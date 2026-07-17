@@ -639,7 +639,7 @@ msgstr ""
 msgid "Resource"
 msgstr ""
 
-#: forms/cluster.forms.php forms/monitoring.forms.php
+#: forms/cluster.forms.php forms/monitoring.forms.php forms/node.forms.php
 #: forms/oom_reports.forms.php forms/vps.forms.php pages/page_adminm.php
 #: pages/page_jumpto.php
 msgid "Value"
@@ -1813,7 +1813,8 @@ msgstr ""
 msgid "Duration"
 msgstr ""
 
-#: forms/monitoring.forms.php forms/object_history.forms.php
+#: forms/monitoring.forms.php forms/node.forms.php
+#: forms/object_history.forms.php
 msgid "Event"
 msgstr ""
 
@@ -2067,7 +2068,7 @@ msgid "error - unable to check pool status"
 msgstr ""
 
 #: forms/node.forms.php forms/oom_reports.forms.php
-#: forms/security_advisory.forms.php
+#: forms/security_advisory.forms.php lib/functions.lib.php
 msgid "unknown"
 msgstr ""
 
@@ -2106,6 +2107,255 @@ msgstr ""
 
 #: forms/node.forms.php
 msgid "See all graphs in Munin"
+msgstr ""
+
+#: forms/node.forms.php pages/page_node.php
+msgid "Kernel history"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Effective or observed time"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Booted kernel"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Reported kernel"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Evidence quality"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "System boot"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Live patch change"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Reported kernel change"
+msgstr ""
+
+#: forms/node.forms.php
+#, php-format
+msgid "after %s, before %s"
+msgstr ""
+
+#: forms/node.forms.php
+#, php-format
+msgid "before %s"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "exact"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "inferred"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "incomplete"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "No kernel history is available yet."
+msgstr ""
+
+#: forms/node.forms.php pages/page_node.php
+msgid "System history"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Observation period"
+msgstr ""
+
+#: forms/node.forms.php forms/vps.forms.php
+msgid "CPUs"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Linux-visible memory"
+msgstr ""
+
+#: forms/node.forms.php forms/vps.forms.php pages/page_adminvps.php
+msgid "Swap"
+msgstr ""
+
+#: forms/node.forms.php pages/page_adminvps.php
+msgid "Cgroup version"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "current"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "No system history is available yet."
+msgstr ""
+
+#: forms/node.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: pages/page_backup.php pages/page_cluster.php pages/page_console.php
+#: pages/page_dataset.php pages/page_dns.php pages/page_export.php
+#: pages/page_history.php pages/page_incidents.php pages/page_jumpto.php
+#: pages/page_lifetimes.php pages/page_monitoring.php pages/page_nas.php
+#: pages/page_networking.php pages/page_node.php pages/page_oom_reports.php
+#: pages/page_outage.php pages/page_redirect.php pages/page_reminder.php
+#: pages/page_transactions.php pages/page_userdata.php pages/page_userns.php
+msgid "Access forbidden"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "This Node evidence is available only to administrators."
+msgstr ""
+
+#: forms/node.forms.php pages/page_node.php
+msgid "Kernel parameters"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Raw boot command line"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Booted parameters"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "No kernel parameter evidence is available yet."
+msgstr ""
+
+#: forms/node.forms.php pages/page_node.php
+msgid "Sysctls"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Current sysctls"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Configured value"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Effective value"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Result"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "not configured"
+msgstr ""
+
+#: forms/node.forms.php lib/functions.lib.php
+msgid "unavailable"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "No sysctl evidence is available yet."
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Sysctl history"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Observed"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Previous state"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "New state"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "No history is available for this sysctl yet."
+msgstr ""
+
+#: forms/node.forms.php pages/page_node.php
+msgid "Software versions"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Current software versions"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Component"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Booted closure version"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Booted closure revision"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Current closure version"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Current closure revision"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Software deployment history"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "System"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Previous"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "New"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "booted closure"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "current closure"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "No software deployment history is available yet."
+msgstr ""
+
+#: forms/node.forms.php
+msgid "no earlier value"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "available"
+msgstr ""
+
+#: forms/node.forms.php forms/vps.forms.php
+msgid "Available"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "vpsFree.cz configuration"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "initial baseline"
 msgstr ""
 
 #: forms/object_history.forms.php
@@ -3861,10 +4111,6 @@ msgid "Parameters"
 msgstr ""
 
 #: forms/vps.forms.php
-msgid "Available"
-msgstr ""
-
-#: forms/vps.forms.php
 msgid "Create a VPS: Final touches (4/4)"
 msgstr ""
 
@@ -3873,15 +4119,7 @@ msgid "Back to parameters"
 msgstr ""
 
 #: forms/vps.forms.php
-msgid "CPUs"
-msgstr ""
-
-#: forms/vps.forms.php
 msgid "Memory"
-msgstr ""
-
-#: forms/vps.forms.php pages/page_adminvps.php
-msgid "Swap"
 msgstr ""
 
 #: forms/vps.forms.php pages/page_adminvps.php
@@ -4497,6 +4735,26 @@ msgstr ""
 
 #: lib/functions.lib.php
 msgid "On, no authentication device is enabled"
+msgstr ""
+
+#: lib/functions.lib.php
+msgid "not supported by this kernel"
+msgstr ""
+
+#: lib/functions.lib.php
+msgid "effective value could not be read"
+msgstr ""
+
+#: lib/functions.lib.php
+msgid "configured and effective values differ"
+msgstr ""
+
+#: lib/functions.lib.php
+msgid "effective"
+msgstr ""
+
+#: lib/functions.lib.php
+msgid "modified"
 msgstr ""
 
 #: lib/functions.lib.php
@@ -5451,17 +5709,6 @@ msgstr ""
 #: pages/page_dns.php pages/page_export.php pages/page_history.php
 #: pages/page_incidents.php pages/page_jumpto.php pages/page_lifetimes.php
 #: pages/page_monitoring.php pages/page_nas.php pages/page_networking.php
-#: pages/page_node.php pages/page_oom_reports.php pages/page_outage.php
-#: pages/page_redirect.php pages/page_reminder.php pages/page_transactions.php
-#: pages/page_userdata.php pages/page_userns.php
-msgid "Access forbidden"
-msgstr ""
-
-#: pages/page_adminm.php pages/page_adminvps.php pages/page_backup.php
-#: pages/page_cluster.php pages/page_console.php pages/page_dataset.php
-#: pages/page_dns.php pages/page_export.php pages/page_history.php
-#: pages/page_incidents.php pages/page_jumpto.php pages/page_lifetimes.php
-#: pages/page_monitoring.php pages/page_nas.php pages/page_networking.php
 #: pages/page_oom_reports.php pages/page_outage.php pages/page_redirect.php
 #: pages/page_reminder.php pages/page_transactions.php pages/page_userdata.php
 #: pages/page_userns.php
@@ -6189,10 +6436,6 @@ msgstr ""
 
 #: pages/page_adminvps.php
 msgid "Set start menu timeout"
-msgstr ""
-
-#: pages/page_adminvps.php
-msgid "Cgroup version"
 msgstr ""
 
 #: pages/page_adminvps.php
@@ -7501,6 +7744,10 @@ msgstr ""
 
 #: pages/page_node.php
 msgid "Back to status"
+msgstr ""
+
+#: pages/page_node.php
+msgid "Node details"
 msgstr ""
 
 #: pages/page_node.php

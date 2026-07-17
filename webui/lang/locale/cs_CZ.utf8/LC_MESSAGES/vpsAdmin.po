@@ -638,7 +638,7 @@ msgstr "Prostředky clusteru"
 msgid "Resource"
 msgstr "Zdroj"
 
-#: forms/cluster.forms.php forms/monitoring.forms.php
+#: forms/cluster.forms.php forms/monitoring.forms.php forms/node.forms.php
 #: forms/oom_reports.forms.php forms/vps.forms.php pages/page_adminm.php
 #: pages/page_jumpto.php
 msgid "Value"
@@ -1823,7 +1823,8 @@ msgstr "Objekt"
 msgid "Duration"
 msgstr "Trvání"
 
-#: forms/monitoring.forms.php forms/object_history.forms.php
+#: forms/monitoring.forms.php forms/node.forms.php
+#: forms/object_history.forms.php
 msgid "Event"
 msgstr "Událost"
 
@@ -2081,7 +2082,7 @@ msgid "error - unable to check pool status"
 msgstr "chyba - nelze zkontrolovat status poolu"
 
 #: forms/node.forms.php forms/oom_reports.forms.php
-#: forms/security_advisory.forms.php
+#: forms/security_advisory.forms.php lib/functions.lib.php
 msgid "unknown"
 msgstr "neznámý"
 
@@ -2121,6 +2122,255 @@ msgstr "Grafy"
 #: forms/node.forms.php
 msgid "See all graphs in Munin"
 msgstr "Zobrazit všechny grafy v Muninu"
+
+#: forms/node.forms.php pages/page_node.php
+msgid "Kernel history"
+msgstr "Historie jádra"
+
+#: forms/node.forms.php
+msgid "Effective or observed time"
+msgstr "Čas účinnosti nebo zjištění"
+
+#: forms/node.forms.php
+msgid "Booted kernel"
+msgstr "Jádro při spuštění"
+
+#: forms/node.forms.php
+msgid "Reported kernel"
+msgstr "Hlášené jádro"
+
+#: forms/node.forms.php
+msgid "Evidence quality"
+msgstr "Kvalita podkladů"
+
+#: forms/node.forms.php
+msgid "System boot"
+msgstr "Spuštění systému"
+
+#: forms/node.forms.php
+msgid "Live patch change"
+msgstr "Změna živé záplaty"
+
+#: forms/node.forms.php
+msgid "Reported kernel change"
+msgstr "Změna hlášeného jádra"
+
+#: forms/node.forms.php
+#, php-format
+msgid "after %s, before %s"
+msgstr "po %s, před %s"
+
+#: forms/node.forms.php
+#, php-format
+msgid "before %s"
+msgstr "před %s"
+
+#: forms/node.forms.php
+msgid "exact"
+msgstr "přesné"
+
+#: forms/node.forms.php
+msgid "inferred"
+msgstr "odvozené"
+
+#: forms/node.forms.php
+msgid "incomplete"
+msgstr "neúplné"
+
+#: forms/node.forms.php
+msgid "No kernel history is available yet."
+msgstr "Historie jádra zatím není k dispozici."
+
+#: forms/node.forms.php pages/page_node.php
+msgid "System history"
+msgstr "Historie systému"
+
+#: forms/node.forms.php
+msgid "Observation period"
+msgstr "Období pozorování"
+
+#: forms/node.forms.php forms/vps.forms.php
+msgid "CPUs"
+msgstr "CPU"
+
+#: forms/node.forms.php
+msgid "Linux-visible memory"
+msgstr "Paměť viditelná v Linuxu"
+
+#: forms/node.forms.php forms/vps.forms.php pages/page_adminvps.php
+msgid "Swap"
+msgstr "Swap"
+
+#: forms/node.forms.php pages/page_adminvps.php
+msgid "Cgroup version"
+msgstr "Verze Cgroup"
+
+#: forms/node.forms.php
+msgid "current"
+msgstr "aktuální"
+
+#: forms/node.forms.php
+msgid "No system history is available yet."
+msgstr "Historie systému zatím není k dispozici."
+
+#: forms/node.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: pages/page_backup.php pages/page_cluster.php pages/page_console.php
+#: pages/page_dataset.php pages/page_dns.php pages/page_export.php
+#: pages/page_history.php pages/page_incidents.php pages/page_jumpto.php
+#: pages/page_lifetimes.php pages/page_monitoring.php pages/page_nas.php
+#: pages/page_networking.php pages/page_node.php pages/page_oom_reports.php
+#: pages/page_outage.php pages/page_redirect.php pages/page_reminder.php
+#: pages/page_transactions.php pages/page_userdata.php pages/page_userns.php
+msgid "Access forbidden"
+msgstr "Přístup zakázán"
+
+#: forms/node.forms.php
+msgid "This Node evidence is available only to administrators."
+msgstr "Tyto údaje o Node jsou dostupné pouze administrátorům."
+
+#: forms/node.forms.php pages/page_node.php
+msgid "Kernel parameters"
+msgstr "Parametry jádra"
+
+#: forms/node.forms.php
+msgid "Raw boot command line"
+msgstr "Původní příkazová řádka při spuštění"
+
+#: forms/node.forms.php
+msgid "Booted parameters"
+msgstr "Parametry použité při spuštění"
+
+#: forms/node.forms.php
+msgid "No kernel parameter evidence is available yet."
+msgstr "Údaje o parametrech jádra zatím nejsou k dispozici."
+
+#: forms/node.forms.php pages/page_node.php
+msgid "Sysctls"
+msgstr "Sysctl"
+
+#: forms/node.forms.php
+msgid "Current sysctls"
+msgstr "Aktuální sysctl"
+
+#: forms/node.forms.php
+msgid "Configured value"
+msgstr "Nakonfigurovaná hodnota"
+
+#: forms/node.forms.php
+msgid "Effective value"
+msgstr "Používaná hodnota"
+
+#: forms/node.forms.php
+msgid "Result"
+msgstr "Výsledek"
+
+#: forms/node.forms.php
+msgid "not configured"
+msgstr "nenakonfigurováno"
+
+#: forms/node.forms.php lib/functions.lib.php
+msgid "unavailable"
+msgstr "nedostupné"
+
+#: forms/node.forms.php
+msgid "No sysctl evidence is available yet."
+msgstr "Údaje o sysctl zatím nejsou k dispozici."
+
+#: forms/node.forms.php
+msgid "Sysctl history"
+msgstr "Historie sysctl"
+
+#: forms/node.forms.php
+msgid "Observed"
+msgstr "Zjištěno"
+
+#: forms/node.forms.php
+msgid "Previous state"
+msgstr "Předchozí stav"
+
+#: forms/node.forms.php
+msgid "New state"
+msgstr "Nový stav"
+
+#: forms/node.forms.php
+msgid "No history is available for this sysctl yet."
+msgstr "Historie tohoto sysctl zatím není k dispozici."
+
+#: forms/node.forms.php pages/page_node.php
+msgid "Software versions"
+msgstr "Verze softwaru"
+
+#: forms/node.forms.php
+msgid "Current software versions"
+msgstr "Aktuální verze softwaru"
+
+#: forms/node.forms.php
+msgid "Component"
+msgstr "Komponenta"
+
+#: forms/node.forms.php
+msgid "Booted closure version"
+msgstr "Verze closure při spuštění"
+
+#: forms/node.forms.php
+msgid "Booted closure revision"
+msgstr "Revize closure při spuštění"
+
+#: forms/node.forms.php
+msgid "Current closure version"
+msgstr "Verze aktuálního closure"
+
+#: forms/node.forms.php
+msgid "Current closure revision"
+msgstr "Revize aktuálního closure"
+
+#: forms/node.forms.php
+msgid "Software deployment history"
+msgstr "Historie nasazení softwaru"
+
+#: forms/node.forms.php
+msgid "System"
+msgstr "Systém"
+
+#: forms/node.forms.php
+msgid "Previous"
+msgstr "Předchozí"
+
+#: forms/node.forms.php
+msgid "New"
+msgstr "Nové"
+
+#: forms/node.forms.php
+msgid "booted closure"
+msgstr "closure při spuštění"
+
+#: forms/node.forms.php
+msgid "current closure"
+msgstr "aktuální closure"
+
+#: forms/node.forms.php
+msgid "No software deployment history is available yet."
+msgstr "Historie nasazení softwaru zatím není k dispozici."
+
+#: forms/node.forms.php
+msgid "no earlier value"
+msgstr "bez předchozí hodnoty"
+
+#: forms/node.forms.php
+msgid "available"
+msgstr "dostupné"
+
+#: forms/node.forms.php forms/vps.forms.php
+msgid "Available"
+msgstr "K dispozici"
+
+#: forms/node.forms.php
+msgid "vpsFree.cz configuration"
+msgstr "Konfigurace vpsFree.cz"
+
+#: forms/node.forms.php
+msgid "initial baseline"
+msgstr "počáteční stav"
 
 #: forms/object_history.forms.php
 msgid "Object history"
@@ -3900,10 +4150,6 @@ msgid "Parameters"
 msgstr "Parametry"
 
 #: forms/vps.forms.php
-msgid "Available"
-msgstr "K dispozici"
-
-#: forms/vps.forms.php
 msgid "Create a VPS: Final touches (4/4)"
 msgstr "Vytvořit VPS: Poslední úpravy (4/4)"
 
@@ -3912,16 +4158,8 @@ msgid "Back to parameters"
 msgstr "Zpět k parametrům"
 
 #: forms/vps.forms.php
-msgid "CPUs"
-msgstr "CPU"
-
-#: forms/vps.forms.php
 msgid "Memory"
 msgstr "Paměť"
-
-#: forms/vps.forms.php pages/page_adminvps.php
-msgid "Swap"
-msgstr "Swap"
 
 #: forms/vps.forms.php pages/page_adminvps.php
 msgid "Disk"
@@ -4545,6 +4783,26 @@ msgstr "Zapnuto"
 #: lib/functions.lib.php
 msgid "On, no authentication device is enabled"
 msgstr "Zapnuto, ale není zapnuté žádné ověřovací zařízení"
+
+#: lib/functions.lib.php
+msgid "not supported by this kernel"
+msgstr "toto jádro nepodporuje"
+
+#: lib/functions.lib.php
+msgid "effective value could not be read"
+msgstr "efektivní hodnotu se nepodařilo načíst"
+
+#: lib/functions.lib.php
+msgid "configured and effective values differ"
+msgstr "nakonfigurovaná a používaná hodnota se liší"
+
+#: lib/functions.lib.php
+msgid "effective"
+msgstr "používá se"
+
+#: lib/functions.lib.php
+msgid "modified"
+msgstr "upraveno"
 
 #: lib/functions.lib.php
 msgid "Error message"
@@ -5516,17 +5774,6 @@ msgstr "Platby"
 #: pages/page_dns.php pages/page_export.php pages/page_history.php
 #: pages/page_incidents.php pages/page_jumpto.php pages/page_lifetimes.php
 #: pages/page_monitoring.php pages/page_nas.php pages/page_networking.php
-#: pages/page_node.php pages/page_oom_reports.php pages/page_outage.php
-#: pages/page_redirect.php pages/page_reminder.php pages/page_transactions.php
-#: pages/page_userdata.php pages/page_userns.php
-msgid "Access forbidden"
-msgstr "Přístup zakázán"
-
-#: pages/page_adminm.php pages/page_adminvps.php pages/page_backup.php
-#: pages/page_cluster.php pages/page_console.php pages/page_dataset.php
-#: pages/page_dns.php pages/page_export.php pages/page_history.php
-#: pages/page_incidents.php pages/page_jumpto.php pages/page_lifetimes.php
-#: pages/page_monitoring.php pages/page_nas.php pages/page_networking.php
 #: pages/page_oom_reports.php pages/page_outage.php pages/page_redirect.php
 #: pages/page_reminder.php pages/page_transactions.php pages/page_userdata.php
 #: pages/page_userns.php
@@ -6300,10 +6547,6 @@ msgstr "sekundy"
 #: pages/page_adminvps.php
 msgid "Set start menu timeout"
 msgstr "Nastavit časový limit start menu"
-
-#: pages/page_adminvps.php
-msgid "Cgroup version"
-msgstr "Verze Cgroup"
 
 #: pages/page_adminvps.php
 msgid "In use:"
@@ -7632,6 +7875,10 @@ msgid "Back to status"
 msgstr "Zpět na přehled"
 
 #: pages/page_node.php
+msgid "Node details"
+msgstr "Podrobnosti nodu"
+
+#: pages/page_node.php
 msgid "You have to log in to be able to access vpsadmin's functions"
 msgstr "Abyste měli přístup k funkcím vpsadmin, musíte se přihlásit"
 
@@ -7980,6 +8227,110 @@ msgstr "Upravit pole nápovědy"
 msgid "Help"
 msgstr "Pomoc"
 
+#~ msgid ""
+#~ "Boot times reconstructed from status reports are estimates. Runtime "
+#~ "changes are shown with the interval in which they were observed."
+#~ msgstr ""
+#~ "Časy spuštění rekonstruované ze stavových hlášení jsou odhady. Změny za "
+#~ "běhu jsou zobrazeny s intervalem, ve kterém byly zjištěny."
+
+#~ msgid ""
+#~ "Values are reported by the running Node. The beginning of each period is "
+#~ "the first report with these values and the end is the latest report that "
+#~ "confirmed them. The exact change happened after the old period ended and "
+#~ "no later than the new period began."
+#~ msgstr ""
+#~ "Hodnoty hlásí běžící node. Začátek každého období odpovídá prvnímu "
+#~ "hlášení s těmito hodnotami a konec poslednímu hlášení, které je "
+#~ "potvrdilo. Ke změně došlo po skončení starého období a nejpozději na "
+#~ "začátku nového období."
+
+#~ msgid ""
+#~ "These parameters were read from the running kernel after boot. Their "
+#~ "order and repeated names are preserved because a later parameter can "
+#~ "override an earlier one."
+#~ msgstr ""
+#~ "Tyto parametry byly načteny z běžícího jádra po spuštění. Jejich pořadí a "
+#~ "opakované názvy jsou zachovány, protože pozdější parametr může přepsat "
+#~ "dřívější."
+
+#~ msgid ""
+#~ "Security-relevant kernel controls are read from the running Node. A "
+#~ "configured value is shown separately from the effective value actually in "
+#~ "use."
+#~ msgstr ""
+#~ "Bezpečnostně důležitá nastavení jádra se načítají z běžícího Node. "
+#~ "Nakonfigurovaná hodnota se zobrazuje odděleně od skutečně používané "
+#~ "hodnoty."
+
+#~ msgid ""
+#~ "Exact source revisions identify the booted and currently activated system "
+#~ "closures. Every closure includes vpsAdminOS, vpsAdmin, and nixpkgs."
+#~ msgstr ""
+#~ "Přesné revize zdrojových kódů identifikují systémové closure použité při "
+#~ "spuštění a aktuálně aktivované. Každé closure obsahuje vpsAdminOS, "
+#~ "vpsAdmin a nixpkgs."
+
+#~ msgid "Position"
+#~ msgstr "Pozice"
+
+#~ msgid "Configured and booted parameters"
+#~ msgstr "Nakonfigurované a použité parametry"
+
+#~ msgid "Comparison"
+#~ msgstr "Porovnání"
+
+#~ msgid "Configured position"
+#~ msgstr "Pozice v konfiguraci"
+
+#~ msgid "Configured parameter"
+#~ msgstr "Nakonfigurovaný parametr"
+
+#~ msgid "Booted position"
+#~ msgstr "Pozice při spuštění"
+
+#~ msgid "same"
+#~ msgstr "shodné"
+
+#~ msgid "different order"
+#~ msgstr "jiné pořadí"
+
+#~ msgid "different value"
+#~ msgstr "jiná hodnota"
+
+#~ msgid "configured only"
+#~ msgstr "pouze v konfiguraci"
+
+#~ msgid "Current version"
+#~ msgstr "Aktuální verze"
+
+#~ msgid "booted"
+#~ msgstr "při spuštění"
+
+#~ msgid "no"
+#~ msgstr "ne"
+
+#~ msgid "yes"
+#~ msgstr "ano"
+
+#~ msgid "Previous availability"
+#~ msgstr "Předchozí dostupnost"
+
+#~ msgid "Previous configured value"
+#~ msgstr "Předchozí nakonfigurovaná hodnota"
+
+#~ msgid "Previous effective value"
+#~ msgstr "Předchozí používaná hodnota"
+
+#~ msgid "New availability"
+#~ msgstr "Nová dostupnost"
+
+#~ msgid "New configured value"
+#~ msgstr "Nová nakonfigurovaná hodnota"
+
+#~ msgid "New effective value"
+#~ msgstr "Nová používaná hodnota"
+
 #~ msgid "Replace VPS "
 #~ msgstr "Nahradit VPS"
 
@@ -8043,9 +8394,6 @@ msgstr "Pomoc"
 #~ msgid "ignored"
 #~ msgstr "ignoroval"
 
-#~ msgid "Bytes"
-#~ msgstr "Bajtů"
-
 #~ msgid "Force stop VPS"
 #~ msgstr "Vynutit stop VPS"
 
@@ -8054,9 +8402,6 @@ msgstr "Pomoc"
 
 #~ msgid "IDs"
 #~ msgstr "ID"
-
-#~ msgid "Current"
-#~ msgstr "Aktuální"
 
 #~ msgid "planned outages"
 #~ msgstr "plánované odstávky"

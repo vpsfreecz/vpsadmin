@@ -109,7 +109,7 @@ function node_overview()
 
         // Node ID, Name, IP, load
         $xtpl->table_td($node->id);
-        $xtpl->table_td($node->domain_name);
+        $xtpl->table_td(node_link($node, h($node->domain_name)));
         $xtpl->table_td($node->vps_running, false, true);
         $xtpl->table_td(format_decimal_number($node->uptime / 60.0 / 60 / 24, 1, false), false, true);
         $xtpl->table_td(format_load_average($node->loadavg5), false, true);
@@ -133,7 +133,7 @@ function node_overview()
         $xtpl->table_td(h($node->version), false, true);
 
         // Kernel
-        $xtpl->table_td(h(kernel_version($node->kernel)));
+        $xtpl->table_td(node_kernel_history_link($node));
 
         $xtpl->table_td(maintenance_lock_icon('node', $node));
 
@@ -182,7 +182,7 @@ function node_vps_overview()
 
         // Node ID, Name, IP, load
         $xtpl->table_td($node->id);
-        $xtpl->table_td($node->domain_name);
+        $xtpl->table_td(node_link($node, h($node->domain_name)));
 
         // Up, down, del, sum
         $xtpl->table_td($node->vps_running, false, true);
@@ -537,7 +537,7 @@ function node_create_form()
     $xtpl->table_add_category('');
     $xtpl->form_create('?page=cluster&action=newnode_save', 'post');
 
-    api_create_form($api->node);
+    api_create_form($api->node, ['cpus', 'total_memory', 'total_swap']);
 
     $xtpl->form_out(_("Register"));
 }

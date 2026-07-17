@@ -207,11 +207,7 @@ foreach ($nodes as $node) {
         );
     }
 
-    $xtpl->table_td(
-        h(kernel_version($node->kernel)),
-        false,
-        true
-    );
+    $xtpl->table_td(node_kernel_history_link($node), false, true);
 
     $xtpl->table_td(
         cgroup_version($node->cgroup_version),

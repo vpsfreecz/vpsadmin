@@ -109,7 +109,7 @@ final class XssReportSinksTest extends TestCase
         );
 
         $this->assertFileContains(
-            'webui/pages/page_index.php',
+            'webui/lib/functions.lib.php',
             'h(kernel_version($node->kernel))',
             'VULN-34 public node kernel strings must be escaped.'
         );

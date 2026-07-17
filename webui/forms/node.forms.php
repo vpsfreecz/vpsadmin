@@ -145,3 +145,436 @@ function node_details_table($node_id)
         $xtpl->table_out();
     }
 }
+
+function node_kernel_history_table($node_id)
+{
+    global $xtpl, $api;
+
+    $node = $api->node->find($node_id);
+    $events = $api->node($node_id)->kernel_history->list([
+        'limit' => 500,
+    ]);
+
+    $xtpl->title(_('Kernel history') . ': ' . $node->domain_name);
+
+    $xtpl->table_title(_('Kernel history'), 'node.kernel-history');
+    $xtpl->table_add_category(_('Event'));
+    $xtpl->table_add_category(_('Effective or observed time'));
+    $xtpl->table_add_category(_('Booted kernel'));
+    $xtpl->table_add_category(_('Reported kernel'));
+    $xtpl->table_add_category(_('Evidence quality'));
+
+    foreach ($events as $event) {
+        switch ($event->event_type) {
+            case 'boot':
+                $eventLabel = _('System boot');
+                break;
+            case 'livepatch':
+                $eventLabel = _('Live patch change');
+                break;
+            case 'reported_release_change':
+                $eventLabel = _('Reported kernel change');
+                break;
+            default:
+                $eventLabel = $event->event_type;
+                break;
+        }
+
+        if ($event->effective_at) {
+            $eventTime = tolocaltz($event->effective_at);
+        } elseif ($event->observed_after) {
+            $eventTime = sprintf(
+                _('after %s, before %s'),
+                tolocaltz($event->observed_after),
+                tolocaltz($event->observed_before)
+            );
+        } else {
+            $eventTime = sprintf(_('before %s'), tolocaltz($event->observed_before));
+        }
+
+        switch ($event->confidence) {
+            case 'exact':
+                $confidence = _('exact');
+                break;
+            case 'inferred':
+                $confidence = _('inferred');
+                break;
+            default:
+                $confidence = _('incomplete');
+                break;
+        }
+
+        $xtpl->table_td(h($eventLabel));
+        $xtpl->table_td(h($eventTime));
+        $xtpl->table_td(h(kernel_version($event->booted_release)));
+        $xtpl->table_td(h(kernel_version($event->reported_release)));
+        $xtpl->table_td(h($confidence));
+        $xtpl->table_tr($event->current ? '#DFF0D8' : false);
+    }
+
+    if ($events->count() == 0) {
+        $xtpl->table_td(_('No kernel history is available yet.'), false, false, 5);
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_out();
+}
+
+function node_system_history_table($node_id)
+{
+    global $xtpl, $api;
+
+    $node = $api->node->find($node_id);
+    $states = $api->node_system_state->list([
+        'node' => $node->id,
+        'limit' => 1000,
+    ]);
+
+    $xtpl->title(_('System history') . ': ' . $node->domain_name);
+
+    $xtpl->table_title(_('System history'), 'node.system-history');
+    $xtpl->table_add_category(_('Observation period'));
+    $xtpl->table_add_category(_('CPUs'));
+    $xtpl->table_add_category(_('Linux-visible memory'));
+    $xtpl->table_add_category(_('Swap'));
+    $xtpl->table_add_category(_('Cgroup version'));
+
+    foreach ($states as $state) {
+        $period = h(tolocaltz($state->first_observed_at))
+            . '<br>&ndash;<br>'
+            . h(tolocaltz($state->last_observed_at));
+        if ($state->current) {
+            $period .= '<br><strong>' . h(_('current')) . '</strong>';
+        }
+
+        $xtpl->table_td($period);
+        $xtpl->table_td($state->cpus === null ? h(_('unknown')) : h($state->cpus));
+        $xtpl->table_td(
+            $state->total_memory === null
+                ? h(_('unknown'))
+                : h(data_size_to_humanreadable($state->total_memory))
+        );
+        $xtpl->table_td(
+            $state->total_swap === null
+                ? h(_('unknown'))
+                : h(data_size_to_humanreadable($state->total_swap))
+        );
+        $xtpl->table_td(h(node_system_cgroup_version($state->cgroup_version)));
+        $xtpl->table_tr($state->current ? '#DFF0D8' : false);
+    }
+
+    if ($states->count() === 0) {
+        $xtpl->table_td(_('No system history is available yet.'), false, false, 5);
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_out('node-system-history');
+}
+
+function node_admin_page_forbidden()
+{
+    global $xtpl;
+
+    $xtpl->perex(_('Access forbidden'), _('This Node evidence is available only to administrators.'));
+}
+
+function node_kernel_parameters_table($node_id)
+{
+    global $xtpl, $api;
+
+    $node = $api->node->find($node_id);
+    $parameters = $api->node_kernel_parameter->list([
+        'node' => $node->id,
+        'source' => 'current',
+        'limit' => 1000,
+    ]);
+    $evidences = $api->node_kernel_evidence->list([
+        'node' => $node->id,
+        'limit' => 1,
+    ]);
+
+    $booted = [];
+    foreach ($parameters as $parameter) {
+        $booted[] = [
+            'position' => $parameter->position,
+            'name' => $parameter->name,
+            'value' => $parameter->value,
+        ];
+    }
+    usort($booted, fn($a, $b) => $a['position'] <=> $b['position']);
+
+    $commandLine = null;
+    foreach ($evidences as $evidence) {
+        $commandLine = $evidence->kernel_command_line;
+        break;
+    }
+
+    $xtpl->title(_('Kernel parameters') . ': ' . $node->domain_name);
+
+    $xtpl->table_td(_('Raw boot command line') . ':');
+    $xtpl->table_td(node_kernel_command_line_value($commandLine));
+    $xtpl->table_tr();
+    $xtpl->table_out('node-kernel-command-line');
+
+    $xtpl->table_title(_('Booted parameters'), 'node.kernel-parameters');
+    $xtpl->table_add_category(_('Name'));
+    $xtpl->table_add_category(_('Value'));
+
+    foreach ($booted as $row) {
+        $xtpl->table_td(h($row['name']));
+        $xtpl->table_td($row['value'] === null ? '-' : h($row['value']));
+        $xtpl->table_tr();
+    }
+
+    if (count($booted) === 0) {
+        $xtpl->table_td(_('No kernel parameter evidence is available yet.'), false, false, 2);
+        $xtpl->table_tr();
+    }
+    $xtpl->table_out('node-kernel-parameters');
+}
+
+function node_sysctls_table($node_id)
+{
+    global $xtpl, $api;
+
+    $node = $api->node->find($node_id);
+    $sysctls = iterator_to_array($api->node_sysctl->list([
+        'node' => $node->id,
+        'source' => 'current',
+        'limit' => 1000,
+    ]));
+    usort($sysctls, fn($a, $b) => strcmp($a->name, $b->name));
+
+    $xtpl->title(_('Sysctls') . ': ' . $node->domain_name);
+    $xtpl->table_title(_('Current sysctls'), 'node.sysctls');
+    $xtpl->table_add_category(_('Name'));
+    $xtpl->table_add_category(_('Configured value'));
+    $xtpl->table_add_category(_('Effective value'));
+    $xtpl->table_add_category(_('Result'));
+
+    foreach ($sysctls as $sysctl) {
+        $name = '<a href="?page=node&amp;action=sysctl_history&amp;id=' . (int) $node->id
+            . '&amp;name=' . rawurlencode($sysctl->name) . '">' . h($sysctl->name) . '</a>';
+        [$result, $color] = node_sysctl_result(
+            $sysctl->available,
+            $sysctl->configured_value,
+            $sysctl->effective_value
+        );
+
+        $xtpl->table_td($name);
+        $xtpl->table_td(h($sysctl->configured_value ?? _('not configured')));
+        $xtpl->table_td(h($sysctl->available ? ($sysctl->effective_value ?? _('unknown')) : _('unavailable')));
+        $xtpl->table_td(h($result));
+        $xtpl->table_tr($color);
+    }
+
+    if (count($sysctls) === 0) {
+        $xtpl->table_td(_('No sysctl evidence is available yet.'), false, false, 4);
+        $xtpl->table_tr();
+    }
+    $xtpl->table_out('node-sysctls');
+}
+
+function node_sysctl_history_table($node_id, $name)
+{
+    global $xtpl, $api;
+
+    $node = $api->node->find($node_id);
+    $changes = $api->node_sysctl_change->list([
+        'node' => $node->id,
+        'name' => $name,
+        'limit' => 1000,
+    ]);
+
+    $xtpl->title(
+        _('Sysctl history') . ': ' . h($name) . ' (' . h($node->domain_name) . ')'
+    );
+    $xtpl->table_title(_('Sysctl history'), 'node.sysctl-history');
+    $xtpl->table_add_category(_('Observed'));
+    $xtpl->table_add_category(_('Previous state'));
+    $xtpl->table_add_category(_('New state'));
+
+    foreach ($changes as $change) {
+        $xtpl->table_td(h(node_evidence_observed_interval($change)));
+        $xtpl->table_td(node_sysctl_state($change, 'before'));
+        $xtpl->table_td(node_sysctl_state($change, 'after'));
+        $xtpl->table_tr($change->after_available === false ? '#F2DEDE' : false);
+    }
+
+    if ($changes->count() === 0) {
+        $xtpl->table_td(_('No history is available for this sysctl yet.'), false, false, 3);
+        $xtpl->table_tr();
+    }
+    $xtpl->table_out('node-sysctl-history');
+}
+
+function node_software_versions_table($node_id)
+{
+    global $xtpl, $api;
+
+    $node = $api->node->find($node_id);
+    $versions = $api->node_software_version->list([
+        'node' => $node->id,
+        'source' => 'current',
+        'limit' => 100,
+    ]);
+    $deployments = $api->node_software_deployment->list([
+        'node' => $node->id,
+        'limit' => 500,
+    ]);
+    $changes = $api->node_software_change->list([
+        'node' => $node->id,
+        'limit' => 1000,
+    ]);
+
+    $matrix = [];
+    foreach ($versions as $version) {
+        $matrix[$version->component][$version->generation] = $version;
+    }
+    $changesByEvent = [];
+    foreach ($changes as $change) {
+        $changesByEvent[$change->node_kernel_event->id][] = $change;
+    }
+
+    $xtpl->title(_('Software versions') . ': ' . $node->domain_name);
+    $xtpl->table_title(_('Current software versions'), 'node.software-versions');
+    $xtpl->table_add_category(_('Component'));
+    $xtpl->table_add_category(_('Booted closure version'));
+    $xtpl->table_add_category(_('Booted closure revision'));
+    $xtpl->table_add_category(_('Current closure version'));
+    $xtpl->table_add_category(_('Current closure revision'));
+
+    $components = ['vpsadminos', 'vpsadmin', 'nixpkgs'];
+    if (isset($matrix['vpsfree_cz_configuration'])) {
+        $components[] = 'vpsfree_cz_configuration';
+    }
+
+    foreach ($components as $component) {
+        $booted = $matrix[$component]['booted'] ?? null;
+        $current = $matrix[$component]['current'] ?? null;
+        $xtpl->table_td(h(node_software_component_label($component)));
+        $xtpl->table_td(h($booted->version ?? '-'));
+        $xtpl->table_td(node_software_revision_link(
+            $component,
+            $booted->revision ?? null,
+            $booted->revision_dirty ?? false
+        ));
+        $xtpl->table_td(h($current->version ?? '-'));
+        $xtpl->table_td(node_software_revision_link(
+            $component,
+            $current->revision ?? null,
+            $current->revision_dirty ?? false
+        ));
+        $xtpl->table_tr();
+    }
+    $xtpl->table_out();
+
+    $xtpl->table_title(_('Software deployment history'), 'node.software-deployments');
+    $xtpl->table_add_category(_('Observed'));
+    $xtpl->table_add_category(_('System'));
+    $xtpl->table_add_category(_('Component'));
+    $xtpl->table_add_category(_('Previous'));
+    $xtpl->table_add_category(_('New'));
+
+    $hasChanges = false;
+    foreach ($deployments as $deployment) {
+        $deploymentChanges = $changesByEvent[$deployment->id] ?? [];
+        foreach ($deploymentChanges as $index => $change) {
+            $hasChanges = true;
+            $xtpl->table_td($index === 0 ? h(node_evidence_observed_interval($deployment)) : '');
+            $xtpl->table_td(h($change->generation === 'booted'
+                ? _('booted closure')
+                : _('current closure')));
+            $xtpl->table_td(h(node_software_component_label($change->component)));
+            $xtpl->table_td(node_software_change_value(
+                $change->component,
+                $change->before_version,
+                $change->before_revision,
+                $change->before_revision_dirty,
+                true
+            ));
+            $xtpl->table_td(node_software_change_value(
+                $change->component,
+                $change->after_version,
+                $change->after_revision,
+                $change->after_revision_dirty,
+                false
+            ));
+            $xtpl->table_tr();
+        }
+    }
+
+    if (!$hasChanges) {
+        $xtpl->table_td(_('No software deployment history is available yet.'), false, false, 5);
+        $xtpl->table_tr();
+    }
+    $xtpl->table_out();
+}
+
+function node_evidence_observed_interval($event)
+{
+    if ($event->effective_at ?? null) {
+        return tolocaltz($event->effective_at);
+    }
+    if ($event->observed_after ?? null) {
+        return sprintf(
+            _('after %s, before %s'),
+            tolocaltz($event->observed_after),
+            tolocaltz($event->observed_before)
+        );
+    }
+
+    return sprintf(_('before %s'), tolocaltz($event->observed_before));
+}
+
+function node_sysctl_availability($value)
+{
+    if ($value === null) {
+        return _('no earlier value');
+    }
+
+    return $value ? _('available') : _('unavailable');
+}
+
+function node_sysctl_history_value($value)
+{
+    return $value === null ? '-' : $value;
+}
+
+function node_sysctl_state($change, $prefix)
+{
+    return makeDefinitionList([
+        _('Available') => node_sysctl_availability($change->{$prefix . '_available'}),
+        _('Configured value') => node_sysctl_history_value($change->{$prefix . '_configured_value'}),
+        _('Effective value') => node_sysctl_history_value($change->{$prefix . '_effective_value'}),
+    ], 'inline node-sysctl-state');
+}
+
+function node_software_component_label($component)
+{
+    switch ($component) {
+        case 'vpsadminos':
+            return 'vpsAdminOS';
+        case 'vpsadmin':
+            return 'vpsAdmin';
+        case 'nixpkgs':
+            return 'nixpkgs';
+        case 'vpsfree_cz_configuration':
+            return _('vpsFree.cz configuration');
+        default:
+            return $component;
+    }
+}
+
+function node_software_change_value($component, $version, $revision, $revisionDirty, $baseline)
+{
+    if ($version === null && $revision === null) {
+        return $baseline ? h(_('initial baseline')) : '-';
+    }
+
+    return h($version ?? '-') . ' / ' . node_software_revision_link(
+        $component,
+        $revision,
+        $revisionDirty
+    );
+}

@@ -740,18 +740,21 @@ function api_param_to_form($name, $desc, $v = null, $label_callback = null, $emp
     $xtpl->table_tr();
 }
 
-function api_params_to_form($action, $direction, $label_callbacks = null)
+function api_params_to_form($action, $direction, $label_callbacks = null, $exclude = [])
 {
     $params = $action->getParameters($direction);
 
     foreach ($params as $name => $desc) {
+        if (in_array($name, $exclude, true)) {
+            continue;
+        }
         api_param_to_form($name, $desc, null, $label_callbacks ? $label_callbacks[$name] : null);
     }
 }
 
-function api_create_form($resource)
+function api_create_form($resource, $exclude = [])
 {
-    api_params_to_form($resource->create, 'input');
+    api_params_to_form($resource->create, 'input', null, $exclude);
 }
 
 function api_update_form($obj)
@@ -1283,6 +1286,20 @@ function node_link($node, $label = null)
     return '<a href="?page=node&id=' . $node->id . '">' . $label . '</a>';
 };
 
+function node_kernel_history_link($node)
+{
+    $kernel = h(kernel_version($node->kernel));
+
+    if (!isLoggedIn()) {
+        return $kernel;
+    }
+
+    return '<a data-vpsadmin-doc-id="node.kernel-history"'
+        . ' href="?page=node&amp;action=kernel_history&amp;id=' . (int) $node->id . '">'
+        . $kernel
+        . '</a>';
+}
+
 function vps_link($vps)
 {
     return '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . '</a>';
@@ -1489,6 +1506,67 @@ function getVersionLink()
     $short = substr($hash, 0, 8);
 
     return '<a href="https://github.com/vpsfreecz/vpsadmin/commit/' . $hash . '" target="_blank">' . $short . '</a>';
+}
+
+function node_sysctl_result($available, $configured_value, $effective_value)
+{
+    if (!$available) {
+        return [_('not supported by this kernel'), '#F2DEDE'];
+    }
+
+    if ($effective_value === null) {
+        return [_('effective value could not be read'), '#FFE27A'];
+    }
+
+    if ($configured_value !== null && $configured_value !== $effective_value) {
+        return [_('configured and effective values differ'), '#FFE27A'];
+    }
+
+    return [_('effective'), false];
+}
+
+function node_kernel_command_line_value($commandLine)
+{
+    if ($commandLine === null || $commandLine === '') {
+        return h(_('unavailable'));
+    }
+
+    return '<code class="node-kernel-command-line">' . h($commandLine) . '</code>';
+}
+
+function node_system_cgroup_version($version)
+{
+    switch ($version) {
+        case 'cgroup_v1':
+            return 'v1';
+        case 'cgroup_v2':
+            return 'v2';
+        default:
+            return _('unknown');
+    }
+}
+
+function node_software_revision_link($component, $revision, $dirty = false)
+{
+    if (!is_string($revision) || !preg_match('/^[0-9a-f]{40}$/', $revision)) {
+        return h(_('unavailable'));
+    }
+
+    $repositories = [
+        'vpsadminos' => 'https://github.com/vpsfreecz/vpsadminos/commit/',
+        'vpsadmin' => 'https://github.com/vpsfreecz/vpsadmin/commit/',
+        'nixpkgs' => 'https://github.com/NixOS/nixpkgs/commit/',
+        'vpsfree_cz_configuration' => 'https://github.com/vpsfreecz/vpsfree-cz-configuration/commit/',
+    ];
+
+    if (!isset($repositories[$component])) {
+        return h(_('unavailable'));
+    }
+
+    $link = '<a href="' . $repositories[$component] . $revision
+        . '" target="_blank">' . h(substr($revision, 0, 12)) . '</a>';
+
+    return $dirty ? $link . ' (' . h(_('modified')) . ')' : $link;
 }
 
 function getCommitHash()
