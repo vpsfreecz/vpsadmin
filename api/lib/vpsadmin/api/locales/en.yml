@@ -63,6 +63,11 @@ en:
       activate:
         label: Activate account
       active:
+        choices:
+          'false':
+            label: 'false'
+          'true':
+            label: 'true'
         label: Active
       add_ip_addresses:
         description: Add all IP addresses from this network to the database now
@@ -117,6 +122,30 @@ en:
         label: Affected users
       affected_vps_count:
         label: Affected VPSes
+      after_available:
+        label: After_available
+      after_configured_value:
+        label: After_configured_value
+      after_effective_value:
+        label: After_effective_value
+      after_revision:
+        label: After_revision
+      after_revision_dirty:
+        label: After_revision_dirty
+      after_revision_source:
+        choices:
+          confctl:
+            label: confctl
+          native:
+            label: native
+        label: After_revision_source
+      after_version:
+        label: After_version
+      after_version_source:
+        choices:
+          native:
+            label: native
+        label: After_version_source
       algorithm:
         choices:
           hmac_sha224:
@@ -140,6 +169,8 @@ en:
         label: Allow_single_sign_on
       amount:
         label: Amount
+      applied_at:
+        label: Applied_at
       arc_c:
         label: Arc_c
       arc_c_max:
@@ -161,6 +192,10 @@ en:
         description: Controls whether the access time for files is updated when they
           are read
         label: Access time
+      attached:
+        label: Attached
+      attached_at:
+        label: Attached_at
       attr_changes:
         label: Attribute changes
       attribute:
@@ -196,16 +231,50 @@ en:
       avail:
         description: Amount of space left in dataset
         label: Available space
+      available:
+        label: Available
       available_space:
         label: Available_space
       bcc:
         label: Bcc
+      before_available:
+        label: Before_available
+      before_configured_value:
+        label: Before_configured_value
+      before_effective_value:
+        label: Before_effective_value
+      before_revision:
+        label: Before_revision
+      before_revision_dirty:
+        label: Before_revision_dirty
+      before_revision_source:
+        choices:
+          confctl:
+            label: confctl
+          native:
+            label: native
+        label: Before_revision_source
+      before_version:
+        label: Before_version
+      before_version_source:
+        choices:
+          native:
+            label: native
+        label: Before_version_source
       begins_at:
         label: Begins at
       bits:
         label: Bits
       block_count:
         label: Block count
+      boot_id:
+        label: Boot_id
+      booted_at:
+        label: Booted_at
+      booted_release:
+        label: Booted_release
+      booted_system:
+        label: Booted_system
       bytes:
         label: Bytes
       bytes_in:
@@ -236,6 +305,8 @@ en:
             label: cgroup_v2
       challenge_token:
         label: Challenge_token
+      change_count:
+        label: Change_count
       change_type:
         choices:
           create_record:
@@ -274,7 +345,18 @@ en:
       comment:
         description: Optional comment
         label: Comment
+      completed_at:
+        label: Completed_at
       component:
+        choices:
+          nixpkgs:
+            label: nixpkgs
+          vpsadmin:
+            label: vpsadmin
+          vpsadminos:
+            label: vpsadminos
+          vpsfree_cz_configuration:
+            label: vpsfree_cz_configuration
         description: Filter outages by vpsAdmin component
         label: Component
       compression:
@@ -288,8 +370,21 @@ en:
       concurrency:
         description: How many migrations run concurrently
         label: Concurrency
+      confidence:
+        choices:
+          exact:
+            label: exact
+          incomplete:
+            label: incomplete
+          inferred:
+            label: inferred
+        label: Confidence
       config:
         label: Config
+      configuration_digest:
+        label: Configuration_digest
+      configured_value:
+        label: Configured_value
       confirmed:
         label: Confirmed
       content:
@@ -363,6 +458,8 @@ en:
           waiting:
             label: waiting
         label: Current state
+      current_system:
+        label: Current_system
       cve:
         description: Filter by CVE identifier.
         label: CVE
@@ -393,6 +490,8 @@ en:
         label: Description
       detected_at:
         label: Detected_at
+      digest:
+        label: Digest
       direct:
         label: Direct
       diskspace:
@@ -449,6 +548,10 @@ en:
         label: Enable dynamic update
       dynamic_update_url:
         label: Dynamic update URL
+      effective_at:
+        label: Effective_at
+      effective_value:
+        label: Effective_value
       email:
         description: Administrator of this zone
         label: E-mail
@@ -518,8 +621,34 @@ en:
         label: Event_data
       event_key:
         label: Event_key
+      event_source:
+        choices:
+          node_report:
+            label: node_report
+          reconstructed_node_status:
+            label: reconstructed_node_status
+        label: Event_source
       event_type:
+        choices:
+          boot:
+            label: boot
+          deployment_change:
+            label: deployment_change
+          ebpf_change:
+            label: ebpf_change
+          livepatch:
+            label: livepatch
+          livepatch_change:
+            label: livepatch_change
+          module_change:
+            label: module_change
+          reported_release_change:
+            label: reported_release_change
+          sysctl_change:
+            label: sysctl_change
         label: Event_type
+      evidence_revision:
+        label: Evidence_revision
       expiration:
         description: A date after which the token becomes invalid
       expirations:
@@ -599,11 +728,20 @@ en:
         label: From personal package
       from_snapshot:
         label: From snapshot
+      from_status_id:
+        label: From_status_id
       full_name:
         description: First and last name
         label: Full name
       fuse:
         label: FUSE
+      generation:
+        choices:
+          booted:
+            label: booted
+          current:
+            label: current
+        label: Generation
       handled_by:
         description: Filter outages handled by user
         label: Handled by
@@ -749,6 +887,16 @@ en:
         label: Keep snapshots
       kernel:
         label: Kernel
+      kernel_command_line:
+        label: Kernel_command_line
+      kernel_config_available:
+        label: Kernel_config_available
+      kernel_config_digest:
+        label: Kernel_config_digest
+      kernel_source_revision:
+        label: Kernel_source_revision
+      kernel_version:
+        label: Kernel_version
       keyid:
         label: Key ID
       killed_name:
@@ -808,12 +956,16 @@ en:
         label: Access level
       limit:
         label: Limit
+      livepatch_id:
+        label: Livepatch_id
       loadavg1:
         label: Loadavg1
       loadavg15:
         label: Loadavg15
       loadavg5:
         label: Loadavg5
+      loaded:
+        label: Loaded
       loaded_at:
         label: Loaded_at
       localized:
@@ -1003,14 +1155,26 @@ en:
         label: Node_a
       node_a_ip_addr:
         label: Node_a_ip_addr
+      node_active:
+        label: Node_active
       node_b:
         label: Node_b
       node_b_ip_addr:
         label: Node_b_ip_addr
       node_count:
         label: Node_count
+      node_ebpf_program:
+        label: NodeEbpfProgram
       node_id:
         label: Node_id
+      node_kernel_event:
+        label: NodeKernelEvent
+      node_kernel_evidence:
+        label: NodeKernelEvidence
+      node_kernel_history_state:
+        label: NodeKernelHistoryState
+      node_kernel_livepatch:
+        label: NodeKernelLivepatch
       node_name:
         label: Node_name
       node_state:
@@ -1044,6 +1208,17 @@ en:
           suspended:
             label: Suspended
         label: Object state
+      observed_after:
+        description: Last observation before the change; null for the first known
+          event
+        label: Observed_after
+      observed_at:
+        label: Observed_at
+      observed_before:
+        description: First observation containing the change
+        label: Observed_before
+      observed_through:
+        label: Observed_through
       offset:
         label: Offset
       on_start_fail:
@@ -1134,6 +1309,8 @@ en:
         label: Passphrase
       password_reset:
         label: Password reset
+      patch_version:
+        label: Patch_version
       path:
         label: Path
       peer_type:
@@ -1191,6 +1368,8 @@ en:
         label: Pool_status
       port:
         label: Port
+      position:
+        label: Position
       ppp:
         label: PPP
       preferred_logout_all:
@@ -1264,6 +1443,8 @@ en:
         label: Reason
       reason_code:
         label: Reason code
+      received_at:
+        label: Received_at
       recent_since:
         label: Recent_since
       reconstructed:
@@ -1311,8 +1492,12 @@ en:
         label: Replace IP addresses
       reply_to:
         label: Reply_to
+      report_schema_version:
+        label: Report_schema_version
       reported_at:
         label: Reported_at
+      reported_release:
+        label: Reported_release
       request_count:
         label: Request count
       resource:
@@ -1340,6 +1525,17 @@ en:
         label: Reverse_network_prefix
       reverse_record_value:
         label: Reverse_record_value
+      revision:
+        label: Revision
+      revision_dirty:
+        label: Revision_dirty
+      revision_source:
+        choices:
+          confctl:
+            label: confctl
+          native:
+            label: native
+        label: Revision_source
       role:
         choices:
           backup:
@@ -1442,6 +1638,8 @@ en:
         label: Shares IPv4 networks with location
       since:
         label: Since
+      since_kernel:
+        label: Since_kernel
       size:
         label: Size
       skip_multi_factor_auth_until:
@@ -1451,15 +1649,29 @@ en:
         label: Skip start
       snapshot:
         label: Snapshot
+      snapshot_revision:
+        label: Snapshot_revision
       source:
         choices:
+          current:
+            label: current
+          event:
+            label: event
           external_source:
             label: external_source
           internal_source:
             label: internal_source
+          node_report:
+            label: node_report
+          reconstructed_node_status:
+            label: reconstructed_node_status
         label: Source
       source_cursor:
         label: Source_cursor
+      source_revision:
+        label: Source_revision
+      source_status_id:
+        label: Source_status_id
       split_access:
         choices:
           no_access:
@@ -1628,6 +1840,8 @@ en:
       threads:
         description: Number of NFS server threads.
         label: Threads
+      through_status_id:
+        label: Through_status_id
       time_zone:
         description: IANA time zone identifier, e.g. Europe/Prague
         label: Time zone
@@ -1676,6 +1890,8 @@ en:
         description: If possible, keep IP addresses and recharge them to a different
           environment or location
         label: Transfer IP addresses
+      transition:
+        label: Transition
       ttl:
         description: Optional TTL in seconds, defaults to zone TTL
         label: TTL
@@ -1736,6 +1952,8 @@ en:
         label: Unassigned_by_chain
       until:
         label: Until
+      until_kernel:
+        label: Until_kernel
       uptime:
         label: Uptime
       urgent:
@@ -1822,8 +2040,15 @@ en:
         label: Variant
       vendor:
         label: Vendor
+      verified_at:
+        label: Verified_at
       version:
         description: 4 or 6
+      version_source:
+        choices:
+          native:
+            label: native
+        label: Version_source
       view:
         description: When enabled, list help boxes for the current user, including
           page/action filters
@@ -2636,6 +2861,10 @@ en:
             label: ID
           name:
             label: Name
+        kernel_history:
+          attributes:
+            id:
+              label: Id
         status:
           attributes:
             cpu_idle:
@@ -2646,6 +2875,100 @@ en:
               label: Id
             version:
               label: Version
+      node_ebpf_program:
+        attributes:
+          id:
+            label: Id
+          name:
+            label: Name
+      node_ebpf_program_link:
+        attributes:
+          id:
+            label: Id
+          name:
+            label: Name
+      node_ebpf_program_object:
+        attributes:
+          id:
+            label: Id
+          name:
+            label: Name
+      node_kernel_configuration_option:
+        attributes:
+          id:
+            label: Id
+          name:
+            label: Name
+      node_kernel_event:
+        attributes:
+          id:
+            label: Id
+      node_kernel_evidence:
+        attributes:
+          id:
+            label: Id
+      node_kernel_evidence_error:
+        attributes:
+          id:
+            label: Id
+      node_kernel_history_gap:
+        attributes:
+          id:
+            label: Id
+      node_kernel_history_state:
+        attributes:
+          id:
+            label: Id
+      node_kernel_livepatch:
+        attributes:
+          id:
+            label: Id
+      node_kernel_livepatch_patch:
+        attributes:
+          id:
+            label: Id
+          name:
+            label: Name
+          version:
+            label: Version
+      node_kernel_module:
+        attributes:
+          id:
+            label: Id
+          name:
+            label: Name
+      node_kernel_parameter:
+        attributes:
+          id:
+            label: Id
+          name:
+            label: Name
+      node_software_change:
+        attributes:
+          id:
+            label: Id
+      node_software_deployment:
+        attributes:
+          id:
+            label: Id
+      node_software_version:
+        attributes:
+          id:
+            label: Id
+          version:
+            label: Version
+      node_sysctl:
+        attributes:
+          id:
+            label: Id
+          name:
+            label: Name
+      node_sysctl_change:
+        attributes:
+          id:
+            label: Id
+          name:
+            label: Name
       node_transfer_connection:
         attributes:
           created_at:

@@ -70,6 +70,27 @@ RSpec.describe 'VpsAdmin::API::Resources::Node' do
     )
   end
 
+  def create_service_node!
+    suffix = Node.maximum(:id).to_i + 100
+    service_node = Node.create!(
+      location: node.location,
+      name: "spec-mailer-node-#{suffix}",
+      role: :mailer,
+      ip_addr: "192.0.2.#{(suffix % 200) + 1}",
+      cpus: 2,
+      total_memory: 1024,
+      total_swap: 512,
+      active: true
+    )
+    NodeCurrentStatus.create!(
+      node: service_node,
+      kernel: 'stale-service-kernel',
+      update_count: 0,
+      vpsadmin_version: 'spec'
+    )
+    service_node
+  end
+
   describe 'Description' do
     it 'describes the show endpoint for HaveAPI clients' do
       as(SpecSeed.admin) { options "#{show_path(node.id)}?method=GET" }
@@ -247,6 +268,58 @@ RSpec.describe 'VpsAdmin::API::Resources::Node' do
       expect(node_obj['cpus']).to eq(node.cpus)
       expect(node_obj['total_memory']).to eq(node.total_memory)
       expect(node_obj['type']).to eq(node.role)
+    end
+
+    it 'shows observed capacity instead of the legacy rollback cache' do
+      node.update_columns(cpus: 99, total_memory: 99_999, total_swap: 999)
+      current_status = NodeCurrentStatus.find_or_initialize_by(node:)
+      current_status.update!(
+        cpus: 12,
+        total_memory: 12_288,
+        total_swap: 0,
+        vpsadmin_version: 'spec',
+        update_count: 1
+      )
+
+      as(SpecSeed.admin) { json_get show_path(node.id) }
+
+      expect_status(200)
+      expect(node_obj).to include(
+        'cpus' => 12,
+        'total_memory' => 12_288,
+        'total_swap' => 0
+      )
+    end
+
+    it 'shows unknown capacity before a hosting Node reports' do
+      suffix = Node.maximum(:id).to_i + 101
+      unreported = Node.create!(
+        location: node.location,
+        name: "spec-unreported-node-#{suffix}",
+        role: :node,
+        hypervisor_type: :vpsadminos,
+        ip_addr: "192.0.2.#{(suffix % 200) + 1}",
+        max_vps: 10,
+        active: true
+      )
+
+      as(SpecSeed.admin) { json_get show_path(unreported.id) }
+
+      expect_status(200)
+      expect(node_obj).to include(
+        'cpus' => nil,
+        'total_memory' => nil,
+        'total_swap' => nil
+      )
+    end
+
+    it 'does not expose a kernel for service nodes' do
+      service_node = create_service_node!
+
+      as(SpecSeed.admin) { json_get show_path(service_node.id) }
+
+      expect_status(200)
+      expect(node_obj['kernel']).to be_nil
     end
 
     it 'allows admins to show inactive nodes' do

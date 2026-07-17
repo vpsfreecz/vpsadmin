@@ -63,6 +63,11 @@ cs:
       activate:
         label: Aktivovat účet
       active:
+        choices:
+          'false':
+            label: ne
+          'true':
+            label: ano
         label: Aktivní
       add_ip_addresses:
         description: Přidat nyní všechny IP adresy z této sítě do databáze
@@ -116,6 +121,30 @@ cs:
         label: Dotčení uživatelé
       affected_vps_count:
         label: Dotčené VPS
+      after_available:
+        label: Nová dostupnost
+      after_configured_value:
+        label: Nová nakonfigurovaná hodnota
+      after_effective_value:
+        label: Nová používaná hodnota
+      after_revision:
+        label: Nová revize
+      after_revision_dirty:
+        label: Nová revize obsahuje lokální změny
+      after_revision_source:
+        choices:
+          confctl:
+            label: confctl
+          native:
+            label: Nativní metadata
+        label: Zdroj nové revize
+      after_version:
+        label: Nová verze
+      after_version_source:
+        choices:
+          native:
+            label: Nativní metadata
+        label: Zdroj nové verze
       algorithm:
         choices:
           hmac_sha224:
@@ -139,6 +168,8 @@ cs:
         label: Povolit jednotné přihlášení
       amount:
         label: Množství
+      applied_at:
+        label: Použito v
       arc_c:
         label: ARC c
       arc_c_max:
@@ -159,6 +190,10 @@ cs:
       atime:
         description: Řídí, zda se při čtení souborů aktualizuje čas přístupu
         label: Čas přístupu (atime)
+      attached:
+        label: Připojeno
+      attached_at:
+        label: Připojeno v
       attr_changes:
         label: Změny atributů
       attribute:
@@ -195,16 +230,50 @@ cs:
       avail:
         description: Množství volného místa v datasetu
         label: Dostupné místo
+      available:
+        label: Dostupné
       available_space:
         label: Dostupné místo
       bcc:
         label: Bcc
+      before_available:
+        label: Předchozí dostupnost
+      before_configured_value:
+        label: Předchozí nakonfigurovaná hodnota
+      before_effective_value:
+        label: Předchozí používaná hodnota
+      before_revision:
+        label: Předchozí revize
+      before_revision_dirty:
+        label: Předchozí revize obsahuje lokální změny
+      before_revision_source:
+        choices:
+          confctl:
+            label: confctl
+          native:
+            label: Nativní metadata
+        label: Zdroj předchozí revize
+      before_version:
+        label: Předchozí verze
+      before_version_source:
+        choices:
+          native:
+            label: Nativní metadata
+        label: Zdroj předchozí verze
       begins_at:
         label: Začíná
       bits:
         label: Bity
       block_count:
         label: Počet bloků
+      boot_id:
+        label: ID spuštění
+      booted_at:
+        label: Čas spuštění
+      booted_release:
+        label: Verze jádra při spuštění
+      booted_system:
+        label: Systém při spuštění
       bytes:
         label: Bajty
       bytes_in:
@@ -235,6 +304,8 @@ cs:
             label: cgroup v2
       challenge_token:
         label: Token výzvy
+      change_count:
+        label: Počet změn
       change_type:
         choices:
           create_record:
@@ -273,7 +344,18 @@ cs:
       comment:
         description: Volitelný komentář
         label: Komentář
+      completed_at:
+        label: Dokončeno
       component:
+        choices:
+          nixpkgs:
+            label: nixpkgs
+          vpsadmin:
+            label: vpsAdmin
+          vpsadminos:
+            label: vpsAdminOS
+          vpsfree_cz_configuration:
+            label: Konfigurace vpsFree.cz
         description: Filtrovat hlášení podle komponenty vpsAdminu
         label: Komponenta
       compression:
@@ -287,8 +369,21 @@ cs:
       concurrency:
         description: Kolik migrací běží současně
         label: Souběžnost
+      confidence:
+        choices:
+          exact:
+            label: Přesné
+          incomplete:
+            label: Neúplné
+          inferred:
+            label: Odvozené
+        label: Kvalita podkladů
       config:
         label: Konfigurace
+      configuration_digest:
+        label: Kontrolní součet konfigurace
+      configured_value:
+        label: Nastavená hodnota
       confirmed:
         label: Potvrzeno
       content:
@@ -362,6 +457,8 @@ cs:
           waiting:
             label: čekání na připojení
         label: Aktuální stav
+      current_system:
+        label: Aktuální systém
       cve:
         description: Filtrovat podle identifikátoru CVE.
         label: CVE
@@ -393,6 +490,8 @@ cs:
         label: Popis
       detected_at:
         label: Detekováno
+      digest:
+        label: Kontrolní součet
       direct:
         label: Přímé
       diskspace:
@@ -424,7 +523,7 @@ cs:
       domain:
         label: Doména
       domain_name:
-        description: Název nodu včetně domény lokace
+        description: Název Node včetně domény lokace
         label: Doménové jméno
       done:
         choices:
@@ -449,6 +548,10 @@ cs:
         label: Povolit dynamickou aktualizaci
       dynamic_update_url:
         label: URL dynamické aktualizace
+      effective_at:
+        label: Čas účinnosti
+      effective_value:
+        label: Účinná hodnota
       email:
         description: Administrátor této zóny
         label: E-mail
@@ -518,8 +621,34 @@ cs:
         label: Data události
       event_key:
         label: Klíč události
+      event_source:
+        choices:
+          node_report:
+            label: hlášení Node
+          reconstructed_node_status:
+            label: rekonstruovaný stav Node
+        label: Zdroj události
       event_type:
+        choices:
+          boot:
+            label: Spuštění systému
+          deployment_change:
+            label: Změna nasazení
+          ebpf_change:
+            label: Změna eBPF programu
+          livepatch:
+            label: Změna živé záplaty
+          livepatch_change:
+            label: Změna živé záplaty
+          module_change:
+            label: Změna modulů
+          reported_release_change:
+            label: Změna hlášeného jádra
+          sysctl_change:
+            label: Změna sysctl
         label: Typ události
+      evidence_revision:
+        label: Revize podkladů
       expiration:
         description: Datum, po kterém token přestane být platný
       expirations:
@@ -598,11 +727,20 @@ cs:
         label: Z osobního balíčku
       from_snapshot:
         label: Ze snapshotu
+      from_status_id:
+        label: ID prvního stavu
       full_name:
         description: Jméno a příjmení
         label: Celé jméno
       fuse:
         label: FUSE
+      generation:
+        choices:
+          booted:
+            label: Při spuštění
+          current:
+            label: Aktuální
+        label: Stav systému
       handled_by:
         description: Filtrovat hlášení řešená uživatelem
         label: Řeší
@@ -747,6 +885,16 @@ cs:
         label: Ponechat snapshoty
       kernel:
         label: Jádro
+      kernel_command_line:
+        label: Příkazový řádek jádra
+      kernel_config_available:
+        label: Konfigurace jádra k dispozici
+      kernel_config_digest:
+        label: Kontrolní součet konfigurace jádra
+      kernel_source_revision:
+        label: Revize zdrojů jádra
+      kernel_version:
+        label: Verze jádra
       keyid:
         label: ID klíče
       killed_name:
@@ -806,12 +954,16 @@ cs:
         label: Úroveň přístupu
       limit:
         label: Limit
+      livepatch_id:
+        label: ID živé záplaty
       loadavg1:
         label: Loadavg1
       loadavg15:
         label: Loadavg15
       loadavg5:
         label: Loadavg5
+      loaded:
+        label: Načteno
       loaded_at:
         label: Načteno
       localized:
@@ -998,14 +1150,26 @@ cs:
         label: Node A
       node_a_ip_addr:
         label: IP adresa nodu A
+      node_active:
+        label: Aktivní Node
       node_b:
         label: Node B
       node_b_ip_addr:
         label: IP adresa nodu B
       node_count:
         label: Počet nodů
+      node_ebpf_program:
+        label: eBPF program Node
       node_id:
         label: ID nodu
+      node_kernel_event:
+        label: Událost kernelu Node
+      node_kernel_evidence:
+        label: Podklady kernelu Node
+      node_kernel_history_state:
+        label: Stav historie kernelu Node
+      node_kernel_livepatch:
+        label: Live patch kernelu Node
       node_name:
         label: Název nodu
       node_state:
@@ -1039,6 +1203,17 @@ cs:
           suspended:
             label: pozastaveno
         label: Stav objektu
+      observed_after:
+        description: Poslední pozorování před změnou; u první známé události není
+          uvedeno
+        label: Zjištěno po
+      observed_at:
+        label: Pozorováno v
+      observed_before:
+        description: První pozorování, ve kterém už byla změna přítomna
+        label: Zjištěno před
+      observed_through:
+        label: Pozorováno do
       offset:
         label: Offset
       on_start_fail:
@@ -1129,6 +1304,8 @@ cs:
         label: Heslová fráze
       password_reset:
         label: Reset hesla
+      patch_version:
+        label: Verze záplaty
       path:
         label: Cesta
       peer_type:
@@ -1186,6 +1363,8 @@ cs:
         label: Status poolu
       port:
         label: Port
+      position:
+        label: Pořadí
       ppp:
         label: PPP
       preferred_logout_all:
@@ -1259,6 +1438,8 @@ cs:
         label: Důvod
       reason_code:
         label: Kód důvodu
+      received_at:
+        label: Přijato v
       recent_since:
         label: Nedávné od
       reconstructed:
@@ -1306,8 +1487,12 @@ cs:
         label: Nahradit IP adresy
       reply_to:
         label: Reply-To
+      report_schema_version:
+        label: Verze schématu hlášení
       reported_at:
         label: Nahlášeno
+      reported_release:
+        label: Hlášená verze jádra
       request_count:
         label: Počet požadavků
       resource:
@@ -1335,6 +1520,17 @@ cs:
         label: Prefix reverzní sítě
       reverse_record_value:
         label: Hodnota reverzního záznamu
+      revision:
+        label: Revize
+      revision_dirty:
+        label: Revize obsahuje lokální změny
+      revision_source:
+        choices:
+          confctl:
+            label: confctl
+          native:
+            label: Nativní metadata
+        label: Zdroj revize
       role:
         choices:
           backup:
@@ -1437,6 +1633,8 @@ cs:
         label: Sdílí IPv6 sítě s lokací
       since:
         label: Od
+      since_kernel:
+        label: Od verze jádra
       size:
         label: Velikost
       skip_multi_factor_auth_until:
@@ -1446,15 +1644,29 @@ cs:
         label: Přeskočit spuštění
       snapshot:
         label: Snapshot
+      snapshot_revision:
+        label: Revize snímku
       source:
         choices:
+          current:
+            label: aktuální stav
+          event:
+            label: událost
           external_source:
             label: externí
           internal_source:
             label: interní
+          node_report:
+            label: Hlášení Node
+          reconstructed_node_status:
+            label: Rekonstrukce ze stavu Node
         label: Zdroj
       source_cursor:
         label: Kurzor zdroje
+      source_revision:
+        label: Revize zdroje
+      source_status_id:
+        label: ID zdrojového stavu
       split_access:
         choices:
           no_access:
@@ -1623,6 +1835,8 @@ cs:
       threads:
         description: Počet vláken NFS serveru.
         label: Vlákna
+      through_status_id:
+        label: ID posledního stavu
       time_zone:
         description: Identifikátor časové zóny IANA, např. Europe/Prague
         label: Časová zóna
@@ -1671,6 +1885,8 @@ cs:
         description: Je-li to možné, ponechat IP adresy a přeúčtovat je do jiného
           prostředí nebo lokace
         label: Přenést IP adresy
+      transition:
+        label: Probíhá přechod
       ttl:
         description: Volitelné TTL v sekundách, výchozí je TTL zóny
         label: TTL
@@ -1731,6 +1947,8 @@ cs:
         label: Nepřiřazeno řetězcem
       until:
         label: Do
+      until_kernel:
+        label: Do verze jádra
       uptime:
         label: Uptime
       urgent:
@@ -1817,8 +2035,15 @@ cs:
         label: Varianta
       vendor:
         label: Vendor
+      verified_at:
+        label: Ověřeno v
       version:
         description: 4 nebo 6
+      version_source:
+        choices:
+          native:
+            label: Nativní metadata
+        label: Zdroj verze
       view:
         description: Je-li povoleno, vypsat nápovědní boxy pro aktuálního uživatele
           včetně filtrů stránky/akce
@@ -2570,7 +2795,7 @@ cs:
               id:
                 label: ID
               name:
-                label: Název nodu
+                label: Název Node
           show:
             output:
               cpu_idle:
@@ -2608,7 +2833,7 @@ cs:
           max_tx:
             label: Maximální odchozí datová propustnost
           name:
-            description: Název nodu
+            description: Název Node
           send_mail:
             label: Odeslat e-mail
           stop_on_error:
@@ -2630,6 +2855,10 @@ cs:
             label: ID
           name:
             label: Název
+        kernel_history:
+          attributes:
+            id:
+              label: ID
         status:
           attributes:
             cpu_idle:
@@ -2640,6 +2869,100 @@ cs:
               label: ID
             version:
               label: Verze
+      node_ebpf_program:
+        attributes:
+          id:
+            label: ID eBPF programu
+          name:
+            label: Název eBPF programu
+      node_ebpf_program_link:
+        attributes:
+          id:
+            label: ID eBPF odkazu
+          name:
+            label: Název eBPF odkazu
+      node_ebpf_program_object:
+        attributes:
+          id:
+            label: ID eBPF objektu
+          name:
+            label: Název eBPF objektu
+      node_kernel_configuration_option:
+        attributes:
+          id:
+            label: ID volby konfigurace jádra
+          name:
+            label: Název volby konfigurace jádra
+      node_kernel_event:
+        attributes:
+          id:
+            label: ID události kernelu Node
+      node_kernel_evidence:
+        attributes:
+          id:
+            label: ID podkladů kernelu Node
+      node_kernel_evidence_error:
+        attributes:
+          id:
+            label: ID chyby podkladů kernelu Node
+      node_kernel_history_gap:
+        attributes:
+          id:
+            label: ID mezery v historii kernelu Node
+      node_kernel_history_state:
+        attributes:
+          id:
+            label: ID stavu historie kernelu Node
+      node_kernel_livepatch:
+        attributes:
+          id:
+            label: ID záznamu živé záplaty
+      node_kernel_livepatch_patch:
+        attributes:
+          id:
+            label: ID změny živé záplaty
+          name:
+            label: Název změny živé záplaty
+          version:
+            label: Verze změny živé záplaty
+      node_kernel_module:
+        attributes:
+          id:
+            label: ID modulu jádra
+          name:
+            label: Název modulu jádra
+      node_kernel_parameter:
+        attributes:
+          id:
+            label: ID parametru jádra
+          name:
+            label: Název parametru jádra
+      node_software_change:
+        attributes:
+          id:
+            label: ID změny softwaru
+      node_software_deployment:
+        attributes:
+          id:
+            label: ID nasazení softwaru
+      node_software_version:
+        attributes:
+          id:
+            label: ID verze softwaru
+          version:
+            label: Verze
+      node_sysctl:
+        attributes:
+          id:
+            label: ID sysctl
+          name:
+            label: Název sysctl
+      node_sysctl_change:
+        attributes:
+          id:
+            label: ID změny sysctl
+          name:
+            label: Název sysctl
       node_transfer_connection:
         attributes:
           created_at:

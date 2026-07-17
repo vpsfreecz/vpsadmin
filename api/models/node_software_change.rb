@@ -3,6 +3,9 @@ class NodeSoftwareChange < ApplicationRecord
   REVISION_SOURCES = %w[native confctl].freeze
 
   belongs_to :node_kernel_event, inverse_of: :software_changes
+  has_one :node, through: :node_kernel_event
+  has_one :node_kernel_evidence, through: :node_kernel_event, source: :kernel_evidence
+  delegate :observed_after, :observed_before, to: :node_kernel_event
 
   enum :generation, %i[booted current]
   enum :component, %i[vpsadminos vpsadmin nixpkgs vpsfree_cz_configuration]

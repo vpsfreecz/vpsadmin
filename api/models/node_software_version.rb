@@ -1,5 +1,7 @@
 class NodeSoftwareVersion < ApplicationRecord
   belongs_to :node_kernel_evidence, inverse_of: :software_versions
+  has_one :node, through: :node_kernel_evidence
+  delegate :snapshot_type, :snapshot_revision, :observed_at, to: :node_kernel_evidence
 
   enum :generation, %i[booted current]
   enum :component, %i[vpsadminos vpsadmin nixpkgs vpsfree_cz_configuration]

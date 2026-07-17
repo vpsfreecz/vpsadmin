@@ -1,5 +1,7 @@
 class NodeEbpfProgram < ApplicationRecord
   belongs_to :node_kernel_evidence, inverse_of: :ebpf_programs
+  has_one :node, through: :node_kernel_evidence
+  delegate :snapshot_type, :snapshot_revision, :observed_at, to: :node_kernel_evidence
   has_many :program_objects,
            class_name: 'NodeEbpfProgramObject',
            dependent: :delete_all,

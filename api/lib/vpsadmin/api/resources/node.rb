@@ -51,7 +51,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     integer :arc_size
     integer :arc_hitpercent
     string :version, db_name: :vpsadmin_version
-    string :kernel
+    string :kernel, nullable: true
     string :cgroup_version, label: 'Cgroup version', choices: ::NodeCurrentStatus.cgroup_versions.keys.map(&:to_s)
     string :pool_state, choices: ::Pool::STATE_VALUES.map(&:to_s), db_name: :pool_state_value
     string :pool_scan, choices: ::Pool::SCAN_VALUES.map(&:to_s), db_name: :pool_scan_value
@@ -432,6 +432,64 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
   end
 
   include VpsAdmin::API::Maintainable::Action
+
+  class KernelHistory < HaveAPI::Resource
+    desc 'View node kernel boots and runtime release changes'
+    route '{node_id}/kernel_history'
+    model ::NodeKernelEvent
+
+    params(:all) do
+      id :id
+      string :event_type, db_name: :public_event_type,
+                          choices: %w[boot livepatch reported_release_change]
+      datetime :booted_at, nullable: true
+      string :booted_release, nullable: true
+      string :reported_release
+      datetime :effective_at, nullable: true
+      datetime :observed_after,
+               desc: 'Last observation before the change; null for the first known event',
+               nullable: true
+      datetime :observed_before,
+               desc: 'First observation containing the change'
+      string :source, choices: ::NodeKernelEvent.sources.keys
+      string :confidence, choices: ::NodeKernelEvent.confidences.keys
+      bool :current
+    end
+
+    class Index < HaveAPI::Actions::Default::Index
+      input do
+        datetime :from
+        datetime :to
+        patch :limit, default: 100, fill: true
+      end
+
+      output(:object_list) do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u
+      end
+
+      def query
+        node = ::Node.where(role: %i[node storage], active: true).find(path_params['node_id'])
+        q = node.node_kernel_events.kernel_history
+        q = q.where('observed_before >= ?', input[:from]) if input[:from]
+        q = q.where('observed_before <= ?', input[:to]) if input[:to]
+        q
+      end
+
+      def count
+        query.count
+      end
+
+      def exec
+        with_desc_pagination(query).order(observed_before: :desc, id: :desc).map do |event|
+          VpsAdmin::API::KernelEvidence::ResourceProjection::Event.new(event)
+        end
+      end
+    end
+  end
 
   class Status < HaveAPI::Resource
     desc 'View node statuses in time'
