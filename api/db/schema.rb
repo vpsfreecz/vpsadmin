@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_16_120100) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -899,13 +899,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
     t.float "cpu_user"
     t.integer "cpus"
     t.datetime "created_at", precision: nil
-    t.string "kernel", limit: 30, null: false
+    t.string "kernel", limit: 30
     t.datetime "last_log_at"
     t.float "loadavg"
     t.float "loadavg1", default: 0.0, null: false
     t.float "loadavg15", default: 0.0, null: false
     t.float "loadavg5", default: 0.0, null: false
     t.integer "node_id", null: false
+    t.bigint "node_kernel_evidence_id"
     t.datetime "pool_checked_at", precision: nil
     t.integer "pool_scan", default: 0, null: false
     t.float "pool_scan_percent"
@@ -939,6 +940,224 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
     t.integer "used_swap"
     t.string "vpsadmin_version", limit: 25, null: false
     t.index ["node_id"], name: "index_node_current_statuses_on_node_id", unique: true
+    t.index ["node_kernel_evidence_id"], name: "index_node_current_statuses_on_node_kernel_evidence_id", unique: true
+  end
+
+  create_table "node_ebpf_program_links", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.boolean "attached", null: false
+    t.string "name", null: false
+    t.bigint "node_ebpf_program_id", null: false
+    t.index ["name", "node_ebpf_program_id"], name: "idx_node_ebpf_program_links_lookup"
+    t.index ["node_ebpf_program_id", "name"], name: "idx_node_ebpf_program_links_unique", unique: true
+  end
+
+  create_table "node_ebpf_program_objects", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "node_ebpf_program_id", null: false
+    t.index ["name", "node_ebpf_program_id"], name: "idx_node_ebpf_program_objects_lookup"
+    t.index ["node_ebpf_program_id", "name"], name: "idx_node_ebpf_program_objects_unique", unique: true
+  end
+
+  create_table "node_ebpf_programs", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.boolean "active", null: false
+    t.datetime "attached_at"
+    t.text "description"
+    t.string "digest", limit: 128
+    t.string "name", null: false
+    t.bigint "node_kernel_evidence_id", null: false
+    t.string "revision", limit: 128
+    t.string "since_kernel", limit: 128
+    t.string "until_kernel", limit: 128
+    t.datetime "verified_at"
+    t.index ["name", "node_kernel_evidence_id"], name: "idx_node_ebpf_program_lookup"
+    t.index ["node_kernel_evidence_id", "name"], name: "idx_node_ebpf_program_unique", unique: true
+  end
+
+  create_table "node_kernel_configuration_options", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "node_kernel_configuration_id", null: false
+    t.text "value", null: false
+    t.index ["name", "node_kernel_configuration_id"], name: "idx_node_kernel_configuration_options_lookup"
+    t.index ["node_kernel_configuration_id", "name"], name: "idx_node_kernel_configuration_options_unique", unique: true
+  end
+
+  create_table "node_kernel_configurations", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.text "content", size: :medium, null: false
+    t.datetime "created_at", null: false
+    t.string "digest", limit: 64, null: false
+    t.datetime "updated_at", null: false
+    t.index ["digest"], name: "index_node_kernel_configurations_on_digest", unique: true
+  end
+
+  create_table "node_kernel_livepatch_patches", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "node_kernel_livepatch_id", null: false
+    t.string "version", limit: 128
+    t.index ["name", "node_kernel_livepatch_id"], name: "idx_node_kernel_livepatch_patches_lookup"
+    t.index ["node_kernel_livepatch_id", "name"], name: "idx_node_kernel_livepatch_patches_unique", unique: true
+  end
+
+  create_table "node_kernel_livepatches", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.datetime "applied_at"
+    t.boolean "enabled"
+    t.string "kernel_version", limit: 128
+    t.string "livepatch_id", null: false
+    t.boolean "loaded"
+    t.bigint "node_kernel_evidence_id", null: false
+    t.string "patch_version", limit: 128
+    t.boolean "transition"
+    t.datetime "verified_at"
+    t.index ["livepatch_id", "node_kernel_evidence_id"], name: "idx_node_kernel_livepatch_lookup"
+    t.index ["node_kernel_evidence_id", "livepatch_id"], name: "idx_node_kernel_livepatch_unique", unique: true
+  end
+
+  create_table "node_kernel_modules", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "node_kernel_evidence_id", null: false
+    t.index ["name", "node_kernel_evidence_id"], name: "idx_node_kernel_module_lookup"
+    t.index ["node_kernel_evidence_id", "name"], name: "idx_node_kernel_module_unique", unique: true
+  end
+
+  create_table "node_kernel_parameters", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "node_kernel_evidence_id", null: false
+    t.integer "position", null: false
+    t.text "value"
+    t.index ["name", "node_kernel_evidence_id"], name: "idx_node_kernel_parameters_lookup"
+    t.index ["node_kernel_evidence_id", "position"], name: "idx_node_kernel_parameters_position", unique: true
+  end
+
+  create_table "node_kernel_events", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.string "boot_id", limit: 64
+    t.datetime "booted_at"
+    t.string "booted_release", limit: 128
+    t.integer "confidence", null: false
+    t.datetime "created_at", null: false
+    t.boolean "current", default: false, null: false
+    t.datetime "effective_at"
+    t.integer "event_type", null: false
+    t.bigint "node_id", null: false
+    t.bigint "node_kernel_evidence_id"
+    t.datetime "observed_after"
+    t.datetime "observed_before", null: false
+    t.string "reported_release", limit: 128, null: false
+    t.integer "source", null: false
+    t.bigint "source_status_id"
+    t.datetime "updated_at", null: false
+    t.index ["node_id", "boot_id"], name: "index_node_kernel_events_on_node_id_and_boot_id"
+    t.index ["node_id", "current"], name: "index_node_kernel_events_on_node_id_and_current"
+    t.index ["node_id", "observed_before"], name: "index_node_kernel_events_on_node_id_and_observed_before"
+    t.index ["node_id", "source_status_id", "event_type"], name: "idx_node_kernel_events_source_status", unique: true
+    t.index ["node_id"], name: "index_node_kernel_events_on_node_id"
+    t.index ["node_kernel_evidence_id"], name: "index_node_kernel_events_on_node_kernel_evidence_id"
+  end
+
+  create_table "node_kernel_evidence_errors", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.string "component", null: false
+    t.bigint "node_kernel_evidence_id", null: false
+    t.text "reason", null: false
+    t.index ["node_kernel_evidence_id", "component"], name: "idx_node_kernel_evidence_errors_component"
+  end
+
+  create_table "node_kernel_evidences", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.string "boot_id", limit: 64
+    t.datetime "booted_at"
+    t.string "booted_release", limit: 128
+    t.string "booted_system", limit: 512
+    t.datetime "created_at", null: false
+    t.string "current_system", limit: 512
+    t.text "kernel_command_line"
+    t.string "kernel_config_digest", limit: 64
+    t.string "kernel_source_revision", limit: 128
+    t.bigint "node_id", null: false
+    t.datetime "observed_at", null: false
+    t.datetime "received_at", null: false
+    t.integer "report_schema_version", null: false
+    t.string "reported_release", limit: 128
+    t.string "snapshot_revision", limit: 64, null: false
+    t.integer "snapshot_type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["kernel_config_digest"], name: "index_node_kernel_evidences_on_kernel_config_digest"
+    t.index ["node_id", "snapshot_type"], name: "index_node_kernel_evidences_on_node_id_and_snapshot_type"
+    t.index ["node_id"], name: "index_node_kernel_evidences_on_node_id"
+    t.index ["snapshot_revision"], name: "index_node_kernel_evidences_on_snapshot_revision"
+  end
+
+  create_table "node_kernel_history_gaps", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "from", null: false
+    t.bigint "node_kernel_history_state_id", null: false
+    t.string "reason", null: false
+    t.datetime "to", null: false
+    t.datetime "updated_at", null: false
+    t.index ["node_kernel_history_state_id", "from", "to"], name: "idx_node_kernel_history_gaps_interval"
+    t.index ["node_kernel_history_state_id"], name: "idx_on_node_kernel_history_state_id_cb51b9d9bd"
+  end
+
+  create_table "node_kernel_history_states", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "completed_at", null: false
+    t.datetime "created_at", null: false
+    t.bigint "from_status_id"
+    t.bigint "node_id", null: false
+    t.datetime "observed_through"
+    t.datetime "started_at"
+    t.bigint "through_status_id"
+    t.datetime "updated_at", null: false
+    t.index ["node_id"], name: "index_node_kernel_history_states_on_node_id", unique: true
+  end
+
+  create_table "node_software_changes", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.string "after_revision", limit: 128
+    t.boolean "after_revision_dirty", default: false, null: false
+    t.string "after_revision_source", limit: 16
+    t.string "after_version", limit: 128
+    t.string "after_version_source", limit: 16
+    t.string "before_revision", limit: 128
+    t.boolean "before_revision_dirty", default: false, null: false
+    t.string "before_revision_source", limit: 16
+    t.string "before_version", limit: 128
+    t.string "before_version_source", limit: 16
+    t.integer "component", null: false
+    t.integer "generation", null: false
+    t.bigint "node_kernel_event_id", null: false
+    t.index ["component", "generation", "node_kernel_event_id"], name: "idx_node_software_changes_lookup"
+    t.index ["node_kernel_event_id", "generation", "component"], name: "idx_node_software_changes_unique", unique: true
+  end
+
+  create_table "node_software_versions", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.integer "component", null: false
+    t.integer "generation", null: false
+    t.bigint "node_kernel_evidence_id", null: false
+    t.string "revision", limit: 128
+    t.boolean "revision_dirty", default: false, null: false
+    t.integer "revision_source"
+    t.string "version", limit: 128
+    t.integer "version_source"
+    t.index ["component", "generation", "node_kernel_evidence_id"], name: "idx_node_software_versions_lookup"
+    t.index ["node_kernel_evidence_id", "generation", "component"], name: "idx_node_software_versions_unique", unique: true
+  end
+
+  create_table "node_sysctl_changes", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.boolean "after_available"
+    t.text "after_configured_value"
+    t.text "after_effective_value"
+    t.boolean "before_available"
+    t.text "before_configured_value"
+    t.text "before_effective_value"
+    t.string "name", null: false
+    t.bigint "node_kernel_event_id", null: false
+    t.index ["name", "node_kernel_event_id"], name: "idx_node_sysctl_changes_lookup"
+    t.index ["node_kernel_event_id", "name"], name: "idx_node_sysctl_changes_unique", unique: true
+  end
+
+  create_table "node_sysctls", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.boolean "available", null: false
+    t.text "configured_value"
+    t.text "effective_value"
+    t.string "name", null: false
+    t.bigint "node_kernel_evidence_id", null: false
+    t.index ["name", "node_kernel_evidence_id"], name: "idx_node_sysctl_lookup"
+    t.index ["node_kernel_evidence_id", "name"], name: "idx_node_sysctl_unique", unique: true
   end
 
   create_table "node_statuses", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -973,6 +1192,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
     t.index ["node_id"], name: "index_node_statuses_on_node_id"
   end
 
+  create_table "node_system_history_states", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "completed_at", null: false
+    t.datetime "created_at", null: false
+    t.bigint "from_status_id"
+    t.bigint "node_id", null: false
+    t.datetime "observed_through"
+    t.datetime "started_at"
+    t.bigint "through_status_id"
+    t.datetime "updated_at", null: false
+    t.index ["node_id"], name: "index_node_system_history_states_on_node_id", unique: true
+  end
+
+  create_table "node_system_states", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.integer "cgroup_version"
+    t.integer "cpus"
+    t.datetime "created_at", null: false
+    t.boolean "current", default: false, null: false
+    t.datetime "first_observed_at", null: false
+    t.datetime "last_observed_at", null: false
+    t.bigint "node_id", null: false
+    t.integer "total_memory"
+    t.integer "total_swap"
+    t.datetime "updated_at", null: false
+    t.index ["node_id", "current"], name: "idx_node_system_states_current"
+    t.index ["node_id", "first_observed_at"], name: "idx_node_system_states_observed"
+    t.index ["node_id"], name: "index_node_system_states_on_node_id"
+  end
+
   create_table "node_transfer_connections", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "enabled", default: true, null: false
@@ -988,7 +1235,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
 
   create_table "nodes", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.boolean "active", default: true, null: false
-    t.integer "cpus", null: false
+    t.integer "cpus", default: 0, null: false
     t.integer "hypervisor_type"
     t.string "ip_addr", limit: 127, null: false
     t.integer "location_id", null: false, unsigned: true
@@ -999,8 +1246,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
     t.integer "max_vps"
     t.string "name", limit: 64, null: false
     t.integer "role", null: false
-    t.integer "total_memory", null: false
-    t.integer "total_swap", null: false
+    t.integer "total_memory", default: 0, null: false
+    t.integer "total_swap", default: 0, null: false
     t.index ["active"], name: "index_nodes_on_active"
     t.index ["hypervisor_type"], name: "index_nodes_on_hypervisor_type"
     t.index ["location_id"], name: "location_id"
@@ -1242,8 +1489,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
   end
 
   create_table "security_advisories", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.integer "content_revision", default: 0, null: false
     t.datetime "created_at", null: false
     t.integer "created_by_id"
+    t.string "external_id"
     t.string "name"
     t.datetime "published_at"
     t.integer "published_by_id"
@@ -1251,6 +1500,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
     t.integer "state", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["created_by_id"], name: "index_security_advisories_on_created_by_id"
+    t.index ["external_id"], name: "index_security_advisories_on_external_id", unique: true
     t.index ["published_at"], name: "index_security_advisories_on_published_at"
     t.index ["published_by_id"], name: "index_security_advisories_on_published_by_id"
     t.index ["state"], name: "index_security_advisories_on_state"
@@ -1950,4 +2200,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
     t.index ["external_id"], name: "index_webauthn_credentials_on_external_id", unique: true
     t.index ["user_id"], name: "index_webauthn_credentials_on_user_id"
   end
+
+  add_foreign_key "node_current_statuses", "node_kernel_evidences", on_delete: :nullify
+  add_foreign_key "node_ebpf_program_links", "node_ebpf_programs", on_delete: :cascade
+  add_foreign_key "node_ebpf_program_objects", "node_ebpf_programs", on_delete: :cascade
+  add_foreign_key "node_ebpf_programs", "node_kernel_evidences", on_delete: :cascade
+  add_foreign_key "node_kernel_configuration_options", "node_kernel_configurations", on_delete: :cascade
+  add_foreign_key "node_kernel_livepatch_patches", "node_kernel_livepatches", on_delete: :cascade
+  add_foreign_key "node_kernel_livepatches", "node_kernel_evidences", on_delete: :cascade
+  add_foreign_key "node_kernel_modules", "node_kernel_evidences", on_delete: :cascade
+  add_foreign_key "node_kernel_parameters", "node_kernel_evidences", on_delete: :cascade
+  add_foreign_key "node_kernel_events", "node_kernel_evidences", on_delete: :nullify
+  add_foreign_key "node_kernel_evidence_errors", "node_kernel_evidences", on_delete: :cascade
+  add_foreign_key "node_kernel_history_gaps", "node_kernel_history_states", on_delete: :cascade
+  add_foreign_key "node_software_changes", "node_kernel_events", on_delete: :cascade
+  add_foreign_key "node_software_versions", "node_kernel_evidences", on_delete: :cascade
+  add_foreign_key "node_sysctl_changes", "node_kernel_events", on_delete: :cascade
+  add_foreign_key "node_sysctls", "node_kernel_evidences", on_delete: :cascade
 end
