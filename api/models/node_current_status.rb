@@ -2,6 +2,10 @@ require_relative 'pool'
 
 class NodeCurrentStatus < ApplicationRecord
   belongs_to :node
+  belongs_to :kernel_evidence,
+             class_name: 'NodeKernelEvidence',
+             foreign_key: :node_kernel_evidence_id,
+             optional: true
 
   enum :cgroup_version, %i[cgroup_invalid cgroup_v1 cgroup_v2]
   enum :pool_state, Pool::STATE_VALUES, prefix: :state

@@ -8,6 +8,9 @@ class Node < ApplicationRecord
   has_many :pools
   has_many :port_reservations
   has_many :node_statuses, dependent: :destroy
+  has_many :node_kernel_events, dependent: :destroy
+  has_many :node_kernel_evidences, dependent: :destroy
+  has_one :node_kernel_history_state, dependent: :destroy
   has_one :node_current_status
 
   enum :role, %i[node storage mailer dns_server]
@@ -259,7 +262,7 @@ class Node < ApplicationRecord
   %i[uptime process_count cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
      cpu_irq cpu_softirq cpu_guest loadavg1 loadavg5 loadavg15
      used_memory used_swap arc_c_max arc_c arc_size arc_hitpercent
-     kernel vpsadmin_version pool_state pool_scan pool_scan_percent
+     vpsadmin_version pool_state pool_scan pool_scan_percent
      pool_checked_at pool_state_value pool_scan_value
      cgroup_version].each do |attr|
     define_method(attr) do
@@ -271,8 +274,14 @@ class Node < ApplicationRecord
     node_current_status && node_current_status.vpsadmin_version
   end
 
-  def kernel_version
+  def kernel
+    return unless node? || storage?
+
     node_current_status && node_current_status.kernel
+  end
+
+  def kernel_version
+    kernel
   end
 
   def hypervisor?
