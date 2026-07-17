@@ -8,9 +8,11 @@ class Node < ApplicationRecord
   has_many :pools
   has_many :port_reservations
   has_many :node_statuses, dependent: :destroy
+  has_many :node_system_states, dependent: :destroy
   has_many :node_kernel_events, dependent: :destroy
   has_many :node_kernel_evidences, dependent: :destroy
   has_one :node_kernel_history_state, dependent: :destroy
+  has_one :node_system_history_state, dependent: :destroy
   has_one :node_current_status
 
   enum :role, %i[node storage mailer dns_server]
@@ -282,6 +284,10 @@ class Node < ApplicationRecord
 
   def kernel_version
     kernel
+  end
+
+  def system_state_host?
+    node? || storage?
   end
 
   def hypervisor?

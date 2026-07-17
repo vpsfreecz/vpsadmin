@@ -85,6 +85,11 @@ namespace :vpsadmin do
     task :reconstruct_kernel_history do
       VpsAdmin::API::Tasks.run(:node_kernel_event, :reconstruct)
     end
+
+    desc 'Reconstruct node system-state history from node status samples'
+    task :reconstruct_system_states do
+      VpsAdmin::API::Tasks.run(:node_system_state, :reconstruct)
+    end
   end
 
   namespace :dataset do
