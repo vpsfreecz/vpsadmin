@@ -15,7 +15,14 @@
     let
       supportedSystems = [ "x86_64-linux" ];
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
-      flakeRevision = nixpkgs.lib.removeSuffix "-dirty" (self.rev or self.dirtyRev);
+      flakeDirty = !(self ? rev) && self ? dirtyRev;
+      flakeRevision =
+        if self ? rev then
+          self.rev
+        else if self ? dirtyRev then
+          nixpkgs.lib.removeSuffix "-dirty" self.dirtyRev
+        else
+          null;
       vpsadminosVersion = "${
         nixpkgs.lib.removeSuffix "\n" (builtins.readFile (vpsadminos.outPath + "/.version"))
       }.0";
@@ -45,6 +52,7 @@
             _module.args = {
               inherit vpsadminos;
               vpsadminRev = flakeRevision;
+              vpsadminRevisionDirty = flakeDirty;
             };
             imports = [ ./nixos/modules/nixos-modules.nix ];
           };
@@ -54,6 +62,7 @@
             _module.args = {
               inherit vpsadminos;
               vpsadminRev = flakeRevision;
+              vpsadminRevisionDirty = flakeDirty;
             };
             imports = [ ./nixos/modules/vpsadminos-modules.nix ];
           };

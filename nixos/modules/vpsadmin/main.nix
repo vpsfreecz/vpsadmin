@@ -4,6 +4,7 @@
   lib,
   vpsadminos ? null,
   vpsadminRev,
+  vpsadminRevisionDirty,
   ...
 }:
 with lib;
@@ -20,6 +21,7 @@ let
   vpsadminosRubyOverlay =
     if vpsadminosPath == null then null else import (vpsadminosPath + "/os/overlays/ruby.nix");
   overlayList = import ../../overlays { inherit vpsadminRev vpsadminosPath; };
+  vpsadminVersion = removeSuffix "\n" (builtins.readFile ../../../VERSION);
 in
 {
   options = {
@@ -85,5 +87,14 @@ in
       "d /run/vpsadmin - - - - -"
       "d ${cfg.stateDirectory} - - - - -"
     ];
+
+    # This file is part of each system closure, so nodectld can distinguish
+    # the software that was booted from the software most recently activated.
+    environment.etc."vpsadmin/build-info.json".text = builtins.toJSON {
+      schemaVersion = 1;
+      version = vpsadminVersion;
+      revision = vpsadminRev;
+      revisionDirty = vpsadminRevisionDirty;
+    };
   };
 }

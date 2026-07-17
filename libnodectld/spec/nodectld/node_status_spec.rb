@@ -21,6 +21,11 @@ RSpec.describe NodeCtld::NodeStatus do
     allow(NodeCtld::SystemProbes::Kernel).to receive(:new).and_return(double(version: '6.1.0'))
     allow(NodeCtld::SystemProbes::Uptime).to receive(:new).and_return(double(uptime: 123.4))
     allow(NodeCtld::SystemProbes::LoadAvg).to receive(:new).and_return(double(avg: { 1 => 0.1, 5 => 0.2, 15 => 0.3 }))
+    evidence = double(
+      values: { 'schema_version' => 1 },
+      report_published: nil
+    )
+    allow(NodeCtld::SystemProbes::SecurityEvidence).to receive(:new).and_return(evidence)
 
     if arc
       allow(NodeCtld::SystemProbes::Arc).to receive(:new).and_return(
@@ -29,6 +34,8 @@ RSpec.describe NodeCtld::NodeStatus do
     else
       allow(NodeCtld::SystemProbes::Arc).to receive(:new)
     end
+
+    evidence
   end
 
   def published_status(pool_status, status: described_class.new(pool_status))
@@ -51,7 +58,7 @@ RSpec.describe NodeCtld::NodeStatus do
     $CFG = runtime_cfg(vpsadmin: { node_id: 44, type: :node })
     pool_status = double(summary_values: [Time.at(100), :online, :scrub, 12.5])
 
-    stub_probes
+    evidence = stub_probes
     allow(File).to receive(:read).with('/run/osctl/cgroup.version').and_return("2\n")
 
     payload = published_status(pool_status)
@@ -73,19 +80,27 @@ RSpec.describe NodeCtld::NodeStatus do
         'scan' => 'scrub',
         'scan_percent' => 12.5,
         'checked_at' => 100
-      }
+      },
+      'security_evidence' => { 'schema_version' => 1 }
     )
+    expect(evidence).to have_received(:report_published)
   end
 
-  it 'omits ARC outside node/storage roles' do
-    $CFG = runtime_cfg(vpsadmin: { type: :dns })
+  it 'omits ARC and all kernel evidence outside node/storage roles' do
+    $CFG = runtime_cfg(vpsadmin: { type: :dns_server })
     pool_status = double(summary_values: [Time.at(100), :online, :none, nil])
 
     stub_probes(arc: false)
     allow(File).to receive(:read).with('/run/osctl/cgroup.version').and_return("2\n")
 
-    expect(published_status(pool_status)['arc']).to be_nil
+    payload = published_status(pool_status)
+
+    expect(payload['arc']).to be_nil
+    expect(payload['kernel']).to be_nil
+    expect(payload).not_to have_key('security_evidence')
     expect(NodeCtld::SystemProbes::Arc).not_to have_received(:new)
+    expect(NodeCtld::SystemProbes::Kernel).not_to have_received(:new)
+    expect(NodeCtld::SystemProbes::SecurityEvidence).not_to have_received(:new)
   end
 
   it 'falls back to cgroup version 0 when the runtime file is missing' do
@@ -99,5 +114,36 @@ RSpec.describe NodeCtld::NodeStatus do
     allow(status).to receive(:log)
 
     expect(published_status(pool_status, status: status)['cgroup_version']).to eq(0)
+  end
+
+  it 'refreshes CPU count and cgroup version for every status update' do
+    $CFG = runtime_cfg(vpsadmin: { node_id: 44, type: :node })
+    pool_status = double(summary_values: [Time.at(100), :online, :none, nil])
+
+    stub_probes
+    allow(NodeCtld::SystemProbes::Cpus).to receive(:new).and_return(
+      double(count: 4),
+      double(count: 8)
+    )
+    allow(File).to receive(:read).with('/run/osctl/cgroup.version').and_return("1\n", "2\n")
+    status = described_class.new(pool_status)
+
+    first = published_status(pool_status, status: status)
+    second = published_status(pool_status, status: status)
+
+    expect(first).to include('cpus' => 4, 'cgroup_version' => 1)
+    expect(second).to include('cpus' => 8, 'cgroup_version' => 2)
+  end
+
+  it 'does not advance periodic evidence reporting when the status is dropped' do
+    $CFG = runtime_cfg(vpsadmin: { node_id: 44, type: :node })
+    pool_status = double(summary_values: [Time.at(100), :online, :none, nil])
+    evidence = stub_probes
+    allow(File).to receive(:read).with('/run/osctl/cgroup.version').and_return("2\n")
+    allow(NodeCtld::NodeBunny).to receive(:publish_drop).and_return(nil)
+
+    described_class.new(pool_status).update
+
+    expect(evidence).not_to have_received(:report_published)
   end
 end

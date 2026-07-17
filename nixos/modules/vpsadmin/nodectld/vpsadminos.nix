@@ -43,6 +43,7 @@ in
         export HOME=${config.users.extraUsers.root.home}
         export LANG=en_US.UTF-8
         export LOCALE_ARCHIVE=/run/current-system/sw/lib/locale/locale-archive
+        export VPSADMIN_REVISION=${escapeShellArg (toString vpsadminRev)}
         ${optionalString (!isNull rubyCrashReportTemplate) ''
           export RUBY_CRASH_REPORT=${escapeShellArg rubyCrashReportTemplate}
         ''}

@@ -27,7 +27,7 @@ module NodeCtld::Utils
             needs(arg)
 
           elsif arg == :log
-            send(:include, ::OsCtl::Lib::Utils::Log)
+            include ::OsCtl::Lib::Utils::Log
 
           else
             send(:include, NodeCtld::Utils.const_get(MODULES[arg]))

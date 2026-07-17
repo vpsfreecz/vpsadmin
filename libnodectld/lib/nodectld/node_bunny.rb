@@ -91,8 +91,10 @@ module NodeCtld
     # Call {Bunny::Exchange#publish} and drop message if the connection is closed
     def publish_drop(exchange, msg, **)
       exchange.publish(msg, **)
+      true
     rescue Bunny::ConnectionClosedError
       log(:warn, 'publish_drop: connection currently closed, message dropped')
+      false
     end
 
     # @return [String]

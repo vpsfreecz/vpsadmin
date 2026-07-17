@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  vpsadminRev,
   ...
 }:
 with lib;
@@ -47,7 +48,10 @@ in
         ln -sfn /run/current-system/sw/bin/nodectl /run/nodectl/nodectl
       '';
       serviceConfig = {
-        Environment = "RUBY_CRASH_REPORT=/dev/null";
+        Environment = [
+          "RUBY_CRASH_REPORT=/dev/null"
+          "VPSADMIN_REVISION=${toString vpsadminRev}"
+        ];
         Type = "simple";
         ExecStart = "${pkgs.nodectld}/bin/nodectld --no-wrapper";
         Restart = "on-failure";
