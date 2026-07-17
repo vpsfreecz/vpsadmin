@@ -82,62 +82,73 @@ import ../../make-test.nix (
       end
 
       describe 'supervisor status ingestion' do
-        it 'ingests node status' do
-          t = Time.utc(2026, 4, 5, 12, 0, 0)
+        it 'accepts a legacy node status without security evidence' do
+          node.succeeds('sv stop nodectld', timeout: 30)
 
-          publish_supervisor_payload(
-            services,
-            routing_key: 'statuses',
-            payload: {
-              id: node1_id,
-              time: t.to_i,
-              uptime: 9876,
-              nproc: 55,
-              loadavg: { '1' => 0.7, '5' => 0.4, '15' => 0.2 },
-              vpsadmin_version: 'integration',
-              kernel: '6.8.0',
-              cgroup_version: 2,
-              cpus: 4,
-              cpu: {
-                user: 11.0,
-                nice: 0.0,
-                system: 6.0,
-                idle: 80.0,
-                iowait: 1.0,
-                irq: 1.0,
-                softirq: 1.0,
-                guest: 0.0
-              },
-              memory: { total: 8 * 1024 * 1024, used: 3 * 1024 * 1024 },
-              swap: { total: 1024 * 1024, used: 128 * 1024 },
-              storage: {
-                state: 'online',
-                scan: 'none',
-                scan_percent: nil,
-                checked_at: t.to_i
-              },
-              arc: {
-                c_max: 512 * 1024 * 1024,
-                c: 256 * 1024 * 1024,
-                size: 128 * 1024 * 1024,
-                hitpercent: 97.0
+          begin
+            current = node_current_status_row(services, node_id: node1_id)
+            t = Time.at([
+              Time.now.to_i,
+              current ? current.fetch('updated_at').to_i + 1 : 0
+            ].max).utc
+
+            publish_supervisor_payload(
+              services,
+              routing_key: 'statuses',
+              payload: {
+                id: node1_id,
+                time: t.to_i,
+                uptime: 9876,
+                nproc: 55,
+                loadavg: { '1' => 0.7, '5' => 0.4, '15' => 0.2 },
+                vpsadmin_version: 'legacy-integration',
+                kernel: '6.8.0',
+                cgroup_version: 2,
+                cpus: 4,
+                cpu: {
+                  user: 11.0,
+                  nice: 0.0,
+                  system: 6.0,
+                  idle: 80.0,
+                  iowait: 1.0,
+                  irq: 1.0,
+                  softirq: 1.0,
+                  guest: 0.0
+                },
+                memory: { total: 8 * 1024 * 1024, used: 3 * 1024 * 1024 },
+                swap: { total: 1024 * 1024, used: 128 * 1024 },
+                storage: {
+                  state: 'online',
+                  scan: 'none',
+                  scan_percent: nil,
+                  checked_at: t.to_i
+                },
+                arc: {
+                  c_max: 512 * 1024 * 1024,
+                  c: 256 * 1024 * 1024,
+                  size: 128 * 1024 * 1024,
+                  hitpercent: 97.0
+                }
               }
-            }
-          )
+            )
 
-          row = wait_for_row('node current status from supervisor') do
-            row = node_current_status_row(services, node_id: node1_id)
-            row if row && row.fetch('uptime').to_i == 9876
+            row = wait_for_row('legacy node current status from supervisor') do
+              row = node_current_status_row(services, node_id: node1_id)
+              row if row && row.fetch('uptime').to_i == 9876
+            end
+
+            expect(row.fetch('process_count')).to eq(55)
+            expect(row.fetch('total_memory')).to eq(8192)
+            expect(row.fetch('used_memory')).to eq(3072)
+            expect(row.fetch('total_swap')).to eq(1024)
+            expect(row.fetch('used_swap')).to eq(128)
+            expect(row.fetch('arc_size')).to eq(128)
+            expect(row.fetch('pool_state')).to eq(1)
+            expect(row.fetch('pool_scan')).to eq(1)
+          ensure
+            node.succeeds('sv start nodectld', timeout: 30)
+            wait_for_supervisor_node_process(node)
           end
-
-          expect(row.fetch('process_count')).to eq(55)
-          expect(row.fetch('total_memory')).to eq(8192)
-          expect(row.fetch('used_memory')).to eq(3072)
-          expect(row.fetch('total_swap')).to eq(1024)
-          expect(row.fetch('used_swap')).to eq(128)
-          expect(row.fetch('arc_size')).to eq(128)
-          expect(row.fetch('pool_state')).to eq(1)
-          expect(row.fetch('pool_scan')).to eq(1)
         end
 
         it 'ingests VPS status' do

@@ -356,7 +356,8 @@ base
         'used_swap', used_swap,
         'arc_size', arc_size,
         'pool_state', pool_state,
-        'pool_scan', pool_scan
+        'pool_scan', pool_scan,
+        'updated_at', UNIX_TIMESTAMP(updated_at)
       )
       FROM node_current_statuses
       WHERE node_id = #{Integer(node_id)}
