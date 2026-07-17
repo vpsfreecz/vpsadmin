@@ -627,6 +627,48 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
       expect(response_message).to include('swap is not available')
     end
 
+    it 'accepts swap only while the current Node report has swap' do
+      node = create_node!(
+        name_prefix: 'spec-observed-swap',
+        location: SpecSeed.location,
+        role: :node,
+        hypervisor_type: :vpsadminos,
+        total_swap: 512
+      )
+      vps = create_vps!(user: SpecSeed.user, node: node)
+
+      as(SpecSeed.user) { json_put show_path(vps.id), vps: { swap: 128 } }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      node.node_current_status.update!(total_swap: 0)
+      as(SpecSeed.user) { json_put show_path(vps.id), vps: { swap: 256 } }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('swap is not available')
+    end
+
+    it 'fails closed before the first Node status report' do
+      node = create_node!(
+        name_prefix: 'spec-unreported-swap',
+        location: SpecSeed.location,
+        role: :node,
+        hypervisor_type: :vpsadminos,
+        total_swap: 512
+      )
+      node.node_current_status.destroy!
+      node.reload
+      vps = create_vps!(user: SpecSeed.user, node: node)
+
+      as(SpecSeed.user) { json_put show_path(vps.id), vps: { swap: 128 } }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('swap is not available')
+    end
+
     it 'rejects user namespace map from another user' do
       vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node)
       other_ns = UserNamespace.create!(
@@ -1832,7 +1874,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
   def create_node!(name_prefix:, location:, role: :node, hypervisor_type: :vpsadminos, total_swap: 512)
     suffix = SecureRandom.hex(3)
 
-    Node.create!(
+    node = Node.create!(
       name: "#{name_prefix}-#{suffix}",
       location: location,
       role: role,
@@ -1844,6 +1886,16 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
       total_swap: total_swap,
       active: true
     )
+    NodeCurrentStatus.create!(
+      node:,
+      vpsadmin_version: 'spec',
+      update_count: 1,
+      cpus: 2,
+      total_memory: 2048,
+      total_swap:,
+      cgroup_version: :cgroup_v2
+    )
+    node
   end
 
   def create_os_template!(hypervisor_type:, enabled: true, cgroup_version: :cgroup_any)

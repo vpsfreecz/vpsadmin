@@ -21,9 +21,9 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     integer :max_tx, label: 'Max tx', desc: 'Maximum output throughput'
     integer :max_rx, label: 'Max tx', desc: 'Maximum input throughput'
 
-    integer :cpus
-    integer :total_memory
-    integer :total_swap
+    integer :cpus, nullable: true
+    integer :total_memory, nullable: true
+    integer :total_swap, nullable: true
 
     # Hypervisor-specific params
     integer :max_vps
@@ -161,9 +161,6 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       patch :type, required: true
       patch :location, required: true
       patch :ip_addr, required: true
-      patch :cpus, required: true
-      patch :total_memory, required: true
-      patch :total_swap, required: true
       bool :maintenance, desc: 'Put the node into maintenance mode'
     end
 
@@ -344,7 +341,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
     desc 'Update node'
 
     input do
-      use :common, exclude: %i[domain_name]
+      use :common, exclude: %i[domain_name cpus total_memory total_swap]
     end
 
     authorize do |u|

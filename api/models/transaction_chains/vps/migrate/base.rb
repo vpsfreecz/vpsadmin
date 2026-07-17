@@ -119,7 +119,7 @@ module TransactionChains
     end
 
     def check_swap!
-      return unless opts[:swap] == :enforce && src_vps.swap > 0 && dst_node.total_swap == 0
+      return unless opts[:swap] == :enforce && src_vps.swap > 0 && !dst_node.swap_available?
 
       raise VpsAdmin::API::Exceptions::OperationNotSupported,
             "VPS has #{src_vps.swap}MiB of swap, which is not available " \

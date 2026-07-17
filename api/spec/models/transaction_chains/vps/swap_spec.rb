@@ -23,6 +23,17 @@ RSpec.describe TransactionChains::Vps::Swap do
       role: :node,
       name: "swap-dst-#{SecureRandom.hex(3)}"
     )
+    [src_node, dst_node].each do |node|
+      NodeCurrentStatus.create!(
+        node:,
+        vpsadmin_version: 'spec',
+        update_count: 1,
+        cpus: node[:cpus],
+        total_memory: node[:total_memory],
+        total_swap: node[:total_swap],
+        cgroup_version: :cgroup_v2
+      )
+    end
     src_pool = create_pool!(node: src_node, role: :hypervisor)
     dst_pool = create_pool!(node: dst_node, role: :hypervisor)
     src_pool.update!(migration_public_key: 'spec-src-pubkey')

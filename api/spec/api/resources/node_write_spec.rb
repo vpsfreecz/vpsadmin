@@ -65,10 +65,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Node write actions' do # rubocop:disab
       name: "spec-node-#{suffix}",
       type: role,
       location: location_id,
-      ip_addr: random_ipv4,
-      cpus: 2,
-      total_memory: 2048,
-      total_swap: 512
+      ip_addr: random_ipv4
     }
 
     payload[:max_vps] = 5 if role == 'node'
@@ -139,6 +136,27 @@ RSpec.describe 'VpsAdmin::API::Resources::Node write actions' do # rubocop:disab
       expect(record.location_id).to eq(payload[:location])
       expect(record.ip_addr).to eq(payload[:ip_addr])
       expect(record.role).to eq(payload[:type])
+      expect(record.attributes.slice('cpus', 'total_memory', 'total_swap')).to eq(
+        'cpus' => 0,
+        'total_memory' => 0,
+        'total_swap' => 0
+      )
+    end
+
+    it 'accepts legacy bootstrap capacity fields without treating them as observed' do
+      ensure_signer_unlocked!
+      legacy_payload = payload.merge(cpus: 4, total_memory: 4096, total_swap: 1024)
+
+      as(SpecSeed.admin) { json_post index_path, node: legacy_payload }
+
+      expect_status(200)
+      record = Node.find_by!(name: legacy_payload[:name])
+      expect(record.attributes.slice('cpus', 'total_memory', 'total_swap')).to eq(
+        'cpus' => 4,
+        'total_memory' => 4096,
+        'total_swap' => 1024
+      )
+      expect(record).to have_attributes(cpus: 4, total_memory: 4096, total_swap: 1024)
     end
 
     it 'returns validation errors for missing name' do
@@ -164,6 +182,14 @@ RSpec.describe 'VpsAdmin::API::Resources::Node write actions' do # rubocop:disab
   end
 
   describe 'Update' do
+    it 'does not expose legacy capacity fields as editable inputs' do
+      as(SpecSeed.admin) { options "#{show_path(node.id)}?method=PUT" }
+
+      expect_status(200)
+      parameters = json.dig('response', 'input', 'parameters')
+      expect(parameters).not_to include('cpus', 'total_memory', 'total_swap')
+    end
+
     it 'rejects unauthenticated access' do
       json_put show_path(node.id), node: { name: 'spec-node-updated' }
 

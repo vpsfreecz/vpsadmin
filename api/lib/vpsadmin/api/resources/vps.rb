@@ -506,7 +506,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       elsif vps.node.vpsadminos? \
             && input[:swap] \
-            && input[:swap] > 0 && vps.node.total_swap == 0
+            && input[:swap] > 0 && !vps.node.swap_available?
         error!("swap is not available on #{vps.node.domain_name}")
 
       elsif input[:user_namespace_map] \

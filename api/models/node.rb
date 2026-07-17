@@ -286,6 +286,31 @@ class Node < ApplicationRecord
     kernel
   end
 
+  def cpus
+    return self[:cpus] unless system_state_host?
+
+    value = node_current_status&.cpus
+    value if value&.positive?
+  end
+
+  def total_memory
+    return self[:total_memory] unless system_state_host?
+
+    value = node_current_status&.total_memory
+    value if value&.positive?
+  end
+
+  def total_swap
+    return self[:total_swap] unless system_state_host?
+
+    value = node_current_status&.total_swap
+    value if value && value >= 0
+  end
+
+  def swap_available?
+    total_swap&.positive? || false
+  end
+
   def system_state_host?
     node? || storage?
   end
