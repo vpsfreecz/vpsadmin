@@ -274,25 +274,7 @@ test.describe('security advisory admin browser workflow', () => {
     await expect(content(page)).toContainText(ui.nodeNote);
   });
 
-  test('publishes with mail disabled and editable published time', async ({ page }) => {
-    const s = requireSecurityAdvisoryFixtures();
-    const ui = s.uiCreate;
-
-    await gotoAdvisory(page, 'show', { id: advisoryId });
-    const form = formByAction(page, `action=publish&id=${advisoryId}`);
-    await expect(form).toBeVisible();
-    await expect(form.locator('input[name="send_mail"]')).not.toBeChecked();
-    await expect(form.locator('input[name="published_at"]')).toHaveValue(ui.editedPublishedAt);
-    await setCheckboxIfPresent(form, 'send_mail', false);
-    await submitForm(form, 'Publish');
-
-    await expect(heading(page)).toContainText(`Security advisory #${advisoryId}`);
-    await expect(content(page)).toContainText('published');
-    await expect(content(page)).toContainText(ui.name);
-    await expect(content(page)).toContainText(expectedAdvisoryTime(ui.editedPublishedAt));
-  });
-
-  test('edits advisory CVEs, name, and translated text', async ({ page }) => {
+  test('edits draft advisory CVEs, name, and translated text', async ({ page }) => {
     const s = requireSecurityAdvisoryFixtures();
     const ui = s.uiCreate;
 
@@ -318,6 +300,24 @@ test.describe('security advisory admin browser workflow', () => {
     for (const cve of ui.editedCves) {
       await expect(content(page)).toContainText(cve);
     }
+  });
+
+  test('publishes with mail disabled and editable published time', async ({ page }) => {
+    const s = requireSecurityAdvisoryFixtures();
+    const ui = s.uiCreate;
+
+    await gotoAdvisory(page, 'show', { id: advisoryId });
+    const form = formByAction(page, `action=publish&id=${advisoryId}`);
+    await expect(form).toBeVisible();
+    await expect(form.locator('input[name="send_mail"]')).not.toBeChecked();
+    await expect(form.locator('input[name="published_at"]')).toHaveValue(ui.editedPublishedAt);
+    await setCheckboxIfPresent(form, 'send_mail', false);
+    await submitForm(form, 'Publish');
+
+    await expect(heading(page)).toContainText(`Security advisory #${advisoryId}`);
+    await expect(content(page)).toContainText('published');
+    await expect(content(page)).toContainText(ui.editedName);
+    await expect(content(page)).toContainText(expectedAdvisoryTime(ui.editedPublishedAt));
   });
 
   test('posts, edits, and deletes an advisory update', async ({ page }) => {

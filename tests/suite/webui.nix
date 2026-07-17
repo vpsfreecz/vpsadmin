@@ -1268,6 +1268,7 @@ import ../make-test.nix (
 
         if publish
           advisory.publish!(
+            expected_content_revision: advisory.content_revision,
             send_mail: false,
             published_by: admin,
             published_at: published_at
