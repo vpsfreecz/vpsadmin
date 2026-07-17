@@ -44,6 +44,40 @@ function currentResourceId(page) {
   return new URL(page.url()).searchParams.get('id');
 }
 
+async function gotoNode(page, nodeId, action = null) {
+  const query = new URLSearchParams({
+    page: 'node',
+    id: String(nodeId),
+  });
+
+  if (action) {
+    query.set('action', action);
+  }
+
+  await page.goto(`/?${query.toString()}`, { waitUntil: 'domcontentloaded' });
+}
+
+async function tableLayout(page, selector) {
+  return page.locator(selector).evaluate((table) => {
+    const tableRect = table.getBoundingClientRect();
+    const contentRect = table.closest('#content-in').getBoundingClientRect();
+
+    return {
+      clientWidth: table.clientWidth,
+      contentRight: contentRect.right,
+      right: tableRect.right,
+      scrollWidth: table.scrollWidth,
+    };
+  });
+}
+
+async function expectTableWithinContent(page, selector) {
+  const layout = await tableLayout(page, selector);
+
+  expect(layout.right).toBeLessThanOrEqual(layout.contentRight + 1);
+  expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth + 1);
+}
+
 function resourcePackageItemRow(page, resourceLabel) {
   return page.locator('table.table-style01 tr', {
     has: page.locator('a[href*="resource_packages_item_edit"]'),
@@ -109,10 +143,19 @@ test.describe.serial('admin cluster browser coverage', () => {
     await expect(content(page)).toContainText('Summary');
     await expect(content(page)).toContainText('Node list');
     await expect(content(page)).toContainText(fixtures.node.domainName);
+    await expect(page.locator(
+      `#cluster_node_list a[href="?page=node&id=${fixtures.node.id}"]`,
+    )).toHaveText(fixtures.node.domainName);
+    await expect(page.locator(
+      `#cluster_node_list a[href*="action=kernel_history"][href*="id=${fixtures.node.id}"]`,
+    )).toBeVisible();
 
     await gotoCluster(page, 'vps');
     await expect(content(page)).toContainText('Node list');
     await expect(content(page)).toContainText('Free');
+    await expect(page.locator(
+      `#cluster_node_list a[href="?page=node&id=${fixtures.node.id}"]`,
+    )).toHaveText(fixtures.node.domainName);
 
     await gotoCluster(page, 'environments');
     await expect(content(page)).toContainText('Environments');
@@ -398,10 +441,73 @@ test.describe.serial('admin cluster browser coverage', () => {
     await expect(form).toBeVisible();
     await expect(form.locator('input[name="name"]')).toBeVisible();
     await expect(form.locator('input[name="ip_addr"]')).toBeVisible();
+    await expect(form.locator('input[name="cpus"]')).toHaveCount(0);
+    await expect(form.locator('input[name="total_memory"]')).toHaveCount(0);
+    await expect(form.locator('input[name="total_swap"]')).toHaveCount(0);
 
     await gotoCluster(page, 'node_edit', { node_id: fixtures.node.id });
     form = formByAction(page, `action=node_edit_save&node_id=${fixtures.node.id}`);
     await expect(form).toBeVisible();
+
+    await logout(page, fixtures.admin.username);
+  });
+
+  test('Node evidence pages use boot order and compact neutral layouts', async ({ page }) => {
+    requireClusterAdminFixtures();
+
+    await login(page, fixtures.admin);
+
+    await gotoNode(page, fixtures.node.id, 'kernel_parameters');
+    await expect(heading(page)).toContainText('Kernel parameters');
+    await expect(page.locator('.page-description')).toHaveCount(0);
+    await expect(page.locator('#perex')).toHaveCount(0);
+    await expect(page.locator('#node-kernel-command-line code')).toBeVisible();
+    await expect(page.locator('#node-kernel-parameters tr').first().locator('th')).toHaveCount(2);
+
+    const commandLine = (await page
+      .locator('#node-kernel-command-line code')
+      .innerText())
+      .trim();
+    const expectedNames = commandLine
+      .split(/\s+/)
+      .map((token) => token.split('=', 1)[0]);
+    const bootedNames = (await page
+      .locator('#node-kernel-parameters tr td:first-child')
+      .allInnerTexts())
+      .map((value) => value.trim());
+    expect(bootedNames).toEqual(expectedNames);
+
+    const commandLineCellWidths = await page
+      .locator('#node-kernel-command-line td')
+      .evaluateAll((cells) => cells.map((cell) => cell.getBoundingClientRect().width));
+    expect(commandLineCellWidths[1]).toBeGreaterThan(commandLineCellWidths[0] * 4);
+    await expectTableWithinContent(page, '#node-kernel-parameters');
+
+    await gotoNode(page, fixtures.node.id, 'sysctls');
+    await expect(heading(page)).toContainText('Sysctls');
+    await expect(page.locator('.page-description')).toHaveCount(0);
+    await expect(page.locator('#perex')).toHaveCount(0);
+    await expect(page.locator('#node-sysctls tr').first().locator('th')).toHaveCount(4);
+    await expectTableWithinContent(page, '#node-sysctls');
+
+    const sysctlName = (await page.locator('#node-sysctls a').first().innerText()).trim();
+    await page.locator('#node-sysctls a').first().click();
+    await expect(heading(page)).toContainText('Sysctl history');
+    await expect(heading(page)).toContainText(sysctlName);
+    await expect(page.locator('.page-description')).toHaveCount(0);
+    await expect(page.locator('#perex')).toHaveCount(0);
+    await expect(page.locator('#node-sysctl-history tr').first().locator('th')).toHaveCount(3);
+    await expectTableWithinContent(page, '#node-sysctl-history');
+
+    for (const [action, title] of [
+      ['kernel_history', 'Kernel history'],
+      ['software_versions', 'Software versions'],
+    ]) {
+      await gotoNode(page, fixtures.node.id, action);
+      await expect(heading(page)).toContainText(title);
+      await expect(page.locator('.page-description')).toHaveCount(0);
+      await expect(page.locator('#perex')).toHaveCount(0);
+    }
 
     await logout(page, fixtures.admin.username);
   });
