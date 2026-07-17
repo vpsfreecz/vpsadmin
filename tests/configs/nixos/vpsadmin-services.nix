@@ -3,6 +3,8 @@
   lib,
   pkgs,
   vpsadminos,
+  vpsadminRev,
+  vpsadminRevisionDirty,
   ...
 }:
 let
@@ -295,7 +297,13 @@ in
     containers.webui = {
       autoStart = true;
       privateNetwork = false;
-      specialArgs = { inherit vpsadminos; };
+      specialArgs = {
+        inherit
+          vpsadminos
+          vpsadminRev
+          vpsadminRevisionDirty
+          ;
+      };
       config =
         { config, lib, ... }:
         {

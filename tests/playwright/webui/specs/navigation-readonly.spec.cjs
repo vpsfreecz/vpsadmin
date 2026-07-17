@@ -5,6 +5,8 @@ const { login, logout, navLink } = require('../lib/pages/auth.cjs');
 const { submitForm } = require('../lib/pages/webui.cjs');
 
 const fixtures = readFixtures();
+const expectedRevision = process.env.VPSADMIN_WEBUI_REVISION;
+const hasExpectedRevision = /^[0-9a-f]{40}$/.test(expectedRevision || '');
 
 function contentLink(page, href) {
   return page.locator(`#content-in a[href="${href}"]`);
@@ -21,6 +23,16 @@ test('user overview exposes read-only navigation and status data', async ({ page
   await page.goto('/', { waitUntil: 'domcontentloaded' });
 
   await expect(page.locator('#content-in h1')).toContainText('Overview');
+  if (hasExpectedRevision) {
+    await expect(page.locator('#slogan a')).toHaveText(expectedRevision.slice(0, 8));
+    await expect(page.locator('#slogan a')).toHaveAttribute(
+      'href',
+      `https://github.com/vpsfreecz/vpsadmin/commit/${expectedRevision}`,
+    );
+  } else {
+    await expect(page.locator('#slogan')).toContainText('Version: 4.1.0');
+    await expect(page.locator('#slogan a')).toHaveCount(0);
+  }
   await expect(page.locator('#content-in')).toContainText(fixtures.newsLog.message);
   await expect(page.locator('#content-in')).toContainText('Members total');
   await expect(page.locator('#content-in')).toContainText('VPS total');
@@ -37,7 +49,7 @@ test('user overview exposes read-only navigation and status data', async ({ page
   await logout(page, fixtures.user.username);
 });
 
-test('user can open node detail from the overview', async ({ page }) => {
+test('user can open node detail and reported system history', async ({ page }) => {
   await login(page, fixtures.user);
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await contentLink(page, `?page=node&id=${fixtures.node.id}`).click();
@@ -45,6 +57,19 @@ test('user can open node detail from the overview', async ({ page }) => {
   await expect(page.locator('#content-in h1')).toContainText(`Node ${fixtures.node.domainName}`);
   await expect(page.locator('#content-in')).toContainText(fixtures.location.label);
   await expect(page.locator('#content-in')).toContainText('Storage pools');
+
+  const systemHistoryHref = `?page=node&action=system_history&id=${fixtures.node.id}`;
+  await expect(page.locator(`#aside a[href="${systemHistoryHref}"]`)).toBeVisible();
+  await page.locator(`#aside a[href="${systemHistoryHref}"]`).click();
+  await expect(page.locator('#content-in h1')).toContainText(
+    `System history: ${fixtures.node.domainName}`,
+  );
+  await expect(page.locator('#content-in .page-description')).toHaveCount(0);
+  await expect(page.locator('#node-system-history')).toBeVisible();
+  await expect(page.locator('#node-system-history tr').first().locator('th')).toHaveCount(5);
+  await expect(page.locator('#node-system-history')).toContainText('current');
+  await expect(page.locator('#node-system-history')).toContainText('v2');
+  await expect(page.locator('#node-system-history')).not.toContainText('cgroup v2');
 
   await logout(page, fixtures.user.username);
 });

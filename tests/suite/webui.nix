@@ -565,6 +565,7 @@ import ../make-test.nix (
             export PLAYWRIGHT_BROWSERS_PATH=${playwrightBrowsers}
             export WEBUI_BASE_URL=http://webui.vpsadmin.test
             export VPSADMIN_WEBUI_FIXTURES=#{WEBUI_FIXTURES}
+            export VPSADMIN_WEBUI_REVISION="$(${pkgs.jq}/bin/jq --raw-output .revision /etc/vpsadmin/build-info.json)"
             result_dir=/tmp/vpsadmin-webui-playwright-results-#{safe_name}
 
             rm -rf "$HOME" "$result_dir"
