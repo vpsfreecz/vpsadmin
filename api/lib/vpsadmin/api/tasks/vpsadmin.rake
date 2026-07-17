@@ -80,6 +80,13 @@ namespace :vpsadmin do
     end
   end
 
+  namespace :node do
+    desc 'Reconstruct node kernel history from node status samples'
+    task :reconstruct_kernel_history do
+      VpsAdmin::API::Tasks.run(:node_kernel_event, :reconstruct)
+    end
+  end
+
   namespace :dataset do
     desc 'Remove old dataset property logs'
     task :prune_property_logs do
