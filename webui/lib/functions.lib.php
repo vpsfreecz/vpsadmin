@@ -1571,17 +1571,7 @@ function node_software_revision_link($component, $revision, $dirty = false)
 
 function getCommitHash()
 {
-    $hash = null;
-
-    if (isset($_SESSION['commit_hash'])) {
-        $hash = $_SESSION['commit_hash'];
-
-    } else {
-        $hash = readCommitHash();
-        $_SESSION['commit_hash'] = $hash;
-    }
-
-    return $hash;
+    return readCommitHash();
 }
 
 function readCommitHash()
