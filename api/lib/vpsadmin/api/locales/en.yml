@@ -681,6 +681,8 @@ en:
       finish_weekday:
         description: Prepare the migration and finish it on this day
         label: Finish weekday
+      first_observed_at:
+        label: First observed at
       force:
         description: Delete the DNS resolver even it is in use. Affected VPSes get
           a new DNS resolver.
@@ -920,6 +922,8 @@ en:
         label: Last activity
       last_check_at:
         label: Last_check_at
+      last_observed_at:
+        label: Last observed at
       last_report:
         label: Last report
       last_request_at:
@@ -2867,6 +2871,8 @@ en:
               label: Id
         status:
           attributes:
+            cgroup_version:
+              label: Cgroup version
             cpu_idle:
               label: Cpu_idle
             created_at:
@@ -2875,6 +2881,12 @@ en:
               label: Id
             version:
               label: Version
+      node_cgroup_state:
+        attributes:
+          cgroup_version:
+            label: Cgroup version
+          id:
+            label: ID
       node_ebpf_program:
         attributes:
           id:
@@ -2969,6 +2981,12 @@ en:
             label: Id
           name:
             label: Name
+      node_system_state:
+        attributes:
+          cgroup_version:
+            label: Cgroup version
+          id:
+            label: ID
       node_transfer_connection:
         attributes:
           created_at:

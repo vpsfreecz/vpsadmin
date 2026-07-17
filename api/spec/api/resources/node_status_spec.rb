@@ -267,6 +267,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Node::Status' do
       expect(status_obj['uptime']).to eq(100)
       expect(status_obj['version']).to eq('spec-1')
       expect(status_obj['kernel']).to eq('spec-kernel')
+      expect(status_obj['cgroup_version']).to eq('cgroup_v1')
       expect(status_obj['created_at']).not_to be_nil
     end
 

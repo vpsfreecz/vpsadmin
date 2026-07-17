@@ -521,7 +521,8 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       integer :arc_size
       float :arc_hitpercent
       string :version, db_name: :vpsadmin_version
-      string :kernel
+      string :kernel, nullable: true
+      string :cgroup_version, label: 'Cgroup version', choices: ::NodeStatus.cgroup_versions.keys
       datetime :created_at
     end
 

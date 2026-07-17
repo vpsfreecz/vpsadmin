@@ -680,6 +680,8 @@ cs:
       finish_weekday:
         description: Připravit migraci a dokončit ji v tento den
         label: Dokončit v den
+      first_observed_at:
+        label: První pozorování
       force:
         description: Smazat DNS resolver i tehdy, když se používá. Dotčené VPS dostanou
           nový DNS resolver.
@@ -918,6 +920,8 @@ cs:
         label: Poslední aktivita
       last_check_at:
         label: Poslední kontrola
+      last_observed_at:
+        label: Poslední pozorování
       last_report:
         label: Poslední hlášení
       last_request_at:
@@ -2861,6 +2865,8 @@ cs:
               label: ID
         status:
           attributes:
+            cgroup_version:
+              label: Verze cgroup
             cpu_idle:
               label: Nečinnost CPU
             created_at:
@@ -2869,6 +2875,12 @@ cs:
               label: ID
             version:
               label: Verze
+      node_cgroup_state:
+        attributes:
+          cgroup_version:
+            label: Verze cgroup
+          id:
+            label: ID
       node_ebpf_program:
         attributes:
           id:
@@ -2963,6 +2975,12 @@ cs:
             label: ID změny sysctl
           name:
             label: Název sysctl
+      node_system_state:
+        attributes:
+          cgroup_version:
+            label: Verze cgroup
+          id:
+            label: ID
       node_transfer_connection:
         attributes:
           created_at:
