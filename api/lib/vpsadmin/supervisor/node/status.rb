@@ -3,7 +3,6 @@ require_relative 'base'
 module VpsAdmin::Supervisor
   class Node::Status < Node::Base
     LOG_INTERVAL = 900
-
     AVERAGES = %i[
       process_count
       cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq cpu_softirq cpu_guest
@@ -35,8 +34,43 @@ module VpsAdmin::Supervisor
     protected
 
     def update_status(current_status, new_status)
+      node.with_lock do
+        current_status = ::NodeCurrentStatus.find_by(node:) || current_status
+        check_time = Time.at(new_status['time'])
+
+        # Supervisor processes may have queued the same Node concurrently. Always
+        # compare and replace evidence while holding the Node lock, and never let
+        # a delayed report move current status backwards.
+        if current_status.persisted? &&
+           current_status.updated_at &&
+           current_status.updated_at > check_time
+          return nil
+        end
+
+        update_status_locked(current_status, new_status, check_time)
+      end
+    rescue ActiveRecord::RecordNotUnique
+      # Possible race condition when adding a new node, it is safe to ignore
+      # as other status updates will pass.
+      nil
+    end
+
+    def update_status_locked(current_status, new_status, check_time)
       now = Time.now
-      check_time = Time.at(new_status['time'])
+      parsed_evidence = if kernel_host? && new_status.has_key?('security_evidence')
+                          VpsAdmin::API::KernelEvidence::PayloadParser.call(
+                            new_status['security_evidence']
+                          )
+                        end
+      kernel_evidence = parsed_evidence&.report
+      record_kernel_evidence = parsed_evidence&.record_events
+      kernel_configuration = parsed_evidence&.kernel_configuration
+      comparison = VpsAdmin::API::KernelEvidence::SnapshotReader.comparison(
+        node:,
+        current_snapshot: current_status.kernel_evidence
+      )
+      previous_kernel_evidence = comparison.report
+      previous_kernel_evidence_observed_at = comparison.observed_at
       current_status.created_at ||= check_time
       if current_status.update_count.to_i <= 0
         current_status.update_count = 1
@@ -55,7 +89,7 @@ module VpsAdmin::Supervisor
         loadavg5: new_status['loadavg']['5'],
         loadavg15: new_status['loadavg']['15'],
         vpsadmin_version: new_status['vpsadmin_version'],
-        kernel: new_status['kernel'],
+        kernel: kernel_host? ? new_status['kernel'] : nil,
         cgroup_version: new_status['cgroup_version'],
         cpus: new_status['cpus'],
         cpu_user: new_status['cpu']['user'],
@@ -76,12 +110,40 @@ module VpsAdmin::Supervisor
         pool_checked_at: Time.at(new_status['storage']['checked_at'])
       )
 
-      if new_status['arc']
+      assign_arc(current_status, new_status['arc'])
+      update_status_averages(current_status, now)
+
+      ::NodeCurrentStatus.transaction(requires_new: true) do
+        store_kernel_configuration!(kernel_configuration) if kernel_configuration
+        current_status.save!
+        record_system_state!(current_status, check_time) if kernel_host?
+        if record_kernel_evidence
+          record_evidence_events(
+            report: kernel_evidence,
+            previous_report: previous_kernel_evidence,
+            previous_observed_at: previous_kernel_evidence_observed_at,
+            observed_at: check_time,
+            received_at: now
+          )
+        end
+        store_current_evidence(current_status, kernel_evidence, check_time, now)
+
+        # Active Record timestamping saves at receipt time. The status
+        # timestamp is the Node observation time and our ordering watermark.
+        current_status.updated_at = check_time
+        current_status.save!(touch: false)
+      end
+
+      nil
+    end
+
+    def assign_arc(current_status, arc)
+      if arc
         current_status.assign_attributes(
-          arc_c_max: new_status['arc']['c_max'] / 1024 / 1024,
-          arc_c: new_status['arc']['c'] / 1024 / 1024,
-          arc_size: new_status['arc']['size'] / 1024 / 1024,
-          arc_hitpercent: new_status['arc']['hitpercent']
+          arc_c_max: arc['c_max'] / 1024 / 1024,
+          arc_c: arc['c'] / 1024 / 1024,
+          arc_size: arc['size'] / 1024 / 1024,
+          arc_hitpercent: arc['hitpercent']
         )
       else
         current_status.assign_attributes(
@@ -91,54 +153,88 @@ module VpsAdmin::Supervisor
           arc_hitpercent: nil
         )
       end
+    end
 
+    def update_status_averages(current_status, now)
       if current_status.last_log_at.nil? || current_status.last_log_at + LOG_INTERVAL < now
-        # Log status and reset averages
         log_status(current_status)
-
-        current_status.assign_attributes(
-          last_log_at: now,
-          update_count: 1
-        )
-
+        current_status.assign_attributes(last_log_at: now, update_count: 1)
         AVERAGES.each do |attr|
           current_status.assign_attributes("sum_#{attr}": current_status.send(attr))
         end
-      else
-        # Compute averages
-        AVERAGES.each do |attr|
-          avg_attr = :"sum_#{attr}"
-          avg_value = current_status.send(avg_attr)
+        return
+      end
 
-          # Not all metrics must be available, e.g. there's no ZFS ARC on mailer
-          # nodes.
-          next if avg_value.nil?
+      AVERAGES.each do |attr|
+        average_attribute = :"sum_#{attr}"
+        average_value = current_status.send(average_attribute)
+        next if average_value.nil?
 
-          cur_value = current_status.send(attr)
-          if cur_value.nil?
-            current_status.assign_attributes(avg_attr => nil)
-            next
-          end
-
-          current_status.assign_attributes(avg_attr => avg_value + cur_value)
+        current_value = current_status.send(attr)
+        if current_value.nil?
+          current_status.assign_attributes(average_attribute => nil)
+          next
         end
 
-        current_status.update_count += 1
+        current_status.assign_attributes(average_attribute => average_value + current_value)
       end
-
-      begin
-        current_status.save!
-      rescue ActiveRecord::RecordNotUnique
-        # Possible race condition when adding a new node, it is safe to ignore
-        # as other status updates will pass.
-      end
-
-      nil
+      current_status.update_count += 1
     end
 
-    def log_status(current_status)
-      update_count = current_status.update_count
+    def record_evidence_events(
+      report:,
+      previous_report:,
+      previous_observed_at:,
+      observed_at:,
+      received_at:
+    )
+      VpsAdmin::API::Operations::Node::RecordKernelEvidence.run(
+        node:,
+        observed_at:,
+        received_at:,
+        report:,
+        previous_report:,
+        previous_observed_at:
+      )
+    end
 
+    def store_current_evidence(current_status, report, observed_at, received_at)
+      if report
+        snapshot = current_status.kernel_evidence || ::NodeKernelEvidence.new(
+          node:,
+          snapshot_type: :current
+        )
+        VpsAdmin::API::KernelEvidence::SnapshotWriter.call(
+          snapshot:,
+          report:,
+          observed_at:,
+          received_at:
+        )
+        current_status.update!(kernel_evidence: snapshot) \
+          unless current_status.node_kernel_evidence_id == snapshot.id
+      elsif !kernel_host? && current_status.kernel_evidence
+        snapshot = current_status.kernel_evidence
+        current_status.update!(kernel_evidence: nil)
+        snapshot.destroy!
+      end
+    end
+
+    def record_system_state!(current_status, observed_at)
+      values = VpsAdmin::API::SystemState::Normalizer.from_status(current_status)
+      VpsAdmin::API::SystemState::Recorder.call(node:, values:, observed_at:)
+
+      cache_values = values.slice(:cpus, :total_memory, :total_swap)
+                           .transform_values { |value| value || 0 }
+      node.update_columns(cache_values)
+    end
+
+    def store_kernel_configuration!(attributes)
+      VpsAdmin::API::KernelEvidence::ConfigurationWriter.call(**attributes)
+    end
+
+    def kernel_host? = node.node? || node.storage?
+
+    def log_status(current_status)
       log = ::NodeStatus.new(
         node_id: current_status.node_id,
         uptime: current_status.uptime,
@@ -146,22 +242,15 @@ module VpsAdmin::Supervisor
         total_memory: current_status.total_memory,
         total_swap: current_status.total_swap,
         vpsadmin_version: current_status.vpsadmin_version,
-        kernel: current_status.kernel,
+        kernel: current_status.kernel || '',
         cgroup_version: current_status.cgroup_version,
         created_at: current_status.updated_at
       )
 
       AVERAGES.each do |attr|
         sum = current_status.send(:"sum_#{attr}")
-
-        v =
-          if sum
-            sum / current_status.update_count
-          else
-            current_status.send(attr)
-          end
-
-        log.assign_attributes(attr => v)
+        value = sum ? sum / current_status.update_count : current_status.send(attr)
+        log.assign_attributes(attr => value)
       end
 
       log.save!
