@@ -19,19 +19,20 @@ function security_advisory_params()
     return $params;
 }
 
-function security_advisory_save_nodes($id)
+function security_advisory_save_nodes($id, $revision)
 {
     global $api;
 
     $statuses = [];
     foreach ($api->security_advisory($id)->node_status->list() as $status) {
-        $statuses[$status->node_id] = $status;
+        $statuses[$status->node->id] = $status;
     }
 
     foreach (security_advisory_nodes() as $node) {
         $prefix = 'node_' . $node->id;
         $state = $_POST[$prefix . '_state'];
         $params = [
+            'expected_content_revision' => $revision,
             'state' => $state,
             'vulnerable_until' => $state === 'not_affected' ? null : security_advisory_datetime_param($prefix . '_vulnerable_until'),
             'mitigated_since' => $state === 'not_affected' ? null : security_advisory_datetime_param($prefix . '_mitigated_since'),
@@ -44,7 +45,11 @@ function security_advisory_save_nodes($id)
             $params['node'] = $node->id;
             $api->security_advisory($id)->node_status->create($params);
         }
+
+        $revision++;
     }
+
+    return $revision;
 }
 
 function security_advisory_datetime_param($name)
@@ -106,8 +111,12 @@ switch ($_GET['action'] ?? 'list') {
                 try {
                     $cves = security_advisory_parse_cves($_POST['cves'] ?? '');
                     $advisory = $api->security_advisory->create(security_advisory_params());
-                    security_advisory_save_cves($advisory->id, $cves);
-                    security_advisory_save_nodes($advisory->id);
+                    $revision = security_advisory_save_cves(
+                        $advisory->id,
+                        $cves,
+                        $advisory->content_revision
+                    );
+                    security_advisory_save_nodes($advisory->id, $revision);
                     redirect('?page=security_advisory&action=show&id=' . $advisory->id);
                 } catch (\InvalidArgumentException $e) {
                     $xtpl->perex(_('Create failed'), h($e->getMessage()));
@@ -131,8 +140,14 @@ switch ($_GET['action'] ?? 'list') {
 
                 try {
                     $cves = security_advisory_parse_cves($_POST['cves'] ?? '');
-                    $api->security_advisory->update($_GET['id'], security_advisory_params());
-                    security_advisory_save_cves($_GET['id'], $cves);
+                    $params = security_advisory_params();
+                    $params['expected_content_revision'] = (int) $_POST['expected_content_revision'];
+                    $advisory = $api->security_advisory->update($_GET['id'], $params);
+                    security_advisory_save_cves(
+                        $_GET['id'],
+                        $cves,
+                        $advisory->content_revision
+                    );
                     redirect('?page=security_advisory&action=show&id=' . $_GET['id']);
                 } catch (\InvalidArgumentException $e) {
                     $xtpl->perex(_('Update failed'), h($e->getMessage()));
@@ -155,7 +170,10 @@ switch ($_GET['action'] ?? 'list') {
                 csrf_check();
 
                 try {
-                    security_advisory_save_nodes($_GET['id']);
+                    security_advisory_save_nodes(
+                        $_GET['id'],
+                        (int) $_POST['expected_content_revision']
+                    );
                     redirect('?page=security_advisory&action=show&id=' . $_GET['id']);
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
@@ -173,6 +191,7 @@ switch ($_GET['action'] ?? 'list') {
 
             try {
                 $api->security_advisory->publish($_GET['id'], [
+                    'expected_content_revision' => (int) $_POST['expected_content_revision'],
                     'send_mail' => isset($_POST['send_mail']),
                     'published_at' => security_advisory_datetime_param('published_at'),
                 ]);

@@ -167,7 +167,7 @@ function security_advisory_unlink_form($url, $confirm)
         . '</form>';
 }
 
-function security_advisory_save_cves($id, $desired = null)
+function security_advisory_save_cves($id, $desired, $revision)
 {
     global $api;
 
@@ -182,7 +182,10 @@ function security_advisory_save_cves($id, $desired = null)
         if (isset($desired[$cve->cve_id])) {
             $existing[$cve->cve_id] = true;
         } else {
-            $api->security_advisory_cve->delete($cve->id);
+            $api->security_advisory_cve->delete($cve->id, [
+                'expected_content_revision' => $revision,
+            ]);
+            $revision++;
         }
     }
 
@@ -191,11 +194,15 @@ function security_advisory_save_cves($id, $desired = null)
             $api->security_advisory_cve->create([
                 'security_advisory' => $id,
                 'cve_id' => $cveId,
+                'expected_content_revision' => $revision,
             ]);
+            $revision++;
         }
     }
 
     security_advisory_cve_rows($id, true);
+
+    return $revision;
 }
 
 function security_advisory_state_label($state)
@@ -421,6 +428,14 @@ function security_advisory_form($id = null)
             : '?page=security_advisory&action=new',
         'post'
     );
+    if ($advisory) {
+        $xtpl->form_set_hidden_fields([
+            'expected_content_revision' => post_val(
+                'expected_content_revision',
+                $advisory->content_revision
+            ),
+        ]);
+    }
 
     security_advisory_form_input(
         _('Published at') . ':',
@@ -742,6 +757,12 @@ function security_advisory_details($id)
 
         $xtpl->table_title(_('Publish advisory'));
         $xtpl->form_create('?page=security_advisory&action=publish&id=' . $id, 'post');
+        $xtpl->form_add_input_pure(
+            'hidden',
+            0,
+            'expected_content_revision',
+            (string) $advisory->content_revision
+        );
         $xtpl->form_add_input(
             _('Published at') . ':',
             'text',
@@ -777,7 +798,7 @@ function security_advisory_node_status_table($id)
     $xtpl->table_add_category(_('Note'));
 
     foreach ($statuses as $status) {
-        $xtpl->table_td(h($status->node_name));
+        $xtpl->table_td(h($status->node->domain_name));
         $xtpl->table_td(security_advisory_node_state_label($status->state));
         $xtpl->table_td(security_advisory_time($status->vulnerable_until));
         $xtpl->table_td(security_advisory_time($status->mitigated_since));
@@ -925,6 +946,12 @@ function security_advisory_node_form($id)
 
     $xtpl->title(_('Security advisory') . ' #' . $advisory->id . ' - ' . _('node statuses'));
     $xtpl->form_create('?page=security_advisory&action=nodes&id=' . $id, 'post');
+    $xtpl->form_set_hidden_fields([
+        'expected_content_revision' => post_val(
+            'expected_content_revision',
+            $advisory->content_revision
+        ),
+    ]);
     security_advisory_node_fields($id);
     $xtpl->form_out(_('Save node statuses'));
 }
@@ -1113,7 +1140,7 @@ function security_advisory_node_fields($id = null, $embedded = false)
 
     if ($id !== null) {
         foreach ($api->security_advisory($id)->node_status->list() as $status) {
-            $statuses[$status->node_id] = $status;
+            $statuses[$status->node->id] = $status;
         }
     }
 
