@@ -1,4 +1,4 @@
 source 'https://rubygems.org'
-gem 'haveapi-client', '~> 0.29.3'
+gem 'haveapi-client', '~> 0.29.4'
 gem 'highline'
 gem 'nokogiri'

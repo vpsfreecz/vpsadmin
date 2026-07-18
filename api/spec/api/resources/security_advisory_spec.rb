@@ -673,6 +673,27 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       }
       expect_status(200)
 
+      observed_at = Time.utc(2040, 1, 1, 12, 0, 0)
+      NodeSystemState.create!(
+        node: SpecSeed.node,
+        cpus: 8,
+        total_memory: 8192,
+        total_swap: 1024,
+        cgroup_version: :cgroup_v2,
+        first_observed_at: observed_at,
+        last_observed_at: observed_at,
+        current: true
+      )
+      json_get vpath('/node_cgroup_states'), node_cgroup_state: {
+        node: SpecSeed.node.id
+      }
+      expect_status(200)
+      cgroup_states = json.dig('response', 'node_cgroup_states')
+      expect(cgroup_states).not_to be_empty
+      expect(cgroup_states).to all(
+        include('node' => include('id' => SpecSeed.node.id))
+      )
+
       json_get cve_index_path, security_advisory_cve: {
         security_advisory: advisory.id
       }

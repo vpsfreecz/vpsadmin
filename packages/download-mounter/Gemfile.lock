@@ -79,7 +79,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  haveapi-client (~> 0.29.3)
+  haveapi-client (~> 0.29.4)
   highline
   rspec
 
