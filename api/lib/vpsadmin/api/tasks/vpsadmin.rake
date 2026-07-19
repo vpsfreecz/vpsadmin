@@ -81,6 +81,16 @@ namespace :vpsadmin do
   end
 
   namespace :node do
+    desc 'Show per-node kernel and system-state history backfill status'
+    task :history_backfill_status do
+      VpsAdmin::API::Tasks.run(:node_history_backfill, :status)
+    end
+
+    desc 'Reconstruct pending node kernel and system-state history'
+    task :reconstruct_history do
+      VpsAdmin::API::Tasks.run(:node_history_backfill, :reconstruct)
+    end
+
     desc 'Reconstruct node kernel history from node status samples'
     task :reconstruct_kernel_history do
       VpsAdmin::API::Tasks.run(:node_kernel_event, :reconstruct)
