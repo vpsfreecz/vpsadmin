@@ -4,6 +4,9 @@ require 'securerandom'
 
 module NodeCtld
   class RpcClient
+    SETUP_RETRIES = 10
+    SETUP_RETRY_DELAY = 10
+
     class Error < ::StandardError; end
 
     class Timeout < Error; end
@@ -18,20 +21,9 @@ module NodeCtld
     include OsCtl::Lib::Utils::Log
 
     def initialize
-      retry_on_timeout('Timeout while creating channel') do
-        @channel = NodeBunny.create_channel
-      end
-
-      retry_on_timeout('Timeout while creating exchange') do
-        @exchange = @channel.direct(NodeBunny.exchange_name)
-      end
-
       @response = nil
       @debug = $CFG.get(:rpc_client, :debug)
-
-      retry_on_timeout('Timeout while setting up reply queue') do
-        setup_reply_queue
-      end
+      setup_channel
     end
 
     def close
@@ -128,15 +120,29 @@ module NodeCtld
     attr_reader :lock, :condition, :call_id
     attr_accessor :response
 
-    def retry_on_timeout(message, attempts: 10, delay: 10)
-      attempts.times do |i|
-        return yield
+    def setup_channel
+      SETUP_RETRIES.times do |i|
+        return setup_channel_once
       rescue ::Timeout::Error
-        log(:warn, "[#{i + 1}/#{attempts}] #{message}")
-        sleep(delay)
+        # NodeBunny recovers the connection before propagating a channel-open
+        # timeout. Later setup methods use per-channel continuations, so leave
+        # a timed-out channel registered until the connection is closed or
+        # recovered and its number cannot be reused for a delayed reply.
+        @channel = nil
+        @exchange = nil
+        @reply_queue = nil
+
+        log(:warn, "[#{i + 1}/#{SETUP_RETRIES}] Timeout while setting up RPC channel")
+        sleep(SETUP_RETRY_DELAY)
       end
 
-      yield
+      setup_channel_once
+    end
+
+    def setup_channel_once
+      @channel = NodeBunny.create_channel
+      @exchange = @channel.direct(NodeBunny.exchange_name)
+      setup_reply_queue
     end
 
     def setup_reply_queue
