@@ -44,6 +44,14 @@ if (isLoggedIn()) {
             node_system_history_table($_GET['id']);
             break;
 
+        case 'kernel_boot_evidence':
+            if (isAdmin()) {
+                node_kernel_boot_evidence_table($_GET['id'], $_GET['event_id'] ?? 0);
+            } else {
+                node_admin_page_forbidden();
+            }
+            break;
+
         case 'kernel_parameters':
             if (isAdmin()) {
                 node_kernel_parameters_table($_GET['id']);

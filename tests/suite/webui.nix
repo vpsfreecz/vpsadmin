@@ -2002,6 +2002,29 @@ import ../make-test.nix (
 
       node = Node.find(${toString node1Seed.id})
       node2 = Node.find(${toString node2Seed.id})
+      reported_boot = node
+        .node_kernel_events
+        .boot
+        .node_report
+        .where.not(node_kernel_evidence_id: nil)
+        .order(observed_before: :desc, id: :desc)
+        .first!
+      reconstructed_boot = node.node_kernel_events.find_or_initialize_by(
+        event_type: :boot,
+        source: :reconstructed_node_status,
+        boot_id: 'webui-reconstructed-boot'
+      )
+      reconstructed_boot.assign_attributes(
+        confidence: :inferred,
+        booted_at: reported_boot.booted_at - 86_400,
+        booted_release: reported_boot.booted_release,
+        reported_release: reported_boot.reported_release,
+        effective_at: reported_boot.booted_at - 86_400,
+        observed_before: reported_boot.observed_before - 86_400,
+        current: false,
+        kernel_evidence: nil
+      )
+      reconstructed_boot.save! if reconstructed_boot.changed? || reconstructed_boot.new_record?
 
       readonly_session = UserSession.create!(
         user: user,
@@ -3990,6 +4013,10 @@ import ../make-test.nix (
           'name' => node.name,
           'domainName' => node.domain_name,
           'locationId' => node.location_id
+        },
+        'kernelEvidence' => {
+          'reportedBootId' => reported_boot.id,
+          'reconstructedBootId' => reconstructed_boot.id
         },
         'cluster' => {
           'nodes' => {

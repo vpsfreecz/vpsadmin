@@ -16,6 +16,7 @@ final class NodeEvidencePagesTest extends TestCase
 
         self::assertStringContainsString("if (isAdmin()) {", $source);
         self::assertStringContainsString("_('Kernel parameters')", $source);
+        self::assertStringContainsString("case 'kernel_boot_evidence':", $source);
         self::assertStringContainsString("_('Sysctls')", $source);
         self::assertStringContainsString("_('Software versions')", $source);
         self::assertStringContainsString("node_admin_page_forbidden();", $source);
@@ -23,6 +24,84 @@ final class NodeEvidencePagesTest extends TestCase
             "case 'vpsfree_cz_configuration':",
             $forms
         );
+    }
+
+    public function testKernelHistorySeparatesOriginFromTimePrecision(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/node.forms.php');
+        $historyStart = strpos($source, 'function node_kernel_history_table');
+        $historyEnd = strpos($source, 'function node_kernel_boot_evidence_table');
+        $historySource = substr($source, $historyStart, $historyEnd - $historyStart);
+
+        self::assertStringContainsString("table_add_category(_('Origin'))", $source);
+        self::assertStringContainsString("table_add_category(_('Time precision'))", $source);
+        self::assertStringNotContainsString("table_add_category(_('Evidence quality'))", $source);
+        self::assertStringContainsString("table_out('node-kernel-history')", $historySource);
+        self::assertSame('node', node_kernel_event_origin_label('node_report'));
+        self::assertSame(
+            'reconstructed',
+            node_kernel_event_origin_label('reconstructed_node_status')
+        );
+        self::assertSame('exact', node_kernel_event_confidence_label('exact'));
+        self::assertSame('inferred', node_kernel_event_confidence_label('inferred'));
+        self::assertSame('incomplete', node_kernel_event_confidence_label('incomplete'));
+    }
+
+    public function testBootEvidenceDrilldownIsNodeScopedAndUsesEventParameters(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/node.forms.php');
+
+        self::assertStringContainsString(
+            'data-vpsadmin-doc-id="node.kernel-boot-evidence"',
+            $source
+        );
+        self::assertStringContainsString(
+            '(int) $event->node->id !== (int) $node->id',
+            $source
+        );
+        self::assertStringContainsString(
+            '$event->node_kernel_evidence_id ?? null',
+            $source
+        );
+        self::assertStringNotContainsString(
+            '$event->node_kernel_evidence ?? null',
+            $source
+        );
+        self::assertStringContainsString("'source' => 'event'", $source);
+        self::assertStringContainsString("'node_kernel_evidence' => \$evidence->id", $source);
+        self::assertStringContainsString("_('Detailed evidence unavailable')", $source);
+    }
+
+    public function testEvidenceComponentRowsFetchEveryPage(): void
+    {
+        $resource = new class {
+            public array $calls = [];
+
+            public function list(array $input): array
+            {
+                $this->calls[] = $input;
+                $fromId = $input['from_id'] ?? 0;
+                $lastId = min(1001, $fromId + $input['limit']);
+
+                if ($fromId >= $lastId) {
+                    return [];
+                }
+
+                return array_map(
+                    fn($id) => (object) ['id' => $id],
+                    range($fromId + 1, $lastId)
+                );
+            }
+        };
+
+        $rows = node_evidence_component_rows($resource, ['node' => 123]);
+
+        self::assertCount(1001, $rows);
+        self::assertSame(1, $rows[0]->id);
+        self::assertSame(1001, $rows[1000]->id);
+        self::assertCount(2, $resource->calls);
+        self::assertArrayNotHasKey('from_id', $resource->calls[0]);
+        self::assertSame(1000, $resource->calls[1]['from_id']);
     }
 
     public function testSystemHistoryIsAvailableToEveryLoggedInUser(): void

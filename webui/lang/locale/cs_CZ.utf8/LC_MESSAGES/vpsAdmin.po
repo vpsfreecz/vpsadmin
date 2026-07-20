@@ -1182,9 +1182,9 @@ msgstr "Status"
 msgid "Reason code"
 msgstr "Kód důvodu"
 
-#: forms/dns.forms.php forms/outage.forms.php forms/users.forms.php
-#: forms/vps.forms.php pages/page_adminvps.php pages/page_cluster.php
-#: pages/page_lifetimes.php public/index.php
+#: forms/dns.forms.php forms/node.forms.php forms/outage.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminvps.php
+#: pages/page_cluster.php pages/page_lifetimes.php public/index.php
 msgid "Reason"
 msgstr "Důvod"
 
@@ -2140,8 +2140,12 @@ msgid "Reported kernel"
 msgstr "Hlášené jádro"
 
 #: forms/node.forms.php
-msgid "Evidence quality"
-msgstr "Kvalita podkladů"
+msgid "Origin"
+msgstr "Původ"
+
+#: forms/node.forms.php
+msgid "Time precision"
+msgstr "Určení času"
 
 #: forms/node.forms.php
 msgid "System boot"
@@ -2166,20 +2170,99 @@ msgid "before %s"
 msgstr "před %s"
 
 #: forms/node.forms.php
-msgid "exact"
-msgstr "přesné"
-
-#: forms/node.forms.php
-msgid "inferred"
-msgstr "odvozené"
-
-#: forms/node.forms.php
-msgid "incomplete"
-msgstr "neúplné"
-
-#: forms/node.forms.php
 msgid "No kernel history is available yet."
 msgstr "Historie jádra zatím není k dispozici."
+
+#: forms/node.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: pages/page_backup.php pages/page_cluster.php pages/page_console.php
+#: pages/page_dataset.php pages/page_dns.php pages/page_export.php
+#: pages/page_history.php pages/page_incidents.php pages/page_jumpto.php
+#: pages/page_lifetimes.php pages/page_monitoring.php pages/page_nas.php
+#: pages/page_networking.php pages/page_node.php pages/page_oom_reports.php
+#: pages/page_outage.php pages/page_redirect.php pages/page_reminder.php
+#: pages/page_transactions.php pages/page_userdata.php pages/page_userns.php
+msgid "Access forbidden"
+msgstr "Přístup zakázán"
+
+#: forms/node.forms.php
+msgid "The requested boot evidence does not belong to this Node."
+msgstr "Požadované podklady ke spuštění nepatří tomuto Nodu."
+
+#: forms/node.forms.php
+msgid "Boot evidence"
+msgstr "Podklady ke spuštění"
+
+#: forms/node.forms.php
+msgid "Boot ID"
+msgstr "ID spuštění"
+
+#: forms/node.forms.php lib/functions.lib.php
+msgid "unavailable"
+msgstr "nedostupné"
+
+#: forms/node.forms.php
+msgid "Boot time"
+msgstr "Čas spuštění"
+
+#: forms/node.forms.php
+msgid "Previous observation"
+msgstr "Předchozí pozorování"
+
+#: forms/node.forms.php
+msgid "First observation"
+msgstr "První pozorování"
+
+#: forms/node.forms.php
+msgid "Detailed evidence unavailable"
+msgstr "Podrobné podklady nejsou k dispozici"
+
+#: forms/node.forms.php
+msgid ""
+"This boot was reconstructed from legacy Node status samples, which did not "
+"contain kernel parameters."
+msgstr ""
+"Toto spuštění bylo zrekonstruováno ze starších vzorků stavu Nodu, které "
+"neobsahovaly parametry jádra."
+
+#: forms/node.forms.php
+msgid "Evidence observed at"
+msgstr "Podklady zachyceny"
+
+#: forms/node.forms.php
+msgid "Evidence received at"
+msgstr "Podklady přijaty"
+
+#: forms/node.forms.php
+msgid "Report schema version"
+msgstr "Verze schématu hlášení"
+
+#: forms/node.forms.php
+msgid "Evidence revision"
+msgstr "Revize podkladů"
+
+#: forms/node.forms.php
+msgid "Kernel source revision"
+msgstr "Revize zdrojového kódu jádra"
+
+#: forms/node.forms.php
+msgid "Raw boot command line"
+msgstr "Původní příkazová řádka při spuštění"
+
+#: forms/node.forms.php
+msgid "Booted parameters"
+msgstr "Parametry použité při spuštění"
+
+#: forms/node.forms.php
+msgid "No kernel parameter evidence is available for this boot."
+msgstr "Pro toto spuštění nejsou k dispozici podklady o parametrech jádra."
+
+#: forms/node.forms.php
+msgid "Collection errors"
+msgstr "Chyby při sběru"
+
+#: forms/node.forms.php
+msgid "Component"
+msgstr "Komponenta"
 
 #: forms/node.forms.php pages/page_node.php
 msgid "System history"
@@ -2213,17 +2296,6 @@ msgstr "aktuální"
 msgid "No system history is available yet."
 msgstr "Historie systému zatím není k dispozici."
 
-#: forms/node.forms.php pages/page_adminm.php pages/page_adminvps.php
-#: pages/page_backup.php pages/page_cluster.php pages/page_console.php
-#: pages/page_dataset.php pages/page_dns.php pages/page_export.php
-#: pages/page_history.php pages/page_incidents.php pages/page_jumpto.php
-#: pages/page_lifetimes.php pages/page_monitoring.php pages/page_nas.php
-#: pages/page_networking.php pages/page_node.php pages/page_oom_reports.php
-#: pages/page_outage.php pages/page_redirect.php pages/page_reminder.php
-#: pages/page_transactions.php pages/page_userdata.php pages/page_userns.php
-msgid "Access forbidden"
-msgstr "Přístup zakázán"
-
 #: forms/node.forms.php
 msgid "This Node evidence is available only to administrators."
 msgstr "Tyto údaje o Node jsou dostupné pouze administrátorům."
@@ -2231,14 +2303,6 @@ msgstr "Tyto údaje o Node jsou dostupné pouze administrátorům."
 #: forms/node.forms.php pages/page_node.php
 msgid "Kernel parameters"
 msgstr "Parametry jádra"
-
-#: forms/node.forms.php
-msgid "Raw boot command line"
-msgstr "Původní příkazová řádka při spuštění"
-
-#: forms/node.forms.php
-msgid "Booted parameters"
-msgstr "Parametry použité při spuštění"
 
 #: forms/node.forms.php
 msgid "No kernel parameter evidence is available yet."
@@ -2267,10 +2331,6 @@ msgstr "Výsledek"
 #: forms/node.forms.php
 msgid "not configured"
 msgstr "nenakonfigurováno"
-
-#: forms/node.forms.php lib/functions.lib.php
-msgid "unavailable"
-msgstr "nedostupné"
 
 #: forms/node.forms.php
 msgid "No sysctl evidence is available yet."
@@ -2303,10 +2363,6 @@ msgstr "Verze softwaru"
 #: forms/node.forms.php
 msgid "Current software versions"
 msgstr "Aktuální verze softwaru"
-
-#: forms/node.forms.php
-msgid "Component"
-msgstr "Komponenta"
 
 #: forms/node.forms.php
 msgid "Booted closure version"
@@ -4771,6 +4827,26 @@ msgstr[2] "%s adres"
 #: lib/functions.lib.php
 msgid "Some input parameters are not valid."
 msgstr "Některé vstupní parametry nejsou platné."
+
+#: lib/functions.lib.php
+msgid "node"
+msgstr "Node"
+
+#: lib/functions.lib.php
+msgid "reconstructed"
+msgstr "zrekonstruováno"
+
+#: lib/functions.lib.php
+msgid "exact"
+msgstr "přesné"
+
+#: lib/functions.lib.php
+msgid "inferred"
+msgstr "odvozené"
+
+#: lib/functions.lib.php
+msgid "incomplete"
+msgstr "neúplné"
 
 #: lib/functions.lib.php
 msgid "Off"
@@ -8226,6 +8302,9 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "reported by Node"
+#~ msgstr "hlášeno Nodem"
 
 #~ msgid ""
 #~ "Boot times reconstructed from status reports are estimates. Runtime "

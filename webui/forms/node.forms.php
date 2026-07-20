@@ -162,7 +162,8 @@ function node_kernel_history_table($node_id)
     $xtpl->table_add_category(_('Effective or observed time'));
     $xtpl->table_add_category(_('Booted kernel'));
     $xtpl->table_add_category(_('Reported kernel'));
-    $xtpl->table_add_category(_('Evidence quality'));
+    $xtpl->table_add_category(_('Origin'));
+    $xtpl->table_add_category(_('Time precision'));
 
     foreach ($events as $event) {
         switch ($event->event_type) {
@@ -192,32 +193,142 @@ function node_kernel_history_table($node_id)
             $eventTime = sprintf(_('before %s'), tolocaltz($event->observed_before));
         }
 
-        switch ($event->confidence) {
-            case 'exact':
-                $confidence = _('exact');
-                break;
-            case 'inferred':
-                $confidence = _('inferred');
-                break;
-            default:
-                $confidence = _('incomplete');
-                break;
+        $eventCell = h($eventLabel);
+        if (isAdmin() && $event->event_type === 'boot') {
+            $eventCell = '<a data-vpsadmin-doc-id="node.kernel-boot-evidence"'
+                . ' href="?page=node&amp;action=kernel_boot_evidence&amp;id=' . (int) $node->id
+                . '&amp;event_id=' . (int) $event->id . '">' . h($eventLabel) . '</a>';
         }
 
-        $xtpl->table_td(h($eventLabel));
+        $xtpl->table_td($eventCell);
         $xtpl->table_td(h($eventTime));
         $xtpl->table_td(h(kernel_version($event->booted_release)));
         $xtpl->table_td(h(kernel_version($event->reported_release)));
-        $xtpl->table_td(h($confidence));
+        $xtpl->table_td(h(node_kernel_event_origin_label($event->source)));
+        $xtpl->table_td(h(node_kernel_event_confidence_label($event->confidence)));
         $xtpl->table_tr($event->current ? '#DFF0D8' : false);
     }
 
     if ($events->count() == 0) {
-        $xtpl->table_td(_('No kernel history is available yet.'), false, false, 5);
+        $xtpl->table_td(_('No kernel history is available yet.'), false, false, 6);
         $xtpl->table_tr();
     }
 
-    $xtpl->table_out();
+    $xtpl->table_out('node-kernel-history');
+}
+
+function node_kernel_boot_evidence_table($node_id, $event_id)
+{
+    global $xtpl, $api;
+
+    $node = $api->node->find($node_id);
+    $event = $api->node_kernel_event->find($event_id);
+
+    if ((int) $event->node->id !== (int) $node->id || $event->event_type !== 'boot') {
+        $xtpl->perex(
+            _('Access forbidden'),
+            _('The requested boot evidence does not belong to this Node.')
+        );
+        return;
+    }
+
+    $xtpl->title(_('Boot evidence') . ': ' . $node->domain_name);
+    $xtpl->table_title(_('Boot evidence'), 'node.kernel-boot-evidence');
+    $xtpl->table_td(_('Origin') . ':');
+    $xtpl->table_td(h(node_kernel_event_origin_label($event->source)));
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Time precision') . ':');
+    $xtpl->table_td(h(node_kernel_event_confidence_label($event->confidence)));
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Boot ID') . ':');
+    $xtpl->table_td(h($event->boot_id ?? _('unavailable')));
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Boot time') . ':');
+    $xtpl->table_td($event->booted_at ? h(tolocaltz($event->booted_at)) : h(_('unavailable')));
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Previous observation') . ':');
+    $xtpl->table_td(
+        $event->observed_after ? h(tolocaltz($event->observed_after)) : h(_('unavailable'))
+    );
+    $xtpl->table_tr();
+    $xtpl->table_td(_('First observation') . ':');
+    $xtpl->table_td(h(tolocaltz($event->observed_before)));
+    $xtpl->table_tr();
+
+    $evidenceId = $event->node_kernel_evidence_id ?? null;
+    if ($evidenceId === null) {
+        $xtpl->table_out('node-kernel-boot-evidence');
+        $xtpl->perex(
+            _('Detailed evidence unavailable'),
+            _('This boot was reconstructed from legacy Node status samples, which did not contain kernel parameters.')
+        );
+        return;
+    }
+
+    $evidence = $api->node_kernel_evidence->find($evidenceId);
+    $parameters = node_evidence_component_rows($api->node_kernel_parameter, [
+        'node' => $node->id,
+        'node_kernel_evidence' => $evidence->id,
+        'source' => 'event',
+    ]);
+    $errors = node_evidence_component_rows($api->node_kernel_evidence_error, [
+        'node' => $node->id,
+        'node_kernel_evidence' => $evidence->id,
+        'source' => 'event',
+    ]);
+
+    $xtpl->table_td(_('Evidence observed at') . ':');
+    $xtpl->table_td(h(tolocaltz($evidence->observed_at)));
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Evidence received at') . ':');
+    $xtpl->table_td(h(tolocaltz($evidence->received_at)));
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Report schema version') . ':');
+    $xtpl->table_td(h($evidence->report_schema_version));
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Evidence revision') . ':');
+    $xtpl->table_td('<code>' . h($evidence->snapshot_revision) . '</code>');
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Kernel source revision') . ':');
+    $xtpl->table_td(h($evidence->kernel_source_revision ?? _('unavailable')));
+    $xtpl->table_tr();
+    $xtpl->table_out('node-kernel-boot-evidence');
+
+    $xtpl->table_td(_('Raw boot command line') . ':');
+    $xtpl->table_td(node_kernel_command_line_value($evidence->kernel_command_line));
+    $xtpl->table_tr();
+    $xtpl->table_out('node-kernel-boot-command-line');
+
+    $xtpl->table_title(_('Booted parameters'));
+    $xtpl->table_add_category(_('Name'));
+    $xtpl->table_add_category(_('Value'));
+    foreach ($parameters as $parameter) {
+        $xtpl->table_td(h($parameter->name));
+        $xtpl->table_td($parameter->value === null ? '-' : h($parameter->value));
+        $xtpl->table_tr();
+    }
+    if (count($parameters) === 0) {
+        $xtpl->table_td(
+            _('No kernel parameter evidence is available for this boot.'),
+            false,
+            false,
+            2
+        );
+        $xtpl->table_tr();
+    }
+    $xtpl->table_out('node-kernel-boot-parameters');
+
+    if (count($errors) > 0) {
+        $xtpl->table_title(_('Collection errors'));
+        $xtpl->table_add_category(_('Component'));
+        $xtpl->table_add_category(_('Reason'));
+        foreach ($errors as $error) {
+            $xtpl->table_td(h($error->component));
+            $xtpl->table_td(h($error->reason));
+            $xtpl->table_tr();
+        }
+        $xtpl->table_out('node-kernel-boot-errors');
+    }
 }
 
 function node_system_history_table($node_id)

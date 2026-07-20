@@ -1300,6 +1300,62 @@ function node_kernel_history_link($node)
         . '</a>';
 }
 
+function node_kernel_event_origin_label($source)
+{
+    switch ($source) {
+        case 'node_report':
+            return _('node');
+        case 'reconstructed_node_status':
+            return _('reconstructed');
+        default:
+            return _('unknown');
+    }
+}
+
+function node_kernel_event_confidence_label($confidence)
+{
+    switch ($confidence) {
+        case 'exact':
+            return _('exact');
+        case 'inferred':
+            return _('inferred');
+        default:
+            return _('incomplete');
+    }
+}
+
+function node_evidence_component_rows($resource, $filters, $pageSize = 1000)
+{
+    if ($pageSize < 1) {
+        throw new InvalidArgumentException('Evidence page size must be positive');
+    }
+
+    $rows = [];
+    $fromId = null;
+
+    do {
+        $input = $filters;
+        $input['limit'] = $pageSize;
+        if ($fromId !== null) {
+            $input['from_id'] = $fromId;
+        }
+
+        $fetched = 0;
+        foreach ($resource->list($input) as $row) {
+            $rowId = (int) $row->id;
+            if ($fromId !== null && $rowId <= $fromId) {
+                throw new UnexpectedValueException('Evidence pagination did not advance');
+            }
+
+            $rows[] = $row;
+            $fromId = $rowId;
+            $fetched++;
+        }
+    } while ($fetched === $pageSize);
+
+    return $rows;
+}
+
 function vps_link($vps)
 {
     return '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . '</a>';

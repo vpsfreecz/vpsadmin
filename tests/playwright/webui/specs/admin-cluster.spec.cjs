@@ -512,6 +512,80 @@ test.describe.serial('admin cluster browser coverage', () => {
     await logout(page, fixtures.admin.username);
   });
 
+  test('Node boot history distinguishes provenance and exposes scoped evidence', async ({ page }) => {
+    requireClusterAdminFixtures();
+    const evidence = fixtures.kernelEvidence;
+
+    await login(page, fixtures.admin);
+    await gotoNode(page, fixtures.node.id, 'kernel_history');
+    const history = page.locator('#node-kernel-history');
+    await expect(history.locator('th')).toContainText([
+      'Event',
+      'Effective or observed time',
+      'Booted kernel',
+      'Reported kernel',
+      'Origin',
+      'Time precision',
+    ]);
+    await expect(history).toContainText('node');
+    await expect(history).toContainText('reconstructed');
+    await expect(history).toContainText('exact');
+    await expect(history).toContainText('inferred');
+
+    const reportedLink = history.locator(
+      `a[href*="action=kernel_boot_evidence"][href*="event_id=${evidence.reportedBootId}"]`,
+    );
+    await expect(reportedLink).toHaveAttribute(
+      'data-vpsadmin-doc-id',
+      'node.kernel-boot-evidence',
+    );
+    await reportedLink.click();
+    await expect(heading(page)).toContainText('Boot evidence');
+    await expect(page.locator('#node-kernel-boot-evidence')).toContainText('node');
+    await expect(page.locator('#node-kernel-boot-evidence')).toContainText('exact');
+    await expect(page.locator('#node-kernel-boot-command-line code')).toBeVisible();
+
+    const commandLine = (await page
+      .locator('#node-kernel-boot-command-line code')
+      .innerText())
+      .trim();
+    const expectedNames = commandLine
+      .split(/\s+/)
+      .map((token) => token.split('=', 1)[0]);
+    const parameterNames = (await page
+      .locator('#node-kernel-boot-parameters tr td:first-child')
+      .allInnerTexts())
+      .map((value) => value.trim());
+    expect(parameterNames).toEqual(expectedNames);
+
+    await page.goto(
+      `/?page=node&action=kernel_boot_evidence&id=${fixtures.node.id}`
+      + `&event_id=${evidence.reconstructedBootId}`,
+      { waitUntil: 'domcontentloaded' },
+    );
+    await expect(page.locator('#perex')).toContainText('Detailed evidence unavailable');
+    await expect(page.locator('#perex')).toContainText('did not contain kernel parameters');
+
+    await page.goto(
+      `/?page=node&action=kernel_boot_evidence&id=${fixtures.cluster.nodes.node2.id}`
+      + `&event_id=${evidence.reportedBootId}`,
+      { waitUntil: 'domcontentloaded' },
+    );
+    await expect(page.locator('#perex')).toContainText('Access forbidden');
+    await expect(page.locator('#perex')).toContainText('does not belong to this Node');
+    await logout(page, fixtures.admin.username);
+
+    await login(page, fixtures.user);
+    await page.goto(
+      `/?page=node&action=kernel_boot_evidence&id=${fixtures.node.id}`
+      + `&event_id=${evidence.reportedBootId}`,
+      { waitUntil: 'domcontentloaded' },
+    );
+    await expect(page.locator('#perex')).toContainText('Access forbidden');
+    await expect(page.locator('#perex')).toContainText('available only to administrators');
+    await logout(page, fixtures.user.username);
+  });
+
   test('maintenance lock, event log, and help box actions work', async ({ page }) => {
     const c = requireClusterAdminFixtures();
     const eventLog = c.eventLog;

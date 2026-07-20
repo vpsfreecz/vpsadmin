@@ -1176,9 +1176,9 @@ msgstr ""
 msgid "Reason code"
 msgstr ""
 
-#: forms/dns.forms.php forms/outage.forms.php forms/users.forms.php
-#: forms/vps.forms.php pages/page_adminvps.php pages/page_cluster.php
-#: pages/page_lifetimes.php public/index.php
+#: forms/dns.forms.php forms/node.forms.php forms/outage.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminvps.php
+#: pages/page_cluster.php pages/page_lifetimes.php public/index.php
 msgid "Reason"
 msgstr ""
 
@@ -2126,7 +2126,11 @@ msgid "Reported kernel"
 msgstr ""
 
 #: forms/node.forms.php
-msgid "Evidence quality"
+msgid "Origin"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Time precision"
 msgstr ""
 
 #: forms/node.forms.php
@@ -2152,19 +2156,96 @@ msgid "before %s"
 msgstr ""
 
 #: forms/node.forms.php
-msgid "exact"
-msgstr ""
-
-#: forms/node.forms.php
-msgid "inferred"
-msgstr ""
-
-#: forms/node.forms.php
-msgid "incomplete"
-msgstr ""
-
-#: forms/node.forms.php
 msgid "No kernel history is available yet."
+msgstr ""
+
+#: forms/node.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: pages/page_backup.php pages/page_cluster.php pages/page_console.php
+#: pages/page_dataset.php pages/page_dns.php pages/page_export.php
+#: pages/page_history.php pages/page_incidents.php pages/page_jumpto.php
+#: pages/page_lifetimes.php pages/page_monitoring.php pages/page_nas.php
+#: pages/page_networking.php pages/page_node.php pages/page_oom_reports.php
+#: pages/page_outage.php pages/page_redirect.php pages/page_reminder.php
+#: pages/page_transactions.php pages/page_userdata.php pages/page_userns.php
+msgid "Access forbidden"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "The requested boot evidence does not belong to this Node."
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Boot evidence"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Boot ID"
+msgstr ""
+
+#: forms/node.forms.php lib/functions.lib.php
+msgid "unavailable"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Boot time"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Previous observation"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "First observation"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Detailed evidence unavailable"
+msgstr ""
+
+#: forms/node.forms.php
+msgid ""
+"This boot was reconstructed from legacy Node status samples, which did not "
+"contain kernel parameters."
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Evidence observed at"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Evidence received at"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Report schema version"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Evidence revision"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Kernel source revision"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Raw boot command line"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Booted parameters"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "No kernel parameter evidence is available for this boot."
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Collection errors"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Component"
 msgstr ""
 
 #: forms/node.forms.php pages/page_node.php
@@ -2199,31 +2280,12 @@ msgstr ""
 msgid "No system history is available yet."
 msgstr ""
 
-#: forms/node.forms.php pages/page_adminm.php pages/page_adminvps.php
-#: pages/page_backup.php pages/page_cluster.php pages/page_console.php
-#: pages/page_dataset.php pages/page_dns.php pages/page_export.php
-#: pages/page_history.php pages/page_incidents.php pages/page_jumpto.php
-#: pages/page_lifetimes.php pages/page_monitoring.php pages/page_nas.php
-#: pages/page_networking.php pages/page_node.php pages/page_oom_reports.php
-#: pages/page_outage.php pages/page_redirect.php pages/page_reminder.php
-#: pages/page_transactions.php pages/page_userdata.php pages/page_userns.php
-msgid "Access forbidden"
-msgstr ""
-
 #: forms/node.forms.php
 msgid "This Node evidence is available only to administrators."
 msgstr ""
 
 #: forms/node.forms.php pages/page_node.php
 msgid "Kernel parameters"
-msgstr ""
-
-#: forms/node.forms.php
-msgid "Raw boot command line"
-msgstr ""
-
-#: forms/node.forms.php
-msgid "Booted parameters"
 msgstr ""
 
 #: forms/node.forms.php
@@ -2252,10 +2314,6 @@ msgstr ""
 
 #: forms/node.forms.php
 msgid "not configured"
-msgstr ""
-
-#: forms/node.forms.php lib/functions.lib.php
-msgid "unavailable"
 msgstr ""
 
 #: forms/node.forms.php
@@ -2288,10 +2346,6 @@ msgstr ""
 
 #: forms/node.forms.php
 msgid "Current software versions"
-msgstr ""
-
-#: forms/node.forms.php
-msgid "Component"
 msgstr ""
 
 #: forms/node.forms.php
@@ -4723,6 +4777,26 @@ msgstr[1] ""
 
 #: lib/functions.lib.php
 msgid "Some input parameters are not valid."
+msgstr ""
+
+#: lib/functions.lib.php
+msgid "node"
+msgstr ""
+
+#: lib/functions.lib.php
+msgid "reconstructed"
+msgstr ""
+
+#: lib/functions.lib.php
+msgid "exact"
+msgstr ""
+
+#: lib/functions.lib.php
+msgid "inferred"
+msgstr ""
+
+#: lib/functions.lib.php
+msgid "incomplete"
 msgstr ""
 
 #: lib/functions.lib.php
