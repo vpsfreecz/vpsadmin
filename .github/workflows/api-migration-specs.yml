@@ -109,7 +109,8 @@ jobs:
           if [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             git -C api ls-files 'spec/migrations/*_spec.rb' | sort > api/tmp/migration-specs.txt
           else
-            git diff --name-only "${{ steps.base.outputs.ref }}...HEAD" -- \
+            git diff --name-only --diff-filter=ACMRTUXB \
+              "${{ steps.base.outputs.ref }}...HEAD" -- \
               'api/db/migrate/*.rb' \
               'plugins/*/api/db/migrate/*.rb' \
               'api/spec/migrations/*_spec.rb' \
