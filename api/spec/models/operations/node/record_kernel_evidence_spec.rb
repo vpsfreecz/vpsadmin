@@ -95,24 +95,6 @@ RSpec.describe VpsAdmin::API::Operations::Node::RecordKernelEvidence do
     VpsAdmin::API::KernelEvidence::SnapshotReader.call(snapshot)
   end
 
-  def event_snapshot(value, observed_at: t0 + 90)
-    VpsAdmin::API::KernelEvidence::SnapshotWriter.call(
-      snapshot: NodeKernelEvidence.new(node:, snapshot_type: :event),
-      report: report(value),
-      observed_at:,
-      received_at: observed_at
-    )
-  end
-
-  def capture_sql(&block)
-    statements = []
-    callback = lambda do |*, payload|
-      statements << payload[:sql] unless payload[:name] == 'SCHEMA'
-    end
-    ActiveSupport::Notifications.subscribed(callback, 'sql.active_record', &block)
-    statements
-  end
-
   before do
     node.node_kernel_events.delete_all
   end
@@ -405,116 +387,6 @@ RSpec.describe VpsAdmin::API::Operations::Node::RecordKernelEvidence do
     expect(boots.map(&:boot_id)).to eq(%w[boot-a boot-b])
   end
 
-  it 'reconciles a bootstrap event written by an old supervisor after migration' do
-    reconstructed = NodeKernelEvent.create!(
-      node:,
-      event_type: :boot,
-      source: :reconstructed_node_status,
-      confidence: :inferred,
-      booted_at: t0,
-      booted_release: '6.12.93',
-      reported_release: '6.12.93',
-      effective_at: t0,
-      observed_before: t0 + 60,
-      current: false
-    )
-    bootstrap = NodeKernelEvent.create!(
-      node:,
-      event_type: :boot,
-      source: :node_report,
-      confidence: :inferred,
-      boot_id: 'boot-a',
-      booted_at: nil,
-      booted_release: '6.12.93',
-      reported_release: '6.12.93',
-      observed_before: t0 + 90,
-      current: true,
-      kernel_evidence: event_snapshot(evidence)
-    )
-    current_report = report(evidence)
-
-    queries = capture_sql do
-      described_class.run(
-        node:,
-        observed_at: t0 + 120,
-        report: current_report,
-        previous_report: current_report,
-        previous_observed_at: t0 + 90
-      )
-    end
-
-    expect(bootstrap.reload).to be_exact
-    expect(bootstrap.effective_at).to eq(t0)
-    expect(NodeKernelEvent.exists?(reconstructed.id)).to be(false)
-    expect(node.node_kernel_events.kernel_history.sole).to eq(bootstrap)
-    expect(queries).to include(
-      a_string_matching(/SELECT .*node_kernel_events.*FOR UPDATE/mi)
-    )
-  end
-
-  it 'keeps bootstrap confidence tied to its immutable event evidence' do
-    exact_snapshot = event_snapshot(evidence)
-    bootstrap = NodeKernelEvent.create!(
-      node:,
-      event_type: :boot,
-      source: :node_report,
-      confidence: :inferred,
-      boot_id: 'boot-a',
-      booted_at: t0,
-      booted_release: '6.12.93',
-      reported_release: '6.12.93',
-      observed_before: t0 + 90,
-      current: true,
-      kernel_evidence: exact_snapshot
-    )
-    later_fallback = report(evidence(errors: [{
-      'component' => 'booted_at',
-      'reason' => 'estimated_from_uptime'
-    }]))
-
-    described_class.run(
-      node:,
-      observed_at: t0 + 120,
-      report: later_fallback,
-      previous_report: later_fallback,
-      previous_observed_at: t0 + 90
-    )
-
-    expect(bootstrap.reload).to be_exact
-    expect(bootstrap.effective_at).to eq(exact_snapshot.booted_at)
-
-    node.node_kernel_events.delete_all
-    estimated_snapshot = event_snapshot(evidence(errors: [{
-      'component' => 'booted_at',
-      'reason' => 'estimated_from_uptime'
-    }]))
-    bootstrap = NodeKernelEvent.create!(
-      node:,
-      event_type: :boot,
-      source: :node_report,
-      confidence: :exact,
-      boot_id: 'boot-a',
-      booted_at: t0,
-      booted_release: '6.12.93',
-      reported_release: '6.12.93',
-      observed_before: t0 + 90,
-      current: true,
-      kernel_evidence: estimated_snapshot
-    )
-    later_exact = report(evidence)
-
-    described_class.run(
-      node:,
-      observed_at: t0 + 120,
-      report: later_exact,
-      previous_report: later_exact,
-      previous_observed_at: t0 + 90
-    )
-
-    expect(bootstrap.reload).to be_inferred
-    expect(bootstrap.effective_at).to eq(estimated_snapshot.booted_at)
-  end
-
   it 'deletes at most one reconstructed boot per reported event' do
     reconstructed = 2.times.map do |index|
       NodeKernelEvent.create!(
@@ -530,84 +402,14 @@ RSpec.describe VpsAdmin::API::Operations::Node::RecordKernelEvidence do
         current: false
       )
     end
-    bootstrap = NodeKernelEvent.create!(
-      node:,
-      event_type: :boot,
-      source: :node_report,
-      confidence: :inferred,
-      boot_id: 'boot-a',
-      booted_at: t0,
-      booted_release: '6.12.93',
-      reported_release: '6.12.93',
-      observed_before: t0 + 90,
-      current: true,
-      kernel_evidence: event_snapshot(evidence)
-    )
-    current_report = report(evidence)
-
-    2.times do |index|
-      described_class.run(
-        node:,
-        observed_at: t0 + 120 + index.minutes,
-        report: current_report,
-        previous_report: current_report,
-        previous_observed_at: t0 + 90 + index.minutes
-      )
-    end
+    described_class.run(node:, observed_at: t0 + 120, report: report(evidence))
 
     expect(NodeKernelEvent.exists?(reconstructed.first.id)).to be(false)
     expect(NodeKernelEvent.exists?(reconstructed.last.id)).to be(true)
+    reported = node.node_kernel_events.node_report.boot.sole
     expect(node.node_kernel_events.kernel_history).to contain_exactly(
-      bootstrap,
+      reported,
       reconstructed.last
     )
-  end
-
-  it 'repairs an actual reboot written by an old rolling-window supervisor' do
-    rebooted_at = t0 + 1.hour
-    reboot_report = evidence(
-      boot_id: 'boot-b',
-      booted_at: rebooted_at.iso8601
-    )
-    reconstructed = NodeKernelEvent.create!(
-      node:,
-      event_type: :boot,
-      source: :reconstructed_node_status,
-      confidence: :inferred,
-      booted_at: rebooted_at,
-      booted_release: '6.12.93',
-      reported_release: '6.12.93',
-      effective_at: rebooted_at,
-      observed_before: rebooted_at + 5,
-      current: false
-    )
-    reported = NodeKernelEvent.create!(
-      node:,
-      event_type: :boot,
-      source: :node_report,
-      confidence: :inferred,
-      boot_id: 'boot-b',
-      booted_at: rebooted_at,
-      booted_release: '6.12.93',
-      reported_release: '6.12.93',
-      observed_after: t0 + 10,
-      observed_before: rebooted_at + 10,
-      current: true,
-      kernel_evidence: event_snapshot(reboot_report, observed_at: rebooted_at + 10)
-    )
-    current_report = report(reboot_report)
-
-    described_class.run(
-      node:,
-      observed_at: rebooted_at + 30,
-      report: current_report,
-      previous_report: current_report,
-      previous_observed_at: rebooted_at + 10
-    )
-
-    expect(reported.reload).to be_exact
-    expect(reported.effective_at).to eq(rebooted_at)
-    expect(NodeKernelEvent.exists?(reconstructed.id)).to be(true)
-    expect(node.node_kernel_events.kernel_history).to contain_exactly(reconstructed, reported)
   end
 end

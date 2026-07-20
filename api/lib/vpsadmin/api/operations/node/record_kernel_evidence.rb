@@ -18,8 +18,6 @@ module VpsAdmin::API
       @received_at = received_at
 
       node.with_lock do
-        reconcile_existing_reported_boot!(node, report)
-
         if new_boot?(report, previous_report)
           booted_at = parse_time(report.kernel.booted_at)
           event = create_event!(
@@ -249,38 +247,6 @@ module VpsAdmin::API
 
         parse_time(value)
       end.max
-    end
-
-    # An old supervisor can write a boot event after the corrective migration and
-    # before the new application reaches that host. Fix that event when the new
-    # supervisor sees the same boot, including an actual rolling-window reboot.
-    def reconcile_existing_reported_boot!(node, report)
-      event = node.node_kernel_events.node_report.boot
-                  .lock
-                  .order(observed_before: :desc, id: :desc)
-                  .detect { |candidate| same_boot?(candidate, report.kernel) }
-      return unless event
-
-      evidence = event.kernel_evidence
-      return unless evidence
-
-      attributes = {
-        effective_at: evidence.booted_at,
-        confidence: VpsAdmin::API::KernelEvidence::BootTimeConfidence.from_evidence(evidence)
-      }
-      return if attributes.all? { |name, value| event.public_send(name) == value }
-
-      event.update!(attributes)
-      delete_reconstructed_boot_duplicate!(node, event)
-    end
-
-    def same_boot?(event, kernel)
-      return event.boot_id == kernel.boot_id if event.boot_id && kernel.boot_id
-
-      booted_at = parse_time(kernel.booted_at)
-      return false unless event.booted_at && booted_at
-
-      (event.booted_at - booted_at).abs <= BOOT_TIME_TOLERANCE
     end
 
     def delete_reconstructed_boot_duplicate!(node, reported_event)
