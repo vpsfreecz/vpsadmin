@@ -19,7 +19,7 @@ RSpec.describe VpsAdmin::API::Authentication::TokenConfig do
     )
   end
 
-  def request_token(password: 'secret', auth_request: request)
+  def request_token(password: 'secret', auth_request: request, scope: 'all')
     described_class.request.handle.call(
       HaveAPI::Authentication::Token::ActionRequest.new(
         request: auth_request,
@@ -28,7 +28,7 @@ RSpec.describe VpsAdmin::API::Authentication::TokenConfig do
           password:,
           lifetime: 'fixed',
           interval: 3600,
-          scope: 'all'
+          scope:
         }
       ),
       HaveAPI::Authentication::Token::ActionResult.new
@@ -49,6 +49,19 @@ RSpec.describe VpsAdmin::API::Authentication::TokenConfig do
           token:,
           new_password1:,
           new_password2:
+        }
+      ),
+      HaveAPI::Authentication::Token::ActionResult.new
+    )
+  end
+
+  def complete_totp(token, code)
+    described_class.actions.fetch(:totp).handle.call(
+      HaveAPI::Authentication::Token::ActionRequest.new(
+        request:,
+        input: {
+          token:,
+          code:
         }
       ),
       HaveAPI::Authentication::Token::ActionResult.new
@@ -88,6 +101,45 @@ RSpec.describe VpsAdmin::API::Authentication::TokenConfig do
       'interval' => 3600,
       'scope' => ['all']
     )
+  end
+
+  it 'preserves long token scopes through multi-factor authentication' do
+    scopes = %w[
+      token#revoke
+      node#index
+      node#show
+      node_kernel_evidence#index
+      node_kernel_evidence#show
+      node_cgroup_state#index
+      node_kernel_event#index
+      node_kernel_configuration_option#index
+      node_kernel_parameter#index
+      node_kernel_module#index
+      node_sysctl#index
+      node_software_version#index
+    ]
+    user.update!(enable_multi_factor_auth: true)
+    device = create_totp_device!(user:)
+    now = Time.now.change(usec: 0)
+    allow(Time).to receive(:now).and_return(now)
+
+    continuation = request_token(scope: scopes.join(' '))
+
+    expect(continuation).to be_ok
+    expect(continuation).not_to be_complete
+    expect(continuation.next_action).to eq(:totp)
+
+    auth_token = AuthToken.joins(:token).find_by!(tokens: { token: continuation.token })
+    expect(auth_token.opts['scope']).to eq(scopes)
+
+    result = complete_totp(continuation.token, device.totp.at(now))
+
+    expect(result).to be_ok
+    expect(result).to be_complete
+    expect(AuthToken.exists?(auth_token.id)).to be(false)
+
+    session = UserSession.joins(:token).find_by!(tokens: { token: result.token })
+    expect(session.scope).to eq(scopes)
   end
 
   it 'creates token sessions without a user agent header' do
