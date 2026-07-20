@@ -376,12 +376,12 @@ RSpec.describe VpsAdmin::Supervisor::Node::Status do
       expect(node.node_kernel_events.boot.sole.software_changes.count).to eq(6)
     end
 
-    it 'normalizes legacy configuration provenance independently for each closure' do
+    it 'stores canonical system configuration provenance independently for each closure' do
       current = NodeCurrentStatus.find_or_initialize_by(node:)
       value = evidence
       value.fetch('software_versions') << {
         'generation' => 'current',
-        'component' => 'vpsfree_cz_configuration',
+        'component' => 'system_configuration',
         'version' => nil,
         'version_source' => nil,
         'revision' => 'd' * 40,
@@ -415,23 +415,36 @@ RSpec.describe VpsAdmin::Supervisor::Node::Status do
       ).to eq('d' * 40)
     end
 
-    it 'rejects duplicate legacy and generic configuration identities' do
+    it 'rejects the retired configuration component without losing ordinary status' do
+      current = NodeCurrentStatus.find_or_initialize_by(node:)
       value = evidence
-      configuration = {
+      value.fetch('software_versions') << {
         'generation' => 'current',
-        'component' => 'system_configuration',
+        'component' => 'vpsfree_cz_configuration',
         'version' => nil,
         'version_source' => nil,
         'revision' => 'd' * 40,
         'revision_source' => 'native',
         'revision_dirty' => false
       }
-      value.fetch('software_versions') << configuration
-      value.fetch('software_versions') << configuration.merge(
-        'component' => 'vpsfree_cz_configuration'
+
+      supervisor.send(
+        :update_status,
+        current,
+        payload('security_evidence' => value)
       )
 
-      expect(parse_evidence(value).record_events).to be(false)
+      current.reload
+      expect(current.uptime).to eq(3600)
+      expect(stored_report(current).fetch('schema_version')).to eq(1)
+      expect(stored_report(current).dig('errors', 0, 'reason'))
+        .to include('software_versions.component is invalid')
+      expect(node.node_kernel_events).to be_empty
+      expect(node.node_system_states.sole).to have_attributes(
+        first_observed_at: timestamp,
+        last_observed_at: timestamp,
+        current: true
+      )
     end
 
     it 'rejects non-scalar sysctl values and non-string eBPF metadata' do
