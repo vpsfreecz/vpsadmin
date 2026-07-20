@@ -540,7 +540,8 @@ function node_software_versions_table($node_id)
 
     $matrix = [];
     foreach ($versions as $version) {
-        $matrix[$version->component][$version->generation] = $version;
+        $component = node_software_component_key($version->component);
+        $matrix[$component][$version->generation] = $version;
     }
     $changesByEvent = [];
     foreach ($changes as $change) {
@@ -556,8 +557,8 @@ function node_software_versions_table($node_id)
     $xtpl->table_add_category(_('Current closure revision'));
 
     $components = ['vpsadminos', 'vpsadmin', 'nixpkgs'];
-    if (isset($matrix['vpsfree_cz_configuration'])) {
-        $components[] = 'vpsfree_cz_configuration';
+    if (isset($matrix['system_configuration'])) {
+        $components[] = 'system_configuration';
     }
 
     foreach ($components as $component) {
@@ -663,15 +664,15 @@ function node_sysctl_state($change, $prefix)
 
 function node_software_component_label($component)
 {
-    switch ($component) {
+    switch (node_software_component_key($component)) {
         case 'vpsadminos':
             return 'vpsAdminOS';
         case 'vpsadmin':
             return 'vpsAdmin';
         case 'nixpkgs':
             return 'nixpkgs';
-        case 'vpsfree_cz_configuration':
-            return _('vpsFree.cz configuration');
+        case 'system_configuration':
+            return _('System configuration');
         default:
             return $component;
     }

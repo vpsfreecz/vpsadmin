@@ -351,12 +351,12 @@ en:
         choices:
           nixpkgs:
             label: nixpkgs
+          system_configuration:
+            label: system_configuration
           vpsadmin:
             label: vpsadmin
           vpsadminos:
             label: vpsadminos
-          vpsfree_cz_configuration:
-            label: vpsfree_cz_configuration
         description: Filter outages by vpsAdmin component
         label: Component
       compression:

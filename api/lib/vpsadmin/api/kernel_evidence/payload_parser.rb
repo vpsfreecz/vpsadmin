@@ -3,8 +3,10 @@ require 'time'
 
 module VpsAdmin::API::KernelEvidence
   class PayloadParser
+    LEGACY_SYSTEM_CONFIGURATION_COMPONENT = 'vpsfree_cz_configuration'.freeze
     MAX_CONFIGURATION_BYTES = 1_048_576
     SCHEMA_VERSION = 1
+    SYSTEM_CONFIGURATION_COMPONENT = 'system_configuration'.freeze
     Result = Data.define(:report, :kernel_configuration, :record_events)
 
     def self.call(raw) = new(raw).call
@@ -21,6 +23,7 @@ module VpsAdmin::API::KernelEvidence
       end
 
       payload = @raw.deep_dup
+      normalize_legacy_software_components!(payload)
       validate!(payload)
       configuration = extract_configuration!(payload)
 
@@ -135,7 +138,7 @@ module VpsAdmin::API::KernelEvidence
       end
 
       required = %w[booted current].product(%w[vpsadminos vpsadmin nixpkgs])
-      optional = %w[booted current].product(%w[vpsfree_cz_configuration])
+      optional = %w[booted current].product([SYSTEM_CONFIGURATION_COMPONENT])
       allowed = required + optional
       actual = identities.map do |identity|
         generation = identity.fetch('generation')
@@ -157,6 +160,18 @@ module VpsAdmin::API::KernelEvidence
 
       raise TypeError,
             'software_versions must contain every required identity and no duplicate identities'
+    end
+
+    def normalize_legacy_software_components!(payload)
+      identities = payload['software_versions']
+      return unless identities.is_a?(Array)
+
+      identities.each do |identity|
+        next unless identity.is_a?(Hash)
+        next unless identity['component'] == LEGACY_SYSTEM_CONFIGURATION_COMPONENT
+
+        identity['component'] = SYSTEM_CONFIGURATION_COMPONENT
+      end
     end
 
     def validate_software_identity!(identity)

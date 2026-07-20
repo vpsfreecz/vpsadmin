@@ -381,7 +381,7 @@ RSpec.describe NodeCtld::SystemProbes::SecurityEvidence do
       },
       {
         'generation' => 'booted',
-        'component' => 'vpsfree_cz_configuration',
+        'component' => 'system_configuration',
         'version' => nil,
         'version_source' => nil,
         'revision' => configuration_revision,
@@ -390,7 +390,7 @@ RSpec.describe NodeCtld::SystemProbes::SecurityEvidence do
       },
       {
         'generation' => 'current',
-        'component' => 'vpsfree_cz_configuration',
+        'component' => 'system_configuration',
         'version' => nil,
         'version_source' => nil,
         'revision' => configuration_revision,

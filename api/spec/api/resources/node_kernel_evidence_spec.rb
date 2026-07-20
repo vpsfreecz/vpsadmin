@@ -495,7 +495,7 @@ RSpec.describe VpsAdmin::API::Resources::NodeKernelEvidence do
 
     node.node_current_status.kernel_evidence.software_versions.create!(
       generation: :current,
-      component: :vpsfree_cz_configuration,
+      component: :system_configuration,
       revision: 'd' * 40,
       revision_source: :native,
       revision_dirty: true
@@ -503,13 +503,13 @@ RSpec.describe VpsAdmin::API::Resources::NodeKernelEvidence do
     admin_get(
       'node_software_versions',
       node: node.id,
-      component: 'vpsfree_cz_configuration',
+      component: 'system_configuration',
       revision_dirty: true
     )
     expect(rows('node_software_versions')).to contain_exactly(
       include(
         'generation' => 'current',
-        'component' => 'vpsfree_cz_configuration',
+        'component' => 'system_configuration',
         'version' => nil,
         'revision' => 'd' * 40,
         'revision_source' => 'native',

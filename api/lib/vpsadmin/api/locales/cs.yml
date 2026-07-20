@@ -350,12 +350,12 @@ cs:
         choices:
           nixpkgs:
             label: nixpkgs
+          system_configuration:
+            label: Konfigurace systému
           vpsadmin:
             label: vpsAdmin
           vpsadminos:
             label: vpsAdminOS
-          vpsfree_cz_configuration:
-            label: Konfigurace vpsFree.cz
         description: Filtrovat hlášení podle komponenty vpsAdminu
         label: Komponenta
       compression:

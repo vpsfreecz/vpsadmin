@@ -21,7 +21,7 @@ final class NodeEvidencePagesTest extends TestCase
         self::assertStringContainsString("_('Software versions')", $source);
         self::assertStringContainsString("node_admin_page_forbidden();", $source);
         self::assertStringContainsString(
-            "case 'vpsfree_cz_configuration':",
+            "case 'system_configuration':",
             $forms
         );
     }
@@ -163,20 +163,35 @@ final class NodeEvidencePagesTest extends TestCase
 
     public function testRevisionLinksRequireExactCommitsAndMarkModifiedSources(): void
     {
+        $functions = file_get_contents(dirname(__DIR__, 2) . '/lib/functions.lib.php');
         $revision = str_repeat('a', 40);
         $link = node_software_revision_link('nixpkgs', $revision, true);
 
+        self::assertStringNotContainsString('vpsfree-cz-configuration', $functions);
         self::assertStringContainsString('github.com/NixOS/nixpkgs/commit/' . $revision, $link);
         self::assertStringContainsString('>aaaaaaaaaaaa</a>', $link);
         self::assertStringContainsString('(modified)', $link);
-        $configurationLink = node_software_revision_link(
-            'vpsfree_cz_configuration',
-            $revision
+        self::assertSame(
+            'system_configuration',
+            node_software_component_key('vpsfree_cz_configuration')
         );
+        self::assertSame(
+            'unavailable',
+            node_software_revision_link('system_configuration', $revision)
+        );
+
+        define('SOFTWARE_REVISION_LINKS', [
+            'nixpkgs' => 'https://github.com/NixOS/nixpkgs/commit/',
+            'system_configuration'
+                => 'https://github.com/vpsfreecz/vpsfree-cz-configuration/commit/',
+            'unsafe' => 'javascript:alert(1)',
+        ]);
+        $configurationLink = node_software_revision_link('system_configuration', $revision);
         self::assertStringContainsString(
             'github.com/vpsfreecz/vpsfree-cz-configuration/commit/' . $revision,
             $configurationLink
         );
+        self::assertSame('unavailable', node_software_revision_link('unsafe', $revision));
         self::assertSame('unavailable', node_software_revision_link('vpsadmin', 'dev'));
         self::assertSame('unavailable', node_software_revision_link('vpsadminos', 'staging'));
     }

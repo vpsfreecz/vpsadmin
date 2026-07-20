@@ -10,6 +10,11 @@ let
   cfg = config.vpsadmin.webui;
   app = "vpsadmin-webui";
   boolToPhp = v: if v then "true" else "false";
+  softwareRevisionLinksPhp = concatStringsSep "\n" (
+    mapAttrsToList (
+      component: url: "${builtins.toJSON component} => ${builtins.toJSON url},"
+    ) cfg.softwareRevisionLinks
+  );
   rootDir = if isNull cfg.sourceCodeDir then cfg.package else cfg.sourceCodeDir;
   phpEntrypointConfig = ''
     fastcgi_split_path_info ^(.+\.php)(/.+)$;
@@ -133,6 +138,19 @@ in
       nasPublic = mkOption {
         type = types.bool;
         default = true;
+      };
+
+      softwareRevisionLinks = mkOption {
+        type = types.attrsOf types.str;
+        default = {
+          nixpkgs = "https://github.com/NixOS/nixpkgs/commit/";
+          vpsadmin = "https://github.com/vpsfreecz/vpsadmin/commit/";
+          vpsadminos = "https://github.com/vpsfreecz/vpsadminos/commit/";
+        };
+        description = ''
+          Commit URL prefixes keyed by Node software component. Components not
+          present in this mapping are rendered without a revision link.
+        '';
       };
 
       extraConfig = mkOption {
@@ -289,6 +307,9 @@ in
       define ('USERNS_PUBLIC', ${boolToPhp cfg.usernsPublic});
       define ('EXPORT_PUBLIC', ${boolToPhp cfg.exportPublic});
       define ('NAS_PUBLIC', ${boolToPhp cfg.nasPublic});
+      define ('SOFTWARE_REVISION_LINKS', [
+        ${softwareRevisionLinksPhp}
+      ]);
 
       define ('WEBUI_ROOT', '${rootDir}/');
 

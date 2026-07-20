@@ -2421,8 +2421,8 @@ msgid "Available"
 msgstr "K dispozici"
 
 #: forms/node.forms.php
-msgid "vpsFree.cz configuration"
-msgstr "Konfigurace vpsFree.cz"
+msgid "System configuration"
+msgstr "Konfigurace systému"
 
 #: forms/node.forms.php
 msgid "initial baseline"
@@ -8305,6 +8305,9 @@ msgstr "Pomoc"
 
 #~ msgid "reported by Node"
 #~ msgstr "hlášeno Nodem"
+
+#~ msgid "vpsFree.cz configuration"
+#~ msgstr "Konfigurace vpsFree.cz"
 
 #~ msgid ""
 #~ "Boot times reconstructed from status reports are estimates. Runtime "

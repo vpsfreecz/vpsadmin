@@ -2405,7 +2405,7 @@ msgid "Available"
 msgstr ""
 
 #: forms/node.forms.php
-msgid "vpsFree.cz configuration"
+msgid "System configuration"
 msgstr ""
 
 #: forms/node.forms.php

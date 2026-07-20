@@ -376,7 +376,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::Status do
       expect(node.node_kernel_events.boot.sole.software_changes.count).to eq(6)
     end
 
-    it 'stores optional configuration provenance independently for each closure' do
+    it 'normalizes legacy configuration provenance independently for each closure' do
       current = NodeCurrentStatus.find_or_initialize_by(node:)
       value = evidence
       value.fetch('software_versions') << {
@@ -397,19 +397,41 @@ RSpec.describe VpsAdmin::Supervisor::Node::Status do
 
       configuration = current.reload.kernel_evidence.software_versions.find_by!(
         generation: :current,
-        component: :vpsfree_cz_configuration
+        component: :system_configuration
       )
       expect(configuration).to have_attributes(
         revision: 'd' * 40,
         revision_source: 'native',
         revision_dirty: true
       )
+      expect(configuration.component_before_type_cast).to eq(3)
+      expect(NodeSoftwareVersion.components.fetch('system_configuration')).to eq(3)
+      expect(NodeSoftwareChange.components.fetch('system_configuration')).to eq(3)
       expect(current.kernel_evidence.software_versions.count).to eq(7)
       expect(
         node.node_kernel_events.boot.sole.software_changes
-            .find_by!(generation: :current, component: :vpsfree_cz_configuration)
+            .find_by!(generation: :current, component: :system_configuration)
             .after_revision
       ).to eq('d' * 40)
+    end
+
+    it 'rejects duplicate legacy and generic configuration identities' do
+      value = evidence
+      configuration = {
+        'generation' => 'current',
+        'component' => 'system_configuration',
+        'version' => nil,
+        'version_source' => nil,
+        'revision' => 'd' * 40,
+        'revision_source' => 'native',
+        'revision_dirty' => false
+      }
+      value.fetch('software_versions') << configuration
+      value.fetch('software_versions') << configuration.merge(
+        'component' => 'vpsfree_cz_configuration'
+      )
+
+      expect(parse_evidence(value).record_events).to be(false)
     end
 
     it 'rejects non-scalar sysctl values and non-string eBPF metadata' do

@@ -221,7 +221,7 @@ module NodeCtld::SystemProbes
           revision_key: 'nixpkgsRevision',
           dirty_key: nil
         ),
-        configuration_software_version('booted', configuration_info)
+        system_configuration_software_version('booted', configuration_info)
       ].compact
     end
 
@@ -243,18 +243,18 @@ module NodeCtld::SystemProbes
           revision_key: 'nixpkgsRevision',
           dirty_key: nil
         ),
-        configuration_software_version('current', configuration_info)
+        system_configuration_software_version('current', configuration_info)
       ].compact
       verify_running_vpsadmin(vpsadmin_metadata, versions)
       versions
     end
 
-    def configuration_software_version(generation, metadata)
+    def system_configuration_software_version(generation, metadata)
       return if metadata.nil?
 
       {
         'generation' => generation,
-        'component' => 'vpsfree_cz_configuration',
+        'component' => 'system_configuration',
         'version' => nil,
         'version_source' => nil,
         'revision' => metadata.fetch('revision'),

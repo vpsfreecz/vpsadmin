@@ -4,7 +4,7 @@ class NodeSoftwareVersion < ApplicationRecord
   delegate :snapshot_type, :snapshot_revision, :observed_at, to: :node_kernel_evidence
 
   enum :generation, %i[booted current]
-  enum :component, %i[vpsadminos vpsadmin nixpkgs vpsfree_cz_configuration]
+  enum :component, %i[vpsadminos vpsadmin nixpkgs system_configuration]
   enum :version_source, { native: 0 }, prefix: :version
   enum :revision_source, { native: 0, confctl: 1 }, prefix: :revision
 
