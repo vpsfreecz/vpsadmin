@@ -1437,6 +1437,23 @@ import ../make-test.nix (
         language: language,
         monthly_payment: 100
       )
+      hard_deleted_request_user = User.unscoped.find_by(
+        login: 'webui-hard-deleted-request-user'
+      )
+      if hard_deleted_request_user
+        hard_deleted_request_user.update_column(
+          :object_state,
+          User.object_states[:active]
+        )
+      end
+      hard_deleted_request_user = ensure_webui_user(
+        login: 'webui-hard-deleted-request-user',
+        full_name: 'Webui Hard Deleted Request User',
+        email: 'webui-hard-deleted-request-user@example.test',
+        password: 'webuiHardDeletedRequestUserPassword',
+        env: env,
+        language: language
+      )
       time_zone_tip_set_user = ensure_webui_user(
         login: 'webui-time-zone-tip-set',
         full_name: 'Webui Time Zone Tip Set',
@@ -1830,6 +1847,25 @@ import ../make-test.nix (
       admin_approval_approve = create_admin_change_request.call('approve')
       admin_approval_deny = create_admin_change_request.call('deny')
       admin_approval_ignore = create_admin_change_request.call('ignore')
+      hard_deleted_request_reason = 'Webui hard-deleted user approval denied'
+      UserRequest.where(change_reason: hard_deleted_request_reason).delete_all
+      hard_deleted_request = ChangeRequest.new(
+        user: hard_deleted_request_user,
+        state: :denied,
+        api_ip_addr: '192.0.2.32',
+        api_ip_ptr: 'webui-hard-deleted-approval.example.test',
+        client_ip_addr: '198.51.100.32',
+        client_ip_ptr: 'webui-hard-deleted-client.example.test',
+        change_reason: hard_deleted_request_reason,
+        full_name: 'Webui Hard Deleted Requested Name',
+        email: 'webui-hard-deleted-requested@example.test',
+        address: 'Webui Hard Deleted Requested Address'
+      )
+      hard_deleted_request.save!
+      hard_deleted_request_user.update_column(
+        :object_state,
+        User.object_states[:hard_delete]
+      )
 
       self_service_prefix = 'Webui Self-Service'
       UserPublicKey
@@ -3908,6 +3944,15 @@ import ../make-test.nix (
                 'id' => admin_approval_ignore.id,
                 'type' => 'change',
                 'reason' => admin_approval_ignore.change_reason
+              },
+              'hardDeletedDenied' => {
+                'id' => hard_deleted_request.id,
+                'type' => 'change',
+                'reason' => hard_deleted_request.change_reason,
+                'userId' => hard_deleted_request.user_id,
+                'fullName' => hard_deleted_request.full_name,
+                'email' => hard_deleted_request.email,
+                'address' => hard_deleted_request.address
               }
             }
           }

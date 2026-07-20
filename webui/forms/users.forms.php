@@ -332,6 +332,11 @@ function user_request_type_label($type)
     return user_request_type_labels()[$type];
 }
 
+function user_request_raw_user_id($request)
+{
+    return $request->attributes()['raw_user_id'] ?? null;
+}
+
 function approval_requests_list()
 {
     global $xtpl, $api;
@@ -436,6 +441,8 @@ function approval_requests_list()
     foreach ($requestsSlice as $r) {
         $type = $r->currency ? 'registration' : 'change';
         $nextUrl = urlencode($_SERVER['REQUEST_URI']);
+        $requestUser = $type == 'change' && $r->user_id ? $r->user : null;
+        $canResolve = $type != 'change' || $requestUser;
 
         $xtpl->table_td('<a href="?page=adminm&action=request_details&id=' . $r->id . '&type=' . $type . '">#' . $r->id . '</a>');
         $xtpl->table_td(tolocaltz($r->created_at));
@@ -443,9 +450,20 @@ function approval_requests_list()
         $xtpl->table_td(api_param_choice_label($stateParam, $r->state));
         $xtpl->table_td($r->admin_id ? ('<a href="?page=adminm&action=edit&id=' . $r->admin_id . '&type=' . $type . '">' . $r->admin->login . '</a>') : '-');
         $xtpl->table_td('<a href="?page=adminm&action=request_details&id=' . $r->id . '&type=' . $type . '"><img src="template/icons/m_edit.png"  title="' . _("Details") . '" /></a>');
-        $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type . '&rule=approve&t=' . csrf_token() . '&next_url=' . $nextUrl . '">' . _("approve") . '</a>');
-        $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type . '&rule=deny&t=' . csrf_token() . '&next_url=' . $nextUrl . '">' . _("deny") . '</a>');
-        $xtpl->table_td('<a href="?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type . '&rule=ignore&t=' . csrf_token() . '&next_url=' . $nextUrl . '">' . _("ignore") . '</a>');
+
+        foreach ([
+            'approve' => _("approve"),
+            'deny' => _("deny"),
+            'ignore' => _("ignore"),
+        ] as $rule => $label) {
+            $xtpl->table_td(
+                $canResolve
+                    ? '<a href="?page=adminm&action=request_process&id=' . $r->id
+                        . '&type=' . $type . '&rule=' . $rule . '&t=' . csrf_token()
+                        . '&next_url=' . $nextUrl . '">' . $label . '</a>'
+                    : '-'
+            );
+        }
 
         $xtpl->table_tr();
 
@@ -475,7 +493,7 @@ function approval_requests_list()
             ];
         } else {
             $dl = [
-                _('User') => $r->user->login,
+                _('User') => $requestUser ? $requestUser->login : user_request_raw_user_id($r),
             ];
 
             $changeable = [
@@ -485,7 +503,7 @@ function approval_requests_list()
             ];
 
             foreach ($changeable as $param => $label) {
-                if ($r->user->{$param} == $r->{$param}) {
+                if ($requestUser && $requestUser->{$param} == $r->{$param}) {
                     continue;
                 }
 
@@ -511,6 +529,8 @@ function approval_requests_details($type, $id)
 
     $r = $api->user_request->{$type}->show($id);
     $stateParam = $api->user_request->{$type}->index->getParameters('input')->state;
+    $requestUser = $r->user_id ? $r->user : null;
+    $rawUserId = user_request_raw_user_id($r);
 
     $xtpl->title(_("Request for approval details"));
 
@@ -534,7 +554,7 @@ function approval_requests_details($type, $id)
     $xtpl->table_tr();
 
     $xtpl->table_td(_("Applicant") . ':');
-    $xtpl->table_td($r->user_id ? ('<a href="?page=adminm&action=edit&id=' . $r->user_id . '">' . $r->user->login . '</a>') : '-');
+    $xtpl->table_td($requestUser ? user_link($requestUser) : ($rawUserId ?? '-'));
     $xtpl->table_tr();
 
     $xtpl->table_td(_("Admin") . ':');
@@ -718,13 +738,35 @@ function approval_requests_details($type, $id)
         $xtpl->table_out();
     };
 
-    $xtpl->form_create('?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type, 'post');
     $params = $r->resolve->getParameters('input');
     $request_attrs = $r->show->getParameters('output');
 
+    if ($type == 'change' && !$requestUser) {
+        $xtpl->table_add_category(_('Request info'));
+        $xtpl->table_add_category('');
+
+        foreach ([
+            'full_name' => _('Full name'),
+            'email' => _('E-mail'),
+            'address' => _('Address'),
+        ] as $param => $label) {
+            $xtpl->table_td($label . ':');
+            $xtpl->table_td(h($r->{$param}));
+            $xtpl->table_tr();
+        }
+
+        $xtpl->table_td(_('Change reason') . ':');
+        $xtpl->table_td(h($r->change_reason));
+        $xtpl->table_tr();
+        $xtpl->table_out();
+        return;
+    }
+
+    $xtpl->form_create('?page=adminm&action=request_process&id=' . $r->id . '&type=' . $type, 'post');
+
     if ($type == 'change') {
         $xtpl->table_td(_('Full name') . ':', false, false, '1', '2');
-        $xtpl->table_td(h($r->user->full_name));
+        $xtpl->table_td(h($requestUser->full_name));
         $xtpl->table_tr();
         $xtpl->form_add_input_pure(
             'text',
@@ -735,7 +777,7 @@ function approval_requests_details($type, $id)
         $xtpl->table_tr();
 
         $xtpl->table_td(_('E-mail') . ':', false, false, '1', '2');
-        $xtpl->table_td(h($r->user->email));
+        $xtpl->table_td(h($requestUser->email));
         $xtpl->table_tr();
         $xtpl->form_add_input_pure(
             'text',
@@ -746,7 +788,7 @@ function approval_requests_details($type, $id)
         $xtpl->table_tr();
 
         $xtpl->table_td(_('Address') . ':', false, false, '1', '2');
-        $xtpl->table_td(h($r->user->address));
+        $xtpl->table_td(h($requestUser->address));
         $xtpl->table_tr();
         $xtpl->form_add_input_pure(
             'text',

@@ -32,6 +32,10 @@ class UserRequest < ApplicationRecord
     req
   end
 
+  def raw_user_id
+    user_id
+  end
+
   def user_mail
     user.email
   end
@@ -49,6 +53,11 @@ class UserRequest < ApplicationRecord
   end
 
   def resolve(action, reason, params)
+    if user_required_for_resolution? && !user
+      errors.add(:user, 'no longer exists')
+      raise ActiveRecord::RecordInvalid, self
+    end
+
     target_state = {
       approve: :approved,
       deny: :denied,
@@ -79,6 +88,10 @@ class UserRequest < ApplicationRecord
   def invalidate(chain, params); end
 
   def request_correction(chain, params); end
+
+  def user_required_for_resolution?
+    user_id.present?
+  end
 
   private
 

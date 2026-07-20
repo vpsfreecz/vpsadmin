@@ -574,6 +574,39 @@ test.describe.serial('admin member and user management browser coverage', () => 
 
     await login(page, fixtures.admin);
 
+    const hardDeleted = requests.hardDeletedDenied;
+    await page.goto(
+      '/?page=adminm&action=approval_requests&type=change&state=denied&limit=10',
+      { waitUntil: 'domcontentloaded' },
+    );
+    await expect(page.locator('#content-in')).toContainText(hardDeleted.reason);
+    const hardDeletedRow = rowWithText(page, hardDeleted.reason);
+    const hardDeletedUser = hardDeletedRow
+      .locator('dt')
+      .filter({ hasText: /^User:$/ })
+      .locator('xpath=following-sibling::dd[1]');
+    await expect(hardDeletedUser).toHaveText(String(hardDeleted.userId));
+    await expect(
+      page.locator(`a[href*="action=request_process"][href*="id=${hardDeleted.id}"]`),
+    ).toHaveCount(0);
+
+    await page.goto(
+      `/?page=adminm&action=request_details&id=${hardDeleted.id}&type=${hardDeleted.type}`,
+      { waitUntil: 'domcontentloaded' },
+    );
+    const hardDeletedDetails = page.locator('#content-in');
+    await expect(hardDeletedDetails).toContainText('Request for approval details');
+    await expect(hardDeletedDetails).toContainText(hardDeleted.reason);
+    await expect(hardDeletedDetails).toContainText(hardDeleted.fullName);
+    await expect(hardDeletedDetails).toContainText(hardDeleted.email);
+    await expect(hardDeletedDetails).toContainText(hardDeleted.address);
+    const applicant = hardDeletedDetails
+      .locator('td')
+      .filter({ hasText: /^Applicant:$/ })
+      .locator('xpath=following-sibling::td[1]');
+    await expect(applicant).toHaveText(String(hardDeleted.userId));
+    await expect(formByAction(page, 'action=request_process')).toHaveCount(0);
+
     await page.goto(
       `/?page=adminm&action=approval_requests&type=change&state=awaiting&limit=10&user=${target.id}`,
       { waitUntil: 'domcontentloaded' },

@@ -17,6 +17,10 @@ class ChangeRequest < UserRequest
     user && user.full_name
   end
 
+  def user_required_for_resolution?
+    true
+  end
+
   def approve(_chain, _params)
     %i[full_name email address].each do |attr|
       v = send(attr)

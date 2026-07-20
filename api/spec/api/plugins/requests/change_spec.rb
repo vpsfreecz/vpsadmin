@@ -157,6 +157,7 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Change', requires_plugins
 
       changes.each do |row|
         expect(resource_id(row['user']).to_i).to eq(user.id)
+        expect(row).not_to have_key('raw_user_id')
       end
     end
 
@@ -209,6 +210,34 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Change', requires_plugins
 
       ids = changes.map { |row| row['id'].to_i }
       expect(ids).to eq([c_other.id, c_user_approved.id, c_user_awaiting.id])
+
+      changes.each do |row|
+        expect(row['raw_user_id']).to eq(resource_id(row['user']))
+      end
+    end
+
+    it 'preserves the raw user ID when the user is hard-deleted' do
+      raw_user_id = SpecSeed.other_user.id
+      SpecSeed.other_user.update!(object_state: :hard_delete)
+
+      as(admin) { json_get index_path }
+
+      expect_status(200)
+      row = changes.find { |item| item['id'].to_i == c_other.id }
+      expect(row['user']).to be_nil
+      expect(row['raw_user_id']).to eq(raw_user_id)
+    end
+
+    it 'keeps the user association when the user is soft-deleted' do
+      user_id = SpecSeed.other_user.id
+      SpecSeed.other_user.update!(object_state: :soft_delete)
+
+      as(admin) { json_get index_path }
+
+      expect_status(200)
+      row = changes.find { |item| item['id'].to_i == c_other.id }
+      expect(resource_id(row['user'])).to eq(user_id)
+      expect(row['raw_user_id']).to eq(user_id)
     end
   end
 
@@ -236,6 +265,7 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Change', requires_plugins
         'change_reason'
       )
       expect(change_obj['id'].to_i).to eq(c_user_awaiting.id)
+      expect(change_obj).not_to have_key('raw_user_id')
     end
 
     it 'does not expose handling admin details to normal users on show through includes' do
@@ -280,6 +310,18 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Change', requires_plugins
       expect_status(200)
       expect(json['status']).to be(true)
       expect(change_obj['id'].to_i).to eq(c_other.id)
+      expect(change_obj['raw_user_id']).to eq(SpecSeed.other_user.id)
+    end
+
+    it 'shows the raw user ID when the user is hard-deleted' do
+      raw_user_id = SpecSeed.other_user.id
+      SpecSeed.other_user.update!(object_state: :hard_delete)
+
+      as(admin) { json_get show_path(c_other.id) }
+
+      expect_status(200)
+      expect(change_obj['user']).to be_nil
+      expect(change_obj['raw_user_id']).to eq(raw_user_id)
     end
 
     it 'allows admins to see the handling admin association' do
@@ -437,6 +479,38 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Change', requires_plugins
       expect_status(200)
       expect(json['status']).to be(false)
       expect(errors.keys.map(&:to_s)).to include('state')
+    end
+
+    it 'rejects resolving a request whose user is hard-deleted' do
+      req = c_other
+      SpecSeed.other_user.update!(object_state: :hard_delete)
+
+      as(admin) { json_post resolve_path(req.id), change: { action: 'approve', reason: 'ok' } }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('user')
+      expect(req.reload.state).to eq('awaiting')
+      expect(req.admin_id).to be_nil
+    end
+
+    it 'rejects ignoring a request with no user ID' do
+      req = ::ChangeRequest.new(
+        state: :awaiting,
+        api_ip_addr: '192.0.2.12',
+        api_ip_ptr: 'ptr-192.0.2.12',
+        change_reason: 'Spec missing user',
+        full_name: 'Spec Missing User'
+      )
+      req.save!(validate: false)
+
+      as(admin) { json_post resolve_path(req.id), change: { action: 'ignore', reason: 'ok' } }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('user')
+      expect(req.reload.state).to eq('awaiting')
+      expect(req.admin_id).to be_nil
     end
   end
 end
