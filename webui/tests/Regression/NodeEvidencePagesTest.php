@@ -172,10 +172,6 @@ final class NodeEvidencePagesTest extends TestCase
         self::assertStringContainsString('>aaaaaaaaaaaa</a>', $link);
         self::assertStringContainsString('(modified)', $link);
         self::assertSame(
-            'system_configuration',
-            node_software_component_key('vpsfree_cz_configuration')
-        );
-        self::assertSame(
             'unavailable',
             node_software_revision_link('system_configuration', $revision)
         );

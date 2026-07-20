@@ -1608,7 +1608,6 @@ function node_software_revision_link($component, $revision, $dirty = false)
         return h(_('unavailable'));
     }
 
-    $component = node_software_component_key($component);
     $repositories = defined('SOFTWARE_REVISION_LINKS') ? SOFTWARE_REVISION_LINKS : [
         'vpsadminos' => 'https://github.com/vpsfreecz/vpsadminos/commit/',
         'vpsadmin' => 'https://github.com/vpsfreecz/vpsadmin/commit/',
@@ -1625,13 +1624,6 @@ function node_software_revision_link($component, $revision, $dirty = false)
         . '" target="_blank">' . h(substr($revision, 0, 12)) . '</a>';
 
     return $dirty ? $link . ' (' . h(_('modified')) . ')' : $link;
-}
-
-function node_software_component_key($component)
-{
-    return $component === 'vpsfree_cz_configuration'
-        ? 'system_configuration'
-        : $component;
 }
 
 function getCommitHash()

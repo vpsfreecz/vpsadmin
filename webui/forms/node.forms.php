@@ -540,7 +540,7 @@ function node_software_versions_table($node_id)
 
     $matrix = [];
     foreach ($versions as $version) {
-        $component = node_software_component_key($version->component);
+        $component = $version->component;
         $matrix[$component][$version->generation] = $version;
     }
     $changesByEvent = [];
@@ -664,7 +664,7 @@ function node_sysctl_state($change, $prefix)
 
 function node_software_component_label($component)
 {
-    switch (node_software_component_key($component)) {
+    switch ($component) {
         case 'vpsadminos':
             return 'vpsAdminOS';
         case 'vpsadmin':
