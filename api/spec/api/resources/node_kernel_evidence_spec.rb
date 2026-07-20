@@ -287,7 +287,8 @@ RSpec.describe VpsAdmin::API::Resources::NodeKernelEvidence do
     expect(returned.first).to include(
       'source' => 'node_report',
       'confidence' => 'exact',
-      'kernel_source_revision' => 'a2384967'
+      'kernel_source_revision' => 'a2384967',
+      'node_kernel_evidence' => include('id' => a_kind_of(Integer))
     )
   end
 

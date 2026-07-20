@@ -178,7 +178,8 @@ module VpsAdmin::API
         state = ::NodeKernelHistoryState.find_or_initialize_by(node:)
         next 0 if state.persisted? && !force
 
-        created = create_events(node, reconstruction.events)
+        events = reject_reported_bootstrap_duplicate(node, reconstruction.events)
+        created = create_events(node, events)
         state.assign_attributes(
           from_status_id: reconstruction.first_status&.id,
           through_status_id: reconstruction.last_status&.id,
@@ -207,6 +208,33 @@ module VpsAdmin::API
         event.save!
         1
       end
+    end
+
+    # A forced backfill may scan the legacy samples that originally produced a
+    # bootstrap row which has since been replaced by exact reported evidence.
+    # Do not recreate that one derived duplicate.
+    def reject_reported_bootstrap_duplicate(node, events)
+      reported = node.node_kernel_events.node_report.boot
+                     .where(observed_after: nil)
+                     .order(:observed_before, :id)
+                     .first
+      reported_booted_at = reported&.booted_at || reported&.effective_at
+      return events unless reported_booted_at && reported.booted_release
+
+      duplicate_index = events.each_index.filter_map do |index|
+        event = events[index]
+        next unless event[:event_type] == :boot
+        next unless event[:booted_release] == reported.booted_release
+        next if event[:observed_before] > reported.observed_before
+
+        difference = (event[:booted_at] - reported_booted_at).abs
+        next if difference > BOOT_TIME_TOLERANCE
+
+        [difference, -event[:observed_before].to_f, -event[:source_status_id], index]
+      end.min_by { |candidate| candidate.first(3) }&.last
+      return events unless duplicate_index
+
+      events.each_with_index.filter_map { |event, index| event unless index == duplicate_index }
     end
 
     def mark_current_kernel_event(node)

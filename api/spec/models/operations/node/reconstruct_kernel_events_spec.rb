@@ -98,7 +98,7 @@ RSpec.describe VpsAdmin::API::Operations::Node::ReconstructKernelEvents do
     )
   end
 
-  it 'retains reconstructed and node-reported evidence as append-only records' do
+  it 'does not recreate a reconstructed bootstrap replaced by exact reporting' do
     status = create_status(time: t0 + 100, uptime: 100, kernel: '6.12.95')
     NodeKernelEvent.create!(
       node:,
@@ -106,7 +106,7 @@ RSpec.describe VpsAdmin::API::Operations::Node::ReconstructKernelEvents do
       source: :node_report,
       confidence: :exact,
       boot_id: 'boot-a',
-      booted_at: t0,
+      booted_at: nil,
       booted_release: '6.12.95',
       reported_release: '6.12.95',
       effective_at: t0,
@@ -116,13 +116,18 @@ RSpec.describe VpsAdmin::API::Operations::Node::ReconstructKernelEvents do
 
     described_class.run(node, batch_size: 1)
 
-    expect(node.node_kernel_events.kernel_history.count).to eq(2)
-    reconstructed = node.node_kernel_events.reconstructed_node_status.first
-    expect(reconstructed.source_status_id).to eq(status.id)
+    expect(node.node_kernel_events.kernel_history.count).to eq(1)
+    expect(node.node_kernel_events.reconstructed_node_status).to be_empty
     expect(node.node_kernel_events.node_report.first).to be_current
+    expect(NodeStatus.exists?(status.id)).to be(true)
+    expect(node.reload.node_kernel_history_state.through_status_id).to eq(status.id)
+
+    expect(described_class.run(node, batch_size: 1, force: true)).to eq(0)
+    expect(node.node_kernel_events.kernel_history.count).to eq(1)
+    expect(node.node_kernel_events.reconstructed_node_status).to be_empty
   end
 
-  it 'stops backfill before exact reporting and never supersedes exact current state' do
+  it 'stops backfill before exact reporting and preserves exact current state' do
     historical = create_status(time: t0 + 100, uptime: 100, kernel: '6.12.93')
     exact = NodeKernelEvent.create!(
       node:,
@@ -142,7 +147,7 @@ RSpec.describe VpsAdmin::API::Operations::Node::ReconstructKernelEvents do
     described_class.run(node)
 
     reconstructed = node.node_kernel_events.reconstructed_node_status
-    expect(reconstructed.pluck(:source_status_id)).to eq([historical.id])
+    expect(reconstructed).to be_empty
     expect(reconstructed.pluck(:source_status_id)).not_to include(post_exact.id)
     expect(exact.reload).to be_current
     expect(node.reload.node_kernel_history_state.through_status_id).to eq(historical.id)
@@ -249,12 +254,10 @@ RSpec.describe VpsAdmin::API::Operations::Node::ReconstructKernelEvents do
       )
     end
 
-    expect(described_class.run(node, batch_size: 1, progress:)).to eq(1)
+    expect(described_class.run(node, batch_size: 1, progress:)).to eq(0)
 
     expect(progress).to have_received(:retry).once
-    expect(node.node_kernel_events.reconstructed_node_status.pluck(:source_status_id)).to eq(
-      [historical.id]
-    )
+    expect(node.node_kernel_events.reconstructed_node_status).to be_empty
     expect(node.node_kernel_events.reconstructed_node_status.pluck(:source_status_id)).not_to include(
       after_exact.id
     )

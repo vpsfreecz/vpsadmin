@@ -32,5 +32,7 @@ class NodeKernelEvent < ApplicationRecord
             uniqueness: { scope: %i[node_id event_type] },
             allow_nil: true
 
-  scope :kernel_history, -> { where(event_type: event_types.slice(*PUBLIC_EVENT_TYPES).values) }
+  scope :kernel_history, lambda {
+    where(event_type: event_types.slice(*PUBLIC_EVENT_TYPES).values)
+  }
 end

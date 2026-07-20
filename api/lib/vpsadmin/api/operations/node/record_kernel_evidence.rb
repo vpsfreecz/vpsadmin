@@ -1,8 +1,11 @@
 require 'time'
+require 'vpsadmin/api/kernel_evidence/boot_time_confidence'
 require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::Node::RecordKernelEvidence < Operations::Base
+    BOOT_TIME_TOLERANCE = 5.minutes
+
     def run(
       node:,
       observed_at:,
@@ -15,17 +18,20 @@ module VpsAdmin::API
       @received_at = received_at
 
       node.with_lock do
+        reconcile_existing_reported_boot!(node, report)
+
         if new_boot?(report, previous_report)
+          booted_at = parse_time(report.kernel.booted_at)
           event = create_event!(
             node:,
             event_type: :boot,
             observed_at:,
             previous_observed_at:,
             report:,
-            # booted_at is derived from the Node clock and uptime. The boot ID
-            # makes the boot identity exact, not its wall-clock timestamp.
-            confidence: :inferred
+            effective_at: booted_at,
+            confidence: VpsAdmin::API::KernelEvidence::BootTimeConfidence.from_report(report)
           )
+          delete_reconstructed_boot_duplicate!(node, event)
           record_sysctl_changes(event, report, previous_report)
           record_software_changes(event, report, previous_report)
           return
@@ -243,6 +249,70 @@ module VpsAdmin::API
 
         parse_time(value)
       end.max
+    end
+
+    # An old supervisor can write a boot event after the corrective migration and
+    # before the new application reaches that host. Fix that event when the new
+    # supervisor sees the same boot, including an actual rolling-window reboot.
+    def reconcile_existing_reported_boot!(node, report)
+      event = node.node_kernel_events.node_report.boot
+                  .lock
+                  .order(observed_before: :desc, id: :desc)
+                  .detect { |candidate| same_boot?(candidate, report.kernel) }
+      return unless event
+
+      evidence = event.kernel_evidence
+      return unless evidence
+
+      attributes = {
+        effective_at: evidence.booted_at,
+        confidence: VpsAdmin::API::KernelEvidence::BootTimeConfidence.from_evidence(evidence)
+      }
+      return if attributes.all? { |name, value| event.public_send(name) == value }
+
+      event.update!(attributes)
+      delete_reconstructed_boot_duplicate!(node, event)
+    end
+
+    def same_boot?(event, kernel)
+      return event.boot_id == kernel.boot_id if event.boot_id && kernel.boot_id
+
+      booted_at = parse_time(kernel.booted_at)
+      return false unless event.booted_at && booted_at
+
+      (event.booted_at - booted_at).abs <= BOOT_TIME_TOLERANCE
+    end
+
+    def delete_reconstructed_boot_duplicate!(node, reported_event)
+      return unless reported_event.observed_after.nil?
+
+      reported_booted_at = reported_event.booted_at || reported_event.effective_at
+      return unless reported_booted_at && reported_event.booted_release
+
+      candidates = node.node_kernel_events.reconstructed_node_status.boot
+                       .where(booted_release: reported_event.booted_release)
+                       .where(
+                         booted_at: (
+                           (reported_booted_at - BOOT_TIME_TOLERANCE)..
+                           (reported_booted_at + BOOT_TIME_TOLERANCE)
+                         )
+                       )
+                       .where('observed_before <= ?', reported_event.observed_before)
+                       .to_a
+      reconstructed = candidates.min_by do |candidate|
+        [
+          (candidate.booted_at - reported_booted_at).abs,
+          -candidate.observed_before.to_f,
+          -candidate.id
+        ]
+      end
+      return unless reconstructed
+
+      if reconstructed.current? && !reported_event.current? &&
+         !node.node_kernel_events.where(current: true).where.not(id: reconstructed.id).exists?
+        reported_event.update!(current: true)
+      end
+      reconstructed.destroy!
     end
 
     def create_event!(
