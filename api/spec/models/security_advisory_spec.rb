@@ -256,7 +256,11 @@ RSpec.describe SecurityAdvisory do
       node: SpecSeed.node,
       hostname: 'spec-advisory-foreign'
     )
-    advisory.publish!(send_mail: false, published_by: SpecSeed.admin)
+    advisory.publish!(
+      expected_content_revision: advisory.content_revision,
+      send_mail: false,
+      published_by: SpecSeed.admin
+    )
     update = advisory.create_update!(
       {},
       { SpecSeed.language => { summary: 'Fallback follow-up' } },
