@@ -627,7 +627,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
           node: SpecSeed.node.id,
           state: 'not_affected',
           en_note: 'Mitigated by live patch',
-          cs_note: 'Mitigováno live patchem',
+          cs_note: 'Ošetřeno live patchem',
           expected_content_revision: advisory.content_revision
         }
       end
@@ -636,7 +636,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       expect(json['status']).to be(true), json.inspect
       expect(node_status_obj).to include(
         'en_note' => 'Mitigated by live patch',
-        'cs_note' => 'Mitigováno live patchem'
+        'cs_note' => 'Ošetřeno live patchem'
       )
       expect(node_status_obj).not_to include('note')
 
@@ -646,7 +646,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       as(SpecSeed.admin) do
         json_put node_status_path(advisory.id, status.id), node_status: {
           en_note: nil,
-          cs_note: 'Mitigováno programem BPF LSM',
+          cs_note: 'Ošetřeno programem BPF LSM',
           expected_content_revision: advisory.reload.content_revision
         }
       end
@@ -654,7 +654,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       expect_status(200)
       expect(node_status_obj).to include(
         'en_note' => nil,
-        'cs_note' => 'Mitigováno programem BPF LSM'
+        'cs_note' => 'Ošetřeno programem BPF LSM'
       )
       expect(node_status_obj).not_to include('note')
       expect(status.reload.security_advisory_node_status_translations.count).to eq(1)

@@ -1087,7 +1087,7 @@ function security_advisory_node_header_html($langs)
 function security_advisory_node_note_placeholder($lang)
 {
     return $lang->code === 'cs'
-        ? 'Mitigováno live patchem'
+        ? 'Ošetřeno live patchem'
         : 'Mitigated by live patch';
 }
 

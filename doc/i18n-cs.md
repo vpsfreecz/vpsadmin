@@ -64,8 +64,11 @@ Always translate with context. The same English word can mean different things:
   rule: use `Přidání routy`/`Odebrání routy` and
   `Přidání host IP adresy`/`Odebrání host IP adresy`.
 - `Security advisory` is `Bezpečnostní upozornění`.
-- Security advisory `mitigated` state is `ošetřeno`, not a literal
-  `zmírněno`.
+- Security advisory `mitigated` state and mitigation wording use `ošetřeno`,
+  never the literal `zmírněno` or the anglicism `mitigováno`. For example,
+  translate `Mitigated by live patch` as `Ošetřeno live patchem`,
+  `Mitigated by kernel upgrade` as `Ošetřeno aktualizací jádra`, and
+  `Mitigated by BPF LSM program` as `Ošetřeno programem BPF LSM`.
 - SSH/user key `Fingerprint` in short table and field labels is `Otisk`.
   In prose, use `otisk klíče`, `otisk klíče SSH`, or
   `otisk hostitelského klíče SSH` when the type of key needs to be explicit.

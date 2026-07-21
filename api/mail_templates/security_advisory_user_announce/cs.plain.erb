@@ -12,7 +12,7 @@ Tvoje zasažené VPS:
 <% @vpses.each do |vps| -%>
   - VPS #<%= vps.vps_id %> - <%= vps.vps.hostname %> (na <%= vps.node.domain_name %>)
     Zranitelné do: <%= local_time(vps.vulnerable_until, '%Y-%m-%d %H:%M %Z') %>
-    Mitigováno od: <%= local_time(vps.mitigated_since, '%Y-%m-%d %H:%M %Z') %>
+    Ošetřeno od: <%= local_time(vps.mitigated_since, '%Y-%m-%d %H:%M %Z') %>
 <% end -%>
 
 Shrnutí:

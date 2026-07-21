@@ -3609,8 +3609,8 @@ import ../make-test.nix (
               vulnerable_until: advisory_vulnerable_until,
               mitigated_since: advisory_mitigated_since,
               notes: {
-                en: 'Kernel updated on the affected webui fixture node',
-                cs: 'Jádro bylo na testovacím Node aktualizováno'
+                en: 'Mitigated by kernel upgrade',
+                cs: 'Ošetřeno aktualizací jádra'
               }
             }
           ]
@@ -4568,8 +4568,8 @@ import ../make-test.nix (
             'vulnerableUntil' => '2026-05-29 08:00',
             'mitigatedSince' => '2026-05-29 10:30',
             'nodeNotes' => {
-              'en' => 'Kernel updated by Playwright fixture',
-              'cs' => 'Jádro aktualizováno testem Playwright'
+              'en' => 'Mitigated by kernel upgrade',
+              'cs' => 'Ošetřeno aktualizací jádra'
             },
             'notAffectedNotes' => {
               'en' => 'Temporarily marked not affected by Playwright',

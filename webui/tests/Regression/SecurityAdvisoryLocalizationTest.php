@@ -25,11 +25,11 @@ final class SecurityAdvisoryLocalizationTest extends TestCase
 
         $status = (object) [
             'en_note' => 'Mitigated by live patch',
-            'cs_note' => 'Mitigováno live patchem',
+            'cs_note' => 'Ošetřeno live patchem',
         ];
 
         self::assertSame(
-            'Mitigováno live patchem',
+            'Ošetřeno live patchem',
             security_advisory_localized_node_note($status)
         );
 
@@ -70,7 +70,7 @@ final class SecurityAdvisoryLocalizationTest extends TestCase
         self::assertStringContainsString('data-field="en_note"', $bulk);
         self::assertStringContainsString('data-field="cs_note"', $bulk);
         self::assertStringContainsString('Mitigated by live patch', $bulk);
-        self::assertStringContainsString('Mitigováno live patchem', $bulk);
+        self::assertStringContainsString('Ošetřeno live patchem', $bulk);
         self::assertSame(4, substr_count($bulk, 'size="14"'));
         self::assertSame(4, substr_count($row, 'size="14"'));
     }
