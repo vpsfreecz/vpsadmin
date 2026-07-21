@@ -10,6 +10,7 @@ const {
   advisoryIdFromUrl,
   applyNodeStatusDefaults,
   content,
+  expectNodeStatusInputSizes,
   fillAdvisoryTextFields,
   fillUpdateTextFields,
   formByAction,
@@ -184,6 +185,7 @@ test.describe('security advisory admin browser workflow', () => {
 
     const form = formByAction(page, 'action=new');
     await expect(form).toBeVisible();
+    await expectNodeStatusInputSizes(form, s.nodes);
     await fillAdvisoryTextFields(form, {
       publishedAt: ui.publishedAt,
       cves: ui.cves,
@@ -243,6 +245,7 @@ test.describe('security advisory admin browser workflow', () => {
     await gotoAdvisory(page, 'nodes', { id: advisoryId });
     let form = formByAction(page, `action=nodes&id=${advisoryId}`);
     await expect(form).toBeVisible();
+    await expectNodeStatusInputSizes(form, s.nodes);
     await setNodeStatus(form, node.id, {
       state: 'not_affected',
       vulnerableUntil: '',

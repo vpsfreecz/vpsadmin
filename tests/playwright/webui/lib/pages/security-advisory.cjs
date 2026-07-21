@@ -180,6 +180,36 @@ async function applyNodeStatusDefaults(form, values, nodes = []) {
   }
 }
 
+async function expectNodeStatusInputSizes(form, nodes = []) {
+  for (const field of ['vulnerable_until', 'mitigated_since']) {
+    await expect(
+      form.locator(`.security-advisory-node-bulk[data-field="${field}"]`),
+    ).toHaveAttribute('size', '14');
+  }
+
+  const bulkNotes = await form
+    .locator('.security-advisory-node-bulk[data-field$="_note"]')
+    .all();
+  expect(bulkNotes.length).toBeGreaterThan(0);
+  for (const note of bulkNotes) {
+    await expect(note).toHaveAttribute('size', '14');
+  }
+
+  for (const node of nodes) {
+    for (const field of ['vulnerable_until', 'mitigated_since']) {
+      await expect(nodeField(form, node.id, field)).toHaveAttribute('size', '14');
+    }
+
+    const notes = await form.locator(
+      `input[name^="node_${node.id}_"][name$="_note"]`,
+    ).all();
+    expect(notes.length).toBeGreaterThan(0);
+    for (const note of notes) {
+      await expect(note).toHaveAttribute('size', '14');
+    }
+  }
+}
+
 async function setNodeStatus(form, nodeId, values) {
   if ('state' in values) {
     await nodeField(form, nodeId, 'state').selectOption(values.state);
@@ -260,6 +290,7 @@ module.exports = {
   applyNodeStatusDefaults,
   content,
   cveText,
+  expectNodeStatusInputSizes,
   fillAdvisoryTextFields,
   fillUpdateTextFields,
   formByAction,

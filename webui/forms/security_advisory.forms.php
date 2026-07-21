@@ -1,5 +1,8 @@
 <?php
 
+const SECURITY_ADVISORY_NODE_DATE_INPUT_SIZE = 14;
+const SECURITY_ADVISORY_NODE_NOTE_INPUT_SIZE = 14;
+
 function security_advisory_link($advisory)
 {
     return '<a href="?page=security_advisory&action=show&id=' . $advisory->id . '">'
@@ -1098,13 +1101,23 @@ function security_advisory_node_bulk_row_html($langs)
             . '<input type="button" value="' . h(_('Apply')) . '" onclick="securityAdvisoryApplyNodeDefaults();" style="margin-top:3px;" />'
         )
         . security_advisory_node_table_cell_html(security_advisory_node_select_html('', 'mitigated', 'security-advisory-node-bulk', 'state'))
-        . security_advisory_node_table_cell_html(security_advisory_node_bulk_input_html('vulnerable_until', 15, $defaultTime, $defaultTime))
-        . security_advisory_node_table_cell_html(security_advisory_node_bulk_input_html('mitigated_since', 15, $defaultTime, $defaultTime));
+        . security_advisory_node_table_cell_html(security_advisory_node_bulk_input_html(
+            'vulnerable_until',
+            SECURITY_ADVISORY_NODE_DATE_INPUT_SIZE,
+            $defaultTime,
+            $defaultTime
+        ))
+        . security_advisory_node_table_cell_html(security_advisory_node_bulk_input_html(
+            'mitigated_since',
+            SECURITY_ADVISORY_NODE_DATE_INPUT_SIZE,
+            $defaultTime,
+            $defaultTime
+        ));
 
     foreach ($langs as $lang) {
         $html .= security_advisory_node_table_cell_html(security_advisory_node_bulk_input_html(
             $lang->code . '_note',
-            18,
+            SECURITY_ADVISORY_NODE_NOTE_INPUT_SIZE,
             security_advisory_node_note_placeholder($lang)
         ));
     }
@@ -1135,14 +1148,14 @@ function security_advisory_node_row_html($node, $status, $langs)
             $prefix . '_vulnerable_until',
             post_val($prefix . '_vulnerable_until', $vulnerableUntil),
             'vulnerable_until',
-            15,
+            SECURITY_ADVISORY_NODE_DATE_INPUT_SIZE,
             $defaultTime
         ))
         . security_advisory_node_table_cell_html(security_advisory_node_input_html(
             $prefix . '_mitigated_since',
             post_val($prefix . '_mitigated_since', $mitigatedSince),
             'mitigated_since',
-            15,
+            SECURITY_ADVISORY_NODE_DATE_INPUT_SIZE,
             $defaultTime
         ));
 
@@ -1152,7 +1165,7 @@ function security_advisory_node_row_html($node, $status, $langs)
             $prefix . '_' . $name,
             post_val($prefix . '_' . $name, $status ? $status->{$name} : ''),
             $name,
-            18,
+            SECURITY_ADVISORY_NODE_NOTE_INPUT_SIZE,
             security_advisory_node_note_placeholder($lang)
         ));
     }
@@ -1215,12 +1228,22 @@ function security_advisory_node_fields($id = null, $embedded = false)
     );
     $xtpl->table_td(security_advisory_node_select_html('', 'mitigated', 'security-advisory-node-bulk', 'state'));
     $defaultTime = security_advisory_datetime_form_value();
-    $xtpl->table_td(security_advisory_node_bulk_input_html('vulnerable_until', 15, $defaultTime, $defaultTime));
-    $xtpl->table_td(security_advisory_node_bulk_input_html('mitigated_since', 15, $defaultTime, $defaultTime));
+    $xtpl->table_td(security_advisory_node_bulk_input_html(
+        'vulnerable_until',
+        SECURITY_ADVISORY_NODE_DATE_INPUT_SIZE,
+        $defaultTime,
+        $defaultTime
+    ));
+    $xtpl->table_td(security_advisory_node_bulk_input_html(
+        'mitigated_since',
+        SECURITY_ADVISORY_NODE_DATE_INPUT_SIZE,
+        $defaultTime,
+        $defaultTime
+    ));
     foreach ($langs as $lang) {
         $xtpl->table_td(security_advisory_node_bulk_input_html(
             $lang->code . '_note',
-            18,
+            SECURITY_ADVISORY_NODE_NOTE_INPUT_SIZE,
             security_advisory_node_note_placeholder($lang)
         ));
     }
@@ -1246,14 +1269,14 @@ function security_advisory_node_fields($id = null, $embedded = false)
             $prefix . '_vulnerable_until',
             post_val($prefix . '_vulnerable_until', $vulnerableUntil),
             'vulnerable_until',
-            15,
+            SECURITY_ADVISORY_NODE_DATE_INPUT_SIZE,
             $defaultTime
         ));
         $xtpl->table_td(security_advisory_node_input_html(
             $prefix . '_mitigated_since',
             post_val($prefix . '_mitigated_since', $mitigatedSince),
             'mitigated_since',
-            15,
+            SECURITY_ADVISORY_NODE_DATE_INPUT_SIZE,
             $defaultTime
         ));
         foreach ($langs as $lang) {
@@ -1262,7 +1285,7 @@ function security_advisory_node_fields($id = null, $embedded = false)
                 $prefix . '_' . $name,
                 post_val($prefix . '_' . $name, $status ? $status->{$name} : ''),
                 $name,
-                18,
+                SECURITY_ADVISORY_NODE_NOTE_INPUT_SIZE,
                 security_advisory_node_note_placeholder($lang)
             ));
         }

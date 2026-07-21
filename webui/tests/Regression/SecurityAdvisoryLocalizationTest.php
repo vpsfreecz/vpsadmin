@@ -55,6 +55,15 @@ final class SecurityAdvisoryLocalizationTest extends TestCase
 
         $header = security_advisory_node_header_html($langs);
         $bulk = security_advisory_node_bulk_row_html($langs);
+        $row = security_advisory_node_row_html(
+            (object) [
+                'id' => 42,
+                'domain_name' => 'node.example.test',
+                'type' => 'node',
+            ],
+            null,
+            $langs
+        );
 
         self::assertStringContainsString('English Note', $header);
         self::assertStringContainsString('Česky Note', $header);
@@ -62,6 +71,8 @@ final class SecurityAdvisoryLocalizationTest extends TestCase
         self::assertStringContainsString('data-field="cs_note"', $bulk);
         self::assertStringContainsString('Mitigated by live patch', $bulk);
         self::assertStringContainsString('Mitigováno live patchem', $bulk);
+        self::assertSame(4, substr_count($bulk, 'size="14"'));
+        self::assertSame(4, substr_count($row, 'size="14"'));
     }
 
     public function testNodeSaveSendsLocalizedFieldsInsteadOfLegacyNote(): void
