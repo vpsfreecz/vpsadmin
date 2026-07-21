@@ -775,12 +775,9 @@ function security_advisory_details($id)
 
         $xtpl->table_title(_('Publish advisory'));
         $xtpl->form_create('?page=security_advisory&action=publish&id=' . $id, 'post');
-        $xtpl->form_add_input_pure(
-            'hidden',
-            0,
-            'expected_content_revision',
-            (string) $advisory->content_revision
-        );
+        $xtpl->form_set_hidden_fields([
+            'expected_content_revision' => (string) $advisory->content_revision,
+        ]);
         $xtpl->form_add_input(
             _('Published at') . ':',
             'text',

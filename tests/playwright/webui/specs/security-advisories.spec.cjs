@@ -312,6 +312,16 @@ test.describe('security advisory admin browser workflow', () => {
     await gotoAdvisory(page, 'show', { id: advisoryId });
     const form = formByAction(page, `action=publish&id=${advisoryId}`);
     await expect(form).toBeVisible();
+    await expect(
+      form.locator('input[type="hidden"][name="expected_content_revision"]'),
+    ).toHaveCount(1);
+    const publishedAtRow = form
+      .locator('input[name="published_at"]')
+      .locator('xpath=ancestor::tr');
+    await expect(publishedAtRow.locator(':scope > td')).toHaveCount(3);
+    await expect(publishedAtRow.locator(':scope > td').first()).toHaveText(
+      'Published at:',
+    );
     await expect(form.locator('input[name="send_mail"]')).not.toBeChecked();
     await expect(form.locator('input[name="published_at"]')).toHaveValue(ui.editedPublishedAt);
     await setCheckboxIfPresent(form, 'send_mail', false);

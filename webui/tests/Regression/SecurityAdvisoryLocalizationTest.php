@@ -86,4 +86,21 @@ final class SecurityAdvisoryLocalizationTest extends TestCase
         self::assertStringContainsString('$params[$name]', $saveSource);
         self::assertStringNotContainsString("'note' =>", $saveSource);
     }
+
+    public function testPublishRevisionIsStoredOutsideVisibleTableCells(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/forms/security_advisory.forms.php');
+        $detailsStart = strpos($source, 'function security_advisory_details');
+        $detailsEnd = strpos($source, 'function security_advisory_node_status_table');
+        $detailsSource = substr($source, $detailsStart, $detailsEnd - $detailsStart);
+
+        self::assertStringContainsString(
+            '$xtpl->form_set_hidden_fields([',
+            $detailsSource
+        );
+        self::assertStringNotContainsString(
+            '$xtpl->form_add_input_pure(',
+            $detailsSource
+        );
+    }
 }
