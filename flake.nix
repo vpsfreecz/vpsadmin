@@ -102,6 +102,47 @@
         test-runner = vpsadminos.packages.${system}.test-runner;
       });
 
+      checks = forAllSystems (
+        system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+          systemConfigurationUrl = "https://github.com/example/configuration/commit/";
+          webuiConfiguration = nixpkgs.lib.nixosSystem {
+            inherit system;
+            modules = [
+              self.nixosModules.nixos-modules
+              {
+                vpsadmin.webui = {
+                  enable = true;
+                  domain = "webui.example.test";
+                  api.externalUrl = "https://api.example.test";
+                  api.internalUrl = "http://api.example.test";
+                  productionEnvironmentId = 1;
+                  softwareRevisionLinks.system_configuration = systemConfigurationUrl;
+                };
+              }
+            ];
+          };
+          actual = webuiConfiguration.config.vpsadmin.webui.softwareRevisionLinks;
+          expected = {
+            nixpkgs = "https://github.com/NixOS/nixpkgs/commit/";
+            system_configuration = systemConfigurationUrl;
+            vpsadmin = "https://github.com/vpsfreecz/vpsadmin/commit/";
+            vpsadminos = "https://github.com/vpsfreecz/vpsadminos/commit/";
+          };
+        in
+        {
+          webui-software-revision-links =
+            assert nixpkgs.lib.assertMsg (actual == expected) ''
+              Extending vpsadmin.webui.softwareRevisionLinks must preserve the
+              standard component links
+            '';
+            pkgs.runCommand "webui-software-revision-links" { } ''
+              touch $out
+            '';
+        }
+      );
+
       devShells = forAllSystems (
         system:
         let

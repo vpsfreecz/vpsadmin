@@ -142,11 +142,7 @@ in
 
       softwareRevisionLinks = mkOption {
         type = types.attrsOf types.str;
-        default = {
-          nixpkgs = "https://github.com/NixOS/nixpkgs/commit/";
-          vpsadmin = "https://github.com/vpsfreecz/vpsadmin/commit/";
-          vpsadminos = "https://github.com/vpsfreecz/vpsadminos/commit/";
-        };
+        default = { };
         description = ''
           Commit URL prefixes keyed by Node software component. Components not
           present in this mapping are rendered without a revision link.
@@ -201,7 +197,14 @@ in
     vpsadmin = {
       enableOverlay = true;
       enableStateDirectory = true;
-      webui.timeZone = mkDefault config.time.timeZone;
+      webui = {
+        timeZone = mkDefault config.time.timeZone;
+        softwareRevisionLinks = {
+          nixpkgs = mkDefault "https://github.com/NixOS/nixpkgs/commit/";
+          vpsadmin = mkDefault "https://github.com/vpsfreecz/vpsadmin/commit/";
+          vpsadminos = mkDefault "https://github.com/vpsfreecz/vpsadminos/commit/";
+        };
+      };
     };
 
     systemd.tmpfiles.rules = [
