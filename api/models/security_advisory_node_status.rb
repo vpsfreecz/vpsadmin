@@ -1,6 +1,7 @@
 class SecurityAdvisoryNodeStatus < ApplicationRecord
   belongs_to :security_advisory
   belongs_to :node
+  has_many :security_advisory_node_status_translations, dependent: :delete_all
 
   enum :state, %i[unknown not_affected vulnerable mitigated]
 
@@ -19,6 +20,46 @@ class SecurityAdvisoryNodeStatus < ApplicationRecord
   def state_label
     STATE_LABELS.fetch(state, state.to_s)
   end
+
+  def update_translations!(translations)
+    translations.each do |lang, attrs|
+      note_value = attrs[:note].presence
+      translation = security_advisory_node_status_translations.find_by(language: lang)
+
+      if note_value
+        translation ||= security_advisory_node_status_translations.build(language: lang)
+        translation.update!(note: note_value)
+      else
+        translation&.destroy!
+      end
+    end
+
+    security_advisory_node_status_translations.reset
+    self
+  end
+
+  def localized_note(lang)
+    translations = security_advisory_node_status_translations
+    translation = if translations.loaded?
+                    translations.target.find { |row| row.language_id == lang.id }
+                  else
+                    translations.find_by(language_id: lang.id)
+                  end
+    translation&.note
+  end
+
+  def self.define_note_accessor(lang)
+    method_name = "#{lang.code}_note"
+    return if method_defined?(method_name)
+
+    define_method(method_name) do
+      localized_note(lang)
+    end
+  end
+
+  # The API resource defines these accessors after the database schema exists.
+  # Querying languages while model files are loaded prevents a fresh database
+  # from running its first migration.
 
   protected
 

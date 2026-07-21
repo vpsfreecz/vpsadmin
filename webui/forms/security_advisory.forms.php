@@ -303,6 +303,21 @@ function security_advisory_localized_text($object, $field)
     return '';
 }
 
+function security_advisory_localized_node_note($status)
+{
+    $codes = [security_advisory_current_language_code(), 'en'];
+
+    foreach (array_unique($codes) as $code) {
+        $name = $code . '_note';
+        $value = $status->{$name};
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+    }
+
+    return '';
+}
+
 function security_advisory_node_role_label($type)
 {
     switch ($type) {
@@ -481,11 +496,11 @@ function security_advisory_form($id = null)
             $lang->label . ' ' . _('summary') . ':',
             $name,
             post_val($name, $advisory ? $advisory->{$name} : ''),
-            _('A kernel bug could affect containers on selected nodes.'),
+            _('Local privilege escalation'),
             security_advisory_param_description(
                 $input,
                 $name,
-                _('One-sentence summary shown in advisory lists and emails.')
+                _('Short vulnerability-class title shown in advisory lists and emails.')
             )
         );
 
@@ -802,7 +817,7 @@ function security_advisory_node_status_table($id)
         $xtpl->table_td(security_advisory_node_state_label($status->state));
         $xtpl->table_td(security_advisory_time($status->vulnerable_until));
         $xtpl->table_td(security_advisory_time($status->mitigated_since));
-        $xtpl->table_td(nl2br(h($status->note)));
+        $xtpl->table_td(nl2br(h(security_advisory_localized_node_note($status))));
         $xtpl->table_tr();
     }
 
@@ -1034,11 +1049,11 @@ function security_advisory_node_script_html()
         </script>';
 }
 
-function security_advisory_node_script_row()
+function security_advisory_node_script_row($columnCount)
 {
     global $xtpl;
 
-    $xtpl->table_td(security_advisory_node_script_html(), false, false, 5);
+    $xtpl->table_td(security_advisory_node_script_html(), false, false, $columnCount);
     $xtpl->table_tr(false, 'security-advisory-node-script');
 }
 
@@ -1047,35 +1062,57 @@ function security_advisory_node_table_cell_html($content, $style = '')
     return '<td' . ($style !== '' ? ' style="' . h($style) . '"' : '') . '>' . $content . '</td>';
 }
 
-function security_advisory_node_header_html()
+function security_advisory_node_header_html($langs)
 {
     $style = 'background:#5EAFFF; color:#FFF; font-weight:bold; text-align:center;';
     $html = '<tr>';
 
-    foreach ([_('Node'), _('State'), _('Vulnerable until'), _('Mitigated since'), _('Note')] as $label) {
+    foreach ([_('Node'), _('State'), _('Vulnerable until'), _('Mitigated since')] as $label) {
         $html .= security_advisory_node_table_cell_html(h($label), $style);
+    }
+
+    foreach ($langs as $lang) {
+        $html .= security_advisory_node_table_cell_html(
+            h($lang->label . ' ' . _('Note')),
+            $style
+        );
     }
 
     return $html . '</tr>';
 }
 
-function security_advisory_node_bulk_row_html()
+function security_advisory_node_note_placeholder($lang)
+{
+    return $lang->code === 'cs'
+        ? 'Mitigováno live patchem'
+        : 'Mitigated by live patch';
+}
+
+function security_advisory_node_bulk_row_html($langs)
 {
     $defaultTime = security_advisory_datetime_form_value();
 
-    return '<tr class="security-advisory-node-bulk-row">'
+    $html = '<tr class="security-advisory-node-bulk-row">'
         . security_advisory_node_table_cell_html(
             '<strong>' . h(_('All nodes')) . '</strong><br>'
             . '<input type="button" value="' . h(_('Apply')) . '" onclick="securityAdvisoryApplyNodeDefaults();" style="margin-top:3px;" />'
         )
         . security_advisory_node_table_cell_html(security_advisory_node_select_html('', 'mitigated', 'security-advisory-node-bulk', 'state'))
         . security_advisory_node_table_cell_html(security_advisory_node_bulk_input_html('vulnerable_until', 15, $defaultTime, $defaultTime))
-        . security_advisory_node_table_cell_html(security_advisory_node_bulk_input_html('mitigated_since', 15, $defaultTime, $defaultTime))
-        . security_advisory_node_table_cell_html(security_advisory_node_bulk_input_html('note', 18, _('Kernel updated')))
-        . '</tr>';
+        . security_advisory_node_table_cell_html(security_advisory_node_bulk_input_html('mitigated_since', 15, $defaultTime, $defaultTime));
+
+    foreach ($langs as $lang) {
+        $html .= security_advisory_node_table_cell_html(security_advisory_node_bulk_input_html(
+            $lang->code . '_note',
+            18,
+            security_advisory_node_note_placeholder($lang)
+        ));
+    }
+
+    return $html . '</tr>';
 }
 
-function security_advisory_node_row_html($node, $status)
+function security_advisory_node_row_html($node, $status, $langs)
 {
     $prefix = 'node_' . $node->id;
     $defaultTime = security_advisory_datetime_form_value();
@@ -1086,7 +1123,7 @@ function security_advisory_node_row_html($node, $status)
         ? security_advisory_datetime_form_value($status->mitigated_since)
         : $defaultTime;
 
-    return '<tr class="security-advisory-node-row">'
+    $html = '<tr class="security-advisory-node-row">'
         . security_advisory_node_table_cell_html(h($node->domain_name) . '<br><small>' . security_advisory_node_role_label($node->type) . '</small>')
         . security_advisory_node_table_cell_html(security_advisory_node_select_html(
             $prefix . '_state',
@@ -1107,25 +1144,30 @@ function security_advisory_node_row_html($node, $status)
             'mitigated_since',
             15,
             $defaultTime
-        ))
-        . security_advisory_node_table_cell_html(security_advisory_node_input_html(
-            $prefix . '_note',
-            post_val($prefix . '_note', $status ? $status->note : ''),
-            'note',
+        ));
+
+    foreach ($langs as $lang) {
+        $name = $lang->code . '_note';
+        $html .= security_advisory_node_table_cell_html(security_advisory_node_input_html(
+            $prefix . '_' . $name,
+            post_val($prefix . '_' . $name, $status ? $status->{$name} : ''),
+            $name,
             18,
-            _('Kernel updated')
-        ))
-        . '</tr>';
+            security_advisory_node_note_placeholder($lang)
+        ));
+    }
+
+    return $html . '</tr>';
 }
 
-function security_advisory_node_embedded_table_html($nodes, $statuses)
+function security_advisory_node_embedded_table_html($nodes, $statuses, $langs)
 {
     $html = '<table class="table-style01 security-advisory-node-table" style="margin:0; width:auto; max-width:100%;">';
-    $html .= security_advisory_node_header_html();
-    $html .= security_advisory_node_bulk_row_html();
+    $html .= security_advisory_node_header_html($langs);
+    $html .= security_advisory_node_bulk_row_html($langs);
 
     foreach ($nodes as $node) {
-        $html .= security_advisory_node_row_html($node, $statuses[$node->id] ?? null);
+        $html .= security_advisory_node_row_html($node, $statuses[$node->id] ?? null, $langs);
     }
 
     return $html . '</table>' . security_advisory_node_script_html();
@@ -1136,6 +1178,7 @@ function security_advisory_node_fields($id = null, $embedded = false)
     global $xtpl, $api;
 
     $nodes = security_advisory_nodes();
+    $langs = $api->language->list();
     $statuses = [];
 
     if ($id !== null) {
@@ -1147,7 +1190,12 @@ function security_advisory_node_fields($id = null, $embedded = false)
     if ($embedded) {
         $xtpl->table_td('<strong>' . _('Node status') . '</strong>', false, false, 3);
         $xtpl->table_tr();
-        $xtpl->table_td(security_advisory_node_embedded_table_html($nodes, $statuses), false, false, 3);
+        $xtpl->table_td(
+            security_advisory_node_embedded_table_html($nodes, $statuses, $langs),
+            false,
+            false,
+            3
+        );
         $xtpl->table_tr();
         return;
     }
@@ -1157,7 +1205,9 @@ function security_advisory_node_fields($id = null, $embedded = false)
     $xtpl->table_add_category(_('State'));
     $xtpl->table_add_category(_('Vulnerable until'));
     $xtpl->table_add_category(_('Mitigated since'));
-    $xtpl->table_add_category(_('Note'));
+    foreach ($langs as $lang) {
+        $xtpl->table_add_category($lang->label . ' ' . _('Note'));
+    }
 
     $xtpl->table_td(
         '<strong>' . h(_('All nodes')) . '</strong><br>'
@@ -1167,7 +1217,13 @@ function security_advisory_node_fields($id = null, $embedded = false)
     $defaultTime = security_advisory_datetime_form_value();
     $xtpl->table_td(security_advisory_node_bulk_input_html('vulnerable_until', 15, $defaultTime, $defaultTime));
     $xtpl->table_td(security_advisory_node_bulk_input_html('mitigated_since', 15, $defaultTime, $defaultTime));
-    $xtpl->table_td(security_advisory_node_bulk_input_html('note', 18, _('Kernel updated')));
+    foreach ($langs as $lang) {
+        $xtpl->table_td(security_advisory_node_bulk_input_html(
+            $lang->code . '_note',
+            18,
+            security_advisory_node_note_placeholder($lang)
+        ));
+    }
     $xtpl->table_tr(false, 'security-advisory-node-bulk-row');
 
     foreach ($nodes as $node) {
@@ -1200,17 +1256,20 @@ function security_advisory_node_fields($id = null, $embedded = false)
             15,
             $defaultTime
         ));
-        $xtpl->table_td(security_advisory_node_input_html(
-            $prefix . '_note',
-            post_val($prefix . '_note', $status ? $status->note : ''),
-            'note',
-            18,
-            _('Kernel updated')
-        ));
+        foreach ($langs as $lang) {
+            $name = $lang->code . '_note';
+            $xtpl->table_td(security_advisory_node_input_html(
+                $prefix . '_' . $name,
+                post_val($prefix . '_' . $name, $status ? $status->{$name} : ''),
+                $name,
+                18,
+                security_advisory_node_note_placeholder($lang)
+            ));
+        }
         $xtpl->table_tr(false, 'security-advisory-node-row');
     }
 
-    security_advisory_node_script_row();
+    security_advisory_node_script_row(4 + count($langs));
 }
 
 function security_advisory_update_form($id, $updateId = null)

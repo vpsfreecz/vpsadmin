@@ -427,6 +427,10 @@ cs:
       cs_message:
         description: Volitelná zpráva pro uživatele s dalšími detaily o této aktualizaci.
         label: Česká zpráva
+      cs_note:
+        description: Volitelná lokalizovaná poznámka k výjimečné situaci na tomto
+          nodu.
+        label: Česká poznámka
       cs_response:
         description: Uživatelské vysvětlení opravy a informace, zda uživatelé musí
           něco udělat.
@@ -561,6 +565,10 @@ cs:
       en_message:
         description: Volitelná zpráva pro uživatele s dalšími detaily o této aktualizaci.
         label: Anglická zpráva
+      en_note:
+        description: Volitelná lokalizovaná poznámka k výjimečné situaci na tomto
+          nodu.
+        label: Anglická poznámka
       en_response:
         description: Uživatelské vysvětlení ošetření nebo opravy a informace, zda
           uživatelé musí něco udělat.
@@ -1188,8 +1196,6 @@ cs:
         label: Stav nodu
       nodes_online:
         label: Nody online
-      note:
-        description: Volitelná poznámka operátora k tomuto stavu nodu.
       ns_id:
         description: Začátek rozsahu ID v uživatelském namespace
         label: ID namespace
@@ -3181,12 +3187,12 @@ cs:
           created_at:
             label: Vytvořeno
           cs_summary:
-            description: Jednověté veřejné shrnutí zobrazené v seznamech upozornění,
+            description: Krátký název typu zranitelnosti zobrazovaný v seznamech upozornění,
               statusovém výstupu, IRC oznámeních a e-mailech.
           cve:
             description: Volitelný odkaz na CVE vytvořený atomicky s konceptem.
           en_summary:
-            description: Jednověté veřejné shrnutí zobrazené v seznamech upozornění,
+            description: Krátký název typu zranitelnosti zobrazovaný v seznamech upozornění,
               statusovém výstupu, IRC oznámeních a e-mailech.
           id:
             label: ID
@@ -3214,8 +3220,6 @@ cs:
               label: ID
             node:
               description: Node, pro který se zaznamenává stav expozice.
-            note:
-              label: Poznámka
             state:
               description: Vyhodnocení, zda byl node dotčen a zda bylo provedeno ošetření.
         output:

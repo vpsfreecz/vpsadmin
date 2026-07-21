@@ -9,7 +9,7 @@ module VpsAdmin::API::Resources
     SEND_MAIL_DESCRIPTION =
       'When enabled, affected users are emailed after the action completes.'.freeze
     TEXT_DESCRIPTIONS = {
-      summary: 'One-sentence public summary shown in advisory lists, ' \
+      summary: 'Short vulnerability-class title shown in advisory lists, ' \
                'status output, IRC announcements, and emails.',
       description: 'User-facing explanation of the vulnerability, ' \
                    'affected systems, impact, and conditions.',
@@ -392,6 +392,16 @@ module VpsAdmin::API::Resources
                 desc: 'Apply the change only when the advisory has this content revision.'
       end
 
+      params(:notes) do
+        ::Language.all.each do |lang|
+          ::SecurityAdvisoryNodeStatus.define_note_accessor(lang)
+          text :"#{lang.code}_note",
+               label: "#{lang.label} note",
+               desc: 'Optional localized note for an exceptional circumstance on this node.',
+               nullable: true
+        end
+      end
+
       params(:editable) do
         resource VpsAdmin::API::Resources::Node,
                  value_label: :domain_name,
@@ -406,7 +416,7 @@ module VpsAdmin::API::Resources
         datetime :mitigated_since,
                  desc: 'When the node was mitigated or patched, if known.',
                  nullable: true
-        text :note, desc: 'Optional operator note for this node status.', nullable: true
+        use :notes
       end
 
       params(:all) do
@@ -425,7 +435,22 @@ module VpsAdmin::API::Resources
         datetime :mitigated_since,
                  desc: 'When the node was mitigated or patched, if known.',
                  nullable: true
-        text :note, desc: 'Optional operator note for this node status.', nullable: true
+        use :notes
+      end
+
+      module NoteHelpers
+        def extract_note_translations
+          translations = {}
+
+          ::Language.all.each do |lang|
+            name = :"#{lang.code}_note"
+            next unless input.has_key?(name)
+
+            translations[lang] = { note: input.delete(name).presence }
+          end
+
+          translations
+        end
       end
 
       class Index < HaveAPI::Actions::Default::Index
@@ -457,7 +482,9 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          q = with_includes(query.includes(:node)).order('nodes.id')
+          q = with_includes(
+            query.includes(:node, :security_advisory_node_status_translations)
+          ).order('nodes.id')
           q = q.where(node: input[:node]) if input[:node]
           q = q.where(state: ::SecurityAdvisoryNodeStatus.states[input[:state]]) if input[:state]
           with_pagination(q)
@@ -466,6 +493,7 @@ module VpsAdmin::API::Resources
 
       class Create < HaveAPI::Actions::Default::Create
         include Helpers
+        include NoteHelpers
 
         desc 'Create advisory node status'
 
@@ -486,10 +514,13 @@ module VpsAdmin::API::Resources
 
         def exec
           advisory = ::SecurityAdvisory.find(path_params['security_advisory_id'])
+          translations = extract_note_translations
           mutate_draft(advisory) do
-            ::SecurityAdvisoryNodeStatus.create!(
+            status = ::SecurityAdvisoryNodeStatus.create!(
               to_db_names(input).merge(security_advisory: advisory)
             )
+            status.update_translations!(translations)
+            status
           end
         rescue ActiveRecord::RecordInvalid => e
           error!('create failed', to_param_names(e.record.errors.to_hash))
@@ -498,6 +529,7 @@ module VpsAdmin::API::Resources
 
       class Update < HaveAPI::Actions::Default::Update
         include Helpers
+        include NoteHelpers
 
         desc 'Update advisory node status'
 
@@ -519,8 +551,10 @@ module VpsAdmin::API::Resources
             security_advisory_id: path_params['security_advisory_id'],
             id: path_params['node_status_id']
           )
+          translations = extract_note_translations
           mutate_draft(status.security_advisory) do
             status.update!(to_db_names(input))
+            status.update_translations!(translations)
           end
           status
         rescue ActiveRecord::RecordInvalid => e

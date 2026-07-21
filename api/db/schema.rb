@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_20_233450) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -1516,13 +1516,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_233450) do
   create_table "security_advisory_node_statuses", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.datetime "mitigated_since"
     t.bigint "node_id", null: false
-    t.text "note"
     t.bigint "security_advisory_id", null: false
     t.integer "state", default: 0, null: false
     t.datetime "vulnerable_until"
     t.index ["node_id"], name: "index_security_advisory_node_statuses_on_node_id"
     t.index ["security_advisory_id", "node_id"], name: "index_sans_on_advisory_node", unique: true
     t.index ["state"], name: "index_security_advisory_node_statuses_on_state"
+  end
+
+  create_table "security_advisory_node_status_translations", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.bigint "language_id", null: false
+    t.text "note"
+    t.bigint "security_advisory_node_status_id", null: false
+    t.index ["language_id"], name: "index_sanst_on_language"
+    t.index ["security_advisory_node_status_id", "language_id"], name: "index_sanst_on_status_language", unique: true
   end
 
   create_table "security_advisory_translations", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|

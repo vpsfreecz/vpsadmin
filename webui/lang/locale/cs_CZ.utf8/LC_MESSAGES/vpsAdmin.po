@@ -3015,12 +3015,12 @@ msgid "Optional well-known vulnerability name."
 msgstr "Volitelný název známé zranitelnosti."
 
 #: forms/security_advisory.forms.php
-msgid "A kernel bug could affect containers on selected nodes."
-msgstr "Bug v jádře může ovlivnit kontejnery na vybraných nodech."
+msgid "Local privilege escalation"
+msgstr "Lokální eskalace oprávnění"
 
 #: forms/security_advisory.forms.php
-msgid "One-sentence summary shown in advisory lists and emails."
-msgstr "Shrnutí v jedné větě zobrazené v seznamech upozornění a e-mailech."
+msgid "Short vulnerability-class title shown in advisory lists and emails."
+msgstr "Krátký název typu zranitelnosti zobrazovaný v seznamech upozornění a e-mailech."
 
 #: forms/security_advisory.forms.php
 msgid ""
@@ -3161,10 +3161,6 @@ msgstr "Všechny nody"
 #: forms/security_advisory.forms.php
 msgid "Apply"
 msgstr "Použít"
-
-#: forms/security_advisory.forms.php
-msgid "Kernel updated"
-msgstr "Jádro aktualizováno"
 
 #: forms/security_advisory.forms.php
 msgid "Edit security advisory update"
@@ -8302,6 +8298,12 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "A kernel bug could affect containers on selected nodes."
+#~ msgstr "Bug v jádře může ovlivnit kontejnery na vybraných nodech."
+
+#~ msgid "Kernel updated"
+#~ msgstr "Jádro aktualizováno"
 
 #~ msgid "reported by Node"
 #~ msgstr "hlášeno Nodem"

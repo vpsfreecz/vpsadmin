@@ -2990,11 +2990,11 @@ msgid "Optional well-known vulnerability name."
 msgstr ""
 
 #: forms/security_advisory.forms.php
-msgid "A kernel bug could affect containers on selected nodes."
+msgid "Local privilege escalation"
 msgstr ""
 
 #: forms/security_advisory.forms.php
-msgid "One-sentence summary shown in advisory lists and emails."
+msgid "Short vulnerability-class title shown in advisory lists and emails."
 msgstr ""
 
 #: forms/security_advisory.forms.php
@@ -3134,10 +3134,6 @@ msgstr ""
 
 #: forms/security_advisory.forms.php
 msgid "Apply"
-msgstr ""
-
-#: forms/security_advisory.forms.php
-msgid "Kernel updated"
 msgstr ""
 
 #: forms/security_advisory.forms.php

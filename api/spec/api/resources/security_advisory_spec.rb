@@ -251,7 +251,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
         'well-known vulnerability name'
       )
       expect(advisory_params.dig('en_summary', 'description')).to include(
-        'One-sentence public summary'
+        'Short vulnerability-class title'
       )
       expect(advisory_params.dig('en_description', 'description')).to include(
         'affected systems'
@@ -619,6 +619,93 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
   end
 
   describe 'Node statuses and publication' do
+    it 'creates and updates localized node notes' do
+      advisory = build_advisory
+
+      as(SpecSeed.admin) do
+        json_post node_status_index_path(advisory.id), node_status: {
+          node: SpecSeed.node.id,
+          state: 'not_affected',
+          en_note: 'Mitigated by live patch',
+          cs_note: 'Mitigováno live patchem',
+          expected_content_revision: advisory.content_revision
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true), json.inspect
+      expect(node_status_obj).to include(
+        'en_note' => 'Mitigated by live patch',
+        'cs_note' => 'Mitigováno live patchem'
+      )
+      expect(node_status_obj).not_to include('note')
+
+      status = ::SecurityAdvisoryNodeStatus.find(node_status_obj.fetch('id'))
+      expect(status.security_advisory_node_status_translations.count).to eq(2)
+
+      as(SpecSeed.admin) do
+        json_put node_status_path(advisory.id, status.id), node_status: {
+          en_note: nil,
+          cs_note: 'Mitigováno programem BPF LSM',
+          expected_content_revision: advisory.reload.content_revision
+        }
+      end
+
+      expect_status(200)
+      expect(node_status_obj).to include(
+        'en_note' => nil,
+        'cs_note' => 'Mitigováno programem BPF LSM'
+      )
+      expect(node_status_obj).not_to include('note')
+      expect(status.reload.security_advisory_node_status_translations.count).to eq(1)
+    end
+
+    it 'loads localized notes for the public index in one query' do
+      advisory = build_advisory
+      czech = Language.find_by!(code: 'cs')
+
+      [SpecSeed.node, SpecSeed.other_node].each_with_index do |node, i|
+        status = advisory.security_advisory_node_statuses.create!(
+          node:,
+          state: 'not_affected'
+        )
+        status.update_translations!(
+          Language.find_by!(code: 'en') => { note: "English note #{i}" },
+          czech => { note: "Česká poznámka #{i}" }
+        )
+      end
+
+      translation_queries = []
+      subscriber = ActiveSupport::Notifications.subscribe('sql.active_record') do |*, payload|
+        if payload[:sql].include?('security_advisory_node_status_translations')
+          translation_queries << payload[:sql]
+        end
+      end
+
+      begin
+        as(SpecSeed.admin) { json_get node_status_index_path(advisory.id) }
+      ensure
+        ActiveSupport::Notifications.unsubscribe(subscriber)
+      end
+
+      expect_status(200)
+      expect(node_statuses.count).to eq(2)
+      expect(translation_queries.count).to eq(1), translation_queries.inspect
+    end
+
+    it 'does not expose the legacy note field in the API contract' do
+      advisory = build_advisory
+
+      as(SpecSeed.admin) do
+        options "#{node_status_index_path(advisory.id)}?method=POST"
+      end
+
+      expect_status(200)
+      parameters = json.dig('response', 'input', 'parameters')
+      expect(parameters).to include('en_note', 'cs_note')
+      expect(parameters).not_to include('note')
+    end
+
     it 'supports the complete automation workflow with only its exact token scopes' do
       advisory = build_advisory
       session = create_open_session!(

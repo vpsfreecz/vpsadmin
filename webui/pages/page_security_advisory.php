@@ -36,8 +36,12 @@ function security_advisory_save_nodes($id, $revision)
             'state' => $state,
             'vulnerable_until' => $state === 'not_affected' ? null : security_advisory_datetime_param($prefix . '_vulnerable_until'),
             'mitigated_since' => $state === 'not_affected' ? null : security_advisory_datetime_param($prefix . '_mitigated_since'),
-            'note' => $_POST[$prefix . '_note'] ?: null,
         ];
+
+        foreach ($api->language->list() as $lang) {
+            $name = $lang->code . '_note';
+            $params[$name] = $_POST[$prefix . '_' . $name] ?: null;
+        }
 
         if (isset($statuses[$node->id])) {
             $api->security_advisory($id)->node_status->update($statuses[$node->id]->id, $params);

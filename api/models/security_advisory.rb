@@ -8,7 +8,7 @@ class SecurityAdvisory < ApplicationRecord
 
   has_many :security_advisory_cves, class_name: 'SecurityAdvisoryCve', dependent: :delete_all
   has_many :security_advisory_translations, dependent: :delete_all
-  has_many :security_advisory_node_statuses, dependent: :delete_all
+  has_many :security_advisory_node_statuses, dependent: :destroy
   has_many :nodes, through: :security_advisory_node_statuses
   has_many :security_advisory_vpses, dependent: :delete_all
   has_many :vpses, through: :security_advisory_vpses

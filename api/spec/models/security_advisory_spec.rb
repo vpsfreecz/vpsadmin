@@ -150,6 +150,28 @@ RSpec.describe SecurityAdvisory do
 
     expect(update_translation).not_to be_valid
     expect(update_translation.errors[:security_advisory_update]).not_to be_empty
+
+    node_status_translation = SecurityAdvisoryNodeStatusTranslation.new(
+      security_advisory_node_status_id: missing,
+      language: SpecSeed.language,
+      note: 'Orphan node note'
+    )
+
+    expect(node_status_translation).not_to be_valid
+    expect(node_status_translation.errors[:security_advisory_node_status]).not_to be_empty
+  end
+
+  it 'removes localized node notes when the advisory is destroyed' do
+    advisory = build_advisory
+    status = add_not_affected_status!(advisory)
+    translation = status.security_advisory_node_status_translations.create!(
+      language: SpecSeed.language,
+      note: 'Spec node note'
+    )
+
+    advisory.destroy!
+
+    expect(SecurityAdvisoryNodeStatusTranslation.where(id: translation.id)).to be_empty
   end
 
   it 'mails affected users only when requested' do

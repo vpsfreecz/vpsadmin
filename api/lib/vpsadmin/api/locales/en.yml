@@ -428,6 +428,10 @@ en:
       cs_message:
         description: Optional user-facing message with more details about this update.
         label: Česky message
+      cs_note:
+        description: Optional localized note for an exceptional circumstance on this
+          node.
+        label: Česky note
       cs_response:
         description: User-facing explanation of the mitigation or fix and whether
           users need to take action.
@@ -561,6 +565,10 @@ en:
       en_message:
         description: Optional user-facing message with more details about this update.
         label: English message
+      en_note:
+        description: Optional localized note for an exceptional circumstance on this
+          node.
+        label: English note
       en_response:
         description: User-facing explanation of the mitigation or fix and whether
           users need to take action.
@@ -1193,8 +1201,6 @@ en:
         label: Node_state
       nodes_online:
         label: Nodes_online
-      note:
-        description: Optional operator note for this node status.
       ns_id:
         description: Beginning of the ID range within the user namespace
         label: Ns_id
@@ -3185,13 +3191,13 @@ en:
           created_at:
             label: Created_at
           cs_summary:
-            description: One-sentence public summary shown in advisory lists, status
-              output, IRC announcements, and emails.
+            description: Short vulnerability-class title shown in advisory lists,
+              status output, IRC announcements, and emails.
           cve:
             description: Optional CVE link created atomically with the draft.
           en_summary:
-            description: One-sentence public summary shown in advisory lists, status
-              output, IRC announcements, and emails.
+            description: Short vulnerability-class title shown in advisory lists,
+              status output, IRC announcements, and emails.
           id:
             label: Id
           name:
@@ -3218,8 +3224,6 @@ en:
               label: Id
             node:
               description: Node whose exposure status is being recorded.
-            note:
-              label: Note
             state:
               description: Assessment of whether the node was affected and whether
                 it has been mitigated.
