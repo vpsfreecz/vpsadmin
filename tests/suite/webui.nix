@@ -1252,19 +1252,28 @@ import ../make-test.nix (
               state: :not_affected,
               vulnerable_until: nil,
               mitigated_since: nil,
-              note: 'Not affected in deterministic fixture'
+              notes: {}
             }
           end
 
-          advisory.security_advisory_node_statuses.create!(
+          node_status = advisory.security_advisory_node_statuses.create!(
             {
               node: node,
               state: status.fetch(:state),
               vulnerable_until: status[:vulnerable_until],
-              mitigated_since: status[:mitigated_since],
-              note: status[:note]
+              mitigated_since: status[:mitigated_since]
             }
           )
+
+          Language.find_each do |lang|
+            note = status.fetch(:notes, {})[lang.code.to_sym]
+            next if note.nil? || note.empty?
+
+            node_status.security_advisory_node_status_translations.create!(
+              language: lang,
+              note: note
+            )
+          end
         end
 
         if publish
@@ -3599,7 +3608,10 @@ import ../make-test.nix (
               state: :mitigated,
               vulnerable_until: advisory_vulnerable_until,
               mitigated_since: advisory_mitigated_since,
-              note: 'Kernel updated on the affected webui fixture node'
+              notes: {
+                en: 'Kernel updated on the affected webui fixture node',
+                cs: 'Jádro bylo na testovacím Node aktualizováno'
+              }
             }
           ]
         else
@@ -3609,7 +3621,7 @@ import ../make-test.nix (
               state: :not_affected,
               vulnerable_until: nil,
               mitigated_since: nil,
-              note: 'Not affected in deterministic fixture'
+              notes: {}
             }
           ]
         end
@@ -3621,7 +3633,7 @@ import ../make-test.nix (
             state: :unknown,
             vulnerable_until: nil,
             mitigated_since: nil,
-            note: 'Draft fixture status has not been assessed'
+            notes: {}
           }
         ]
       end
@@ -4555,8 +4567,14 @@ import ../make-test.nix (
             'editedPublishedAt' => '2026-05-29 12:30',
             'vulnerableUntil' => '2026-05-29 08:00',
             'mitigatedSince' => '2026-05-29 10:30',
-            'nodeNote' => 'Kernel updated by Playwright fixture',
-            'notAffectedNote' => 'Temporarily marked not affected by Playwright',
+            'nodeNotes' => {
+              'en' => 'Kernel updated by Playwright fixture',
+              'cs' => 'Jádro aktualizováno testem Playwright'
+            },
+            'notAffectedNotes' => {
+              'en' => 'Temporarily marked not affected by Playwright',
+              'cs' => 'Dočasně označeno testem Playwright jako nedotčené'
+            },
             'summary' => 'Webui browser created advisory summary',
             'description' => 'Webui browser created advisory description.',
             'response' => 'Webui browser created advisory response.',

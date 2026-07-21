@@ -198,7 +198,7 @@ test.describe('security advisory admin browser workflow', () => {
         state: 'mitigated',
         vulnerableUntil: ui.vulnerableUntil,
         mitigatedSince: ui.mitigatedSince,
-        note: ui.nodeNote,
+        notes: ui.nodeNotes,
       },
       s.nodes,
     );
@@ -210,7 +210,7 @@ test.describe('security advisory admin browser workflow', () => {
     await expect(content(page)).toContainText(ui.name);
     await expect(content(page)).toContainText(ui.summary);
     await expect(content(page)).toContainText(expectedAdvisoryTime(ui.publishedAt));
-    await expect(content(page)).toContainText(ui.nodeNote);
+    await expect(content(page)).toContainText(ui.nodeNotes.en);
 
     for (const cve of ui.cves) {
       await expect(content(page)).toContainText(cve);
@@ -247,13 +247,13 @@ test.describe('security advisory admin browser workflow', () => {
       state: 'not_affected',
       vulnerableUntil: '',
       mitigatedSince: '',
-      note: ui.notAffectedNote,
+      notes: ui.notAffectedNotes,
     });
     await submitForm(form, 'Save node statuses');
 
     await expect(heading(page)).toContainText(`Security advisory #${advisoryId}`);
     await expect(content(page)).toContainText('not affected');
-    await expect(content(page)).toContainText(ui.notAffectedNote);
+    await expect(content(page)).toContainText(ui.notAffectedNotes.en);
 
     await gotoAdvisory(page, 'nodes', { id: advisoryId });
     form = formByAction(page, `action=nodes&id=${advisoryId}`);
@@ -263,7 +263,7 @@ test.describe('security advisory admin browser workflow', () => {
         state: 'mitigated',
         vulnerableUntil: ui.vulnerableUntil,
         mitigatedSince: ui.mitigatedSince,
-        note: ui.nodeNote,
+        notes: ui.nodeNotes,
       },
       s.nodes,
     );
@@ -271,7 +271,7 @@ test.describe('security advisory admin browser workflow', () => {
 
     await expect(heading(page)).toContainText(`Security advisory #${advisoryId}`);
     await expect(content(page)).toContainText('mitigated');
-    await expect(content(page)).toContainText(ui.nodeNote);
+    await expect(content(page)).toContainText(ui.nodeNotes.en);
   });
 
   test('edits draft advisory CVEs, name, and translated text', async ({ page }) => {

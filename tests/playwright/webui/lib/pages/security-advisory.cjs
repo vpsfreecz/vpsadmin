@@ -131,7 +131,6 @@ async function applyNodeStatusDefaults(form, values, nodes = []) {
   const textFields = {
     vulnerableUntil: 'vulnerable_until',
     mitigatedSince: 'mitigated_since',
-    note: 'note',
   };
 
   for (const [valueName, fieldName] of Object.entries(textFields)) {
@@ -142,6 +141,14 @@ async function applyNodeStatusDefaults(form, values, nodes = []) {
     await form
       .locator(`.security-advisory-node-bulk[data-field="${fieldName}"]`)
       .fill(String(values[valueName]));
+  }
+
+  if ('notes' in values) {
+    for (const [language, note] of Object.entries(values.notes)) {
+      await form
+        .locator(`.security-advisory-node-bulk[data-field="${language}_note"]`)
+        .fill(String(note));
+    }
   }
 
   await form.locator('input[type="button"][value="Apply"]').click();
@@ -163,8 +170,12 @@ async function applyNodeStatusDefaults(form, values, nodes = []) {
       );
     }
 
-    if ('note' in values) {
-      await expect(nodeField(form, node.id, 'note')).toHaveValue(String(values.note));
+    if ('notes' in values) {
+      for (const [language, note] of Object.entries(values.notes)) {
+        await expect(nodeField(form, node.id, `${language}_note`)).toHaveValue(
+          String(note),
+        );
+      }
     }
   }
 }
@@ -182,8 +193,10 @@ async function setNodeStatus(form, nodeId, values) {
     await nodeField(form, nodeId, 'mitigated_since').fill(String(values.mitigatedSince));
   }
 
-  if ('note' in values) {
-    await nodeField(form, nodeId, 'note').fill(String(values.note));
+  if ('notes' in values) {
+    for (const [language, note] of Object.entries(values.notes)) {
+      await nodeField(form, nodeId, `${language}_note`).fill(String(note));
+    }
   }
 }
 
