@@ -328,6 +328,14 @@ module VpsAdmin::API::Resources
                choices: { values: ::EventRoutingContext.source_labels },
                load_validators: false
         integer :match_order
+        string :time_interval_state,
+               choices: {
+                 values: ::EventRouteMatch::TIME_INTERVAL_STATES.to_h do |state|
+                   [state, state.capitalize]
+                 end
+               },
+               load_validators: false
+        custom :time_interval_snapshot, nullable: true
         datetime :created_at
         datetime :updated_at
       end
