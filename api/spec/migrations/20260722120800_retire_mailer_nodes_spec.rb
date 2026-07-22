@@ -2,7 +2,7 @@
 
 require_relative '../migration_helper'
 
-MigrationSpecSupport.require_migration('20260629170000_retire_mailer_nodes')
+MigrationSpecSupport.require_migration('20260722120800_retire_mailer_nodes')
 
 RSpec.describe RetireMailerNodes do
   def define_nodes_schema
