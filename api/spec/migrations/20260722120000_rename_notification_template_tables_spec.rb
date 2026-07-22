@@ -2,7 +2,7 @@
 
 require_relative '../migration_helper'
 
-MigrationSpecSupport.require_migration('20260615100000_rename_notification_template_tables')
+MigrationSpecSupport.require_migration('20260722120000_rename_notification_template_tables')
 
 RSpec.describe RenameNotificationTemplateTables do
   def define_old_schema

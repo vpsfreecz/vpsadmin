@@ -2,7 +2,7 @@
 
 require_relative '../migration_helper'
 
-MigrationSpecSupport.require_migration('20260628120000_add_notification_rate_limits')
+MigrationSpecSupport.require_migration('20260722120600_add_notification_rate_limits')
 
 RSpec.describe AddNotificationRateLimits do
   def define_dependency_schema

@@ -2,7 +2,7 @@
 
 require_relative '../migration_helper'
 
-MigrationSpecSupport.require_migration('20260622220000_add_user_notification_delivery_methods')
+MigrationSpecSupport.require_migration('20260722120200_add_user_notification_delivery_methods')
 
 RSpec.describe AddUserNotificationDeliveryMethods do
   def define_users_schema

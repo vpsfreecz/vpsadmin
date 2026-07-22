@@ -2,7 +2,7 @@
 
 require_relative '../migration_helper'
 
-MigrationSpecSupport.require_migration('20260624120000_add_event_routing_contexts')
+MigrationSpecSupport.require_migration('20260722120400_add_event_routing_contexts')
 
 RSpec.describe AddEventRoutingContexts do
   def define_event_schema
