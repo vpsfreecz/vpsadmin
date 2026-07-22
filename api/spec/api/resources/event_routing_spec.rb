@@ -369,7 +369,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     it 'keeps dedicated system report migration routes matcher-free' do
       migration = File.expand_path(
-        '../../../db/migrate/20260624121000_migrate_legacy_email_recipients_to_routes',
+        '../../../db/migrate/20260722120500_migrate_legacy_email_recipients_to_routes',
         __dir__
       )
       require migration unless defined?(MigrateLegacyEmailRecipientsToRoutes)

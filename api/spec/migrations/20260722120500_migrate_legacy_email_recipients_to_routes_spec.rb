@@ -2,7 +2,7 @@
 
 require_relative '../migration_helper'
 
-MigrationSpecSupport.require_migration('20260624121000_migrate_legacy_email_recipients_to_routes')
+MigrationSpecSupport.require_migration('20260722120500_migrate_legacy_email_recipients_to_routes')
 
 RSpec.describe MigrateLegacyEmailRecipientsToRoutes do
   def define_legacy_schema

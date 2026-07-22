@@ -2,7 +2,7 @@
 
 require_relative '../migration_helper'
 
-MigrationSpecSupport.require_migration('20260615110000_add_events')
+MigrationSpecSupport.require_migration('20260722120100_add_events')
 
 RSpec.describe AddEvents do
   def define_old_schema

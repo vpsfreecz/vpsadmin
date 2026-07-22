@@ -2,7 +2,7 @@
 
 require_relative '../migration_helper'
 
-MigrationSpecSupport.require_migration('20260623210000_remove_users_mailer_enabled')
+MigrationSpecSupport.require_migration('20260722120300_remove_users_mailer_enabled')
 
 RSpec.describe RemoveUsersMailerEnabled do
   def define_notification_schema

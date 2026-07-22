@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_22_120800) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -451,13 +451,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.datetime "created_at", null: false
     t.text "error_summary"
     t.bigint "event_id", null: false
-    t.bigint "event_routing_context_id"
     t.bigint "event_route_id"
+    t.bigint "event_routing_context_id"
     t.datetime "last_attempt_at"
     t.integer "mail_log_id"
     t.datetime "next_attempt_at"
-    t.bigint "notification_receiver_target_id"
     t.bigint "notification_receiver_id"
+    t.bigint "notification_receiver_target_id"
     t.bigint "notification_target_id"
     t.text "payload", size: :long
     t.string "provider_message_id"
@@ -466,8 +466,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.text "response_headers"
     t.integer "response_status"
     t.integer "state", null: false
-    t.string "target_label"
     t.integer "target_kind", null: false
+    t.string "target_label"
     t.text "target_value"
     t.string "template_name", limit: 100
     t.integer "transaction_id"
@@ -475,12 +475,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["action", "state", "next_attempt_at"], name: "idx_event_deliveries_on_action_state_next_attempt"
     t.index ["event_id", "action", "state"], name: "index_event_deliveries_on_event_id_and_action_and_state"
     t.index ["event_id"], name: "index_event_deliveries_on_event_id"
-    t.index ["event_routing_context_id"], name: "idx_event_deliveries_on_routing_context"
     t.index ["event_route_id"], name: "index_event_deliveries_on_event_route_id"
+    t.index ["event_routing_context_id"], name: "idx_event_deliveries_on_routing_context"
     t.index ["mail_log_id"], name: "index_event_deliveries_on_mail_log_id"
     t.index ["next_attempt_at"], name: "index_event_deliveries_on_next_attempt_at"
-    t.index ["notification_receiver_target_id"], name: "idx_event_deliveries_on_receiver_target"
     t.index ["notification_receiver_id"], name: "index_event_deliveries_on_notification_receiver_id"
+    t.index ["notification_receiver_target_id"], name: "idx_event_deliveries_on_receiver_target"
     t.index ["notification_target_id"], name: "idx_event_deliveries_on_target"
     t.index ["released_at"], name: "index_event_deliveries_on_released_at"
     t.index ["state"], name: "index_event_deliveries_on_state"
@@ -510,19 +510,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["recipient_user_id"], name: "idx_event_delivery_attempts_on_recipient_user"
   end
 
-  create_table "event_routing_contexts", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+  create_table "event_route_matchers", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.bigint "event_id", null: false
-    t.integer "routing_state", null: false
-    t.string "source", limit: 50, null: false
-    t.string "subject_relation", limit: 50, null: false
+    t.bigint "event_route_id", null: false
+    t.string "field", limit: 100, null: false
+    t.string "operator", limit: 50, null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.index ["event_id", "user_id"], name: "index_event_routing_contexts_on_event_user", unique: true
-    t.index ["event_id"], name: "index_event_routing_contexts_on_event_id"
-    t.index ["routing_state"], name: "index_event_routing_contexts_on_routing_state"
-    t.index ["subject_relation"], name: "index_event_routing_contexts_on_subject_relation"
-    t.index ["user_id"], name: "index_event_routing_contexts_on_user_id"
+    t.text "value", null: false
+    t.index ["event_route_id"], name: "index_event_route_matchers_on_event_route_id"
   end
 
   create_table "event_route_matches", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -542,21 +537,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["route_owner_id"], name: "index_event_route_matches_on_route_owner_id"
   end
 
-  create_table "event_route_matchers", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "event_route_id", null: false
-    t.string "field", limit: 100, null: false
-    t.string "operator", limit: 50, null: false
-    t.datetime "updated_at", null: false
-    t.text "value", null: false
-    t.index ["event_route_id"], name: "index_event_route_matchers_on_event_route_id"
-  end
-
   create_table "event_routes", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.boolean "continue", default: false, null: false
     t.datetime "created_at", null: false
     t.boolean "enabled", default: true, null: false
-    t.string "template_name", limit: 100
     t.string "event_type", limit: 100
     t.string "event_type_pattern", limit: 100
     t.datetime "expires_at"
@@ -568,6 +552,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.boolean "single_use", default: false, null: false
     t.datetime "spent_at"
     t.integer "subject_scope", default: 0, null: false
+    t.string "template_name", limit: 100
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["enabled"], name: "index_event_routes_on_enabled"
@@ -576,9 +561,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["notification_receiver_id"], name: "index_event_routes_on_notification_receiver_id"
     t.index ["parent_id"], name: "index_event_routes_on_parent_id"
     t.index ["subject_scope", "enabled"], name: "index_event_routes_on_subject_scope_enabled"
-    t.index ["user_id", "single_use", "spent_at"], name: "index_event_routes_on_user_single_use_spent"
     t.index ["user_id", "parent_id", "position", "id"], name: "index_event_routes_on_user_parent_position"
+    t.index ["user_id", "single_use", "spent_at"], name: "index_event_routes_on_user_single_use_spent"
     t.index ["user_id"], name: "index_event_routes_on_user_id"
+  end
+
+  create_table "event_routing_contexts", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "event_id", null: false
+    t.integer "routing_state", null: false
+    t.string "source", limit: 50, null: false
+    t.string "subject_relation", limit: 50, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["event_id", "user_id"], name: "index_event_routing_contexts_on_event_user", unique: true
+    t.index ["event_id"], name: "index_event_routing_contexts_on_event_id"
+    t.index ["routing_state"], name: "index_event_routing_contexts_on_routing_state"
+    t.index ["subject_relation"], name: "index_event_routing_contexts_on_subject_relation"
+    t.index ["user_id"], name: "index_event_routing_contexts_on_user_id"
   end
 
   create_table "events", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -800,8 +800,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.datetime "created_at", precision: nil
     t.string "from", null: false
     t.string "in_reply_to"
-    t.integer "notification_template_id"
     t.string "message_id"
+    t.integer "notification_template_id"
     t.string "references"
     t.string "reply_to"
     t.string "return_path"
@@ -813,32 +813,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.datetime "updated_at", precision: nil
     t.integer "user_id"
     t.index ["user_id"], name: "index_mail_logs_on_user_id"
-  end
-
-  create_table "notification_template_variants", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.datetime "created_at", precision: nil
-    t.string "from"
-    t.text "html"
-    t.integer "language_id", null: false
-    t.integer "notification_template_id", null: false
-    t.text "options"
-    t.integer "protocol", default: 0, null: false
-    t.string "reply_to"
-    t.string "return_path"
-    t.string "subject"
-    t.text "text"
-    t.datetime "updated_at", precision: nil
-    t.index ["notification_template_id", "protocol", "language_id"], name: "notification_template_variants_unique", unique: true
-  end
-
-  create_table "notification_templates", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.datetime "created_at", precision: nil
-    t.string "label", limit: 100, null: false
-    t.string "name", limit: 100, null: false
-    t.string "template_id", limit: 100, null: false
-    t.datetime "updated_at", precision: nil
-    t.integer "user_visibility", default: 0, null: false
-    t.index ["name"], name: "index_notification_templates_on_name", unique: true
   end
 
   create_table "mailbox_handlers", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -1138,44 +1112,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["digest"], name: "index_node_kernel_configurations_on_digest", unique: true
   end
 
-  create_table "node_kernel_livepatch_patches", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
-    t.string "name", null: false
-    t.bigint "node_kernel_livepatch_id", null: false
-    t.string "version", limit: 128
-    t.index ["name", "node_kernel_livepatch_id"], name: "idx_node_kernel_livepatch_patches_lookup"
-    t.index ["node_kernel_livepatch_id", "name"], name: "idx_node_kernel_livepatch_patches_unique", unique: true
-  end
-
-  create_table "node_kernel_livepatches", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
-    t.datetime "applied_at"
-    t.boolean "enabled"
-    t.string "kernel_version", limit: 128
-    t.string "livepatch_id", null: false
-    t.boolean "loaded"
-    t.bigint "node_kernel_evidence_id", null: false
-    t.string "patch_version", limit: 128
-    t.boolean "transition"
-    t.datetime "verified_at"
-    t.index ["livepatch_id", "node_kernel_evidence_id"], name: "idx_node_kernel_livepatch_lookup"
-    t.index ["node_kernel_evidence_id", "livepatch_id"], name: "idx_node_kernel_livepatch_unique", unique: true
-  end
-
-  create_table "node_kernel_modules", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
-    t.string "name", null: false
-    t.bigint "node_kernel_evidence_id", null: false
-    t.index ["name", "node_kernel_evidence_id"], name: "idx_node_kernel_module_lookup"
-    t.index ["node_kernel_evidence_id", "name"], name: "idx_node_kernel_module_unique", unique: true
-  end
-
-  create_table "node_kernel_parameters", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
-    t.string "name", null: false
-    t.bigint "node_kernel_evidence_id", null: false
-    t.integer "position", null: false
-    t.text "value"
-    t.index ["name", "node_kernel_evidence_id"], name: "idx_node_kernel_parameters_lookup"
-    t.index ["node_kernel_evidence_id", "position"], name: "idx_node_kernel_parameters_position", unique: true
-  end
-
   create_table "node_kernel_events", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "boot_id", limit: 64
     t.datetime "booted_at"
@@ -1255,6 +1191,44 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["node_id"], name: "index_node_kernel_history_states_on_node_id", unique: true
   end
 
+  create_table "node_kernel_livepatch_patches", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "node_kernel_livepatch_id", null: false
+    t.string "version", limit: 128
+    t.index ["name", "node_kernel_livepatch_id"], name: "idx_node_kernel_livepatch_patches_lookup"
+    t.index ["node_kernel_livepatch_id", "name"], name: "idx_node_kernel_livepatch_patches_unique", unique: true
+  end
+
+  create_table "node_kernel_livepatches", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.datetime "applied_at"
+    t.boolean "enabled"
+    t.string "kernel_version", limit: 128
+    t.string "livepatch_id", null: false
+    t.boolean "loaded"
+    t.bigint "node_kernel_evidence_id", null: false
+    t.string "patch_version", limit: 128
+    t.boolean "transition"
+    t.datetime "verified_at"
+    t.index ["livepatch_id", "node_kernel_evidence_id"], name: "idx_node_kernel_livepatch_lookup"
+    t.index ["node_kernel_evidence_id", "livepatch_id"], name: "idx_node_kernel_livepatch_unique", unique: true
+  end
+
+  create_table "node_kernel_modules", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "node_kernel_evidence_id", null: false
+    t.index ["name", "node_kernel_evidence_id"], name: "idx_node_kernel_module_lookup"
+    t.index ["node_kernel_evidence_id", "name"], name: "idx_node_kernel_module_unique", unique: true
+  end
+
+  create_table "node_kernel_parameters", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "node_kernel_evidence_id", null: false
+    t.integer "position", null: false
+    t.text "value"
+    t.index ["name", "node_kernel_evidence_id"], name: "idx_node_kernel_parameters_lookup"
+    t.index ["node_kernel_evidence_id", "position"], name: "idx_node_kernel_parameters_position", unique: true
+  end
+
   create_table "node_software_changes", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
     t.string "after_revision", limit: 128
     t.boolean "after_revision_dirty", default: false, null: false
@@ -1284,29 +1258,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.integer "version_source"
     t.index ["component", "generation", "node_kernel_evidence_id"], name: "idx_node_software_versions_lookup"
     t.index ["node_kernel_evidence_id", "generation", "component"], name: "idx_node_software_versions_unique", unique: true
-  end
-
-  create_table "node_sysctl_changes", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
-    t.boolean "after_available"
-    t.text "after_configured_value"
-    t.text "after_effective_value"
-    t.boolean "before_available"
-    t.text "before_configured_value"
-    t.text "before_effective_value"
-    t.string "name", null: false
-    t.bigint "node_kernel_event_id", null: false
-    t.index ["name", "node_kernel_event_id"], name: "idx_node_sysctl_changes_lookup"
-    t.index ["node_kernel_event_id", "name"], name: "idx_node_sysctl_changes_unique", unique: true
-  end
-
-  create_table "node_sysctls", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
-    t.boolean "available", null: false
-    t.text "configured_value"
-    t.text "effective_value"
-    t.string "name", null: false
-    t.bigint "node_kernel_evidence_id", null: false
-    t.index ["name", "node_kernel_evidence_id"], name: "idx_node_sysctl_lookup"
-    t.index ["node_kernel_evidence_id", "name"], name: "idx_node_sysctl_unique", unique: true
   end
 
   create_table "node_statuses", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -1339,6 +1290,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.integer "used_swap"
     t.string "vpsadmin_version", limit: 25, null: false
     t.index ["node_id"], name: "index_node_statuses_on_node_id"
+  end
+
+  create_table "node_sysctl_changes", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.boolean "after_available"
+    t.text "after_configured_value"
+    t.text "after_effective_value"
+    t.boolean "before_available"
+    t.text "before_configured_value"
+    t.text "before_effective_value"
+    t.string "name", null: false
+    t.bigint "node_kernel_event_id", null: false
+    t.index ["name", "node_kernel_event_id"], name: "idx_node_sysctl_changes_lookup"
+    t.index ["node_kernel_event_id", "name"], name: "idx_node_sysctl_changes_unique", unique: true
+  end
+
+  create_table "node_sysctls", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.boolean "available", null: false
+    t.text "configured_value"
+    t.text "effective_value"
+    t.string "name", null: false
+    t.bigint "node_kernel_evidence_id", null: false
+    t.index ["name", "node_kernel_evidence_id"], name: "idx_node_sysctl_lookup"
+    t.index ["node_kernel_evidence_id", "name"], name: "idx_node_sysctl_unique", unique: true
   end
 
   create_table "node_system_history_states", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -1402,6 +1376,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["location_id"], name: "location_id"
   end
 
+  create_table "notification_rate_limit_states", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "delivery_method", limit: 32, null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["user_id", "delivery_method"], name: "idx_notification_rate_limit_states_unique", unique: true
+  end
+
   create_table "notification_receiver_targets", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "notification_receiver_id", null: false
@@ -1426,14 +1408,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["user_id"], name: "index_notification_receivers_on_user_id"
   end
 
-  create_table "notification_rate_limit_states", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "delivery_method", limit: 32, null: false
-    t.datetime "updated_at", null: false
-    t.integer "user_id", null: false
-    t.index ["user_id", "delivery_method"], name: "idx_notification_rate_limit_states_unique", unique: true
-  end
-
   create_table "notification_targets", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "action", limit: 50, null: false
     t.text "config"
@@ -1453,6 +1427,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["user_id", "action", "identity_key"], name: "idx_notification_targets_on_user_action_identity", unique: true
     t.index ["user_id"], name: "index_notification_targets_on_user_id"
     t.index ["verification_token"], name: "index_notification_targets_on_verification_token", unique: true
+  end
+
+  create_table "notification_template_variants", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", precision: nil
+    t.string "from"
+    t.text "html"
+    t.integer "language_id", null: false
+    t.integer "notification_template_id", null: false
+    t.text "options"
+    t.integer "protocol", default: 0, null: false
+    t.string "reply_to"
+    t.string "return_path"
+    t.string "subject"
+    t.text "text"
+    t.datetime "updated_at", precision: nil
+    t.index ["notification_template_id", "protocol", "language_id"], name: "notification_template_variants_unique", unique: true
+  end
+
+  create_table "notification_templates", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", precision: nil
+    t.string "label", limit: 100, null: false
+    t.string "name", limit: 100, null: false
+    t.string "template_id", limit: 100, null: false
+    t.datetime "updated_at", precision: nil
+    t.integer "user_visibility", default: 0, null: false
+    t.index ["name"], name: "index_notification_templates_on_name", unique: true
   end
 
   create_table "oauth2_authorizations", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -1715,6 +1715,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["security_advisory_id", "cve_id"], name: "index_security_advisory_cves_unique", unique: true
   end
 
+  create_table "security_advisory_node_status_translations", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.bigint "language_id", null: false
+    t.text "note"
+    t.bigint "security_advisory_node_status_id", null: false
+    t.index ["language_id"], name: "index_sanst_on_language"
+    t.index ["security_advisory_node_status_id", "language_id"], name: "index_sanst_on_status_language", unique: true
+  end
+
   create_table "security_advisory_node_statuses", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.datetime "mitigated_since"
     t.bigint "node_id", null: false
@@ -1724,14 +1732,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["node_id"], name: "index_security_advisory_node_statuses_on_node_id"
     t.index ["security_advisory_id", "node_id"], name: "index_sans_on_advisory_node", unique: true
     t.index ["state"], name: "index_security_advisory_node_statuses_on_state"
-  end
-
-  create_table "security_advisory_node_status_translations", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.bigint "language_id", null: false
-    t.text "note"
-    t.bigint "security_advisory_node_status_id", null: false
-    t.index ["language_id"], name: "index_sanst_on_language"
-    t.index ["security_advisory_node_status_id", "language_id"], name: "index_sanst_on_status_language", unique: true
   end
 
   create_table "security_advisory_translations", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -2016,27 +2016,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["user_id"], name: "index_user_failed_logins_on_user_id"
   end
 
-  create_table "user_notification_delivery_methods", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "delivery_method", limit: 32, null: false
-    t.boolean "enabled", default: true, null: false
-    t.datetime "updated_at", null: false
-    t.integer "user_id", null: false
-    t.index ["delivery_method", "enabled"], name: "idx_user_notification_delivery_methods_state"
-    t.index ["user_id", "delivery_method"], name: "idx_user_notification_delivery_methods_unique", unique: true
-  end
-
-  create_table "user_notification_rate_limits", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "delivery_method", limit: 32, null: false
-    t.integer "limit_count", null: false
-    t.string "period", limit: 16, null: false
-    t.datetime "updated_at", null: false
-    t.integer "user_id", null: false
-    t.index ["delivery_method", "period"], name: "idx_user_notification_rate_limits_method_period"
-    t.index ["user_id", "delivery_method", "period"], name: "idx_user_notification_rate_limits_unique", unique: true
-  end
-
   create_table "user_namespace_blocks", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.integer "index", null: false
     t.integer "offset", null: false, unsigned: true
@@ -2077,6 +2056,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["offset"], name: "index_user_namespaces_on_offset"
     t.index ["size"], name: "index_user_namespaces_on_size"
     t.index ["user_id"], name: "index_user_namespaces_on_user_id"
+  end
+
+  create_table "user_notification_delivery_methods", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "delivery_method", limit: 32, null: false
+    t.boolean "enabled", default: true, null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["delivery_method", "enabled"], name: "idx_user_notification_delivery_methods_state"
+    t.index ["user_id", "delivery_method"], name: "idx_user_notification_delivery_methods_unique", unique: true
+  end
+
+  create_table "user_notification_rate_limits", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "delivery_method", limit: 32, null: false
+    t.integer "limit_count", null: false
+    t.string "period", limit: 16, null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["delivery_method", "period"], name: "idx_user_notification_rate_limits_method_period"
+    t.index ["user_id", "delivery_method", "period"], name: "idx_user_notification_rate_limits_unique", unique: true
   end
 
   create_table "user_public_keys", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -2418,13 +2418,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
   add_foreign_key "node_ebpf_program_objects", "node_ebpf_programs", on_delete: :cascade
   add_foreign_key "node_ebpf_programs", "node_kernel_evidences", on_delete: :cascade
   add_foreign_key "node_kernel_configuration_options", "node_kernel_configurations", on_delete: :cascade
+  add_foreign_key "node_kernel_events", "node_kernel_evidences", on_delete: :nullify
+  add_foreign_key "node_kernel_evidence_errors", "node_kernel_evidences", on_delete: :cascade
+  add_foreign_key "node_kernel_history_gaps", "node_kernel_history_states", on_delete: :cascade
   add_foreign_key "node_kernel_livepatch_patches", "node_kernel_livepatches", on_delete: :cascade
   add_foreign_key "node_kernel_livepatches", "node_kernel_evidences", on_delete: :cascade
   add_foreign_key "node_kernel_modules", "node_kernel_evidences", on_delete: :cascade
   add_foreign_key "node_kernel_parameters", "node_kernel_evidences", on_delete: :cascade
-  add_foreign_key "node_kernel_events", "node_kernel_evidences", on_delete: :nullify
-  add_foreign_key "node_kernel_evidence_errors", "node_kernel_evidences", on_delete: :cascade
-  add_foreign_key "node_kernel_history_gaps", "node_kernel_history_states", on_delete: :cascade
   add_foreign_key "node_software_changes", "node_kernel_events", on_delete: :cascade
   add_foreign_key "node_software_versions", "node_kernel_evidences", on_delete: :cascade
   add_foreign_key "node_sysctl_changes", "node_kernel_events", on_delete: :cascade

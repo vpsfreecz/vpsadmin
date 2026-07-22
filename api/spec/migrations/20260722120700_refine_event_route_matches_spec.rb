@@ -2,7 +2,7 @@
 
 require_relative '../migration_helper'
 
-MigrationSpecSupport.require_migration('20260628130000_refine_event_route_matches')
+MigrationSpecSupport.require_migration('20260722120700_refine_event_route_matches')
 
 RSpec.describe RefineEventRouteMatches do
   def define_legacy_schema
