@@ -210,6 +210,144 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
       expect(route.reload.hit_count).to eq(1)
     end
 
+    it 'does not mark reports ignored when an active interval gates a mute route' do
+      vps = create_vps!
+      receiver = NotificationReceiver.create!(
+        user: vps.user,
+        label: 'Scheduled OOM ignore',
+        mute: true
+      )
+      route = EventRoute.create!(
+        user: vps.user,
+        notification_receiver: receiver,
+        event_type: 'vps.oom_report',
+        position: 1
+      )
+      interval = EventTimeInterval.create!(
+        user: vps.user,
+        name: 'Inactive OOM ignore window',
+        time_zone: 'UTC',
+        specs: [{ years: [{ start: 1, end: 1 }] }]
+      )
+      route.event_route_time_intervals.create!(
+        event_time_interval: interval,
+        mode: :active
+      )
+
+      report = supervisor.send(:save_report, build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope'))
+
+      expect(report.oom_report_rule).to be_nil
+      expect(report.ignored).to be(false)
+      expect(route.reload.hit_count).to eq(1)
+    end
+
+    it 'marks delayed reports ignored when a mute interval matched at occurrence time' do
+      vps = create_vps!
+      receiver = NotificationReceiver.create!(
+        user: vps.user,
+        label: 'Scheduled OOM receiver'
+      )
+      receiver.notification_receiver_actions.create!(
+        action: :email,
+        target_kind: :custom,
+        target_value: 'scheduled@example.test',
+        verified_at: Time.now
+      )
+      route = EventRoute.create!(
+        user: vps.user,
+        notification_receiver: receiver,
+        event_type: 'vps.oom_report',
+        position: 1
+      )
+      interval = EventTimeInterval.create!(
+        user: vps.user,
+        name: 'Historical mute window',
+        time_zone: 'UTC',
+        specs: [{ years: [{ start: 2024, end: 2024 }] }]
+      )
+      route.event_route_time_intervals.create!(
+        event_time_interval: interval,
+        mode: :mute
+      )
+      occurred_at = Time.utc(2024, 7, 22, 12, 0)
+
+      report = supervisor.send(
+        :save_report,
+        build_oom_report_payload(
+          vps:,
+          cgroup: '/user.slice/a.scope',
+          time: occurred_at
+        )
+      )
+
+      expect(report.oom_report_rule).to be_nil
+      expect(report.ignored).to be(true)
+      expect(report.created_at).to be_within(1.second).of(occurred_at)
+      expect(route.reload.hit_count).to eq(1)
+    end
+
+    it 'does not mark reports ignored when a scheduled mute continues to a delivery' do
+      vps = create_vps!
+      muted_receiver = NotificationReceiver.create!(
+        user: vps.user,
+        label: 'Scheduled OOM mute'
+      )
+      muted_receiver.notification_receiver_actions.create!(
+        action: :email,
+        target_kind: :custom,
+        target_value: 'muted@example.test',
+        verified_at: Time.now
+      )
+      mail_receiver = NotificationReceiver.create!(
+        user: vps.user,
+        label: 'OOM audit'
+      )
+      mail_receiver.notification_receiver_actions.create!(
+        action: :email,
+        target_kind: :custom,
+        target_value: 'audit@example.test',
+        verified_at: Time.now
+      )
+      mute_route = EventRoute.create!(
+        user: vps.user,
+        notification_receiver: muted_receiver,
+        event_type: 'vps.oom_report',
+        position: 1,
+        continue: true
+      )
+      occurred_at = Time.now.utc
+      interval = EventTimeInterval.create!(
+        user: vps.user,
+        name: 'Current mute window',
+        time_zone: 'UTC',
+        specs: [{ years: [{ start: occurred_at.year, end: occurred_at.year }] }]
+      )
+      mute_route.event_route_time_intervals.create!(
+        event_time_interval: interval,
+        mode: :mute
+      )
+      mail_route = EventRoute.create!(
+        user: vps.user,
+        notification_receiver: mail_receiver,
+        event_type: 'vps.oom_report',
+        position: 2
+      )
+
+      report = supervisor.send(
+        :save_report,
+        build_oom_report_payload(
+          vps:,
+          cgroup: '/user.slice/a.scope',
+          time: occurred_at
+        )
+      )
+
+      expect(report.oom_report_rule).to be_nil
+      expect(report.ignored).to be(false)
+      expect(mute_route.reload.hit_count).to eq(1)
+      expect(mail_route.reload.hit_count).to eq(1)
+    end
+
     it 'does not mark reports ignored when a mute route continues to a delivery' do
       vps = create_vps!
       muted_receiver = NotificationReceiver.create!(

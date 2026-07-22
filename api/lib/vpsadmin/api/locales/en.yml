@@ -77,6 +77,8 @@ en:
           'true':
             label: 'true'
         label: Active
+      active_route_reference_count:
+        label: Active_route_reference_count
       add_ip_addresses:
         description: Add all IP addresses from this network to the database now
         label: Add_ip_addresses
@@ -539,6 +541,8 @@ en:
         label: Display_action_summary
       display_label:
         label: Display_label
+      display_summary:
+        label: Display_summary
       display_target:
         label: Display_target
       distribution:
@@ -699,6 +703,8 @@ en:
         label: Event_source
       event_subject:
         label: Event_subject
+      event_time_interval:
+        label: Event_time_interval
       event_type:
         choices:
           boot:
@@ -1701,6 +1707,8 @@ en:
         label: Match_order
       matcher_summary:
         label: Matcher_summary
+      matches_now:
+        label: Matches_now
       max:
         description: When an object is allocating a resource, it must not use more
           than maximum
@@ -1743,6 +1751,10 @@ en:
         label: Mitigated_since
       mode:
         choices:
+          active:
+            label: Active
+          mute:
+            label: Mute
           ro:
             label: ro
           rw:
@@ -1760,6 +1772,8 @@ en:
         label: Mountpoint
       mute:
         label: Mute
+      mute_route_reference_count:
+        label: Mute_route_reference_count
       namespace:
         choices:
           forms:
@@ -2267,6 +2281,8 @@ en:
         label: Route_owner_id
       route_owner_login:
         label: Route_owner_login
+      route_reference_count:
+        label: Route_reference_count
       route_via:
         label: Route_via
       routed:
@@ -2425,6 +2441,8 @@ en:
         label: Source_revision
       source_status_id:
         label: Source_status_id
+      specs:
+        label: Specs
       spent_at:
         label: Spent_at
       split_access:
@@ -2664,6 +2682,17 @@ en:
         label: Threads
       through_status_id:
         label: Through_status_id
+      time_interval_snapshot:
+        label: Time_interval_snapshot
+      time_interval_state:
+        choices:
+          active:
+            label: Active
+          inactive:
+            label: Inactive
+          muted:
+            label: Muted
+        label: Time_interval_state
       time_zone:
         description: IANA time zone identifier, e.g. Europe/Prague
         label: Time zone
@@ -4436,6 +4465,24 @@ en:
               label: Id
             updated_at:
               label: Updated_at
+        time_interval:
+          attributes:
+            created_at:
+              label: Created_at
+            id:
+              label: Id
+            updated_at:
+              label: Updated_at
+      event_time_interval:
+        attributes:
+          created_at:
+            label: Created_at
+          id:
+            label: Id
+          name:
+            label: Name
+          updated_at:
+            label: Updated_at
       event_type:
         attributes:
           name:

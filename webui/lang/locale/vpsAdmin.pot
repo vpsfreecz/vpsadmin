@@ -296,7 +296,7 @@ msgid "Node list"
 msgstr ""
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
-#: forms/node.forms.php forms/outage.forms.php
+#: forms/node.forms.php forms/notifications.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/users.forms.php forms/vps.forms.php
 #: pages/page_cluster.php pages/page_transactions.php
 msgid "Name"
@@ -2450,6 +2450,10 @@ msgid "Targets"
 msgstr ""
 
 #: forms/notifications.forms.php
+msgid "Time intervals"
+msgstr ""
+
+#: forms/notifications.forms.php
 msgid "Limits"
 msgstr ""
 
@@ -2644,6 +2648,191 @@ msgstr ""
 
 #: forms/notifications.forms.php
 msgid "muted"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Active interval"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Mute interval"
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Invalid time range \"%s\". Use HH:MM-HH:MM."
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Time range \"%s\" must end after it starts."
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Invalid weekday range \"%s\"."
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Weekday range \"%s\" cannot wrap."
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Invalid %s range \"%s\". Use start:end."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Add at least one time specification."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "day-of-month"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "month"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "year"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Each specification must constrain at least one field."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Comma-separated HH:MM-HH:MM ranges; ranges cannot cross midnight."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Times"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "For example monday-friday, sunday."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Weekdays"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Days of month"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Use start:end; negative days count from the end of the month."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Months"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Use month numbers and start:end ranges."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Use full years and start:end ranges."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Years"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Remove specification"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Add time interval"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Time interval"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Update time interval"
+msgstr ""
+
+#: forms/notifications.forms.php lib/tips.lib.php pages/page_adminm.php
+msgid "Time zone"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Used to evaluate this interval, including daylight saving time changes."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Specifications"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid ""
+"A specification matches when all of its filled fields match. Multiple "
+"specifications are alternatives."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Add specification"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Assigned routes"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Back to time intervals"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Notification time intervals"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Matches now"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Do you really wish to delete this time interval?"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No time intervals configured."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Route time intervals"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Behavior"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid ""
+"Intervals gate only this route receiver. Child routes are still evaluated. "
+"Mute intervals override active intervals."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Mode"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Do you really wish to unassign this time interval?"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Assign interval"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Create a time interval first"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -3282,6 +3471,10 @@ msgstr ""
 
 #: forms/notifications.forms.php
 msgid "Deliveries"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Evaluated at"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -5910,10 +6103,6 @@ msgstr ""
 
 #: lib/tips.lib.php
 msgid "Dismiss"
-msgstr ""
-
-#: lib/tips.lib.php pages/page_adminm.php
-msgid "Time zone"
 msgstr ""
 
 #: lib/tips.lib.php
@@ -8861,6 +9050,50 @@ msgstr ""
 
 #: pages/page_notifications.php
 msgid "Invalid route order"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Time interval added"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to add time interval"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Time interval updated"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to update time interval"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Time interval deleted"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to delete time interval"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Time interval assigned"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Time interval assignments updated"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to save time interval assignments"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Time interval unassigned"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to unassign time interval"
 msgstr ""
 
 #: pages/page_notifications.php

@@ -131,6 +131,143 @@ if (isLoggedIn()) {
             }
             break;
 
+        case 'time_intervals':
+            notifications_time_intervals(api_get_uint('user'));
+            break;
+
+        case 'time_interval_new':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                csrf_check();
+                $user_id = notifications_target_user_id();
+
+                try {
+                    $interval = $api->event_time_interval->create(
+                        notifications_time_interval_params(true)
+                    );
+
+                    notify_user(_('Time interval added'), '');
+                    redirect(notifications_time_interval_url($interval->id, $user_id));
+                } catch (\InvalidArgumentException $e) {
+                    $xtpl->perex(_('Failed to add time interval'), h($e->getMessage()));
+                    notifications_time_interval_form(null, $user_id);
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(
+                        _('Failed to add time interval'),
+                        $e->getResponse()
+                    );
+                    notifications_time_interval_form(null, $user_id);
+                }
+            } else {
+                notifications_time_interval_form(null, api_get_uint('user'));
+            }
+            break;
+
+        case 'time_interval_edit':
+            $interval = $api->event_time_interval->show($_GET['id']);
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                csrf_check();
+
+                try {
+                    $api->event_time_interval->update(
+                        $interval->id,
+                        notifications_time_interval_params()
+                    );
+
+                    notify_user(_('Time interval updated'), '');
+                    redirect(notifications_time_interval_url($interval->id, $interval->user_id));
+                } catch (\InvalidArgumentException $e) {
+                    $xtpl->perex(_('Failed to update time interval'), h($e->getMessage()));
+                    notifications_time_interval_form($interval, $interval->user_id);
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(
+                        _('Failed to update time interval'),
+                        $e->getResponse()
+                    );
+                    notifications_time_interval_form($interval, $interval->user_id);
+                }
+            } else {
+                notifications_time_interval_form($interval, $interval->user_id);
+            }
+            break;
+
+        case 'time_interval_delete':
+            csrf_check();
+
+            try {
+                $interval = $api->event_time_interval->show($_GET['id']);
+                $api->event_time_interval->delete($interval->id);
+
+                notify_user(_('Time interval deleted'), '');
+                redirect(
+                    '?page=notifications&action=time_intervals'
+                    . notifications_user_qs($interval->user_id)
+                );
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(
+                    _('Failed to delete time interval'),
+                    $e->getResponse()
+                );
+                notifications_time_intervals(api_get_uint('user'));
+            }
+            break;
+
+        case 'route_time_intervals_save':
+            csrf_check();
+
+            try {
+                $route = $api->event_route->show($_GET['route']);
+                if (isset($_POST['add_assignment'])) {
+                    $route->time_interval->create([
+                        'event_time_interval' => api_post_uint('event_time_interval'),
+                        'mode' => api_post('mode'),
+                    ]);
+                    notify_user(_('Time interval assigned'), '');
+                } elseif (isset($_POST['save_assignments'])) {
+                    foreach ($_POST['assignments'] ?? [] as $id => $row) {
+                        if (!ctype_digit((string) $id) || !is_array($row)) {
+                            continue;
+                        }
+                        $route->time_interval->update($id, [
+                            'mode' => $row['mode'] ?? null,
+                        ]);
+                    }
+                    notify_user(_('Time interval assignments updated'), '');
+                }
+
+                redirect(
+                    '?page=notifications&action=route_edit&id=' . $route->id
+                    . notifications_user_qs($route->user_id)
+                );
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(
+                    _('Failed to save time interval assignments'),
+                    $e->getResponse()
+                );
+                notifications_route_edit($_GET['route']);
+            }
+            break;
+
+        case 'route_time_interval_delete':
+            csrf_check();
+
+            try {
+                $route = $api->event_route->show($_GET['route']);
+                $route->time_interval->delete($_GET['id']);
+
+                notify_user(_('Time interval unassigned'), '');
+                redirect(
+                    '?page=notifications&action=route_edit&id=' . $route->id
+                    . notifications_user_qs($route->user_id)
+                );
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(
+                    _('Failed to unassign time interval'),
+                    $e->getResponse()
+                );
+                notifications_route_edit($_GET['route']);
+            }
+            break;
+
         case 'matcher_new':
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 csrf_check();

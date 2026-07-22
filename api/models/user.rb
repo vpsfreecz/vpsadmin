@@ -26,6 +26,7 @@ class User < ApplicationRecord
   has_many :notification_receivers, dependent: :destroy
   has_many :notification_targets, dependent: :destroy
   has_many :event_routes, dependent: :destroy
+  has_many :event_time_intervals, dependent: :destroy
   has_many :events
   has_many :user_notification_delivery_methods, dependent: :delete_all
   has_many :user_notification_rate_limits, dependent: :delete_all

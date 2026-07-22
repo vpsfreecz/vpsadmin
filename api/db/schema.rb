@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_22_120800) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_22_120900) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -528,6 +528,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_120800) do
     t.bigint "route_owner_id", null: false
     t.string "source", limit: 32, null: false
     t.string "subject_relation", limit: 32, null: false
+    t.text "time_interval_snapshot"
+    t.string "time_interval_state", limit: 32, default: "active", null: false
     t.datetime "updated_at", null: false
     t.index ["event_id", "event_route_id", "route_owner_id"], name: "idx_event_route_matches_unique", unique: true
     t.index ["event_id", "match_order", "id"], name: "idx_event_route_matches_on_event_order"
@@ -535,6 +537,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_120800) do
     t.index ["event_route_id", "event_id"], name: "idx_event_route_matches_on_route_event"
     t.index ["event_route_id"], name: "index_event_route_matches_on_event_route_id"
     t.index ["route_owner_id"], name: "index_event_route_matches_on_route_owner_id"
+    t.index ["time_interval_state"], name: "idx_event_route_matches_on_time_state"
+  end
+
+  create_table "event_route_time_intervals", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "event_route_id", null: false
+    t.bigint "event_time_interval_id", null: false
+    t.integer "mode", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_route_id", "event_time_interval_id"], name: "idx_route_time_intervals_unique", unique: true
+    t.index ["event_route_id", "mode"], name: "idx_route_time_intervals_on_route_mode"
+    t.index ["event_route_id"], name: "idx_route_time_intervals_on_route"
+    t.index ["event_time_interval_id"], name: "idx_route_time_intervals_on_interval"
   end
 
   create_table "event_routes", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -579,6 +594,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_120800) do
     t.index ["routing_state"], name: "index_event_routing_contexts_on_routing_state"
     t.index ["subject_relation"], name: "index_event_routing_contexts_on_subject_relation"
     t.index ["user_id"], name: "index_event_routing_contexts_on_user_id"
+  end
+
+  create_table "event_time_intervals", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.text "specs", null: false
+    t.string "time_zone", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id", "name"], name: "index_event_time_intervals_on_user_name", unique: true
+    t.index ["user_id"], name: "index_event_time_intervals_on_user_id"
   end
 
   create_table "events", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -2413,6 +2439,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_120800) do
     t.index ["user_id"], name: "index_webauthn_credentials_on_user_id"
   end
 
+  add_foreign_key "event_route_time_intervals", "event_routes", on_delete: :cascade
+  add_foreign_key "event_route_time_intervals", "event_time_intervals"
   add_foreign_key "node_current_statuses", "node_kernel_evidences", on_delete: :nullify
   add_foreign_key "node_ebpf_program_links", "node_ebpf_programs", on_delete: :cascade
   add_foreign_key "node_ebpf_program_objects", "node_ebpf_programs", on_delete: :cascade

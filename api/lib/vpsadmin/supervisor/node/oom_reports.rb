@@ -52,13 +52,14 @@ module VpsAdmin::Supervisor
       full_cgroup = report.fetch('cgroup')
       cgroup = full_cgroup[0..254]
       count = report.fetch('count')
+      occurred_at = Time.at(report.fetch('time'))
 
       counter = ::OomReportCounter.find_or_create_by!(vps:, cgroup:)
       ::OomReportCounter.increment_counter(:counter, counter.id, by: count)
 
       rule = nil
       ignored = nil
-      routed = evaluate_event_routes(vps, full_cgroup, report)
+      routed = evaluate_event_routes(vps, full_cgroup, report, occurred_at:)
 
       if routed
         ignored = routed.suppressed_by_mute?
@@ -83,7 +84,7 @@ module VpsAdmin::Supervisor
         killed_pid: report.fetch('killed_pid'),
         killed_name: killed_name && killed_name[0..49],
         count:,
-        created_at: Time.at(report.fetch('time')),
+        created_at: occurred_at,
         processed: true,
         ignored:,
         oom_report_rule: rule
@@ -184,7 +185,7 @@ module VpsAdmin::Supervisor
       end
     end
 
-    def evaluate_event_routes(vps, full_cgroup, report)
+    def evaluate_event_routes(vps, full_cgroup, report, occurred_at:)
       return unless vps.user.event_routes.where(event_type: 'vps.oom_report').exists?
 
       count = report.fetch('count')
@@ -206,6 +207,7 @@ module VpsAdmin::Supervisor
           selected_report_count: 1,
           selected_oom_count: count
         },
+        occurred_at:,
         record_route_hits: true
       )
     end

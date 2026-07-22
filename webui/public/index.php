@@ -309,7 +309,13 @@ if (isLoggedIn()) {
         $xtpl->menu_add(_("DNS"), '?page=dns', ($_GET["page"] == 'dns'), false, 'dns.menu');
         $xtpl->menu_add(_("Transaction log"), '?page=transactions', ($_GET["page"] == 'transactions'));
     }
-    $xtpl->menu_add(_("Notifications"), '?page=notifications', ($_GET["page"] == 'notifications'), true);
+    $xtpl->menu_add(
+        _("Notifications"),
+        '?page=notifications',
+        ($_GET["page"] == 'notifications'),
+        true,
+        'notifications.menu'
+    );
 
     try {
         list_transaction_chains();

@@ -461,6 +461,14 @@ form[name="userns-map-entries"] input[type="text"] {text-align: right;}
   margin-bottom: 10px;
 }
 
+.notification-time-interval-spec-separator {
+  margin: 18px 0;
+}
+
+.notification-time-interval-spec:first-child > .notification-time-interval-spec-separator {
+  display: none;
+}
+
 a.user-unpaid {color: #fff;}
 
 /* Dropdown menu */

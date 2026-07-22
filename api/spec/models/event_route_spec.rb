@@ -14,12 +14,17 @@ RSpec.describe EventRoute do
   def reset_routing!(user)
     EventRouteMatch.delete_all
     EventRouteMatcher.joins(:event_route).where(event_routes: { user_id: user.id }).delete_all
+    EventRouteTimeInterval
+      .joins(:event_route)
+      .where(event_routes: { user_id: user.id })
+      .delete_all
     NotificationReceiverAction
       .joins(:notification_receiver)
       .where(notification_receivers: { user_id: user.id })
       .delete_all
     NotificationTarget.where(user:).delete_all
     EventRoute.where(user:).delete_all
+    EventTimeInterval.where(user:).delete_all
     NotificationReceiver.where(user:).delete_all
     user.user_notification_delivery_methods.delete_all
   end
@@ -89,9 +94,11 @@ RSpec.describe EventRoute do
     EventDelivery.delete_all
     Event.delete_all
     EventRouteMatcher.delete_all
+    EventRouteTimeInterval.delete_all
     NotificationReceiverAction.delete_all
     NotificationTarget.delete_all
     EventRoute.delete_all
+    EventTimeInterval.delete_all
     NotificationReceiver.delete_all
   end
 
@@ -122,6 +129,17 @@ RSpec.describe EventRoute do
       subject: 'Spec event',
       payload:
     )
+  end
+
+  def create_time_interval!(specs:, user: SpecSeed.user, name: 'Spec interval')
+    EventTimeInterval.create!(user:, name:, time_zone: 'UTC', specs:)
+  end
+
+  def route_event_at!(time, event_type: 'vps.incident_report', payload: {})
+    event = build_event(event_type:, payload:)
+    event.created_at = time
+    VpsAdmin::API::Events::Router.new(event).route!
+    event
   end
 
   def matched_routes(event)
@@ -461,6 +479,110 @@ RSpec.describe EventRoute do
     )
     expect(deliveries.map(&:template_name)).to eq(['vps_incident_report', nil])
     expect(deliveries).to all(be_released_state)
+  end
+
+  it 'gates only the scheduled route receiver and still traverses matching children' do
+    parent_receiver = create_receiver!(
+      label: 'Scheduled parent',
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/parent'
+      }
+    )
+    child_receiver = create_receiver!(
+      label: 'Unscheduled child',
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/child'
+      }
+    )
+    parent = create_route!(receiver: parent_receiver)
+    child = create_route!(receiver: child_receiver, parent:)
+    inactive = create_time_interval!(specs: [{ years: [{ start: 2025 }] }])
+    parent.event_route_time_intervals.create!(event_time_interval: inactive, mode: :active)
+
+    event = route_event_at!(Time.utc(2026, 7, 22, 12, 0))
+    deliveries = event.event_deliveries.order(:id).to_a
+    matches = event.event_route_matches.order(:match_order).to_a
+
+    expect(event.reload).to be_routed_routing_state
+    expect(matches.map(&:event_route)).to eq([parent, child])
+    expect(matches.map(&:time_interval_state)).to eq(%w[inactive active])
+    expect(matches.first.time_interval_snapshot).to include(
+      'state' => 'inactive',
+      'evaluated_at' => '2026-07-22T12:00:00Z'
+    )
+    expect(deliveries.map(&:state)).to eq(%w[skipped prepared])
+    expect(deliveries.map(&:error_summary)).to eq(
+      ['route is outside its active time intervals', nil]
+    )
+  end
+
+  it 'lets mute intervals override matching active intervals' do
+    receiver = create_receiver!(
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/muted'
+      }
+    )
+    route = create_route!(receiver:)
+    active = create_time_interval!(
+      name: 'Always active in 2026',
+      specs: [{ years: [{ start: 2026 }] }]
+    )
+    mute = create_time_interval!(
+      name: 'Muted in July',
+      specs: [{ months: [{ start: 7 }] }]
+    )
+    route.event_route_time_intervals.create!(event_time_interval: active, mode: :active)
+    route.event_route_time_intervals.create!(event_time_interval: mute, mode: :mute)
+
+    event = route_event_at!(Time.utc(2026, 7, 22, 12, 0))
+    match = event.event_route_matches.sole
+    delivery = event.event_deliveries.sole
+
+    expect(event.reload).to be_suppressed_routing_state
+    expect(match.time_interval_state).to eq('muted')
+    expect(match.time_interval_snapshot.fetch('assignments').map { |row| row.fetch('matched') }).to eq([true, true])
+    expect(delivery).to be_skipped_state
+    expect(delivery.error_summary).to eq('route is muted by a time interval')
+  end
+
+  it 'preserves continue and stop behavior when a route schedule suppresses delivery' do
+    first_receiver = create_receiver!(
+      label: 'Inactive first receiver',
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/first'
+      }
+    )
+    second_receiver = create_receiver!(
+      label: 'Second receiver',
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/second'
+      }
+    )
+    first = create_route!(receiver: first_receiver, position: 1, continue: true)
+    second = create_route!(receiver: second_receiver, position: 2)
+    inactive = create_time_interval!(specs: [{ years: [{ start: 2025 }] }])
+    first.event_route_time_intervals.create!(event_time_interval: inactive, mode: :active)
+
+    continued = route_event_at!(Time.utc(2026, 7, 22, 12, 0))
+
+    expect(matched_routes(continued)).to eq([first, second])
+    expect(continued.event_deliveries.pluck(:state)).to contain_exactly('skipped', 'prepared')
+
+    first.update!(continue: false)
+    stopped = route_event_at!(Time.utc(2026, 7, 22, 12, 0))
+
+    expect(matched_routes(stopped)).to eq([first])
+    expect(stopped.reload).to be_suppressed_routing_state
   end
 
   it 'uses continue on matching sibling routes for additive delivery' do

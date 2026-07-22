@@ -623,7 +623,8 @@ module VpsAdmin::API
     RouteMatchPlan = Struct.new(
       :event_route,
       :route_context,
-      :match_order
+      :match_order,
+      :time_interval_result
     )
     DeliveryPlan = Struct.new(
       :action,
@@ -639,7 +640,8 @@ module VpsAdmin::API
       :error_summary,
       :next_attempt_at,
       :payload,
-      :route_context
+      :route_context,
+      :route_time_interval_state
     )
 
     RouteResult = Struct.new(
@@ -661,7 +663,9 @@ module VpsAdmin::API
         routing_state == 'suppressed' &&
           deliveries.any? do |delivery|
             receiver = delivery.notification_receiver
-            receiver&.enabled? && receiver.mute?
+            delivery.route_time_interval_state == 'muted' ||
+              (delivery.route_time_interval_state == 'active' &&
+                receiver&.enabled? && receiver.mute?)
           end
       end
     end
@@ -987,7 +991,7 @@ module VpsAdmin::API
 
     def plan(event_type, user: nil, vps: nil, subject: nil, summary: nil,
              payload: nil, severity: nil, category: nil, ip_addr: nil,
-             record_route_hits: false, **event_args)
+             occurred_at: nil, record_route_hits: false, **event_args)
       type = type_for(event_type)
       context = event_context_for(type, event_args)
       attrs = context ? type.definition.build_attributes(context) : {}
@@ -1007,7 +1011,8 @@ module VpsAdmin::API
         subject: subject || attrs[:subject] || type&.label || event_type.to_s,
         summary: summary || attrs[:summary],
         parameters: payload_with_defaults(type, payload || attrs[:payload] || {}),
-        ip_addr: ip_addr || attrs[:ip_addr]
+        ip_addr: ip_addr || attrs[:ip_addr],
+        created_at: occurred_at
       )
       context.event = event if context
       event.runtime_event_context = context
@@ -1244,6 +1249,7 @@ module VpsAdmin::API
         @matched_routes = []
         @matched_route_matches = []
         @match_order = 0
+        @event_time = event.created_at || Time.now
       end
 
       def route!
@@ -1409,9 +1415,16 @@ module VpsAdmin::API
       end
 
       def process_route(route_context, route, deadline)
-        record_matched_route(route_context, route)
+        time_interval_result = record_matched_route(route_context, route)
 
-        deliveries = route.notification_receiver ? deliveries_for_route(route) : []
+        deliveries =
+          if route.notification_receiver.nil?
+            []
+          elsif time_interval_result.fetch('state') == 'active'
+            deliveries_for_route(route)
+          else
+            deliveries_for_scheduled_route(route, time_interval_result.fetch('state'))
+          end
         matched_child = false
 
         child_routes(route_context, route.id).each do |child|
@@ -1445,6 +1458,7 @@ module VpsAdmin::API
                      .where(enabled: true)
                      .includes(
                        :event_route_matchers,
+                       event_route_time_intervals: :event_time_interval,
                        notification_receiver: [
                          { notification_receiver_actions: :notification_target },
                          { user: :user_notification_delivery_methods }
@@ -1475,6 +1489,29 @@ module VpsAdmin::API
         end
 
         actions.map { |receiver_action| delivery_from_receiver_action(route, receiver, receiver_action) }
+      end
+
+      def deliveries_for_scheduled_route(route, state)
+        receiver = route.notification_receiver
+        reason =
+          if state == 'muted'
+            'route is muted by a time interval'
+          else
+            'route is outside its active time intervals'
+          end
+        actions = receiver.notification_receiver_actions.to_a
+
+        return [skipped_delivery(route, receiver, nil, reason, route_time_interval_state: state)] if actions.empty?
+
+        actions.map do |receiver_action|
+          skipped_delivery(
+            route,
+            receiver,
+            receiver_action,
+            reason,
+            route_time_interval_state: state
+          )
+        end
       end
 
       def delivery_from_receiver_action(route, receiver, receiver_action)
@@ -1586,7 +1623,8 @@ module VpsAdmin::API
           state:,
           next_attempt_at:,
           payload:,
-          route_context: @route_context
+          route_context: @route_context,
+          route_time_interval_state: 'active'
         )
       end
 
@@ -1602,11 +1640,12 @@ module VpsAdmin::API
           notification_target: nil,
           notification_receiver_action: nil,
           state: 'prepared',
-          route_context: nil
+          route_context: nil,
+          route_time_interval_state: 'active'
         )
       end
 
-      def skipped_delivery(route, receiver, receiver_action, reason)
+      def skipped_delivery(route, receiver, receiver_action, reason, route_time_interval_state: 'active')
         DeliveryPlan.new(
           action: receiver_action&.action || 'email',
           target_kind: receiver_action&.target_kind || 'default_recipient',
@@ -1619,7 +1658,8 @@ module VpsAdmin::API
           notification_receiver_action: receiver_action,
           state: 'skipped',
           error_summary: reason,
-          route_context: @route_context
+          route_context: @route_context,
+          route_time_interval_state:
         )
       end
 
@@ -1748,7 +1788,9 @@ module VpsAdmin::API
           route_owner: route_context.route_owner,
           subject_relation: route_context.subject_relation,
           source: route_context.source,
-          match_order: route_match.match_order
+          match_order: route_match.match_order,
+          time_interval_state: route_match.time_interval_result.fetch('state'),
+          time_interval_snapshot: route_match.time_interval_result
         )
       end
 
@@ -1780,7 +1822,9 @@ module VpsAdmin::API
       def record_matched_route(route_context, route)
         @matched_routes << route
         @match_order += 1
-        @matched_route_matches << RouteMatchPlan.new(route, route_context, @match_order)
+        result = route.time_interval_result(at: @event_time)
+        @matched_route_matches << RouteMatchPlan.new(route, route_context, @match_order, result)
+        result
       end
 
       def spend_single_use_routes(routes)

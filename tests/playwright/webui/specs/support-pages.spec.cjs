@@ -243,6 +243,7 @@ test.describe('support and status browser coverage', () => {
       'Routes',
       'Receivers',
       'Targets',
+      'Time intervals',
       'Limits',
       'Event types',
       'Test event',
@@ -326,6 +327,41 @@ test.describe('support and status browser coverage', () => {
     await submitForm(targetEditForm, 'Save');
     await expectNotification(page, 'Target updated');
 
+    const intervalName = 'Webui always-active interval';
+    await page.goto('/?page=notifications&action=time_intervals', {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(heading(page)).toContainText('Notification time intervals');
+    await expect(content(page).locator('[data-vpsadmin-doc-id="notifications.time-intervals"]'))
+      .toBeVisible();
+    await content(page).getByRole('link', { name: 'Add time interval' }).click();
+    const intervalForm = formByAction(page, 'action=time_interval_new');
+    await expect(page.locator('[data-vpsadmin-doc-id="notifications.time-interval-form"]'))
+      .toBeVisible();
+    await intervalForm.locator('input[name="name"]').fill(intervalName);
+    const timeZoneSelect = intervalForm.locator('select[name="time_zone"]');
+    await expect(timeZoneSelect).toHaveValue('UTC');
+    await expect(timeZoneSelect.locator('option[value="Europe/Prague"]')).toHaveCount(1);
+    await expect(intervalForm.locator('input[name="time_zone"]')).toHaveCount(0);
+    await timeZoneSelect.selectOption('UTC');
+    await intervalForm.locator('#notification-time-interval-add-spec').click();
+    const intervalSpecs = intervalForm.locator('.notification-time-interval-spec');
+    await expect(intervalSpecs).toHaveCount(2);
+    await expect(intervalSpecs.nth(0).locator('.notification-time-interval-spec-separator'))
+      .toBeHidden();
+    await expect(intervalSpecs.nth(1).locator('.notification-time-interval-spec-separator'))
+      .toBeVisible();
+    await intervalSpecs.nth(0).locator('.notification-time-interval-remove').click();
+    await expect(intervalSpecs).toHaveCount(1);
+    await expect(intervalSpecs.nth(0).locator('.notification-time-interval-spec-separator'))
+      .toBeHidden();
+    await intervalSpecs.nth(0).locator('input[name$="[times]"]').fill('00:00-24:00');
+    await intervalSpecs.nth(0).locator('input[name$="[weekdays]"]').fill('');
+    await submitForm(intervalForm, 'Add');
+    await expectNotification(page, 'Time interval added');
+    const intervalId = new URL(page.url()).searchParams.get('id');
+    expect(intervalId).toMatch(/^\d+$/);
+
     await page.goto(`/?page=notifications&action=receiver_edit&id=${receiverId}`, {
       waitUntil: 'domcontentloaded',
     });
@@ -400,6 +436,14 @@ test.describe('support and status browser coverage', () => {
     await expect(heading(page)).toContainText(`Notification route #${routeId}`);
     await expect(content(page)).toContainText('Matchers');
     await expect(content(page)).toContainText('Receiver');
+    const assignmentForm = formByAction(page, 'action=route_time_intervals_save');
+    await expect(page.locator('[data-vpsadmin-doc-id="notifications.route-time-intervals"]'))
+      .toBeVisible();
+    await assignmentForm.locator('select[name="event_time_interval"]').selectOption(intervalId);
+    await assignmentForm.locator('select[name="mode"]').selectOption('active');
+    await submitForm(assignmentForm, 'Assign interval');
+    await expectNotification(page, 'Time interval assigned');
+    await expect(rowWithText(page, intervalName)).toContainText('Active interval');
 
     await linkWithParams(content(page), {
       action: 'matcher_new',
@@ -434,6 +478,17 @@ test.describe('support and status browser coverage', () => {
     await expect(content(page)).toContainText(subject);
     await expect(content(page)).toContainText('Deliveries');
     await expect(content(page)).toContainText('webhook');
+    const matchedRoutesHeading = page.locator(
+      '[data-vpsadmin-doc-id="notifications.event-route-matches"]',
+    );
+    await expect(matchedRoutesHeading).toBeVisible();
+    const matchedRoutes = matchedRoutesHeading.locator(
+      'xpath=following-sibling::table[contains(@class, "table-style01")][1]',
+    );
+    await expect(matchedRoutes).toBeVisible();
+    const matchedRouteRow = matchedRoutes.locator('tr', { hasText: routeLabel }).first();
+    await expect(matchedRouteRow).toContainText('active');
+    await expect(matchedRouteRow).toContainText(intervalName);
     const payloadRow = rowWithText(page, 'Payload');
     await expect(payloadRow.locator('pre')).toContainText('"note"');
     await expect(payloadRow.locator('pre')).toContainText('testing notification routing');
@@ -562,6 +617,18 @@ test.describe('support and status browser coverage', () => {
     }).click();
     await expectNotification(page, 'Route deleted');
 
+    await page.goto('/?page=notifications&action=time_intervals', {
+      waitUntil: 'domcontentloaded',
+    });
+    const intervalRow = rowWithText(page, intervalName);
+    await expect(intervalRow).toBeVisible();
+    await acceptNextDialog(page);
+    await linkWithParams(intervalRow, {
+      action: 'time_interval_delete',
+      id: intervalId,
+    }).click();
+    await expectNotification(page, 'Time interval deleted');
+
     await page.goto('/?page=notifications&action=receivers', {
       waitUntil: 'domcontentloaded',
     });
@@ -591,6 +658,7 @@ test.describe('support and status browser coverage', () => {
       'Routes',
       'Receivers',
       'Targets',
+      'Time intervals',
       'Limits',
       'Event types',
       'Test event',
