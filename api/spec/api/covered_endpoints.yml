@@ -138,6 +138,16 @@ covered:
 - event_route.matcher#index
 - event_route.matcher#show
 - event_route.matcher#update
+- event_route.time_interval#create
+- event_route.time_interval#delete
+- event_route.time_interval#index
+- event_route.time_interval#show
+- event_route.time_interval#update
+- event_time_interval#create
+- event_time_interval#delete
+- event_time_interval#index
+- event_time_interval#show
+- event_time_interval#update
 - export#create
 - export#delete
 - export#index

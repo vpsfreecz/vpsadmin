@@ -118,11 +118,98 @@ final class NotificationRouteUiTest extends TestCase
         self::assertStringContainsString('$event->route_match->list()', $matches);
         self::assertStringContainsString("_('Matched routes')", $matches);
         self::assertStringContainsString("_('Relation')", $matches);
+        self::assertStringContainsString("_('Time intervals')", $matches);
+        self::assertStringContainsString('notifications_route_time_interval_result_html', $matches);
+        self::assertStringContainsString('time_interval_snapshot', $source);
         self::assertStringNotContainsString("_('Source')", $matches);
         self::assertStringNotContainsString("_('Order')", $matches);
         self::assertStringNotContainsString('match_order', $matches);
         self::assertStringContainsString('notifications_event_route_matches($event)', $show);
         self::assertStringNotContainsString('matched_event_route_id', $show);
+    }
+
+    public function testTimeIntervalInputIsParsedIntoApiRanges(): void
+    {
+        require_once dirname(__DIR__, 2) . '/forms/notifications.forms.php';
+
+        $_POST['specs'] = [[
+            'times' => '09:00-12:00, 13:00-17:30',
+            'weekdays' => 'monday-friday, sunday',
+            'days_of_month' => '1:15, -2:-1',
+            'months' => '1:6, 12',
+            'years' => '2026:2028',
+        ]];
+
+        try {
+            $specs = notifications_time_interval_specs_from_post();
+        } finally {
+            unset($_POST['specs']);
+        }
+
+        self::assertSame([
+            ['start_time' => '09:00', 'end_time' => '12:00'],
+            ['start_time' => '13:00', 'end_time' => '17:30'],
+        ], $specs[0]['times']);
+        self::assertSame([
+            ['start' => 'monday', 'end' => 'friday'],
+            ['start' => 'sunday', 'end' => 'sunday'],
+        ], $specs[0]['weekdays']);
+        self::assertSame([
+            ['start' => 1, 'end' => 15],
+            ['start' => -2, 'end' => -1],
+        ], $specs[0]['days_of_month']);
+        self::assertSame([['start' => 2026, 'end' => 2028]], $specs[0]['years']);
+    }
+
+    public function testTimeIntervalInputRejectsOvernightRanges(): void
+    {
+        require_once dirname(__DIR__, 2) . '/forms/notifications.forms.php';
+
+        $this->expectException(InvalidArgumentException::class);
+        notifications_time_interval_parse_times('22:00-06:00');
+    }
+
+    public function testTimeIntervalsHaveStandaloneAndRouteEditors(): void
+    {
+        $source = $this->notificationsFormsSource();
+        $pageSource = file_get_contents(dirname(__DIR__, 2) . '/pages/page_notifications.php');
+        $indexSource = file_get_contents(dirname(__DIR__, 2) . '/public/index.php');
+        $routeEdit = $this->sourceBetween(
+            $source,
+            'function notifications_route_edit(',
+            'function notifications_matcher_new('
+        );
+
+        self::assertStringContainsString('notifications.time-intervals', $source);
+        self::assertStringContainsString('notifications.time-interval-form', $source);
+        self::assertStringContainsString('notifications.route-time-intervals', $source);
+        self::assertStringContainsString('notifications_route_time_intervals($route)', $routeEdit);
+        self::assertStringContainsString("case 'time_intervals':", $pageSource);
+        self::assertStringContainsString("case 'route_time_intervals_save':", $pageSource);
+        self::assertStringContainsString("case 'route_time_interval_delete':", $pageSource);
+        self::assertStringContainsString("'notifications.menu'", $indexSource);
+    }
+
+    public function testTimeIntervalFormUsesSharedTimeZonesAndSeparatesSpecs(): void
+    {
+        $form = $this->sourceBetween(
+            $this->notificationsFormsSource(),
+            'function notifications_time_interval_form(',
+            'function notifications_time_intervals('
+        );
+        $spec = $this->sourceBetween(
+            $this->notificationsFormsSource(),
+            'function notifications_time_interval_spec_html(',
+            'function notifications_time_interval_editor_script('
+        );
+
+        self::assertStringContainsString('$xtpl->form_add_select(', $form);
+        self::assertStringContainsString('time_zone_options()', $form);
+        self::assertDoesNotMatchRegularExpression(
+            "/form_add_input\\(\\s*_\\('Time zone'\\).*?'time_zone'/s",
+            $form
+        );
+        self::assertStringContainsString('notification-time-interval-spec-separator', $spec);
     }
 
     public function testRouteLifecycleAndHitLabelsAreShownForAllRoutes(): void
