@@ -113,7 +113,7 @@ module OperationalAlertsSpecHelpers
     fixture ? fixture.merge(incident:, ip_assignment: ip_address_assignment, mailbox:) : incident
   end
 
-  def create_oom_report_fixture!(vps:, rule: nil, cgroup: '/', count: 1,
+  def create_oom_report_fixture!(vps:, cgroup: '/', count: 1,
                                  created_at: Time.now.utc, reported_at: nil,
                                  processed: true, ignored: false,
                                  invoked_by_pid: 100, invoked_by_name: 'invoked',
@@ -129,8 +129,7 @@ module OperationalAlertsSpecHelpers
       created_at:,
       reported_at:,
       processed:,
-      ignored:,
-      oom_report_rule: rule
+      ignored:
     )
   end
 

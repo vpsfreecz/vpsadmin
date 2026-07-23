@@ -57,8 +57,6 @@ cs:
             label: E-mail
           ignore:
             label: ignorovat
-          notify:
-            label: Upozornit
           request_correction:
             label: vyžádat opravu
           sms:
@@ -304,8 +302,6 @@ cs:
         label: Cc
       cgroup:
         label: Cgroup
-      cgroup_pattern:
-        label: Vzor cesty cgroup
       cgroup_version:
         choices:
           cgroup_any:
@@ -1368,6 +1364,8 @@ cs:
         label: Skryté
       history_id:
         label: ID historie
+      hit_count:
+        label: Zásahy
       host_ip_address:
         description: Host adresa pro přiřazení rozhraní, výchozí je první adresa
         label: Host IP adresa
@@ -1408,8 +1406,6 @@ cs:
         label: Dopad
       impermanence:
         label: NixOS Impermanence
-      implicit_oom_report_rule_hit_count:
-        label: Počet zásahů implicitního OOM report pravidla
       in_reply_to:
         label: In reply to
       in_rescue_mode:
@@ -1891,8 +1887,6 @@ cs:
       onstartall:
         description: Spustit VPS při akci spustit vše?
         label: Při spuštění všeho
-      oom_report_rule:
-        label: Pravidlo OOM reportu
       oom_score_adj:
         label: Úprava OOM skóre
       opens_at:
@@ -4440,8 +4434,6 @@ cs:
         attributes:
           created_at:
             label: Vytvořeno
-          hit_count:
-            label: Zásahy
           id:
             label: ID
           subject_scope:
@@ -5076,18 +5068,6 @@ cs:
           attributes:
             id:
               label: ID
-      oom_report_rule:
-        attributes:
-          created_at:
-            label: Vytvořeno
-          hit_count:
-            label: Počet zásahů
-          id:
-            label: ID
-          updated_at:
-            label: Aktualizováno
-          vps:
-            label: VPS
       os_family:
         attributes:
           id:
@@ -5391,8 +5371,6 @@ cs:
         attributes:
           class_name:
             label: Název objektu
-          hit_count:
-            label: Zásahy
           label:
             description: Uživatelsky srozumitelný název
           name:

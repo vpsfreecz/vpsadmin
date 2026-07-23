@@ -57,8 +57,6 @@ en:
             label: E-mail
           ignore:
             label: ignore
-          notify:
-            label: notify
           request_correction:
             label: request_correction
           sms:
@@ -305,8 +303,6 @@ en:
         label: Cc
       cgroup:
         label: Cgroup
-      cgroup_pattern:
-        label: Cgroup path pattern
       cgroup_version:
         choices:
           cgroup_any:
@@ -1369,6 +1365,8 @@ en:
         label: Hidden
       history_id:
         label: History_id
+      hit_count:
+        label: Hits
       host_ip_address:
         description: Host address to assign to the interface, defaults to the first
           address
@@ -1410,8 +1408,6 @@ en:
         label: Impact
       impermanence:
         label: NixOS Impermanence
-      implicit_oom_report_rule_hit_count:
-        label: Implicit_oom_report_rule_hit_count
       in_reply_to:
         label: In_reply_to
       in_rescue_mode:
@@ -1896,8 +1892,6 @@ en:
       onstartall:
         description: Start VPS on start all action?
         label: On start all
-      oom_report_rule:
-        label: OomReportRule
       oom_score_adj:
         label: Oom_score_adj
       opens_at:
@@ -4444,8 +4438,6 @@ en:
         attributes:
           created_at:
             label: Created_at
-          hit_count:
-            label: Hits
           id:
             label: Id
           subject_scope:
@@ -5080,18 +5072,6 @@ en:
           attributes:
             id:
               label: Id
-      oom_report_rule:
-        attributes:
-          created_at:
-            label: Created_at
-          hit_count:
-            label: Hit count
-          id:
-            label: Id
-          updated_at:
-            label: Updated_at
-          vps:
-            label: VPS
       os_family:
         attributes:
           id:
@@ -5393,8 +5373,6 @@ en:
         attributes:
           class_name:
             label: Class name
-          hit_count:
-            label: Hits
           label:
             description: Human-friendly name
           name:

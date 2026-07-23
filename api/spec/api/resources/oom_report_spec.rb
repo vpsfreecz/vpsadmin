@@ -134,25 +134,6 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
     vps_other = create_vps!(user: SpecSeed.other_user, node: SpecSeed.other_node, hostname: 'other-vps')
     vps_support = create_vps!(user: SpecSeed.support, node: SpecSeed.other_node, hostname: 'support-vps')
 
-    rule_user_notify = OomReportRule.create!(
-      vps: vps_user,
-      action: :notify,
-      cgroup_pattern: '/user/*',
-      hit_count: 0
-    )
-    rule_other_ignore = OomReportRule.create!(
-      vps: vps_other,
-      action: :ignore,
-      cgroup_pattern: '/other/*',
-      hit_count: 0
-    )
-    rule_support_notify = OomReportRule.create!(
-      vps: vps_support,
-      action: :notify,
-      cgroup_pattern: '/support/*',
-      hit_count: 0
-    )
-
     report_user_a = OomReport.create!(
       vps: vps_user,
       cgroup: '/user/a',
@@ -164,8 +145,7 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
       created_at: base_time + 10,
       reported_at: base_time + 11,
       processed: true,
-      ignored: false,
-      oom_report_rule: rule_user_notify
+      ignored: false
     )
 
     report_user_b = OomReport.create!(
@@ -179,8 +159,7 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
       created_at: base_time + 20,
       reported_at: base_time + 21,
       processed: true,
-      ignored: false,
-      oom_report_rule: rule_user_notify
+      ignored: false
     )
 
     report_other = OomReport.create!(
@@ -194,8 +173,7 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
       created_at: base_time + 30,
       reported_at: base_time + 31,
       processed: true,
-      ignored: false,
-      oom_report_rule: rule_other_ignore
+      ignored: false
     )
 
     report_support = OomReport.create!(
@@ -209,8 +187,7 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
       created_at: base_time + 40,
       reported_at: base_time + 41,
       processed: true,
-      ignored: false,
-      oom_report_rule: rule_support_notify
+      ignored: false
     )
 
     report_user_unprocessed = OomReport.unscoped.create!(
@@ -224,8 +201,7 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
       created_at: base_time + 5,
       reported_at: nil,
       processed: false,
-      ignored: false,
-      oom_report_rule: nil
+      ignored: false
     )
 
     usage_user_primary = OomReportUsage.create!(
@@ -329,9 +305,6 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
       vps_user: vps_user,
       vps_other: vps_other,
       vps_support: vps_support,
-      rule_user_notify: rule_user_notify,
-      rule_other_ignore: rule_other_ignore,
-      rule_support_notify: rule_support_notify,
       report_user_a: report_user_a,
       report_user_b: report_user_b,
       report_other: report_other,
@@ -360,10 +333,6 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
 
   def vps_support
     seed_data.fetch(:vps_support)
-  end
-
-  def rule_user_notify
-    seed_data.fetch(:rule_user_notify)
   end
 
   def report_user_a
@@ -518,15 +487,6 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
       expect(json['status']).to be(true)
       ids = oom_reports.map { |row| row['id'] }
       expect(ids).to contain_exactly(report_other.id, report_support.id)
-    end
-
-    it 'filters by oom_report_rule' do
-      as(SpecSeed.admin) { json_get index_path, oom_report: { oom_report_rule: rule_user_notify.id } }
-
-      expect_status(200)
-      expect(json['status']).to be(true)
-      ids = oom_reports.map { |row| row['id'] }
-      expect(ids).to contain_exactly(report_user_a.id, report_user_b.id)
     end
 
     it 'filters by cgroup' do

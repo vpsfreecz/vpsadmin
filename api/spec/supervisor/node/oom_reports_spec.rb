@@ -60,20 +60,20 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
       expect(OomReportCounter.find_by!(vps:, cgroup: payload.fetch('cgroup')).counter).to eq(7)
     end
 
-    it 'increments matching rule hit count and marks ignored reports' do
+    it 'plans unmatched reports through the generated default route without persisting an event' do
       vps = create_vps!
-      rule = OomReportRule.create!(
-        vps:,
-        action: :ignore,
-        cgroup_pattern: '/user.slice/*',
-        hit_count: 0
-      )
+      route = EventRoute.default_admin_route_for(vps.user)
+      report = nil
 
-      report = supervisor.send(:save_report, build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope'))
+      expect do
+        report = supervisor.send(
+          :save_report,
+          build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope')
+        )
+      end.not_to change(Event.where(event_type: 'vps.oom_report'), :count)
 
-      expect(rule.reload.hit_count).to eq(1)
-      expect(report.oom_report_rule).to eq(rule)
-      expect(report.ignored).to be(true)
+      expect(report.ignored).to be(false)
+      expect(route.reload.hit_count).to eq(1)
     end
 
     it 'uses OOM event routes to mark matching reports ignored' do
@@ -107,7 +107,6 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
 
       report = supervisor.send(:save_report, build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope'))
 
-      expect(report.oom_report_rule).to be_nil
       expect(report.ignored).to be(true)
       expect(route.reload.hit_count).to eq(1)
     end
@@ -178,7 +177,6 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
 
       report = supervisor.send(:save_report, build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope'))
 
-      expect(report.oom_report_rule).to be_nil
       expect(report.ignored).to be(false)
       expect(route.reload.hit_count).to eq(1)
     end
@@ -205,7 +203,6 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
 
       report = supervisor.send(:save_report, build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope'))
 
-      expect(report.oom_report_rule).to be_nil
       expect(report.ignored).to be(false)
       expect(route.reload.hit_count).to eq(1)
     end
@@ -236,7 +233,6 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
 
       report = supervisor.send(:save_report, build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope'))
 
-      expect(report.oom_report_rule).to be_nil
       expect(report.ignored).to be(false)
       expect(route.reload.hit_count).to eq(1)
     end
@@ -280,7 +276,6 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
         )
       )
 
-      expect(report.oom_report_rule).to be_nil
       expect(report.ignored).to be(true)
       expect(report.created_at).to be_within(1.second).of(occurred_at)
       expect(route.reload.hit_count).to eq(1)
@@ -342,7 +337,6 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
         )
       )
 
-      expect(report.oom_report_rule).to be_nil
       expect(report.ignored).to be(false)
       expect(mute_route.reload.hit_count).to eq(1)
       expect(mail_route.reload.hit_count).to eq(1)
@@ -388,20 +382,9 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
 
       report = supervisor.send(:save_report, build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope'))
 
-      expect(report.oom_report_rule).to be_nil
       expect(report.ignored).to be(false)
       expect(mute_route.reload.hit_count).to eq(1)
       expect(mail_route.reload.hit_count).to eq(1)
-    end
-  end
-
-  describe '#evaluate_rules' do
-    it 'returns the first matching rule in rule order' do
-      vps = create_vps!
-      first = OomReportRule.create!(vps:, action: :notify, cgroup_pattern: '/user.slice/*')
-      OomReportRule.create!(vps:, action: :ignore, cgroup_pattern: '/user.slice/a.scope')
-
-      expect(supervisor.send(:evaluate_rules, vps, '/user.slice/a.scope')).to eq(first)
     end
   end
 

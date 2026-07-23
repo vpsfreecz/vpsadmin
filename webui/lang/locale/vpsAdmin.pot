@@ -128,10 +128,9 @@ msgstr ""
 
 #: forms/backup.forms.php forms/cluster.forms.php forms/dataset.forms.php
 #: forms/dns.forms.php forms/export.forms.php forms/notifications.forms.php
-#: forms/oom_reports.forms.php forms/security_advisory.forms.php
-#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
-#: forms/vps.forms.php pages/page_adminm.php pages/page_backup.php
-#: pages/page_cluster.php
+#: forms/security_advisory.forms.php forms/userdata.forms.php
+#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
+#: pages/page_adminm.php pages/page_backup.php pages/page_cluster.php
 msgid "Delete"
 msgstr ""
 
@@ -374,10 +373,9 @@ msgstr ""
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
 #: forms/export.forms.php forms/networking.forms.php
-#: forms/notifications.forms.php forms/oom_reports.forms.php
-#: forms/security_advisory.forms.php forms/userdata.forms.php
-#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
-#: pages/page_cluster.php public/index.php
+#: forms/notifications.forms.php forms/security_advisory.forms.php
+#: forms/userdata.forms.php forms/users.forms.php forms/vps.forms.php
+#: pages/page_adminm.php pages/page_cluster.php public/index.php
 msgid "Edit"
 msgstr ""
 
@@ -487,9 +485,8 @@ msgid "Add network to location"
 msgstr ""
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
-#: forms/notifications.forms.php forms/oom_reports.forms.php
-#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
-#: pages/page_adminm.php
+#: forms/notifications.forms.php forms/userdata.forms.php
+#: forms/userns.forms.php forms/users.forms.php pages/page_adminm.php
 msgid "Add"
 msgstr ""
 
@@ -510,8 +507,7 @@ msgid "Location network"
 msgstr ""
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
-#: forms/export.forms.php forms/notifications.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/export.forms.php forms/notifications.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/userdata.forms.php
 #: forms/userns.forms.php forms/users.forms.php pages/page_adminm.php
 #: pages/page_adminvps.php pages/page_cluster.php
@@ -591,8 +587,8 @@ msgid "Page"
 msgstr ""
 
 #: forms/cluster.forms.php forms/dataset.forms.php
-#: forms/notifications.forms.php forms/oom_reports.forms.php
-#: lib/xtemplate.lib.php pages/page_transactions.php
+#: forms/notifications.forms.php lib/xtemplate.lib.php
+#: pages/page_transactions.php
 msgid "Action"
 msgstr ""
 
@@ -1778,7 +1774,7 @@ msgstr ""
 msgid "Back to user details"
 msgstr ""
 
-#: forms/lifetimes.forms.php forms/oom_reports.forms.php forms/vps.forms.php
+#: forms/lifetimes.forms.php forms/vps.forms.php
 msgid "Back to VPS details"
 msgstr ""
 
@@ -3700,10 +3696,6 @@ msgid "Out-of-memory Reports"
 msgstr ""
 
 #: forms/oom_reports.forms.php
-msgid "Rule ID"
-msgstr ""
-
-#: forms/oom_reports.forms.php
 msgid "Killed process"
 msgstr ""
 
@@ -3725,10 +3717,6 @@ msgstr ""
 
 #: forms/oom_reports.forms.php
 msgid "Cgroup"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "Rule"
 msgstr ""
 
 #: forms/oom_reports.forms.php
@@ -3765,65 +3753,6 @@ msgstr ""
 
 #: forms/oom_reports.forms.php pages/page_adminvps.php
 msgid "Processes"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "OOM report rules for VPS "
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "Cgroup path pattern"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "Hit count"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "No rules are configured, notifications are sent for all OOM reports."
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "Rules are evaluated top to bottom"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid ""
-"Patterns are matched using Ruby's <a href=\"https://docs.ruby-lang.org/en/"
-"master/File.html#method-c-fnmatch\" target=\"_blank\">File.fnmatch</a> "
-"method with <code>File::FNM_PATHNAME | File::FNM_EXTGLOB</code>"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid ""
-"Matches are done against full cgroup path without <code>/sys/fs/cgroup</"
-"code>, see"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "existing OOM reports"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "The first matching rule determines the action"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid ""
-"Out-of-memory situations are considered a configuration error and can result "
-"in VPS being restarted or stopped"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "Add rule"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "Update OOM report rule"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "Back to rule list"
 msgstr ""
 
 #: forms/outage.forms.php

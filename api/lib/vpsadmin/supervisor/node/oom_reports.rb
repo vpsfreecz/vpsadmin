@@ -57,24 +57,7 @@ module VpsAdmin::Supervisor
       counter = ::OomReportCounter.find_or_create_by!(vps:, cgroup:)
       ::OomReportCounter.increment_counter(:counter, counter.id, by: count)
 
-      rule = nil
-      ignored = nil
       routed = evaluate_event_routes(vps, full_cgroup, report, occurred_at:)
-
-      if routed
-        ignored = routed.suppressed_by_mute?
-
-      else
-        rule = evaluate_rules(vps, full_cgroup)
-
-        if rule
-          ::OomReportRule.increment_counter(:hit_count, rule.id)
-        else
-          ::Vps.increment_counter(:implicit_oom_report_rule_hit_count, vps.id)
-        end
-
-        ignored = rule&.action == 'ignore'
-      end
 
       new_report = ::OomReport.create!(
         vps:,
@@ -86,8 +69,7 @@ module VpsAdmin::Supervisor
         count:,
         created_at: occurred_at,
         processed: true,
-        ignored:,
-        oom_report_rule: rule
+        ignored: routed.suppressed_by_mute?
       )
 
       new_report.oom_report_usages.insert_all(
@@ -179,15 +161,7 @@ module VpsAdmin::Supervisor
       end
     end
 
-    def evaluate_rules(vps, full_cgroup)
-      vps.oom_report_rules.order('id').detect do |rule|
-        File.fnmatch?(rule.cgroup_pattern, full_cgroup, File::FNM_PATHNAME | File::FNM_EXTGLOB)
-      end
-    end
-
     def evaluate_event_routes(vps, full_cgroup, report, occurred_at:)
-      return unless vps.user.event_routes.where(event_type: 'vps.oom_report').exists?
-
       count = report.fetch('count')
 
       VpsAdmin::API::Events.plan(

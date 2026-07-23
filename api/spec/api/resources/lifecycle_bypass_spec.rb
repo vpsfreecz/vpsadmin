@@ -602,36 +602,6 @@ RSpec.describe 'API lifecycle bypass regressions' do # rubocop:disable RSpec/Des
       expect_lifecycle_denied
     end
 
-    it 'blocks suspended users from managing OOM report rules' do
-      vps = create_vps!
-      rule = OomReportRule.create!(
-        vps: vps,
-        action: :notify,
-        cgroup_pattern: 'lifecycle/rule',
-        hit_count: 0
-      )
-      suspend_user!
-
-      as(SpecSeed.user) do
-        json_post vpath('/oom_report_rules'), oom_report_rule: {
-          vps: vps.id,
-          action: 'notify',
-          cgroup_pattern: 'blocked/rule'
-        }
-      end
-      expect_lifecycle_denied
-
-      as(SpecSeed.user) do
-        json_put vpath("/oom_report_rules/#{rule.id}"), oom_report_rule: {
-          action: 'ignore'
-        }
-      end
-      expect_lifecycle_denied
-
-      as(SpecSeed.user) { json_delete vpath("/oom_report_rules/#{rule.id}") }
-      expect_lifecycle_denied
-    end
-
     it 'blocks suspended users and suspended VPSes from user-data mutations and deploys' do
       vps = create_vps!
       data = create_user_data!
