@@ -3786,20 +3786,12 @@ import ../make-test.nix (
       )
       support_incident.save! if support_incident.changed? || support_incident.new_record?
 
-      oom_rule = OomReportRule.find_or_initialize_by(
-        vps: support_vps,
-        cgroup_pattern: '/'
-      )
-      oom_rule.action = :notify
-      oom_rule.save! if oom_rule.changed? || oom_rule.new_record?
-
       oom_report = OomReport.unscoped.find_or_initialize_by(
         vps: support_vps,
         invoked_by_pid: 1234,
         cgroup: '/'
       )
       oom_report.assign_attributes(
-        oom_report_rule: oom_rule,
         processed: true,
         ignored: false,
         invoked_by_name: 'webui-fixture',
@@ -3810,11 +3802,6 @@ import ../make-test.nix (
         created_at: Time.now - 1200
       )
       oom_report.save! if oom_report.changed? || oom_report.new_record?
-
-      OomReportRule
-        .where(vps: support_vps)
-        .where('cgroup_pattern LIKE ?', '/webui-playwright-%')
-        .destroy_all
 
       pools_by_filesystem = Pool
         .where(filesystem: [
@@ -4523,7 +4510,6 @@ import ../make-test.nix (
           'oomReport' => {
             'id' => oom_report.id,
             'vpsId' => support_vps.id,
-            'ruleId' => oom_rule.id,
             'cgroup' => oom_report.cgroup,
             'killedName' => oom_report.killed_name
           },
