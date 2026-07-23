@@ -712,7 +712,7 @@ test.describe('support and status browser coverage', () => {
 
     await login(page, fixtures.user);
     await page.goto(
-      `/?page=oom_reports&action=list&list=1&vps=${s.vps.id}&oom_report_rule=${s.oomReport.ruleId}`,
+      `/?page=oom_reports&action=list&list=1&vps=${s.vps.id}`,
       { waitUntil: 'domcontentloaded' },
     );
 
@@ -720,6 +720,7 @@ test.describe('support and status browser coverage', () => {
     const filter = formByName(page, 'user-session-filter');
     await expect(filter).toBeVisible();
     await expect(filter.locator('input[name="user"]')).toHaveCount(0);
+    await expect(filter.locator('input[name="oom_report_rule"]')).toHaveCount(0);
     await expect(rowWithText(page, s.oomReport.killedName)).toContainText(s.vps.hostname);
 
     await page.goto(`/?page=oom_reports&action=show&id=${s.oomReport.id}`, {
@@ -749,7 +750,6 @@ test.describe('support and status browser coverage', () => {
         '/?page=oom_reports&action=list&list=1',
         `user=${fixtures.user.id}`,
         `vps=${s.vps.id}`,
-        `oom_report_rule=${s.oomReport.ruleId}`,
       ].join('&'),
       { waitUntil: 'domcontentloaded' },
     );
@@ -758,6 +758,7 @@ test.describe('support and status browser coverage', () => {
     const filter = formByName(page, 'user-session-filter');
     await expect(filter.locator('input[name="user"]')).toBeVisible();
     await expect(filter.locator('input[name="vps"]')).toBeVisible();
+    await expect(filter.locator('input[name="oom_report_rule"]')).toHaveCount(0);
     await expect(rowWithText(page, s.oomReport.killedName)).toContainText(
       fixtures.user.username,
     );
