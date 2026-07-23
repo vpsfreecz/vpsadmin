@@ -27,14 +27,8 @@ RSpec.describe TransactionChains::Vps::Destroy do
     set_vps_running!(vps, is_running: false, status: true, update_count: 1)
     VpsStatus.create!(vps: vps, is_running: false, status: true)
 
-    rule = OomReportRule.create!(
-      vps: vps,
-      action: :notify,
-      cgroup_pattern: 'user.slice'
-    )
     OomReport.create!(
       vps: vps,
-      oom_report_rule: rule,
       invoked_by_name: 'spec-task',
       invoked_by_pid: 123,
       processed: true
@@ -59,8 +53,7 @@ RSpec.describe TransactionChains::Vps::Destroy do
     {
       fixture: fixture,
       mount: mount,
-      netif: netif,
-      rule: rule
+      netif: netif
     }
   end
 

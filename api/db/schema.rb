@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_22_120900) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_22_121000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -1564,16 +1564,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_120900) do
     t.index ["vps_id"], name: "index_oom_report_counters_on_vps_id"
   end
 
-  create_table "oom_report_rules", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.integer "action", null: false
-    t.string "cgroup_pattern", null: false
-    t.datetime "created_at", null: false
-    t.bigint "hit_count", default: 0, null: false
-    t.datetime "updated_at", null: false
-    t.bigint "vps_id", null: false
-    t.index ["vps_id"], name: "index_oom_report_rules_on_vps_id"
-  end
-
   create_table "oom_report_stats", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.integer "oom_report_id", null: false
     t.string "parameter", limit: 30, null: false
@@ -1618,7 +1608,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_120900) do
     t.integer "invoked_by_pid", null: false
     t.string "killed_name", limit: 50
     t.integer "killed_pid"
-    t.bigint "oom_report_rule_id"
     t.boolean "processed", default: false, null: false
     t.datetime "reported_at", precision: nil
     t.integer "vps_id", null: false
@@ -2380,7 +2369,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_120900) do
     t.boolean "enable_os_template_auto_update", default: true, null: false
     t.datetime "expiration_date", precision: nil
     t.string "hostname", default: "vps"
-    t.bigint "implicit_oom_report_rule_hit_count", default: 0, null: false
     t.text "info", size: :medium
     t.integer "maintenance_lock", default: 0, null: false
     t.string "maintenance_lock_reason"
