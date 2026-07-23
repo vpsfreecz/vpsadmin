@@ -44,7 +44,6 @@ class Vps < ApplicationRecord
   has_many :events, dependent: :nullify
   has_many :oom_reports, dependent: :destroy
   has_many :oom_report_counters, dependent: :delete_all
-  has_many :oom_report_rules, dependent: :delete_all
   has_many :oom_preventions, dependent: :destroy
   has_many :dataset_expansions
   has_many :export_mounts, dependent: :delete_all
