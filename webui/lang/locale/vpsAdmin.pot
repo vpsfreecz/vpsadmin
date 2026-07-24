@@ -2639,6 +2639,15 @@ msgid "Move down"
 msgstr ""
 
 #: forms/notifications.forms.php
+msgid "all matching events"
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "wait %d s, interval %d s"
+msgstr ""
+
+#: forms/notifications.forms.php
 msgid "muted"
 msgstr ""
 
@@ -2848,6 +2857,10 @@ msgid "Matchers"
 msgstr ""
 
 #: forms/notifications.forms.php
+msgid "Grouping"
+msgstr ""
+
+#: forms/notifications.forms.php
 msgid "Hits"
 msgstr ""
 
@@ -2881,6 +2894,29 @@ msgstr ""
 
 #: forms/notifications.forms.php
 msgid "Event type pattern"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Group notifications"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Group by fields"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Initial wait (seconds)"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Minimum group interval (seconds)"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid ""
+"Grouping applies only to this route and is not inherited. Enter comma-"
+"separated event fields, or leave the field list empty to group all matching "
+"events. Muted and skipped events are excluded."
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -3027,6 +3063,14 @@ msgid "sending"
 msgstr ""
 
 #: forms/notifications.forms.php
+msgid "waiting for group"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "accepted by provider"
+msgstr ""
+
+#: forms/notifications.forms.php
 msgid "Waiting for transaction release"
 msgstr ""
 
@@ -3036,6 +3080,23 @@ msgstr ""
 
 #: forms/notifications.forms.php
 msgid "Delivery attempt is running"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Waiting for more matching events"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Accepted by provider"
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "%d events"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "send after"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -3438,6 +3499,10 @@ msgid "Delivery"
 msgstr ""
 
 #: forms/notifications.forms.php
+msgid "Group"
+msgstr ""
+
+#: forms/notifications.forms.php
 msgid "Attempts"
 msgstr ""
 
@@ -3511,6 +3576,27 @@ msgstr ""
 
 #: forms/notifications.forms.php
 msgid "Template"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Notification group"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Group key"
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "and %d more"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Group events"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Effective delivery"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -3607,11 +3693,6 @@ msgstr ""
 
 #: forms/notifications.forms.php
 msgid "Other"
-msgstr ""
-
-#: forms/notifications.forms.php
-#, php-format
-msgid "%d events"
 msgstr ""
 
 #: forms/notifications.forms.php
