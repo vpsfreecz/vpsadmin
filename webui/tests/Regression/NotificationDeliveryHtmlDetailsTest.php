@@ -62,7 +62,8 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
         $functionSource = substr($source, $start, $end - $start);
 
         self::assertStringNotContainsString('$xtpl->table_add_category(_(\'Result\'))', $functionSource);
-        self::assertStringContainsString('false, false, 12', $functionSource);
+        self::assertStringContainsString('notifications_delivery_group_html($delivery)', $functionSource);
+        self::assertStringContainsString('false, false, 13', $functionSource);
     }
 
     public function testDeliveryLogFilterIncludesAbortedState(): void
@@ -107,6 +108,9 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
         self::assertStringContainsString('notifications_delivery_route_link($delivery, $event->user_id)', $functionSource);
         self::assertStringContainsString('notifications_delivery_transaction_chain_link($delivery)', $functionSource);
         self::assertStringContainsString("_('Transaction chain') . ':'", $functionSource);
+        self::assertStringContainsString("_('Notification group') . ':'", $functionSource);
+        self::assertStringContainsString('notifications_delivery_group_event_ids($delivery)', $functionSource);
+        self::assertStringContainsString("_('Effective delivery') . ':'", $functionSource);
     }
 
     public function testTargetFormShowsLinkedUserLoginForAdmins(): void

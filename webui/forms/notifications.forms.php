@@ -1176,6 +1176,15 @@ function notifications_nullable_id($name)
 
 function notifications_route_params($create = false)
 {
+    $grouping_enabled = isset($_POST['grouping_enabled']);
+    $group_by = [];
+    foreach (explode(',', (string) api_post('group_by', '')) as $field) {
+        $field = trim($field);
+        if ($field !== '' && !in_array($field, $group_by, true)) {
+            $group_by[] = $field;
+        }
+    }
+
     $params = [
         'parent_id' => notifications_nullable_id('parent_id'),
         'notification_receiver_id' => notifications_nullable_id('notification_receiver_id'),
@@ -1183,6 +1192,10 @@ function notifications_route_params($create = false)
         'enabled' => isset($_POST['enabled']),
         'event_type' => api_post('event_type'),
         'event_type_pattern' => api_post('event_type_pattern'),
+        'grouping_enabled' => $grouping_enabled,
+        'group_by' => $grouping_enabled ? $group_by : [],
+        'group_wait_seconds' => $grouping_enabled ? api_post_uint('group_wait_seconds') : null,
+        'group_interval_seconds' => $grouping_enabled ? api_post_uint('group_interval_seconds') : null,
         'continue' => isset($_POST['continue']),
     ];
     $subject_scope = api_post('subject_scope');
@@ -1403,6 +1416,39 @@ function notifications_route_receiver_html($route, $receivers)
     }
 
     return h($receivers[$route->notification_receiver_id] ?? ('#' . $route->notification_receiver_id));
+}
+
+function notifications_route_group_fields($route)
+{
+    $fields = notifications_prop($route, 'group_by', []);
+    if ($fields instanceof \stdClass) {
+        $fields = (array) $fields;
+    }
+    if (!is_array($fields)) {
+        $fields = [];
+    }
+
+    return $fields;
+}
+
+function notifications_route_grouping_html($route)
+{
+    if (!notifications_prop($route, 'grouping_enabled', false)) {
+        return '-';
+    }
+
+    $fields = notifications_route_group_fields($route);
+    $group_by = $fields
+        ? implode(', ', array_map(fn($field) => '<code>' . h($field) . '</code>', $fields))
+        : h(_('all matching events'));
+
+    return $group_by
+        . '<br>'
+        . h(sprintf(
+            _('wait %d s, interval %d s'),
+            notifications_prop($route, 'group_wait_seconds', 0),
+            notifications_prop($route, 'group_interval_seconds', 0)
+        ));
 }
 
 function notifications_receiver_options($user_id, $empty = true)
@@ -2169,6 +2215,7 @@ function notifications_routes_list($user_id = null)
     $xtpl->table_add_category(_('Scope'));
     $xtpl->table_add_category(_('Receiver'));
     $xtpl->table_add_category(_('Matchers'));
+    $xtpl->table_add_category(_('Grouping'));
     $xtpl->table_add_category(_('Hits'));
     $xtpl->table_add_category(_('Enabled'));
     $xtpl->table_add_category(_('Continue'));
@@ -2193,6 +2240,7 @@ function notifications_routes_list($user_id = null)
         $xtpl->table_td(h(notifications_subject_scope_label($route->subject_scope)));
         $xtpl->table_td(notifications_route_receiver_html($route, $receiver_labels));
         $xtpl->table_td($route->matcher_summary ? h($route->matcher_summary) : '<code>*</code>');
+        $xtpl->table_td(notifications_route_grouping_html($route), false, true);
         $xtpl->table_td(
             '<a href="?page=notifications&action=events&user=' . $user_id
             . '&event_route_id=' . $route->id . '">' . $route->hit_count . '</a>',
@@ -2215,11 +2263,11 @@ function notifications_routes_list($user_id = null)
     }
 
     if (!$routes) {
-        $xtpl->table_td(_('No routes configured.'), false, false, 13);
+        $xtpl->table_td(_('No routes configured.'), false, false, 14);
         $xtpl->table_tr(false, 'nodrag nodrop', 'nodrag nodrop');
     }
 
-    $xtpl->table_td(notifications_route_add_link($user_id, null, _('Add route')), false, true, 13);
+    $xtpl->table_td(notifications_route_add_link($user_id, null, _('Add route')), false, true, 14);
     $xtpl->table_tr(false, 'nodrag nodrop', 'nodrag nodrop');
 
     $xtpl->table_out('notification-routes-table');
@@ -2263,6 +2311,41 @@ function notifications_route_new($user_id = null, $parent_id = null)
     $xtpl->form_add_input(_('Event type pattern') . ':', 'text', '40', 'event_type_pattern', post_val('event_type_pattern'));
     $xtpl->form_add_select(_('Scope') . ':', 'subject_scope', $subject_scope_options, post_val('subject_scope', 'self'));
     $xtpl->form_add_select(_('Receiver') . ':', 'notification_receiver_id', $receiver_options, post_val('notification_receiver_id', ''));
+    $xtpl->form_add_checkbox(
+        _('Group notifications') . ':',
+        'grouping_enabled',
+        '1',
+        post_val('grouping_enabled', false)
+    );
+    $xtpl->form_add_input(
+        _('Group by fields') . ':',
+        'text',
+        '40',
+        'group_by',
+        post_val('group_by')
+    );
+    $xtpl->form_add_input(
+        _('Initial wait (seconds)') . ':',
+        'text',
+        '10',
+        'group_wait_seconds',
+        post_val('group_wait_seconds', '30')
+    );
+    $xtpl->form_add_input(
+        _('Minimum group interval (seconds)') . ':',
+        'text',
+        '10',
+        'group_interval_seconds',
+        post_val('group_interval_seconds', '300')
+    );
+    $xtpl->table_td('', false, false, 1);
+    $xtpl->table_td(
+        h(_('Grouping applies only to this route and is not inherited. Enter comma-separated event fields, or leave the field list empty to group all matching events. Muted and skipped events are excluded.')),
+        false,
+        false,
+        1
+    );
+    $xtpl->table_tr();
     $xtpl->form_add_checkbox(_('Enabled') . ':', 'enabled', '1', post_val('enabled', true));
     $xtpl->form_add_checkbox(_('Continue') . ':', 'continue', '1', post_val('continue', false));
     $xtpl->form_out(_('Add'));
@@ -2287,6 +2370,7 @@ function notifications_route_subroutes($route)
     $xtpl->table_add_category(_('Scope'));
     $xtpl->table_add_category(_('Receiver'));
     $xtpl->table_add_category(_('Matchers'));
+    $xtpl->table_add_category(_('Grouping'));
     $xtpl->table_add_category(_('Enabled'));
     $xtpl->table_add_category(_('Continue'));
     $xtpl->table_add_category('');
@@ -2300,6 +2384,7 @@ function notifications_route_subroutes($route)
         $xtpl->table_td(h(notifications_subject_scope_label($child->subject_scope)));
         $xtpl->table_td(notifications_route_receiver_html($child, $receiver_labels));
         $xtpl->table_td($child->matcher_summary ? h($child->matcher_summary) : '<code>*</code>');
+        $xtpl->table_td(notifications_route_grouping_html($child), false, true);
         $xtpl->table_td(boolean_icon($child->enabled));
         $xtpl->table_td(boolean_icon($child->continue));
         $xtpl->table_td(notifications_route_add_link($route->user_id, $child->id), false, true);
@@ -2308,11 +2393,11 @@ function notifications_route_subroutes($route)
     }
 
     if (!$children) {
-        $xtpl->table_td(_('No subroutes configured.'), false, false, 9);
+        $xtpl->table_td(_('No subroutes configured.'), false, false, 10);
         $xtpl->table_tr();
     }
 
-    $xtpl->table_td(notifications_route_add_link($route->user_id, $route->id, _('Add subroute')), false, true, 9);
+    $xtpl->table_td(notifications_route_add_link($route->user_id, $route->id, _('Add subroute')), false, true, 10);
     $xtpl->table_tr(false, 'nodrag nodrop', 'nodrag nodrop');
     $xtpl->table_out();
 }
@@ -2348,6 +2433,40 @@ function notifications_route_edit($route_id)
     api_param_to_form('event_type_pattern', $input->event_type_pattern, post_val('event_type_pattern', $route->event_type_pattern));
     $xtpl->form_add_select(_('Scope') . ':', 'subject_scope', $subject_scope_options, post_val('subject_scope', $route->subject_scope));
     $xtpl->form_add_select(_('Receiver') . ':', 'notification_receiver_id', $receiver_options, post_val('notification_receiver_id', $route->notification_receiver_id));
+    api_param_to_form(
+        'grouping_enabled',
+        $input->grouping_enabled,
+        post_val('grouping_enabled', notifications_prop($route, 'grouping_enabled', false))
+    );
+    $xtpl->form_add_input(
+        _('Group by fields') . ':',
+        'text',
+        '40',
+        'group_by',
+        post_val('group_by', implode(', ', notifications_route_group_fields($route)))
+    );
+    $xtpl->form_add_input(
+        _('Initial wait (seconds)') . ':',
+        'text',
+        '10',
+        'group_wait_seconds',
+        post_val('group_wait_seconds', notifications_prop($route, 'group_wait_seconds'))
+    );
+    $xtpl->form_add_input(
+        _('Minimum group interval (seconds)') . ':',
+        'text',
+        '10',
+        'group_interval_seconds',
+        post_val('group_interval_seconds', notifications_prop($route, 'group_interval_seconds'))
+    );
+    $xtpl->table_td('', false, false, 1);
+    $xtpl->table_td(
+        h(_('Grouping applies only to this route and is not inherited. Enter comma-separated event fields, or leave the field list empty to group all matching events. Muted and skipped events are excluded.')),
+        false,
+        false,
+        1
+    );
+    $xtpl->table_tr();
     api_param_to_form('enabled', $input->enabled, post_val('enabled', $route->enabled));
     api_param_to_form('continue', $input->continue, post_val('continue', $route->continue));
     $xtpl->form_out(_('Save'));
@@ -2815,7 +2934,7 @@ function notifications_delivery_vps_link($delivery)
 function notifications_delivery_state_group_states($state_group)
 {
     if ($state_group === 'queue') {
-        return ['prepared', 'released', 'sending'];
+        return ['prepared', 'released', 'grouping', 'sending', 'accepted'];
     } elseif ($state_group === 'log') {
         return ['sent', 'failed', 'canceled', 'skipped', 'aborted'];
     }
@@ -2846,6 +2965,10 @@ function notifications_delivery_state_label($delivery)
         return $next_attempt_at ? _('released (scheduled)') : _('released');
     } elseif ($state === 'sending') {
         return _('sending');
+    } elseif ($state === 'grouping') {
+        return _('waiting for group');
+    } elseif ($state === 'accepted') {
+        return _('accepted by provider');
     }
 
     return $state ?: '-';
@@ -2860,6 +2983,10 @@ function notifications_delivery_result_label($delivery)
         return _('Waiting for dispatcher');
     } elseif ($state === 'sending') {
         return _('Delivery attempt is running');
+    } elseif ($state === 'grouping') {
+        return _('Waiting for more matching events');
+    } elseif ($state === 'accepted') {
+        return _('Accepted by provider');
     }
 
     $result = [];
@@ -2882,6 +3009,47 @@ function notifications_delivery_result_label($delivery)
     }
 
     return $result ? implode(', ', $result) : '-';
+}
+
+function notifications_delivery_group_event_ids($delivery)
+{
+    $ids = notifications_prop($delivery, 'group_event_ids', []);
+    if ($ids instanceof \stdClass) {
+        $ids = (array) $ids;
+    }
+
+    return is_array($ids) ? $ids : [];
+}
+
+function notifications_delivery_group_labels($delivery)
+{
+    $labels = notifications_prop($delivery, 'group_labels', []);
+    if ($labels instanceof \stdClass) {
+        $labels = (array) $labels;
+    }
+
+    return is_array($labels) ? $labels : [];
+}
+
+function notifications_delivery_group_html($delivery)
+{
+    if (!notifications_prop($delivery, 'grouped_delivery', false)) {
+        return '-';
+    }
+
+    $parts = [
+        h(sprintf(_('%d events'), notifications_prop($delivery, 'event_count', 1))),
+    ];
+    $labels = notifications_delivery_group_labels($delivery);
+    if ($labels) {
+        $parts[] = '<code>' . h(json_encode($labels, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) . '</code>';
+    }
+    $next_flush_at = notifications_prop($delivery, 'group_next_flush_at');
+    if ($next_flush_at) {
+        $parts[] = h(_('send after') . ' ' . tolocaltz($next_flush_at));
+    }
+
+    return implode('<br>', $parts);
 }
 
 function notifications_json_pretty($value)
@@ -3962,6 +4130,7 @@ function notifications_deliveries_admin($state_group)
 
     $xtpl->table_add_category(_('Delivery'));
     $xtpl->table_add_category(_('Event'));
+    $xtpl->table_add_category(_('Group'));
     $xtpl->table_add_category(_('User'));
     $xtpl->table_add_category(_('VPS'));
     $xtpl->table_add_category(_('Receiver'));
@@ -3992,6 +4161,7 @@ function notifications_deliveries_admin($state_group)
             false,
             true
         );
+        $xtpl->table_td(notifications_delivery_group_html($delivery), false, true);
         $xtpl->table_td(notifications_delivery_user_link($delivery), false, true);
         $xtpl->table_td(notifications_delivery_vps_link($delivery), false, true);
         $xtpl->table_td(notifications_delivery_receiver_link($delivery, notifications_prop($delivery, 'event_user_id')));
@@ -4006,7 +4176,7 @@ function notifications_deliveries_admin($state_group)
     }
 
     if ($deliveries->count() == 0) {
-        $xtpl->table_td(_('No deliveries found.'), false, false, 12);
+        $xtpl->table_td(_('No deliveries found.'), false, false, 13);
         $xtpl->table_tr();
     }
 
@@ -4392,8 +4562,47 @@ function notifications_delivery_show($event_id, $delivery_id)
     }
 
     $xtpl->table_td(_('State') . ':');
-    $xtpl->table_td(h($delivery->state));
+    $xtpl->table_td(h(notifications_delivery_state_label($delivery)));
     $xtpl->table_tr();
+
+    if (notifications_prop($delivery, 'grouped_delivery', false)) {
+        $xtpl->table_td(_('Notification group') . ':');
+        $xtpl->table_td(notifications_delivery_group_html($delivery), false, true);
+        $xtpl->table_tr();
+
+        $group_key = notifications_prop($delivery, 'group_key');
+        if ($group_key) {
+            $xtpl->table_td(_('Group key') . ':');
+            $xtpl->table_td('<code>' . h($group_key) . '</code>');
+            $xtpl->table_tr();
+        }
+
+        $event_links = [];
+        foreach (notifications_delivery_group_event_ids($delivery) as $member_event_id) {
+            $event_links[] = notifications_event_link($member_event_id, '#' . $member_event_id);
+        }
+        $truncated = notifications_prop($delivery, 'group_truncated_count', 0);
+        if ($truncated > 0) {
+            $event_links[] = h(sprintf(_('and %d more'), $truncated));
+        }
+        $xtpl->table_td(_('Group events') . ':');
+        $xtpl->table_td($event_links ? implode(', ', $event_links) : '-');
+        $xtpl->table_tr();
+
+        $effective_delivery_id = notifications_prop($delivery, 'effective_event_delivery_id');
+        $effective_event_id = notifications_prop($delivery, 'effective_event_id');
+        if ($effective_delivery_id && $effective_event_id) {
+            $xtpl->table_td(_('Effective delivery') . ':');
+            $xtpl->table_td(
+                notifications_delivery_link(
+                    $effective_event_id,
+                    $effective_delivery_id,
+                    '#' . $effective_delivery_id
+                )
+            );
+            $xtpl->table_tr();
+        }
+    }
 
     $xtpl->table_td(_('Target') . ':');
     $xtpl->table_td($target ? h($target) : '-');

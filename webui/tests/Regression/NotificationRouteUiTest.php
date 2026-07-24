@@ -48,6 +48,47 @@ final class NotificationRouteUiTest extends TestCase
         }
     }
 
+    public function testRouteFormsAndListsExplainGrouping(): void
+    {
+        $source = $this->notificationsFormsSource();
+        $routeParams = $this->sourceBetween(
+            $source,
+            'function notifications_route_params(',
+            'function notifications_receiver_params('
+        );
+        $routeNew = $this->sourceBetween(
+            $source,
+            'function notifications_route_new(',
+            'function notifications_route_subroutes('
+        );
+        $routeEdit = $this->sourceBetween(
+            $source,
+            'function notifications_route_edit(',
+            'function notifications_matcher_new('
+        );
+        $routesList = $this->sourceBetween(
+            $source,
+            'function notifications_routes_list(',
+            'function notifications_route_new('
+        );
+
+        self::assertStringContainsString("isset(\$_POST['grouping_enabled'])", $routeParams);
+        self::assertStringContainsString("explode(',', (string) api_post('group_by', ''))", $routeParams);
+        self::assertStringContainsString("'group_wait_seconds'", $routeParams);
+        self::assertStringContainsString("'group_interval_seconds'", $routeParams);
+
+        foreach ([$routeNew, $routeEdit] as $form) {
+            self::assertStringContainsString("_('Group by fields')", $form);
+            self::assertStringContainsString("_('Initial wait (seconds)')", $form);
+            self::assertStringContainsString("_('Minimum group interval (seconds)')", $form);
+            self::assertStringContainsString('Grouping applies only to this route and is not inherited.', $form);
+            self::assertStringContainsString('Muted and skipped events are excluded.', $form);
+        }
+
+        self::assertStringContainsString("_('Grouping')", $routesList);
+        self::assertStringContainsString('notifications_route_grouping_html($route)', $routesList);
+    }
+
     public function testEventLogFiltersAllowEmptySeverityAndRoutingState(): void
     {
         $source = $this->sourceBetween(
