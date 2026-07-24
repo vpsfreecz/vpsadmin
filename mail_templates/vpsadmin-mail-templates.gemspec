@@ -18,6 +18,6 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = ">= #{File.read('../.ruby-version').strip}"
 
-  s.add_dependency 'haveapi-client', '~> 0.29.4'
+  s.add_dependency 'haveapi-client', '~> 0.29.5'
   s.add_dependency 'highline', '~> 3.1'
 end
