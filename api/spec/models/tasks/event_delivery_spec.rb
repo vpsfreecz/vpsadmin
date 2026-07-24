@@ -1261,9 +1261,14 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     event = VpsAdmin::API::Events.emit!(
       'vps.oom_report',
       user: SpecSeed.user,
+      source: foreign_report,
       subject: 'Foreign OOM report',
       payload: {
-        selected_report_ids: [foreign_report.id]
+        oom_report_id: foreign_report.id,
+        cgroup: foreign_report.cgroup,
+        count: foreign_report.count,
+        oom_count: foreign_report.count,
+        killed_name: foreign_report.killed_name
       }
     )
     delivery = event.event_deliveries.sole
@@ -1273,7 +1278,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     end.not_to change(EventDeliveryAttempt, :count)
 
     expect(delivery.reload).to be_failed_state
-    expect(delivery.error_summary).to include('missing report ids')
+    expect(delivery.error_summary).to include('event source is missing')
     expect(delivery.mail_log).to be_nil
   end
 

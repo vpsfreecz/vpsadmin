@@ -173,15 +173,6 @@ namespace :vpsadmin do
   end
 
   namespace :oom_report do
-    desc 'Notify users about stale OOM reports'
-    task :notify do
-      puts 'Notifying users about stale OOM reports'
-      VpsAdmin::API::Tasks.run(:oom_report, :notify)
-    end
-
-    desc 'Run OOM reports pipeline'
-    task run: %i[notify]
-
     desc 'Remove old OOM reports'
     task :prune do
       puts 'Pruning OOM reports'
