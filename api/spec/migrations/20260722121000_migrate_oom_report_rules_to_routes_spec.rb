@@ -28,8 +28,10 @@ RSpec.describe MigrateOomReportRulesToRoutes do
       create_table :oom_reports do |t|
         t.references :vps, null: false
         t.bigint :oom_report_rule_id
+        t.datetime :reported_at
         t.boolean :ignored, null: false, default: false
       end
+      add_index :oom_reports, :reported_at
 
       create_table :notification_receivers do |t|
         t.references :user, null: false
@@ -51,6 +53,10 @@ RSpec.describe MigrateOomReportRulesToRoutes do
         t.string :event_type_pattern, limit: 100
         t.string :template_name, limit: 100
         t.integer :subject_scope, null: false, default: 0
+        t.boolean :grouping_enabled, null: false, default: false
+        t.text :group_by
+        t.integer :group_wait_seconds
+        t.integer :group_interval_seconds
         t.boolean :continue, null: false, default: false
         t.boolean :single_use, null: false, default: false
         t.datetime :spent_at
@@ -115,6 +121,10 @@ RSpec.describe MigrateOomReportRulesToRoutes do
       event_type_pattern: nil,
       template_name: nil,
       subject_scope: 0,
+      grouping_enabled: false,
+      group_by: nil,
+      group_wait_seconds: nil,
+      group_interval_seconds: nil,
       continue: false,
       single_use: false,
       spent_at: nil,
@@ -160,6 +170,23 @@ RSpec.describe MigrateOomReportRulesToRoutes do
     define_legacy_schema
     first_user = create_user_with_defaults('first')
     second_user = create_user_with_defaults('second')
+    legacy_oom_receiver_id = insert_row(
+      :notification_receivers,
+      user_id: first_user.fetch(:user_id),
+      label: 'Legacy OOM recipient',
+      description: 'Advanced OOM recipient',
+      enabled: true,
+      mute: false,
+      created_at: timestamp,
+      updated_at: timestamp
+    )
+    legacy_oom_route_id = insert_route(
+      user_id: first_user.fetch(:user_id),
+      receiver_id: legacy_oom_receiver_id,
+      label: 'Legacy OOM notification',
+      position: 5,
+      event_type: 'vps.oom_report'
+    )
     first_vps = create_vps(first_user.fetch(:user_id), 'first-vps')
     second_vps = create_vps(second_user.fetch(:user_id), 'second-vps')
     broad_rule_id = create_rule(
@@ -191,6 +218,7 @@ RSpec.describe MigrateOomReportRulesToRoutes do
 
     expect(table_exists?(:oom_report_rules)).to be(false)
     expect(column_exists?(:oom_reports, :oom_report_rule_id)).to be(false)
+    expect(column_exists?(:oom_reports, :reported_at)).to be(false)
     expect(column_exists?(:vpses, :implicit_oom_report_rule_hit_count)).to be(false)
     expect(column_exists?(:oom_reports, :ignored)).to be(true)
     expect(find_row(:oom_reports, id: report_id).fetch('ignored')).to be_truthy
@@ -206,16 +234,17 @@ RSpec.describe MigrateOomReportRulesToRoutes do
     expect(first_routes.map { |route| route.fetch('label') }).to eq(
       [
         'OOM report notify /user.slice/*',
-        'OOM report ignore /user.slice/special.scope'
+        'OOM report ignore /user.slice/special.scope',
+        'OOM report notifications'
       ]
     )
-    expect(first_routes.map { |route| route.fetch('hit_count').to_i }).to eq([41, 7])
-    expect(first_routes.map { |route| route.fetch('position').to_i }).to eq([10_000, 10_001])
-    expect(first_routes.map { |route| boolish(route.fetch('continue')) }).to eq([false, false])
+    expect(first_routes.map { |route| route.fetch('hit_count').to_i }).to eq([41, 7, 12])
+    expect(first_routes.map { |route| route.fetch('position').to_i }).to eq([0, 1, 2])
+    expect(first_routes.map { |route| boolish(route.fetch('continue')) }).to eq([false, false, false])
 
-    notify_route, ignore_route = first_routes
+    notify_route, ignore_route, catch_all_route = first_routes
     expect(notify_route.fetch('notification_receiver_id').to_i)
-      .to eq(first_user.fetch(:receiver_id))
+      .to eq(legacy_oom_receiver_id)
     ignored_receiver = find_row(
       :notification_receivers,
       user_id: first_user.fetch(:user_id),
@@ -225,18 +254,29 @@ RSpec.describe MigrateOomReportRulesToRoutes do
     expect(boolish(ignored_receiver.fetch('mute'))).to be(true)
     expect(ignore_route.fetch('notification_receiver_id').to_i)
       .to eq(ignored_receiver.fetch('id').to_i)
+    expect(catch_all_route.fetch('notification_receiver_id').to_i)
+      .to eq(legacy_oom_receiver_id)
+    expect(row_count(:event_routes, id: legacy_oom_route_id)).to eq(0)
 
     expect_matcher(notify_route.fetch('id'), 'vps_id', '==', first_vps.to_s)
-    expect_matcher(notify_route.fetch('id'), 'stage', '==', 'raw')
     expect_matcher(notify_route.fetch('id'), 'cgroup', '=*', '/user.slice/*')
     expect_matcher(ignore_route.fetch('id'), 'vps_id', '==', first_vps.to_s)
-    expect_matcher(ignore_route.fetch('id'), 'stage', '==', 'raw')
     expect_matcher(
       ignore_route.fetch('id'),
       'cgroup',
       '=*',
       '/user.slice/special.scope'
     )
+    expect(boolish(notify_route.fetch('grouping_enabled'))).to be(true)
+    expect(JSON.parse(notify_route.fetch('group_by'))).to eq(['vps_id'])
+    expect(notify_route.fetch('group_wait_seconds').to_i).to eq(60)
+    expect(notify_route.fetch('group_interval_seconds').to_i).to eq(10_800)
+    expect(boolish(ignore_route.fetch('grouping_enabled'))).to be(false)
+    expect(boolish(catch_all_route.fetch('grouping_enabled'))).to be(true)
+    expect(row_count(
+             :event_route_matchers,
+             event_route_id: catch_all_route.fetch('id')
+           )).to eq(0)
 
     default_route = find_row(
       :event_routes,
@@ -246,13 +286,14 @@ RSpec.describe MigrateOomReportRulesToRoutes do
       :event_routes,
       id: first_user.fetch(:admin_route_id)
     )
-    expect(default_route.fetch('position').to_i).to eq(10_002)
-    expect(admin_route.fetch('position').to_i).to eq(10_003)
+    expect(default_route.fetch('position').to_i).to eq(10_003)
+    expect(admin_route.fetch('position').to_i).to eq(10_004)
 
     other_route = find_row(
       :event_routes,
       user_id: second_user.fetch(:user_id),
-      event_type: 'vps.oom_report'
+      event_type: 'vps.oom_report',
+      label: 'OOM report ignore /system.slice/{a,b}.service'
     )
     expect(other_route.fetch('hit_count').to_i).to eq(3)
     expect_matcher(
@@ -288,9 +329,10 @@ RSpec.describe MigrateOomReportRulesToRoutes do
       },
       order: %i[position id]
     )
-    expect(routes.length).to eq(101)
-    expect(routes.map { |route| route.fetch('hit_count').to_i }).to eq((0..100).to_a)
-    expect(row_count(:event_route_matchers)).to eq(303)
+    expect(routes.length).to eq(102)
+    expect(routes.first(101).map { |route| route.fetch('hit_count').to_i }).to eq((0..100).to_a)
+    expect(routes.last.fetch('label')).to eq('OOM report notifications')
+    expect(row_count(:event_route_matchers)).to eq(202)
   end
 
   it 'keeps the legacy schema when a source rule cannot be converted' do
@@ -305,14 +347,14 @@ RSpec.describe MigrateOomReportRulesToRoutes do
     )
 
     expect { migrate_up! }
-      .to raise_error(ActiveRecord::MigrationError, /default receiver not found/)
+      .to raise_error(ActiveRecord::MigrationError, /default admin receiver missing/)
 
     expect(table_exists?(:oom_report_rules)).to be(true)
     expect(column_exists?(:oom_reports, :oom_report_rule_id)).to be(true)
     expect(column_exists?(:vpses, :implicit_oom_report_rule_hit_count)).to be(true)
   end
 
-  it 'recreates only empty legacy storage on rollback' do
+  it 'is irreversible after deleting legacy rule storage' do
     define_legacy_schema
     user = create_user_with_defaults('rollback')
     vps_id = create_vps(user.fetch(:user_id), 'rollback-vps')
@@ -324,12 +366,8 @@ RSpec.describe MigrateOomReportRulesToRoutes do
     )
 
     migrate_up!
-    migrate_down!
 
-    expect(table_exists?(:oom_report_rules)).to be(true)
-    expect(row_count(:oom_report_rules)).to eq(0)
-    expect(column_exists?(:oom_reports, :oom_report_rule_id)).to be(true)
-    expect(column_exists?(:vpses, :implicit_oom_report_rule_hit_count)).to be(true)
-    expect(row_count(:event_routes, event_type: 'vps.oom_report')).to eq(1)
+    expect { migrate_down! }
+      .to raise_error(ActiveRecord::IrreversibleMigration, /database backup/)
   end
 end

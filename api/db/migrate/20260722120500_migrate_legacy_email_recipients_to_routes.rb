@@ -186,9 +186,7 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
       event_type: 'vps.oom_report',
       template_name: 'vps_oom_report',
       relation: 'other_user',
-      matchers: [
-        ['stage', '==', 'notification']
-      ]
+      matchers: []
     },
     'vps_oom_prevention' => {
       event_type: 'vps.oom_prevention',
