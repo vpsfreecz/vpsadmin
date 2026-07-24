@@ -2659,6 +2659,15 @@ msgid "Move down"
 msgstr "Posunout dolů"
 
 #: forms/notifications.forms.php
+msgid "all matching events"
+msgstr "všechny odpovídající události"
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "wait %d s, interval %d s"
+msgstr "čekání %d s, interval %d s"
+
+#: forms/notifications.forms.php
 msgid "muted"
 msgstr "ztlumeno"
 
@@ -2872,6 +2881,10 @@ msgid "Matchers"
 msgstr "Matchery"
 
 #: forms/notifications.forms.php
+msgid "Grouping"
+msgstr "Seskupování"
+
+#: forms/notifications.forms.php
 msgid "Hits"
 msgstr "Počet shod"
 
@@ -2906,6 +2919,32 @@ msgstr "Typ události"
 #: forms/notifications.forms.php
 msgid "Event type pattern"
 msgstr "Vzor typu události"
+
+#: forms/notifications.forms.php
+msgid "Group notifications"
+msgstr "Seskupovat notifikace"
+
+#: forms/notifications.forms.php
+msgid "Group by fields"
+msgstr "Seskupovat podle polí"
+
+#: forms/notifications.forms.php
+msgid "Initial wait (seconds)"
+msgstr "Počáteční čekání (sekundy)"
+
+#: forms/notifications.forms.php
+msgid "Minimum group interval (seconds)"
+msgstr "Minimální interval skupiny (sekundy)"
+
+#: forms/notifications.forms.php
+msgid ""
+"Grouping applies only to this route and is not inherited. Enter comma-"
+"separated event fields, or leave the field list empty to group all matching "
+"events. Muted and skipped events are excluded."
+msgstr ""
+"Seskupování platí pouze pro tuto routu a nedědí se. Zadejte čárkami oddělená "
+"pole události, nebo ponechte seznam polí prázdný pro seskupení všech "
+"odpovídajících událostí. Ztlumené a přeskočené události jsou vynechány."
 
 #: forms/notifications.forms.php
 msgid "Back to routes"
@@ -3057,6 +3096,14 @@ msgid "sending"
 msgstr "odesílá se"
 
 #: forms/notifications.forms.php
+msgid "waiting for group"
+msgstr "čeká na seskupení"
+
+#: forms/notifications.forms.php
+msgid "accepted by provider"
+msgstr "přijato poskytovatelem"
+
+#: forms/notifications.forms.php
 msgid "Waiting for transaction release"
 msgstr "Čeká na uvolnění transakce"
 
@@ -3067,6 +3114,23 @@ msgstr "Čeká na dispatcher"
 #: forms/notifications.forms.php
 msgid "Delivery attempt is running"
 msgstr "Pokus o doručení běží"
+
+#: forms/notifications.forms.php
+msgid "Waiting for more matching events"
+msgstr "Čeká na další odpovídající události"
+
+#: forms/notifications.forms.php
+msgid "Accepted by provider"
+msgstr "Přijato poskytovatelem"
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "%d events"
+msgstr "%d událostí"
+
+#: forms/notifications.forms.php
+msgid "send after"
+msgstr "odeslat po"
 
 #: forms/notifications.forms.php
 msgid "Header"
@@ -3474,6 +3538,10 @@ msgid "Delivery"
 msgstr "Doručení"
 
 #: forms/notifications.forms.php
+msgid "Group"
+msgstr "Skupina"
+
+#: forms/notifications.forms.php
 msgid "Attempts"
 msgstr "Pokusy"
 
@@ -3548,6 +3616,27 @@ msgstr "Doručení události"
 #: forms/notifications.forms.php
 msgid "Template"
 msgstr "Šablona"
+
+#: forms/notifications.forms.php
+msgid "Notification group"
+msgstr "Skupina notifikací"
+
+#: forms/notifications.forms.php
+msgid "Group key"
+msgstr "Klíč skupiny"
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "and %d more"
+msgstr "a dalších %d"
+
+#: forms/notifications.forms.php
+msgid "Group events"
+msgstr "Události skupiny"
+
+#: forms/notifications.forms.php
+msgid "Effective delivery"
+msgstr "Výsledné doručení"
 
 #: forms/notifications.forms.php
 msgid "Message ID"
@@ -3644,11 +3733,6 @@ msgstr "Nejsou zaznamenány žádné pokusy."
 #: forms/notifications.forms.php
 msgid "Other"
 msgstr "Ostatní"
-
-#: forms/notifications.forms.php
-#, php-format
-msgid "%d events"
-msgstr "%d událostí"
 
 #: forms/notifications.forms.php
 msgid "Default routed"
@@ -9814,9 +9898,6 @@ msgstr "Pomoc"
 
 #~ msgid "A kernel bug could affect containers on selected nodes."
 #~ msgstr "Bug v jádře může ovlivnit kontejnery na vybraných nodech."
-
-#~ msgid "reported by Node"
-#~ msgstr "hlášeno Nodem"
 
 #~ msgid "vpsFree.cz configuration"
 #~ msgstr "Konfigurace vpsFree.cz"
