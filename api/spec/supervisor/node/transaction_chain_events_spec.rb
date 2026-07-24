@@ -125,6 +125,39 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     transaction = create_transaction!(chain)
     unsent = create_gated_delivery!(transaction:)
     unsent_mail = create_gated_delivery!(transaction:, mail_log: true)
+    grouping = create_gated_delivery!(transaction:, state: :grouping)
+    first_member_at = Time.now
+    survivor_member_at = first_member_at + 120
+    group_key = Digest::SHA256.hexdigest('transaction-gated group')
+    group = EventDeliveryGroup.create!(
+      route_owner: SpecSeed.user,
+      action: 'email',
+      group_key:,
+      labels: {},
+      group_wait_seconds: 30,
+      group_interval_seconds: 300,
+      next_flush_at: first_member_at + 30
+    )
+    grouping.update!(
+      event_delivery_group: group,
+      group_key:,
+      group_labels: {},
+      group_wait_seconds: 30,
+      group_interval_seconds: 300,
+      released_at: first_member_at
+    )
+    survivor = create_gated_delivery!(
+      transaction: create_transaction!(create_chain!),
+      state: :grouping
+    )
+    survivor.update!(
+      event_delivery_group: group,
+      group_key:,
+      group_labels: {},
+      group_wait_seconds: 30,
+      group_interval_seconds: 300,
+      released_at: survivor_member_at
+    )
     attempted = create_gated_delivery!(transaction:, state: :released, attempted: true)
     supervisor = described_class.new(nil, SpecSeed.node)
 
@@ -147,6 +180,11 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     expect(unsent_mail.mail_log).to be_present
     expect(unsent_mail.event.reload).to be_aborted_routing_state
     expect(unsent_mail.event_routing_context.reload).to be_aborted_routing_state
+    expect(grouping.reload).to be_aborted_state
+    expect(grouping.event.reload).to be_aborted_routing_state
+    expect(grouping.event_routing_context.reload).to be_aborted_routing_state
+    expect(survivor.reload).to be_grouping_state
+    expect(group.reload.next_flush_at).to be_within(1.second).of(survivor_member_at + 30)
     expect(attempted.reload).to be_released_state
     expect(attempted.event.reload).to be_routed_routing_state
     expect(attempted.event_routing_context.reload).to be_routed_routing_state

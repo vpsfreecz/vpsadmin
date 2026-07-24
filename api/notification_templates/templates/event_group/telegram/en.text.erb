@@ -1,0 +1,7 @@
+<%= @group_event_count %> grouped vpsAdmin events
+<% @group_events.each do |event| -%>
+- [<%= event.severity %>] <%= event.subject %> (<%= event.event_type %>)
+<% end -%>
+<% if @group_truncated_count > 0 -%>
+… and <%= @group_truncated_count %> more
+<% end -%>

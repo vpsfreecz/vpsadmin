@@ -1,0 +1,4 @@
+vpsAdmin: <%= @group_event_count %> grouped events
+<% @group_events.first(3).each do |event| -%>
+<%= event.severity %>: <%= event.subject %>
+<% end -%>

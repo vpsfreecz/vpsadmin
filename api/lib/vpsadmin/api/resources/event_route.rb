@@ -21,6 +21,11 @@ module VpsAdmin::API::Resources
              label: 'Scope',
              choices: { values: ::EventRoute.subject_scope_labels },
              load_validators: false
+      bool :grouping_enabled, label: 'Group notifications'
+      custom :group_by
+      integer :group_wait_seconds, nullable: true
+      integer :group_interval_seconds, nullable: true
+      string :grouping_summary
       bool :continue
       integer :hit_count, label: 'Hits'
       bool :single_use
@@ -99,7 +104,9 @@ module VpsAdmin::API::Resources
       input do
         use :common,
             include: %i[user parent_id notification_receiver_id label position
-                        enabled event_type event_type_pattern subject_scope continue]
+                        enabled event_type event_type_pattern subject_scope
+                        grouping_enabled group_by group_wait_seconds
+                        group_interval_seconds continue]
       end
 
       output do
@@ -132,6 +139,10 @@ module VpsAdmin::API::Resources
             event_type: input[:event_type],
             event_type_pattern: input[:event_type_pattern],
             subject_scope: input[:subject_scope] || 'self',
+            grouping_enabled: input.has_key?(:grouping_enabled) ? input[:grouping_enabled] : false,
+            group_by: input[:group_by] || [],
+            group_wait_seconds: input[:group_wait_seconds],
+            group_interval_seconds: input[:group_interval_seconds],
             continue: input.has_key?(:continue) ? input[:continue] : false
           )
         end
@@ -150,7 +161,9 @@ module VpsAdmin::API::Resources
       input do
         use :common,
             include: %i[parent_id notification_receiver_id label position
-                        enabled event_type event_type_pattern subject_scope continue]
+                        enabled event_type event_type_pattern subject_scope
+                        grouping_enabled group_by group_wait_seconds
+                        group_interval_seconds continue]
       end
 
       output do
@@ -166,7 +179,11 @@ module VpsAdmin::API::Resources
       def exec
         route = self.class.model.find_by!(with_restricted(id: path_params['event_route_id']))
         attrs = {}
-        %i[parent_id notification_receiver_id label position enabled event_type event_type_pattern subject_scope continue].each do |v|
+        %i[
+          parent_id notification_receiver_id label position enabled event_type
+          event_type_pattern subject_scope grouping_enabled group_by
+          group_wait_seconds group_interval_seconds continue
+        ].each do |v|
           attrs[v] = input[v] if input.has_key?(v)
         end
 

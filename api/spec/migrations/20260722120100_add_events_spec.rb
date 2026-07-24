@@ -86,7 +86,11 @@ RSpec.describe AddEvents do
     expect(table_exists?(:event_route_matchers)).to be(true)
     expect(table_exists?(:events)).to be(true)
     expect(table_exists?(:event_deliveries)).to be(true)
+    expect(table_exists?(:event_delivery_groups)).to be(true)
     expect(table_exists?(:event_delivery_attempts)).to be(true)
+    expect(column_exists?(:event_routes, :group_by)).to be(true)
+    expect(column_exists?(:event_deliveries, :group_key)).to be(true)
+    expect(column_exists?(:event_deliveries, :target_secret)).to be(true)
 
     default_receiver = find_row(:notification_receivers, user_id: ids.fetch(:enabled_id), label: 'Default e-mail')
     mute_receiver = find_row(:notification_receivers, user_id: ids.fetch(:disabled_id), label: 'Do not notify')
@@ -264,6 +268,7 @@ RSpec.describe AddEvents do
     migrate_down!
 
     expect(table_exists?(:event_delivery_attempts)).to be(false)
+    expect(table_exists?(:event_delivery_groups)).to be(false)
     expect(table_exists?(:event_deliveries)).to be(false)
     expect(table_exists?(:events)).to be(false)
     expect(table_exists?(:event_route_matchers)).to be(false)

@@ -15,6 +15,7 @@ module NodeCtld
     EVENT_DELIVERY_STATE_SKIPPED = 4
     EVENT_DELIVERY_STATE_CANCELED = 6
     EVENT_DELIVERY_STATE_ABORTED = 8
+    EVENT_DELIVERY_STATE_GROUPING = 9
     EVENT_ROUTING_STATE_ABORTED = 4
     EVENT_ROUTING_CONTEXT_STATE_ABORTED = 6
 
@@ -286,18 +287,35 @@ module NodeCtld
       log(:debug, self, 'Abort unsent transaction-gated event deliveries')
 
       event_ids = []
-      db.prepared(<<~SQL, chain_id).each { |row| event_ids << row.fetch('event_id').to_i }
-        SELECT DISTINCT ed.event_id
+      group_ids = []
+      rows = db.prepared(<<~SQL, chain_id)
+        SELECT DISTINCT ed.event_id, ed.event_delivery_group_id
         FROM event_deliveries ed
         INNER JOIN transactions t ON t.id = ed.transaction_id
         LEFT JOIN event_delivery_attempts a ON a.event_delivery_id = ed.id
         WHERE t.transaction_chain_id = ?
-          AND ed.state IN (#{EVENT_DELIVERY_STATE_PREPARED}, #{EVENT_DELIVERY_STATE_RELEASED})
+          AND ed.state IN (
+            #{EVENT_DELIVERY_STATE_PREPARED},
+            #{EVENT_DELIVERY_STATE_RELEASED},
+            #{EVENT_DELIVERY_STATE_GROUPING}
+          )
           AND ed.attempt_count = 0
           AND ed.provider_message_id IS NULL
           AND a.id IS NULL
       SQL
+      rows.each do |row|
+        event_ids << row.fetch('event_id').to_i
+        group_id = row['event_delivery_group_id']
+        group_ids << group_id.to_i if group_id
+      end
       return if event_ids.empty?
+
+      group_ids.uniq.sort.each do |group_id|
+        db.prepared(
+          'SELECT id FROM event_delivery_groups WHERE id = ? FOR UPDATE',
+          group_id
+        ).get
+      end
 
       now = Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
       db.prepared(
@@ -310,7 +328,7 @@ module NodeCtld
               ed.error_summary = ?,
               ed.updated_at = ?
           WHERE t.transaction_chain_id = ?
-            AND ed.state IN (?, ?)
+            AND ed.state IN (?, ?, ?)
             AND ed.attempt_count = 0
             AND ed.provider_message_id IS NULL
             AND a.id IS NULL
@@ -320,10 +338,52 @@ module NodeCtld
         now,
         chain_id,
         EVENT_DELIVERY_STATE_PREPARED,
-        EVENT_DELIVERY_STATE_RELEASED
+        EVENT_DELIVERY_STATE_RELEASED,
+        EVENT_DELIVERY_STATE_GROUPING
       )
 
+      group_ids.uniq.sort.each { |group_id| recompute_event_delivery_group(db, group_id, now) }
       event_ids.uniq.each { |event_id| recompute_aborted_event_state(db, event_id, now) }
+    end
+
+    def recompute_event_delivery_group(db, group_id, now)
+      group = db.prepared(
+        'SELECT group_wait_seconds, group_interval_seconds, last_sealed_at
+         FROM event_delivery_groups
+         WHERE id = ?
+         FOR UPDATE',
+        group_id
+      ).get
+      return if group.nil?
+
+      member = db.prepared(
+        'SELECT released_at
+         FROM event_deliveries
+         WHERE event_delivery_group_id = ? AND state = ?
+         ORDER BY released_at, id
+         LIMIT 1',
+        group_id,
+        EVENT_DELIVERY_STATE_GROUPING
+      ).get
+
+      next_flush_at = if member
+                        wait_deadline =
+                          member.fetch('released_at') + group.fetch('group_wait_seconds').to_i
+                        last_sealed_at = group['last_sealed_at']
+                        interval_deadline =
+                          last_sealed_at &&
+                          (last_sealed_at + group.fetch('group_interval_seconds').to_i)
+                        [wait_deadline, interval_deadline].compact.max
+                      end
+
+      db.prepared(
+        'UPDATE event_delivery_groups
+         SET next_flush_at = ?, updated_at = ?
+         WHERE id = ?',
+        next_flush_at,
+        now,
+        group_id
+      )
     end
 
     def recompute_aborted_event_state(db, event_id, now)

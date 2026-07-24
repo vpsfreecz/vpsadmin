@@ -451,8 +451,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_121000) do
     t.datetime "created_at", null: false
     t.text "error_summary"
     t.bigint "event_id", null: false
+    t.bigint "event_delivery_group_id"
     t.bigint "event_route_id"
     t.bigint "event_routing_context_id"
+    t.bigint "effective_event_delivery_id"
+    t.integer "group_interval_seconds"
+    t.string "group_key", limit: 64
+    t.text "group_labels"
+    t.integer "group_wait_seconds"
     t.datetime "last_attempt_at"
     t.integer "mail_log_id"
     t.datetime "next_attempt_at"
@@ -468,6 +474,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_121000) do
     t.integer "state", null: false
     t.integer "target_kind", null: false
     t.string "target_label"
+    t.text "target_secret"
     t.text "target_value"
     t.string "template_name", limit: 100
     t.integer "transaction_id"
@@ -475,6 +482,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_121000) do
     t.index ["action", "state", "next_attempt_at"], name: "idx_event_deliveries_on_action_state_next_attempt"
     t.index ["event_id", "action", "state"], name: "index_event_deliveries_on_event_id_and_action_and_state"
     t.index ["event_id"], name: "index_event_deliveries_on_event_id"
+    t.index ["effective_event_delivery_id"], name: "idx_event_deliveries_on_effective"
+    t.index ["event_delivery_group_id"], name: "idx_event_deliveries_on_group"
     t.index ["event_route_id"], name: "index_event_deliveries_on_event_route_id"
     t.index ["event_routing_context_id"], name: "idx_event_deliveries_on_routing_context"
     t.index ["mail_log_id"], name: "index_event_deliveries_on_mail_log_id"
@@ -485,6 +494,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_121000) do
     t.index ["released_at"], name: "index_event_deliveries_on_released_at"
     t.index ["state"], name: "index_event_deliveries_on_state"
     t.index ["transaction_id"], name: "index_event_deliveries_on_transaction_id"
+  end
+
+  create_table "event_delivery_groups", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.string "action", limit: 50, null: false
+    t.datetime "created_at", null: false
+    t.bigint "event_route_id"
+    t.string "group_key", limit: 64, null: false
+    t.integer "group_interval_seconds", null: false
+    t.integer "group_wait_seconds", null: false
+    t.text "labels", null: false
+    t.datetime "last_sealed_at"
+    t.datetime "next_flush_at"
+    t.bigint "route_owner_id"
+    t.datetime "updated_at", null: false
+    t.index ["action", "next_flush_at"], name: "idx_event_delivery_groups_on_action_due"
+    t.index ["event_route_id"], name: "index_event_delivery_groups_on_event_route_id"
+    t.index ["group_key"], name: "index_event_delivery_groups_on_group_key", unique: true
   end
 
   create_table "event_delivery_attempts", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -559,6 +585,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_121000) do
     t.string "event_type", limit: 100
     t.string "event_type_pattern", limit: 100
     t.datetime "expires_at"
+    t.text "group_by"
+    t.integer "group_interval_seconds"
+    t.integer "group_wait_seconds"
+    t.boolean "grouping_enabled", default: false, null: false
     t.bigint "hit_count", default: 0, null: false
     t.string "label"
     t.bigint "notification_receiver_id"

@@ -13,13 +13,20 @@ class EventDelivery < ApplicationRecord
     'failed' => 'failed',
     'canceled' => 'canceled',
     'accepted' => 'accepted',
-    'aborted' => 'aborted'
+    'aborted' => 'aborted',
+    'grouping' => 'waiting for group',
+    'grouped' => 'included in grouped delivery'
   }.freeze
 
-  ABORTABLE_STATES = %w[prepared released].freeze
+  ABORTABLE_STATES = %w[prepared released grouping].freeze
   NON_DELIVERED_FINAL_STATES = %w[skipped canceled aborted].freeze
 
   belongs_to :event
+  belongs_to :event_delivery_group, optional: true
+  belongs_to :effective_event_delivery,
+             class_name: 'EventDelivery',
+             foreign_key: :effective_event_delivery_id,
+             optional: true
   belongs_to :event_routing_context, optional: true
   belongs_to :event_route, optional: true
   belongs_to :notification_receiver, optional: true
@@ -35,11 +42,18 @@ class EventDelivery < ApplicationRecord
              foreign_key: :transaction_id,
              optional: true
   has_many :event_delivery_attempts, dependent: :delete_all
+  has_many :grouped_event_deliveries,
+           class_name: 'EventDelivery',
+           foreign_key: :effective_event_delivery_id,
+           dependent: :nullify
 
   enum :target_kind, %i[default_recipient custom], suffix: true
-  enum :state, %i[prepared released sending sent skipped failed canceled accepted aborted], suffix: true
+  enum :state,
+       %i[prepared released sending sent skipped failed canceled accepted aborted grouping grouped],
+       suffix: true
 
   serialize :response_headers, coder: JSON
+  serialize :group_labels, coder: JSON
 
   validates :action, :target_kind, :state, presence: true
   validates :action, inclusion: { in: ->(_) { VpsAdmin::API::Notifications::Actions.names } }
@@ -74,16 +88,21 @@ class EventDelivery < ApplicationRecord
     now = Time.now
 
     transaction do
-      rows = joins(:delivery_transaction)
-             .where(
-               transactions: { transaction_chain_id: chain_id },
-               state: ABORTABLE_STATES,
-               attempt_count: 0,
-               provider_message_id: nil
-             )
-             .where(no_delivery_attempts_sql)
-             .lock
-             .pluck(:id, :event_id)
+      candidates = joins(:delivery_transaction)
+                   .where(
+                     transactions: { transaction_chain_id: chain_id },
+                     state: ABORTABLE_STATES,
+                     attempt_count: 0,
+                     provider_message_id: nil
+                   )
+                   .where(no_delivery_attempts_sql)
+      group_ids = candidates
+                  .where.not(event_delivery_group_id: nil)
+                  .distinct
+                  .pluck(:event_delivery_group_id)
+                  .sort
+      groups = ::EventDeliveryGroup.where(id: group_ids).order(:id).lock.to_a
+      rows = candidates.lock.pluck(:id, :event_id)
 
       ids = rows.map(&:first)
 
@@ -103,6 +122,7 @@ class EventDelivery < ApplicationRecord
         aborted_event_ids = where(id: ids, state: 'aborted').pluck(:event_id).uniq
       end
 
+      groups.each { |group| group.recalculate_next_flush_at!(now:) }
       aborted_event_ids.each { |event_id| recompute_abort_routing_state!(event_id, now:) }
     end
 
@@ -152,6 +172,67 @@ class EventDelivery < ApplicationRecord
 
   def response_headers_json
     JSON.dump(response_headers || {})
+  end
+
+  def grouping_enabled?
+    group_key.present?
+  end
+
+  def effective_delivery
+    effective_event_delivery || self
+  end
+
+  def group_members
+    return self.class.where(id:) unless event_delivery_group_id
+    if grouping_state?
+      return self.class.where(event_delivery_group_id:, state: 'grouping').order(:id)
+    end
+
+    leader_id = effective_event_delivery_id || id
+    self.class
+        .where(event_delivery_group_id:)
+        .where('id = ? OR effective_event_delivery_id = ?', leader_id, leader_id)
+        .order(:id)
+  end
+
+  def group_events
+    ::Event.where(id: group_members.select(:event_id)).order(:id)
+  end
+
+  def event_count
+    return 1 unless event_delivery_group_id
+
+    group_members.count
+  end
+
+  def grouped_delivery?
+    event_delivery_group_id.present?
+  end
+
+  def grouped_delivery
+    grouped_delivery?
+  end
+
+  def group_id
+    event_delivery_group_id
+  end
+
+  def group_event_ids
+    group_events.limit(100).pluck(:id)
+  end
+
+  def group_truncated_count
+    [event_count - 100, 0].max
+  end
+
+  def group_next_flush_at
+    return unless grouping_state?
+
+    event_delivery_group&.next_flush_at
+  end
+
+  def effective_event_id
+    effective_event_delivery&.event_id
   end
 
   def public_payload

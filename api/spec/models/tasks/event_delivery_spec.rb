@@ -915,6 +915,9 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     mail_log = Struct.new(:to, :cc, :bcc).new(recipient, '', '')
     delivery = Struct.new(:id, :action, :mail_log).new(id, 'email', mail_log)
     delivery.define_singleton_method(:reload) { self }
+    delivery.define_singleton_method(:grouping_enabled?) { false }
+    delivery.define_singleton_method(:grouping_state?) { false }
+    delivery.define_singleton_method(:grouped_state?) { false }
     delivery
   end
 
@@ -1811,6 +1814,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
 
   it 'posts signed webhook payloads and marks deliveries sent' do
     delivery, action, route = create_webhook_delivery!(secret: 'super-secret')
+    action.update!(secret: 'changed-after-routing')
     request = nil
     http = instance_double(Net::HTTP)
     response_headers = {
@@ -1847,17 +1851,21 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     task.deliver_webhooks
 
     body = JSON.parse(request.body)
-    expected_signature = OpenSSL::HMAC.hexdigest('sha256', action.secret, request.body)
+    expected_signature = OpenSSL::HMAC.hexdigest('sha256', 'super-secret', request.body)
 
-    expect(body.dig('event', 'type')).to eq('user.test_notification')
-    expect(body.dig('event', 'fields', 'subject_relation')).to eq('self')
-    expect(body.dig('event', 'fields', 'subject_user_id')).to eq(delivery.event.user_id)
-    expect(body.dig('event', 'fields', 'subject_is_self')).to be(true)
+    expect(body['version']).to eq(1)
+    expect(body.dig('group', 'grouped')).to be(false)
+    expect(body.dig('group', 'event_count')).to eq(1)
+    expect(body.dig('events', 0, 'type')).to eq('user.test_notification')
+    expect(body.dig('events', 0, 'fields', 'subject_relation')).to eq('self')
+    expect(body.dig('events', 0, 'fields', 'subject_user_id')).to eq(delivery.event.user_id)
+    expect(body.dig('events', 0, 'fields', 'subject_is_self')).to be(true)
     expect(body.dig('delivery', 'id')).to eq(delivery.id)
     expect(body.dig('delivery', 'route', 'id')).to eq(route.id)
     expect(request['X-VpsAdmin-Event']).to eq('user.test_notification')
     expect(request['X-VpsAdmin-Delivery']).to eq(delivery.id.to_s)
     expect(request['X-VpsAdmin-Signature-256']).to eq("sha256=#{expected_signature}")
+    expect(delivery.target_secret).to eq('super-secret')
     expect(delivery.reload).to be_sent_state
     expect(delivery.response_status).to eq(202)
     expect(delivery.response_body).to eq('accepted')
@@ -2190,6 +2198,64 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
   it 'does not call other-user managed private webhook addresses' do
     ip_address = create_managed_private_ip!(user: SpecSeed.other_user)
     delivery, = create_webhook_delivery!(url: "http://#{ip_address.addr}:9292/events")
+
+    allow(Resolv).to receive(:getaddresses)
+      .with(ip_address.addr)
+      .and_return([ip_address.addr])
+    allow(Net::HTTP).to receive(:start)
+
+    task.deliver_webhooks
+
+    expect(Net::HTTP).not_to have_received(:start)
+    expect(delivery.reload).to be_released_state
+    expect(delivery.error_summary).to include('not owned by the event user')
+  end
+
+  it 'does not send cross-user groups to a managed webhook address' do
+    ip_address = create_managed_private_ip!(user: SpecSeed.user)
+    delivery, = create_webhook_delivery!(url: "http://#{ip_address.addr}:9292/events")
+    group = EventDeliveryGroup.create!(
+      action: 'webhook',
+      group_key: Digest::SHA256.hexdigest('cross-user managed webhook'),
+      labels: {},
+      group_wait_seconds: 0,
+      group_interval_seconds: 60
+    )
+    delivery.update!(
+      event_delivery_group: group,
+      group_key: group.group_key,
+      group_labels: {},
+      group_wait_seconds: 0,
+      group_interval_seconds: 60
+    )
+    foreign_event = Event.create!(
+      user: SpecSeed.other_user,
+      event_type: 'user.test_notification',
+      category: 'general',
+      severity: 'info',
+      subject: 'Foreign grouped webhook event',
+      payload: {}
+    )
+    EventDelivery.create!(
+      event: foreign_event,
+      event_delivery_group: group,
+      effective_event_delivery: delivery,
+      notification_receiver: delivery.notification_receiver,
+      notification_target: delivery.notification_target,
+      notification_receiver_action: delivery.notification_receiver_action,
+      action: delivery.action,
+      target_kind: delivery.target_kind,
+      target_value: delivery.target_value,
+      target_label: delivery.target_label,
+      state: :grouped,
+      group_key: group.group_key,
+      group_labels: {},
+      group_wait_seconds: 0,
+      group_interval_seconds: 60
+    )
+    delivery.update!(
+      payload: JSON.dump(VpsAdmin::API::Notifications.webhook_payload_for(delivery))
+    )
 
     allow(Resolv).to receive(:getaddresses)
       .with(ip_address.addr)

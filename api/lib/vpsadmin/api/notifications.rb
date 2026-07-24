@@ -196,6 +196,8 @@ module VpsAdmin::API
     TELEGRAM_LINK_PREVIEW_OPTIONS = { is_disabled: true }.freeze
     TELEGRAM_TEXT_LIMIT = 4096
     SMS_TEXT_LIMIT = 459
+    WEBHOOK_EVENT_LIMIT = 100
+    GROUP_CAPABLE_TEMPLATES = %w[vps_oom_report].freeze
     SMS_CALLBACK_PATH = '/internal/notifications/sms/callback'.freeze
     SMS_CALLBACK_MAX_BODY_SIZE = 16 * 1024
     SMS_CALLBACK_SIGNATURE_VERSION = 'v1'.freeze
@@ -237,42 +239,26 @@ module VpsAdmin::API
     end
 
     def webhook_payload_for(delivery)
-      event = delivery.event
+      members = delivery.group_members.includes(event: %i[user vps]).limit(WEBHOOK_EVENT_LIMIT).to_a
+      events = members.map do |member|
+        webhook_event_for(member.event, route_context: member.event_routing_context)
+      end
+      event_count = delivery.event_count
       route = delivery.event_route
       receiver = delivery.notification_receiver
       target = delivery.notification_target
       receiver_target = delivery.notification_receiver_target || delivery.notification_receiver_action
-      user = event.user
-      vps = event.vps
 
       {
-        event: {
-          id: event.id,
-          type: event.event_type,
-          category: event.category,
-          severity: event.severity,
-          subject: event.subject,
-          summary: event.summary,
-          payload: event.payload || {},
-          fields: VpsAdmin::API::Events.matchable_field_values(
-            event,
-            route_context: delivery.event_routing_context
-          ),
-          ip_addr: event.ip_addr,
-          source: {
-            class: event.source_class,
-            id: event.source_id
-          },
-          user: user && {
-            id: user.id,
-            login: user.login
-          },
-          vps: vps && {
-            id: vps.id,
-            hostname: vps.hostname
-          },
-          created_at: event.created_at&.iso8601
+        version: 1,
+        group: {
+          grouped: delivery.event_delivery_group_id.present?,
+          key: delivery.event_delivery_group&.group_key,
+          labels: delivery.event_delivery_group&.labels || {},
+          event_count:,
+          truncated_count: [event_count - events.length, 0].max
         },
+        events:,
         delivery: {
           id: delivery.id,
           action: delivery.action,
@@ -297,6 +283,39 @@ module VpsAdmin::API
       }
     end
 
+    def webhook_event_for(event, route_context:)
+      user = event.user
+      vps = event.vps
+
+      {
+        id: event.id,
+        type: event.event_type,
+        category: event.category,
+        severity: event.severity,
+        subject: event.subject,
+        summary: event.summary,
+        payload: event.payload || {},
+        fields: VpsAdmin::API::Events.matchable_field_values(
+          event,
+          route_context:
+        ),
+        ip_addr: event.ip_addr,
+        source: {
+          class: event.source_class,
+          id: event.source_id
+        },
+        user: user && {
+          id: user.id,
+          login: user.login
+        },
+        vps: vps && {
+          id: vps.id,
+          hostname: vps.hostname
+        },
+        created_at: event.created_at&.iso8601
+      }
+    end
+
     def telegram_payload_for(delivery)
       {
         chat_id: delivery.target_value
@@ -318,6 +337,8 @@ module VpsAdmin::API
     end
 
     def telegram_message_for(delivery)
+      return grouped_telegram_message_for(delivery) if generic_group_rendering?(delivery)
+
       event = delivery.event
       template_name = template_name_for_delivery(delivery, :telegram)
 
@@ -372,6 +393,34 @@ module VpsAdmin::API
       { text: truncate_telegram_text(text_lines.join("\n")) }
     end
 
+    def grouped_telegram_message_for(delivery)
+      if grouped_template_available?(delivery, :telegram)
+        rendered = ::NotificationTemplate.render_telegram!(
+          :event_group,
+          grouped_template_options_for(delivery, :telegram)
+        )
+        html = rendered[:html].to_s
+
+        if html.present? && html.length <= TELEGRAM_TEXT_LIMIT
+          return {
+            text: html,
+            parse_mode: TELEGRAM_HTML_PARSE_MODE,
+            link_preview_options: TELEGRAM_LINK_PREVIEW_OPTIONS
+          }
+        end
+
+        return { text: truncate_telegram_text(rendered.fetch(:text)) }
+      end
+
+      events = delivery.group_events.limit(30).to_a
+      event_count = delivery.event_count
+      lines = ["#{event_count} grouped vpsAdmin notifications"]
+      lines.concat(events.map { |event| "[#{event.severity}] #{event.subject}" })
+      lines << "… and #{event_count - events.length} more" if event_count > events.length
+
+      { text: truncate_telegram_text(lines.join("\n")) }
+    end
+
     def telegram_webui_url(event)
       base_url = VpsAdmin::API::Events.webui_url
       return if base_url.blank?
@@ -396,6 +445,8 @@ module VpsAdmin::API
     end
 
     def sms_text_for(delivery)
+      return grouped_sms_text_for(delivery) if generic_group_rendering?(delivery)
+
       event = delivery.event
       template_name = template_name_for_delivery(delivery, :sms)
 
@@ -413,6 +464,21 @@ module VpsAdmin::API
       ]
       lines << "VPS: ##{event.vps.id} #{event.vps.hostname}" if event.vps
 
+      truncate_sms_text(lines.join("\n"))
+    end
+
+    def grouped_sms_text_for(delivery)
+      if grouped_template_available?(delivery, :sms)
+        rendered = ::NotificationTemplate.render_sms!(
+          :event_group,
+          grouped_template_options_for(delivery, :sms)
+        )
+        return truncate_sms_text(rendered.fetch(:text))
+      end
+
+      events = delivery.group_events.limit(10).to_a
+      lines = ["#{delivery.event_count} grouped vpsAdmin notifications"]
+      lines.concat(events.map { |event| "[#{event.severity}] #{event.subject}" })
       truncate_sms_text(lines.join("\n"))
     end
 
@@ -837,6 +903,19 @@ module VpsAdmin::API
       event = delivery.event
       template_name = template_name_for_delivery(delivery, :email)
 
+      if generic_group_rendering?(delivery)
+        if grouped_template_available?(delivery, :email)
+          return ::NotificationTemplate.send_email!(
+            :event_group,
+            grouped_template_options_for(delivery, :email)
+          )
+        end
+
+        return ::NotificationTemplate.send_custom_email(
+          grouped_email_options_for(delivery)
+        )
+      end
+
       if template_name
         return ::NotificationTemplate.send_email!(
           template_name,
@@ -846,6 +925,70 @@ module VpsAdmin::API
 
       ::NotificationTemplate.send_custom_email(
         VpsAdmin::API::Events.email_custom_options_for(event, delivery)
+      )
+    end
+
+    def grouped_email_options_for(delivery)
+      events = delivery.group_events.limit(100).to_a
+      event_count = delivery.event_count
+      lines = events.map do |event|
+        [
+          "[#{event.severity}] #{event.subject}",
+          event.summary.presence,
+          "Event type: #{event.event_type}",
+          event.vps && "VPS: ##{event.vps.id} #{event.vps.hostname}"
+        ].compact.join("\n")
+      end
+      lines << "… and #{event_count - events.length} more events" if event_count > events.length
+
+      {
+        user: delivery.recipient_user || delivery.event.user,
+        from: NotificationTemplates.default_from,
+        to: VpsAdmin::API::Events.email_target_addresses(delivery.event, delivery),
+        subject: "#{event_count} grouped vpsAdmin notifications",
+        text_plain: lines.join("\n\n")
+      }
+    end
+
+    def grouped_template_options_for(delivery, action)
+      event_limit = {
+        email: 100,
+        telegram: 30,
+        sms: 10
+      }.fetch(action.to_sym, 100)
+      events = delivery.group_events.limit(event_limit).to_a
+      event_count = delivery.event_count
+      user = delivery.recipient_user || delivery.event.user
+      opts = {
+        user:,
+        vars: {
+          base_url: VpsAdmin::API::Events.webui_url,
+          user:,
+          group_events: events,
+          group_event_count: event_count,
+          group_truncated_count: [event_count - events.length, 0].max,
+          group_labels: delivery.group_labels || {}
+        }
+      }
+
+      if action.to_sym == :email
+        opts.merge!(
+          to: VpsAdmin::API::Events.email_target_addresses(delivery.event, delivery),
+          include_default_recipients: false,
+          include_template_recipients: false
+        )
+      end
+
+      opts
+    end
+
+    def grouped_template_available?(delivery, action)
+      user = delivery.recipient_user || delivery.event.user
+      VpsAdmin::API::Events.template_available?(
+        :event_group,
+        nil,
+        user&.language,
+        protocol: action
       )
     end
 
@@ -863,6 +1006,16 @@ module VpsAdmin::API
 
       delivery.template_name.presence&.to_sym ||
         VpsAdmin::API::Events.template_name_for(event, action, delivery:)
+    end
+
+    def generic_group_rendering?(delivery)
+      return false unless delivery.event_delivery_group_id
+
+      event_types = delivery.group_events.distinct.limit(2).pluck(:event_type)
+      template_name = template_name_for_delivery(delivery, delivery.action)
+
+      event_types.length != 1 ||
+        !GROUP_CAPABLE_TEMPLATES.include?(template_name.to_s)
     end
 
     def test_notification_event?(event)
@@ -1332,6 +1485,149 @@ module VpsAdmin::API
       end
     end
 
+    class GroupActivation
+      class << self
+        def activate_released!(action, limit: DEFAULT_LIMIT)
+          ::EventDelivery
+            .where(
+              action: action.to_s,
+              state: 'released',
+              event_delivery_group_id: nil
+            )
+            .where.not(group_key: nil)
+            .order(:id)
+            .limit(limit)
+            .each { |delivery| activate!(delivery) }
+        end
+
+        def activate!(delivery, now: Time.now)
+          return delivery.event_delivery_group if delivery.event_delivery_group
+          return unless delivery.grouping_enabled?
+
+          group = find_or_create_group!(delivery)
+
+          group.with_lock do
+            delivery.lock!
+            delivery.reload
+            return delivery.event_delivery_group if delivery.event_delivery_group
+            return unless delivery.released_state?
+
+            first_member_at = delivery.released_at || now
+            next_flush_at =
+              group.next_flush_at ||
+              [
+                first_member_at + delivery.group_wait_seconds,
+                group.last_sealed_at &&
+                  (group.last_sealed_at + delivery.group_interval_seconds)
+              ].compact.max
+
+            group.update!(next_flush_at:)
+            delivery.update!(
+              event_delivery_group: group,
+              state: 'grouping',
+              next_attempt_at: nil
+            )
+          end
+
+          group
+        end
+
+        protected
+
+        def find_or_create_group!(delivery)
+          ::EventDeliveryGroup.find_or_create_by!(group_key: delivery.group_key) do |group|
+            group.event_route = delivery.event_route
+            group.route_owner = delivery.event_routing_context&.recipient_user
+            group.action = delivery.action
+            group.labels = delivery.group_labels || {}
+            group.group_wait_seconds = delivery.group_wait_seconds
+            group.group_interval_seconds = delivery.group_interval_seconds
+          end
+        rescue ActiveRecord::RecordNotUnique
+          retry
+        end
+      end
+    end
+
+    class GroupSealer
+      class << self
+        def seal_due!(action, limit: DEFAULT_LIMIT, now: Time.now,
+                      publisher: Publisher.default)
+          groups = ::EventDeliveryGroup
+                   .due_for_action(action.to_s, now)
+                   .order(:next_flush_at, :id)
+                   .limit(limit)
+                   .to_a
+
+          groups.filter_map do |group|
+            seal!(group, now:, publisher:)
+          end
+        end
+
+        def seal!(group, now: Time.now, publisher: Publisher.default)
+          released = nil
+
+          ::EventDeliveryGroup.transaction do
+            group.lock!
+            group.reload
+            next if group.next_flush_at.nil? || group.next_flush_at > now
+
+            members = group.event_deliveries
+                           .where(state: 'grouping')
+                           .order(:id)
+                           .lock
+                           .to_a
+            if members.empty?
+              group.update!(next_flush_at: nil)
+              next
+            end
+
+            leader = members.first
+            member_ids = members.drop(1).map(&:id)
+            if member_ids.any?
+              ::EventDelivery.where(id: member_ids, state: 'grouping').update_all(
+                state: ::EventDelivery.states.fetch('grouped'),
+                effective_event_delivery_id: leader.id,
+                next_attempt_at: nil,
+                updated_at: now
+              )
+            end
+
+            leader.update!(
+              state: 'prepared',
+              effective_event_delivery_id: nil,
+              next_attempt_at: nil
+            )
+            prepare!(leader)
+
+            if leader.reload.prepared_state?
+              leader.update!(
+                state: 'released',
+                released_at: now,
+                next_attempt_at: now
+              )
+              released = leader
+            end
+
+            group.update!(
+              last_sealed_at: now,
+              next_flush_at: nil
+            )
+          end
+
+          publisher.publish_after_commit([released]) if released
+          released
+        end
+
+        protected
+
+        def prepare!(delivery)
+          router = VpsAdmin::API::Events::Router.new(delivery.event)
+          Actions.fetch(delivery.action).prepare_delivery_for(router, delivery)
+        end
+      end
+    end
+
     class Retry
       class InvalidState < StandardError; end
 
@@ -1417,6 +1713,8 @@ module VpsAdmin::API
         return if delivery_limit <= 0
 
         deliveries = ActiveRecord::Base.connection_pool.with_connection do
+          GroupActivation.activate_released!(@action, limit: requested_limit)
+          GroupSealer.seal_due!(@action, limit: requested_limit)
           due_deliveries(delivery_limit, scan_limit: requested_limit)
         end
 
@@ -1437,6 +1735,13 @@ module VpsAdmin::API
 
         delivery = find_delivery(id)
         return unless delivery && delivery.action == @action
+
+        if delivery.grouping_enabled? && delivery.event_delivery_group_id.nil?
+          group = GroupActivation.activate!(delivery)
+          GroupSealer.seal!(group) if group&.next_flush_at && group.next_flush_at <= Time.now
+          delivery.reload
+        end
+        return if delivery.grouping_state? || delivery.grouped_state?
 
         dispatch_delivery(delivery, worker_state:, defer_throttles:)
       end
@@ -1460,6 +1765,7 @@ module VpsAdmin::API
                   :notification_receiver_action
                 )
                 .where(action: @action, state: %w[released sending])
+                .where('group_key IS NULL OR event_delivery_group_id IS NOT NULL')
                 .due
                 .order(:id)
 
@@ -2220,13 +2526,17 @@ module VpsAdmin::API
         headers = {
           'Content-Type' => 'application/json',
           'User-Agent' => 'vpsAdmin notification dispatcher',
-          'X-VpsAdmin-Event' => delivery.event.event_type,
           'X-VpsAdmin-Delivery' => delivery.id.to_s
         }
+        if delivery.event_count == 1
+          headers['X-VpsAdmin-Event'] = delivery.event.event_type
+        end
+        if delivery.event_delivery_group
+          headers['X-VpsAdmin-Group'] = delivery.event_delivery_group.group_key
+        end
 
-        target = delivery.notification_target || delivery.notification_receiver_action
-        if target&.secret.present?
-          digest = OpenSSL::HMAC.hexdigest('sha256', target.secret, body)
+        if delivery.target_secret.present?
+          digest = OpenSSL::HMAC.hexdigest('sha256', delivery.target_secret, body)
           headers['X-VpsAdmin-Signature-256'] = "sha256=#{digest}"
         end
 
@@ -2250,9 +2560,13 @@ module VpsAdmin::API
       def validate_webhook_destination!(ip, delivery)
         managed_ips = managed_webhook_ip_addresses(ip)
         if managed_ips.any?
-          event_user_id = delivery.event&.user_id
+          event_user_ids = delivery.group_events.distinct.pluck(:user_id)
           owners = managed_ips.map(&:current_owner)
-          return if event_user_id && owners.all? { |owner| owner&.id == event_user_id }
+          if event_user_ids.one? &&
+             event_user_ids.first &&
+             owners.all? { |owner| owner&.id == event_user_ids.first }
+            return
+          end
 
           raise ArgumentError,
                 'webhook destination is managed by vpsAdmin and is not owned by the event user'

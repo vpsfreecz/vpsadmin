@@ -23,6 +23,7 @@ class Event < ApplicationRecord
   belongs_to :user, optional: true
   belongs_to :vps, optional: true
   has_many :event_deliveries, dependent: :delete_all
+  has_many :event_delivery_groups, through: :event_deliveries
   has_many :event_routing_contexts, dependent: :delete_all
   has_many :event_route_matches, -> { order(:match_order, :id) }, dependent: :delete_all
   has_many :matched_event_routes, through: :event_route_matches, source: :event_route
@@ -96,6 +97,18 @@ class Event < ApplicationRecord
 
   def payload=(value)
     self.parameters = value
+  end
+
+  def suppressed_by_mute?
+    suppressed_routing_state? &&
+      event_deliveries.any? do |delivery|
+        delivery.error_summary == 'route is muted by a time interval' ||
+          (
+            delivery.error_summary == 'receiver does not notify' &&
+            delivery.notification_receiver.enabled? &&
+            delivery.notification_receiver.mute?
+          )
+      end
   end
 
   protected

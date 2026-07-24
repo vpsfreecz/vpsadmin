@@ -575,6 +575,52 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(attempts.first['error_summary']).to eq('spec transport failure')
   end
 
+  it 'lets users configure explicit route grouping' do
+    receiver = NotificationReceiver.create!(
+      user: SpecSeed.user,
+      label: 'Grouped API receiver'
+    )
+
+    as(SpecSeed.user) do
+      json_post route_index_path, event_route: {
+        label: 'Grouped API route',
+        notification_receiver_id: receiver.id,
+        event_type: 'user.test_notification',
+        grouping_enabled: true,
+        group_by: %w[severity],
+        group_wait_seconds: 45,
+        group_interval_seconds: 600
+      }
+    end
+
+    expect_status(200)
+    route = EventRoute.find(route_obj.fetch('id'))
+    expect(route).to be_grouping_enabled
+    expect(route.group_by).to eq(%w[severity])
+    expect(route_obj).to include(
+      'grouping_enabled' => true,
+      'group_by' => %w[severity],
+      'group_wait_seconds' => 45,
+      'group_interval_seconds' => 600,
+      'grouping_summary' => 'severity; wait 45s; interval 600s'
+    )
+
+    as(SpecSeed.user) do
+      json_put route_path(route.id), event_route: {
+        grouping_enabled: false,
+        group_by: [],
+        group_wait_seconds: nil,
+        group_interval_seconds: nil
+      }
+    end
+
+    expect_status(200)
+    expect(route.reload).not_to be_grouping_enabled
+    expect(route.group_by).to eq([])
+    expect(route.group_wait_seconds).to be_nil
+    expect(route.group_interval_seconds).to be_nil
+  end
+
   it 'lets users manage reusable intervals and assign their own intervals to routes' do
     as(SpecSeed.user) do
       json_post time_interval_index_path, event_time_interval: {
@@ -777,6 +823,46 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     )
     canceled = EventDelivery.create!(common.merge(state: :canceled, error_summary: 'spec canceled'))
     skipped = EventDelivery.create!(common.merge(state: :skipped, error_summary: 'spec skipped'))
+    group_key = Digest::SHA256.hexdigest('spec queue group')
+    group = EventDeliveryGroup.create!(
+      event_route: nil,
+      route_owner: SpecSeed.user,
+      action: 'email',
+      group_key:,
+      labels: { 'severity' => 'info' },
+      group_wait_seconds: 30,
+      group_interval_seconds: 300,
+      next_flush_at: Time.now + 7200
+    )
+    grouped_first = EventDelivery.create!(
+      common.merge(
+        state: :grouping,
+        event_delivery_group: group,
+        group_key:,
+        group_labels: { 'severity' => 'info' },
+        group_wait_seconds: 30,
+        group_interval_seconds: 300
+      )
+    )
+    grouped_event = Event.create!(
+      user: SpecSeed.other_user,
+      event_type: 'system.daily_report',
+      category: 'system',
+      severity: 'info',
+      subject: 'Second grouped queue event',
+      payload: {}
+    )
+    grouped_second = EventDelivery.create!(
+      common.merge(
+        event: grouped_event,
+        state: :grouping,
+        event_delivery_group: group,
+        group_key:,
+        group_labels: { 'severity' => 'info' },
+        group_wait_seconds: 30,
+        group_interval_seconds: 300
+      )
+    )
 
     as(SpecSeed.user) { json_get event_delivery_index_path, event_delivery: { state_group: 'queue' } }
 
@@ -792,8 +878,19 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     expect_status(200)
     expect(deliveries.map { |row| row['id'] }).to eq(
-      [sending.id, released_due.id, released_later.id, prepared.id]
+      [sending.id, released_due.id, released_later.id, grouped_first.id, prepared.id]
     )
+    expect(deliveries.map { |row| row['id'] }).not_to include(grouped_second.id)
+    grouped_row = deliveries.detect { |row| row['id'] == grouped_first.id }
+    expect(grouped_row).to include(
+      'event_delivery_group_id' => group.id,
+      'grouped_delivery' => true,
+      'event_count' => 2,
+      'group_truncated_count' => 0,
+      'group_labels' => { 'severity' => 'info' },
+      'group_event_ids' => [event.id, grouped_event.id]
+    )
+    expect(grouped_row['group_next_flush_at']).to be_present
     row = deliveries.detect { |delivery| delivery['id'] == prepared.id }
     expect(row).to include(
       'event_id' => event.id,
@@ -805,6 +902,18 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       'notification_target_label' => 'Spec queue e-mail',
       'template_name' => 'spec_queue_template'
     )
+
+    as(SpecSeed.admin) do
+      json_get event_delivery_index_path,
+               event_delivery: {
+                 state_group: 'queue',
+                 user: SpecSeed.other_user.id,
+                 event_type: 'system.daily_report'
+               }
+    end
+
+    expect_status(200)
+    expect(deliveries.map { |row| row['id'] }).to eq([grouped_first.id])
 
     as(SpecSeed.admin) do
       json_get event_delivery_index_path,
@@ -1818,7 +1927,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     as(SpecSeed.user) { json_get delivery_path(event.id, webhook_delivery.id) }
 
     expect_status(200)
-    expect(JSON.parse(delivery_obj['payload']).dig('event', 'id')).to eq(event.id)
+    expect(JSON.parse(delivery_obj['payload']).dig('events', 0, 'id')).to eq(event.id)
     expect(JSON.parse(delivery_obj['response_headers_json'])).to eq(
       'x-spec-detail' => ['delivery']
     )

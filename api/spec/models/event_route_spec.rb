@@ -102,18 +102,6 @@ RSpec.describe EventRoute do
     NotificationReceiver.delete_all
   end
 
-  def emit_oom_report!(stage)
-    VpsAdmin::API::Events.emit!(
-      'vps.oom_report',
-      user: SpecSeed.user,
-      subject: 'Spec OOM',
-      payload: {
-        'stage' => stage,
-        'cgroup' => '/user.slice/a.scope'
-      }
-    )
-  end
-
   def build_matcher(event_type:, field:, operator:, value:)
     route = create_route!(
       event_type:,
@@ -304,14 +292,14 @@ RSpec.describe EventRoute do
       action: {
         action: :webhook,
         target_kind: :custom,
-        target_value: 'https://example.test/undeclared-stage'
+        target_value: 'https://example.test/undeclared-field'
       }
     )
     route = create_route!(receiver:, event_type: nil)
     route.event_route_matchers.create!(
-      field: 'stage',
+      field: 'changed_at',
       operator: '==',
-      value: 'notification'
+      value: '2026-07-01T12:00:00Z'
     )
 
     event = VpsAdmin::API::Events.emit!(
@@ -322,7 +310,7 @@ RSpec.describe EventRoute do
         'codename' => 'Spec-Abuse',
         'subject' => 'Spec incident',
         'text' => 'Spec incident body',
-        'stage' => 'notification'
+        'changed_at' => '2026-07-01T12:00:00Z'
       }
     )
 
@@ -960,8 +948,8 @@ RSpec.describe EventRoute do
       value: '2.5'
     )
     datetime_matcher = build_matcher(
-      event_type: 'vps.oom_report',
-      field: 'batch_reported_at',
+      event_type: 'transaction_chain.state_changed',
+      field: 'changed_at',
       operator: '>=',
       value: '2026-07-01T12:00:00Z'
     )
@@ -972,14 +960,14 @@ RSpec.describe EventRoute do
       value: 'yes'
     )
     integer_list_contains_matcher = build_matcher(
-      event_type: 'vps.oom_report',
-      field: 'selected_report_ids',
+      event_type: 'transaction_chain.state_changed',
+      field: 'concern_object_ids',
       operator: 'contains',
       value: '42'
     )
     integer_list_not_contains_matcher = build_matcher(
-      event_type: 'vps.oom_report',
-      field: 'selected_report_ids',
+      event_type: 'transaction_chain.state_changed',
+      field: 'concern_object_ids',
       operator: 'not_contains',
       value: '99'
     )
@@ -998,8 +986,8 @@ RSpec.describe EventRoute do
     )
     expect(datetime_matcher).to be_matches(
       build_event(
-        event_type: 'vps.oom_report',
-        payload: { 'batch_reported_at' => '2026-07-01T13:00:00Z' }
+        event_type: 'transaction_chain.state_changed',
+        payload: { 'changed_at' => '2026-07-01T13:00:00Z' }
       )
     )
     expect(boolean_matcher).to be_matches(
@@ -1010,14 +998,14 @@ RSpec.describe EventRoute do
     )
     expect(integer_list_contains_matcher).to be_matches(
       build_event(
-        event_type: 'vps.oom_report',
-        payload: { 'selected_report_ids' => [41, 42] }
+        event_type: 'transaction_chain.state_changed',
+        payload: { 'concern_object_ids' => [41, 42] }
       )
     )
     expect(integer_list_not_contains_matcher).to be_matches(
       build_event(
-        event_type: 'vps.oom_report',
-        payload: { 'selected_report_ids' => [41, 42] }
+        event_type: 'transaction_chain.state_changed',
+        payload: { 'concern_object_ids' => [41, 42] }
       )
     )
   end
@@ -1030,14 +1018,14 @@ RSpec.describe EventRoute do
       value: 'ten'
     )
     datetime_matcher = build_matcher(
-      event_type: 'vps.oom_report',
-      field: 'batch_reported_at',
+      event_type: 'transaction_chain.state_changed',
+      field: 'changed_at',
       operator: '>=',
       value: 'yesterday'
     )
     integer_list_matcher = build_matcher(
-      event_type: 'vps.oom_report',
-      field: 'selected_report_ids',
+      event_type: 'transaction_chain.state_changed',
+      field: 'concern_object_ids',
       operator: 'contains',
       value: 'forty-two'
     )
@@ -1050,15 +1038,72 @@ RSpec.describe EventRoute do
     )
     expect(datetime_matcher).not_to be_matches(
       build_event(
-        event_type: 'vps.oom_report',
-        payload: { 'batch_reported_at' => '2026-07-01T13:00:00Z' }
+        event_type: 'transaction_chain.state_changed',
+        payload: { 'changed_at' => '2026-07-01T13:00:00Z' }
       )
     )
     expect(integer_list_matcher).not_to be_matches(
       build_event(
-        event_type: 'vps.oom_report',
-        payload: { 'selected_report_ids' => [42] }
+        event_type: 'transaction_chain.state_changed',
+        payload: { 'concern_object_ids' => [42] }
       )
+    )
+  end
+
+  it 'validates route grouping fields against the selected event type' do
+    exact = described_class.new(
+      user: SpecSeed.user,
+      event_type: 'vps.oom_report',
+      grouping_enabled: true,
+      group_by: %w[vps_id cgroup],
+      group_wait_seconds: 60,
+      group_interval_seconds: 10_800
+    )
+    wildcard = described_class.new(
+      user: SpecSeed.user,
+      event_type_pattern: 'vps.*',
+      grouping_enabled: true,
+      group_by: ['vps_id'],
+      group_wait_seconds: 60,
+      group_interval_seconds: 10_800
+    )
+    list_field = described_class.new(
+      user: SpecSeed.user,
+      event_type: 'transaction_chain.state_changed',
+      grouping_enabled: true,
+      group_by: ['concern_object_ids'],
+      group_wait_seconds: 60,
+      group_interval_seconds: 10_800
+    )
+
+    expect(exact).to be_valid
+    expect(wildcard).not_to be_valid
+    expect(wildcard.errors[:group_by]).to include(
+      'vps_id is not common to every selected event type'
+    )
+    expect(list_field).not_to be_valid
+    expect(list_field.errors[:group_by]).to include(
+      'concern_object_ids is a list field'
+    )
+  end
+
+  it 'requires complete bounded grouping configuration without a template override' do
+    route = described_class.new(
+      user: SpecSeed.user,
+      event_type: 'user.test_notification',
+      grouping_enabled: true,
+      group_by: %w[severity severity],
+      group_wait_seconds: EventRoute::MAX_GROUP_WAIT_SECONDS + 1,
+      group_interval_seconds: EventRoute::MIN_GROUP_INTERVAL_SECONDS - 1,
+      template_name: 'spec_override'
+    )
+
+    expect(route).not_to be_valid
+    expect(route.errors[:group_by]).to include('cannot contain duplicate fields')
+    expect(route.errors[:group_wait_seconds]).to be_present
+    expect(route.errors[:group_interval_seconds]).to be_present
+    expect(route.errors[:template_name]).to include(
+      'cannot be overridden on a grouped route'
     )
   end
 

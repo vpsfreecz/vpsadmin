@@ -1,3 +1,4 @@
+require 'digest'
 require 'json'
 require 'time'
 
@@ -631,6 +632,7 @@ module VpsAdmin::API
       :target_kind,
       :target_value,
       :target_label,
+      :target_secret,
       :template_name,
       :event_route,
       :notification_receiver,
@@ -641,7 +643,11 @@ module VpsAdmin::API
       :next_attempt_at,
       :payload,
       :route_context,
-      :route_time_interval_state
+      :route_time_interval_state,
+      :group_key,
+      :group_labels,
+      :group_wait_seconds,
+      :group_interval_seconds
     )
 
     RouteResult = Struct.new(
@@ -1024,7 +1030,7 @@ module VpsAdmin::API
               source_id: nil, subject: nil, summary: nil, payload: nil,
               severity: nil, category: nil, ip_addr: nil, route: true,
               release: true, persist: :routed, route_context_mode: nil,
-              route_owner: nil, **event_args)
+              route_owner: nil, occurred_at: nil, **event_args)
       type = type_for(event_type)
       context = event_context_for(type, event_args)
       attrs = context ? type.definition.build_attributes(context) : {}
@@ -1048,7 +1054,8 @@ module VpsAdmin::API
         parameters: payload_with_defaults(type, payload || attrs[:payload] || {}),
         source_class: source_class || source&.class&.name,
         source_id: source_id || source&.id,
-        ip_addr: ip_addr || attrs[:ip_addr]
+        ip_addr: ip_addr || attrs[:ip_addr],
+        created_at: occurred_at
       )
       context.event = event if context
       event.runtime_event_context = context
@@ -1610,12 +1617,26 @@ module VpsAdmin::API
 
       def build_delivery(route, receiver, receiver_action, target_value:, target_label:, template_name: nil,
                          target_kind: nil, state: 'prepared', next_attempt_at: nil, payload: nil)
+        action = receiver_action&.action || 'email'
+        resolved_target_kind = target_kind || receiver_action&.target_kind || 'default_recipient'
+        resolved_template_name = template_name || delivery_template_name(route, receiver_action)
+        grouping = grouping_attributes(
+          route,
+          action:,
+          target_kind: resolved_target_kind,
+          target_value:,
+          template_name: resolved_template_name,
+          notification_target: receiver_action&.notification_target,
+          target_secret: receiver_action&.secret
+        )
+
         DeliveryPlan.new(
-          action: receiver_action&.action || 'email',
-          target_kind: target_kind || receiver_action&.target_kind || 'default_recipient',
+          action:,
+          target_kind: resolved_target_kind,
           target_value:,
           target_label: delivery_label(target_label),
-          template_name: template_name || delivery_template_name(route, receiver_action),
+          target_secret: receiver_action&.secret,
+          template_name: resolved_template_name,
           event_route: route,
           notification_receiver: receiver,
           notification_target: receiver_action&.notification_target,
@@ -1624,8 +1645,67 @@ module VpsAdmin::API
           next_attempt_at:,
           payload:,
           route_context: @route_context,
-          route_time_interval_state: 'active'
+          route_time_interval_state: 'active',
+          **grouping
         )
+      end
+
+      def grouping_attributes(route, action:, target_kind:, target_value:,
+                              template_name:, notification_target:, target_secret:)
+        return {} unless route&.grouping_enabled?
+
+        labels = route.group_by.to_h do |field|
+          value = EventRouteMatcher.field_value(event, field, route_context: @route_context)
+          [field, canonical_group_value(value)]
+        end
+        target_identity =
+          if notification_target
+            [
+              'notification_target',
+              notification_target.id,
+              target_value,
+              target_secret.present? ? Digest::SHA256.hexdigest(target_secret) : nil,
+              canonical_group_value(notification_target.config || {})
+            ]
+          else
+            ['target_value', target_value]
+          end
+        identity = [
+          route.id,
+          @route_context&.route_owner&.id,
+          action,
+          target_kind,
+          target_identity,
+          template_name,
+          route.group_by,
+          route.group_wait_seconds,
+          route.group_interval_seconds,
+          labels
+        ]
+
+        {
+          group_key: Digest::SHA256.hexdigest(JSON.dump(identity)),
+          group_labels: labels,
+          group_wait_seconds: route.group_wait_seconds,
+          group_interval_seconds: route.group_interval_seconds
+        }
+      end
+
+      def canonical_group_value(value)
+        case value
+        when Hash
+          value.each_with_object({}) do |(key, item), ret|
+            ret[key.to_s] = canonical_group_value(item)
+          end.sort.to_h
+        when Array
+          value.map { |item| canonical_group_value(item) }
+        when Time, DateTime, ActiveSupport::TimeWithZone
+          value.iso8601
+        when String, Numeric, TrueClass, FalseClass, NilClass
+          value
+        else
+          value.to_s
+        end
       end
 
       def direct_email_delivery(target_kind:, target_value:, target_label:, template_name: nil)
@@ -1762,16 +1842,21 @@ module VpsAdmin::API
           target_kind: delivery.target_kind,
           target_value: delivery.target_value,
           target_label: delivery.target_label,
+          target_secret: delivery.target_secret,
           template_name: delivery.template_name,
           state: delivery.state,
           error_summary: delivery.error_summary,
           next_attempt_at: delivery.next_attempt_at,
-          payload: delivery.payload
+          payload: delivery.payload,
+          group_key: delivery.group_key,
+          group_labels: delivery.group_labels,
+          group_wait_seconds: delivery.group_wait_seconds,
+          group_interval_seconds: delivery.group_interval_seconds
         )
 
         record.association(:event).target = event if event.runtime_email_context?
 
-        if record.prepared_state?
+        if record.prepared_state? && !record.grouping_enabled?
           VpsAdmin::API::Notifications::Actions
             .fetch(record.action)
             .prepare_delivery_for(self, record)

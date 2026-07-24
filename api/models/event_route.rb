@@ -2,8 +2,17 @@ class EventRoute < ApplicationRecord
   MAX_ROUTES = 100
   MAX_MATCHERS = 30
   MAX_TIME_INTERVALS = 20
+  MAX_GROUP_FIELDS = 10
+  MIN_GROUP_WAIT_SECONDS = 0
+  MAX_GROUP_WAIT_SECONDS = 86_400
+  MIN_GROUP_INTERVAL_SECONDS = 60
+  MAX_GROUP_INTERVAL_SECONDS = 2_592_000
   DEFAULT_ROUTE_LABEL = 'Default route'.freeze
   DEFAULT_ADMIN_ROUTE_LABEL = 'Default admin route'.freeze
+  DEFAULT_OOM_ROUTE_LABEL = 'OOM report notifications'.freeze
+  DEFAULT_OOM_EVENT_TYPE = 'vps.oom_report'.freeze
+  DEFAULT_OOM_GROUP_WAIT_SECONDS = 60
+  DEFAULT_OOM_GROUP_INTERVAL_SECONDS = 3 * 60 * 60
   DEFAULT_ROUTE_POSITION = 10_000
   DEFAULT_ADMIN_ROUTE_POSITION = 10_001
   DEFAULT_ROUTE_MATCHER_FIELD = 'default_routed'.freeze
@@ -34,9 +43,12 @@ class EventRoute < ApplicationRecord
   has_many :event_route_time_intervals, -> { order(:id) }, dependent: :delete_all
   has_many :event_time_intervals, through: :event_route_time_intervals
   has_many :event_deliveries, dependent: :nullify
+  has_many :event_delivery_groups, dependent: :nullify
   has_many :event_route_matches, dependent: :delete_all
 
   enum :subject_scope, %i[self visible], suffix: true
+
+  serialize :group_by, coder: JSON
 
   def self.default_route_for(user, role: DEFAULT_ACCOUNT_ROUTE_ROLE_VALUE)
     default_routes_for(user).detect { |route| route.default_for_role?(role) }
@@ -44,6 +56,20 @@ class EventRoute < ApplicationRecord
 
   def self.default_admin_route_for(user)
     default_route_for(user, role: DEFAULT_ADMIN_ROUTE_ROLE_VALUE)
+  end
+
+  def self.default_oom_route_for(user)
+    active
+      .where(
+        user:,
+        parent_id: nil,
+        label: DEFAULT_OOM_ROUTE_LABEL,
+        event_type: DEFAULT_OOM_EVENT_TYPE,
+        event_type_pattern: nil,
+        subject_scope: subject_scopes.fetch('self')
+      )
+      .order(:position, :id)
+      .first
   end
 
   def self.default_routes_for(user)
@@ -74,17 +100,34 @@ class EventRoute < ApplicationRecord
 
     return scope.maximum(:position).to_i + 1 if parent_id.present?
 
-    default_route = default_routes_for(user).first
+    fallback_route = fallback_routes_for(user).min_by { |route| [route.position, route.id] }
 
-    return scope.maximum(:position).to_i + 1 unless default_route
+    return scope.maximum(:position).to_i + 1 unless fallback_route
 
-    max_before_default = scope.where('position < ?', default_route.position).maximum(:position)
+    max_before_default = scope.where('position < ?', fallback_route.position).maximum(:position)
     candidate = max_before_default ? max_before_default + 1 : 0
 
-    return candidate if candidate < default_route.position
+    return candidate if candidate < fallback_route.position
 
-    scope.where('position >= ?', default_route.position).update_all('position = position + 1')
-    default_route.position
+    scope.where('position >= ?', fallback_route.position).update_all('position = position + 1')
+    fallback_route.position
+  end
+
+  def self.generated_fallback_position_for(user)
+    scope = where(user:, parent_id: nil)
+    fallback_route = default_routes_for(user).min_by { |route| [route.position, route.id] }
+
+    return scope.maximum(:position).to_i + 1 unless fallback_route
+
+    scope.where('position >= ?', fallback_route.position).update_all('position = position + 1')
+    fallback_route.position
+  end
+
+  def self.fallback_routes_for(user)
+    default_routes_for(user).tap do |routes|
+      oom_route = default_oom_route_for(user)
+      routes << oom_route if oom_route
+    end
   end
 
   def self.prepend_position_for(user, parent_id = nil)
@@ -99,7 +142,22 @@ class EventRoute < ApplicationRecord
   validates :event_type_pattern, length: { maximum: 100 }, allow_nil: true
   validates :template_name, length: { maximum: 100 }, allow_nil: true
   validates :position, numericality: { only_integer: true }
+  validates :group_wait_seconds,
+            numericality: {
+              only_integer: true,
+              greater_than_or_equal_to: MIN_GROUP_WAIT_SECONDS,
+              less_than_or_equal_to: MAX_GROUP_WAIT_SECONDS
+            },
+            allow_nil: true
+  validates :group_interval_seconds,
+            numericality: {
+              only_integer: true,
+              greater_than_or_equal_to: MIN_GROUP_INTERVAL_SECONDS,
+              less_than_or_equal_to: MAX_GROUP_INTERVAL_SECONDS
+            },
+            allow_nil: true
   validate :check_event_type_selector
+  validate :check_grouping
   validate :check_parent_owner
   validate :check_receiver_owner
   validate :check_parent_loop
@@ -177,6 +235,17 @@ class EventRoute < ApplicationRecord
     label.presence || matcher_summary
   end
 
+  def group_by
+    Array(super).map(&:to_s)
+  end
+
+  def grouping_summary
+    return 'disabled' unless grouping_enabled?
+
+    fields = group_by.any? ? group_by.join(', ') : 'all matching events'
+    "#{fields}; wait #{group_wait_seconds}s; interval #{group_interval_seconds}s"
+  end
+
   def active?
     return false if spent_at.present?
     return false if expires_at && expires_at <= Time.now
@@ -218,6 +287,51 @@ class EventRoute < ApplicationRecord
   end
 
   protected
+
+  def check_grouping
+    unless grouping_enabled?
+      if group_by.any? || group_wait_seconds.present? || group_interval_seconds.present?
+        errors.add(:grouping_enabled, 'must be enabled when grouping settings are present')
+      end
+      return
+    end
+
+    if group_wait_seconds.nil?
+      errors.add(:group_wait_seconds, 'must be configured')
+    end
+    if group_interval_seconds.nil?
+      errors.add(:group_interval_seconds, 'must be configured')
+    end
+
+    fields = group_by
+    if fields.length > MAX_GROUP_FIELDS
+      errors.add(:group_by, "cannot contain more than #{MAX_GROUP_FIELDS} fields")
+    end
+    if fields.uniq.length != fields.length
+      errors.add(:group_by, 'cannot contain duplicate fields')
+    end
+
+    metadata = EventRouteMatcher.field_map(
+      event_type: event_type.presence || '__any__'
+    )
+    fields.each do |field|
+      config = metadata[field]
+      unless config
+        errors.add(:group_by, "contains unknown field #{field}")
+        next
+      end
+
+      if event_type.blank? && !EventRouteMatcher::COMMON_FIELDS.has_key?(field)
+        errors.add(:group_by, "#{field} is not common to every selected event type")
+      end
+
+      if %w[string_list integer_list].include?(config.fetch(:type))
+        errors.add(:group_by, "#{field} is a list field")
+      end
+    end
+
+    errors.add(:template_name, 'cannot be overridden on a grouped route') if template_name.present?
+  end
 
   def default_label_for_role(role)
     case role.to_s
