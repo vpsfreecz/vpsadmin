@@ -232,48 +232,33 @@ module VpsAdmin::API::Events::Core
     }
   end
 
-  def oom_reports_from_ids(event, ids)
-    ids = Array(ids).map(&:to_i).uniq
-    return [] if ids.empty?
-
-    reports = oom_report_scope(event).where(id: ids).to_a.index_by(&:id)
-    ids.filter_map { |id| reports[id] }
-  end
-
-  def oom_reports_from_batch(event, selected_reports)
-    batch_time = parse_time(param(event, 'batch_reported_at'))
-    return selected_reports if batch_time.nil?
-
-    scope = oom_report_scope(event).order('oom_reports.created_at')
-    last_reported_id = param(event, 'last_reported_id')
-    scope = scope.where('oom_reports.id > ?', last_reported_id.to_i) if last_reported_id.present?
-    scope = scope.where('oom_reports.created_at <= ?', batch_time)
-    scope.to_a
-  end
-
   def oom_report_scope(event)
     raise ArgumentError, 'OOM report event has no user' if event.user_id.blank?
 
     scope = ::OomReport.joins(:vps).where(vpses: { user_id: event.user_id })
     scope = scope.where(vps_id: event.vps_id) if event.vps_id.present?
-    scope.where(ignored: false)
+    scope
   end
 
-  def oom_report_email_vars(event)
-    selected_reports = oom_reports_from_ids(event, param(event, 'selected_report_ids'))
-    reports = oom_reports_from_batch(event, selected_reports)
+  def oom_report_email_vars(event, delivery = nil)
+    events = delivery ? delivery.group_events : ::Event.where(id: event.id)
+    report_ids = events
+                 .where(source_class: ::OomReport.name)
+                 .order(:id)
+                 .pluck(:source_id)
+    reports_by_id = oom_report_scope(event).where(id: report_ids).index_by(&:id)
+    reports = report_ids.filter_map { |id| reports_by_id[id] }
+    raise ArgumentError, 'OOM report event source is missing' if reports.empty?
 
-    raise ArgumentError, 'OOM report parameters are missing report ids' if reports.empty?
-
-    selected_reports = reports.first(30) if selected_reports.empty?
+    selected_reports = reports.first(30)
 
     {
       base_url:,
       vps: event.vps || reports.first.vps,
       all_oom_reports: reports,
-      all_oom_count: param(event, 'oom_count') || reports.sum(&:count),
+      all_oom_count: reports.sum(&:count),
       selected_oom_reports: selected_reports,
-      selected_oom_count: param(event, 'selected_oom_count') || selected_reports.sum(&:count)
+      selected_oom_count: selected_reports.sum(&:count)
     }
   end
 
@@ -1002,22 +987,16 @@ VpsAdmin::API::Events.define do
     fields(
       vps_id: { description: 'ID of the VPS affected by the OOM report', type: :integer },
       vps_hostname: { description: 'Hostname of the VPS affected by the OOM report', type: :string },
-      stage: { description: 'Processing stage that emitted the OOM notification', type: :string },
-      cgroup: { description: 'Primary affected cgroup path', type: :string },
-      cgroups: { description: 'Affected cgroup paths included in the event', type: :string_list },
-      count: { description: 'Number of OOM reports in the selected group', type: :integer },
-      killed_name: { description: 'Name of the process killed by the kernel', type: :string },
-      report_count: { description: 'Number of raw reports considered for the event', type: :integer },
-      selected_report_count: { description: 'Number of raw reports selected for notification', type: :integer },
-      selected_oom_count: { description: 'Number of OOM kills represented by selected reports', type: :integer },
-      selected_report_ids: { description: 'IDs of raw OOM reports selected for notification', type: :integer_list },
-      last_reported_id: { description: 'Highest raw OOM report ID already processed', type: :integer },
-      batch_reported_at: { description: 'Time when the OOM report batch was processed', type: :datetime }
+      oom_report_id: { description: 'ID of the persisted OOM report', type: :integer },
+      cgroup: { description: 'Affected cgroup path', type: :string },
+      count: { description: 'Number of OOM kills represented by this report', type: :integer },
+      oom_count: { description: 'Number of OOM kills represented by this report', type: :integer },
+      killed_name: { description: 'Name of the process killed by the kernel', type: :string }
     )
 
     deliver :email do
       template :vps_oom_report
-      vars { VpsAdmin::API::Events::Core.oom_report_email_vars(event) }
+      vars { VpsAdmin::API::Events::Core.oom_report_email_vars(event, current_delivery) }
     end
   end
 

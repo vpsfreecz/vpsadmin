@@ -896,16 +896,12 @@ cs:
             label: Metody autentizace použité při neúspěšných pokusech
           authorization_id:
             label: ID OAuth autorizace použité při přihlášení
-          batch_reported_at:
-            label: Čas zpracování dávky OOM reportů
           begins_at:
             label: Čas začátku odstávky nebo výpadku
           category:
             label: Kategorie události používaná pro seskupení
           cgroup:
-            label: Primární dotčená cesta cgroup
-          cgroups:
-            label: Dotčené cgroup cesty zahrnuté v události
+            label: Dotčená cesta cgroup
           chain_id:
             label: ID transakčního řetězce, jehož stav se změnil
           chain_label:
@@ -1054,8 +1050,6 @@ cs:
             label: Kód jazyka použitý pro přehled
           language_id:
             label: ID jazyka použitého pro přehled
-          last_reported_id:
-            label: Nejvyšší již zpracované ID surového OOM reportu
           level:
             label: Číselná úroveň uživatele při vytvoření
           login:
@@ -1104,6 +1098,10 @@ cs:
             label: ID předchozího DNS resolveru
           old_dns_resolver_label:
             label: Popisek předchozího DNS resolveru
+          oom_count:
+            label: Počet OOM killů zastoupených tímto reportem
+          oom_report_id:
+            label: ID uloženého OOM reportu
           ooms_in_period:
             label: Počet OOM reportů zaznamenaných ve sledovaném období
           original_refquota:
@@ -1160,8 +1158,6 @@ cs:
             label: Čas, před kterým se potlačují opakovaná připomenutí
           reply_to_mail_id:
             label: ID předchozího mailového vlákna, na které řešení odpovídá
-          report_count:
-            label: Počet surových reportů zvažovaných pro událost
           reported_by_id:
             label: ID administrátora, který nahlásil aktualizaci
           reported_by_login:
@@ -1184,12 +1180,6 @@ cs:
             label: Notifikační role deklarované typem události
           scope:
             label: Rozsah přístupu udělený tokenu
-          selected_oom_count:
-            label: Počet OOM killů zastoupených vybranými reporty
-          selected_report_count:
-            label: Počet surových reportů vybraných pro notifikaci
-          selected_report_ids:
-            label: ID surových OOM reportů vybraných pro notifikaci
           serial:
             label: Serial DNS zóny zaznamenaný při transferu
           severity:
@@ -1208,8 +1198,6 @@ cs:
             label: Filesystem zdrojového storage poolu
           src_pool_id:
             label: ID zdrojového storage poolu
-          stage:
-            label: Fáze zpracování, která vytvořila OOM notifikaci
           state:
             label: Životní stav, který brzy vyprší nebo už vypršel
           status:
@@ -3907,28 +3895,16 @@ cs:
           vps_id:
             description: ID VPS ovlivněného OOM prevencí
         vps_oom_report:
-          batch_reported_at:
-            description: Čas zpracování dávky OOM reportů
           cgroup:
-            description: Primární dotčená cesta cgroup
-          cgroups:
-            description: Dotčené cgroup cesty zahrnuté v události
+            description: Dotčená cesta cgroup
           count:
-            description: Počet OOM reportů ve vybrané skupině
+            description: Počet OOM killů zastoupených tímto reportem
           killed_name:
             description: Název procesu ukončeného kernelem
-          last_reported_id:
-            description: Nejvyšší již zpracované ID surového OOM reportu
-          report_count:
-            description: Počet surových reportů zvažovaných pro událost
-          selected_oom_count:
-            description: Počet OOM killů zastoupených vybranými reporty
-          selected_report_count:
-            description: Počet surových reportů vybraných pro notifikaci
-          selected_report_ids:
-            description: ID surových OOM reportů vybraných pro notifikaci
-          stage:
-            description: Fáze zpracování, která vytvořila OOM notifikaci
+          oom_count:
+            description: Počet OOM killů zastoupených tímto reportem
+          oom_report_id:
+            description: ID uloženého OOM reportu
           vps_hostname:
             description: Hostname VPS ovlivněného OOM reportem
           vps_id:
@@ -6141,7 +6117,6 @@ cs:
           mount_snapshot: Mount snapshotu
           mounts: Mounty
           oom_prevention: OOM prevence
-          oom_reports: OOM reporty
           passwd: Heslo
           reinstall: Přeinstalace
           remove_veth: Odebrání veth

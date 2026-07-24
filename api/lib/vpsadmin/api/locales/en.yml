@@ -896,16 +896,12 @@ en:
             label: Authentication methods used in failed attempts
           authorization_id:
             label: ID of the OAuth authorization used for sign-in
-          batch_reported_at:
-            label: Time when the OOM report batch was processed
           begins_at:
             label: Time when the outage begins
           category:
             label: Event category used for grouping
           cgroup:
-            label: Primary affected cgroup path
-          cgroups:
-            label: Affected cgroup paths included in the event
+            label: Affected cgroup path
           chain_id:
             label: ID of the transaction chain whose state changed
           chain_label:
@@ -933,7 +929,7 @@ en:
           concern_object_ids:
             label: IDs of objects affected by the chain
           count:
-            label: Number of OOM reports in the selected group
+            label: Number of OOM kills represented by this report
           cpu:
             label: CPU core count assigned to the VPS after the change
           cpu_limit:
@@ -1054,8 +1050,6 @@ en:
             label: Language code used for the report
           language_id:
             label: ID of the language used for the report
-          last_reported_id:
-            label: Highest raw OOM report ID already processed
           level:
             label: Numeric user level assigned during creation
           login:
@@ -1104,6 +1098,10 @@ en:
             label: ID of the previous DNS resolver
           old_dns_resolver_label:
             label: Label of the previous DNS resolver
+          oom_count:
+            label: Number of OOM kills represented by this report
+          oom_report_id:
+            label: ID of the persisted OOM report
           ooms_in_period:
             label: Number of OOM reports seen in the tracked period
           original_refquota:
@@ -1160,8 +1158,6 @@ en:
             label: Time before which repeated reminders are suppressed
           reply_to_mail_id:
             label: ID of the previous mail thread this resolution replies to
-          report_count:
-            label: Number of raw reports considered for the event
           reported_by_id:
             label: ID of the admin who reported the update
           reported_by_login:
@@ -1184,12 +1180,6 @@ en:
             label: Notification roles declared by the event type
           scope:
             label: Access scope granted to the token
-          selected_oom_count:
-            label: Number of OOM kills represented by selected reports
-          selected_report_count:
-            label: Number of raw reports selected for notification
-          selected_report_ids:
-            label: IDs of raw OOM reports selected for notification
           serial:
             label: DNS zone serial observed during transfer
           severity:
@@ -1208,8 +1198,6 @@ en:
             label: Filesystem name of the source storage pool
           src_pool_id:
             label: ID of the source storage pool
-          stage:
-            label: Processing stage that emitted the OOM notification
           state:
             label: Lifecycle state that is about to expire or already expired
           status:
@@ -3911,28 +3899,16 @@ en:
           vps_id:
             description: ID of the VPS affected by OOM prevention
         vps_oom_report:
-          batch_reported_at:
-            description: Time when the OOM report batch was processed
           cgroup:
-            description: Primary affected cgroup path
-          cgroups:
-            description: Affected cgroup paths included in the event
+            description: Affected cgroup path
           count:
-            description: Number of OOM reports in the selected group
+            description: Number of OOM kills represented by this report
           killed_name:
             description: Name of the process killed by the kernel
-          last_reported_id:
-            description: Highest raw OOM report ID already processed
-          report_count:
-            description: Number of raw reports considered for the event
-          selected_oom_count:
-            description: Number of OOM kills represented by selected reports
-          selected_report_count:
-            description: Number of raw reports selected for notification
-          selected_report_ids:
-            description: IDs of raw OOM reports selected for notification
-          stage:
-            description: Processing stage that emitted the OOM notification
+          oom_count:
+            description: Number of OOM kills represented by this report
+          oom_report_id:
+            description: ID of the persisted OOM report
           vps_hostname:
             description: Hostname of the VPS affected by the OOM report
           vps_id:
@@ -6143,7 +6119,6 @@ en:
           mount_snapshot: Mount snapshot
           mounts: Mounts
           oom_prevention: OOM Prevention
-          oom_reports: OOM Reports
           passwd: Password
           reinstall: Reinstall
           remove_veth: Remove veth

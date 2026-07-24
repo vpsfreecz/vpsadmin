@@ -37,7 +37,7 @@ testLib.makeTests [
   "admin/location-network-primary-switch"
   "alerts/incident-report-process"
   "alerts/notification-routing"
-  "alerts/oom-report-notify-and-prune"
+  "alerts/oom-report-group-and-prune"
   "alerts/lifetime-and-daily-report"
   "tasks/auth-session-housekeeping"
   "tasks/dataset-expansion-enforce-and-resolve"

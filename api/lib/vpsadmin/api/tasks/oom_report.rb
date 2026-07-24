@@ -1,26 +1,6 @@
 module VpsAdmin::API::Tasks
   class OomReport < Base
-    DEFAULT_COOLDOWN = 3 * 60 * 60
-
     DEFAULT_DAYS = 90
-
-    # Notify users about stale and previously unreported OOM reports
-    #
-    # Accepts the following environment variables:
-    # [COOLDOWN]: Number of seconds from the last report to wait before notifying
-    #             the user again
-    def notify
-      vpses = ::Vps.joins(:oom_reports).where(
-        oom_reports: { reported_at: nil, ignored: false }
-      ).group('vpses.id')
-      return unless vpses.exists?
-
-      VpsAdmin::API::NotificationEvents.run_chain(
-        TransactionChains::Vps::OomReports,
-        args: [vpses],
-        kwargs: { cooldown: cooldown }
-      )
-    end
 
     # Remove old OOM reports
     # Accepts the following environment variables:
@@ -46,10 +26,6 @@ module VpsAdmin::API::Tasks
     end
 
     protected
-
-    def cooldown
-      ENV.fetch('COOLDOWN', DEFAULT_COOLDOWN).to_i
-    end
 
     def days
       ENV.fetch('DAYS', DEFAULT_DAYS).to_i

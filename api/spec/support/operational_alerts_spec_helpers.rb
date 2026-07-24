@@ -114,7 +114,7 @@ module OperationalAlertsSpecHelpers
   end
 
   def create_oom_report_fixture!(vps:, cgroup: '/', count: 1,
-                                 created_at: Time.now.utc, reported_at: nil,
+                                 created_at: Time.now.utc,
                                  processed: true, ignored: false,
                                  invoked_by_pid: 100, invoked_by_name: 'invoked',
                                  killed_pid: 200, killed_name: 'killed')
@@ -127,7 +127,6 @@ module OperationalAlertsSpecHelpers
       killed_name:,
       count:,
       created_at:,
-      reported_at:,
       processed:,
       ignored:
     )

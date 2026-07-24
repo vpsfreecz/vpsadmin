@@ -54,66 +54,68 @@ module VpsAdmin::Supervisor
       count = report.fetch('count')
       occurred_at = Time.at(report.fetch('time'))
 
-      counter = ::OomReportCounter.find_or_create_by!(vps:, cgroup:)
-      ::OomReportCounter.increment_counter(:counter, counter.id, by: count)
+      ::OomReport.transaction(requires_new: true) do
+        counter = ::OomReportCounter.find_or_create_by!(vps:, cgroup:)
+        ::OomReportCounter.increment_counter(:counter, counter.id, by: count)
 
-      routed = evaluate_event_routes(vps, full_cgroup, report, occurred_at:)
+        new_report = ::OomReport.create!(
+          vps:,
+          cgroup:,
+          invoked_by_pid: report.fetch('invoked_by_pid'),
+          invoked_by_name: invoked_by_name && invoked_by_name[0..49],
+          killed_pid: report.fetch('killed_pid'),
+          killed_name: killed_name && killed_name[0..49],
+          count:,
+          created_at: occurred_at,
+          processed: true,
+          ignored: false
+        )
 
-      new_report = ::OomReport.create!(
-        vps:,
-        cgroup:,
-        invoked_by_pid: report.fetch('invoked_by_pid'),
-        invoked_by_name: invoked_by_name && invoked_by_name[0..49],
-        killed_pid: report.fetch('killed_pid'),
-        killed_name: killed_name && killed_name[0..49],
-        count:,
-        created_at: occurred_at,
-        processed: true,
-        ignored: routed.suppressed_by_mute?
-      )
+        new_report.oom_report_usages.insert_all(
+          report.fetch('usage').map do |type, attrs|
+            {
+              memtype: type,
+              usage: attrs['usage'],
+              limit: attrs['limit'],
+              failcnt: attrs['failcnt']
+            }
+          end
+        )
 
-      new_report.oom_report_usages.insert_all(
-        report.fetch('usage').map do |type, attrs|
-          {
-            memtype: type,
-            usage: attrs['usage'],
-            limit: attrs['limit'],
-            failcnt: attrs['failcnt']
-          }
-        end
-      )
+        new_report.oom_report_stats.insert_all(
+          report.fetch('stats').map do |param, value|
+            {
+              parameter: param,
+              value:
+            }
+          end
+        )
 
-      new_report.oom_report_stats.insert_all(
-        report.fetch('stats').map do |param, value|
-          {
-            parameter: param,
-            value:
-          }
-        end
-      )
+        new_report.oom_report_tasks.insert_all(
+          report.fetch('tasks').map do |task|
+            {
+              host_pid: task.fetch('pid'),
+              vps_pid: task.fetch('vps_pid'),
+              name: task.fetch('name')[0..49],
+              host_uid: task.fetch('uid'),
+              vps_uid: task.fetch('vps_uid'),
+              tgid: task.fetch('tgid'),
+              total_vm: task.fetch('total_vm'),
+              rss: task.fetch('rss'),
+              rss_anon: task.fetch('rss_anon', nil),
+              rss_file: task.fetch('rss_file', nil),
+              rss_shmem: task.fetch('rss_shmem', nil),
+              pgtables_bytes: task.fetch('pgtables_bytes'),
+              swapents: task.fetch('swapents'),
+              oom_score_adj: task.fetch('oom_score_adj')
+            }
+          end
+        )
 
-      new_report.oom_report_tasks.insert_all(
-        report.fetch('tasks').map do |task|
-          {
-            host_pid: task.fetch('pid'),
-            vps_pid: task.fetch('vps_pid'),
-            name: task.fetch('name')[0..49],
-            host_uid: task.fetch('uid'),
-            vps_uid: task.fetch('vps_uid'),
-            tgid: task.fetch('tgid'),
-            total_vm: task.fetch('total_vm'),
-            rss: task.fetch('rss'),
-            rss_anon: task.fetch('rss_anon', nil),
-            rss_file: task.fetch('rss_file', nil),
-            rss_shmem: task.fetch('rss_shmem', nil),
-            pgtables_bytes: task.fetch('pgtables_bytes'),
-            swapents: task.fetch('swapents'),
-            oom_score_adj: task.fetch('oom_score_adj')
-          }
-        end
-      )
-
-      new_report
+        event = emit_event(new_report, full_cgroup, report, occurred_at:)
+        new_report.update!(ignored: event.suppressed_by_mute?)
+        new_report
+      end
     end
 
     def handle_abuser(vps)
@@ -161,28 +163,26 @@ module VpsAdmin::Supervisor
       end
     end
 
-    def evaluate_event_routes(vps, full_cgroup, report, occurred_at:)
+    def emit_event(oom_report, full_cgroup, report, occurred_at:)
+      vps = oom_report.vps
       count = report.fetch('count')
 
-      VpsAdmin::API::Events.plan(
+      VpsAdmin::API::Events.emit!(
         'vps.oom_report',
         user: vps.user,
         vps:,
+        source: oom_report,
         subject: "OOM report for VPS ##{vps.id}",
         summary: "vpsAdmin recorded #{count} out-of-memory events",
         payload: {
-          stage: 'raw',
+          oom_report_id: oom_report.id,
           cgroup: full_cgroup,
-          cgroups: [full_cgroup],
           count:,
           oom_count: count,
-          killed_name: report.fetch('killed_name'),
-          report_count: 1,
-          selected_report_count: 1,
-          selected_oom_count: count
+          killed_name: report.fetch('killed_name')
         },
         occurred_at:,
-        record_route_hits: true
+        persist: :always
       )
     end
   end

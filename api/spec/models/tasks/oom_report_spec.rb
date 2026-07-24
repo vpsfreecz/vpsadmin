@@ -13,52 +13,6 @@ RSpec.describe VpsAdmin::API::Tasks::OomReport do
     build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
   end
 
-  describe '#notify' do
-    before do
-      allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain)
-    end
-
-    it 'selects VPSes with unreported non-ignored reports' do
-      selected_vps = create_vps!
-      ignored_vps = create_vps!
-      reported_vps = create_vps!
-      create_oom_report_fixture!(vps: selected_vps, ignored: false, reported_at: nil)
-      create_oom_report_fixture!(vps: ignored_vps, ignored: true, reported_at: nil)
-      create_oom_report_fixture!(vps: reported_vps, ignored: false, reported_at: 1.hour.ago)
-      captured_vps_ids = nil
-      allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain) do |_klass, args:, kwargs:|
-        captured_vps_ids = args.first.map(&:id)
-        expect(kwargs).to include(:cooldown)
-      end
-
-      task.notify
-
-      expect(captured_vps_ids).to eq([selected_vps.id])
-    end
-
-    it 'passes through cooldown from the environment' do
-      create_oom_report_fixture!(vps: create_vps!, reported_at: nil)
-
-      with_env('COOLDOWN' => '42') do
-        task.notify
-      end
-
-      expect(VpsAdmin::API::NotificationEvents).to have_received(:run_chain).with(
-        TransactionChains::Vps::OomReports,
-        args: [anything],
-        kwargs: { cooldown: 42 }
-      )
-    end
-
-    it 'does nothing when there is nothing to notify' do
-      create_oom_report_fixture!(vps: create_vps!, reported_at: 1.hour.ago)
-
-      task.notify
-
-      expect(VpsAdmin::API::NotificationEvents).not_to have_received(:run_chain)
-    end
-  end
-
   describe '#prune' do
     it 'deletes old reports in batches and prints a summary count' do
       old_reports = 2.times.map do |i|

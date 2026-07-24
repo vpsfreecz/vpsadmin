@@ -1,13 +1,8 @@
-<%= @event.subject %>
-<% if @event.summary.present? -%>
-
-<%= @event.summary %>
+VPS #<%= @vps.id %> <%= @vps.hostname %>: <%= @all_oom_count %> out-of-memory events
+<% @selected_oom_reports.each do |report| -%>
+- <%= local_time(report.created_at, '%Y-%m-%d %H:%M %Z') %>: killed <%= report.killed_name || 'nothing' %>, <%= report.count %>x
 <% end -%>
-<% if @event.vps -%>
-
-VPS: #<%= @event.vps.id %> <%= @event.vps.hostname %>
-<% end -%>
-<% url = webui_url("?page=notifications&action=event_show&id=#{@event.id}") -%>
+<% url = webui_url("?page=oom_reports&vps=#{@vps.id}&list=1") -%>
 <% if url.present? -%>
 
 Open: <%= url %>

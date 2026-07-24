@@ -237,9 +237,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
       template_name: 'vps_oom_report',
       label: 'OOM report',
       roles: %w[admin],
-      matchers: [
-        ['stage', '==', 'notification']
-      ]
+      matchers: []
     },
     {
       event_type: 'vps.oom_prevention',

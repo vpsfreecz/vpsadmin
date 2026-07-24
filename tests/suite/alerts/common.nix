@@ -253,7 +253,10 @@ base
     services.mariadb_json_rows(sql: <<~SQL)
       SELECT JSON_OBJECT(
         'id', id,
-        'reported_at', reported_at
+        'cgroup', cgroup,
+        'count', count,
+        'ignored', ignored,
+        'created_at', created_at
       )
       FROM oom_reports
       WHERE id IN (#{ids.map { |id| Integer(id) }.join(',')})

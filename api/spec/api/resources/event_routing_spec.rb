@@ -1582,9 +1582,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(test['default_routed']).to be(true)
     oom = event_types.detect { |row| row['name'] == 'vps.oom_report' }
     oom_fields = oom['fields'].index_by { |field| field['name'] }
-    expect(oom_fields.dig('stage', 'description')).to eq('Processing stage that emitted the OOM notification')
-    expect(oom_fields.dig('cgroups', 'type')).to eq('string_list')
-    expect(oom_fields.dig('cgroups', 'operators')).to eq(%w[contains not_contains])
+    expect(oom_fields.dig('oom_report_id', 'description')).to eq('ID of the persisted OOM report')
+    expect(oom_fields.dig('oom_report_id', 'type')).to eq('integer')
+    expect(oom_fields.dig('cgroup', 'type')).to eq('string')
+    expect(oom_fields).not_to have_key('stage')
     chain = event_types.detect { |row| row['name'] == 'transaction_chain.state_changed' }
     chain_fields = chain['fields'].index_by { |field| field['name'] }
     expect(chain['default_routed']).to be(false)

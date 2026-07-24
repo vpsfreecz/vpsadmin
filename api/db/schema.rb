@@ -1639,11 +1639,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_121000) do
     t.string "killed_name", limit: 50
     t.integer "killed_pid"
     t.boolean "processed", default: false, null: false
-    t.datetime "reported_at", precision: nil
     t.integer "vps_id", null: false
     t.index ["created_at"], name: "index_oom_reports_on_created_at"
     t.index ["processed"], name: "index_oom_reports_on_processed"
-    t.index ["reported_at"], name: "index_oom_reports_on_reported_at"
     t.index ["vps_id"], name: "index_oom_reports_on_vps_id"
   end
 
