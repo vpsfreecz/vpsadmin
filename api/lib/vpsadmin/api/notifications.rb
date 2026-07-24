@@ -197,7 +197,7 @@ module VpsAdmin::API
     TELEGRAM_TEXT_LIMIT = 4096
     SMS_TEXT_LIMIT = 459
     WEBHOOK_EVENT_LIMIT = 100
-    GROUP_CAPABLE_TEMPLATES = [].freeze
+    GROUP_CAPABLE_TEMPLATES = %w[vps_oom_report].freeze
     SMS_CALLBACK_PATH = '/internal/notifications/sms/callback'.freeze
     SMS_CALLBACK_MAX_BODY_SIZE = 16 * 1024
     SMS_CALLBACK_SIGNATURE_VERSION = 'v1'.freeze

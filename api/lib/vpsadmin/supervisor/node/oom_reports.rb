@@ -62,8 +62,6 @@ module VpsAdmin::Supervisor
         counter = ::OomReportCounter.find_or_create_by!(vps:, cgroup:)
         ::OomReportCounter.increment_counter(:counter, counter.id, by: count)
 
-        routed = evaluate_event_routes(vps, full_cgroup, report, occurred_at:)
-
         new_report = ::OomReport.create!(
           vps:,
           cgroup:,
@@ -74,7 +72,7 @@ module VpsAdmin::Supervisor
           count:,
           created_at: occurred_at,
           processed: true,
-          ignored: routed.suppressed_by_mute?
+          ignored: false
         )
 
         new_report.oom_report_usages.insert_all(
@@ -113,6 +111,9 @@ module VpsAdmin::Supervisor
           raise TaskRangeError, message, cause: e
         end
 
+        emit_event(new_report, full_cgroup, report, occurred_at:) do |prepared|
+          new_report.update!(ignored: prepared.suppressed_by_mute?)
+        end
         new_report
       end
     end
@@ -211,28 +212,27 @@ module VpsAdmin::Supervisor
       end
     end
 
-    def evaluate_event_routes(vps, full_cgroup, report, occurred_at:)
+    def emit_event(oom_report, full_cgroup, report, occurred_at:, &)
+      vps = oom_report.vps
       count = report.fetch('count')
 
-      VpsAdmin::API::Events.plan(
+      VpsAdmin::API::Events.emit!(
         'vps.oom_report',
         user: vps.user,
         vps:,
+        source: oom_report,
         subject: "OOM report for VPS ##{vps.id}",
         summary: "vpsAdmin recorded #{count} out-of-memory events",
         payload: {
-          stage: 'raw',
+          oom_report_id: oom_report.id,
           cgroup: full_cgroup,
-          cgroups: [full_cgroup],
           count:,
           oom_count: count,
-          killed_name: report.fetch('killed_name'),
-          report_count: 1,
-          selected_report_count: 1,
-          selected_oom_count: count
+          killed_name: report.fetch('killed_name')
         },
         occurred_at:,
-        record_route_hits: true
+        record_route_hits_on_drop: true,
+        &
       )
     end
   end

@@ -143,7 +143,6 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
       killed_name: 'killed',
       count: 1,
       created_at: base_time + 10,
-      reported_at: base_time + 11,
       processed: true,
       ignored: false
     )
@@ -157,7 +156,6 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
       killed_name: 'killed-b',
       count: 1,
       created_at: base_time + 20,
-      reported_at: base_time + 21,
       processed: true,
       ignored: false
     )
@@ -171,7 +169,6 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
       killed_name: 'killed-o',
       count: 1,
       created_at: base_time + 30,
-      reported_at: base_time + 31,
       processed: true,
       ignored: false
     )
@@ -185,7 +182,6 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
       killed_name: 'killed-s',
       count: 1,
       created_at: base_time + 40,
-      reported_at: base_time + 41,
       processed: true,
       ignored: false
     )
@@ -199,7 +195,6 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
       killed_name: 'killed2',
       count: 1,
       created_at: base_time + 5,
-      reported_at: nil,
       processed: false,
       ignored: false
     )
