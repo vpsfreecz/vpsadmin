@@ -4,7 +4,7 @@ module VpsAdmin::API::Resources
     model ::EventDelivery
 
     STATE_GROUPS = {
-      'queue' => %w[prepared released sending accepted],
+      'queue' => %w[prepared released grouping sending accepted],
       'log' => %w[sent failed canceled skipped aborted]
     }.freeze
 
@@ -16,6 +16,16 @@ module VpsAdmin::API::Resources
     params(:all) do
       id :id
       integer :event_id
+      integer :event_delivery_group_id, nullable: true
+      integer :effective_event_delivery_id, nullable: true
+      integer :effective_event_id, nullable: true
+      bool :grouped_delivery
+      integer :event_count
+      integer :group_truncated_count
+      datetime :group_next_flush_at, nullable: true
+      string :group_key, nullable: true
+      custom :group_labels
+      custom :group_event_ids
       integer :event_routing_context_id, nullable: true
       integer :recipient_user_id, nullable: true
       string :recipient_user_login, nullable: true
@@ -109,21 +119,29 @@ module VpsAdmin::API::Resources
                   { event: %i[user vps] },
                   { event_routing_context: :recipient_user },
                   { delivery_transaction: :transaction_chain },
+                  :effective_event_delivery,
+                  :event_delivery_group,
                   :event_route,
                   :notification_receiver,
                   :notification_target,
                   :notification_receiver_target
                 )
+                .where.not(state: 'grouped')
+                .where(<<~SQL.squish)
+                  event_deliveries.state != #{::EventDelivery.states.fetch('grouping')}
+                  OR event_deliveries.id IN (
+                    SELECT MIN(group_members.id)
+                    FROM event_deliveries AS group_members
+                    WHERE group_members.state = #{::EventDelivery.states.fetch('grouping')}
+                    GROUP BY group_members.event_delivery_group_id
+                  )
+                SQL
 
-        if input[:user]
-          user_id = input[:user].respond_to?(:id) ? input[:user].id : input[:user]
-          q = q.where(events: { user_id: })
-        end
+        q = q.where(*event_member_filter) if input[:user] || input[:event_type].present?
         if input[:recipient_user]
           user_id = input[:recipient_user].respond_to?(:id) ? input[:recipient_user].id : input[:recipient_user]
           q = q.joins(:event_routing_context).where(event_routing_contexts: { user_id: })
         end
-        q = q.where(events: { event_type: input[:event_type] }) if input[:event_type].present?
         q = q.where(action: input[:action]) if input[:action].present?
         q = q.where(event_route_id: input[:event_route_id]) if input[:event_route_id].present?
         if input[:notification_receiver_id].present?
@@ -149,6 +167,53 @@ module VpsAdmin::API::Resources
       end
 
       protected
+
+      def event_member_filter
+        grouping_state = ::EventDelivery.states.fetch('grouping')
+        predicates = []
+        values = []
+
+        if input[:user]
+          predicates << 'filtered_events.user_id = ?'
+          values << (input[:user].respond_to?(:id) ? input[:user].id : input[:user])
+        end
+        if input[:event_type].present?
+          predicates << 'filtered_events.event_type = ?'
+          values << input[:event_type]
+        end
+
+        [
+          <<~SQL.squish,
+            EXISTS (
+              SELECT 1
+              FROM event_deliveries AS filtered_deliveries
+              INNER JOIN events AS filtered_events
+                ON filtered_events.id = filtered_deliveries.event_id
+              WHERE (
+                filtered_deliveries.id = event_deliveries.id
+                OR (
+                  event_deliveries.event_delivery_group_id IS NOT NULL
+                  AND filtered_deliveries.event_delivery_group_id =
+                    event_deliveries.event_delivery_group_id
+                  AND (
+                    (
+                      event_deliveries.state = #{grouping_state}
+                      AND filtered_deliveries.state = #{grouping_state}
+                    )
+                    OR (
+                      event_deliveries.state != #{grouping_state}
+                      AND filtered_deliveries.effective_event_delivery_id =
+                        event_deliveries.id
+                    )
+                  )
+                )
+              )
+              AND #{predicates.join(' AND ')}
+            )
+          SQL
+          *values
+        ]
+      end
 
       def states_filter
         states = if input[:state_group].present?
@@ -184,10 +249,20 @@ module VpsAdmin::API::Resources
               AND (event_deliveries.next_attempt_at IS NULL OR event_deliveries.next_attempt_at <= CURRENT_TIMESTAMP)
               THEN 2
             WHEN event_deliveries.state = #{states.fetch('released')} THEN 3
-            WHEN event_deliveries.state = #{states.fetch('prepared')} THEN 4
-            ELSE 5
+            WHEN event_deliveries.state = #{states.fetch('grouping')} THEN 4
+            WHEN event_deliveries.state = #{states.fetch('prepared')} THEN 5
+            ELSE 6
           END ASC,
-          COALESCE(event_deliveries.next_attempt_at, event_deliveries.released_at, event_deliveries.created_at) ASC,
+          COALESCE(
+            event_deliveries.next_attempt_at,
+            (
+              SELECT event_delivery_groups.next_flush_at
+              FROM event_delivery_groups
+              WHERE event_delivery_groups.id = event_deliveries.event_delivery_group_id
+            ),
+            event_deliveries.released_at,
+            event_deliveries.created_at
+          ) ASC,
           event_deliveries.id ASC
         SQL
       end

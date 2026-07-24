@@ -57,7 +57,7 @@ RSpec.configure do |config|
   end
 
   config.around do |example|
-    ActiveRecord::Base.transaction do
+    run_example = proc do
       NodeCtldSpec::CfgHelpers.install!(
         node_id: NodeCtldSpec::BaselineSeed.ids.fetch(:node_id),
         public_key_path: NodeCtldSpec::SigningHelpers.public_key_path
@@ -73,12 +73,20 @@ RSpec.configure do |config|
       Thread.current[:command] = nil
 
       example.run
-      raise ActiveRecord::Rollback
     ensure
       Thread.current[:spec_on_save_calls] = nil
       Thread.current[:spec_post_save_calls] = nil
       Thread.current[:command] = nil
       $CFG = nil
+    end
+
+    if example.metadata[:real_transactions]
+      run_example.call
+    else
+      ActiveRecord::Base.transaction do
+        run_example.call
+        raise ActiveRecord::Rollback
+      end
     end
   end
 end

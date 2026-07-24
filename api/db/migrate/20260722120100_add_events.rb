@@ -427,6 +427,10 @@ class AddEvents < ActiveRecord::Migration[8.1]
       t.string      :event_type,               null: true, limit: 100
       t.string      :event_type_pattern,       null: true, limit: 100
       t.string      :template_name, null: true, limit: 100
+      t.boolean     :grouping_enabled,         null: false, default: false
+      t.text        :group_by,                 null: true
+      t.integer     :group_wait_seconds,       null: true
+      t.integer     :group_interval_seconds,   null: true
       t.boolean     :continue,                 null: false, default: false
       t.boolean     :single_use,               null: false, default: false
       t.datetime    :spent_at,                 null: true
@@ -489,8 +493,16 @@ class AddEvents < ActiveRecord::Migration[8.1]
       t.integer     :target_kind,              null: false
       t.text        :target_value,             null: true
       t.string      :target_label,             null: true, limit: 255
+      t.text        :target_secret,            null: true
       t.string      :template_name,            null: true, limit: 100
       t.integer     :state,                    null: false
+      t.references  :event_delivery_group,     null: true,
+                                               index: { name: 'idx_event_deliveries_on_group' }
+      t.bigint      :effective_event_delivery_id, null: true
+      t.string      :group_key,                null: true, limit: 64
+      t.text        :group_labels,             null: true
+      t.integer     :group_wait_seconds,       null: true
+      t.integer     :group_interval_seconds,   null: true
       t.integer     :mail_log_id,              null: true
       t.integer     :transaction_id,           null: true
       t.datetime    :released_at,              null: true
@@ -514,6 +526,25 @@ class AddEvents < ActiveRecord::Migration[8.1]
     add_index :event_deliveries, :mail_log_id
     add_index :event_deliveries, :transaction_id
     add_index :event_deliveries, :released_at
+    add_index :event_deliveries, :effective_event_delivery_id,
+              name: 'idx_event_deliveries_on_effective'
+
+    create_table :event_delivery_groups do |t|
+      t.references  :event_route,              null: true
+      t.bigint      :route_owner_id,           null: true
+      t.string      :action,                   null: false, limit: 50
+      t.string      :group_key,                null: false, limit: 64
+      t.text        :labels,                   null: false
+      t.integer     :group_wait_seconds,       null: false
+      t.integer     :group_interval_seconds,   null: false
+      t.datetime    :next_flush_at,            null: true
+      t.datetime    :last_sealed_at,           null: true
+      t.timestamps                             null: false
+    end
+
+    add_index :event_delivery_groups, :group_key, unique: true
+    add_index :event_delivery_groups, %i[action next_flush_at],
+              name: 'idx_event_delivery_groups_on_action_due'
 
     create_table :event_delivery_attempts do |t|
       t.references  :event_delivery,           null: false
@@ -542,6 +573,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
 
   def down
     drop_table :event_delivery_attempts
+    drop_table :event_delivery_groups
     drop_table :event_deliveries
     drop_table :events
     drop_table :event_route_matchers

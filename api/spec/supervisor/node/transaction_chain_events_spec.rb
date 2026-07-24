@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'digest'
+require 'timeout'
 
 RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
   def create_chain!(state: :queued)
@@ -125,6 +127,39 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     transaction = create_transaction!(chain)
     unsent = create_gated_delivery!(transaction:)
     unsent_mail = create_gated_delivery!(transaction:, mail_log: true)
+    grouping = create_gated_delivery!(transaction:, state: :grouping)
+    first_member_at = Time.now
+    survivor_member_at = first_member_at + 120
+    group_key = Digest::SHA256.hexdigest('transaction-gated group')
+    group = EventDeliveryGroup.create!(
+      route_owner: SpecSeed.user,
+      action: 'email',
+      group_key:,
+      labels: {},
+      group_wait_seconds: 30,
+      group_interval_seconds: 300,
+      next_flush_at: first_member_at + 30
+    )
+    grouping.update!(
+      event_delivery_group: group,
+      group_key:,
+      group_labels: {},
+      group_wait_seconds: 30,
+      group_interval_seconds: 300,
+      released_at: first_member_at
+    )
+    survivor = create_gated_delivery!(
+      transaction: create_transaction!(create_chain!),
+      state: :grouping
+    )
+    survivor.update!(
+      event_delivery_group: group,
+      group_key:,
+      group_labels: {},
+      group_wait_seconds: 30,
+      group_interval_seconds: 300,
+      released_at: survivor_member_at
+    )
     attempted = create_gated_delivery!(transaction:, state: :released, attempted: true)
     supervisor = described_class.new(nil, SpecSeed.node)
 
@@ -147,8 +182,87 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     expect(unsent_mail.mail_log).to be_present
     expect(unsent_mail.event.reload).to be_aborted_routing_state
     expect(unsent_mail.event_routing_context.reload).to be_aborted_routing_state
+    expect(grouping.reload).to be_aborted_state
+    expect(grouping.event.reload).to be_aborted_routing_state
+    expect(grouping.event_routing_context.reload).to be_aborted_routing_state
+    expect(survivor.reload).to be_grouping_state
+    expect(group.reload.next_flush_at).to be_within(1.second).of(survivor_member_at + 30)
     expect(attempted.reload).to be_released_state
     expect(attempted.event.reload).to be_routed_routing_state
     expect(attempted.event_routing_context.reload).to be_routed_routing_state
+  end
+
+  it 'serializes group activation with transaction-chain abort', :real_transactions do
+    chain = create_chain!(state: :failed)
+    transaction = create_transaction!(chain)
+    delivery = create_gated_delivery!(transaction:, state: :released)
+    group_key = Digest::SHA256.hexdigest("abort-activation-race-#{delivery.id}")
+    delivery.update!(
+      group_key:,
+      group_labels: {},
+      group_wait_seconds: 30,
+      group_interval_seconds: 300,
+      released_at: Time.now,
+      next_attempt_at: Time.now
+    )
+
+    abort_locked = Queue.new
+    continue_abort = Queue.new
+    activation_lock_attempted = Queue.new
+    abort_thread = nil
+    activation_thread = nil
+
+    allow(VpsAdmin::API::Notifications::GroupActivation)
+      .to receive(:lock_transaction_chain!)
+      .and_wrap_original do |method, chain_id|
+        activation_lock_attempted << true
+        method.call(chain_id)
+      end
+
+    abort_thread = Thread.new do
+      ActiveRecord::Base.connection_pool.with_connection do
+        EventDelivery.transaction do
+          TransactionChain.where(id: chain.id).lock.take
+          abort_locked << true
+          continue_abort.pop
+          EventDelivery.abort_unsent_for_transaction_chain!(chain.id)
+        end
+      end
+    end
+
+    Timeout.timeout(5) { abort_locked.pop }
+    activation_thread = Thread.new do
+      ActiveRecord::Base.connection_pool.with_connection do
+        VpsAdmin::API::Notifications::GroupActivation.activate!(
+          EventDelivery.find(delivery.id)
+        )
+      end
+    end
+    Timeout.timeout(5) { activation_lock_attempted.pop }
+    continue_abort << true
+
+    expect(Timeout.timeout(5) { abort_thread.value }).to eq([delivery.event_id])
+    expect(Timeout.timeout(5) { activation_thread.value }).to be_nil
+    expect(delivery.reload).to be_aborted_state
+    expect(delivery.event_delivery_group_id).to be_nil
+    expect(EventDeliveryGroup.where(group_key:).count).to eq(0)
+  ensure
+    continue_abort << true if continue_abort
+    [abort_thread, activation_thread].compact.each do |thread|
+      thread.join(5)
+      thread.kill if thread.alive?
+    end
+
+    if delivery&.persisted?
+      EventDeliveryAttempt.where(event_delivery_id: delivery.id).delete_all
+      EventDelivery.where(id: delivery.id).delete_all
+      EventRoutingContext.where(event_id: delivery.event_id).delete_all
+      Event.where(id: delivery.event_id).delete_all
+    end
+    EventDeliveryGroup.where(group_key:).delete_all if group_key
+    Transaction.where(id: transaction&.id).delete_all
+    session_id = chain&.user_session_id
+    TransactionChain.where(id: chain&.id).delete_all
+    UserSession.where(id: session_id).delete_all
   end
 end

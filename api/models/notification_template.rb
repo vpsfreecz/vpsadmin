@@ -252,6 +252,15 @@ class NotificationTemplate < ApplicationRecord
     transactions: Hash
   }
 
+  register :event_group, vars: {
+    base_url: [String, 'URL to the web UI'],
+    user: ::User,
+    group_events: 'Array<::Event>',
+    group_event_count: Integer,
+    group_truncated_count: Integer,
+    group_labels: Hash
+  }, public: true
+
   register :expiration_warning, name: 'expiration_%{object}_%{state}', params: {
     object: 'class name of the object nearing expiration, demodulized with underscores',
     state: 'one of lifetime states'

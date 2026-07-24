@@ -402,6 +402,16 @@ module VpsAdmin::API::Resources
 
       params(:all) do
         id :id
+        integer :event_delivery_group_id, nullable: true
+        integer :effective_event_delivery_id, nullable: true
+        integer :effective_event_id, nullable: true
+        bool :grouped_delivery
+        integer :event_count
+        integer :group_truncated_count
+        datetime :group_next_flush_at, nullable: true
+        string :group_key, nullable: true
+        custom :group_labels
+        custom :group_event_ids
         integer :event_routing_context_id, nullable: true
         integer :recipient_user_id, nullable: true
         string :recipient_user_login, nullable: true
@@ -476,7 +486,12 @@ module VpsAdmin::API::Resources
           q = self.class.model
                   .joins(:event)
                   .left_outer_joins(:event_routing_context)
-                  .includes(:event_route, delivery_transaction: :transaction_chain)
+                  .includes(
+                    :event_delivery_group,
+                    :effective_event_delivery,
+                    :event_route,
+                    delivery_transaction: :transaction_chain
+                  )
                   .where(event_id: path_params['event_id'])
           return q if current_user.role == :admin
 
@@ -515,7 +530,12 @@ module VpsAdmin::API::Resources
           q = self.class.model
                   .joins(:event)
                   .left_outer_joins(:event_routing_context)
-                  .includes(:event_route, delivery_transaction: :transaction_chain)
+                  .includes(
+                    :event_delivery_group,
+                    :effective_event_delivery,
+                    :event_route,
+                    delivery_transaction: :transaction_chain
+                  )
                   .where(event_id: path_params['event_id'])
           return q if current_user.role == :admin
 
