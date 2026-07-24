@@ -1,3 +1,3 @@
 source 'https://rubygems.org'
 
-gem 'libnodectld', '4.1.0'
+gem 'libnodectld', '4.2.0'

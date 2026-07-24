@@ -1,7 +1,7 @@
 PATH
   remote: ../../client
   specs:
-    vpsadmin-client (4.1.0)
+    vpsadmin-client (4.2.0)
       base64
       curses
       haveapi-client (~> 0.29.5)

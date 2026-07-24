@@ -20,7 +20,7 @@ GEM
     io-console (0.8.2)
     ipaddress (0.8.3)
     json (2.21.1)
-    libnodectld (4.1.0)
+    libnodectld (4.2.0)
       base64
       bigdecimal
       bunny (~> 2.24.0)
@@ -111,7 +111,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  libnodectld (= 4.1.0)!
+  libnodectld (= 4.2.0)!
 
 BUNDLED WITH
    2.7.2

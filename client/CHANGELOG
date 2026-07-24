@@ -1,3 +1,10 @@
+* Fri Jul 24 2026 - version 4.2.0
+- Update haveapi-client to v0.29.5
+- Honor ports and query strings in snapshot download URLs
+- Fix the backup retry option spelling
+- Flush pending terminal input when leaving a remote console
+- Declare ruby-progressbar as a runtime dependency
+
 * Wed Sep 20 2017 - version 2.9.0
 - Updated haveapi-client to v0.10
 

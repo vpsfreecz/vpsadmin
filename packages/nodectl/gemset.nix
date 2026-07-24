@@ -180,7 +180,7 @@
     source = {
       type = "gem";
     };
-    version = "4.1.0";
+    version = "4.2.0";
   };
   libosctl = {
     dependencies = [
@@ -315,7 +315,7 @@
     source = {
       type = "gem";
     };
-    version = "4.1.0";
+    version = "4.2.0";
   };
   osctl = {
     dependencies = [

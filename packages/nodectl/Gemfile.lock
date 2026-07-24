@@ -20,7 +20,7 @@ GEM
     io-console (0.8.2)
     ipaddress (0.8.3)
     json (2.21.1)
-    libnodectld (4.1.0)
+    libnodectld (4.2.0)
       base64
       bigdecimal
       bunny (~> 2.24.0)
@@ -63,9 +63,9 @@ GEM
       timeout
     net-smtp (0.5.1)
       net-protocol
-    nodectl (4.1.0)
+    nodectl (4.2.0)
       json
-      libnodectld (= 4.1.0)
+      libnodectld (= 4.2.0)
       libosctl (= 26.05.0)
       pry (~> 0.14.2)
       pry-remote
@@ -118,7 +118,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  nodectl (= 4.1.0)!
+  nodectl (= 4.2.0)!
 
 BUNDLED WITH
    2.7.2
