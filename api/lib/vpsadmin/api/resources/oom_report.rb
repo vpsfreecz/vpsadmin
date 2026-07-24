@@ -13,7 +13,6 @@ module VpsAdmin::API::Resources
       string :killed_name
       integer :count
       datetime :created_at
-      datetime :reported_at
     end
 
     params(:filters) do

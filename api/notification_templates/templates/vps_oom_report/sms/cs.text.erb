@@ -1,4 +1,4 @@
-<%= @event.subject %>
-<% if @event.vps -%>
-VPS: #<%= @event.vps.id %> <%= @event.vps.hostname %>
+VPS #<%= @vps.id %> <%= @vps.hostname %>: <%= @all_oom_count %> OOM
+<% @selected_oom_reports.first(3).each do |report| -%>
+<%= report.killed_name || 'nic neukončeno' %>: <%= report.count %>x
 <% end -%>

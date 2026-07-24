@@ -31,6 +31,7 @@ class NotificationReceiver < ApplicationRecord
       ensure_default_mute_receiver_for!(user)
       ensure_default_route!(user, email_receiver, role: ::EventRoute::DEFAULT_ACCOUNT_ROUTE_ROLE_VALUE)
       ensure_default_route!(user, email_receiver, role: ::EventRoute::DEFAULT_ADMIN_ROUTE_ROLE_VALUE)
+      ensure_default_oom_route!(user, email_receiver)
     end
   end
 
@@ -174,6 +175,22 @@ class NotificationReceiver < ApplicationRecord
       value: role.to_s
     )
     route
+  end
+
+  def self.ensure_default_oom_route!(user, receiver)
+    route = ::EventRoute.default_oom_route_for(user)
+    return route if route
+
+    user.event_routes.create!(
+      notification_receiver: receiver,
+      label: ::EventRoute::DEFAULT_OOM_ROUTE_LABEL,
+      position: ::EventRoute.generated_fallback_position_for(user),
+      event_type: ::EventRoute::DEFAULT_OOM_EVENT_TYPE,
+      grouping_enabled: true,
+      group_by: ['vps_id'],
+      group_wait_seconds: ::EventRoute::DEFAULT_OOM_GROUP_WAIT_SECONDS,
+      group_interval_seconds: ::EventRoute::DEFAULT_OOM_GROUP_INTERVAL_SECONDS
+    )
   end
 
   def self.default_route_label(role)

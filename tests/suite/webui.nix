@@ -3799,7 +3799,6 @@ import ../make-test.nix (
         killed_name: 'webui-killed',
         killed_pid: 1235,
         count: 1,
-        reported_at: Time.now - 1200,
         created_at: Time.now - 1200
       )
       oom_report.save! if oom_report.changed? || oom_report.new_record?
