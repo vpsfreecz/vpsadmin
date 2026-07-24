@@ -60,9 +60,8 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
       expect(OomReportCounter.find_by!(vps:, cgroup: payload.fetch('cgroup')).counter).to eq(7)
     end
 
-    it 'plans unmatched reports through the generated default route without persisting an event' do
+    it 'persists one event and routes it through the grouped OOM catch-all' do
       vps = create_vps!
-      route = EventRoute.default_admin_route_for(vps.user)
       report = nil
 
       expect do
@@ -70,9 +69,22 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
           :save_report,
           build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope')
         )
-      end.not_to change(Event.where(event_type: 'vps.oom_report'), :count)
+      end.to change(Event.where(event_type: 'vps.oom_report'), :count).by(1)
 
+      route = EventRoute.default_oom_route_for(vps.user)
+      event = Event.where(event_type: 'vps.oom_report').order(:id).last
       expect(report.ignored).to be(false)
+      expect(event.source_class).to eq('OomReport')
+      expect(event.source_id).to eq(report.id)
+      expect(event.created_at).to be_within(1.second).of(report.created_at)
+      expect(event.parameters).to include(
+        'oom_report_id' => report.id,
+        'cgroup' => '/user.slice/a.scope'
+      )
+      expect(event.vps_id).to eq(vps.id)
+      expect(event.event_deliveries.sole.group_labels).to eq(
+        'vps_id' => vps.id
+      )
       expect(route.reload.hit_count).to eq(1)
     end
 
@@ -95,11 +107,6 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
         value: vps.id.to_s
       )
       route.event_route_matchers.create!(
-        field: 'stage',
-        operator: '==',
-        value: 'raw'
-      )
-      route.event_route_matchers.create!(
         field: 'cgroup',
         operator: '=*',
         value: '/user.slice/*'
@@ -111,44 +118,25 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
       expect(route.reload.hit_count).to eq(1)
     end
 
-    it 'does not use raw OOM ignore routes for notification-stage events' do
+    it 'rolls back report details and counters when event persistence fails' do
       vps = create_vps!
-      receiver = NotificationReceiver.create!(
-        user: vps.user,
-        label: 'Ignore raw OOM reports',
-        mute: true
-      )
-      route = EventRoute.create!(
-        user: vps.user,
-        notification_receiver: receiver,
-        event_type: 'vps.oom_report',
-        position: 1
-      )
-      route.event_route_matchers.create!(
-        field: 'stage',
-        operator: '==',
-        value: 'raw'
-      )
-      route.event_route_matchers.create!(
-        field: 'cgroup',
-        operator: '=*',
-        value: '/user.slice/*'
-      )
+      payload = build_oom_report_payload(vps:)
+      allow(VpsAdmin::API::Events).to receive(:emit!)
+        .and_raise(StandardError, 'event persistence failed')
+      counts = [
+        OomReport,
+        OomReportUsage,
+        OomReportStat,
+        OomReportTask,
+        OomReportCounter
+      ].to_h { |model| [model, model.count] }
 
-      event = VpsAdmin::API::Events.emit!(
-        'vps.oom_report',
-        user: vps.user,
-        vps:,
-        subject: 'OOM notification',
-        payload: {
-          stage: 'notification',
-          cgroup: '/user.slice/a.scope'
-        }
+      expect do
+        supervisor.send(:save_report, payload)
+      end.to raise_error(StandardError, 'event persistence failed')
+      expect(counts.transform_keys(&:name)).to eq(
+        counts.keys.to_h { |model| [model.name, model.count] }
       )
-
-      event.reload
-      expect(event.event_route_matches.reload.map(&:event_route)).not_to include(route)
-      expect(route.reload.hit_count).to eq(0)
     end
 
     it 'does not mark reports ignored for non-mute skipped OOM routes' do
