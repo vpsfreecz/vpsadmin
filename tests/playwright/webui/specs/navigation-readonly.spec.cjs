@@ -1,3 +1,6 @@
+const fs = require('node:fs');
+const path = require('node:path');
+
 const { test, expect } = require('@playwright/test');
 
 const { readFixtures } = require('../lib/fixtures.cjs');
@@ -7,6 +10,10 @@ const { submitForm } = require('../lib/pages/webui.cjs');
 const fixtures = readFixtures();
 const expectedRevision = process.env.VPSADMIN_WEBUI_REVISION;
 const hasExpectedRevision = /^[0-9a-f]{40}$/.test(expectedRevision || '');
+const expectedVersion = fs.readFileSync(
+  path.resolve(__dirname, '../../../../VERSION'),
+  'utf8',
+).trim();
 
 function contentLink(page, href) {
   return page.locator(`#content-in a[href="${href}"]`);
@@ -30,7 +37,7 @@ test('user overview exposes read-only navigation and status data', async ({ page
       `https://github.com/vpsfreecz/vpsadmin/commit/${expectedRevision}`,
     );
   } else {
-    await expect(page.locator('#slogan')).toContainText('Version: 4.1.0');
+    await expect(page.locator('#slogan')).toContainText(`Version: ${expectedVersion}`);
     await expect(page.locator('#slogan a')).toHaveCount(0);
   }
   await expect(page.locator('#content-in')).toContainText(fixtures.newsLog.message);
