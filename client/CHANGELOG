@@ -1,3 +1,6 @@
+* Sat Jul 25 2026 - version 4.2.1
+- Update haveapi-client to v0.29.6
+
 * Fri Jul 24 2026 - version 4.2.0
 - Update haveapi-client to v0.29.5
 - Honor ports and query strings in snapshot download URLs
