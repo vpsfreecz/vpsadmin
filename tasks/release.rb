@@ -19,6 +19,20 @@ namespace :vpsadmin do
       File.write(file, File.read(file).sub(/ VERSION = '[^']+'/, " VERSION = '#{v}'"))
     end
 
+    {
+      'packages/libnodectld/Gemfile' => 'libnodectld',
+      'packages/nodectl/Gemfile' => 'nodectl',
+      'packages/nodectld/Gemfile' => 'nodectld'
+    }.each do |file, gem_name|
+      File.write(
+        file,
+        File.read(file).sub(
+          /gem '#{Regexp.escape(gem_name)}', '[^']+'/,
+          "gem '#{gem_name}', '#{v}'"
+        )
+      )
+    end
+
     man_nodectl = 'nodectl/man/man8/nodectl.8.md'
     File.write(
       man_nodectl,
