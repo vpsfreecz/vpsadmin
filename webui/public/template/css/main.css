@@ -383,6 +383,62 @@ form[name="userns-map-entries"] input[type="text"] {text-align: right;}
   margin-top: 10px;
 }
 
+#notification-routes-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+#notification-routes-table th:nth-child(1) {
+  width: 28%;
+}
+
+#notification-routes-table th:nth-child(2) {
+  width: 22%;
+}
+
+#notification-routes-table th:nth-child(3) {
+  width: 18%;
+}
+
+#notification-routes-table th:nth-child(4) {
+  width: 16%;
+}
+
+#notification-routes-table th:nth-child(5),
+#notification-routes-table th:nth-child(6) {
+  width: 8%;
+  text-align: center;
+}
+
+#notification-routes-table td {
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
+#notification-routes-table td:nth-child(5),
+#notification-routes-table td:nth-child(6) {
+  text-align: center;
+}
+
+.notification-route-order {
+  display: inline-block;
+  white-space: nowrap;
+  margin-right: 6px;
+}
+
+.notification-route-hits {
+  font-size: 90%;
+}
+
+#notification-groups-table {
+  width: 100%;
+}
+
+#notification-groups-table td {
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
 .notification-event-type-category {
   margin: 0 0 18px;
 }

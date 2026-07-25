@@ -2605,6 +2605,22 @@ msgid "Operators"
 msgstr ""
 
 #: forms/notifications.forms.php
+msgid "View event types and fields"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "View this event type and its fields"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No groupable fields are available for this event selector."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Fields available for this route"
+msgstr ""
+
+#: forms/notifications.forms.php
 msgid "true"
 msgstr ""
 
@@ -2901,10 +2917,6 @@ msgid "Notification routes"
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Order"
-msgstr ""
-
-#: forms/notifications.forms.php
 msgid "Route"
 msgstr ""
 
@@ -2917,11 +2929,8 @@ msgid "Receiver"
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Hits"
-msgstr ""
-
-#: forms/notifications.forms.php
-msgid "Actions"
+#, php-format
+msgid "%d hits"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -2973,22 +2982,14 @@ msgid "Notification grouping"
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Group by fields"
-msgstr ""
-
-#: forms/notifications.forms.php
-msgid "Initial wait (seconds)"
-msgstr ""
-
-#: forms/notifications.forms.php
-msgid "Minimum group interval (seconds)"
-msgstr ""
-
-#: forms/notifications.forms.php
 msgid ""
 "Grouping applies only to this route and is not inherited. Enter comma-"
 "separated event fields, or leave the field list empty to group all matching "
 "events. Muted and skipped events are excluded."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Group by fields"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -3009,6 +3010,10 @@ msgstr ""
 
 #: forms/notifications.forms.php
 msgid "Expires at"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Hits"
 msgstr ""
 
 #: forms/notifications.forms.php

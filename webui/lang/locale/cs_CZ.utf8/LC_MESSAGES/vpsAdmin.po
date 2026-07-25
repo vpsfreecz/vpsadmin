@@ -2623,6 +2623,22 @@ msgid "Operators"
 msgstr "Operátory"
 
 #: forms/notifications.forms.php
+msgid "View event types and fields"
+msgstr "Zobrazit typy událostí a jejich pole"
+
+#: forms/notifications.forms.php
+msgid "View this event type and its fields"
+msgstr "Zobrazit tento typ události a jeho pole"
+
+#: forms/notifications.forms.php
+msgid "No groupable fields are available for this event selector."
+msgstr "Pro tento výběr událostí nejsou dostupná žádná pole pro seskupování."
+
+#: forms/notifications.forms.php
+msgid "Fields available for this route"
+msgstr "Pole dostupná pro tuto routu"
+
+#: forms/notifications.forms.php
 msgid "true"
 msgstr "true"
 
@@ -2923,10 +2939,6 @@ msgid "Notification routes"
 msgstr "Notifikační routy"
 
 #: forms/notifications.forms.php
-msgid "Order"
-msgstr "Pořadí"
-
-#: forms/notifications.forms.php
 msgid "Route"
 msgstr "Routa"
 
@@ -2939,12 +2951,9 @@ msgid "Receiver"
 msgstr "Příjemce"
 
 #: forms/notifications.forms.php
-msgid "Hits"
-msgstr "Počet shod"
-
-#: forms/notifications.forms.php
-msgid "Actions"
-msgstr "Akce"
+#, php-format
+msgid "%d hits"
+msgstr "%d shod"
 
 #: forms/notifications.forms.php
 msgid "No routes configured."
@@ -2995,18 +3004,6 @@ msgid "Notification grouping"
 msgstr "Seskupování notifikací"
 
 #: forms/notifications.forms.php
-msgid "Group by fields"
-msgstr "Seskupovat podle polí"
-
-#: forms/notifications.forms.php
-msgid "Initial wait (seconds)"
-msgstr "Počáteční čekání (sekundy)"
-
-#: forms/notifications.forms.php
-msgid "Minimum group interval (seconds)"
-msgstr "Minimální interval skupiny (sekundy)"
-
-#: forms/notifications.forms.php
 msgid ""
 "Grouping applies only to this route and is not inherited. Enter comma-"
 "separated event fields, or leave the field list empty to group all matching "
@@ -3015,6 +3012,10 @@ msgstr ""
 "Seskupování platí pouze pro tuto routu a nedědí se. Zadejte čárkami oddělená "
 "pole události, nebo ponechte seznam polí prázdný pro seskupení všech "
 "odpovídajících událostí. Ztlumené a přeskočené události jsou vynechány."
+
+#: forms/notifications.forms.php
+msgid "Group by fields"
+msgstr "Seskupovat podle polí"
 
 #: forms/notifications.forms.php
 msgid "Save grouping"
@@ -3035,6 +3036,10 @@ msgstr "Použito v"
 #: forms/notifications.forms.php
 msgid "Expires at"
 msgstr "Vyprší v"
+
+#: forms/notifications.forms.php
+msgid "Hits"
+msgstr "Počet shod"
 
 #: forms/notifications.forms.php
 msgid "Matchers"
@@ -9941,22 +9946,14 @@ msgstr "Pomoc"
 #~ msgid "Live patch enabled"
 #~ msgstr "Živá záplata povolena"
 
-#~ msgid "View event types and fields"
-#~ msgstr "Zobrazit typy událostí a jejich pole"
+#~ msgid "Order"
+#~ msgstr "Pořadí"
 
-#~ msgid "View this event type and its fields"
-#~ msgstr "Zobrazit tento typ události a jeho pole"
+#~ msgid "Actions"
+#~ msgstr "Akce"
 
-#~ msgid "No groupable fields are available for this event selector."
-#~ msgstr ""
-#~ "Pro tento výběr událostí nejsou dostupná žádná pole pro seskupování."
-
-#~ msgid "Fields available for this route"
-#~ msgstr "Pole dostupná pro tuto routu"
-
-#, php-format
-#~ msgid "%d hits"
-#~ msgstr "%d shod"
+#~ msgid "Minimum group interval (seconds)"
+#~ msgstr "Minimální interval skupiny (sekundy)"
 
 #~ msgid "Group notifications"
 #~ msgstr "Seskupovat notifikace"
