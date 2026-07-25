@@ -46,7 +46,8 @@ function notifications_sidebar($current, $user_id = null)
     );
     $xtpl->sbar_add(
         _('Notification groups'),
-        '?page=notifications&action=groups' . $group_user_qs
+        '?page=notifications&action=groups' . $group_user_qs,
+        'notifications.groups'
     );
     if (isAdmin()) {
         $xtpl->sbar_add(_('Delivery queue'), '?page=notifications&action=delivery_queue');
