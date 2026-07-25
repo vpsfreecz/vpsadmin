@@ -35,11 +35,18 @@ function notifications_sidebar($current, $user_id = null)
     global $xtpl;
 
     $user_qs = notifications_user_qs($user_id);
+    $group_user_qs = isAdmin() && $current === 'groups' && $user_id === null
+        ? ''
+        : $user_qs;
 
     $xtpl->sbar_add(
         _('Event log'),
         '?page=notifications&action=events' . $user_qs,
         'notifications.events'
+    );
+    $xtpl->sbar_add(
+        _('Notification groups'),
+        '?page=notifications&action=groups' . $group_user_qs
     );
     if (isAdmin()) {
         $xtpl->sbar_add(_('Delivery queue'), '?page=notifications&action=delivery_queue');
@@ -257,6 +264,7 @@ function notifications_api_list_to_array($list)
         'notification_receiver_actions',
         'events',
         'event_deliveries',
+        'event_delivery_groups',
         'event_delivery_attempts',
         'event_route_matches',
         'notification_rate_limits',
@@ -2700,6 +2708,13 @@ function notifications_event_url($event_id)
     return '?page=notifications&action=event_show&id=' . rawurlencode((string) $event_id);
 }
 
+function notifications_group_url($group_id, $user_id = null)
+{
+    return '?page=notifications&action=group_show&id='
+        . rawurlencode((string) $group_id)
+        . notifications_user_qs($user_id);
+}
+
 function notifications_event_link($event_id, $label)
 {
     return '<a href="' . notifications_event_url($event_id) . '">' . h($label) . '</a>';
@@ -3064,9 +3079,16 @@ function notifications_delivery_group_html($delivery)
         return '-';
     }
 
-    $parts = [
-        h(sprintf(_('%d events'), notifications_prop($delivery, 'event_count', 1))),
-    ];
+    $event_count = h(sprintf(_('%d events'), notifications_prop($delivery, 'event_count', 1)));
+    $group_id = notifications_prop($delivery, 'event_delivery_group_id');
+    if ($group_id) {
+        $event_count = '<a href="' . notifications_group_url(
+            $group_id,
+            notifications_prop($delivery, 'recipient_user_id')
+                ?: notifications_prop($delivery, 'event_user_id')
+        ) . '">' . $event_count . '</a>';
+    }
+    $parts = [$event_count];
     $labels = notifications_delivery_group_labels($delivery);
     if ($labels) {
         $parts[] = '<code>' . h(json_encode($labels, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) . '</code>';
@@ -4061,6 +4083,380 @@ function notifications_delivery_attempts_html($event, $delivery)
     return $lines ? implode('<br>', $lines) : '-';
 }
 
+function notifications_group_state_label($state)
+{
+    if ($state === 'waiting') {
+        return _('waiting');
+    } elseif ($state === 'overdue') {
+        return _('overdue');
+    } elseif ($state === 'idle') {
+        return _('idle');
+    }
+
+    return $state ?: '-';
+}
+
+function notifications_group_labels_array($group)
+{
+    $labels = notifications_prop($group, 'labels', []);
+
+    if ($labels instanceof \stdClass) {
+        $labels = (array) $labels;
+    }
+
+    return is_array($labels) ? $labels : [];
+}
+
+function notifications_group_custom_array($group, $name)
+{
+    $value = notifications_prop($group, $name, []);
+
+    if ($value instanceof \stdClass) {
+        $value = (array) $value;
+    }
+
+    return is_array($value) ? $value : [];
+}
+
+function notifications_group_labels_html($group)
+{
+    $labels = notifications_group_labels_array($group);
+
+    return $labels
+        ? '<code>' . h(json_encode(
+            $labels,
+            JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+        )) . '</code>'
+        : h(_('all matching events'));
+}
+
+function notifications_group_owner_html($group)
+{
+    $owner_id = notifications_prop($group, 'route_owner_id');
+    $login = notifications_prop($group, 'route_owner_login') ?: ('#' . $owner_id);
+
+    if (isAdmin() && $owner_id) {
+        return '<a href="?page=adminm&action=edit&id=' . rawurlencode((string) $owner_id)
+            . '">' . h($login) . '</a>';
+    }
+
+    return h($login);
+}
+
+function notifications_group_route_html($group)
+{
+    $route_id = notifications_prop($group, 'event_route_id');
+    if (!$route_id) {
+        return '-';
+    }
+
+    $label = notifications_prop($group, 'event_route_label') ?: ('#' . $route_id);
+
+    return '<a href="?page=notifications&action=route_edit&id='
+        . rawurlencode((string) $route_id)
+        . notifications_user_qs(notifications_prop($group, 'route_owner_id'))
+        . '">' . h($label) . '</a>';
+}
+
+function notifications_group_receiver_html($group)
+{
+    $receiver_id = notifications_prop($group, 'notification_receiver_id');
+    if (!$receiver_id) {
+        return '-';
+    }
+
+    $label = notifications_prop($group, 'notification_receiver_label') ?: ('#' . $receiver_id);
+
+    return '<a href="' . notifications_receiver_url(
+        $receiver_id,
+        notifications_prop($group, 'route_owner_id')
+    ) . '">' . h($label) . '</a>';
+}
+
+function notifications_groups($user_id = null)
+{
+    global $xtpl, $api;
+
+    $user_id = isAdmin()
+        ? (($user_id !== null && $user_id > 0) ? $user_id : null)
+        : notifications_target_user_id($user_id);
+    $state_group = api_get('group_state', 'open');
+    $params = [
+        'limit' => api_get_uint('limit', 25),
+    ];
+
+    if ($state_group !== 'all') {
+        $params['state_group'] = $state_group;
+    }
+
+    if (isAdmin() && $user_id) {
+        $params['route_owner'] = $user_id;
+    }
+
+    foreach (['event_route_id', 'notification_receiver_id'] as $name) {
+        $id = api_get_uint($name);
+        if ($id) {
+            $params[$name] = $id;
+        }
+    }
+
+    $groups = $api->event_delivery_group->list($params);
+    $pagination = new \Pagination\System($groups);
+
+    $xtpl->title(_('Notification groups'));
+    $xtpl->table_title(_('Filters'));
+    $xtpl->form_create('', 'get', 'notification-groups', false);
+    $xtpl->form_set_hidden_fields([
+        'page' => 'notifications',
+        'action' => 'groups',
+    ]);
+    $xtpl->form_add_select(
+        _('State') . ':',
+        'group_state',
+        [
+            'open' => _('Open (waiting and overdue)'),
+            'overdue' => _('Overdue'),
+            'idle' => _('Idle'),
+            'all' => _('All'),
+        ],
+        $state_group
+    );
+    $xtpl->form_add_input(_('Limit') . ':', 'text', '20', 'limit', get_val('limit', '25'));
+    if (isAdmin()) {
+        $xtpl->form_add_input(_('Owner ID') . ':', 'text', '20', 'user', get_val('user', $user_id));
+    }
+    $xtpl->form_add_input(
+        _('Route ID') . ':',
+        'text',
+        '20',
+        'event_route_id',
+        get_val('event_route_id')
+    );
+    $xtpl->form_add_input(
+        _('Receiver ID') . ':',
+        'text',
+        '20',
+        'notification_receiver_id',
+        get_val('notification_receiver_id')
+    );
+    $xtpl->form_out(_('Show'));
+
+    $xtpl->table_add_category(_('Group'));
+    $xtpl->table_add_category(_('State'));
+    if (isAdmin()) {
+        $xtpl->table_add_category(_('Owner'));
+    }
+    $xtpl->table_add_category(_('Route'));
+    $xtpl->table_add_category(_('Receiver'));
+    $xtpl->table_add_category(_('Pending events'));
+    $xtpl->table_add_category(_('Next notification'));
+    $xtpl->table_add_category('');
+
+    $column_count = isAdmin() ? 8 : 7;
+    foreach ($groups as $group) {
+        $xtpl->table_td(
+            '<a href="' . notifications_group_url($group->id, $group->route_owner_id)
+            . '">#' . h($group->id) . '</a><br>'
+            . notifications_group_labels_html($group),
+            false,
+            true
+        );
+        $xtpl->table_td(h(notifications_group_state_label($group->state)));
+        if (isAdmin()) {
+            $xtpl->table_td(notifications_group_owner_html($group), false, true);
+        }
+        $xtpl->table_td(notifications_group_route_html($group), false, true);
+        $xtpl->table_td(notifications_group_receiver_html($group), false, true);
+        $xtpl->table_td(h((string) $group->pending_event_count));
+        $xtpl->table_td(notifications_time_or_dash($group->next_flush_at));
+        $xtpl->table_td(
+            '<a href="' . notifications_group_url($group->id, $group->route_owner_id) . '">'
+            . '<img src="template/icons/vps_edit.png" title="' . h(_('Details')) . '"></a>'
+        );
+        $xtpl->table_tr();
+    }
+
+    if ($groups->count() === 0) {
+        $xtpl->table_td(_('No notification groups found.'), false, false, $column_count);
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_pagination($pagination);
+    $xtpl->table_out('notification-groups-table');
+    notifications_sidebar('groups', $user_id);
+}
+
+function notifications_group_show($group_id)
+{
+    global $xtpl, $api;
+
+    $group = $api->event_delivery_group->show($group_id);
+    $events = $api->event->list([
+        'event_delivery_group' => $group->id,
+        'group_membership' => 'pending',
+        'limit' => 100,
+        'meta' => ['includes' => 'user,vps'],
+    ]);
+    $user_id = notifications_prop($group, 'route_owner_id');
+
+    $xtpl->title(_('Notification group') . ' #' . $group->id);
+    $xtpl->table_title(_('Group status'));
+
+    $xtpl->table_td(_('State') . ':');
+    $xtpl->table_td(h(notifications_group_state_label($group->state)));
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Owner') . ':');
+    $xtpl->table_td(notifications_group_owner_html($group), false, true);
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Route') . ':');
+    $xtpl->table_td(notifications_group_route_html($group), false, true);
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Receiver') . ':');
+    $xtpl->table_td(notifications_group_receiver_html($group), false, true);
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Group labels') . ':');
+    $xtpl->table_td(notifications_group_labels_html($group), false, true);
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Group by fields') . ':');
+    $group_by = notifications_group_custom_array($group, 'group_by');
+    $xtpl->table_td(
+        $group_by
+            ? implode(', ', array_map(fn($field) => '<code>' . h($field) . '</code>', $group_by))
+            : h(_('all matching events')),
+        false,
+        true
+    );
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Initial wait') . ':');
+    $xtpl->table_td(h(sprintf(_('%d seconds'), $group->group_wait_seconds)));
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Repeat interval') . ':');
+    $xtpl->table_td(h(sprintf(_('%d seconds'), $group->group_interval_seconds)));
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Next notification') . ':');
+    $xtpl->table_td(notifications_time_or_dash($group->next_flush_at));
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Last notification') . ':');
+    $xtpl->table_td(notifications_time_or_dash($group->last_sealed_at));
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Pending events') . ':');
+    $xtpl->table_td(
+        notifications_event_log_link(
+            sprintf(_('%d events'), $group->pending_event_count),
+            $user_id,
+            [
+                'event_delivery_group_id' => $group->id,
+                'group_membership' => 'pending',
+            ]
+        ),
+        false,
+        true
+    );
+    $xtpl->table_tr();
+    $xtpl->table_td(_('All events') . ':');
+    $xtpl->table_td(
+        notifications_event_log_link(
+            sprintf(_('%d events'), $group->event_count),
+            $user_id,
+            [
+                'event_delivery_group_id' => $group->id,
+                'group_membership' => 'all',
+            ]
+        ),
+        false,
+        true
+    );
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Delivery streams') . ':');
+    $xtpl->table_td(h((string) $group->stream_count));
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Delivery actions') . ':');
+    $actions = notifications_group_custom_array($group, 'actions');
+    $xtpl->table_td($actions ? '<code>' . h(implode(', ', $actions)) . '</code>' : '-');
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Group key') . ':');
+    $xtpl->table_td('<code>' . h($group->group_key) . '</code>');
+    $xtpl->table_tr();
+    $xtpl->table_out();
+
+    $xtpl->table_title(
+        $group->pending_event_count > 100
+            ? sprintf(
+                _('Pending events (showing first %1$d of %2$d)'),
+                100,
+                $group->pending_event_count
+            )
+            : _('Pending events')
+    );
+    $xtpl->table_add_category(_('Time'));
+    $xtpl->table_add_category(_('Type'));
+    if (isAdmin()) {
+        $xtpl->table_add_category(_('User'));
+    }
+    $xtpl->table_add_category(_('VPS'));
+    $xtpl->table_add_category(_('Subject'));
+    $xtpl->table_add_category(_('Severity'));
+    $xtpl->table_add_category('');
+
+    $column_count = isAdmin() ? 7 : 6;
+    foreach ($events as $event) {
+        $xtpl->table_td(tolocaltz($event->created_at));
+        $xtpl->table_td('<code>' . h($event->event_type) . '</code>', false, true);
+        if (isAdmin()) {
+            $xtpl->table_td($event->user_id ? user_link($event->user) : '-');
+        }
+        $xtpl->table_td($event->vps_id ? vps_link($event->vps) : '-');
+        $xtpl->table_td(h($event->subject));
+        $xtpl->table_td(h($event->severity));
+        $xtpl->table_td(
+            '<a href="' . notifications_event_url($event->id) . '">'
+            . '<img src="template/icons/vps_edit.png" title="' . h(_('Details')) . '"></a>'
+        );
+        $xtpl->table_tr();
+    }
+
+    if ($events->count() === 0) {
+        $xtpl->table_td(
+            _('This group has no events waiting for the next notification.'),
+            false,
+            false,
+            $column_count
+        );
+        $xtpl->table_tr();
+    }
+    $xtpl->table_out();
+
+    if (isAdmin()) {
+        $xtpl->sbar_add(
+            _('Show group in delivery queue'),
+            '?page=notifications&action=delivery_queue&event_delivery_group_id=' . $group->id
+        );
+        $xtpl->sbar_add(
+            _('Show group in delivery log'),
+            '?page=notifications&action=delivery_log&event_delivery_group_id=' . $group->id
+        );
+    }
+    $xtpl->sbar_add(
+        _('All pending group events'),
+        notifications_event_log_url($user_id, [
+            'event_delivery_group_id' => $group->id,
+            'group_membership' => 'pending',
+        ])
+    );
+    $xtpl->sbar_add(
+        _('All group events'),
+        notifications_event_log_url($user_id, [
+            'event_delivery_group_id' => $group->id,
+            'group_membership' => 'all',
+        ])
+    );
+    $xtpl->sbar_add(
+        _('Back to notification groups'),
+        '?page=notifications&action=groups' . notifications_user_qs($user_id)
+    );
+    notifications_sidebar('groups', $user_id);
+}
+
 function notifications_deliveries_admin($state_group)
 {
     global $xtpl, $api;
@@ -4093,7 +4489,17 @@ function notifications_deliveries_admin($state_group)
         $params['event_type'] = $event_type;
     }
 
-    foreach (['event_route_id', 'notification_receiver_id', 'notification_target_id', 'notification_receiver_target_id'] as $name) {
+    $group_id = api_get_uint('event_delivery_group_id');
+    if ($group_id !== null && $group_id > 0) {
+        $params['event_delivery_group'] = $group_id;
+    }
+
+    foreach ([
+        'event_route_id',
+        'notification_receiver_id',
+        'notification_target_id',
+        'notification_receiver_target_id',
+    ] as $name) {
         $id = api_get_uint($name);
         if ($id !== null && $id > 0) {
             $params[$name] = $id;
@@ -4119,6 +4525,13 @@ function notifications_deliveries_admin($state_group)
 
     $xtpl->form_add_input(_('Limit') . ':', 'text', '20', 'limit', get_val('limit', '25'));
     $xtpl->form_add_input(_('User ID') . ':', 'text', '20', 'user', get_val('user'));
+    $xtpl->form_add_input(
+        _('Notification group ID') . ':',
+        'text',
+        '20',
+        'event_delivery_group_id',
+        get_val('event_delivery_group_id')
+    );
     $xtpl->form_add_input(_('Route ID') . ':', 'text', '20', 'event_route_id', get_val('event_route_id'));
     $xtpl->form_add_input(_('Receiver ID') . ':', 'text', '20', 'notification_receiver_id', get_val('notification_receiver_id'));
     $xtpl->form_add_input(_('Target ID') . ':', 'text', '20', 'notification_target_id', get_val('notification_target_id'));
@@ -4234,7 +4647,16 @@ function notifications_events()
         $params['action'] = $delivery_action;
     }
 
-    foreach (['notification_receiver_id', 'notification_target_id', 'notification_receiver_target_id'] as $name) {
+    $group_id = api_get_uint('event_delivery_group_id');
+    if ($group_id !== null && $group_id > 0) {
+        $params['event_delivery_group'] = $group_id;
+    }
+
+    foreach ([
+        'notification_receiver_id',
+        'notification_target_id',
+        'notification_receiver_target_id',
+    ] as $name) {
         $id = api_get_uint($name);
         if ($id !== null && $id > 0) {
             $params[$name] = $id;
@@ -4244,6 +4666,11 @@ function notifications_events()
     $route_id = api_get_uint('event_route_id');
     if ($route_id !== null && $route_id > 0) {
         $params['event_route_id'] = $route_id;
+    }
+
+    $group_membership = api_get('group_membership');
+    if (isset($params['event_delivery_group']) && $group_membership) {
+        $params['group_membership'] = $group_membership;
     }
 
     $user_id = api_get_uint('user');
@@ -4270,6 +4697,22 @@ function notifications_events()
 
     $xtpl->form_add_input(_('Limit') . ':', 'text', '20', 'limit', get_val('limit', '25'));
     $xtpl->form_add_input(_('From ID') . ':', 'text', '20', 'from_id', get_val('from_id'));
+    $xtpl->form_add_input(
+        _('Notification group ID') . ':',
+        'text',
+        '20',
+        'event_delivery_group_id',
+        get_val('event_delivery_group_id')
+    );
+    $xtpl->form_add_select(
+        _('Group events') . ':',
+        'group_membership',
+        [
+            'all' => _('All historical members'),
+            'pending' => _('Pending only'),
+        ],
+        get_val('group_membership', 'all')
+    );
     $xtpl->form_add_input(_('Route ID') . ':', 'text', '20', 'event_route_id', get_val('event_route_id'));
     $xtpl->form_add_input(_('Receiver ID') . ':', 'text', '20', 'notification_receiver_id', get_val('notification_receiver_id'));
     $xtpl->form_add_input(_('Target ID') . ':', 'text', '20', 'notification_target_id', get_val('notification_target_id'));
