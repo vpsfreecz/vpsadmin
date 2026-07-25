@@ -186,13 +186,16 @@ class EventDelivery < ApplicationRecord
 
   def group_members
     return self.class.where(id:) unless event_delivery_group_id
+
     if grouping_state?
-      return self.class.where(event_delivery_group_id:, state: 'grouping').order(:id)
+      return self.class
+                 .where(event_delivery_group_id:, group_stream_key:, state: 'grouping')
+                 .order(:id)
     end
 
     leader_id = effective_event_delivery_id || id
     self.class
-        .where(event_delivery_group_id:)
+        .where(event_delivery_group_id:, group_stream_key:)
         .where('id = ? OR effective_event_delivery_id = ?', leader_id, leader_id)
         .order(:id)
   end

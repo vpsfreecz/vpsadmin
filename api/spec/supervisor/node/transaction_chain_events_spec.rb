@@ -131,9 +131,9 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     first_member_at = Time.now
     survivor_member_at = first_member_at + 120
     group_key = Digest::SHA256.hexdigest('transaction-gated group')
+    group_stream_key = Digest::SHA256.hexdigest('transaction-gated email stream')
     group = EventDeliveryGroup.create!(
       route_owner: SpecSeed.user,
-      action: 'email',
       group_key:,
       labels: {},
       group_wait_seconds: 30,
@@ -143,6 +143,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     grouping.update!(
       event_delivery_group: group,
       group_key:,
+      group_stream_key:,
       group_labels: {},
       group_wait_seconds: 30,
       group_interval_seconds: 300,
@@ -155,6 +156,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     survivor.update!(
       event_delivery_group: group,
       group_key:,
+      group_stream_key:,
       group_labels: {},
       group_wait_seconds: 30,
       group_interval_seconds: 300,
@@ -213,10 +215,10 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     activation_thread = nil
 
     allow(VpsAdmin::API::Notifications::GroupActivation)
-      .to receive(:lock_transaction_chain!)
-      .and_wrap_original do |method, chain_id|
+      .to receive(:lock_transaction_chains!)
+      .and_wrap_original do |method, chain_ids|
         activation_lock_attempted << true
-        method.call(chain_id)
+        method.call(chain_ids)
       end
 
     abort_thread = Thread.new do

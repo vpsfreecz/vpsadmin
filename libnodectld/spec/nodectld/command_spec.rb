@@ -82,7 +82,6 @@ RSpec.describe NodeCtld::Command do
 
   def insert_event_delivery_group(next_flush_at:)
     sql_insert('event_delivery_groups', {
-      action: 'email',
       group_key: Digest::SHA256.hexdigest("libnodectld-group-#{next_flush_at.to_f}"),
       labels: '{}',
       group_wait_seconds: 30,

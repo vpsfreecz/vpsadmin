@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+require_relative '../lib/vpsadmin'
+
+$stdout.sync = true
+$stderr.sync = true
+
+VpsAdmin::API::Notifications::Grouper.run
