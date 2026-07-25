@@ -8,8 +8,6 @@ class MigrateOomReportRulesToRoutes < ActiveRecord::Migration[8.1]
   GROUP_INTERVAL_SECONDS = 3 * 60 * 60
 
   def up
-    validate_source_schema!
-
     say_with_time('Migrating OOM report rules to grouped event routes') do
       source_count = select_value('SELECT COUNT(*) FROM oom_report_rules').to_i
       rules = legacy_rules
@@ -74,7 +72,7 @@ class MigrateOomReportRulesToRoutes < ActiveRecord::Migration[8.1]
     end
 
     remove_column :oom_reports, :oom_report_rule_id
-    remove_index :oom_reports, :reported_at if index_exists?(:oom_reports, :reported_at)
+    remove_index :oom_reports, :reported_at
     remove_column :oom_reports, :reported_at
     remove_column :vpses, :implicit_oom_report_rule_hit_count
     drop_table :oom_report_rules
@@ -86,41 +84,6 @@ class MigrateOomReportRulesToRoutes < ActiveRecord::Migration[8.1]
   end
 
   protected
-
-  def validate_source_schema!
-    required_tables = %i[
-      oom_report_rules
-      oom_reports
-      vpses
-      notification_receivers
-      event_routes
-      event_route_matchers
-    ]
-    missing_tables = required_tables.reject { |table| table_exists?(table) }
-    if missing_tables.any?
-      raise ActiveRecord::MigrationError,
-            "cannot migrate OOM report rules, missing tables: #{missing_tables.join(', ')}"
-    end
-
-    required_columns = {
-      oom_reports: %i[oom_report_rule_id reported_at],
-      vpses: %i[implicit_oom_report_rule_hit_count],
-      event_routes: %i[
-        grouping_enabled
-        group_by
-        group_wait_seconds
-        group_interval_seconds
-      ]
-    }
-    missing_columns = required_columns.flat_map do |table, columns|
-      columns.reject { |column| column_exists?(table, column) }
-             .map { |column| "#{table}.#{column}" }
-    end
-    return if missing_columns.empty?
-
-    raise ActiveRecord::MigrationError,
-          "cannot migrate OOM report rules, missing columns: #{missing_columns.join(', ')}"
-  end
 
   def legacy_rules
     select_all(<<~SQL.squish).to_a
@@ -220,9 +183,7 @@ class MigrateOomReportRulesToRoutes < ActiveRecord::Migration[8.1]
 
     quoted_ids = route_ids.map { |id| quote(id) }.join(', ')
     execute "DELETE FROM event_route_matchers WHERE event_route_id IN (#{quoted_ids})"
-    if table_exists?(:event_route_time_intervals)
-      execute "DELETE FROM event_route_time_intervals WHERE event_route_id IN (#{quoted_ids})"
-    end
+    execute "DELETE FROM event_route_time_intervals WHERE event_route_id IN (#{quoted_ids})"
     execute "DELETE FROM event_routes WHERE id IN (#{quoted_ids})"
   end
 
