@@ -51,6 +51,29 @@ if (isLoggedIn()) {
             }
             break;
 
+        case 'route_grouping_save':
+            csrf_check();
+
+            try {
+                $api->event_route->update(
+                    $_GET['id'],
+                    notifications_route_grouping_params()
+                );
+
+                notify_user(_('Notification grouping updated'), '');
+                redirect(
+                    '?page=notifications&action=route_edit&id=' . $_GET['id']
+                    . notifications_user_qs()
+                );
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(
+                    _('Failed to update notification grouping'),
+                    $e->getResponse()
+                );
+                notifications_route_edit($_GET['id']);
+            }
+            break;
+
         case 'route_delete':
             csrf_check();
 

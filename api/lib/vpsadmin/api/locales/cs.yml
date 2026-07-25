@@ -1716,6 +1716,8 @@ cs:
         label: Master povolen
       match_order:
         label: Pořadí vyhodnocení
+      matcher_count:
+        label: Počet matcherů
       matcher_summary:
         label: Souhrn matcheru
       matches_now:

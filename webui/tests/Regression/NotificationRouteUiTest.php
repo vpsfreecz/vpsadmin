@@ -43,17 +43,26 @@ final class NotificationRouteUiTest extends TestCase
         );
 
         foreach ([$routesList, $subroutes] as $functionSource) {
-            self::assertStringContainsString("_('Scope')", $functionSource);
-            self::assertStringContainsString('notifications_subject_scope_label', $functionSource);
+            self::assertStringContainsString('notifications_route_conditions_html', $functionSource);
         }
+        self::assertStringContainsString(
+            'notifications_subject_scope_label($route->subject_scope)',
+            $source
+        );
     }
 
-    public function testRouteFormsAndListsExplainGrouping(): void
+    public function testGroupingUsesAStandaloneRouteDetailsForm(): void
     {
         $source = $this->notificationsFormsSource();
+        $pageSource = file_get_contents(dirname(__DIR__, 2) . '/pages/page_notifications.php');
         $routeParams = $this->sourceBetween(
             $source,
             'function notifications_route_params(',
+            'function notifications_route_grouping_params('
+        );
+        $groupingParams = $this->sourceBetween(
+            $source,
+            'function notifications_route_grouping_params(',
             'function notifications_receiver_params('
         );
         $routeNew = $this->sourceBetween(
@@ -72,21 +81,52 @@ final class NotificationRouteUiTest extends TestCase
             'function notifications_route_new('
         );
 
-        self::assertStringContainsString("isset(\$_POST['grouping_enabled'])", $routeParams);
-        self::assertStringContainsString("explode(',', (string) api_post('group_by', ''))", $routeParams);
-        self::assertStringContainsString("'group_wait_seconds'", $routeParams);
-        self::assertStringContainsString("'group_interval_seconds'", $routeParams);
+        self::assertStringNotContainsString("'grouping_enabled'", $routeParams);
+        self::assertStringNotContainsString("'group_by'", $routeParams);
+        self::assertStringContainsString("isset(\$_POST['grouping_enabled'])", $groupingParams);
+        self::assertStringContainsString(
+            "explode(',', (string) api_post('group_by', ''))",
+            $groupingParams
+        );
+        self::assertStringContainsString("'group_wait_seconds'", $groupingParams);
+        self::assertStringContainsString("'group_interval_seconds'", $groupingParams);
 
-        foreach ([$routeNew, $routeEdit] as $form) {
-            self::assertStringContainsString("_('Group by fields')", $form);
-            self::assertStringContainsString("_('Initial wait (seconds)')", $form);
-            self::assertStringContainsString("_('Minimum group interval (seconds)')", $form);
-            self::assertStringContainsString('Grouping applies only to this route and is not inherited.', $form);
-            self::assertStringContainsString('Muted and skipped events are excluded.', $form);
+        self::assertStringNotContainsString("_('Group by fields')", $routeNew);
+        self::assertStringContainsString("_('Notification grouping')", $routeEdit);
+        self::assertStringContainsString('action=route_grouping_save', $routeEdit);
+        self::assertStringContainsString("_('Group by fields')", $routeEdit);
+        self::assertStringContainsString("_('Initial wait (seconds)')", $routeEdit);
+        self::assertStringContainsString("_('Minimum group interval (seconds)')", $routeEdit);
+        self::assertStringContainsString(
+            'Grouping applies only to this route and is not inherited.',
+            $routeEdit
+        );
+        self::assertStringContainsString('Muted and skipped events are excluded.', $routeEdit);
+
+        self::assertStringNotContainsString("_('Grouping')", $routesList);
+        self::assertStringContainsString("_('Behavior')", $routesList);
+        self::assertStringContainsString('notifications_route_behavior_html', $routesList);
+        self::assertStringContainsString("case 'route_grouping_save':", $pageSource);
+        self::assertStringContainsString('notifications_route_grouping_params()', $pageSource);
+    }
+
+    public function testRouteListUsesSevenCompactColumns(): void
+    {
+        $source = $this->sourceBetween(
+            $this->notificationsFormsSource(),
+            'function notifications_routes_list(',
+            'function notifications_route_new('
+        );
+
+        foreach (['Order', 'Route', 'Conditions', 'Receiver', 'Behavior', 'Hits', 'Actions'] as $label) {
+            self::assertStringContainsString("_('{$label}')", $source);
         }
 
-        self::assertStringContainsString("_('Grouping')", $routesList);
-        self::assertStringContainsString('notifications_route_grouping_html($route)', $routesList);
+        self::assertSame(7, substr_count($source, '$xtpl->table_add_category('));
+        self::assertStringContainsString(
+            'notifications_route_actions_html($route, $user_id)',
+            $source
+        );
     }
 
     public function testEventLogFiltersAllowEmptySeverityAndRoutingState(): void
