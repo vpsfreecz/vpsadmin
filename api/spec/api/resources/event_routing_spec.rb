@@ -814,6 +814,33 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(delivery_groups.map { |row| row['id'] }).to eq([other_group.id])
   end
 
+  it 'describes route selectors, continuation and groupable event fields' do
+    params = action_input_params('event_route', 'create')
+
+    expect(params.dig('event_type', 'description')).to include('exact event type')
+    expect(params.dig('event_type_pattern', 'description')).to include('monitoring.*')
+    expect(params.dig('continue', 'description')).to include('later sibling routes')
+    expect(params.dig('group_by', 'description')).to include('common fields only')
+
+    as(SpecSeed.user) { json_get event_types_path }
+    expect_status(200)
+
+    oom_type = event_types.find { |type| type['name'] == 'vps.oom_report' }
+    fields = oom_type.fetch('fields').index_by { |field| field.fetch('name') }
+    expect(fields.fetch('severity')).to include(
+      'common' => true,
+      'groupable' => true
+    )
+    expect(fields.fetch('cgroup')).to include(
+      'common' => false,
+      'groupable' => true
+    )
+    expect(fields.fetch('roles')).to include(
+      'common' => true,
+      'groupable' => false
+    )
+  end
+
   it 'lets users manage reusable intervals and assign their own intervals to routes' do
     as(SpecSeed.user) do
       json_post time_interval_index_path, event_time_interval: {

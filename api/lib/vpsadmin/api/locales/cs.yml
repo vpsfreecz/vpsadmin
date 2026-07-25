@@ -406,6 +406,8 @@ cs:
       content_revision:
         label: Revize obsahu
       continue:
+        description: Po shodě této routy pokračovat ve vyhodnocování následujících
+          sourozeneckých rout; vnořené routy se vyhodnotí vždy
         label: Pokračovat
       count:
         label: Počet
@@ -816,8 +818,11 @@ cs:
             label: VPS zastaveno kvůli překročení kvóty
           vps_suspended:
             label: VPS suspendováno
-        label: Typ události
+        description: Porovnat s jedním přesným typem události; ponechte prázdné pro
+          všechny typy nebo použijte vzor typu události
       event_type_pattern:
+        description: Vzor ve stylu shellu, například monitoring.*; nelze kombinovat
+          s přesným typem události
         label: Vzor typu události
       event_user_id:
         label: ID uživatele události
@@ -836,8 +841,6 @@ cs:
       expirations:
         description: Prohodit expirace
         label: Expirace
-      expires_at:
-        label: Expiruje
       export:
         description: Filtrovat hlášení ovlivňující konkrétní export
         label: Export
@@ -1342,8 +1345,18 @@ cs:
           current:
             label: Aktuální
         label: Stav systému
+      group_by:
+        description: Skalární pole události, jejichž hodnoty vytvářejí samostatné
+          skupiny; routy pro přesný typ mohou používat pole daného typu události,
+          zatímco routy se vzorem a routy pro všechny události pouze společná pole;
+          prázdná hodnota znamená jednu skupinu pro všechny odpovídající události
+        label: Seskupovat podle polí
       group_event_ids:
         label: ID událostí ve skupině
+      group_interval_seconds:
+        description: Minimální počet sekund mezi notifikacemi ze skupiny, která zůstává
+          aktivní
+        label: Interval opakování
       group_labels:
         label: Hodnoty skupiny
       group_membership:
@@ -1359,11 +1372,18 @@ cs:
         label: Čas příštího odeslání skupiny
       group_truncated_count:
         label: Počet nezobrazených událostí
+      group_wait_seconds:
+        description: Počet sekund čekání na další události poté, co první událost
+          otevře nečinnou skupinu
+        label: Počáteční čekání
       grouped_delivery:
         label: Seskupené doručení
       grouping_enabled:
+        description: Shromáždit odpovídající události a po nastavené prodlevě je odeslat
+          společně
         label: Seskupovat notifikace
       grouping_summary:
+        description: Srozumitelný souhrn nastavení seskupování
         label: Seskupování
       handled_by:
         description: Filtrovat hlášení řešená uživatelem
@@ -1865,6 +1885,9 @@ cs:
         label: Zobrazený cíl akce receiveru
       notification_receiver_action_label:
         label: Popisek akce receiveru
+      notification_receiver_id:
+        description: Receiver použitý k doručení odpovídajících událostí; je-li prázdný,
+          převezme se z nadřazené routy
       notification_receiver_target_id:
         label: ID cíle receiveru notifikací
       notification_target_display_target:
@@ -1994,7 +2017,8 @@ cs:
       parent:
         label: Rodič
       parent_id:
-        label: ID rodiče
+        description: Volitelná nadřazená routa; vnořené routy se vyhodnocují pouze
+          po shodě nadřazené routy
       passed:
         label: Prošlo
       passphrase:
@@ -2080,6 +2104,8 @@ cs:
       port:
         label: Port
       position:
+        description: Pořadí vyhodnocení mezi routami na stejné úrovni; nižší čísla
+          se vyhodnotí dříve
         label: Pořadí
       ppp:
         label: PPP
@@ -2312,14 +2338,8 @@ cs:
         choices:
           aborted:
             label: zrušeno
-          failed:
-            label: selhalo
-          pending:
-            label: čeká
           routed:
             label: naroutováno
-          suppressed:
-            label: potlačeno
         label: Stav routování
       row_id:
         description: Hledat podle ID dotčeného řádku
@@ -2653,6 +2673,8 @@ cs:
         choices:
           system:
             label: systém
+        description: Vyberte, které subjekty událostí jsou vlastníkovi této routy
+          viditelné
       subtree_check:
         description: Viz man exports(5).
         label: Subtree check
@@ -4338,6 +4360,8 @@ cs:
             label: Vytvořeno
           dns_zone:
             label: DNS zóna
+          expires_at:
+            label: Expiruje
           id:
             label: ID
           type:
@@ -4428,6 +4452,8 @@ cs:
             description: Zobrazit události patřící do této skupiny notifikací
           event_route_id:
             label: ID routy události
+          event_type:
+            label: Typ události
           id:
             label: ID
           ip_addr:
@@ -4503,6 +4529,8 @@ cs:
             label: ID routy události
           event_route_label:
             label: Popisek routy události
+          event_type:
+            label: Typ události
           group_key:
             label: Klíč skupiny
           id:
@@ -4521,14 +4549,8 @@ cs:
             label: Všechny události
           event_route_label:
             label: Routa
-          group_by:
-            label: Seskupit podle polí
-          group_interval_seconds:
-            label: Interval opakování
           group_key:
             label: Klíč skupiny
-          group_wait_seconds:
-            label: Počáteční čekání
           id:
             label: ID
           notification_receiver_label:
@@ -4556,16 +4578,22 @@ cs:
         attributes:
           created_at:
             label: Vytvořeno
-          group_by:
-            label: Seskupit podle polí
-          group_interval_seconds:
-            label: Interval opakování
-          group_wait_seconds:
-            label: Počáteční čekání
+          enabled:
+            description: Vypnuté routy a všechny jejich vnořené routy jsou ignorovány
+          event_type:
+            label: Typ události
+          expires_at:
+            description: Volitelné datum a čas, po kterém tato routa přestane odpovídat
+              událostem
+            label: Expiruje
           id:
             label: ID
+          label:
+            description: Volitelný název pro identifikaci routy
           notification_receiver_id:
             label: Receiver
+          parent_id:
+            label: Nadřazená routa
           subject_scope:
             choices:
               self:
@@ -4575,6 +4603,8 @@ cs:
             label: Rozsah
           updated_at:
             label: Aktualizováno
+          user:
+            description: Uživatel, jehož události tato routa vyhodnocuje
         matcher:
           attributes:
             created_at:
@@ -4981,6 +5011,8 @@ cs:
             label: Název
         kernel_history:
           attributes:
+            event_type:
+              label: Typ události
             id:
               label: ID
             livepatch_action:
@@ -5029,6 +5061,8 @@ cs:
             label: Název volby konfigurace jádra
       node_kernel_event:
         attributes:
+          event_type:
+            label: Typ události
           id:
             label: ID události kernelu Node
         input:
@@ -5083,6 +5117,8 @@ cs:
             label: ID změny softwaru
       node_software_deployment:
         attributes:
+          event_type:
+            label: Typ události
           id:
             label: ID nasazení softwaru
       node_software_version:
@@ -5180,6 +5216,8 @@ cs:
         attributes:
           created_at:
             label: Vytvořeno
+          event_type:
+            label: Typ události
           id:
             label: ID
           user_session:
@@ -5509,6 +5547,10 @@ cs:
         attributes:
           class_name:
             label: Název objektu
+          event_type:
+            label: Typ události
+          expires_at:
+            label: Expiruje
           label:
             description: Uživatelsky srozumitelný název
           name:
@@ -5516,6 +5558,8 @@ cs:
             label: Název
           notification_receiver_id:
             label: ID receiveru notifikací
+          parent_id:
+            label: ID rodiče
           size:
             description: Počet transakcí v řetězci
           updated_at:

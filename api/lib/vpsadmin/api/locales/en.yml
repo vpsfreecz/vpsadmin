@@ -407,6 +407,8 @@ en:
       content_revision:
         label: Content_revision
       continue:
+        description: Continue evaluating later sibling routes after this route matches;
+          subroutes are evaluated regardless
         label: Continue
       count:
         label: Count
@@ -816,8 +818,11 @@ en:
             label: VPS stopped over quota
           vps_suspended:
             label: VPS suspended
-        label: Event_type
+        description: Match one exact event type; leave empty to match all types or
+          use an event type pattern
       event_type_pattern:
+        description: Shell-style pattern such as monitoring.*; cannot be combined
+          with an exact event type
         label: Event type pattern
       event_user_id:
         label: Event_user_id
@@ -836,8 +841,6 @@ en:
       expirations:
         description: Swap expirations
         label: Expirations
-      expires_at:
-        label: Expires_at
       export:
         description: Filter outages affecting a specific export
         label: Export
@@ -1343,8 +1346,18 @@ en:
           current:
             label: current
         label: Generation
+      group_by:
+        description: Scalar event fields whose values create separate groups; exact
+          routes may use fields from that event type, while patterns and catch-all
+          routes may use common fields only; empty means one group for all matching
+          events
+        label: Group by fields
       group_event_ids:
         label: Group_event_ids
+      group_interval_seconds:
+        description: Minimum seconds between notifications from a group that remains
+          active
+        label: Repeat interval
       group_labels:
         label: Group_labels
       group_membership:
@@ -1360,11 +1373,18 @@ en:
         label: Group_next_flush_at
       group_truncated_count:
         label: Group_truncated_count
+      group_wait_seconds:
+        description: Seconds to wait for more events after the first event opens an
+          idle group
+        label: Initial wait
       grouped_delivery:
         label: Grouped_delivery
       grouping_enabled:
+        description: Collect matching events and send them together after the configured
+          delay
         label: Group notifications
       grouping_summary:
+        description: Human-readable summary of the grouping configuration
         label: Grouping_summary
       handled_by:
         description: Filter outages handled by user
@@ -1870,6 +1890,9 @@ en:
         label: Receiver target display target
       notification_receiver_action_label:
         label: Receiver target label
+      notification_receiver_id:
+        description: Receiver used to deliver matching events; inherit from a parent
+          when empty
       notification_receiver_target_id:
         label: Notification_receiver_target_id
       notification_target_display_target:
@@ -1999,7 +2022,8 @@ en:
       parent:
         label: Parent
       parent_id:
-        label: Parent_id
+        description: Optional parent; subroutes are evaluated only after their parent
+          matches
       passed:
         label: Passed
       passphrase:
@@ -2085,6 +2109,8 @@ en:
       port:
         label: Port
       position:
+        description: Evaluation order among routes at the same level; lower numbers
+          run first
         label: Position
       ppp:
         label: PPP
@@ -2317,14 +2343,8 @@ en:
         choices:
           aborted:
             label: aborted
-          failed:
-            label: failed
-          pending:
-            label: pending
           routed:
             label: routed
-          suppressed:
-            label: suppressed
         label: Routing_state
       row_id:
         description: Search by concerned row id
@@ -2658,6 +2678,7 @@ en:
         choices:
           system:
             label: Admin system routes
+        description: Select which event subjects are visible to this route owner
       subtree_check:
         description: See man exports(5).
         label: Subtree check
@@ -4342,6 +4363,8 @@ en:
             label: Created_at
           dns_zone:
             label: DnsZone
+          expires_at:
+            label: Expires_at
           id:
             label: ID
           type:
@@ -4432,6 +4455,8 @@ en:
             description: Show events that belong to this notification group
           event_route_id:
             label: Event_route_id
+          event_type:
+            label: Event_type
           id:
             label: Id
           ip_addr:
@@ -4507,6 +4532,8 @@ en:
             label: Event_route_id
           event_route_label:
             label: Event_route_label
+          event_type:
+            label: Event_type
           group_key:
             label: Group_key
           id:
@@ -4525,14 +4552,8 @@ en:
             label: All events
           event_route_label:
             label: Route
-          group_by:
-            label: Group by fields
-          group_interval_seconds:
-            label: Repeat interval
           group_key:
             label: Group key
-          group_wait_seconds:
-            label: Initial wait
           id:
             label: Id
           notification_receiver_label:
@@ -4560,16 +4581,22 @@ en:
         attributes:
           created_at:
             label: Created_at
-          group_by:
-            label: Group_by
-          group_interval_seconds:
-            label: Group_interval_seconds
-          group_wait_seconds:
-            label: Group_wait_seconds
+          enabled:
+            description: Disabled routes and all of their subroutes are ignored
+          event_type:
+            label: Event type
+          expires_at:
+            description: Optional date and time after which this route stops matching
+              events
+            label: Expires at
           id:
             label: Id
+          label:
+            description: Optional name used to identify the route
           notification_receiver_id:
-            label: Notification_receiver_id
+            label: Receiver
+          parent_id:
+            label: Parent route
           subject_scope:
             choices:
               self:
@@ -4579,6 +4606,8 @@ en:
             label: Scope
           updated_at:
             label: Updated_at
+          user:
+            description: User whose events are evaluated by this route
         matcher:
           attributes:
             created_at:
@@ -4985,6 +5014,8 @@ en:
             label: Name
         kernel_history:
           attributes:
+            event_type:
+              label: Event_type
             id:
               label: Id
             livepatch_action:
@@ -5033,6 +5064,8 @@ en:
             label: Name
       node_kernel_event:
         attributes:
+          event_type:
+            label: Event_type
           id:
             label: Id
         input:
@@ -5087,6 +5120,8 @@ en:
             label: Id
       node_software_deployment:
         attributes:
+          event_type:
+            label: Event_type
           id:
             label: Id
       node_software_version:
@@ -5184,6 +5219,8 @@ en:
         attributes:
           created_at:
             label: Created_at
+          event_type:
+            label: Event_type
           id:
             label: Id
           user_session:
@@ -5511,6 +5548,10 @@ en:
         attributes:
           class_name:
             label: Class name
+          event_type:
+            label: Event_type
+          expires_at:
+            label: Expires_at
           label:
             description: Human-friendly name
           name:
@@ -5518,6 +5559,8 @@ en:
             label: Name
           notification_receiver_id:
             label: Notification_receiver_id
+          parent_id:
+            label: Parent_id
           size:
             description: Number of transactions in the chain
           updated_at:

@@ -6,31 +6,66 @@ module VpsAdmin::API::Resources
     model ::EventRoute
 
     params(:common) do
-      resource User, value_label: :login
-      integer :parent_id, nullable: true
-      integer :notification_receiver_id, nullable: true
-      string :label, nullable: true
-      integer :position
-      bool :enabled
+      resource User,
+               value_label: :login,
+               desc: 'User whose events are evaluated by this route'
+      integer :parent_id,
+              label: 'Parent route',
+              desc: 'Optional parent; subroutes are evaluated only after their parent matches',
+              nullable: true
+      integer :notification_receiver_id,
+              label: 'Receiver',
+              desc: 'Receiver used to deliver matching events; inherit from a parent when empty',
+              nullable: true
+      string :label,
+             desc: 'Optional name used to identify the route',
+             nullable: true
+      integer :position,
+              desc: 'Evaluation order among routes at the same level; lower numbers run first'
+      bool :enabled,
+           desc: 'Disabled routes and all of their subroutes are ignored'
       string :event_type,
+             label: 'Event type',
+             desc: 'Match one exact event type; leave empty to match all types or use an event type pattern',
              choices: { values: VpsAdmin::API::Events.type_labels },
              load_validators: false,
              nullable: true
-      string :event_type_pattern, label: 'Event type pattern', nullable: true
+      string :event_type_pattern,
+             label: 'Event type pattern',
+             desc: 'Shell-style pattern such as monitoring.*; cannot be combined with an exact event type',
+             nullable: true
       string :subject_scope,
              label: 'Scope',
+             desc: 'Select which event subjects are visible to this route owner',
              choices: { values: ::EventRoute.subject_scope_labels },
              load_validators: false
-      bool :grouping_enabled, label: 'Group notifications'
-      custom :group_by
-      integer :group_wait_seconds, nullable: true
-      integer :group_interval_seconds, nullable: true
-      string :grouping_summary
-      bool :continue
+      bool :grouping_enabled,
+           label: 'Group notifications',
+           desc: 'Collect matching events and send them together after the configured delay'
+      custom :group_by,
+             label: 'Group by fields',
+             desc: 'Scalar event fields whose values create separate groups; exact routes may use fields from that event type, while patterns and catch-all routes may use common fields only; empty means one group for all matching events'
+      integer :group_wait_seconds,
+              label: 'Initial wait',
+              desc: 'Seconds to wait for more events after the first event opens an idle group',
+              nullable: true
+      integer :group_interval_seconds,
+              label: 'Repeat interval',
+              desc: 'Minimum seconds between notifications from a group that remains active',
+              nullable: true
+      string :grouping_summary,
+             desc: 'Human-readable summary of the grouping configuration'
+      bool :continue,
+           label: 'Continue',
+           desc: 'Continue evaluating later sibling routes after this route matches; subroutes are evaluated regardless'
       integer :hit_count, label: 'Hits'
       bool :single_use
       datetime :spent_at, nullable: true
-      datetime :expires_at, nullable: true
+      datetime :expires_at,
+               label: 'Expires at',
+               desc: 'Optional date and time after which this route stops matching events',
+               desc_key: 'vpsadmin.resources.event_route.attributes.expires_at.description',
+               nullable: true
       string :matcher_summary
       integer :matcher_count, label: 'Matcher count'
       string :display_label
