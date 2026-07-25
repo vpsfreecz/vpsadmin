@@ -601,6 +601,7 @@ msgid "Content"
 msgstr ""
 
 #: forms/cluster.forms.php forms/dns.forms.php forms/networking.forms.php
+#: forms/notifications.forms.php
 msgid "All"
 msgstr ""
 
@@ -1457,7 +1458,8 @@ msgstr ""
 msgid "not enabled"
 msgstr ""
 
-#: forms/dns.forms.php forms/networking.forms.php pages/page_adminvps.php
+#: forms/dns.forms.php forms/networking.forms.php forms/notifications.forms.php
+#: pages/page_adminvps.php
 msgid "Owner"
 msgstr ""
 
@@ -2423,6 +2425,10 @@ msgstr ""
 
 #: forms/node.forms.php
 msgid "initial baseline"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Notification groups"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -3508,7 +3514,31 @@ msgid "No delivery limits are configured."
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Only administrators can view notification delivery queues."
+msgid "waiting"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "overdue"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "idle"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Open (waiting and overdue)"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Overdue"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Idle"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Owner ID"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -3517,6 +3547,104 @@ msgstr ""
 
 #: forms/notifications.forms.php
 msgid "Receiver ID"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Group"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Pending events"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Next notification"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No notification groups found."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Notification group"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Group status"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Group labels"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Initial wait"
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "%d seconds"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Repeat interval"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Last notification"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Delivery streams"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Delivery actions"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Group key"
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Pending events (showing first %1$d of %2$d)"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Severity"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "This group has no events waiting for the next notification."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Show group in delivery queue"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Show group in delivery log"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "All pending group events"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "All group events"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Back to notification groups"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Only administrators can view notification delivery queues."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Notification group ID"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -3529,10 +3657,6 @@ msgstr ""
 
 #: forms/notifications.forms.php
 msgid "Delivery"
-msgstr ""
-
-#: forms/notifications.forms.php
-msgid "Group"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -3556,7 +3680,15 @@ msgid "No deliveries found."
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Severity"
+msgid "Group events"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "All historical members"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Pending only"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -3612,20 +3744,8 @@ msgid "Template"
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Notification group"
-msgstr ""
-
-#: forms/notifications.forms.php
-msgid "Group key"
-msgstr ""
-
-#: forms/notifications.forms.php
 #, php-format
 msgid "and %d more"
-msgstr ""
-
-#: forms/notifications.forms.php
-msgid "Group events"
 msgstr ""
 
 #: forms/notifications.forms.php
