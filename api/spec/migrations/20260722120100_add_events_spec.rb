@@ -90,7 +90,9 @@ RSpec.describe AddEvents do
     expect(table_exists?(:event_delivery_attempts)).to be(true)
     expect(column_exists?(:event_routes, :group_by)).to be(true)
     expect(column_exists?(:event_deliveries, :group_key)).to be(true)
+    expect(column_exists?(:event_deliveries, :group_stream_key)).to be(true)
     expect(column_exists?(:event_deliveries, :target_secret)).to be(true)
+    expect(column_exists?(:event_delivery_groups, :action)).to be(false)
 
     default_receiver = find_row(:notification_receivers, user_id: ids.fetch(:enabled_id), label: 'Default e-mail')
     mute_receiver = find_row(:notification_receivers, user_id: ids.fetch(:disabled_id), label: 'Do not notify')

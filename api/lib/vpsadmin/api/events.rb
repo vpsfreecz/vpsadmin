@@ -645,6 +645,7 @@ module VpsAdmin::API
       :route_context,
       :route_time_interval_state,
       :group_key,
+      :group_stream_key,
       :group_labels,
       :group_wait_seconds,
       :group_interval_seconds
@@ -1318,7 +1319,9 @@ module VpsAdmin::API
           plan_route(route_context, emit_skipped: route_context.self_subject?)
         end
 
-        deliveries = deduplicate(context_results.flat_map(&:deliveries) + direct_email_deliveries)
+        deliveries = apply_grouping(
+          deduplicate(context_results.flat_map(&:deliveries) + direct_email_deliveries)
+        )
 
         RouteResult.new(
           routing_state: routing_state_for(deliveries),
@@ -1620,15 +1623,6 @@ module VpsAdmin::API
         action = receiver_action&.action || 'email'
         resolved_target_kind = target_kind || receiver_action&.target_kind || 'default_recipient'
         resolved_template_name = template_name || delivery_template_name(route, receiver_action)
-        grouping = grouping_attributes(
-          route,
-          action:,
-          target_kind: resolved_target_kind,
-          target_value:,
-          template_name: resolved_template_name,
-          notification_target: receiver_action&.notification_target,
-          target_secret: receiver_action&.secret
-        )
 
         DeliveryPlan.new(
           action:,
@@ -1645,50 +1639,69 @@ module VpsAdmin::API
           next_attempt_at:,
           payload:,
           route_context: @route_context,
-          route_time_interval_state: 'active',
-          **grouping
+          route_time_interval_state: 'active'
         )
       end
 
-      def grouping_attributes(route, action:, target_kind:, target_value:,
-                              template_name:, notification_target:, target_secret:)
-        return {} unless route&.grouping_enabled?
+      def apply_grouping(deliveries)
+        deliveries.group_by do |delivery|
+          [
+            delivery.event_route&.id,
+            delivery.route_context&.route_owner&.id,
+            delivery.notification_receiver&.id
+          ]
+        end.each_value do |route_deliveries|
+          route = route_deliveries.first.event_route
+          next unless route&.grouping_enabled?
 
-        labels = route.group_by.to_h do |field|
-          value = EventRouteMatcher.field_value(event, field, route_context: @route_context)
-          [field, canonical_group_value(value)]
-        end
-        target_identity =
-          if notification_target
-            [
-              'notification_target',
-              notification_target.id,
-              target_value,
-              target_secret.present? ? Digest::SHA256.hexdigest(target_secret) : nil,
-              canonical_group_value(notification_target.config || {})
-            ]
-          else
-            ['target_value', target_value]
+          grouped_deliveries = route_deliveries.reject { |delivery| delivery.state == 'skipped' }
+          next if grouped_deliveries.empty?
+
+          route_context = grouped_deliveries.first.route_context
+          labels = route.group_by.to_h do |field|
+            value = EventRouteMatcher.field_value(event, field, route_context:)
+            [field, canonical_group_value(value)]
           end
+          streams = grouped_deliveries.to_h do |delivery|
+            [delivery, delivery_stream_key(delivery)]
+          end
+          identity = [
+            route.id,
+            route_context&.route_owner&.id,
+            grouped_deliveries.first.notification_receiver&.id,
+            route.group_by,
+            route.group_wait_seconds,
+            route.group_interval_seconds,
+            labels,
+            streams.values.sort
+          ]
+          group_key = Digest::SHA256.hexdigest(JSON.dump(identity))
+
+          streams.each do |delivery, stream_key|
+            delivery.group_key = group_key
+            delivery.group_stream_key = stream_key
+            delivery.group_labels = labels
+            delivery.group_wait_seconds = route.group_wait_seconds
+            delivery.group_interval_seconds = route.group_interval_seconds
+          end
+        end
+
+        deliveries
+      end
+
+      def delivery_stream_key(delivery)
         identity = [
-          route.id,
-          @route_context&.route_owner&.id,
-          action,
-          target_kind,
-          target_identity,
-          template_name,
-          route.group_by,
-          route.group_wait_seconds,
-          route.group_interval_seconds,
-          labels
+          delivery.action,
+          delivery.target_kind,
+          delivery.target_value,
+          delivery.notification_target&.id,
+          delivery.notification_receiver_action&.id,
+          delivery.target_secret.present? ? Digest::SHA256.hexdigest(delivery.target_secret) : nil,
+          canonical_group_value(delivery.notification_target&.config || {}),
+          delivery.template_name
         ]
 
-        {
-          group_key: Digest::SHA256.hexdigest(JSON.dump(identity)),
-          group_labels: labels,
-          group_wait_seconds: route.group_wait_seconds,
-          group_interval_seconds: route.group_interval_seconds
-        }
+        Digest::SHA256.hexdigest(JSON.dump(identity))
       end
 
       def canonical_group_value(value)
@@ -1849,6 +1862,7 @@ module VpsAdmin::API
           next_attempt_at: delivery.next_attempt_at,
           payload: delivery.payload,
           group_key: delivery.group_key,
+          group_stream_key: delivery.group_stream_key,
           group_labels: delivery.group_labels,
           group_wait_seconds: delivery.group_wait_seconds,
           group_interval_seconds: delivery.group_interval_seconds

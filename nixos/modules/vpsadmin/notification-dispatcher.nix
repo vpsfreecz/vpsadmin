@@ -32,8 +32,10 @@ let
   apiApp = apiAppFor cfg.stateDirectory;
 
   actionStateDirectory = action: "${cfg.stateDirectory}/${action}";
+  groupingStateDirectory = "${cfg.stateDirectory}/grouping";
 
   actionApiApp = action: apiAppFor (actionStateDirectory action);
+  groupingApiApp = apiAppFor groupingStateDirectory;
 
   positiveInt = types.addCheck types.int (value: value >= 1);
   nonNegativeInt = types.addCheck types.int (value: value >= 0);
@@ -136,6 +138,18 @@ let
     }
   );
 
+  groupingNotificationsYml = pkgs.writeText "grouping-notifications.yml" (
+    builtins.toJSON {
+      rabbitmq = {
+        hosts = vpsadminCfg.rabbitmq.hosts;
+        vhost = vpsadminCfg.rabbitmq.virtualHost;
+        username = cfg.rabbitmq.username;
+        password = "#rabbitmq_pass#";
+      };
+      poll_interval = cfg.pollInterval;
+    }
+  );
+
   dispatcherService =
     action:
     let
@@ -209,6 +223,71 @@ let
           ++ smsCredentials;
       };
     };
+
+  groupingTmpfilesRules =
+    let
+      runtimeRoot = "${groupingStateDirectory}/app";
+    in
+    groupingApiApp.tmpfilesRules
+    ++ [
+      "d '${runtimeRoot}' 0750 ${cfg.user} ${cfg.group} - -"
+      "d '${groupingStateDirectory}/cache' 0750 ${cfg.user} ${cfg.group} - -"
+    ];
+
+  grouperService = nameValuePair "vpsadmin-notification-grouper" {
+    description = "vpsAdmin notification grouper";
+    after = [
+      "network.target"
+      "vpsadmin-database-setup.service"
+    ];
+    requires = [ "vpsadmin-database-setup.service" ];
+    wantedBy = [ "multi-user.target" ];
+    environment.RACK_ENV = "production";
+    environment.SCHEMA = "${groupingStateDirectory}/cache/schema.rb";
+    environment.VPSADMIN_NOTIFICATIONS_CONFIG = "${groupingStateDirectory}/config/notifications.yml";
+    environment.VPSADMIN_ROOT = "${groupingStateDirectory}/app";
+    path = with pkgs; [
+      mariadb
+    ];
+    startLimitIntervalSec = 180;
+    startLimitBurst = 5;
+    preStart = ''
+      ${groupingApiApp.setup}
+
+      RABBITMQ_PASS=${
+        optionalString (cfg.rabbitmq.passwordFile != null) "$(head -n1 ${cfg.rabbitmq.passwordFile})"
+      }
+      cp -f ${groupingNotificationsYml} "${groupingStateDirectory}/config/notifications.yml"
+      sed -e "s,#rabbitmq_pass#,$RABBITMQ_PASS,g" -i "${groupingStateDirectory}/config/notifications.yml"
+      chmod 440 "${groupingStateDirectory}/config/notifications.yml"
+
+      rm -rf "${groupingStateDirectory}/app"
+      install -d -o ${cfg.user} -g ${cfg.group} -m 0750 "${groupingStateDirectory}/app"
+
+      for entry in "${cfg.package}/notificationDispatcher/"*; do
+        name="$(basename "$entry")"
+        case "$name" in
+          config|plugins)
+            continue
+            ;;
+        esac
+
+        ln -s "$entry" "${groupingStateDirectory}/app/$name"
+      done
+
+      ln -s "${groupingStateDirectory}/config" "${groupingStateDirectory}/app/config"
+      ln -s "${groupingStateDirectory}/plugins" "${groupingStateDirectory}/app/plugins"
+    '';
+    serviceConfig = {
+      Type = "simple";
+      User = cfg.user;
+      Group = cfg.group;
+      WorkingDirectory = "${groupingStateDirectory}/app";
+      ExecStart = "${groupingApiApp.bundle} exec bin/vpsadmin-notification-grouper";
+      Restart = "on-failure";
+      RestartSec = 30;
+    };
+  };
 in
 {
   imports = apiApp.imports;
@@ -439,9 +518,10 @@ in
     systemd.tmpfiles.rules = [
       "d '${cfg.stateDirectory}' 0750 ${cfg.user} ${cfg.group} - -"
     ]
+    ++ groupingTmpfilesRules
     ++ concatMap actionTmpfilesRules cfg.actions;
 
-    systemd.services = listToAttrs (map dispatcherService cfg.actions);
+    systemd.services = listToAttrs ([ grouperService ] ++ map dispatcherService cfg.actions);
 
     users.users = optionalAttrs (cfg.user == "vpsadmin-notifications") {
       ${cfg.user} = {
