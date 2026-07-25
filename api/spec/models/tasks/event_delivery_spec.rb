@@ -918,6 +918,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     delivery.define_singleton_method(:grouping_enabled?) { false }
     delivery.define_singleton_method(:grouping_state?) { false }
     delivery.define_singleton_method(:grouped_state?) { false }
+    delivery.define_singleton_method(:grouped_delivery?) { false }
     delivery
   end
 
@@ -2219,8 +2220,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
   it 'does not send cross-user groups to a managed webhook address' do
     ip_address = create_managed_private_ip!(user: SpecSeed.user)
     delivery, = create_webhook_delivery!(url: "http://#{ip_address.addr}:9292/events")
+    group_stream_key = Digest::SHA256.hexdigest('cross-user webhook stream')
     group = EventDeliveryGroup.create!(
-      action: 'webhook',
       group_key: Digest::SHA256.hexdigest('cross-user managed webhook'),
       labels: {},
       group_wait_seconds: 0,
@@ -2229,6 +2230,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     delivery.update!(
       event_delivery_group: group,
       group_key: group.group_key,
+      group_stream_key:,
       group_labels: {},
       group_wait_seconds: 0,
       group_interval_seconds: 60
@@ -2254,6 +2256,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       target_label: delivery.target_label,
       state: :grouped,
       group_key: group.group_key,
+      group_stream_key:,
       group_labels: {},
       group_wait_seconds: 0,
       group_interval_seconds: 60

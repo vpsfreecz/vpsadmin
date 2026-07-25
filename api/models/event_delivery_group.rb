@@ -9,10 +9,7 @@ class EventDeliveryGroup < ApplicationRecord
 
   serialize :labels, coder: JSON
 
-  validates :action, :group_key, :group_wait_seconds, :group_interval_seconds,
-            presence: true
-  validates :action,
-            inclusion: { in: ->(_) { VpsAdmin::API::Notifications::Actions.names } }
+  validates :group_key, :group_wait_seconds, :group_interval_seconds, presence: true
   validates :group_key, length: { is: 64 }, uniqueness: true
   validates :group_wait_seconds,
             numericality: {
@@ -28,10 +25,9 @@ class EventDeliveryGroup < ApplicationRecord
             }
   validate :check_labels
 
-  scope :due_for_action, lambda { |action, now = Time.now|
-    where(action:)
-      .where.not(next_flush_at: nil)
-      .where(next_flush_at: ..now)
+  scope :due, lambda { |now = Time.now|
+    where.not(next_flush_at: nil)
+         .where(next_flush_at: ..now)
   }
 
   def grouped?
