@@ -95,13 +95,19 @@ final class NotificationRouteUiTest extends TestCase
         self::assertStringContainsString("_('Notification grouping')", $routeEdit);
         self::assertStringContainsString('action=route_grouping_save', $routeEdit);
         self::assertStringContainsString("_('Group by fields')", $routeEdit);
-        self::assertStringContainsString("_('Initial wait (seconds)')", $routeEdit);
-        self::assertStringContainsString("_('Minimum group interval (seconds)')", $routeEdit);
+        self::assertStringContainsString("\$input->group_wait_seconds", $routeEdit);
+        self::assertStringContainsString("\$input->group_interval_seconds", $routeEdit);
         self::assertStringContainsString(
             'Grouping applies only to this route and is not inherited.',
             $routeEdit
         );
         self::assertStringContainsString('Muted and skipped events are excluded.', $routeEdit);
+        self::assertLessThan(
+            strpos($routeEdit, "api_param_to_form(\n        'grouping_enabled'"),
+            strpos($routeEdit, 'Grouping applies only to this route and is not inherited.')
+        );
+        self::assertStringContainsString("false,\n        3\n    );", $routeEdit);
+        self::assertStringContainsString('notifications_route_group_by_hint_html', $routeEdit);
 
         self::assertStringNotContainsString("_('Grouping')", $routesList);
         self::assertStringContainsString("_('Behavior')", $routesList);
@@ -110,7 +116,7 @@ final class NotificationRouteUiTest extends TestCase
         self::assertStringContainsString('notifications_route_grouping_params()', $pageSource);
     }
 
-    public function testRouteListUsesSevenCompactColumns(): void
+    public function testRouteListUsesSixCompactColumnsWithSeparateActions(): void
     {
         $source = $this->sourceBetween(
             $this->notificationsFormsSource(),
@@ -118,15 +124,48 @@ final class NotificationRouteUiTest extends TestCase
             'function notifications_route_new('
         );
 
-        foreach (['Order', 'Route', 'Conditions', 'Receiver', 'Behavior', 'Hits', 'Actions'] as $label) {
+        foreach (['Route', 'Conditions', 'Receiver', 'Behavior', 'Add subroute', 'Delete'] as $label) {
             self::assertStringContainsString("_('{$label}')", $source);
         }
 
-        self::assertSame(7, substr_count($source, '$xtpl->table_add_category('));
+        self::assertSame(6, substr_count($source, '$xtpl->table_add_category('));
+        self::assertStringNotContainsString("_('Order')", $source);
+        self::assertStringNotContainsString("_('Actions')", $source);
         self::assertStringContainsString(
-            'notifications_route_actions_html($route, $user_id)',
+            'notifications_route_add_action_html($route, $user_id)',
             $source
         );
+        self::assertStringContainsString(
+            'notifications_route_delete_action_html($route, $user_id)',
+            $source
+        );
+    }
+
+    public function testRouteFormsUseApiDescriptionsAndEventTypeLinks(): void
+    {
+        $source = $this->notificationsFormsSource();
+        $routeNew = $this->sourceBetween(
+            $source,
+            'function notifications_route_new(',
+            'function notifications_route_subroutes('
+        );
+        $routeEdit = $this->sourceBetween(
+            $source,
+            'function notifications_route_edit(',
+            'function notifications_matcher_new('
+        );
+
+        foreach ([$routeNew, $routeEdit] as $form) {
+            self::assertStringContainsString('notifications_param_description_html', $form);
+            self::assertStringContainsString('notifications_event_types_reference_html', $form);
+            self::assertStringContainsString("\$input->continue", $form);
+            self::assertStringContainsString("\$input->event_type_pattern", $form);
+        }
+
+        self::assertStringContainsString('notifications_route_groupable_fields', $source);
+        self::assertStringContainsString("'groupable'", $source);
+        self::assertStringContainsString("'common'", $source);
+        self::assertStringContainsString('Fields available for this route', $source);
     }
 
     public function testNotificationGroupsAreBrowsableAndLinkToRelatedQueues(): void
@@ -345,7 +384,7 @@ final class NotificationRouteUiTest extends TestCase
         self::assertStringContainsString("_('Single-use route')", $routeEdit);
         self::assertStringContainsString("_('Hits')", $routeEdit);
         self::assertStringNotContainsString("_('Default route lifecycle')", $routeEdit);
-        self::assertStringContainsString("_('Hits')", $routesList);
+        self::assertStringContainsString("_('%d hits')", $routesList);
         self::assertStringNotContainsString('Hit count', $routesList);
     }
 
