@@ -393,16 +393,16 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
   }.merge(EVENT_TEMPLATE_ROUTE_MAP).freeze
 
   def up
-    migrate_template_recipients if table_exists?(:notification_template_email_recipients)
+    migrate_template_recipients
 
-    drop_table :notification_template_email_recipients, if_exists: true
-    drop_table :email_recipients, if_exists: true
-    drop_table :user_notification_template_recipients, if_exists: true
-    drop_table :user_email_role_recipients, if_exists: true
+    drop_table :notification_template_email_recipients
+    drop_table :email_recipients
+    drop_table :user_notification_template_recipients
+    drop_table :user_email_role_recipients
   end
 
   def down
-    create_table :email_recipients, id: { type: :integer, unsigned: true }, if_not_exists: true do |t|
+    create_table :email_recipients, id: { type: :integer, unsigned: true } do |t|
       t.string :label, limit: 100, null: false
       t.string :to, limit: 500
       t.string :cc, limit: 500
@@ -410,33 +410,28 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
     end
 
     create_table :notification_template_email_recipients,
-                 id: { type: :integer, unsigned: true },
-                 if_not_exists: true do |t|
+                 id: { type: :integer, unsigned: true } do |t|
       t.integer :notification_template_id, null: false
       t.integer :email_recipient_id, null: false
     end
     add_index :notification_template_email_recipients,
               %i[notification_template_id email_recipient_id],
               unique: true,
-              name: :notification_template_email_recipients_unique,
-              if_not_exists: true
+              name: :notification_template_email_recipients_unique
 
     create_table :user_email_role_recipients,
-                 id: { type: :integer, unsigned: true },
-                 if_not_exists: true do |t|
+                 id: { type: :integer, unsigned: true } do |t|
       t.integer :user_id, null: false
       t.string :role, limit: 100, null: false
       t.string :to, limit: 500
     end
     add_index :user_email_role_recipients, %i[user_id role],
               unique: true,
-              name: :index_user_email_role_recipients_on_user_id_and_role,
-              if_not_exists: true
-    add_index :user_email_role_recipients, :user_id, if_not_exists: true
+              name: :index_user_email_role_recipients_on_user_id_and_role
+    add_index :user_email_role_recipients, :user_id
 
     create_table :user_notification_template_recipients,
-                 id: { type: :integer, unsigned: true },
-                 if_not_exists: true do |t|
+                 id: { type: :integer, unsigned: true } do |t|
       t.integer :user_id, null: false
       t.integer :notification_template_id, null: false
       t.string :to, limit: 500
@@ -444,8 +439,7 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
     end
     add_index :user_notification_template_recipients, %i[user_id notification_template_id],
               unique: true,
-              name: :user_id_notification_template_id,
-              if_not_exists: true
+              name: :user_id_notification_template_id
   end
 
   protected

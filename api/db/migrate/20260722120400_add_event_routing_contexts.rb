@@ -45,9 +45,6 @@ class AddEventRoutingContexts < ActiveRecord::Migration[8.1]
   protected
 
   def backfill_existing_delivery_contexts
-    return unless table_exists?(:event_deliveries)
-    return unless table_exists?(:events)
-
     say_with_time('Creating routing contexts for existing event deliveries') do
       select_all(<<~SQL.squish).each do |row|
         SELECT
