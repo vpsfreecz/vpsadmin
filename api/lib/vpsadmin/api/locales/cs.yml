@@ -66,6 +66,9 @@ cs:
           webhook:
             label: Webhook
         label: Akce
+      actions:
+        description: Doručovací akce zastoupené streamy skupiny
+        label: Akce
       activate:
         label: Aktivovat účet
       active:
@@ -676,24 +679,20 @@ cs:
         label: Odhadovaný příjem
       event_at:
         label: Čas události
-      event_count:
-        label: Počet událostí
       event_created_at:
         label: Vytvoření události
       event_data:
         label: Data události
+      event_delivery_group:
+        label: Skupina notifikací
       event_delivery_group_id:
-        label: ID skupiny doručení
+        label: ID skupiny notifikací
       event_delivery_id:
         label: ID doručení události
       event_id:
         label: ID události
       event_key:
         label: Klíč události
-      event_route_id:
-        label: ID routy události
-      event_route_label:
-        label: Popisek routy události
       event_routing_context_id:
         label: ID routovacího kontextu události
       event_severity:
@@ -1341,22 +1340,23 @@ cs:
           current:
             label: Aktuální
         label: Stav systému
-      group_by:
-        label: Seskupovat podle
       group_event_ids:
         label: ID událostí ve skupině
-      group_interval_seconds:
-        label: Minimální interval skupiny (sekundy)
-      group_key:
-        label: Klíč skupiny
       group_labels:
         label: Hodnoty skupiny
+      group_membership:
+        choices:
+          all:
+            label: všechny
+          pending:
+            label: čekající
+        description: Při filtrování podle skupiny notifikací vybrat čekající události
+          nebo všechny historické členy
+        label: Členství ve skupině
       group_next_flush_at:
         label: Čas příštího odeslání skupiny
       group_truncated_count:
         label: Počet nezobrazených událostí
-      group_wait_seconds:
-        label: Počáteční čekání skupiny (sekundy)
       grouped_delivery:
         label: Seskupené doručení
       grouping_enabled:
@@ -1538,6 +1538,9 @@ cs:
         label: KVM
       label:
         label: Popisek
+      labels:
+        description: Hodnoty polí událostí, které tuto skupinu identifikují
+        label: Hodnoty skupiny
       last_activity_at:
         label: Poslední aktivita
       last_attempt_at:
@@ -1552,6 +1555,8 @@ cs:
         label: Poslední hlášení
       last_request_at:
         label: Poslední požadavek
+      last_sealed_at:
+        label: Poslední notifikace
       last_seen_at:
         label: Naposledy viděno
       last_transfer_at:
@@ -1805,6 +1810,8 @@ cs:
         label: Nová kvóta datasetu (refquota)
       next_attempt_at:
         label: Další pokus
+      next_flush_at:
+        label: Příští notifikace
       no_start:
         description: Nespouštět VPS na cílovém nodu
         label: Nespouštět
@@ -1849,10 +1856,6 @@ cs:
         label: Zobrazený cíl akce receiveru
       notification_receiver_action_label:
         label: Popisek akce receiveru
-      notification_receiver_id:
-        label: ID receiveru notifikací
-      notification_receiver_label:
-        label: Popisek receiveru notifikací
       notification_receiver_target_id:
         label: ID cíle receiveru notifikací
       notification_target_display_target:
@@ -2004,6 +2007,8 @@ cs:
           secondary_type:
             label: sekundární
         label: Typ protistrany
+      pending_event_count:
+        label: Čekající události
       period:
         choices:
           day:
@@ -2286,10 +2291,8 @@ cs:
         description: Mapovat požadavky z uid/gid 0 na anonymní uid/gid. Toto se nevztahuje
           na jiná uid nebo gid, která mohou být stejně citlivá.
         label: Root squash
-      route_owner_id:
-        label: ID vlastníka routy
-      route_owner_login:
-        label: Login vlastníka routy
+      route_owner:
+        label: Vlastník routy
       route_reference_count:
         label: Reference rout
       route_via:
@@ -2530,6 +2533,8 @@ cs:
             label: součást seskupeného doručení
           grouping:
             label: čeká na seskupení
+          idle:
+            label: nečinná
           ignored:
             label: ignorováno
           inactive:
@@ -2544,6 +2549,8 @@ cs:
             label: online
           open:
             label: otevřeno
+          overdue:
+            label: po termínu
           pending_correction:
             label: čeká na opravu
           prepared:
@@ -2584,11 +2591,19 @@ cs:
             label: bez shody
           vulnerable:
             label: zranitelné
+          waiting:
+            label: čeká
         label: Stav
       state_group:
         choices:
+          idle:
+            label: nečinné
           log:
             label: log
+          open:
+            label: otevřené
+          overdue:
+            label: po termínu
           queue:
             label: fronta
         label: Skupina stavů
@@ -2610,6 +2625,8 @@ cs:
         description: Vypnout VPS, pokud se extra místo používá příliš dlouho nebo
           proběhlo příliš mnoho rozšíření
         label: Vypnout VPS
+      stream_count:
+        label: Doručovací streamy
       subject:
         label: Předmět
       subject_relation:
@@ -4396,10 +4413,16 @@ cs:
         attributes:
           created_at:
             label: Vytvořeno
+          event_delivery_group:
+            description: Zobrazit události patřící do této skupiny notifikací
+          event_route_id:
+            label: ID routy události
           id:
             label: ID
           ip_addr:
             label: IP adresa
+          notification_receiver_id:
+            label: ID receiveru notifikací
           subject_scope:
             choices:
               self:
@@ -4425,32 +4448,113 @@ cs:
           attributes:
             created_at:
               label: Vytvořeno
+            event_count:
+              label: Počet událostí
+            event_route_id:
+              label: ID routy události
+            event_route_label:
+              label: Popisek routy události
+            group_key:
+              label: Klíč skupiny
             id:
               label: ID
+            notification_receiver_id:
+              label: ID receiveru notifikací
+            notification_receiver_label:
+              label: Popisek receiveru notifikací
             updated_at:
               label: Aktualizováno
         route_match:
           attributes:
             created_at:
               label: Vytvořeno
+            event_route_id:
+              label: ID routy události
+            event_route_label:
+              label: Popisek routy události
             id:
               label: ID
+            route_owner_id:
+              label: ID vlastníka routy
+            route_owner_login:
+              label: Přezdívka vlastníka routy
             updated_at:
               label: Aktualizováno
       event_delivery:
         attributes:
           created_at:
             label: Vytvořeno
+          event_count:
+            label: Počet událostí
+          event_delivery_group:
+            description: Zobrazit doručení patřící do této skupiny notifikací
+          event_route_id:
+            label: ID routy události
+          event_route_label:
+            label: Popisek routy události
+          group_key:
+            label: Klíč skupiny
           id:
             label: ID
+          notification_receiver_id:
+            label: ID receiveru notifikací
+          notification_receiver_label:
+            label: Popisek receiveru notifikací
           updated_at:
             label: Aktualizováno
+      event_delivery_group:
+        attributes:
+          created_at:
+            label: Vytvořeno
+          event_count:
+            label: Všechny události
+          event_route_label:
+            label: Routa
+          group_by:
+            label: Seskupit podle polí
+          group_interval_seconds:
+            label: Interval opakování
+          group_key:
+            label: Klíč skupiny
+          group_wait_seconds:
+            label: Počáteční čekání
+          id:
+            label: ID
+          notification_receiver_label:
+            label: Receiver
+          route_owner_id:
+            label: ID vlastníka
+          route_owner_login:
+            label: Vlastník
+          state:
+            description: Čeká na termín zpracování, je po termínu nebo je nečinná
+              bez čekajících událostí
+          updated_at:
+            label: Aktualizováno
+        input:
+          event_route_id:
+            label: ID routy události
+          notification_receiver_id:
+            label: ID receiveru notifikací
+        output:
+          event_route_id:
+            label: ID routy
+          notification_receiver_id:
+            label: ID receiveru
       event_route:
         attributes:
           created_at:
             label: Vytvořeno
+          group_by:
+            label: Seskupit podle polí
+          group_interval_seconds:
+            label: Interval opakování
+          group_wait_seconds:
+            label: Počáteční čekání
           id:
             label: ID
+          notification_receiver_id:
+            label: Receiver
           subject_scope:
             choices:
               self:
@@ -5391,6 +5495,8 @@ cs:
           name:
             description: Pouze pro interní použití
             label: Název
+          notification_receiver_id:
+            label: ID receiveru notifikací
           size:
             description: Počet transakcí v řetězci
           updated_at:

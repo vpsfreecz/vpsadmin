@@ -66,6 +66,9 @@ en:
           webhook:
             label: Webhook
         label: Action
+      actions:
+        description: Delivery actions represented by the group streams
+        label: Actions
       activate:
         label: Activate account
       active:
@@ -676,12 +679,12 @@ en:
         label: Estimated_income
       event_at:
         label: Event_at
-      event_count:
-        label: Event_count
       event_created_at:
         label: Event_created_at
       event_data:
         label: Event_data
+      event_delivery_group:
+        label: Notification group
       event_delivery_group_id:
         label: Event_delivery_group_id
       event_delivery_id:
@@ -690,10 +693,6 @@ en:
         label: Event_id
       event_key:
         label: Event_key
-      event_route_id:
-        label: Event_route_id
-      event_route_label:
-        label: Event_route_label
       event_routing_context_id:
         label: Event_routing_context_id
       event_severity:
@@ -1342,22 +1341,23 @@ en:
           current:
             label: current
         label: Generation
-      group_by:
-        label: Group_by
       group_event_ids:
         label: Group_event_ids
-      group_interval_seconds:
-        label: Group_interval_seconds
-      group_key:
-        label: Group_key
       group_labels:
         label: Group_labels
+      group_membership:
+        choices:
+          all:
+            label: all
+          pending:
+            label: pending
+        description: With a notification group, select pending events or all historical
+          members
+        label: Group membership
       group_next_flush_at:
         label: Group_next_flush_at
       group_truncated_count:
         label: Group_truncated_count
-      group_wait_seconds:
-        label: Group_wait_seconds
       grouped_delivery:
         label: Grouped_delivery
       grouping_enabled:
@@ -1540,6 +1540,9 @@ en:
         label: KVM
       label:
         label: Label
+      labels:
+        description: Event field values that identify this group
+        label: Labels
       last_activity_at:
         label: Last activity
       last_attempt_at:
@@ -1554,6 +1557,8 @@ en:
         label: Last report
       last_request_at:
         label: Last request at
+      last_sealed_at:
+        label: Last notification
       last_seen_at:
         label: Last_seen_at
       last_transfer_at:
@@ -1810,6 +1815,8 @@ en:
         label: New refquota
       next_attempt_at:
         label: Next_attempt_at
+      next_flush_at:
+        label: Next notification
       no_start:
         description: Do not start the VPS on the target node
         label: No start
@@ -1854,10 +1861,6 @@ en:
         label: Receiver target display target
       notification_receiver_action_label:
         label: Receiver target label
-      notification_receiver_id:
-        label: Notification_receiver_id
-      notification_receiver_label:
-        label: Notification_receiver_label
       notification_receiver_target_id:
         label: Notification_receiver_target_id
       notification_target_display_target:
@@ -2009,6 +2012,8 @@ en:
           secondary_type:
             label: secondary_type
         label: Peer_type
+      pending_event_count:
+        label: Pending events
       period:
         choices:
           day:
@@ -2291,10 +2296,8 @@ en:
         description: Map requests from uid/gid 0 to the anonymous uid/gid. Note that
           this does not apply to any other uids or gids that might be equally sensitive.
         label: Root squash
-      route_owner_id:
-        label: Route_owner_id
-      route_owner_login:
-        label: Route_owner_login
+      route_owner:
+        label: Route_owner
       route_reference_count:
         label: Route_reference_count
       route_via:
@@ -2535,6 +2538,8 @@ en:
             label: included in grouped delivery
           grouping:
             label: waiting for group
+          idle:
+            label: idle
           ignored:
             label: ignored
           inactive:
@@ -2549,6 +2554,8 @@ en:
             label: online
           open:
             label: open
+          overdue:
+            label: overdue
           pending_correction:
             label: pending_correction
           prepared:
@@ -2589,11 +2596,19 @@ en:
             label: unmatched
           vulnerable:
             label: vulnerable
+          waiting:
+            label: waiting
         label: State
       state_group:
         choices:
+          idle:
+            label: idle
           log:
             label: log
+          open:
+            label: open
+          overdue:
+            label: overdue
           queue:
             label: queue
         label: State_group
@@ -2615,6 +2630,8 @@ en:
         description: Shut down the VPS after extra space is used too long or there
           are too many expansions
         label: Shutdown VPS
+      stream_count:
+        label: Delivery streams
       subject:
         label: Subject
       subject_relation:
@@ -4400,10 +4417,16 @@ en:
         attributes:
           created_at:
             label: Created_at
+          event_delivery_group:
+            description: Show events that belong to this notification group
+          event_route_id:
+            label: Event_route_id
           id:
             label: Id
           ip_addr:
             label: Ip_addr
+          notification_receiver_id:
+            label: Notification_receiver_id
           subject_scope:
             choices:
               self:
@@ -4429,32 +4452,113 @@ en:
           attributes:
             created_at:
               label: Created_at
+            event_count:
+              label: Event_count
+            event_route_id:
+              label: Event_route_id
+            event_route_label:
+              label: Event_route_label
+            group_key:
+              label: Group_key
             id:
               label: Id
+            notification_receiver_id:
+              label: Notification_receiver_id
+            notification_receiver_label:
+              label: Notification_receiver_label
             updated_at:
               label: Updated_at
         route_match:
           attributes:
             created_at:
               label: Created_at
+            event_route_id:
+              label: Event_route_id
+            event_route_label:
+              label: Event_route_label
             id:
               label: Id
+            route_owner_id:
+              label: Route_owner_id
+            route_owner_login:
+              label: Route_owner_login
             updated_at:
               label: Updated_at
       event_delivery:
         attributes:
           created_at:
             label: Created_at
+          event_count:
+            label: Event_count
+          event_delivery_group:
+            description: Show deliveries that belong to this notification group
+          event_route_id:
+            label: Event_route_id
+          event_route_label:
+            label: Event_route_label
+          group_key:
+            label: Group_key
           id:
             label: Id
+          notification_receiver_id:
+            label: Notification_receiver_id
+          notification_receiver_label:
+            label: Notification_receiver_label
           updated_at:
             label: Updated_at
+      event_delivery_group:
+        attributes:
+          created_at:
+            label: Created_at
+          event_count:
+            label: All events
+          event_route_label:
+            label: Route
+          group_by:
+            label: Group by fields
+          group_interval_seconds:
+            label: Repeat interval
+          group_key:
+            label: Group key
+          group_wait_seconds:
+            label: Initial wait
+          id:
+            label: Id
+          notification_receiver_label:
+            label: Receiver
+          route_owner_id:
+            label: Owner ID
+          route_owner_login:
+            label: Owner
+          state:
+            description: Waiting for its deadline, overdue for processing, or idle
+              with no pending events
+          updated_at:
+            label: Updated_at
+        input:
+          event_route_id:
+            label: Event_route_id
+          notification_receiver_id:
+            label: Notification_receiver_id
+        output:
+          event_route_id:
+            label: Route ID
+          notification_receiver_id:
+            label: Receiver ID
       event_route:
         attributes:
           created_at:
             label: Created_at
+          group_by:
+            label: Group_by
+          group_interval_seconds:
+            label: Group_interval_seconds
+          group_wait_seconds:
+            label: Group_wait_seconds
           id:
             label: Id
+          notification_receiver_id:
+            label: Notification_receiver_id
           subject_scope:
             choices:
               self:
@@ -5393,6 +5497,8 @@ en:
           name:
             description: For internal use only
             label: Name
+          notification_receiver_id:
+            label: Notification_receiver_id
           size:
             description: Number of transactions in the chain
           updated_at:

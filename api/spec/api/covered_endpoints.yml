@@ -127,6 +127,8 @@ covered:
 - event.route_match#index
 - event.route_match#show
 - event_delivery#index
+- event_delivery_group#index
+- event_delivery_group#show
 - event_type#index
 - event_route#create
 - event_route#delete
