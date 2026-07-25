@@ -22,9 +22,6 @@ class AddUserNotificationDeliveryMethods < ActiveRecord::Migration[8.1]
   protected
 
   def backfill_disabled_email_delivery_methods
-    return unless table_exists?(:users)
-    return unless column_exists?(:users, :mailer_enabled)
-
     execute <<~SQL.squish
       INSERT INTO user_notification_delivery_methods
         (user_id, delivery_method, enabled, created_at, updated_at)

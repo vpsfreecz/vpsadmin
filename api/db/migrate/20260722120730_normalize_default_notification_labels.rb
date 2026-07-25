@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class NormalizeDefaultNotificationLabels < ActiveRecord::Migration[8.1]
   DEFAULT_EMAIL_LABEL = 'Default'
   LEGACY_DEFAULT_EMAIL_LABEL = 'Default e-mail'

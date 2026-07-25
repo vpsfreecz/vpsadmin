@@ -2,7 +2,7 @@
 
 require_relative '../migration_helper'
 
-MigrationSpecSupport.require_migration('20260628140000_normalize_default_notification_labels')
+MigrationSpecSupport.require_migration('20260722120730_normalize_default_notification_labels')
 
 RSpec.describe NormalizeDefaultNotificationLabels do
   def define_legacy_schema

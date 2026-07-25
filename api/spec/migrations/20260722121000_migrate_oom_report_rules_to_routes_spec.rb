@@ -72,6 +72,11 @@ RSpec.describe MigrateOomReportRulesToRoutes do
         t.text :value, null: false
         t.timestamps null: false
       end
+
+      create_table :event_route_time_intervals do |t|
+        t.references :event_route, null: false
+        t.bigint :event_time_interval_id, null: false
+      end
     end
   end
 
