@@ -196,6 +196,7 @@ final class NotificationRouteUiTest extends TestCase
         self::assertStringContainsString('action=delivery_queue&event_delivery_group_id=', $groups);
         self::assertStringContainsString('action=delivery_log&event_delivery_group_id=', $groups);
         self::assertStringContainsString("_('Notification groups')", $source);
+        self::assertStringContainsString("'notifications.groups'", $source);
     }
 
     public function testEventLogFiltersAllowEmptySeverityAndRoutingState(): void
