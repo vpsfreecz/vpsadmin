@@ -284,10 +284,10 @@ let
     "phpunit/phpunit" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "phpunit-phpunit-8f5180f4627fc1978be2f61d8d9979dbe37e0c10";
+        name = "phpunit-phpunit-2beef9f448c9e04914a273c89ff6d039f8b97bc8";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/8f5180f4627fc1978be2f61d8d9979dbe37e0c10";
-          sha256 = "0lknhqs8k8inzvj581sbvp7yy9dfp728d1bacqmvfwkv5fdr7crk";
+          url = "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/2beef9f448c9e04914a273c89ff6d039f8b97bc8";
+          sha256 = "0b1gzam18amvrkzaq2ilwc3572syabcajzbh4l293znbqnbnky4m";
         };
       };
     };
