@@ -152,6 +152,7 @@ RSpec.describe EventRoute do
     expect(delivery.target_label).to eq('Default recipient')
     expect(delivery.template_name).to eq('vps_incident_report')
     expect(delivery.reload).to be_released_state
+    expect(SpecSeed.user.event_routes.where(event_type: 'vps.oom_report')).to be_empty
   end
 
   it 'normalizes legacy default e-mail receiver and target labels' do
