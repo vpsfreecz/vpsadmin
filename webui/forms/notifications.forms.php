@@ -2354,8 +2354,8 @@ function notifications_routes_list($user_id = null)
     $xtpl->table_add_category(_('Conditions'));
     $xtpl->table_add_category(_('Receiver'));
     $xtpl->table_add_category(_('Behavior'));
-    $xtpl->table_add_category(_('Add subroute'));
-    $xtpl->table_add_category(_('Delete'));
+    $xtpl->table_add_category('');
+    $xtpl->table_add_category('');
 
     foreach (notifications_ordered_routes($routes) as $row) {
         [$route, $depth] = $row;
@@ -2509,8 +2509,8 @@ function notifications_route_subroutes($route)
     $xtpl->table_add_category(_('Conditions'));
     $xtpl->table_add_category(_('Receiver'));
     $xtpl->table_add_category(_('Behavior'));
-    $xtpl->table_add_category(_('Add subroute'));
-    $xtpl->table_add_category(_('Delete'));
+    $xtpl->table_add_category('');
+    $xtpl->table_add_category('');
 
     foreach ($children as $row) {
         [$child, $depth] = $row;
