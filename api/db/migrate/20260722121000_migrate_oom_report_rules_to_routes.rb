@@ -17,7 +17,7 @@ class MigrateOomReportRulesToRoutes < ActiveRecord::Migration[8.1]
       end
 
       defaults = default_admin_routes
-      validate_default_routes!(rules, defaults)
+      validate_default_routes!(defaults)
       recipients = effective_oom_receiver_ids(defaults)
       implicit_hits = implicit_hit_counts
       ignored_receivers = create_ignored_receivers(rules)
@@ -109,9 +109,9 @@ class MigrateOomReportRulesToRoutes < ActiveRecord::Migration[8.1]
     end
   end
 
-  def validate_default_routes!(rules, defaults)
-    rule_users = rules.map { |rule| rule.fetch('user_id').to_i }.uniq
-    missing = rule_users.reject { |user_id| defaults.has_key?(user_id) }
+  def validate_default_routes!(defaults)
+    user_ids = select_values('SELECT id FROM users ORDER BY id').map(&:to_i)
+    missing = user_ids.reject { |user_id| defaults.has_key?(user_id) }
     missing.concat(defaults.select { |_, receiver_id| receiver_id.nil? }.keys)
     missing.uniq!
     return if missing.empty?

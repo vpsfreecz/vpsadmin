@@ -340,6 +340,27 @@ RSpec.describe MigrateOomReportRulesToRoutes do
     expect(row_count(:event_route_matchers)).to eq(202)
   end
 
+  it 'creates a grouped catch-all route for an existing user without rules' do
+    define_legacy_schema
+    user = create_user_with_defaults('without-rules')
+
+    migrate_up!
+
+    route = find_row(
+      :event_routes,
+      user_id: user.fetch(:user_id),
+      event_type: 'vps.oom_report'
+    )
+    expect(route.fetch('label')).to eq('OOM report notifications')
+    expect(route.fetch('notification_receiver_id').to_i).to eq(user.fetch(:receiver_id))
+    expect(route.fetch('position').to_i).to eq(0)
+    expect(boolish(route.fetch('grouping_enabled'))).to be(true)
+    expect(JSON.parse(route.fetch('group_by'))).to eq(['vps_id'])
+    expect(route.fetch('group_wait_seconds').to_i).to eq(60)
+    expect(route.fetch('group_interval_seconds').to_i).to eq(10_800)
+    expect(row_count(:event_route_matchers, event_route_id: route.fetch('id'))).to eq(0)
+  end
+
   it 'keeps the legacy schema when a source rule cannot be converted' do
     define_legacy_schema
     user_id = insert_row(:users, login: 'missing-default')
@@ -350,6 +371,18 @@ RSpec.describe MigrateOomReportRulesToRoutes do
       pattern: '/user.slice/*',
       hit_count: 1
     )
+
+    expect { migrate_up! }
+      .to raise_error(ActiveRecord::MigrationError, /default admin receiver missing/)
+
+    expect(table_exists?(:oom_report_rules)).to be(true)
+    expect(column_exists?(:oom_reports, :oom_report_rule_id)).to be(true)
+    expect(column_exists?(:vpses, :implicit_oom_report_rule_hit_count)).to be(true)
+  end
+
+  it 'refuses to skip an existing user without a default administrator route' do
+    define_legacy_schema
+    insert_row(:users, login: 'without-defaults')
 
     expect { migrate_up! }
       .to raise_error(ActiveRecord::MigrationError, /default admin receiver missing/)
