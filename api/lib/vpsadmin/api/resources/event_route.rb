@@ -32,6 +32,7 @@ module VpsAdmin::API::Resources
       datetime :spent_at, nullable: true
       datetime :expires_at, nullable: true
       string :matcher_summary
+      integer :matcher_count, label: 'Matcher count'
       string :display_label
     end
 

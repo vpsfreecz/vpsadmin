@@ -795,7 +795,9 @@ function notifications_route_labels($routes)
 
 function notifications_route_tree_label_html($route, $depth, $route_labels = [])
 {
-    $label = h(notifications_route_label_text($route));
+    $url = '?page=notifications&action=route_edit&id=' . $route->id
+        . notifications_user_qs($route->user_id);
+    $label = '<a href="' . $url . '">' . h(notifications_route_label_text($route)) . '</a>';
 
     if ($depth <= 0) {
         return $label;
@@ -1176,15 +1178,6 @@ function notifications_nullable_id($name)
 
 function notifications_route_params($create = false)
 {
-    $grouping_enabled = isset($_POST['grouping_enabled']);
-    $group_by = [];
-    foreach (explode(',', (string) api_post('group_by', '')) as $field) {
-        $field = trim($field);
-        if ($field !== '' && !in_array($field, $group_by, true)) {
-            $group_by[] = $field;
-        }
-    }
-
     $params = [
         'parent_id' => notifications_nullable_id('parent_id'),
         'notification_receiver_id' => notifications_nullable_id('notification_receiver_id'),
@@ -1192,10 +1185,6 @@ function notifications_route_params($create = false)
         'enabled' => isset($_POST['enabled']),
         'event_type' => api_post('event_type'),
         'event_type_pattern' => api_post('event_type_pattern'),
-        'grouping_enabled' => $grouping_enabled,
-        'group_by' => $grouping_enabled ? $group_by : [],
-        'group_wait_seconds' => $grouping_enabled ? api_post_uint('group_wait_seconds') : null,
-        'group_interval_seconds' => $grouping_enabled ? api_post_uint('group_interval_seconds') : null,
         'continue' => isset($_POST['continue']),
     ];
     $subject_scope = api_post('subject_scope');
@@ -1221,6 +1210,25 @@ function notifications_route_params($create = false)
     }
 
     return $params;
+}
+
+function notifications_route_grouping_params()
+{
+    $grouping_enabled = isset($_POST['grouping_enabled']);
+    $group_by = [];
+    foreach (explode(',', (string) api_post('group_by', '')) as $field) {
+        $field = trim($field);
+        if ($field !== '' && !in_array($field, $group_by, true)) {
+            $group_by[] = $field;
+        }
+    }
+
+    return [
+        'grouping_enabled' => $grouping_enabled,
+        'group_by' => $grouping_enabled ? $group_by : [],
+        'group_wait_seconds' => $grouping_enabled ? api_post_uint('group_wait_seconds') : null,
+        'group_interval_seconds' => $grouping_enabled ? api_post_uint('group_interval_seconds') : null,
+    ];
 }
 
 function notifications_receiver_params($create = false)
@@ -1449,6 +1457,53 @@ function notifications_route_grouping_html($route)
             notifications_prop($route, 'group_wait_seconds', 0),
             notifications_prop($route, 'group_interval_seconds', 0)
         ));
+}
+
+function notifications_route_conditions_html($route)
+{
+    $count = notifications_prop($route, 'matcher_count', 0);
+    $summary = $route->matcher_summary ?: _('All events');
+
+    return h(notifications_subject_scope_label($route->subject_scope))
+        . '<br><span title="' . h($summary) . '">'
+        . h(sprintf(_('%d matchers'), $count))
+        . '</span>';
+}
+
+function notifications_route_behavior_html($route, $enabled_link = null)
+{
+    $enabled = $route->enabled ? _('Enabled') : _('Disabled');
+    if ($enabled_link !== null) {
+        $enabled = '<a href="' . $enabled_link . '" title="'
+            . h($route->enabled ? _('Disable route') : _('Enable route')) . '">'
+            . h($enabled) . '</a>';
+    } else {
+        $enabled = h($enabled);
+    }
+
+    $lines = [$enabled];
+    if ($route->continue) {
+        $lines[] = h(_('Continue'));
+    }
+    if (notifications_prop($route, 'grouping_enabled', false)) {
+        $lines[] = '<span title="' . h(strip_tags(notifications_route_grouping_html($route))) . '">'
+            . h(_('Grouped')) . '</span>';
+    }
+
+    return implode('<br>', $lines);
+}
+
+function notifications_route_actions_html($route, $user_id)
+{
+    $delete_link = '?page=notifications&action=route_delete&id=' . $route->id
+        . notifications_user_qs($user_id) . '&t=' . csrf_token();
+
+    return '<span style="white-space:nowrap;">'
+        . notifications_route_add_link($user_id, $route->id)
+        . ' <a href="' . $delete_link . '"'
+        . notifications_confirm_onclick(_('Do you really wish to delete this notification route?'))
+        . '><img src="template/icons/vps_delete.png" title="' . h(_('Delete')) . '"></a>'
+        . '</span>';
 }
 
 function notifications_receiver_options($user_id, $empty = true)
@@ -2209,20 +2264,13 @@ function notifications_routes_list($user_id = null)
     }
 
     $xtpl->table_title(_('Routes') . ': ' . h($user->login), 'notifications.routes');
-    $xtpl->table_add_category('');
-    $xtpl->table_add_category(_('Label'));
-    $xtpl->table_add_category(_('Events'));
-    $xtpl->table_add_category(_('Scope'));
+    $xtpl->table_add_category(_('Order'));
+    $xtpl->table_add_category(_('Route'));
+    $xtpl->table_add_category(_('Conditions'));
     $xtpl->table_add_category(_('Receiver'));
-    $xtpl->table_add_category(_('Matchers'));
-    $xtpl->table_add_category(_('Grouping'));
+    $xtpl->table_add_category(_('Behavior'));
     $xtpl->table_add_category(_('Hits'));
-    $xtpl->table_add_category(_('Enabled'));
-    $xtpl->table_add_category(_('Continue'));
-    $xtpl->table_add_category('');
-    $xtpl->table_add_category('');
-    $xtpl->table_add_category('');
-    $xtpl->table_add_category('');
+    $xtpl->table_add_category(_('Actions'));
 
     foreach (notifications_ordered_routes($routes) as $row) {
         [$route, $depth] = $row;
@@ -2230,44 +2278,36 @@ function notifications_routes_list($user_id = null)
         [$is_first, $is_last] = $sibling_positions[$route->id] ?? [true, true];
         $enabled_link = '?page=notifications&action=route_toggle&id=' . $route->id
             . notifications_user_qs($user_id) . '&t=' . csrf_token();
-        $delete_link = '?page=notifications&action=route_delete&id=' . $route->id
-            . notifications_user_qs($user_id) . '&t=' . csrf_token();
-        $label = notifications_route_tree_label_html($route, $depth, $route_labels);
+        $route_html = notifications_route_tree_label_html($route, $depth, $route_labels)
+            . '<br><span style="color:#666;font-size:90%;">'
+            . notifications_route_type_html($route, $event_type_labels) . '</span>';
 
-        $xtpl->table_td(notifications_drag_handle_html(), false, true);
-        $xtpl->table_td($label, false, true);
-        $xtpl->table_td(notifications_route_type_html($route, $event_type_labels));
-        $xtpl->table_td(h(notifications_subject_scope_label($route->subject_scope)));
+        $xtpl->table_td(
+            '<span style="white-space:nowrap;">' . notifications_drag_handle_html() . ' '
+            . notifications_route_move_links($route, $user_id, $is_first, $is_last) . '</span>',
+            false,
+            true
+        );
+        $xtpl->table_td($route_html, false, true);
+        $xtpl->table_td(notifications_route_conditions_html($route), false, true);
         $xtpl->table_td(notifications_route_receiver_html($route, $receiver_labels));
-        $xtpl->table_td($route->matcher_summary ? h($route->matcher_summary) : '<code>*</code>');
-        $xtpl->table_td(notifications_route_grouping_html($route), false, true);
+        $xtpl->table_td(notifications_route_behavior_html($route, $enabled_link), false, true);
         $xtpl->table_td(
             '<a href="?page=notifications&action=events&user=' . $user_id
             . '&event_route_id=' . $route->id . '">' . $route->hit_count . '</a>',
             false,
             true
         );
-        $xtpl->table_td(
-            '<a href="' . $enabled_link . '" title="' . ($route->enabled ? _('Disable route') : _('Enable route')) . '">'
-            . boolean_icon($route->enabled) . '</a>'
-        );
-        $xtpl->table_td(boolean_icon($route->continue));
-        $xtpl->table_td(notifications_route_move_links($route, $user_id, $is_first, $is_last));
-        $xtpl->table_td(notifications_route_add_link($user_id, $route->id), false, true);
-        $xtpl->table_td('<a href="?page=notifications&action=route_edit&id=' . $route->id . notifications_user_qs($user_id) . '"><img src="template/icons/vps_edit.png" title="' . _('Edit') . '"></a>');
-        $xtpl->table_td(
-            '<a href="' . $delete_link . '"' . notifications_confirm_onclick(_('Do you really wish to delete this notification route?')) . '>'
-            . '<img src="template/icons/vps_delete.png" title="' . _('Delete') . '"></a>'
-        );
+        $xtpl->table_td(notifications_route_actions_html($route, $user_id), false, true);
         $xtpl->table_tr($row_color, false, false, notifications_route_row_id($route));
     }
 
     if (!$routes) {
-        $xtpl->table_td(_('No routes configured.'), false, false, 14);
+        $xtpl->table_td(_('No routes configured.'), false, false, 7);
         $xtpl->table_tr(false, 'nodrag nodrop', 'nodrag nodrop');
     }
 
-    $xtpl->table_td(notifications_route_add_link($user_id, null, _('Add route')), false, true, 14);
+    $xtpl->table_td(notifications_route_add_link($user_id, null, _('Add route')), false, true, 7);
     $xtpl->table_tr(false, 'nodrag nodrop', 'nodrag nodrop');
 
     $xtpl->table_out('notification-routes-table');
@@ -2311,41 +2351,6 @@ function notifications_route_new($user_id = null, $parent_id = null)
     $xtpl->form_add_input(_('Event type pattern') . ':', 'text', '40', 'event_type_pattern', post_val('event_type_pattern'));
     $xtpl->form_add_select(_('Scope') . ':', 'subject_scope', $subject_scope_options, post_val('subject_scope', 'self'));
     $xtpl->form_add_select(_('Receiver') . ':', 'notification_receiver_id', $receiver_options, post_val('notification_receiver_id', ''));
-    $xtpl->form_add_checkbox(
-        _('Group notifications') . ':',
-        'grouping_enabled',
-        '1',
-        post_val('grouping_enabled', false)
-    );
-    $xtpl->form_add_input(
-        _('Group by fields') . ':',
-        'text',
-        '40',
-        'group_by',
-        post_val('group_by')
-    );
-    $xtpl->form_add_input(
-        _('Initial wait (seconds)') . ':',
-        'text',
-        '10',
-        'group_wait_seconds',
-        post_val('group_wait_seconds', '30')
-    );
-    $xtpl->form_add_input(
-        _('Minimum group interval (seconds)') . ':',
-        'text',
-        '10',
-        'group_interval_seconds',
-        post_val('group_interval_seconds', '300')
-    );
-    $xtpl->table_td('', false, false, 1);
-    $xtpl->table_td(
-        h(_('Grouping applies only to this route and is not inherited. Enter comma-separated event fields, or leave the field list empty to group all matching events. Muted and skipped events are excluded.')),
-        false,
-        false,
-        1
-    );
-    $xtpl->table_tr();
     $xtpl->form_add_checkbox(_('Enabled') . ':', 'enabled', '1', post_val('enabled', true));
     $xtpl->form_add_checkbox(_('Continue') . ':', 'continue', '1', post_val('continue', false));
     $xtpl->form_out(_('Add'));
@@ -2363,41 +2368,54 @@ function notifications_route_subroutes($route)
     $event_type_labels = notifications_event_type_labels(false);
     $receiver_labels = notifications_receiver_labels($route->user_id);
     $route_labels = notifications_route_labels($routes);
+    $sibling_positions = notifications_sibling_positions($routes);
 
     $xtpl->table_title(_('Subroutes'));
-    $xtpl->table_add_category(_('Label'));
-    $xtpl->table_add_category(_('Events'));
-    $xtpl->table_add_category(_('Scope'));
+    $xtpl->table_add_category(_('Order'));
+    $xtpl->table_add_category(_('Route'));
+    $xtpl->table_add_category(_('Conditions'));
     $xtpl->table_add_category(_('Receiver'));
-    $xtpl->table_add_category(_('Matchers'));
-    $xtpl->table_add_category(_('Grouping'));
-    $xtpl->table_add_category(_('Enabled'));
-    $xtpl->table_add_category(_('Continue'));
-    $xtpl->table_add_category('');
-    $xtpl->table_add_category('');
+    $xtpl->table_add_category(_('Behavior'));
+    $xtpl->table_add_category(_('Hits'));
+    $xtpl->table_add_category(_('Actions'));
 
     foreach ($children as $row) {
         [$child, $depth] = $row;
+        [$is_first, $is_last] = $sibling_positions[$child->id] ?? [true, true];
+        $route_html = notifications_route_tree_label_html($child, $depth, $route_labels)
+            . '<br><span style="color:#666;font-size:90%;">'
+            . notifications_route_type_html($child, $event_type_labels) . '</span>';
 
-        $xtpl->table_td(notifications_route_tree_label_html($child, $depth, $route_labels), false, true);
-        $xtpl->table_td(notifications_route_type_html($child, $event_type_labels));
-        $xtpl->table_td(h(notifications_subject_scope_label($child->subject_scope)));
+        $xtpl->table_td(
+            notifications_route_move_links(
+                $child,
+                $route->user_id,
+                $is_first,
+                $is_last
+            ),
+            false,
+            true
+        );
+        $xtpl->table_td($route_html, false, true);
+        $xtpl->table_td(notifications_route_conditions_html($child), false, true);
         $xtpl->table_td(notifications_route_receiver_html($child, $receiver_labels));
-        $xtpl->table_td($child->matcher_summary ? h($child->matcher_summary) : '<code>*</code>');
-        $xtpl->table_td(notifications_route_grouping_html($child), false, true);
-        $xtpl->table_td(boolean_icon($child->enabled));
-        $xtpl->table_td(boolean_icon($child->continue));
-        $xtpl->table_td(notifications_route_add_link($route->user_id, $child->id), false, true);
-        $xtpl->table_td('<a href="?page=notifications&action=route_edit&id=' . $child->id . notifications_user_qs($route->user_id) . '"><img src="template/icons/vps_edit.png" title="' . _('Edit') . '"></a>');
+        $xtpl->table_td(notifications_route_behavior_html($child), false, true);
+        $xtpl->table_td(
+            '<a href="?page=notifications&action=events&user=' . $route->user_id
+            . '&event_route_id=' . $child->id . '">' . $child->hit_count . '</a>',
+            false,
+            true
+        );
+        $xtpl->table_td(notifications_route_actions_html($child, $route->user_id), false, true);
         $xtpl->table_tr($child->enabled ? false : '#A6A6A6');
     }
 
     if (!$children) {
-        $xtpl->table_td(_('No subroutes configured.'), false, false, 10);
+        $xtpl->table_td(_('No subroutes configured.'), false, false, 7);
         $xtpl->table_tr();
     }
 
-    $xtpl->table_td(notifications_route_add_link($route->user_id, $route->id, _('Add subroute')), false, true, 10);
+    $xtpl->table_td(notifications_route_add_link($route->user_id, $route->id, _('Add subroute')), false, true, 7);
     $xtpl->table_tr(false, 'nodrag nodrop', 'nodrag nodrop');
     $xtpl->table_out();
 }
@@ -2433,6 +2451,17 @@ function notifications_route_edit($route_id)
     api_param_to_form('event_type_pattern', $input->event_type_pattern, post_val('event_type_pattern', $route->event_type_pattern));
     $xtpl->form_add_select(_('Scope') . ':', 'subject_scope', $subject_scope_options, post_val('subject_scope', $route->subject_scope));
     $xtpl->form_add_select(_('Receiver') . ':', 'notification_receiver_id', $receiver_options, post_val('notification_receiver_id', $route->notification_receiver_id));
+    api_param_to_form('enabled', $input->enabled, post_val('enabled', $route->enabled));
+    api_param_to_form('continue', $input->continue, post_val('continue', $route->continue));
+    $xtpl->form_out(_('Save'));
+    notifications_clear_table_form();
+
+    $xtpl->table_title(_('Notification grouping'), 'notifications.route-grouping-form');
+    $xtpl->form_create(
+        '?page=notifications&action=route_grouping_save&id=' . $route->id
+        . notifications_user_qs($route->user_id),
+        'post'
+    );
     api_param_to_form(
         'grouping_enabled',
         $input->grouping_enabled,
@@ -2450,14 +2479,14 @@ function notifications_route_edit($route_id)
         'text',
         '10',
         'group_wait_seconds',
-        post_val('group_wait_seconds', notifications_prop($route, 'group_wait_seconds'))
+        post_val('group_wait_seconds', notifications_prop($route, 'group_wait_seconds') ?? 30)
     );
     $xtpl->form_add_input(
         _('Minimum group interval (seconds)') . ':',
         'text',
         '10',
         'group_interval_seconds',
-        post_val('group_interval_seconds', notifications_prop($route, 'group_interval_seconds'))
+        post_val('group_interval_seconds', notifications_prop($route, 'group_interval_seconds') ?? 300)
     );
     $xtpl->table_td('', false, false, 1);
     $xtpl->table_td(
@@ -2467,9 +2496,7 @@ function notifications_route_edit($route_id)
         1
     );
     $xtpl->table_tr();
-    api_param_to_form('enabled', $input->enabled, post_val('enabled', $route->enabled));
-    api_param_to_form('continue', $input->continue, post_val('continue', $route->continue));
-    $xtpl->form_out(_('Save'));
+    $xtpl->form_out(_('Save grouping'));
     notifications_clear_table_form();
 
     $xtpl->table_title(_('Route lifecycle'));
