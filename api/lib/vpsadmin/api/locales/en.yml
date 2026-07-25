@@ -1719,6 +1719,8 @@ en:
         label: Master enabled
       match_order:
         label: Match_order
+      matcher_count:
+        label: Matcher count
       matcher_summary:
         label: Matcher_summary
       matches_now:

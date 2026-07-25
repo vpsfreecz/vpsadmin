@@ -2648,6 +2648,35 @@ msgid "wait %d s, interval %d s"
 msgstr ""
 
 #: forms/notifications.forms.php
+msgid "All events"
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "%d matchers"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Disabled"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Disable route"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Enable route"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Grouped"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Do you really wish to delete this notification route?"
+msgstr ""
+
+#: forms/notifications.forms.php
 msgid "muted"
 msgstr ""
 
@@ -2841,11 +2870,15 @@ msgid "Notification routes"
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Events"
+msgid "Order"
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Scope"
+msgid "Route"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Conditions"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -2853,27 +2886,11 @@ msgid "Receiver"
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Matchers"
-msgstr ""
-
-#: forms/notifications.forms.php
-msgid "Grouping"
-msgstr ""
-
-#: forms/notifications.forms.php
 msgid "Hits"
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Disable route"
-msgstr ""
-
-#: forms/notifications.forms.php
-msgid "Enable route"
-msgstr ""
-
-#: forms/notifications.forms.php
-msgid "Do you really wish to delete this notification route?"
+msgid "Actions"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -2897,26 +2914,7 @@ msgid "Event type pattern"
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Group notifications"
-msgstr ""
-
-#: forms/notifications.forms.php
-msgid "Group by fields"
-msgstr ""
-
-#: forms/notifications.forms.php
-msgid "Initial wait (seconds)"
-msgstr ""
-
-#: forms/notifications.forms.php
-msgid "Minimum group interval (seconds)"
-msgstr ""
-
-#: forms/notifications.forms.php
-msgid ""
-"Grouping applies only to this route and is not inherited. Enter comma-"
-"separated event fields, or leave the field list empty to group all matching "
-"events. Muted and skipped events are excluded."
+msgid "Scope"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -2940,6 +2938,33 @@ msgid "Update route"
 msgstr ""
 
 #: forms/notifications.forms.php
+msgid "Notification grouping"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Group by fields"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Initial wait (seconds)"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Minimum group interval (seconds)"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid ""
+"Grouping applies only to this route and is not inherited. Enter comma-"
+"separated event fields, or leave the field list empty to group all matching "
+"events. Muted and skipped events are excluded."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Save grouping"
+msgstr ""
+
+#: forms/notifications.forms.php
 msgid "Route lifecycle"
 msgstr ""
 
@@ -2953,6 +2978,10 @@ msgstr ""
 
 #: forms/notifications.forms.php
 msgid "Expires at"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Matchers"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -2981,10 +3010,6 @@ msgstr ""
 
 #: forms/notifications.forms.php
 msgid "Back to route"
-msgstr ""
-
-#: forms/notifications.forms.php
-msgid "Route"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -3117,6 +3142,10 @@ msgstr ""
 
 #: forms/notifications.forms.php
 msgid "Target"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Events"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -9036,6 +9065,14 @@ msgstr ""
 
 #: pages/page_notifications.php
 msgid "Failed to update route"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Notification grouping updated"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Failed to update notification grouping"
 msgstr ""
 
 #: pages/page_notifications.php
