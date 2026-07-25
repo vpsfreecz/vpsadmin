@@ -134,7 +134,7 @@ module VpsAdmin::API::Resources
             parent_id: input[:parent_id],
             notification_receiver_id: input[:notification_receiver_id],
             label: input[:label],
-            position: input.has_key?(:position) ? input[:position] : next_position(owner, input[:parent_id]),
+            position: input.has_key?(:position) ? input[:position] : prepend_position(owner, input[:parent_id]),
             enabled: input.has_key?(:enabled) ? input[:enabled] : true,
             event_type: input[:event_type],
             event_type_pattern: input[:event_type_pattern],
@@ -150,8 +150,8 @@ module VpsAdmin::API::Resources
         error!('create failed', e.record.errors.to_hash)
       end
 
-      def next_position(owner, parent_id)
-        self.class.model.next_position_for(owner, parent_id)
+      def prepend_position(owner, parent_id)
+        self.class.model.prepend_position_for(owner, parent_id)
       end
     end
 
