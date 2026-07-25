@@ -458,6 +458,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_121000) do
     t.integer "group_interval_seconds"
     t.string "group_key", limit: 64
     t.text "group_labels"
+    t.string "group_stream_key", limit: 64
     t.integer "group_wait_seconds"
     t.datetime "last_attempt_at"
     t.integer "mail_log_id"
@@ -484,6 +485,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_121000) do
     t.index ["event_id"], name: "index_event_deliveries_on_event_id"
     t.index ["effective_event_delivery_id"], name: "idx_event_deliveries_on_effective"
     t.index ["event_delivery_group_id"], name: "idx_event_deliveries_on_group"
+    t.index ["event_delivery_group_id", "group_stream_key", "state"], name: "idx_event_deliveries_on_group_stream_state"
     t.index ["event_route_id"], name: "index_event_deliveries_on_event_route_id"
     t.index ["event_routing_context_id"], name: "idx_event_deliveries_on_routing_context"
     t.index ["mail_log_id"], name: "index_event_deliveries_on_mail_log_id"
@@ -497,7 +499,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_121000) do
   end
 
   create_table "event_delivery_groups", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.string "action", limit: 50, null: false
     t.datetime "created_at", null: false
     t.bigint "event_route_id"
     t.string "group_key", limit: 64, null: false
@@ -508,9 +509,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_121000) do
     t.datetime "next_flush_at"
     t.bigint "route_owner_id"
     t.datetime "updated_at", null: false
-    t.index ["action", "next_flush_at"], name: "idx_event_delivery_groups_on_action_due"
     t.index ["event_route_id"], name: "index_event_delivery_groups_on_event_route_id"
     t.index ["group_key"], name: "index_event_delivery_groups_on_group_key", unique: true
+    t.index ["next_flush_at"], name: "idx_event_delivery_groups_on_due"
   end
 
   create_table "event_delivery_attempts", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|

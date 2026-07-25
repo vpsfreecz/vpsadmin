@@ -133,7 +133,9 @@ module VpsAdmin::API::Resources
                     SELECT MIN(group_members.id)
                     FROM event_deliveries AS group_members
                     WHERE group_members.state = #{::EventDelivery.states.fetch('grouping')}
-                    GROUP BY group_members.event_delivery_group_id
+                    GROUP BY
+                      group_members.event_delivery_group_id,
+                      group_members.group_stream_key
                   )
                 SQL
 
@@ -195,6 +197,8 @@ module VpsAdmin::API::Resources
                   event_deliveries.event_delivery_group_id IS NOT NULL
                   AND filtered_deliveries.event_delivery_group_id =
                     event_deliveries.event_delivery_group_id
+                  AND filtered_deliveries.group_stream_key =
+                    event_deliveries.group_stream_key
                   AND (
                     (
                       event_deliveries.state = #{grouping_state}
