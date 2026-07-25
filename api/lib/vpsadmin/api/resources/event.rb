@@ -41,6 +41,17 @@ module VpsAdmin::API::Resources
       input do
         use :common, include: %i[user event_type category severity routing_state]
         integer :event_route_id, nullable: true
+        resource EventDeliveryGroup,
+                 name: :event_delivery_group,
+                 label: 'Notification group',
+                 desc: 'Show events that belong to this notification group',
+                 nullable: true
+        string :group_membership,
+               label: 'Group membership',
+               desc: 'With a notification group, select pending events or all historical members',
+               choices: { values: { 'pending' => 'pending', 'all' => 'all' } },
+               load_validators: false,
+               nullable: true
         string :action,
                choices: { values: ::EventDelivery.action_labels },
                load_validators: false
@@ -81,6 +92,10 @@ module VpsAdmin::API::Resources
         end
         if input[:notification_receiver_target_id].present?
           delivery_filters[:notification_receiver_target_id] = input[:notification_receiver_target_id]
+        end
+        if input[:event_delivery_group]
+          delivery_filters[:event_delivery_group_id] = input[:event_delivery_group].id
+          delivery_filters[:state] = 'grouping' if input[:group_membership] == 'pending'
         end
 
         q = delivery_filter(q, delivery_filters) if delivery_filters.any?
@@ -151,6 +166,14 @@ module VpsAdmin::API::Resources
            !::NotificationTarget.where(
              id: filters[:notification_target_id],
              user_id: current_user.id
+           ).exists?
+          return false
+        end
+
+        if filters[:event_delivery_group_id].present? &&
+           !::EventDeliveryGroup.where(
+             id: filters[:event_delivery_group_id],
+             route_owner_id: current_user.id
            ).exists?
           return false
         end

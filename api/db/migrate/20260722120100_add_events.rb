@@ -534,6 +534,9 @@ class AddEvents < ActiveRecord::Migration[8.1]
     create_table :event_delivery_groups do |t|
       t.references  :event_route,              null: true
       t.bigint      :route_owner_id,           null: true
+      t.references  :notification_receiver,    null: true
+      t.string      :notification_receiver_label,
+                    null: true
       t.string      :group_key,                null: false, limit: 64
       t.text        :labels,                   null: false
       t.integer     :group_wait_seconds,       null: false
@@ -544,6 +547,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
     end
 
     add_index :event_delivery_groups, :group_key, unique: true
+    add_index :event_delivery_groups, :route_owner_id
     add_index :event_delivery_groups, :next_flush_at,
               name: 'idx_event_delivery_groups_on_due'
 

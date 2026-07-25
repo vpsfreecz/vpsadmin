@@ -96,6 +96,11 @@ module VpsAdmin::API::Resources
                choices: { values: STATE_GROUP_LABELS },
                load_validators: false,
                nullable: true
+        resource EventDeliveryGroup,
+                 name: :event_delivery_group,
+                 label: 'Notification group',
+                 desc: 'Show deliveries that belong to this notification group',
+                 nullable: true
         integer :event_route_id, nullable: true
         resource User, name: :recipient_user, value_label: :login, nullable: true
         integer :notification_receiver_id, nullable: true
@@ -145,6 +150,9 @@ module VpsAdmin::API::Resources
           q = q.joins(:event_routing_context).where(event_routing_contexts: { user_id: })
         end
         q = q.where(action: input[:action]) if input[:action].present?
+        if input[:event_delivery_group]
+          q = q.where(event_delivery_group_id: input[:event_delivery_group].id)
+        end
         q = q.where(event_route_id: input[:event_route_id]) if input[:event_route_id].present?
         if input[:notification_receiver_id].present?
           q = q.where(notification_receiver_id: input[:notification_receiver_id])

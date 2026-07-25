@@ -106,6 +106,14 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     vpath('/event_deliveries')
   end
 
+  def event_delivery_group_index_path
+    vpath('/event_delivery_groups')
+  end
+
+  def event_delivery_group_path(id)
+    vpath("/event_delivery_groups/#{id}")
+  end
+
   def event_path(id)
     vpath("/events/#{id}")
   end
@@ -237,6 +245,11 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
   def deliveries
     json.dig('response', 'deliveries') || json.dig('response', 'event_deliveries') || []
+  end
+
+  def delivery_groups
+    json.dig('response', 'delivery_groups') ||
+      json.dig('response', 'event_delivery_groups') || []
   end
 
   def attempts
@@ -619,6 +632,186 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(route.group_by).to eq([])
     expect(route.group_wait_seconds).to be_nil
     expect(route.group_interval_seconds).to be_nil
+  end
+
+  it 'lets owners and admins inspect notification groups and their events' do
+    receiver = NotificationReceiver.create!(
+      user: SpecSeed.user,
+      label: 'Observed receiver'
+    )
+    route = EventRoute.create!(
+      user: SpecSeed.user,
+      notification_receiver: receiver,
+      event_type: 'user.test_notification',
+      grouping_enabled: true,
+      group_by: ['severity'],
+      group_wait_seconds: 30,
+      group_interval_seconds: 300
+    )
+    group = EventDeliveryGroup.create!(
+      event_route: route,
+      route_owner: SpecSeed.user,
+      notification_receiver: receiver,
+      group_key: Digest::SHA256.hexdigest('observed group'),
+      labels: { 'severity' => 'warning' },
+      group_wait_seconds: 30,
+      group_interval_seconds: 300,
+      next_flush_at: Time.now + 300
+    )
+    pending_event = Event.create!(
+      user: SpecSeed.user,
+      event_type: 'user.test_notification',
+      category: 'general',
+      severity: 'warning',
+      subject: 'Pending grouped event',
+      payload: {}
+    )
+    historical_event = Event.create!(
+      user: SpecSeed.user,
+      event_type: 'user.test_notification',
+      category: 'general',
+      severity: 'warning',
+      subject: 'Historical grouped event',
+      payload: {}
+    )
+    pending_context = EventRoutingContext.create!(
+      event: pending_event,
+      recipient_user: SpecSeed.user,
+      subject_relation: 'self',
+      source: 'direct_route',
+      routing_state: 'routed'
+    )
+    historical_context = EventRoutingContext.create!(
+      event: historical_event,
+      recipient_user: SpecSeed.user,
+      subject_relation: 'self',
+      source: 'direct_route',
+      routing_state: 'routed'
+    )
+    stream_key = Digest::SHA256.hexdigest('observed stream')
+    common = {
+      event_delivery_group: group,
+      event_route: route,
+      notification_receiver: receiver,
+      action: 'email',
+      target_kind: 'default_recipient',
+      group_key: group.group_key,
+      group_stream_key: stream_key,
+      group_labels: group.labels,
+      group_wait_seconds: 30,
+      group_interval_seconds: 300
+    }
+    pending_delivery = EventDelivery.create!(
+      common.merge(
+        event: pending_event,
+        event_routing_context: pending_context,
+        state: 'grouping'
+      )
+    )
+    EventDelivery.create!(
+      common.merge(
+        event: historical_event,
+        event_routing_context: historical_context,
+        state: 'grouped'
+      )
+    )
+    other_group = EventDeliveryGroup.create!(
+      route_owner: SpecSeed.other_user,
+      group_key: Digest::SHA256.hexdigest('other observed group'),
+      labels: {},
+      group_wait_seconds: 30,
+      group_interval_seconds: 300
+    )
+
+    as(SpecSeed.user) do
+      json_get event_delivery_group_index_path,
+               event_delivery_group: { state_group: 'open' }
+    end
+    expect_status(200)
+    expect(delivery_groups.map { |row| row['id'] }).to eq([group.id])
+    expect(delivery_groups.first).to include(
+      'event_route_id' => route.id,
+      'notification_receiver_id' => receiver.id,
+      'route_owner_id' => SpecSeed.user.id,
+      'state' => 'waiting',
+      'pending_event_count' => 1,
+      'stream_count' => 1
+    )
+
+    as(SpecSeed.user) { json_get event_delivery_group_path(group.id) }
+    expect_status(200)
+    group_obj = json.dig('response', 'event_delivery_group') || json['response']
+    expect(group_obj).to include(
+      'event_count' => 2,
+      'actions' => ['email'],
+      'group_by' => ['severity']
+    )
+
+    as(SpecSeed.user) { json_get event_delivery_group_path(other_group.id) }
+    expect_status(404)
+
+    as(SpecSeed.admin) { json_get event_delivery_group_path(other_group.id) }
+    expect_status(200)
+
+    as(SpecSeed.user) do
+      json_get event_index_path, event: {
+        event_delivery_group: group.id,
+        group_membership: 'pending'
+      }
+    end
+    expect_status(200)
+    expect(events.map { |row| row['id'] }).to eq([pending_event.id])
+
+    as(SpecSeed.user) do
+      json_get event_index_path, event: {
+        event_delivery_group: group.id,
+        group_membership: 'all'
+      }
+    end
+    expect_status(200)
+    expect(events.map { |row| row['id'] }).to contain_exactly(
+      pending_event.id,
+      historical_event.id
+    )
+
+    as(SpecSeed.admin) do
+      json_get event_delivery_index_path, event_delivery: {
+        event_delivery_group: group.id
+      }
+    end
+    expect_status(200)
+    expect(deliveries.map { |row| row['id'] }).to eq([pending_delivery.id])
+
+    group.update!(next_flush_at: Time.now - 60)
+    as(SpecSeed.user) do
+      json_get event_delivery_group_index_path,
+               event_delivery_group: { state_group: 'overdue' }
+    end
+    expect_status(200)
+    expect(delivery_groups.map { |row| [row['id'], row['state']] }).to eq(
+      [[group.id, 'overdue']]
+    )
+
+    group.update!(next_flush_at: nil)
+    as(SpecSeed.user) do
+      json_get event_delivery_group_index_path,
+               event_delivery_group: { state_group: 'idle' }
+    end
+    expect_status(200)
+    expect(delivery_groups.map { |row| [row['id'], row['state']] }).to eq(
+      [[group.id, 'idle']]
+    )
+
+    as(SpecSeed.admin) { json_get event_delivery_group_index_path }
+    expect_status(200)
+    expect(delivery_groups.map { |row| row['id'] }).to include(group.id, other_group.id)
+
+    as(SpecSeed.admin) do
+      json_get event_delivery_group_index_path,
+               event_delivery_group: { route_owner: SpecSeed.other_user.id }
+    end
+    expect_status(200)
+    expect(delivery_groups.map { |row| row['id'] }).to eq([other_group.id])
   end
 
   it 'lets users manage reusable intervals and assign their own intervals to routes' do

@@ -507,11 +507,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_121000) do
     t.text "labels", null: false
     t.datetime "last_sealed_at"
     t.datetime "next_flush_at"
+    t.bigint "notification_receiver_id"
+    t.string "notification_receiver_label"
     t.bigint "route_owner_id"
     t.datetime "updated_at", null: false
     t.index ["event_route_id"], name: "index_event_delivery_groups_on_event_route_id"
     t.index ["group_key"], name: "index_event_delivery_groups_on_group_key", unique: true
     t.index ["next_flush_at"], name: "idx_event_delivery_groups_on_due"
+    t.index ["notification_receiver_id"], name: "index_event_delivery_groups_on_notification_receiver_id"
+    t.index ["route_owner_id"], name: "index_event_delivery_groups_on_route_owner_id"
   end
 
   create_table "event_delivery_attempts", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
