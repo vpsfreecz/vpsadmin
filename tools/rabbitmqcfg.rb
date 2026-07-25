@@ -133,7 +133,7 @@ class Cli
       ]
     when 'notification'
       notification_exchange = 'vpsadmin\.notifications'
-      notification_queue = 'vpsadmin\.notifications\.(email|telegram|sms|webhook)'
+      notification_queue = 'vpsadmin\.notifications\.(email|telegram|sms|webhook|grouping)'
 
       [
         "^(amq\\.gen.*|#{notification_exchange}|#{notification_queue})$",
