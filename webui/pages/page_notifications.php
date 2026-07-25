@@ -671,6 +671,14 @@ if (isLoggedIn()) {
             notifications_events();
             break;
 
+        case 'groups':
+            notifications_groups(api_get_uint('user'));
+            break;
+
+        case 'group_show':
+            notifications_group_show(api_get_uint('id'));
+            break;
+
         case 'delivery_queue':
             notifications_deliveries_admin('queue');
             break;

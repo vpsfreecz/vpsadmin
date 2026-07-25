@@ -129,6 +129,36 @@ final class NotificationRouteUiTest extends TestCase
         );
     }
 
+    public function testNotificationGroupsAreBrowsableAndLinkToRelatedQueues(): void
+    {
+        $source = $this->notificationsFormsSource();
+        $pageSource = file_get_contents(dirname(__DIR__, 2) . '/pages/page_notifications.php');
+        $groups = $this->sourceBetween(
+            $source,
+            'function notifications_groups(',
+            'function notifications_deliveries_admin('
+        );
+
+        self::assertStringContainsString("case 'groups':", $pageSource);
+        self::assertStringContainsString("case 'group_show':", $pageSource);
+        self::assertStringContainsString('$api->event_delivery_group->list($params)', $groups);
+        self::assertStringContainsString('$api->event_delivery_group->show($group_id)', $groups);
+        self::assertStringContainsString("\$params['state_group'] = \$state_group", $groups);
+        self::assertStringContainsString(
+            "\$user_id = isAdmin()\n        ? ((\$user_id !== null && \$user_id > 0) ? \$user_id : null)",
+            $groups
+        );
+        self::assertStringContainsString("if (isAdmin() && \$user_id)", $groups);
+        self::assertStringContainsString("'group_membership' => 'pending'", $groups);
+        self::assertStringContainsString("'event_delivery_group' => \$group->id", $groups);
+        self::assertStringContainsString('event_delivery_group_id', $groups);
+        self::assertStringContainsString("_('All pending group events')", $groups);
+        self::assertStringContainsString('Pending events (showing first %1$d of %2$d)', $groups);
+        self::assertStringContainsString('action=delivery_queue&event_delivery_group_id=', $groups);
+        self::assertStringContainsString('action=delivery_log&event_delivery_group_id=', $groups);
+        self::assertStringContainsString("_('Notification groups')", $source);
+    }
+
     public function testEventLogFiltersAllowEmptySeverityAndRoutingState(): void
     {
         $source = $this->sourceBetween(
@@ -141,6 +171,10 @@ final class NotificationRouteUiTest extends TestCase
         self::assertStringContainsString("\$delivery_action !== null && \$delivery_action !== ''", $source);
         self::assertStringContainsString("api_get_uint('event_route_id')", $source);
         self::assertStringContainsString("\$params['event_route_id'] = \$route_id", $source);
+        self::assertStringContainsString("'event_delivery_group_id'", $source);
+        self::assertStringContainsString("\$params['event_delivery_group'] = \$group_id", $source);
+        self::assertStringContainsString("api_get('group_membership')", $source);
+        self::assertStringContainsString("\$params['group_membership']", $source);
         self::assertStringNotContainsString('matched_event_route_id', $source);
         self::assertStringContainsString(
             "api_param_to_form('severity', \$input->severity, get_val('severity'), null, true)",

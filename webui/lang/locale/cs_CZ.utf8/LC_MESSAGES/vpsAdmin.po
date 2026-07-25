@@ -600,6 +600,7 @@ msgid "Content"
 msgstr "Obsah"
 
 #: forms/cluster.forms.php forms/dns.forms.php forms/networking.forms.php
+#: forms/notifications.forms.php
 msgid "All"
 msgstr "Vše"
 
@@ -1463,7 +1464,8 @@ msgstr "Dynamická aktualizace URL"
 msgid "not enabled"
 msgstr "není povoleno"
 
-#: forms/dns.forms.php forms/networking.forms.php pages/page_adminvps.php
+#: forms/dns.forms.php forms/networking.forms.php forms/notifications.forms.php
+#: pages/page_adminvps.php
 msgid "Owner"
 msgstr "Majitel"
 
@@ -2440,6 +2442,10 @@ msgstr "Konfigurace systému"
 #: forms/node.forms.php
 msgid "initial baseline"
 msgstr "počáteční stav"
+
+#: forms/notifications.forms.php
+msgid "Notification groups"
+msgstr "Skupiny notifikací"
 
 #: forms/notifications.forms.php
 msgid "Delivery queue"
@@ -3543,8 +3549,32 @@ msgid "No delivery limits are configured."
 msgstr "Nejsou nakonfigurovány žádné limity doručování."
 
 #: forms/notifications.forms.php
-msgid "Only administrators can view notification delivery queues."
-msgstr "Fronty doručování notifikací mohou zobrazit pouze administrátoři."
+msgid "waiting"
+msgstr "čeká"
+
+#: forms/notifications.forms.php
+msgid "overdue"
+msgstr "po termínu"
+
+#: forms/notifications.forms.php
+msgid "idle"
+msgstr "nečinná"
+
+#: forms/notifications.forms.php
+msgid "Open (waiting and overdue)"
+msgstr "Otevřené (čekající a po termínu)"
+
+#: forms/notifications.forms.php
+msgid "Overdue"
+msgstr "Po termínu"
+
+#: forms/notifications.forms.php
+msgid "Idle"
+msgstr "Nečinné"
+
+#: forms/notifications.forms.php
+msgid "Owner ID"
+msgstr "ID vlastníka"
 
 #: forms/notifications.forms.php
 msgid "Route ID"
@@ -3553,6 +3583,104 @@ msgstr "ID routy"
 #: forms/notifications.forms.php
 msgid "Receiver ID"
 msgstr "ID příjemce"
+
+#: forms/notifications.forms.php
+msgid "Group"
+msgstr "Skupina"
+
+#: forms/notifications.forms.php
+msgid "Pending events"
+msgstr "Čekající události"
+
+#: forms/notifications.forms.php
+msgid "Next notification"
+msgstr "Příští notifikace"
+
+#: forms/notifications.forms.php
+msgid "No notification groups found."
+msgstr "Nebyly nalezeny žádné skupiny notifikací."
+
+#: forms/notifications.forms.php
+msgid "Notification group"
+msgstr "Skupina notifikací"
+
+#: forms/notifications.forms.php
+msgid "Group status"
+msgstr "Stav skupiny"
+
+#: forms/notifications.forms.php
+msgid "Group labels"
+msgstr "Hodnoty skupiny"
+
+#: forms/notifications.forms.php
+msgid "Initial wait"
+msgstr "Počáteční čekání"
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "%d seconds"
+msgstr "%d sekund"
+
+#: forms/notifications.forms.php
+msgid "Repeat interval"
+msgstr "Interval opakování"
+
+#: forms/notifications.forms.php
+msgid "Last notification"
+msgstr "Poslední notifikace"
+
+#: forms/notifications.forms.php
+msgid "Delivery streams"
+msgstr "Doručovací streamy"
+
+#: forms/notifications.forms.php
+msgid "Delivery actions"
+msgstr "Doručovací akce"
+
+#: forms/notifications.forms.php
+msgid "Group key"
+msgstr "Klíč skupiny"
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Pending events (showing first %1$d of %2$d)"
+msgstr "Čekající události (zobrazeno prvních %1$d z %2$d)"
+
+#: forms/notifications.forms.php
+msgid "Severity"
+msgstr "Závažnost"
+
+#: forms/notifications.forms.php
+msgid "This group has no events waiting for the next notification."
+msgstr "Tato skupina nemá žádné události čekající na příští notifikaci."
+
+#: forms/notifications.forms.php
+msgid "Show group in delivery queue"
+msgstr "Zobrazit skupinu ve frontě doručování"
+
+#: forms/notifications.forms.php
+msgid "Show group in delivery log"
+msgstr "Zobrazit skupinu v logu doručování"
+
+#: forms/notifications.forms.php
+msgid "All pending group events"
+msgstr "Všechny čekající události skupiny"
+
+#: forms/notifications.forms.php
+msgid "All group events"
+msgstr "Všechny události skupiny"
+
+#: forms/notifications.forms.php
+msgid "Back to notification groups"
+msgstr "Zpět na skupiny notifikací"
+
+#: forms/notifications.forms.php
+msgid "Only administrators can view notification delivery queues."
+msgstr "Fronty doručování notifikací mohou zobrazit pouze administrátoři."
+
+#: forms/notifications.forms.php
+msgid "Notification group ID"
+msgstr "ID skupiny notifikací"
 
 #: forms/notifications.forms.php
 msgid "Target ID"
@@ -3565,10 +3693,6 @@ msgstr "ID cíle příjemce"
 #: forms/notifications.forms.php
 msgid "Delivery"
 msgstr "Doručení"
-
-#: forms/notifications.forms.php
-msgid "Group"
-msgstr "Skupina"
 
 #: forms/notifications.forms.php
 msgid "Attempts"
@@ -3591,8 +3715,16 @@ msgid "No deliveries found."
 msgstr "Nebyla nalezena žádná doručení."
 
 #: forms/notifications.forms.php
-msgid "Severity"
-msgstr "Závažnost"
+msgid "Group events"
+msgstr "Události skupiny"
+
+#: forms/notifications.forms.php
+msgid "All historical members"
+msgstr "Všechny historické události"
+
+#: forms/notifications.forms.php
+msgid "Pending only"
+msgstr "Pouze čekající"
 
 #: forms/notifications.forms.php
 msgid "Deliveries"
@@ -3647,21 +3779,9 @@ msgid "Template"
 msgstr "Šablona"
 
 #: forms/notifications.forms.php
-msgid "Notification group"
-msgstr "Skupina notifikací"
-
-#: forms/notifications.forms.php
-msgid "Group key"
-msgstr "Klíč skupiny"
-
-#: forms/notifications.forms.php
 #, php-format
 msgid "and %d more"
 msgstr "a dalších %d"
-
-#: forms/notifications.forms.php
-msgid "Group events"
-msgstr "Události skupiny"
 
 #: forms/notifications.forms.php
 msgid "Effective delivery"
@@ -9791,6 +9911,23 @@ msgstr "Upravit pole nápovědy"
 msgid "Help"
 msgstr "Pomoc"
 
+#~ msgid "View event types and fields"
+#~ msgstr "Zobrazit typy událostí a jejich pole"
+
+#~ msgid "View this event type and its fields"
+#~ msgstr "Zobrazit tento typ události a jeho pole"
+
+#~ msgid "No groupable fields are available for this event selector."
+#~ msgstr ""
+#~ "Pro tento výběr událostí nejsou dostupná žádná pole pro seskupování."
+
+#~ msgid "Fields available for this route"
+#~ msgstr "Pole dostupná pro tuto routu"
+
+#, php-format
+#~ msgid "%d hits"
+#~ msgstr "%d shod"
+
 #~ msgid "Group notifications"
 #~ msgstr "Seskupovat notifikace"
 
@@ -10081,9 +10218,6 @@ msgstr "Pomoc"
 
 #~ msgid "Mail template recipients"
 #~ msgstr "Příjemci šablony pošty"
-
-#~ msgid "awaiting"
-#~ msgstr "čekání"
 
 #~ msgid "pending correction"
 #~ msgstr "čekající na opravu"
