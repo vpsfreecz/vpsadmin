@@ -66,7 +66,9 @@ module VpsAdmin::API
           description:,
           type:,
           example:,
-          operators:
+          operators:,
+          common: false,
+          groupable: !%w[string_list integer_list].include?(type)
         }.tap do |ret|
           ret[:choices] = choices if choices
         end
