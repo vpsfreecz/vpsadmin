@@ -23,6 +23,22 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
     end
   end
 
+  def create_grouped_oom_route!(user)
+    NotificationReceiver.ensure_defaults_for!(user)
+
+    EventRoute.create!(
+      user:,
+      notification_receiver: EventRoute.default_admin_route_for(user).notification_receiver,
+      label: 'Spec OOM notifications',
+      position: EventRoute.prepend_position_for(user),
+      event_type: 'vps.oom_report',
+      grouping_enabled: true,
+      group_by: ['vps_id'],
+      group_wait_seconds: 60,
+      group_interval_seconds: 3 * 60 * 60
+    )
+  end
+
   describe '#start' do
     it 'ignores reports for VPSes on another node without dereferencing nil' do
       foreign_vps = build_standalone_vps_fixture(user: SpecSeed.user, node: SpecSeed.other_node).fetch(:vps)
@@ -144,6 +160,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
 
     it 'persists one event and routes it through the grouped OOM catch-all' do
       vps = create_vps!
+      route = create_grouped_oom_route!(vps.user)
       report = nil
 
       expect do
@@ -153,7 +170,6 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
         )
       end.to change(Event.where(event_type: 'vps.oom_report'), :count).by(1)
 
-      route = EventRoute.default_oom_route_for(vps.user)
       event = Event.where(event_type: 'vps.oom_report').order(:id).last
       expect(report.ignored).to be(false)
       expect(event.source_class).to eq('OomReport')
@@ -194,7 +210,13 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
         value: '/user.slice/*'
       )
 
-      report = supervisor.send(:save_report, build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope'))
+      report = nil
+      expect do
+        report = supervisor.send(
+          :save_report,
+          build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope')
+        )
+      end.not_to(change { event_storage_counts })
 
       expect(report.ignored).to be(true)
       expect(route.reload.hit_count).to eq(1)
@@ -245,7 +267,13 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
         value: vps.id.to_s
       )
 
-      report = supervisor.send(:save_report, build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope'))
+      report = nil
+      expect do
+        report = supervisor.send(
+          :save_report,
+          build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope')
+        )
+      end.not_to(change { event_storage_counts })
 
       expect(report.ignored).to be(false)
       expect(route.reload.hit_count).to eq(1)
@@ -271,7 +299,13 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
         value: vps.id.to_s
       )
 
-      report = supervisor.send(:save_report, build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope'))
+      report = nil
+      expect do
+        report = supervisor.send(
+          :save_report,
+          build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope')
+        )
+      end.not_to(change { event_storage_counts })
 
       expect(report.ignored).to be(false)
       expect(route.reload.hit_count).to eq(1)
@@ -301,7 +335,13 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
         mode: :active
       )
 
-      report = supervisor.send(:save_report, build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope'))
+      report = nil
+      expect do
+        report = supervisor.send(
+          :save_report,
+          build_oom_report_payload(vps:, cgroup: '/user.slice/a.scope')
+        )
+      end.not_to(change { event_storage_counts })
 
       expect(report.ignored).to be(false)
       expect(route.reload.hit_count).to eq(1)
@@ -337,14 +377,17 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
       )
       occurred_at = Time.utc(2024, 7, 22, 12, 0)
 
-      report = supervisor.send(
-        :save_report,
-        build_oom_report_payload(
-          vps:,
-          cgroup: '/user.slice/a.scope',
-          time: occurred_at
+      report = nil
+      expect do
+        report = supervisor.send(
+          :save_report,
+          build_oom_report_payload(
+            vps:,
+            cgroup: '/user.slice/a.scope',
+            time: occurred_at
+          )
         )
-      )
+      end.not_to(change { event_storage_counts })
 
       expect(report.ignored).to be(true)
       expect(report.created_at).to be_within(1.second).of(occurred_at)

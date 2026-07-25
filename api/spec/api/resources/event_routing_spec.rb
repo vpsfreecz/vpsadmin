@@ -824,10 +824,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     canceled = EventDelivery.create!(common.merge(state: :canceled, error_summary: 'spec canceled'))
     skipped = EventDelivery.create!(common.merge(state: :skipped, error_summary: 'spec skipped'))
     group_key = Digest::SHA256.hexdigest('spec queue group')
+    group_stream_key = Digest::SHA256.hexdigest('spec queue email stream')
     group = EventDeliveryGroup.create!(
       event_route: nil,
       route_owner: SpecSeed.user,
-      action: 'email',
       group_key:,
       labels: { 'severity' => 'info' },
       group_wait_seconds: 30,
@@ -839,6 +839,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         state: :grouping,
         event_delivery_group: group,
         group_key:,
+        group_stream_key:,
         group_labels: { 'severity' => 'info' },
         group_wait_seconds: 30,
         group_interval_seconds: 300
@@ -858,6 +859,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         state: :grouping,
         event_delivery_group: group,
         group_key:,
+        group_stream_key:,
         group_labels: { 'severity' => 'info' },
         group_wait_seconds: 30,
         group_interval_seconds: 300
@@ -1481,6 +1483,34 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     expect(event.event_route_matches.reload.map(&:event_route)).to include(route)
     expect(event.event_deliveries.sole.action).to eq('webhook')
+  end
+
+  it 'prepends new subroutes among their siblings' do
+    parent = EventRoute.create!(
+      user: SpecSeed.user,
+      label: 'Parent route',
+      position: 50
+    )
+    existing = EventRoute.create!(
+      user: SpecSeed.user,
+      parent_event_route: parent,
+      label: 'Existing child',
+      position: 20,
+      event_type: 'user.test_notification'
+    )
+
+    as(SpecSeed.user) do
+      json_post route_index_path, event_route: {
+        parent_id: parent.id,
+        label: 'Prepended child',
+        event_type: 'user.test_notification'
+      }
+    end
+
+    expect_status(200)
+    route = EventRoute.find(route_obj['id'])
+    expect(route.parent_id).to eq(parent.id)
+    expect(route.position).to be < existing.reload.position
   end
 
   it 'does not count expired routes toward the route limit' do

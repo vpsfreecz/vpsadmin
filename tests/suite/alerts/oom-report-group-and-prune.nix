@@ -38,7 +38,28 @@ import ../../make-test.nix (
         setup_alerts_cluster(services, node)
         services.wait_for_service('vpsadmin-rabbitmq-setup.service')
         services.wait_for_service('vpsadmin-supervisor.service')
+        services.wait_for_service('vpsadmin-notification-grouper.service')
         services.wait_for_service('vpsadmin-notification-dispatcher-email.service')
+
+        services.api_ruby_json(code: <<~RUBY)
+          user = User.find(${toString adminUser.id})
+          NotificationReceiver.ensure_defaults_for!(user)
+          receiver = EventRoute.default_admin_route_for(user)&.notification_receiver
+          raise 'default administrator notification receiver is missing' unless receiver
+
+          route = EventRoute.create!(
+            user: user,
+            notification_receiver: receiver,
+            label: 'Integration OOM notifications',
+            position: EventRoute.prepend_position_for(user),
+            event_type: 'vps.oom_report',
+            grouping_enabled: true,
+            group_by: ['vps_id'],
+            group_wait_seconds: 60,
+            group_interval_seconds: 3 * 60 * 60
+          )
+          puts JSON.dump(id: route.id)
+        RUBY
       end
 
       def publish_oom_reports(services, payloads)
@@ -113,8 +134,11 @@ import ../../make-test.nix (
 
       def grouped_oom_state(services, vps_id:, cgroup_prefix:)
         services.api_ruby_json(code: <<~RUBY)
-          route = EventRoute.default_oom_route_for(
-            User.find(${toString adminUser.id})
+          route = EventRoute.find_by!(
+            user: User.find(${toString adminUser.id}),
+            label: 'Integration OOM notifications',
+            event_type: 'vps.oom_report',
+            parent_id: nil
           )
           reports = OomReport
                     .where(vps_id: #{Integer(vps_id)})
@@ -156,8 +180,11 @@ import ../../make-test.nix (
           cgroup_prefix = "/integration/grouped/#{SecureRandom.hex(4)}"
 
           services.api_ruby_json(code: <<~RUBY)
-            route = EventRoute.default_oom_route_for(
-              User.find(${toString adminUser.id})
+            route = EventRoute.find_by!(
+              user: User.find(${toString adminUser.id}),
+              label: 'Integration OOM notifications',
+              event_type: 'vps.oom_report',
+              parent_id: nil
             )
             route.update!(
               group_wait_seconds: 5,
