@@ -178,6 +178,10 @@ class EventRoute < ApplicationRecord
     "#{selector}: #{event_route_matchers.map(&:summary).join(' AND ')}"
   end
 
+  def matcher_count
+    event_route_matchers.size
+  end
+
   def display_label
     label.presence || matcher_summary
   end

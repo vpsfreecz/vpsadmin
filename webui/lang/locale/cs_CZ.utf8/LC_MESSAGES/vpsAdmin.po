@@ -2668,6 +2668,35 @@ msgid "wait %d s, interval %d s"
 msgstr "čekání %d s, interval %d s"
 
 #: forms/notifications.forms.php
+msgid "All events"
+msgstr "Všechny události"
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "%d matchers"
+msgstr "%d matcherů"
+
+#: forms/notifications.forms.php
+msgid "Disabled"
+msgstr "Zakázáno"
+
+#: forms/notifications.forms.php
+msgid "Disable route"
+msgstr "Vypnout routu"
+
+#: forms/notifications.forms.php
+msgid "Enable route"
+msgstr "Zapnout routu"
+
+#: forms/notifications.forms.php
+msgid "Grouped"
+msgstr "Seskupeno"
+
+#: forms/notifications.forms.php
+msgid "Do you really wish to delete this notification route?"
+msgstr "Opravdu si přejete smazat tuto notifikační routu?"
+
+#: forms/notifications.forms.php
 msgid "muted"
 msgstr "ztlumeno"
 
@@ -2865,40 +2894,28 @@ msgid "Notification routes"
 msgstr "Notifikační routy"
 
 #: forms/notifications.forms.php
-msgid "Events"
-msgstr "Události"
+msgid "Order"
+msgstr "Pořadí"
 
 #: forms/notifications.forms.php
-msgid "Scope"
-msgstr "Rozsah"
+msgid "Route"
+msgstr "Routa"
+
+#: forms/notifications.forms.php
+msgid "Conditions"
+msgstr "Podmínky"
 
 #: forms/notifications.forms.php
 msgid "Receiver"
 msgstr "Příjemce"
 
 #: forms/notifications.forms.php
-msgid "Matchers"
-msgstr "Matchery"
-
-#: forms/notifications.forms.php
-msgid "Grouping"
-msgstr "Seskupování"
-
-#: forms/notifications.forms.php
 msgid "Hits"
 msgstr "Počet shod"
 
 #: forms/notifications.forms.php
-msgid "Disable route"
-msgstr "Vypnout routu"
-
-#: forms/notifications.forms.php
-msgid "Enable route"
-msgstr "Zapnout routu"
-
-#: forms/notifications.forms.php
-msgid "Do you really wish to delete this notification route?"
-msgstr "Opravdu si přejete smazat tuto notifikační routu?"
+msgid "Actions"
+msgstr "Akce"
 
 #: forms/notifications.forms.php
 msgid "No routes configured."
@@ -2921,8 +2938,32 @@ msgid "Event type pattern"
 msgstr "Vzor typu události"
 
 #: forms/notifications.forms.php
-msgid "Group notifications"
-msgstr "Seskupovat notifikace"
+msgid "Scope"
+msgstr "Rozsah"
+
+#: forms/notifications.forms.php
+msgid "Back to routes"
+msgstr "Zpět na routy"
+
+#: forms/notifications.forms.php
+msgid "Subroutes"
+msgstr "Podrouty"
+
+#: forms/notifications.forms.php
+msgid "No subroutes configured."
+msgstr "Nejsou nakonfigurovány žádné podrouty."
+
+#: forms/notifications.forms.php
+msgid "Notification route"
+msgstr "Notifikační routa"
+
+#: forms/notifications.forms.php
+msgid "Update route"
+msgstr "Upravit routu"
+
+#: forms/notifications.forms.php
+msgid "Notification grouping"
+msgstr "Seskupování notifikací"
 
 #: forms/notifications.forms.php
 msgid "Group by fields"
@@ -2947,24 +2988,8 @@ msgstr ""
 "odpovídajících událostí. Ztlumené a přeskočené události jsou vynechány."
 
 #: forms/notifications.forms.php
-msgid "Back to routes"
-msgstr "Zpět na routy"
-
-#: forms/notifications.forms.php
-msgid "Subroutes"
-msgstr "Podrouty"
-
-#: forms/notifications.forms.php
-msgid "No subroutes configured."
-msgstr "Nejsou nakonfigurovány žádné podrouty."
-
-#: forms/notifications.forms.php
-msgid "Notification route"
-msgstr "Notifikační routa"
-
-#: forms/notifications.forms.php
-msgid "Update route"
-msgstr "Upravit routu"
+msgid "Save grouping"
+msgstr "Uložit seskupování"
 
 #: forms/notifications.forms.php
 msgid "Route lifecycle"
@@ -2981,6 +3006,10 @@ msgstr "Použito v"
 #: forms/notifications.forms.php
 msgid "Expires at"
 msgstr "Vyprší v"
+
+#: forms/notifications.forms.php
+msgid "Matchers"
+msgstr "Matchery"
 
 #: forms/notifications.forms.php
 msgid "Field"
@@ -3009,10 +3038,6 @@ msgstr "Vyberte typ události, jehož pole se mají nabízet."
 #: forms/notifications.forms.php
 msgid "Back to route"
 msgstr "Zpět na routu"
-
-#: forms/notifications.forms.php
-msgid "Route"
-msgstr "Routa"
 
 #: forms/notifications.forms.php
 msgid "Matcher operator reference"
@@ -3151,6 +3176,10 @@ msgstr "Notifikační cíle"
 #: forms/notifications.forms.php
 msgid "Target"
 msgstr "Cíl"
+
+#: forms/notifications.forms.php
+msgid "Events"
+msgstr "Události"
 
 #: forms/notifications.forms.php
 msgid "Disable target"
@@ -9187,6 +9216,14 @@ msgid "Failed to update route"
 msgstr "Aktualizace routy se nezdařila"
 
 #: pages/page_notifications.php
+msgid "Notification grouping updated"
+msgstr "Seskupování notifikací bylo aktualizováno"
+
+#: pages/page_notifications.php
+msgid "Failed to update notification grouping"
+msgstr "Aktualizace seskupování notifikací se nezdařila"
+
+#: pages/page_notifications.php
 msgid "Route deleted"
 msgstr "Routa smazána"
 
@@ -9754,6 +9791,9 @@ msgstr "Upravit pole nápovědy"
 msgid "Help"
 msgstr "Pomoc"
 
+#~ msgid "Group notifications"
+#~ msgstr "Seskupovat notifikace"
+
 #~ msgid "Rule ID"
 #~ msgstr "Pravidlo ID"
 
@@ -10068,9 +10108,6 @@ msgstr "Pomoc"
 
 #~ msgid "planned outages"
 #~ msgstr "plánované odstávky"
-
-#~ msgid "Disabled"
-#~ msgstr "Zakázáno"
 
 #~ msgid "Contact support if you need more"
 #~ msgstr "Kontaktujte podporu, pokud potřebujete více"
