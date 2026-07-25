@@ -131,7 +131,9 @@ class EventRouteMatcher < ApplicationRecord
       description: config.fetch(:description),
       type:,
       example: config.fetch(:example),
-      operators: VpsAdmin::API::Events::FIELD_TYPE_OPERATORS.fetch(type)
+      operators: VpsAdmin::API::Events::FIELD_TYPE_OPERATORS.fetch(type),
+      common: true,
+      groupable: !%w[string_list integer_list].include?(type)
     }.tap do |ret|
       ret[:choices] = choices if choices
     end
