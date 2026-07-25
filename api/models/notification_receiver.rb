@@ -19,6 +19,7 @@ class NotificationReceiver < ApplicationRecord
            dependent: :delete_all
   has_many :event_routes, dependent: :nullify
   has_many :event_deliveries, dependent: :nullify
+  has_many :event_delivery_groups
 
   before_validation :set_default_label
 

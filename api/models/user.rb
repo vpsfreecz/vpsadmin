@@ -26,6 +26,10 @@ class User < ApplicationRecord
   has_many :notification_receivers, dependent: :destroy
   has_many :notification_targets, dependent: :destroy
   has_many :event_routes, dependent: :destroy
+  has_many :event_delivery_groups,
+           foreign_key: :route_owner_id,
+           dependent: :nullify,
+           inverse_of: :route_owner
   has_many :event_time_intervals, dependent: :destroy
   has_many :events
   has_many :user_notification_delivery_methods, dependent: :delete_all
