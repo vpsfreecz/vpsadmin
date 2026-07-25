@@ -118,27 +118,39 @@ final class NotificationRouteUiTest extends TestCase
 
     public function testRouteListUsesSixCompactColumnsWithSeparateActions(): void
     {
-        $source = $this->sourceBetween(
-            $this->notificationsFormsSource(),
+        $allSource = $this->notificationsFormsSource();
+        $routesList = $this->sourceBetween(
+            $allSource,
             'function notifications_routes_list(',
             'function notifications_route_new('
         );
+        $subroutes = $this->sourceBetween(
+            $allSource,
+            'function notifications_route_subroutes(',
+            'function notifications_route_edit('
+        );
 
-        foreach (['Route', 'Conditions', 'Receiver', 'Behavior', 'Add subroute', 'Delete'] as $label) {
-            self::assertStringContainsString("_('{$label}')", $source);
+        foreach ([$routesList, $subroutes] as $source) {
+            foreach (['Route', 'Conditions', 'Receiver', 'Behavior'] as $label) {
+                self::assertStringContainsString("_('{$label}')", $source);
+            }
+
+            self::assertSame(6, substr_count($source, '$xtpl->table_add_category('));
+            self::assertSame(2, substr_count($source, "\$xtpl->table_add_category('');"));
+            self::assertStringNotContainsString("_('Order')", $source);
+            self::assertStringNotContainsString("_('Actions')", $source);
+            self::assertStringContainsString(
+                'notifications_route_add_action_html(',
+                $source
+            );
+            self::assertStringContainsString(
+                'notifications_route_delete_action_html(',
+                $source
+            );
         }
 
-        self::assertSame(6, substr_count($source, '$xtpl->table_add_category('));
-        self::assertStringNotContainsString("_('Order')", $source);
-        self::assertStringNotContainsString("_('Actions')", $source);
-        self::assertStringContainsString(
-            'notifications_route_add_action_html($route, $user_id)',
-            $source
-        );
-        self::assertStringContainsString(
-            'notifications_route_delete_action_html($route, $user_id)',
-            $source
-        );
+        self::assertStringContainsString("\$title = \$parent_id === null ? _('Add route') : _('Add subroute');", $allSource);
+        self::assertStringContainsString("title=\"' . h(_('Delete')) . '\"", $allSource);
     }
 
     public function testRouteFormsUseApiDescriptionsAndEventTypeLinks(): void
