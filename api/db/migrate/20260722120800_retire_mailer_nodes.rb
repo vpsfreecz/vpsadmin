@@ -2,9 +2,6 @@ class RetireMailerNodes < ActiveRecord::Migration[8.1]
   MAILER_ROLE = 2
 
   def up
-    return unless table_exists?(:nodes)
-    return unless column_exists?(:nodes, :role) && column_exists?(:nodes, :active)
-
     execute <<~SQL.squish
       UPDATE nodes
       SET active = 0

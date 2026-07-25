@@ -591,8 +591,6 @@ class AddEvents < ActiveRecord::Migration[8.1]
   protected
 
   def backfill_default_routes
-    return unless table_exists?(:users)
-
     say_with_time('Creating default event receivers and routes') do
       execute <<~SQL.squish
         INSERT INTO notification_receivers
@@ -735,8 +733,6 @@ class AddEvents < ActiveRecord::Migration[8.1]
   end
 
   def backfill_advanced_mail_routes
-    return unless table_exists?(:users)
-
     say_with_time('Creating event routes from advanced e-mail settings') do
       backfill_notification_template_recipient_routes
       backfill_email_role_recipient_routes
@@ -744,9 +740,6 @@ class AddEvents < ActiveRecord::Migration[8.1]
   end
 
   def backfill_notification_template_recipient_routes
-    return unless table_exists?(:user_notification_template_recipients)
-    return unless table_exists?(:notification_templates)
-
     template_names = advanced_template_names
     positions = Hash.new(ADVANCED_NOTIFICATION_TEMPLATE_ROUTE_POSITION - 1)
 
@@ -814,8 +807,6 @@ class AddEvents < ActiveRecord::Migration[8.1]
   end
 
   def backfill_email_role_recipient_routes
-    return unless table_exists?(:user_email_role_recipients)
-
     positions = Hash.new(ADVANCED_EMAIL_ROLE_ROUTE_POSITION - 1)
 
     rows = select_all(<<~SQL.squish).to_a.select do |row|
@@ -1064,6 +1055,6 @@ class AddEvents < ActiveRecord::Migration[8.1]
   end
 
   def mailer_enabled_sql
-    column_exists?(:users, :mailer_enabled) ? 'users.mailer_enabled' : '1'
+    'users.mailer_enabled'
   end
 end

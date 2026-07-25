@@ -55,10 +55,6 @@ RSpec.describe RenameNotificationTemplateTables do
       create_table :mail_logs do |t|
         t.integer :mail_template_id
       end
-
-      create_table :event_routes do |t|
-        t.string :email_template_name
-      end
     end
   end
 
@@ -84,7 +80,6 @@ RSpec.describe RenameNotificationTemplateTables do
       enabled: true
     )
     insert_row(:mail_logs, mail_template_id: template_id)
-    insert_row(:event_routes, email_template_name: 'daily_report')
   end
 
   it 'renames legacy mail template tables, columns and indexes' do
@@ -110,7 +105,6 @@ RSpec.describe RenameNotificationTemplateTables do
     expect(column(:notification_template_variants, :from).null).to be(true)
     expect(column(:notification_template_variants, :subject).null).to be(true)
     expect(column_exists?(:mail_logs, :notification_template_id)).to be(true)
-    expect(column_exists?(:event_routes, :template_name)).to be(true)
     expect(index_exists?(:notification_template_email_recipients,
                          :notification_template_email_recipients_unique)).to be(true)
     expect(index_exists?(:notification_template_variants, :notification_template_variants_unique)).to be(true)
@@ -156,7 +150,6 @@ RSpec.describe RenameNotificationTemplateTables do
     expect(column(:mail_template_translations, :from).null).to be(false)
     expect(column(:mail_template_translations, :subject).null).to be(false)
     expect(column_exists?(:mail_logs, :mail_template_id)).to be(true)
-    expect(column_exists?(:event_routes, :email_template_name)).to be(true)
     expect(index_exists?(:mail_template_recipients, :mail_template_recipients_unique)).to be(true)
     expect(index_exists?(:mail_template_translations, :mail_template_translation_unique)).to be(true)
     expect(index_exists?(:user_mail_template_recipients, :user_id_mail_template_id)).to be(true)

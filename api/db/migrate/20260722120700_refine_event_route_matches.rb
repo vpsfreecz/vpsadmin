@@ -7,14 +7,12 @@ class RefineEventRouteMatches < ActiveRecord::Migration[8.1]
 
   def down
     restore_legacy_matched_route_columns
-    drop_table :event_route_matches if table_exists?(:event_route_matches)
+    drop_table :event_route_matches
   end
 
   protected
 
   def create_event_route_matches
-    return if table_exists?(:event_route_matches)
-
     create_table :event_route_matches do |t|
       t.references :event, null: false
       t.references :event_route, null: false
@@ -35,17 +33,11 @@ class RefineEventRouteMatches < ActiveRecord::Migration[8.1]
   end
 
   def backfill_event_route_matches
-    return unless table_exists?(:event_route_matches)
-    return unless table_exists?(:event_routes)
-
     backfill_from_routing_contexts
     backfill_from_events
   end
 
   def backfill_from_routing_contexts
-    return unless table_exists?(:event_routing_contexts)
-    return unless column_exists?(:event_routing_contexts, :matched_event_route_id)
-
     execute <<~SQL.squish
       INSERT IGNORE INTO event_route_matches
         (event_id, event_route_id, route_owner_id, subject_relation, source,
@@ -67,9 +59,6 @@ class RefineEventRouteMatches < ActiveRecord::Migration[8.1]
   end
 
   def backfill_from_events
-    return unless table_exists?(:events)
-    return unless column_exists?(:events, :matched_event_route_id)
-
     execute <<~SQL.squish
       INSERT IGNORE INTO event_route_matches
         (event_id, event_route_id, route_owner_id, subject_relation, source,
@@ -98,45 +87,24 @@ class RefineEventRouteMatches < ActiveRecord::Migration[8.1]
   end
 
   def remove_legacy_matched_route_columns
-    if table_exists?(:event_routing_contexts) &&
-       column_exists?(:event_routing_contexts, :matched_event_route_id)
-      if index_exists?(
-        :event_routing_contexts,
-        :matched_event_route_id,
-        name: 'index_event_routing_contexts_on_matched_route'
-      )
-        remove_index :event_routing_contexts, name: 'index_event_routing_contexts_on_matched_route'
-      end
-      remove_column :event_routing_contexts, :matched_event_route_id
-    end
-
-    return unless table_exists?(:events) && column_exists?(:events, :matched_event_route_id)
-
-    remove_index :events, :matched_event_route_id if index_exists?(:events, [:matched_event_route_id])
+    remove_index :event_routing_contexts, name: 'index_event_routing_contexts_on_matched_route'
+    remove_column :event_routing_contexts, :matched_event_route_id
+    remove_index :events, :matched_event_route_id
     remove_column :events, :matched_event_route_id
   end
 
   def restore_legacy_matched_route_columns
-    if table_exists?(:events) && !column_exists?(:events, :matched_event_route_id)
-      add_column :events, :matched_event_route_id, :bigint, null: true
-      add_index :events, :matched_event_route_id
-    end
-
-    if table_exists?(:event_routing_contexts) &&
-       !column_exists?(:event_routing_contexts, :matched_event_route_id)
-      add_column :event_routing_contexts, :matched_event_route_id, :bigint, null: true
-      add_index :event_routing_contexts, :matched_event_route_id,
-                name: 'index_event_routing_contexts_on_matched_route'
-    end
+    add_column :events, :matched_event_route_id, :bigint, null: true
+    add_index :events, :matched_event_route_id
+    add_column :event_routing_contexts, :matched_event_route_id, :bigint, null: true
+    add_index :event_routing_contexts, :matched_event_route_id,
+              name: 'index_event_routing_contexts_on_matched_route'
 
     restore_event_matched_routes
     restore_context_matched_routes
   end
 
   def restore_event_matched_routes
-    return unless table_exists?(:event_route_matches)
-    return unless table_exists?(:events) && column_exists?(:events, :matched_event_route_id)
-
     execute <<~SQL.squish
       UPDATE events
       INNER JOIN event_route_matches
@@ -152,10 +120,6 @@ class RefineEventRouteMatches < ActiveRecord::Migration[8.1]
   end
 
   def restore_context_matched_routes
-    return unless table_exists?(:event_route_matches)
-    return unless table_exists?(:event_routing_contexts)
-    return unless column_exists?(:event_routing_contexts, :matched_event_route_id)
-
     execute <<~SQL.squish
       UPDATE event_routing_contexts
       INNER JOIN event_route_matches

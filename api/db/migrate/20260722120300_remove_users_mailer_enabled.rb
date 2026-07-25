@@ -8,8 +8,6 @@ class RemoveUsersMailerEnabled < ActiveRecord::Migration[8.1]
   LEGACY_DEFAULT_MUTE_DESCRIPTION = 'Created from the disabled mailer setting'.freeze
 
   def up
-    return unless table_exists?(:users)
-
     preserve_disabled_mailers_as_email_disabled
     ensure_default_email_receivers
     ensure_default_email_actions
@@ -17,17 +15,11 @@ class RemoveUsersMailerEnabled < ActiveRecord::Migration[8.1]
     ensure_default_mute_receivers
     ensure_default_routes
 
-    remove_column :users, :mailer_enabled if column_exists?(:users, :mailer_enabled)
+    remove_column :users, :mailer_enabled
   end
 
   def down
-    return unless table_exists?(:users)
-
-    unless column_exists?(:users, :mailer_enabled)
-      add_column :users, :mailer_enabled, :boolean, null: false, default: true
-    end
-
-    return unless table_exists?(:user_notification_delivery_methods)
+    add_column :users, :mailer_enabled, :boolean, null: false, default: true
 
     execute <<~SQL.squish
       UPDATE users
@@ -45,9 +37,6 @@ class RemoveUsersMailerEnabled < ActiveRecord::Migration[8.1]
   protected
 
   def preserve_disabled_mailers_as_email_disabled
-    return unless table_exists?(:user_notification_delivery_methods)
-    return unless column_exists?(:users, :mailer_enabled)
-
     execute <<~SQL.squish
       UPDATE user_notification_delivery_methods
       INNER JOIN users
@@ -78,8 +67,6 @@ class RemoveUsersMailerEnabled < ActiveRecord::Migration[8.1]
   end
 
   def ensure_default_email_receivers
-    return unless table_exists?(:notification_receivers)
-
     execute <<~SQL.squish
       INSERT INTO notification_receivers
         (user_id, label, description, enabled, mute, created_at, updated_at)
@@ -107,10 +94,6 @@ class RemoveUsersMailerEnabled < ActiveRecord::Migration[8.1]
   end
 
   def ensure_default_email_actions
-    return unless table_exists?(:notification_receivers)
-    return unless table_exists?(:notification_targets)
-    return unless table_exists?(:notification_receiver_targets)
-
     execute <<~SQL.squish
       INSERT INTO notification_targets
         (user_id, action, label, target_kind, target_value, identity_key,
@@ -173,8 +156,6 @@ class RemoveUsersMailerEnabled < ActiveRecord::Migration[8.1]
   end
 
   def normalize_legacy_mute_receivers
-    return unless table_exists?(:notification_receivers)
-
     execute <<~SQL.squish
       UPDATE notification_receivers
       SET label = #{quote(DEFAULT_MUTE_LABEL)},
@@ -186,8 +167,6 @@ class RemoveUsersMailerEnabled < ActiveRecord::Migration[8.1]
   end
 
   def ensure_default_mute_receivers
-    return unless table_exists?(:notification_receivers)
-
     execute <<~SQL.squish
       INSERT INTO notification_receivers
         (user_id, label, description, enabled, mute, created_at, updated_at)
@@ -212,10 +191,6 @@ class RemoveUsersMailerEnabled < ActiveRecord::Migration[8.1]
   end
 
   def ensure_default_routes
-    return unless table_exists?(:event_routes)
-    return unless table_exists?(:notification_receivers)
-    return unless column_exists?(:users, :mailer_enabled)
-
     execute <<~SQL.squish
       INSERT INTO event_routes
         (user_id, parent_id, notification_receiver_id, label, position,
