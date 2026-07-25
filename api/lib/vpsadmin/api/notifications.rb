@@ -19,6 +19,15 @@ module VpsAdmin::API
     class SmsCallbackConflictError < StandardError; end
     class EmailVerificationDeliveryError < StandardError; end
 
+    class DeliveryPreparationTerminalError < StandardError
+      attr_reader :delivery_state
+
+      def initialize(delivery_state, message)
+        @delivery_state = delivery_state
+        super(message)
+      end
+    end
+
     module Actions
       class Definition
         attr_reader :name, :target_kinds
@@ -168,12 +177,14 @@ module VpsAdmin::API
       'webhook' => 'vpsadmin.notifications.webhook',
       'sms' => 'vpsadmin.notifications.sms'
     }.freeze
+    GROUPING_QUEUE = 'vpsadmin.notifications.grouping'.freeze
     ROUTING_KEYS = {
       'email' => 'delivery.email',
       'telegram' => 'delivery.telegram',
       'webhook' => 'delivery.webhook',
       'sms' => 'delivery.sms'
     }.freeze
+    GROUPING_ROUTING_KEY = 'delivery.grouping'.freeze
     DEFAULT_LIMIT = 100
     DEFAULT_EMAIL_CONCURRENCY = 2
     DEFAULT_TELEGRAM_CONCURRENCY = 2
@@ -851,39 +862,35 @@ module VpsAdmin::API
       value == true || value.to_s.casecmp('true') == 0 || value.to_s == '1'
     end
 
-    def render_email_delivery!(delivery)
+    def render_email_delivery!(delivery, strict: false)
       unless delivery.notification_receiver_available?
-        delivery.update!(
-          state: 'canceled',
-          error_summary: 'notification receiver is disabled or muted'
+        raise DeliveryPreparationTerminalError.new(
+          'canceled',
+          'notification receiver is disabled or muted'
         )
-        return
       end
 
       unless delivery.delivery_method_enabled?
-        delivery.update!(
-          state: 'canceled',
-          error_summary: 'email delivery method is disabled'
+        raise DeliveryPreparationTerminalError.new(
+          'canceled',
+          'email delivery method is disabled'
         )
-        return
       end
 
       unless delivery.receiver_action_available?
-        delivery.update!(
-          state: 'canceled',
-          error_summary: 'e-mail action is not available'
+        raise DeliveryPreparationTerminalError.new(
+          'canceled',
+          'e-mail action is not available'
         )
-        return
       end
 
       mail_log = build_mail_log(delivery)
 
       if mail_log.nil?
-        delivery.update!(
-          state: 'skipped',
-          error_summary: 'notification template is disabled'
+        raise DeliveryPreparationTerminalError.new(
+          'skipped',
+          'notification template is disabled'
         )
-        return
       end
 
       persist_mail_log_snapshot!(mail_log)
@@ -892,7 +899,16 @@ module VpsAdmin::API
         mail_log:,
         error_summary: nil
       )
+    rescue DeliveryPreparationTerminalError => e
+      raise if strict
+
+      delivery.update!(
+        state: e.delivery_state,
+        error_summary: e.message
+      )
     rescue StandardError => e
+      raise if strict
+
       delivery.update!(
         state: 'failed',
         error_summary: "#{e.class}: #{e.message}"
@@ -1044,7 +1060,10 @@ module VpsAdmin::API
       end
 
       prepare_delivery do |delivery|
-        VpsAdmin::API::Notifications.render_email_delivery!(delivery)
+        VpsAdmin::API::Notifications.render_email_delivery!(
+          delivery,
+          strict: delivery.sending_state?
+        )
       end
 
       deliver do |delivery|
@@ -1366,7 +1385,9 @@ module VpsAdmin::API
       end
 
       def publish_after_commit(deliveries)
-        deliveries = Array(deliveries).select { |delivery| delivery.action.in?(QUEUES.keys) }
+        deliveries = Array(deliveries).select do |delivery|
+          delivery.action.in?(QUEUES.keys) && delivery.released_state?
+        end
         return if deliveries.empty?
 
         if ActiveRecord.respond_to?(:after_all_transactions_commit)
@@ -1382,11 +1403,16 @@ module VpsAdmin::API
         channel = connection.create_channel
         exchange = channel.direct(EXCHANGE_NAME, durable: true)
 
-        deliveries.group_by(&:action).each_key do |action|
-          declare_queue(channel, exchange, action)
+        grouped, direct = deliveries.partition do |delivery|
+          delivery.grouping_enabled? && delivery.event_delivery_group_id.nil?
         end
 
-        deliveries.each do |delivery|
+        direct.group_by(&:action).each_key do |action|
+          declare_queue(channel, exchange, action)
+        end
+        declare_grouping_queue(channel, exchange) if grouped.any?
+
+        direct.each do |delivery|
           exchange.publish(
             JSON.dump({
                         delivery_id: delivery.id,
@@ -1394,6 +1420,17 @@ module VpsAdmin::API
                         released_at: delivery.released_at&.iso8601
                       }),
             routing_key: Notifications.routing_key(delivery.action),
+            persistent: true
+          )
+        end
+        grouped.uniq { |delivery| [delivery.event_id, delivery.group_key] }.each do |delivery|
+          exchange.publish(
+            JSON.dump({
+                        event_id: delivery.event_id,
+                        group_key: delivery.group_key,
+                        released_at: delivery.released_at&.iso8601
+                      }),
+            routing_key: GROUPING_ROUTING_KEY,
             persistent: true
           )
         end
@@ -1412,6 +1449,15 @@ module VpsAdmin::API
           arguments: { 'x-queue-type' => 'quorum' }
         )
         queue.bind(exchange, routing_key: Notifications.routing_key(action))
+      end
+
+      def declare_grouping_queue(channel, exchange)
+        queue = channel.queue(
+          GROUPING_QUEUE,
+          durable: true,
+          arguments: { 'x-queue-type' => 'quorum' }
+        )
+        queue.bind(exchange, routing_key: GROUPING_ROUTING_KEY)
       end
 
       def connection
@@ -1487,40 +1533,44 @@ module VpsAdmin::API
 
     class GroupActivation
       class << self
-        def activate_released!(action, limit: DEFAULT_LIMIT)
-          ::EventDelivery
-            .where(
-              action: action.to_s,
-              state: 'released',
-              event_delivery_group_id: nil
-            )
-            .where.not(group_key: nil)
-            .order(:id)
-            .limit(limit)
-            .each { |delivery| activate!(delivery) }
+        def activate_released!(limit: DEFAULT_LIMIT)
+          released_groups = ::EventDelivery
+                            .where(state: 'released', event_delivery_group_id: nil)
+                            .where.not(group_key: nil)
+                            .select(:event_id, :group_key)
+                            .distinct
+                            .order(:event_id, :group_key)
+                            .limit(limit)
+                            .pluck(:event_id, :group_key)
+
+          released_groups.each do |event_id, group_key|
+            activate_event!(event_id, group_key)
+          end
         end
 
         def activate!(delivery, now: Time.now)
           return delivery.event_delivery_group if delivery.event_delivery_group
           return unless delivery.grouping_enabled?
 
-          chain_id = transaction_chain_id_for(delivery)
+          activate_event!(delivery.event_id, delivery.group_key, now:)
+        end
+
+        def activate_event!(event_id, group_key, now: Time.now)
+          group = nil
 
           ::EventDelivery.transaction do
-            lock_transaction_chain!(chain_id)
-            delivery.reload
-            return delivery.event_delivery_group if delivery.event_delivery_group
-            return unless delivery.released_state?
+            lock_transaction_chains!(transaction_chain_ids_for(event_id, group_key))
+
+            delivery = released_scope(event_id, group_key).lock.first
+            next unless delivery
 
             group = find_or_create_group!(delivery)
 
             group.with_lock do
-              delivery.lock!
-              delivery.reload
-              return delivery.event_delivery_group if delivery.event_delivery_group
-              return unless delivery.released_state?
+              deliveries = released_scope(event_id, group_key).lock.to_a
+              next if deliveries.empty?
 
-              first_member_at = delivery.released_at || now
+              first_member_at = deliveries.filter_map(&:released_at).min || now
               next_flush_at =
                 group.next_flush_at ||
                 [
@@ -1530,35 +1580,54 @@ module VpsAdmin::API
                 ].compact.max
 
               group.update!(next_flush_at:)
-              delivery.update!(
-                event_delivery_group: group,
-                state: 'grouping',
-                next_attempt_at: nil
+              ::EventDelivery.where(id: deliveries.map(&:id)).update_all(
+                event_delivery_group_id: group.id,
+                state: ::EventDelivery.states.fetch('grouping'),
+                next_attempt_at: nil,
+                updated_at: now
               )
             end
-
-            group
           end
+
+          group
         end
 
         protected
 
-        def transaction_chain_id_for(delivery)
-          transaction_id = delivery.transaction_id
-          return unless transaction_id
-
-          ::Transaction.where(id: transaction_id).pick(:transaction_chain_id)
+        def released_scope(event_id, group_key)
+          ::EventDelivery
+            .where(
+              event_id:,
+              group_key:,
+              state: 'released',
+              event_delivery_group_id: nil
+            )
+            .order(:id)
         end
 
-        def lock_transaction_chain!(chain_id)
-          ::TransactionChain.where(id: chain_id).lock.take if chain_id
+        def transaction_chain_ids_for(event_id, group_key)
+          transaction_ids = released_scope(event_id, group_key)
+                            .where.not(transaction_id: nil)
+                            .distinct
+                            .pluck(:transaction_id)
+          ::Transaction
+            .where(id: transaction_ids)
+            .where.not(transaction_chain_id: nil)
+            .distinct
+            .order(:transaction_chain_id)
+            .pluck(:transaction_chain_id)
+        end
+
+        def lock_transaction_chains!(chain_ids)
+          chain_ids.each do |chain_id|
+            ::TransactionChain.where(id: chain_id).lock.take
+          end
         end
 
         def find_or_create_group!(delivery)
           ::EventDeliveryGroup.find_or_create_by!(group_key: delivery.group_key) do |group|
             group.event_route = delivery.event_route
             group.route_owner = delivery.event_routing_context&.recipient_user
-            group.action = delivery.action
             group.labels = delivery.group_labels || {}
             group.group_wait_seconds = delivery.group_wait_seconds
             group.group_interval_seconds = delivery.group_interval_seconds
@@ -1571,23 +1640,23 @@ module VpsAdmin::API
 
     class GroupSealer
       class << self
-        def seal_due!(action, limit: DEFAULT_LIMIT, now: Time.now,
-                      publisher: Publisher.default)
+        def seal_due!(limit: DEFAULT_LIMIT, now: Time.now, publisher: Publisher.default)
           groups = ::EventDeliveryGroup
-                   .due_for_action(action.to_s, now)
+                   .due(now)
                    .order(:next_flush_at, :id)
                    .limit(limit)
                    .to_a
 
-          groups.filter_map do |group|
+          groups.flat_map do |group|
             seal!(group, now:, publisher:)
           end
         end
 
         def seal!(group, now: Time.now, publisher: Publisher.default)
-          released = nil
+          released = []
 
           ::EventDeliveryGroup.transaction do
+            lock_transaction_chains!(transaction_chain_ids_for(group))
             group.lock!
             group.reload
             next if group.next_flush_at.nil? || group.next_flush_at > now
@@ -1602,31 +1671,35 @@ module VpsAdmin::API
               next
             end
 
-            leader = members.first
-            member_ids = members.drop(1).map(&:id)
-            if member_ids.any?
-              ::EventDelivery.where(id: member_ids, state: 'grouping').update_all(
-                state: ::EventDelivery.states.fetch('grouped'),
-                effective_event_delivery_id: leader.id,
-                next_attempt_at: nil,
-                updated_at: now
-              )
+            streams = members.group_by(&:group_stream_key)
+            if streams.has_key?(nil)
+              raise "notification group ##{group.id} has a delivery without a stream key"
             end
 
-            leader.update!(
-              state: 'prepared',
-              effective_event_delivery_id: nil,
-              next_attempt_at: nil
-            )
-            prepare!(leader)
+            event_sets = streams.values.map { |stream| stream.map(&:event_id).sort }.uniq
+            if event_sets.length != 1
+              raise "notification group ##{group.id} has inconsistent stream membership"
+            end
 
-            if leader.reload.prepared_state?
+            streams.each_value do |stream|
+              leader = stream.first
+              member_ids = stream.drop(1).map(&:id)
+              if member_ids.any?
+                ::EventDelivery.where(id: member_ids, state: 'grouping').update_all(
+                  state: ::EventDelivery.states.fetch('grouped'),
+                  effective_event_delivery_id: leader.id,
+                  next_attempt_at: nil,
+                  updated_at: now
+                )
+              end
+
               leader.update!(
                 state: 'released',
+                effective_event_delivery_id: nil,
                 released_at: now,
                 next_attempt_at: now
               )
-              released = leader
+              released << leader
             end
 
             group.update!(
@@ -1635,16 +1708,152 @@ module VpsAdmin::API
             )
           end
 
-          publisher.publish_after_commit([released]) if released
+          publisher.publish_after_commit(released)
           released
         end
 
         protected
 
-        def prepare!(delivery)
-          router = VpsAdmin::API::Events::Router.new(delivery.event)
-          Actions.fetch(delivery.action).prepare_delivery_for(router, delivery)
+        def transaction_chain_ids_for(group)
+          transaction_ids = group.event_deliveries
+                                 .where(state: 'grouping')
+                                 .where.not(transaction_id: nil)
+                                 .distinct
+                                 .pluck(:transaction_id)
+          ::Transaction
+            .where(id: transaction_ids)
+            .where.not(transaction_chain_id: nil)
+            .distinct
+            .order(:transaction_chain_id)
+            .pluck(:transaction_chain_id)
         end
+
+        def lock_transaction_chains!(chain_ids)
+          chain_ids.each do |chain_id|
+            ::TransactionChain.where(id: chain_id).lock.take
+          end
+        end
+      end
+    end
+
+    class Grouper
+      def self.run
+        new.run
+      end
+
+      def initialize(config: Config.load, sleeper: ->(seconds) { sleep(seconds) })
+        @config = config
+        @sleeper = sleeper
+        @running = true
+        @connection = nil
+      end
+
+      def run
+        trap_signals
+
+        if rabbitmq_configured?
+          run_with_rabbitmq
+        else
+          run_reconciliation_loop
+        end
+      end
+
+      def dispatch_due(limit: DEFAULT_LIMIT)
+        ActiveRecord::Base.connection_pool.with_connection do
+          GroupActivation.activate_released!(limit:)
+          GroupSealer.seal_due!(limit:)
+        end
+      end
+
+      def dispatch_group(event_id, group_key)
+        ActiveRecord::Base.connection_pool.with_connection do
+          group = GroupActivation.activate_event!(event_id, group_key)
+          GroupSealer.seal!(group) if group&.next_flush_at && group.next_flush_at <= Time.now
+        end
+      end
+
+      protected
+
+      def trap_signals
+        %w[INT TERM].each do |signal|
+          Signal.trap(signal) { @running = false }
+        end
+      end
+
+      def run_with_rabbitmq
+        channel = connection.create_channel
+        exchange = channel.direct(EXCHANGE_NAME, durable: true)
+        queue = channel.queue(
+          GROUPING_QUEUE,
+          durable: true,
+          arguments: { 'x-queue-type' => 'quorum' }
+        )
+        queue.bind(exchange, routing_key: GROUPING_ROUTING_KEY)
+
+        while @running
+          dispatch_due
+
+          delivery_info, _properties, payload = queue.pop(manual_ack: true)
+          if delivery_info
+            handle_queue_payload(channel, delivery_info, payload)
+          else
+            @sleeper.call(poll_interval)
+          end
+        end
+      ensure
+        channel.close if channel && channel.respond_to?(:open?) && channel.open?
+        @connection.close if @connection&.open?
+      end
+
+      def handle_queue_payload(channel, delivery_info, payload)
+        data = JSON.parse(payload)
+        dispatch_group(data.fetch('event_id'), data.fetch('group_key'))
+        channel.ack(delivery_info.delivery_tag)
+      rescue StandardError => e
+        warn "Unable to process notification grouping message: #{e.class}: #{e.message}"
+        channel.nack(delivery_info.delivery_tag, false, true)
+      end
+
+      def run_reconciliation_loop
+        while @running
+          dispatch_due
+          @sleeper.call(poll_interval)
+        end
+      end
+
+      def connection
+        if @connection.nil? || !@connection.open?
+          rabbitmq = rabbitmq_config
+          @connection = Bunny.new(
+            hosts: Array(rabbitmq.fetch('hosts')),
+            vhost: rabbitmq.fetch('vhost', '/'),
+            username: rabbitmq.fetch('username'),
+            password: rabbitmq.fetch('password'),
+            log_file: $stderr
+          )
+          @connection.start
+        end
+
+        @connection
+      end
+
+      def rabbitmq_configured?
+        rabbitmq_config
+        true
+      rescue KeyError
+        false
+      end
+
+      def rabbitmq_config
+        rabbitmq = @config.fetch('rabbitmq')
+        rabbitmq.fetch('hosts')
+        rabbitmq.fetch('username')
+        rabbitmq.fetch('password')
+        rabbitmq
+      end
+
+      def poll_interval
+        [@config.fetch('poll_interval', DEFAULT_POLL_INTERVAL).to_f, 0.1].max
       end
     end
 
@@ -1733,8 +1942,6 @@ module VpsAdmin::API
         return if delivery_limit <= 0
 
         deliveries = ActiveRecord::Base.connection_pool.with_connection do
-          GroupActivation.activate_released!(@action, limit: requested_limit)
-          GroupSealer.seal_due!(@action, limit: requested_limit)
           due_deliveries(delivery_limit, scan_limit: requested_limit)
         end
 
@@ -1756,11 +1963,6 @@ module VpsAdmin::API
         delivery = find_delivery(id)
         return unless delivery && delivery.action == @action
 
-        if delivery.grouping_enabled? && delivery.event_delivery_group_id.nil?
-          group = GroupActivation.activate!(delivery)
-          GroupSealer.seal!(group) if group&.next_flush_at && group.next_flush_at <= Time.now
-          delivery.reload
-        end
         return if delivery.grouping_state? || delivery.grouped_state?
 
         dispatch_delivery(delivery, worker_state:, defer_throttles:)
@@ -1936,12 +2138,17 @@ module VpsAdmin::API
         attempt = claim_delivery(delivery)
         return unless attempt
 
+        delivery.reload
+        prepare_grouped_delivery!(delivery)
         result = deliver(delivery.reload)
         if result&.fetch(:accepted, false)
           mark_accepted!(delivery, attempt, result)
         else
           mark_success!(delivery, attempt, result)
         end
+        nil
+      rescue DeliveryPreparationTerminalError => e
+        mark_preparation_terminal!(delivery, attempt, e)
         nil
       rescue WebhookResponseError => e
         mark_failure!(
@@ -2166,8 +2373,14 @@ module VpsAdmin::API
         domains = %i[to cc bcc].flat_map do |attr|
           email_address_domains(mail_log&.public_send(attr))
         end
+        if domains.empty? && delivery.grouped_delivery?
+          addresses = VpsAdmin::API::Events.email_target_addresses(delivery.event, delivery)
+          domains.concat(addresses.flat_map { |address| email_address_domains(address) })
+        end
 
         domains.uniq.presence || ['_unknown']
+      rescue StandardError
+        ['_unknown']
       end
 
       def email_address_domains(value)
@@ -2267,6 +2480,18 @@ module VpsAdmin::API
 
       def deliver(delivery)
         Actions.fetch(@action).deliver_with(self, delivery)
+      end
+
+      def prepare_grouped_delivery!(delivery)
+        return unless delivery.grouped_delivery?
+        return if delivery_snapshot_prepared?(delivery)
+
+        router = VpsAdmin::API::Events::Router.new(delivery.event)
+        Actions.fetch(delivery.action).prepare_delivery_for(router, delivery)
+      end
+
+      def delivery_snapshot_prepared?(delivery)
+        delivery.email_action? ? delivery.mail_log_id.present? : delivery.payload.present?
       end
 
       def deliver_email(delivery)
@@ -2454,6 +2679,20 @@ module VpsAdmin::API
         end
 
         delivery.update!(attrs)
+      end
+
+      def mark_preparation_terminal!(delivery, attempt, error)
+        now = Time.now
+        attempt&.update!(
+          state: 'failed',
+          finished_at: now,
+          error_summary: error.message
+        )
+        delivery.update!(
+          state: error.delivery_state,
+          next_attempt_at: nil,
+          error_summary: error.message
+        )
       end
 
       def telegram_delivery_payload(delivery)

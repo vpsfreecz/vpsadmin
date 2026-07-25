@@ -498,6 +498,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
                                                index: { name: 'idx_event_deliveries_on_group' }
       t.bigint      :effective_event_delivery_id, null: true
       t.string      :group_key,                null: true, limit: 64
+      t.string      :group_stream_key,         null: true, limit: 64
       t.text        :group_labels,             null: true
       t.integer     :group_wait_seconds,       null: true
       t.integer     :group_interval_seconds,   null: true
@@ -526,11 +527,13 @@ class AddEvents < ActiveRecord::Migration[8.1]
     add_index :event_deliveries, :released_at
     add_index :event_deliveries, :effective_event_delivery_id,
               name: 'idx_event_deliveries_on_effective'
+    add_index :event_deliveries,
+              %i[event_delivery_group_id group_stream_key state],
+              name: 'idx_event_deliveries_on_group_stream_state'
 
     create_table :event_delivery_groups do |t|
       t.references  :event_route,              null: true
       t.bigint      :route_owner_id,           null: true
-      t.string      :action,                   null: false, limit: 50
       t.string      :group_key,                null: false, limit: 64
       t.text        :labels,                   null: false
       t.integer     :group_wait_seconds,       null: false
@@ -541,8 +544,8 @@ class AddEvents < ActiveRecord::Migration[8.1]
     end
 
     add_index :event_delivery_groups, :group_key, unique: true
-    add_index :event_delivery_groups, %i[action next_flush_at],
-              name: 'idx_event_delivery_groups_on_action_due'
+    add_index :event_delivery_groups, :next_flush_at,
+              name: 'idx_event_delivery_groups_on_due'
 
     create_table :event_delivery_attempts do |t|
       t.references  :event_delivery,           null: false

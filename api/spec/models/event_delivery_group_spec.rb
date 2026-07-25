@@ -100,19 +100,24 @@ RSpec.describe EventDeliveryGroup do
         now: started_at + 9,
         publisher:
       )
-    ).to be_nil
+    ).to eq([])
 
     leader = VpsAdmin::API::Notifications::GroupSealer.seal!(
       first_group,
       now: started_at + 10,
       publisher:
-    )
+    ).sole
 
     expect(leader).to eq(first)
     expect(first.reload).to be_released_state
     expect(second.reload).to be_grouped_state
     expect(second.effective_event_delivery_id).to eq(first.id)
     expect(first.event_count).to eq(2)
+    expect(first.payload).to be_nil
+
+    VpsAdmin::API::Notifications::Dispatcher
+      .new('webhook')
+      .send(:prepare_grouped_delivery!, first)
 
     payload = JSON.parse(first.payload)
     expect(payload).to include('version' => 1)
@@ -126,7 +131,7 @@ RSpec.describe EventDeliveryGroup do
         now: started_at + 10,
         publisher:
       )
-    ).to be_nil
+    ).to eq([])
   end
 
   it 'uses group_interval to delay a later batch for the same labels' do
@@ -162,7 +167,7 @@ RSpec.describe EventDeliveryGroup do
     expect(warning_group.labels).to eq('severity' => 'warning')
   end
 
-  it 'recovers when another dispatcher creates the group concurrently' do
+  it 'recovers when another grouper creates the group concurrently' do
     create_grouped_route!
     delivery = emit_grouped_event!(subject: 'Concurrent group creation').event_deliveries.sole
     calls = 0
@@ -244,37 +249,57 @@ RSpec.describe EventDeliveryGroup do
     expect(event).to be_nil
   end
 
-  it 'prepares grouped snapshots for every notification action' do
+  it 'uses one group and the same event set for every receiver action' do
     create_grouped_route!(
       actions: %i[email webhook telegram sms],
       group_by: [],
       group_wait_seconds: 0,
       group_interval_seconds: 60
     )
-    deliveries = emit_grouped_event!(subject: 'All actions event').event_deliveries.order(:id).to_a
+    first_deliveries = emit_grouped_event!(subject: 'All actions event').event_deliveries.order(:id).to_a
+    second_deliveries = emit_grouped_event!(subject: 'All actions follow-up').event_deliveries.order(:id).to_a
+    deliveries = first_deliveries + second_deliveries
     now = Time.now
 
-    leaders = deliveries.map do |delivery|
-      group = activate!(delivery, released_at: now)
-      VpsAdmin::API::Notifications::GroupSealer.seal!(
-        group,
-        now:,
-        publisher:
-      )
-    end
+    expect(deliveries.map(&:group_key).uniq.length).to eq(1)
+    expect(deliveries.map(&:group_stream_key).uniq.length).to eq(4)
+
+    group = activate!(first_deliveries.first, released_at: now)
+    activate!(second_deliveries.first, released_at: now)
+    expect(deliveries.map { |delivery| delivery.reload.event_delivery_group }.uniq)
+      .to eq([group])
+
+    leaders = VpsAdmin::API::Notifications::GroupSealer.seal!(
+      group,
+      now:,
+      publisher:
+    )
 
     expect(leaders.map(&:action)).to contain_exactly('email', 'webhook', 'telegram', 'sms')
     expect(leaders.map { |delivery| delivery.reload.state }).to all(eq('released'))
+    expect(leaders.map { |delivery| delivery.group_events.pluck(:id) }.uniq)
+      .to eq([leaders.first.group_events.pluck(:id)])
+    expect(leaders.map(&:event_count)).to all(eq(2))
+    expect(leaders.detect(&:email_action?).mail_log).to be_nil
+    expect(leaders.reject(&:email_action?).map(&:payload)).to all(be_nil)
+
+    leaders.each do |delivery|
+      VpsAdmin::API::Notifications::Dispatcher
+        .new(delivery.action)
+        .send(:prepare_grouped_delivery!, delivery)
+    end
+
     expect(leaders.detect(&:email_action?).mail_log).to be_present
     webhook = leaders.detect(&:webhook_action?)
     expect(JSON.parse(webhook.payload)).to include('version' => 1)
+    expect(JSON.parse(webhook.payload).fetch('events').length).to eq(2)
     webhook_headers = VpsAdmin::API::Notifications::Dispatcher
                       .new('webhook')
                       .send(:webhook_headers, webhook, webhook.payload)
     expect(webhook_headers).to include(
-      'X-VpsAdmin-Event' => 'user.test_notification',
       'X-VpsAdmin-Group' => webhook.event_delivery_group.group_key
     )
+    expect(webhook_headers).not_to have_key('X-VpsAdmin-Event')
     expect(JSON.parse(leaders.detect(&:telegram_action?).payload))
       .to include('chat_id' => '123456789')
     expect(JSON.parse(leaders.detect(&:sms_action?).payload))
@@ -290,7 +315,10 @@ RSpec.describe EventDeliveryGroup do
       group,
       now: started_at + 10,
       publisher:
-    )
+    ).sole
+    VpsAdmin::API::Notifications::Dispatcher
+      .new('webhook')
+      .send(:prepare_grouped_delivery!, leader)
     sealed_payload = leader.payload
 
     later = emit_grouped_event!(subject: 'Next batch event').event_deliveries.sole
@@ -303,5 +331,75 @@ RSpec.describe EventDeliveryGroup do
     expect(JSON.parse(leader.payload).fetch('events').length).to eq(1)
     expect(later.reload).to be_grouping_state
     expect(later.effective_event_delivery_id).to be_nil
+  end
+
+  it 'records preparation failure only on the failing receiver stream' do
+    create_grouped_route!(
+      actions: %i[email webhook],
+      group_by: [],
+      group_wait_seconds: 0,
+      group_interval_seconds: 60
+    )
+    deliveries = emit_grouped_event!(subject: 'Independent preparation').event_deliveries.to_a
+    now = Time.now
+    group = activate!(deliveries.first, released_at: now)
+    leaders = VpsAdmin::API::Notifications::GroupSealer.seal!(
+      group,
+      now:,
+      publisher:
+    )
+    email = leaders.detect(&:email_action?)
+    webhook = leaders.detect(&:webhook_action?)
+    email_dispatcher = VpsAdmin::API::Notifications::Dispatcher.new('email')
+    webhook_dispatcher = VpsAdmin::API::Notifications::Dispatcher.new('webhook')
+
+    allow(NotificationTemplate).to receive(:send_email!)
+      .and_raise('spec rendering failure')
+    allow(NotificationTemplate).to receive(:send_custom_email)
+      .and_raise('spec rendering failure')
+    allow(webhook_dispatcher).to receive(:deliver).and_return({})
+
+    email_dispatcher.dispatch_delivery_id(email.id)
+    webhook_dispatcher.dispatch_delivery_id(webhook.id)
+
+    expect(email.reload.state).to eq('released')
+    expect(email.event_delivery_attempts.sole).to be_failed_state
+    expect(webhook.reload).to be_sent_state
+    expect(webhook.event_delivery_attempts.sole).to be_succeeded_state
+    expect(JSON.parse(webhook.payload).fetch('events').length).to eq(1)
+  end
+
+  it 'reconciles released groups without a RabbitMQ wakeup' do
+    create_grouped_route!(
+      group_by: [],
+      group_wait_seconds: 0,
+      group_interval_seconds: 60
+    )
+    delivery = emit_grouped_event!(subject: 'Database reconciliation').event_deliveries.sole
+    grouper = VpsAdmin::API::Notifications::Grouper.new(config: {})
+
+    expect(delivery.reload.event_delivery_group_id).to be_nil
+
+    grouper.dispatch_due
+
+    expect(delivery.reload).to be_released_state
+    expect(delivery.event_delivery_group).to be_present
+  end
+
+  it 'handles duplicate wakeups from multiple grouper instances' do
+    create_grouped_route!(
+      group_by: [],
+      group_wait_seconds: 0,
+      group_interval_seconds: 60
+    )
+    delivery = emit_grouped_event!(subject: 'Duplicate grouper wakeup').event_deliveries.sole
+    first = VpsAdmin::API::Notifications::Grouper.new(config: {})
+    second = VpsAdmin::API::Notifications::Grouper.new(config: {})
+
+    first.dispatch_group(delivery.event_id, delivery.group_key)
+    second.dispatch_group(delivery.event_id, delivery.group_key)
+
+    expect(described_class.where(group_key: delivery.group_key).count).to eq(1)
+    expect(delivery.reload).to be_released_state
   end
 end
