@@ -9,10 +9,6 @@ class EventRoute < ApplicationRecord
   MAX_GROUP_INTERVAL_SECONDS = 2_592_000
   DEFAULT_ROUTE_LABEL = 'Default route'.freeze
   DEFAULT_ADMIN_ROUTE_LABEL = 'Default admin route'.freeze
-  DEFAULT_OOM_ROUTE_LABEL = 'OOM report notifications'.freeze
-  DEFAULT_OOM_EVENT_TYPE = 'vps.oom_report'.freeze
-  DEFAULT_OOM_GROUP_WAIT_SECONDS = 60
-  DEFAULT_OOM_GROUP_INTERVAL_SECONDS = 3 * 60 * 60
   DEFAULT_ROUTE_POSITION = 10_000
   DEFAULT_ADMIN_ROUTE_POSITION = 10_001
   DEFAULT_ROUTE_MATCHER_FIELD = 'default_routed'.freeze
@@ -58,20 +54,6 @@ class EventRoute < ApplicationRecord
     default_route_for(user, role: DEFAULT_ADMIN_ROUTE_ROLE_VALUE)
   end
 
-  def self.default_oom_route_for(user)
-    active
-      .where(
-        user:,
-        parent_id: nil,
-        label: DEFAULT_OOM_ROUTE_LABEL,
-        event_type: DEFAULT_OOM_EVENT_TYPE,
-        event_type_pattern: nil,
-        subject_scope: subject_scopes.fetch('self')
-      )
-      .order(:position, :id)
-      .first
-  end
-
   def self.default_routes_for(user)
     active
       .where(
@@ -93,41 +75,6 @@ class EventRoute < ApplicationRecord
 
   def self.subject_scope_labels
     SUBJECT_SCOPE_LABELS
-  end
-
-  def self.next_position_for(user, parent_id)
-    scope = where(user:, parent_id:)
-
-    return scope.maximum(:position).to_i + 1 if parent_id.present?
-
-    fallback_route = fallback_routes_for(user).min_by { |route| [route.position, route.id] }
-
-    return scope.maximum(:position).to_i + 1 unless fallback_route
-
-    max_before_default = scope.where('position < ?', fallback_route.position).maximum(:position)
-    candidate = max_before_default ? max_before_default + 1 : 0
-
-    return candidate if candidate < fallback_route.position
-
-    scope.where('position >= ?', fallback_route.position).update_all('position = position + 1')
-    fallback_route.position
-  end
-
-  def self.generated_fallback_position_for(user)
-    scope = where(user:, parent_id: nil)
-    fallback_route = default_routes_for(user).min_by { |route| [route.position, route.id] }
-
-    return scope.maximum(:position).to_i + 1 unless fallback_route
-
-    scope.where('position >= ?', fallback_route.position).update_all('position = position + 1')
-    fallback_route.position
-  end
-
-  def self.fallback_routes_for(user)
-    default_routes_for(user).tap do |routes|
-      oom_route = default_oom_route_for(user)
-      routes << oom_route if oom_route
-    end
   end
 
   def self.prepend_position_for(user, parent_id = nil)
