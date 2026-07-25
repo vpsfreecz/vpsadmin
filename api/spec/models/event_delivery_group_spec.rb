@@ -84,7 +84,7 @@ RSpec.describe EventDeliveryGroup do
   let(:publisher) { instance_double(VpsAdmin::API::Notifications::Publisher, publish_after_commit: nil) }
 
   it 'waits for the first batch and seals matching members into one delivery' do
-    create_grouped_route!
+    _route, receiver = create_grouped_route!
     first = emit_grouped_event!(subject: 'First grouped event').event_deliveries.sole
     second = emit_grouped_event!(subject: 'Second grouped event').event_deliveries.sole
     started_at = Time.utc(2026, 7, 24, 12, 0, 0)
@@ -93,6 +93,7 @@ RSpec.describe EventDeliveryGroup do
     second_group = activate!(second, released_at: started_at + 2)
 
     expect(second_group).to eq(first_group)
+    expect(first_group.notification_receiver).to eq(receiver)
     expect(first_group.reload.next_flush_at).to eq(started_at + 10)
     expect(
       VpsAdmin::API::Notifications::GroupSealer.seal!(
@@ -132,6 +133,26 @@ RSpec.describe EventDeliveryGroup do
         publisher:
       )
     ).to eq([])
+  end
+
+  it 'keeps the original receiver identity after rename and deletion' do
+    _route, receiver = create_grouped_route!
+    delivery = emit_grouped_event!(subject: 'Receiver identity snapshot').event_deliveries.sole
+    group = activate!(delivery, released_at: Time.utc(2026, 7, 24, 12, 0, 0))
+    receiver_id = receiver.id
+    receiver_label = receiver.label
+
+    receiver.update!(label: 'Renamed grouped receiver')
+
+    expect(group.reload.notification_receiver_id).to eq(receiver_id)
+    expect(group.notification_receiver_label).to eq(receiver_label)
+    expect(group.notification_receiver.label).to eq('Renamed grouped receiver')
+
+    receiver.destroy!
+
+    expect(group.reload.notification_receiver_id).to eq(receiver_id)
+    expect(group.notification_receiver_label).to eq(receiver_label)
+    expect(group.notification_receiver).to be_nil
   end
 
   it 'uses group_interval to delay a later batch for the same labels' do

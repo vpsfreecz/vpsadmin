@@ -1628,6 +1628,8 @@ module VpsAdmin::API
           ::EventDeliveryGroup.find_or_create_by!(group_key: delivery.group_key) do |group|
             group.event_route = delivery.event_route
             group.route_owner = delivery.event_routing_context&.recipient_user
+            group.notification_receiver = delivery.notification_receiver
+            group.notification_receiver_label = delivery.notification_receiver&.label
             group.labels = delivery.group_labels || {}
             group.group_wait_seconds = delivery.group_wait_seconds
             group.group_interval_seconds = delivery.group_interval_seconds
