@@ -360,10 +360,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1gdrjbhdac0i7ir2nvz8z2kqysici1q3v0qklwgsqrhmc2h5fchy";
+      sha256 = "1ry1kvfs326ingsjx6xspidf3cjnf0iv2fz57qipf73bkvpjldlf";
       type = "gem";
     };
-    version = "0.29.6";
+    version = "0.29.8";
   };
   haveapi-client = {
     dependencies = [
@@ -378,10 +378,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1hlgssbvh0ds5qzim6h32wdpqqf9a3drcgz40waajbri3cb3hwxl";
+      sha256 = "1xngwpff10qs6ylj72lm6xn8p0d1gx7i3v2f1kp7rgqza482dg2p";
       type = "gem";
     };
-    version = "0.29.6";
+    version = "0.29.8";
   };
   highline = {
     dependencies = [ "reline" ];
