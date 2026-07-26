@@ -20,6 +20,7 @@ module VpsAdmin::API::Resources
       resource VPS, value_label: :hostname, nullable: true
       string :ip_addr, nullable: true
       string :routing_state,
+             label: 'Routing state',
              choices: { values: ::Event.routing_state_labels },
              load_validators: false
       string :subject_relation,
