@@ -36,7 +36,11 @@ DEPENDENCY_UPDATES = [
 
 def find_repo_root(start: Path) -> Path:
     for path in [start, *start.parents]:
-        if (path / "tools" / "bundix_all.sh").is_file() and (path / "api" / "Gemfile").is_file():
+        if (
+            (path / "Rakefile").is_file()
+            and (path / "tasks" / "gem_updates.rb").is_file()
+            and (path / "api" / "Gemfile").is_file()
+        ):
             return path
 
     raise RuntimeError("could not find vpsAdmin repository root")
@@ -59,13 +63,15 @@ def update_file(root: Path, relative_path: Path, pattern: str, version: str) -> 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Update vpsAdmin Ruby HaveAPI dependencies and regenerate bundix outputs."
+        description="Update vpsAdmin Ruby HaveAPI dependencies and regenerate package metadata."
     )
     parser.add_argument("version", help="released HaveAPI version, e.g. 0.28.4")
     parser.add_argument(
+        "--skip-gem-refresh",
         "--skip-bundix",
+        dest="skip_gem_refresh",
         action="store_true",
-        help="update source dependency files without running tools/bundix_all.sh",
+        help="update source dependency files without running rake vpsadmin:gems",
     )
     args = parser.parse_args()
 
@@ -86,8 +92,8 @@ def main() -> int:
     else:
         print("source dependency files already requested this version")
 
-    if not args.skip_bundix:
-        subprocess.run(["./tools/bundix_all.sh"], cwd=root, check=True)
+    if not args.skip_gem_refresh:
+        subprocess.run(["rake", "vpsadmin:gems"], cwd=root, check=True)
 
     return 0
 
