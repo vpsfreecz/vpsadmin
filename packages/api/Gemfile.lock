@@ -291,7 +291,7 @@ DEPENDENCIES
   bunny (~> 2.24.0)
   dnsruby (~> 1.73)
   fio_api!
-  haveapi (~> 0.29.6)
+  haveapi (~> 0.29.8)
   ipaddress (~> 0.8.3)
   mail (~> 2.9)
   mysql2 (~> 0.5.6)
