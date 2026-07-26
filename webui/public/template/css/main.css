@@ -385,29 +385,6 @@ form[name="userns-map-entries"] input[type="text"] {text-align: right;}
 
 #notification-routes-table {
   width: 100%;
-  table-layout: fixed;
-}
-
-#notification-routes-table th:nth-child(1) {
-  width: 28%;
-}
-
-#notification-routes-table th:nth-child(2) {
-  width: 22%;
-}
-
-#notification-routes-table th:nth-child(3) {
-  width: 18%;
-}
-
-#notification-routes-table th:nth-child(4) {
-  width: 16%;
-}
-
-#notification-routes-table th:nth-child(5),
-#notification-routes-table th:nth-child(6) {
-  width: 8%;
-  text-align: center;
 }
 
 #notification-routes-table td {
@@ -415,9 +392,10 @@ form[name="userns-map-entries"] input[type="text"] {text-align: right;}
   vertical-align: top;
 }
 
-#notification-routes-table td:nth-child(5),
-#notification-routes-table td:nth-child(6) {
+#notification-routes-table th:nth-child(n+5),
+#notification-routes-table td:nth-child(n+5) {
   text-align: center;
+  white-space: nowrap;
 }
 
 .notification-route-order {
