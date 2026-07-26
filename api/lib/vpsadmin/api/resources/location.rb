@@ -64,9 +64,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
                  label: 'Prague',
                  has_ipv6: true,
                  remote_console_server: 'https://console.vpsadmin.mydomain.com',
-                 domain: 'prg',
-                 created_at: '2014-05-04 16:59:52 +0200',
-                 updated_at: '2014-05-04 16:59:52 +0200'
+                 domain: 'prg'
                }])
     end
 
