@@ -382,6 +382,12 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       expect(
         route_create.dig('subject_scope', 'validators', 'include', 'values')
       ).to eq(::EventRoute.subject_scope_labels)
+      expect(route_create.dig('parent_id', 'type')).to eq('Resource')
+      expect(route_create.dig('parent_id', 'resource')).to eq(['event_route'])
+      expect(route_create.dig('notification_receiver_id', 'type')).to eq('Resource')
+      expect(
+        route_create.dig('notification_receiver_id', 'resource')
+      ).to eq(['notification_receiver'])
       expect(
         matcher_create.dig('field', 'validators', 'include', 'values')
       ).to include(
@@ -398,7 +404,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       expect(
         target_create.dig('target_kind', 'validators', 'include', 'values')
       ).to eq(::NotificationTarget.target_kind_labels)
-      expect(receiver_target_create).to include('notification_target_id')
+      expect(receiver_target_create.dig('notification_target_id', 'type')).to eq('Resource')
+      expect(
+        receiver_target_create.dig('notification_target_id', 'resource')
+      ).to eq(['notification_target'])
       expect(receiver_target_create).not_to include('enabled')
       expect(receiver_target_update).to include('position')
       expect(receiver_target_update).not_to include('enabled')
@@ -1744,6 +1753,46 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     route = EventRoute.find(route_obj['id'])
     expect(route.parent_id).to eq(parent.id)
     expect(route.position).to be < existing.reload.position
+  end
+
+  it 'authorizes route and receiver-target association inputs' do
+    foreign_parent = EventRoute.create!(
+      user: SpecSeed.other_user,
+      label: 'Foreign parent',
+      position: 1
+    )
+    foreign_receiver = NotificationReceiver.create!(
+      user: SpecSeed.other_user,
+      label: 'Foreign receiver'
+    )
+
+    expect do
+      as(SpecSeed.user) do
+        json_post route_index_path, event_route: {
+          parent_id: foreign_parent.id,
+          notification_receiver_id: foreign_receiver.id,
+          event_type: 'user.test_notification'
+        }
+      end
+    end.not_to change(EventRoute, :count)
+    expect(json['status']).to be(false)
+
+    receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Own receiver')
+    foreign_target = NotificationTarget.create!(
+      user: SpecSeed.other_user,
+      action: :email,
+      target_kind: :custom,
+      target_value: 'foreign@example.test'
+    )
+
+    expect do
+      as(SpecSeed.user) do
+        json_post receiver_target_index_path(receiver.id), target: {
+          notification_target_id: foreign_target.id
+        }
+      end
+    end.not_to change(NotificationReceiverTarget, :count)
+    expect(json['status']).to be(false)
   end
 
   it 'does not count expired routes toward the route limit' do

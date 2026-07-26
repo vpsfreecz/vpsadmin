@@ -1,4 +1,5 @@
 require_relative 'event_time_interval'
+require_relative 'notification_receiver'
 
 module VpsAdmin::API::Resources
   class EventRoute < HaveAPI::Resource
@@ -9,14 +10,6 @@ module VpsAdmin::API::Resources
       resource User,
                value_label: :login,
                desc: 'User whose events are evaluated by this route'
-      integer :parent_id,
-              label: 'Parent route',
-              desc: 'Optional parent; subroutes are evaluated only after their parent matches',
-              nullable: true
-      integer :notification_receiver_id,
-              label: 'Receiver',
-              desc: 'Receiver used to deliver matching events; inherit from a parent when empty',
-              nullable: true
       string :label,
              desc: 'Optional name used to identify the route',
              nullable: true
@@ -67,9 +60,37 @@ module VpsAdmin::API::Resources
       string :display_label
     end
 
+    params(:associations) do
+      resource EventRoute,
+               name: :parent_id,
+               db_name: :parent_event_route,
+               value_label: :display_label,
+               label: 'Parent route',
+               desc: 'Optional parent; subroutes are evaluated only after their parent matches',
+               nullable: true
+      resource NotificationReceiver,
+               name: :notification_receiver_id,
+               db_name: :notification_receiver,
+               value_label: :label,
+               label: 'Receiver',
+               desc: 'Receiver used to deliver matching events; inherit from a parent when empty',
+               nullable: true
+    end
+
     params(:all) do
       id :id
       use :common
+      # Route lists are a normalized tree. Keep the nullable foreign keys as
+      # scalar output fields so clients can assemble that tree without nested
+      # self-references; create, update and filter inputs are Resource values.
+      integer :parent_id,
+              label: 'Parent route',
+              desc: 'ID of the parent route in the normalized route tree',
+              nullable: true
+      integer :notification_receiver_id,
+              label: 'Receiver',
+              desc: 'ID of the receiver selected by this route',
+              nullable: true
       datetime :created_at
       datetime :updated_at
     end
@@ -78,7 +99,8 @@ module VpsAdmin::API::Resources
       desc 'List event routes'
 
       input do
-        use :common, include: %i[user parent_id notification_receiver_id enabled event_type subject_scope]
+        use :common, include: %i[user enabled event_type subject_scope]
+        use :associations
         bool :include_spent, default: false, fill: true
       end
 
@@ -96,8 +118,12 @@ module VpsAdmin::API::Resources
         q = self.class.model.where(with_restricted)
         q = q.where(spent_at: nil) unless input[:include_spent]
 
-        %i[user parent_id notification_receiver_id enabled event_type subject_scope].each do |v|
+        %i[user enabled event_type subject_scope].each do |v|
           q = q.where(v => input[v]) if input.has_key?(v)
+        end
+        q = q.where(parent_id: input[:parent_id]&.id) if input.has_key?(:parent_id)
+        if input.has_key?(:notification_receiver_id)
+          q = q.where(notification_receiver_id: input[:notification_receiver_id]&.id)
         end
 
         q
@@ -134,8 +160,10 @@ module VpsAdmin::API::Resources
       desc 'Create event route'
 
       input do
+        use :common, include: %i[user]
+        use :associations
         use :common,
-            include: %i[user parent_id notification_receiver_id label position
+            include: %i[label position
                         enabled event_type event_type_pattern subject_scope
                         grouping_enabled group_by group_wait_seconds
                         group_interval_seconds continue]
@@ -187,10 +215,10 @@ module VpsAdmin::API::Resources
         self.class.model.transaction do
           self.class.model.create!(
             user: owner,
-            parent_id: input[:parent_id],
-            notification_receiver_id: input[:notification_receiver_id],
+            parent_event_route: input[:parent_id],
+            notification_receiver: input[:notification_receiver_id],
             label: input[:label],
-            position: input.has_key?(:position) ? input[:position] : prepend_position(owner, input[:parent_id]),
+            position: input.has_key?(:position) ? input[:position] : prepend_position(owner, input[:parent_id]&.id),
             enabled: input.has_key?(:enabled) ? input[:enabled] : true,
             event_type: input[:event_type],
             event_type_pattern: input[:event_type_pattern],
@@ -215,8 +243,9 @@ module VpsAdmin::API::Resources
       desc 'Update event route'
 
       input do
+        use :associations
         use :common,
-            include: %i[parent_id notification_receiver_id label position
+            include: %i[label position
                         enabled event_type event_type_pattern subject_scope
                         grouping_enabled group_by group_wait_seconds
                         group_interval_seconds continue]
@@ -236,11 +265,15 @@ module VpsAdmin::API::Resources
         route = self.class.model.find_by!(with_restricted(id: path_params['event_route_id']))
         attrs = {}
         %i[
-          parent_id notification_receiver_id label position enabled event_type
-          event_type_pattern subject_scope grouping_enabled group_by
-          group_wait_seconds group_interval_seconds continue
+          label position enabled event_type event_type_pattern subject_scope
+          grouping_enabled group_by group_wait_seconds group_interval_seconds
+          continue
         ].each do |v|
           attrs[v] = input[v] if input.has_key?(v)
+        end
+        attrs[:parent_event_route] = input[:parent_id] if input.has_key?(:parent_id)
+        if input.has_key?(:notification_receiver_id)
+          attrs[:notification_receiver] = input[:notification_receiver_id]
         end
 
         attrs[:template_name] = nil if clears_template_name?(route, attrs)
@@ -253,7 +286,7 @@ module VpsAdmin::API::Resources
       def clears_template_name?(route, attrs)
         return false if route.template_name.blank?
 
-        %i[parent_id event_type event_type_pattern].any? do |v|
+        %i[parent_event_route event_type event_type_pattern].any? do |v|
           attrs.has_key?(v) && route.public_send(v) != attrs[v]
         end
       end
