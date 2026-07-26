@@ -28,6 +28,7 @@ import ../make-test.nix (
     playwrightSuite = pkgs.runCommand "vpsadmin-webui-playwright-suite" { } ''
       mkdir -p "$out"
       cp -R ${../playwright/webui}/. "$out/"
+      cp ${../../VERSION} "$out/VERSION"
     '';
     webuiTestScriptCommon = common + ''
       require 'shellwords'

@@ -11,7 +11,7 @@ const fixtures = readFixtures();
 const expectedRevision = process.env.VPSADMIN_WEBUI_REVISION;
 const hasExpectedRevision = /^[0-9a-f]{40}$/.test(expectedRevision || '');
 const expectedVersion = fs.readFileSync(
-  path.resolve(__dirname, '../../../../VERSION'),
+  path.resolve(__dirname, '../VERSION'),
   'utf8',
 ).trim();
 
