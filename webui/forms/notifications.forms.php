@@ -1582,6 +1582,15 @@ function notifications_route_add_action_html($route, $user_id)
     return notifications_route_add_link($user_id, $route->id);
 }
 
+function notifications_route_edit_action_html($route, $user_id)
+{
+    $edit_link = '?page=notifications&action=route_edit&id=' . $route->id
+        . notifications_user_qs($user_id);
+
+    return '<a href="' . $edit_link . '"><img src="template/icons/vps_edit.png" alt="'
+        . h(_('Edit')) . '" title="' . h(_('Edit')) . '"></a>';
+}
+
 function notifications_route_delete_action_html($route, $user_id)
 {
     $delete_link = '?page=notifications&action=route_delete&id=' . $route->id
@@ -2356,6 +2365,7 @@ function notifications_routes_list($user_id = null)
     $xtpl->table_add_category(_('Behavior'));
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
+    $xtpl->table_add_category('');
 
     foreach (notifications_ordered_routes($routes) as $row) {
         [$route, $depth] = $row;
@@ -2381,17 +2391,18 @@ function notifications_routes_list($user_id = null)
         $xtpl->table_td(notifications_route_conditions_html($route), false, true);
         $xtpl->table_td(notifications_route_receiver_html($route, $receiver_labels));
         $xtpl->table_td(notifications_route_behavior_html($route, $enabled_link), false, true);
+        $xtpl->table_td(notifications_route_edit_action_html($route, $user_id), false, true);
         $xtpl->table_td(notifications_route_add_action_html($route, $user_id), false, true);
         $xtpl->table_td(notifications_route_delete_action_html($route, $user_id), false, true);
         $xtpl->table_tr($row_color, false, false, notifications_route_row_id($route));
     }
 
     if (!$routes) {
-        $xtpl->table_td(_('No routes configured.'), false, false, 6);
+        $xtpl->table_td(_('No routes configured.'), false, false, 7);
         $xtpl->table_tr(false, 'nodrag nodrop', 'nodrag nodrop');
     }
 
-    $xtpl->table_td(notifications_route_add_link($user_id, null, _('Add route')), false, true, 6);
+    $xtpl->table_td(notifications_route_add_link($user_id, null, _('Add route')), false, true, 7);
     $xtpl->table_tr(false, 'nodrag nodrop', 'nodrag nodrop');
 
     $xtpl->table_out('notification-routes-table');
@@ -2511,6 +2522,7 @@ function notifications_route_subroutes($route)
     $xtpl->table_add_category(_('Behavior'));
     $xtpl->table_add_category('');
     $xtpl->table_add_category('');
+    $xtpl->table_add_category('');
 
     foreach ($children as $row) {
         [$child, $depth] = $row;
@@ -2536,17 +2548,18 @@ function notifications_route_subroutes($route)
         $xtpl->table_td(notifications_route_conditions_html($child), false, true);
         $xtpl->table_td(notifications_route_receiver_html($child, $receiver_labels));
         $xtpl->table_td(notifications_route_behavior_html($child), false, true);
+        $xtpl->table_td(notifications_route_edit_action_html($child, $route->user_id), false, true);
         $xtpl->table_td(notifications_route_add_action_html($child, $route->user_id), false, true);
         $xtpl->table_td(notifications_route_delete_action_html($child, $route->user_id), false, true);
         $xtpl->table_tr($child->enabled ? false : '#A6A6A6');
     }
 
     if (!$children) {
-        $xtpl->table_td(_('No subroutes configured.'), false, false, 6);
+        $xtpl->table_td(_('No subroutes configured.'), false, false, 7);
         $xtpl->table_tr();
     }
 
-    $xtpl->table_td(notifications_route_add_link($route->user_id, $route->id, _('Add subroute')), false, true, 6);
+    $xtpl->table_td(notifications_route_add_link($route->user_id, $route->id, _('Add subroute')), false, true, 7);
     $xtpl->table_tr(false, 'nodrag nodrop', 'nodrag nodrop');
     $xtpl->table_out();
 }

@@ -116,7 +116,7 @@ final class NotificationRouteUiTest extends TestCase
         self::assertStringContainsString('notifications_route_grouping_params()', $pageSource);
     }
 
-    public function testRouteListUsesSixCompactColumnsWithSeparateActions(): void
+    public function testRouteListUsesSevenColumnsWithExplicitActions(): void
     {
         $allSource = $this->notificationsFormsSource();
         $routesList = $this->sourceBetween(
@@ -135,10 +135,14 @@ final class NotificationRouteUiTest extends TestCase
                 self::assertStringContainsString("_('{$label}')", $source);
             }
 
-            self::assertSame(6, substr_count($source, '$xtpl->table_add_category('));
-            self::assertSame(2, substr_count($source, "\$xtpl->table_add_category('');"));
+            self::assertSame(7, substr_count($source, '$xtpl->table_add_category('));
+            self::assertSame(3, substr_count($source, "\$xtpl->table_add_category('');"));
             self::assertStringNotContainsString("_('Order')", $source);
             self::assertStringNotContainsString("_('Actions')", $source);
+            self::assertStringContainsString(
+                'notifications_route_edit_action_html(',
+                $source
+            );
             self::assertStringContainsString(
                 'notifications_route_add_action_html(',
                 $source
@@ -150,7 +154,22 @@ final class NotificationRouteUiTest extends TestCase
         }
 
         self::assertStringContainsString("\$title = \$parent_id === null ? _('Add route') : _('Add subroute');", $allSource);
+        self::assertStringContainsString('function notifications_route_edit_action_html(', $allSource);
+        self::assertStringContainsString('template/icons/vps_edit.png', $allSource);
         self::assertStringContainsString("title=\"' . h(_('Delete')) . '\"", $allSource);
+
+        $css = file_get_contents(dirname(__DIR__, 2) . '/public/template/css/main.css');
+        $routeCss = $this->sourceBetween(
+            $css,
+            '#notification-routes-table {',
+            '.notification-route-order {'
+        );
+        self::assertStringNotContainsString('table-layout:', $routeCss);
+        self::assertDoesNotMatchRegularExpression(
+            '/#notification-routes-table (?:th|td):nth-child\([^)]*\)\s*\{[^}]*width\s*:/s',
+            $routeCss
+        );
+        self::assertStringContainsString('#notification-routes-table th:nth-child(n+5)', $routeCss);
     }
 
     public function testRouteFormsUseApiDescriptionsAndEventTypeLinks(): void
