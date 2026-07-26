@@ -2344,7 +2344,7 @@ en:
             label: routed
           suppressed:
             label: suppressed
-        label: Routing_state
+        label: Routing state
       row_id:
         description: Search by concerned row id
         label: Row id

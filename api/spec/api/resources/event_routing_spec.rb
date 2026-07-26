@@ -409,6 +409,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         'notification_receiver_target_id',
         'subject_relation'
       )
+      expect(event_index.dig('routing_state', 'label')).to eq('Routing state')
     end
 
     it 'keeps dedicated system report migration routes matcher-free' do
