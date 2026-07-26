@@ -1878,14 +1878,12 @@ cs:
         label: Zobrazený cíl akce receiveru
       notification_receiver_action_label:
         label: Popisek akce receiveru
-      notification_receiver_id:
-        description: Receiver použitý k doručení odpovídajících událostí; je-li prázdný,
-          převezme se z nadřazené routy
       notification_receiver_target_id:
         label: ID cíle receiveru notifikací
       notification_target_display_target:
         label: Zobrazený cíl notifikací
       notification_target_id:
+        description: ID znovupoužitelného cíle notifikace propojeného s tímto receiverem
         label: ID cíle notifikací
       notification_target_label:
         label: Popisek cíle notifikací
@@ -2009,9 +2007,6 @@ cs:
         label: Parametr
       parent:
         label: Rodič
-      parent_id:
-        description: Volitelná nadřazená routa; vnořené routy se vyhodnocují pouze
-          po shodě nadřazené routy
       passed:
         label: Prošlo
       passphrase:
@@ -4593,6 +4588,13 @@ cs:
             label: Aktualizováno
           user:
             description: Uživatel, jehož události tato routa vyhodnocuje
+        input:
+          notification_receiver_id:
+            description: Receiver použitý k doručení odpovídajících událostí; je-li
+              prázdný, převezme se z nadřazené routy
+          parent_id:
+            description: Volitelná nadřazená routa; vnořené routy se vyhodnocují pouze
+              po shodě nadřazené routy
         matcher:
           attributes:
             created_at:
@@ -4601,6 +4603,11 @@ cs:
               label: ID
             updated_at:
               label: Aktualizováno
+        output:
+          notification_receiver_id:
+            description: ID receiveru vybraného touto routou
+          parent_id:
+            description: ID nadřazené routy v normalizovaném stromu rout
         time_interval:
           attributes:
             created_at:
