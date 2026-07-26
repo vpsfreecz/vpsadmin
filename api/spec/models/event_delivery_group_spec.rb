@@ -265,7 +265,7 @@ RSpec.describe EventDeliveryGroup do
         user: SpecSeed.user,
         subject: 'Muted grouped event'
       )
-    end.not_to(change { Event.count })
+    end.not_to(change { event_storage_counts })
 
     expect(event).to be_nil
   end
