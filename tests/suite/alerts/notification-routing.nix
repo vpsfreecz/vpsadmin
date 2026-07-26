@@ -9,6 +9,9 @@ import ../../make-test.nix (
       adminUserId = adminUser.id;
       node1Id = nodeSeed.id;
     };
+    webhookServer = pkgs.writeText "vpsadmin-webhook-server.py" (
+      builtins.readFile ../../../doc/examples/notifications/webhook_server.py
+    );
   in
   {
     name = "alerts-notification-routing";
@@ -38,7 +41,6 @@ import ../../make-test.nix (
 
     testScript = common + ''
       require 'json'
-      require 'openssl'
 
       WEBHOOK_SECRET = 'integration-secret'
       WEBHOOK_URL = 'http://127.0.0.1:18080/events'
@@ -59,76 +61,20 @@ import ../../make-test.nix (
           set -euo pipefail
 
           install -d -m 0700 /tmp/notification-webhook
-          api_dir="$(systemctl show -p WorkingDirectory --value vpsadmin-api.service)"
-          api_root="$(dirname "$api_dir")"
-
-          cat > /tmp/notification-webhook/server.rb <<'RUBY'
-          require 'fileutils'
-          require 'json'
-          require 'socket'
-
-          dir = '/tmp/notification-webhook'
-          FileUtils.mkdir_p(dir)
-          server = TCPServer.new('127.0.0.1', 18080)
-
-          Signal.trap('TERM') do
-            server.close rescue nil
-            exit
-          end
-
-          loop do
-            socket = server.accept
-            request_line = socket.gets.to_s
-            headers = {}
-
-            while (line = socket.gets)
-              break if line == "\r\n" || line == "\n"
-
-              name, value = line.split(':', 2)
-              headers[name.downcase] = value.strip if name && value
-            end
-
-            content_length = headers.fetch('content-length', '0').to_i
-            body = content_length.positive? ? socket.read(content_length) : ""
-            request_parts = request_line.split(/\s+/, 3)
-            method = request_parts[0]
-            path = request_parts[1]
-            payload = {
-              method: method,
-              path: path,
-              headers: headers,
-              body: body
-            }
-
-            tmp = File.join(dir, "request.#{$PROCESS_ID}.json")
-            File.write(tmp, JSON.generate(payload))
-            File.rename(tmp, File.join(dir, 'request.json'))
-
-            response = 'accepted'
-            socket.write(
-              "HTTP/1.1 202 Accepted\r\n" \
-              "Content-Type: text/plain\r\n" \
-              "X-VpsAdmin-Test-Result: integration\r\n" \
-              "Content-Length: #{response.bytesize}\r\n" \
-              "Connection: close\r\n" \
-              "\r\n" \
-              "#{response}"
-            )
-          ensure
-            socket&.close
-          end
-          RUBY
-
-          "$api_root/ruby-env-wrapped/bin/ruby" /tmp/notification-webhook/server.rb \
+          install -m 0500 ${webhookServer} /tmp/notification-webhook/server.py
+          WEBHOOK_SECRET='integration-secret' \
+          WEBHOOK_HOST='127.0.0.1' \
+          WEBHOOK_PORT='18080' \
+          WEBHOOK_PATH='/events' \
+          ${pkgs.python3}/bin/python3 /tmp/notification-webhook/server.py \
             >/tmp/notification-webhook/server.log 2>&1 &
           echo "$!" > /tmp/notification-webhook/server.pid
         SH
 
         services.wait_until_succeeds(
-          'curl --silent --show-error --fail-with-body --max-time 2 ' \
-          '--request POST --data "{}" http://127.0.0.1:18080/events'
+          'test "$(curl --silent --output /dev/null --write-out "%{http_code}" ' \
+          '--max-time 2 --request POST --data "{}" http://127.0.0.1:18080/events)" = 401'
         )
-        services.succeeds('rm -f /tmp/notification-webhook/request.json')
       end
 
       def stop_webhook_server(services)
@@ -334,42 +280,34 @@ import ../../make-test.nix (
           expect(rows_by_action.fetch('email').fetch('attempts').first.fetch('state')).to eq('succeeded')
 
           expect(rows_by_action.fetch('webhook').fetch('state')).to eq('sent')
-          expect(rows_by_action.fetch('webhook').fetch('response_status')).to eq(202)
-          expect(rows_by_action.fetch('webhook').fetch('response_body')).to eq('accepted')
-          expect(rows_by_action.fetch('webhook').fetch('response_headers').fetch('x-vpsadmin-test-result')).to eq(['integration'])
+          expect(rows_by_action.fetch('webhook').fetch('response_status')).to eq(204)
+          expect(rows_by_action.fetch('webhook').fetch('response_body')).to eq("")
           expect(rows_by_action.fetch('webhook').fetch('attempt_count')).to eq(1)
           webhook_attempt = rows_by_action.fetch('webhook').fetch('attempts').first
           expect(webhook_attempt.fetch('state')).to eq('succeeded')
-          expect(webhook_attempt.fetch('response_headers').fetch('x-vpsadmin-test-result')).to eq(['integration'])
           true
         end
 
         rows
       end
 
-      def wait_for_webhook_request(services, event)
-        request = nil
+      def wait_for_webhook_payload(services, event)
+        body = nil
 
         wait_until_block_succeeds(name: 'webhook request received', timeout: 120) do
-          _, output = services.succeeds('cat /tmp/notification-webhook/request.json')
-          request = JSON.parse(output)
-          body = JSON.parse(request.fetch('body'))
-          headers = request.fetch('headers')
-
-          expect(request.fetch('method')).to eq('POST')
-          expect(request.fetch('path')).to eq('/events')
-          expect(headers.fetch('content-type')).to include('application/json')
-          expect(headers.fetch('x-vpsadmin-event')).to eq('user.test_notification')
-          expect(headers.fetch('x-vpsadmin-delivery')).to eq(event.fetch('webhook_delivery_id').to_s)
-          expect(headers.fetch('x-vpsadmin-signature-256')).to eq(
-            "sha256=#{OpenSSL::HMAC.hexdigest('sha256', WEBHOOK_SECRET, request.fetch('body'))}"
+          _, output = services.succeeds(
+            "grep '^{' /tmp/notification-webhook/server.log | tail -n 1"
           )
+          body = JSON.parse(output)
+          webhook_event = body.fetch('events').sole
 
-          expect(body.fetch('event').fetch('id')).to eq(event.fetch('event_id'))
-          expect(body.fetch('event').fetch('type')).to eq('user.test_notification')
-          expect(body.fetch('event').fetch('subject')).to eq('Integration notification event')
-          expect(body.fetch('event').fetch('summary')).to eq('Integration notification summary')
-          expect(body.fetch('event').fetch('payload').fetch('note')).to eq('integration notification payload')
+          expect(body.fetch('version')).to eq(1)
+          expect(body.fetch('group').fetch('grouped')).to be(false)
+          expect(webhook_event.fetch('id')).to eq(event.fetch('event_id'))
+          expect(webhook_event.fetch('type')).to eq('user.test_notification')
+          expect(webhook_event.fetch('subject')).to eq('Integration notification event')
+          expect(webhook_event.fetch('summary')).to eq('Integration notification summary')
+          expect(webhook_event.fetch('payload').fetch('note')).to eq('integration notification payload')
           expect(body.fetch('delivery').fetch('id')).to eq(event.fetch('webhook_delivery_id'))
           expect(body.fetch('delivery').fetch('route').fetch('id')).to eq(event.fetch('route_id'))
           expect(body.fetch('delivery').fetch('receiver').fetch('id')).to eq(event.fetch('receiver_id'))
@@ -377,7 +315,7 @@ import ../../make-test.nix (
           true
         end
 
-        request
+        body
       end
 
       before(:suite) do
@@ -408,7 +346,7 @@ import ../../make-test.nix (
               'integration notification payload'
             ]
           )
-          wait_for_webhook_request(services, event)
+          wait_for_webhook_payload(services, event)
           wait_for_notification_deliveries(services, event.fetch('event_id'))
         end
 
