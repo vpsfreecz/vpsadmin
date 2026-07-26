@@ -155,7 +155,11 @@ module VpsAdmin::API::Resources
       desc 'Manage notification receiver target links'
 
       params(:common) do
-        integer :notification_target_id
+        # Receiver-target lists are normalized and use this key to join the
+        # reusable target returned by NotificationTarget. The create input
+        # below is a Resource value and performs target authorization.
+        integer :notification_target_id,
+                desc: 'ID of the reusable notification target linked to this receiver'
         string :action,
                choices: { values: ::NotificationTarget.action_labels },
                load_validators: false
@@ -241,7 +245,11 @@ module VpsAdmin::API::Resources
         desc 'Link notification target to receiver'
 
         input do
-          integer :notification_target_id, required: true
+          resource VpsAdmin::API::Resources::NotificationTarget,
+                   name: :notification_target_id,
+                   db_name: :notification_target,
+                   value_label: :display_target,
+                   required: true
           integer :position, nullable: true
         end
 
@@ -259,7 +267,10 @@ module VpsAdmin::API::Resources
           receiver = ::NotificationReceiver.find_by!(
             with_restricted(id: path_params['notification_receiver_id'])
           )
-          target = ::NotificationTarget.find_by!(user_id: receiver.user_id, id: input[:notification_target_id])
+          target = ::NotificationTarget.find_by!(
+            user_id: receiver.user_id,
+            id: input[:notification_target_id].id
+          )
 
           receiver.notification_receiver_targets.create!(
             notification_target: target,

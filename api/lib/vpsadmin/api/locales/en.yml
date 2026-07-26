@@ -1883,14 +1883,12 @@ en:
         label: Receiver target display target
       notification_receiver_action_label:
         label: Receiver target label
-      notification_receiver_id:
-        description: Receiver used to deliver matching events; inherit from a parent
-          when empty
       notification_receiver_target_id:
         label: Notification_receiver_target_id
       notification_target_display_target:
         label: Notification_target_display_target
       notification_target_id:
+        description: ID of the reusable notification target linked to this receiver
         label: Notification_target_id
       notification_target_label:
         label: Notification_target_label
@@ -2014,9 +2012,6 @@ en:
         label: Parameter
       parent:
         label: Parent
-      parent_id:
-        description: Optional parent; subroutes are evaluated only after their parent
-          matches
       passed:
         label: Passed
       passphrase:
@@ -4596,6 +4591,13 @@ en:
             label: Updated_at
           user:
             description: User whose events are evaluated by this route
+        input:
+          notification_receiver_id:
+            description: Receiver used to deliver matching events; inherit from a
+              parent when empty
+          parent_id:
+            description: Optional parent; subroutes are evaluated only after their
+              parent matches
         matcher:
           attributes:
             created_at:
@@ -4604,6 +4606,11 @@ en:
               label: Id
             updated_at:
               label: Updated_at
+        output:
+          notification_receiver_id:
+            description: ID of the receiver selected by this route
+          parent_id:
+            description: ID of the parent route in the normalized route tree
         time_interval:
           attributes:
             created_at:
