@@ -153,6 +153,30 @@ module VpsAdmin::API::Resources
         allow
       end
 
+      example 'Create a grouped OOM-report route' do
+        request({
+                  notification_receiver_id: 15,
+                  label: 'OOM report notifications',
+                  enabled: true,
+                  event_type: 'vps.oom_report',
+                  subject_scope: 'self',
+                  grouping_enabled: true,
+                  group_by: ['vps_id'],
+                  group_wait_seconds: 60,
+                  group_interval_seconds: 10_800,
+                  continue: false
+                })
+        response({
+                   id: 120,
+                   notification_receiver_id: 15,
+                   label: 'OOM report notifications',
+                   event_type: 'vps.oom_report',
+                   grouping_enabled: true,
+                   group_by: ['vps_id']
+                 })
+        comment 'New top-level routes are inserted before existing routes.'
+      end
+
       def exec
         owner = input[:user] || current_user
 
@@ -346,6 +370,22 @@ module VpsAdmin::API::Resources
           allow if u.role == :admin
           restrict user_id: u.id
           allow
+        end
+
+        example 'Match the account event role' do
+          path_params 120
+          request({
+                    field: 'roles',
+                    operator: 'contains',
+                    value: 'account'
+                  })
+          response({
+                     id: 121,
+                     field: 'roles',
+                     operator: 'contains',
+                     value: 'account'
+                   })
+          comment 'Add this matcher to an event route with ID 120.'
         end
 
         def exec

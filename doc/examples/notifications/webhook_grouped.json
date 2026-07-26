@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "group": {
+    "grouped": true,
+    "key": "oom-vps-123",
+    "labels": {
+      "vps_id": 123
+    },
+    "event_count": 2,
+    "truncated_count": 0
+  },
+  "events": [
+    {
+      "id": 601,
+      "type": "vps.oom_report",
+      "category": "vps",
+      "severity": "warning",
+      "subject": "OOM report",
+      "summary": "Process was killed by the OOM killer",
+      "payload": {},
+      "fields": {
+        "vps_id": 123,
+        "cgroup": "/system.slice/example.service"
+      },
+      "ip_addr": null,
+      "source": {
+        "class": "OomReport",
+        "id": 301
+      },
+      "user": {
+        "id": 42,
+        "login": "example"
+      },
+      "vps": {
+        "id": 123,
+        "hostname": "example-vps"
+      },
+      "created_at": "2026-07-26T10:30:00Z"
+    },
+    {
+      "id": 602,
+      "type": "vps.oom_report",
+      "category": "vps",
+      "severity": "warning",
+      "subject": "OOM report",
+      "summary": "Process was killed by the OOM killer",
+      "payload": {},
+      "fields": {
+        "vps_id": 123,
+        "cgroup": "/system.slice/another.service"
+      },
+      "ip_addr": null,
+      "source": {
+        "class": "OomReport",
+        "id": 302
+      },
+      "user": {
+        "id": 42,
+        "login": "example"
+      },
+      "vps": {
+        "id": 123,
+        "hostname": "example-vps"
+      },
+      "created_at": "2026-07-26T10:30:20Z"
+    }
+  ],
+  "delivery": {
+    "id": 7002,
+    "action": "webhook",
+    "route": {
+      "id": 82,
+      "label": "OOM reports",
+      "matcher_summary": "all"
+    },
+    "receiver": {
+      "id": 91,
+      "label": "Automation webhook"
+    },
+    "notification_target": null,
+    "receiver_target": {
+      "id": 101
+    }
+  }
+}
