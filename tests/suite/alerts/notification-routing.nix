@@ -36,6 +36,7 @@ import ../../make-test.nix (
           { type = "socket"; }
         ];
         config.imports = [ ../../configs/nixos/vpsadmin-services.nix ];
+        config.system.extraDependencies = [ webhookServer ];
       };
     };
 
@@ -281,7 +282,7 @@ import ../../make-test.nix (
 
           expect(rows_by_action.fetch('webhook').fetch('state')).to eq('sent')
           expect(rows_by_action.fetch('webhook').fetch('response_status')).to eq(204)
-          expect(rows_by_action.fetch('webhook').fetch('response_body')).to eq("")
+          expect(rows_by_action.fetch('webhook').fetch('response_body')).to be_nil
           expect(rows_by_action.fetch('webhook').fetch('attempt_count')).to eq(1)
           webhook_attempt = rows_by_action.fetch('webhook').fetch('attempts').first
           expect(webhook_attempt.fetch('state')).to eq('succeeded')
@@ -299,10 +300,12 @@ import ../../make-test.nix (
             "grep '^{' /tmp/notification-webhook/server.log | tail -n 1"
           )
           body = JSON.parse(output)
-          webhook_event = body.fetch('events').sole
+          webhook_events = body.fetch('events')
 
           expect(body.fetch('version')).to eq(1)
           expect(body.fetch('group').fetch('grouped')).to be(false)
+          expect(webhook_events.length).to eq(1)
+          webhook_event = webhook_events.first
           expect(webhook_event.fetch('id')).to eq(event.fetch('event_id'))
           expect(webhook_event.fetch('type')).to eq('user.test_notification')
           expect(webhook_event.fetch('subject')).to eq('Integration notification event')
