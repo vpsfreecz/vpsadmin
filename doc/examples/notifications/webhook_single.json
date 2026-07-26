@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "group": {
+    "grouped": false,
+    "key": null,
+    "labels": {},
+    "event_count": 1,
+    "truncated_count": 0
+  },
+  "events": [
+    {
+      "id": 501,
+      "type": "vps.resources_changed",
+      "category": "vps",
+      "severity": "info",
+      "subject": "VPS resources changed",
+      "summary": "Memory changed from 4096 to 8192 MiB",
+      "payload": {
+        "memory": 8192
+      },
+      "fields": {
+        "vps_id": 123,
+        "subject_relation": "self"
+      },
+      "ip_addr": null,
+      "source": {
+        "class": "TransactionChain",
+        "id": 901
+      },
+      "user": {
+        "id": 42,
+        "login": "example"
+      },
+      "vps": {
+        "id": 123,
+        "hostname": "example-vps"
+      },
+      "created_at": "2026-07-26T10:30:00Z"
+    }
+  ],
+  "delivery": {
+    "id": 7001,
+    "action": "webhook",
+    "route": {
+      "id": 81,
+      "label": "VPS resource changes",
+      "matcher_summary": "all"
+    },
+    "receiver": {
+      "id": 91,
+      "label": "Automation webhook"
+    },
+    "notification_target": null,
+    "receiver_target": {
+      "id": 101
+    }
+  }
+}
