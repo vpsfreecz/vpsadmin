@@ -1,6 +1,6 @@
 ---
 name: vpsadmin-update-haveapi
-description: Update vpsAdmin's Ruby HaveAPI dependencies to a requested released version. Use when Codex needs to bump haveapi/haveapi-client constraints in vpsAdmin Gemfiles or gemspecs, regenerate package Gemfile.lock and gemset.nix files with tools/bundix_all.sh, and prepare the dependency update for review.
+description: Update vpsAdmin's Ruby HaveAPI dependencies to a requested released version. Use when Codex needs to bump haveapi/haveapi-client constraints in vpsAdmin Gemfiles or gemspecs, regenerate package Gemfile.lock and gemset.nix files with rake vpsadmin:gems, and prepare the dependency update for review.
 ---
 
 # vpsAdmin Update HaveAPI
@@ -20,7 +20,7 @@ The script updates the source Ruby dependency declarations for:
 - `plugins/outage_reports/utils/Gemfile`
 - `client/vpsadmin-client.gemspec`
 
-It then runs `tools/bundix_all.sh`, which regenerates the packaged Ruby
+It then runs `rake vpsadmin:gems`, which regenerates the packaged Ruby
 Gemfiles, lockfiles, and Nix gemsets under `packages/`.
 
 ## Checks
