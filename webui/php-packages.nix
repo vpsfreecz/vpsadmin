@@ -42,10 +42,10 @@ let
     "guzzlehttp/guzzle" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "guzzlehttp-guzzle-61443dfb33c62f308ee8add20f45b4d6e4bf8d2f";
+        name = "guzzlehttp-guzzle-744101956d78b7c1384d0cbf379db13e859167bf";
         src = fetchurl {
-          url = "https://api.github.com/repos/guzzle/guzzle/zipball/61443dfb33c62f308ee8add20f45b4d6e4bf8d2f";
-          sha256 = "03ff5vvb0llffy0683pyd17mpn019zzww05spk1m0n4rp5idcj5q";
+          url = "https://api.github.com/repos/guzzle/guzzle/zipball/744101956d78b7c1384d0cbf379db13e859167bf";
+          sha256 = "0nx46afi6v8324yhg1k15v5qnd20a0mgz0bq432lr4j2952zcrr2";
         };
       };
     };
