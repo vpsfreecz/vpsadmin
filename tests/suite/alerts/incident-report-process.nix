@@ -24,7 +24,16 @@ import ../../make-test.nix (
       "alerts"
     ];
 
-    machines = import ../../machines/cluster/1-node.nix args;
+    machines = import ../../machines/cluster/1-node.nix (
+      args
+      // {
+        extraModules.services =
+          { lib, ... }:
+          {
+            vpsadmin.api.rake.tasks."incident-reports".timer.enable = lib.mkForce false;
+          };
+      }
+    );
 
     testScript = common + ''
       configure_examples do |config|
