@@ -95,15 +95,15 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
               })
       response([{
                  id: 10,
-                 vps: {
-                   id: 101,
-                   hostname: 'myvps'
+                 network_interface: {
+                   id: 42,
+                   name: 'eth0'
                  },
-                 version: 4,
-                 location: {
+                 network: {
                    id: 1,
-                   label: 'The Location'
+                   address: '192.168.0.0'
                  },
+                 prefix: 24,
                  addr: '192.168.0.50'
                }])
       comment 'List IP addresses assigned to VPS with ID 101.'
