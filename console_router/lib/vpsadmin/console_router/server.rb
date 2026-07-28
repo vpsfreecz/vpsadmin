@@ -1,3 +1,5 @@
+require 'securerandom'
+
 module VpsAdmin::ConsoleRouter
   class Server < Sinatra::Application
     class RouterFactory
@@ -27,12 +29,14 @@ module VpsAdmin::ConsoleRouter
 
     get '/console/:vps_id' do |vps_id_str|
       vps_id = vps_id_str.to_i
+      client_id = SecureRandom.hex(16)
 
-      if router.check_session(vps_id, params[:session])
+      if router.check_session(vps_id, params[:session], client_id)
         erb :console, locals: {
           api_url: router.api_url,
           vps_id:,
-          session: params[:session]
+          session: params[:session],
+          client_id:
         }
       else
         'Access denied, invalid session'
@@ -45,7 +49,8 @@ module VpsAdmin::ConsoleRouter
         params[:session],
         params[:keys],
         params[:width].to_i,
-        params[:height].to_i
+        params[:height].to_i,
+        client_id: params[:client_id]
       )
 
       if data
@@ -56,6 +61,16 @@ module VpsAdmin::ConsoleRouter
       else
         { data: 'Access denied, invalid session', session: nil }.to_json
       end
+    end
+
+    post '/console/close/:vps_id' do |vps_id_str|
+      router.close_console(
+        vps_id_str.to_i,
+        params[:session],
+        params[:client_id]
+      )
+
+      status 204
     end
   end
 end

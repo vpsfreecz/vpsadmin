@@ -130,7 +130,7 @@ module NodeCtld
     end
 
     def routing_key(session)
-      "#{@vps_id}-#{session.token[0..19]}"
+      "#{@vps_id}-#{session.output_key}"
     end
   end
 end

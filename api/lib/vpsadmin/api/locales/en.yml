@@ -790,6 +790,10 @@ en:
             label: Test notification
           user_totp_recovery_code_used:
             label: TOTP recovery code used
+          vps_console_closed:
+            label: VPS console closed
+          vps_console_opened:
+            label: VPS console opened
           vps_dataset_expanded:
             label: VPS dataset expanded
           vps_dataset_shrunk:
@@ -970,6 +974,8 @@ en:
             label: Client IP address reported by the API client
           client_version:
             label: Version string reported by the API client
+          close_reason:
+            label: Reason why the console client was closed
           closes_at:
             label: Closing minute of day after the change
           codename:
@@ -978,6 +984,8 @@ en:
             label: Classes of objects affected by the chain
           concern_object_ids:
             label: IDs of objects affected by the chain
+          console_client_id:
+            label: Ephemeral identifier correlating console open and close events
           count:
             label: Number of OOM kills represented by this report
           cpu:
@@ -1340,12 +1348,14 @@ en:
             label: Full name of the dataset owner
           user_session_id:
             label: ID of the user session associated with the event
+          vps_console_id:
+            label: ID of the console authorization record used by the client
           vps_count:
             label: Number of VPSes affected by the reply
           vps_hostname:
-            label: Hostname of the VPS whose dataset quota changed
+            label: Hostname of the affected VPS
           vps_id:
-            label: ID of the VPS whose dataset quota changed
+            label: ID of the affected VPS
           vps_ids:
             label: IDs of all VPSes affected by the operation
           weekday:
@@ -3900,6 +3910,46 @@ en:
             description: User-visible label of the affected TOTP device
           used_at:
             description: Time when the recovery code was accepted
+        vps_console_closed:
+          actor_user_id:
+            description: ID of the user whose console token authenticated the client
+          close_reason:
+            description: Reason why the console client was closed
+          console_client_id:
+            description: Ephemeral identifier correlating console open and close events
+          node_id:
+            description: ID of the node hosting the VPS console
+          node_name:
+            description: Domain name of the node hosting the VPS console
+          producer_event_id:
+            description: Stable node-assigned identifier used to deduplicate console
+              event delivery
+          vps_console_id:
+            description: ID of the console authorization record used by the client
+          vps_hostname:
+            description: Hostname of the affected VPS
+          vps_id:
+            description: ID of the affected VPS
+        vps_console_opened:
+          actor_user_id:
+            description: ID of the user whose console token authenticated the client
+          close_reason:
+            description: Reason why the console client was closed
+          console_client_id:
+            description: Ephemeral identifier correlating console open and close events
+          node_id:
+            description: ID of the node hosting the VPS console
+          node_name:
+            description: Domain name of the node hosting the VPS console
+          producer_event_id:
+            description: Stable node-assigned identifier used to deduplicate console
+              event delivery
+          vps_console_id:
+            description: ID of the console authorization record used by the client
+          vps_hostname:
+            description: Hostname of the affected VPS
+          vps_id:
+            description: ID of the affected VPS
         vps_dataset_expanded:
           added_space:
             description: Space added to the dataset refquota, in bytes
@@ -4536,6 +4586,10 @@ en:
           label: Test notification
         user_totp_recovery_code_used:
           label: TOTP recovery code used
+        vps_console_closed:
+          label: VPS console closed
+        vps_console_opened:
+          label: VPS console opened
         vps_dataset_expanded:
           label: VPS dataset expanded
         vps_dataset_shrunk:

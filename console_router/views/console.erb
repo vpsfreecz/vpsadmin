@@ -33,9 +33,14 @@
     var remoteConsole = new VpsAdminConsole(
       document.getElementById('terminal'),
       <%= vps_id %>,
-      '<%= session %>'
+      '<%= session %>',
+      '<%= client_id %>'
     );
     remoteConsole.open();
+
+    window.addEventListener('pagehide', function () {
+      remoteConsole.close();
+    });
 
     setupKeyboard(remoteConsole);
   </script>
