@@ -8,6 +8,7 @@ RSpec.describe VpsAdmin::API::Tasks::Lifetime do
   end
 
   let(:task) { described_class.new }
+  let(:vps_transaction_chain) { instance_double(TransactionChain, id: 12_345) }
 
   def create_lifetime_user!(login_prefix: 'life', state: :active, expiration_date: 1.day.ago,
                             remind_after_date: nil, created_at: Time.now.utc)
@@ -42,6 +43,7 @@ RSpec.describe VpsAdmin::API::Tasks::Lifetime do
       end
       allow_any_instance_of(Vps).to receive(:progress_object_state) do |record, _direction, **_opts|
         record.update!(object_state: :suspended)
+        vps_transaction_chain
       end
     end
     # rubocop:enable RSpec/AnyInstance
@@ -76,6 +78,53 @@ RSpec.describe VpsAdmin::API::Tasks::Lifetime do
 
       expect(user.reload.object_state).to eq('suspended')
       expect(vps.reload.object_state).to eq('active')
+    end
+
+    it 'records VPS expiration observation and queued scheduler processing',
+       :with_event_delivery do
+      vps = create_lifetime_vps!
+
+      with_env('OBJECTS' => 'Vps', 'STATES' => 'active', 'EXECUTE' => 'yes') do
+        task.progress
+      end
+
+      reached = Event.find_by!(event_type: 'vps.expiration_reached', vps:)
+      processed = Event.find_by!(event_type: 'vps.expiration_processing_started', vps:)
+      expect(reached).to have_attributes(user: vps.user, severity: 'warning')
+      expect(reached.payload).to include(
+        'state' => 'active',
+        'target_state' => 'suspended',
+        'trigger' => 'lifetime_scheduler'
+      )
+      expect(processed.payload).to include(
+        'previous_state' => 'active',
+        'target_state' => 'suspended',
+        'transaction_chain_id' => vps_transaction_chain.id,
+        'trigger' => 'lifetime_scheduler'
+      )
+      expect(VpsAdmin::API::Events.default_routed?('vps.expiration_reached')).to be(false)
+      expect(
+        VpsAdmin::API::Events.default_routed?('vps.expiration_processing_started')
+      ).to be(false)
+    end
+
+    it 'records expiration observation but not processing when the VPS is locked',
+       :with_event_delivery do
+      vps = create_lifetime_vps!
+      # rubocop:disable RSpec/AnyInstance
+      allow_any_instance_of(Vps).to receive(:progress_object_state).and_raise(
+        ResourceLocked.new(vps, 'locked')
+      )
+      # rubocop:enable RSpec/AnyInstance
+
+      expect do
+        with_env('OBJECTS' => 'Vps', 'STATES' => 'active', 'EXECUTE' => 'yes') do
+          task.progress
+        end
+      end.to output(/resource locked/).to_stdout
+
+      expect(Event.where(event_type: 'vps.expiration_reached', vps:).count).to eq(1)
+      expect(Event.where(event_type: 'vps.expiration_processing_started', vps:)).to be_empty
     end
 
     it 'uses language-specific reasons' do

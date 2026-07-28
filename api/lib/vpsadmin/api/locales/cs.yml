@@ -790,8 +790,18 @@ cs:
             label: Dataset VPS zmenšen
           vps_dns_resolver_changed:
             label: DNS resolver VPS změněn
+          vps_expiration_changed:
+            label: Expirace VPS změněna
+          vps_expiration_processing_started:
+            label: Zpracování expirace VPS zahájeno
+          vps_expiration_reached:
+            label: Expirace VPS nastala
           vps_incident_report:
             label: Incident
+          vps_maintenance_window_updated:
+            label: Maintenance window VPS aktualizováno
+          vps_maintenance_windows_updated:
+            label: Maintenance windows VPS aktualizována
           vps_migration_begun:
             label: Migrace VPS zahájena
           vps_migration_finished:
@@ -816,10 +826,24 @@ cs:
             label: Prostředky VPS změněny
           vps_resumed:
             label: VPS obnoveno
+          vps_runtime_halted:
+            label: Běh VPS zastaven
+          vps_runtime_oom_restarted:
+            label: VPS restartováno kvůli nadměrnému OOM
+          vps_runtime_oom_stopped:
+            label: VPS zastaveno kvůli nadměrnému OOM
+          vps_runtime_rebooted:
+            label: VPS restartováno
           vps_stopped_over_quota:
             label: VPS zastaveno kvůli překročení kvóty
           vps_suspended:
             label: VPS suspendováno
+          vps_user_data_created:
+            label: Uživatelská data VPS vytvořena
+          vps_user_data_deleted:
+            label: Uživatelská data VPS odstraněna
+          vps_user_data_updated:
+            label: Uživatelská data VPS aktualizována
         description: Porovnat s jedním přesným typem události; ponechte prázdné pro
           všechny typy nebo použijte vzor typu události
       event_type_pattern:
@@ -924,6 +948,8 @@ cs:
             label: Unixový timestamp změny stavu
           changed_by_id:
             label: ID uživatele, který provedl změnu
+          changed_by_login:
+            label: Login uživatele, který provedl změnu
           changed_by_name:
             label: Jméno uživatele, který změnil životní stav VPS
           changed_fields:
@@ -932,6 +958,8 @@ cs:
             label: IP adresa klienta nahlášená API klientem
           client_version:
             label: Verze nahlášená API klientem
+          closes_at:
+            label: Minuta zavření v rámci dne po změně
           codename:
             label: Kódové označení incidentu přidělené vpsAdminem
           concern_classes:
@@ -1040,6 +1068,8 @@ cs:
             label: Počet incidentů odpovídajících odpovědi
           incident_ids:
             label: ID incidentů odpovídajících odpovědi
+          incident_report_id:
+            label: ID souvisejícího hlášení incidentu
           incoming_payment_count:
             label: Počet příchozích plateb zahrnutých v přehledu
           incoming_payment_id:
@@ -1052,6 +1082,8 @@ cs:
             label: IP adresa uvedená v incidentu
           ip_addrs:
             label: IP adresy klientů zaznamenané při neúspěšných pokusech
+          is_open:
+            label: Zda je okno po změně otevřené
           killed_name:
             label: Název procesu ukončeného kernelem
           label:
@@ -1068,6 +1100,8 @@ cs:
             label: ID mailového vlákna použitého pro notifikaci žádosti
           maintenance_window:
             label: Zda migraci omezuje maintenance window
+          maintenance_window_id:
+            label: ID maintenance window
           max_over_refquota_seconds:
             label: Maximální povolený čas nad kvótou před akcí, v sekundách
           memory:
@@ -1102,6 +1136,8 @@ cs:
             label: Uživatelsky viditelný popisek objektu, který vyprší
           object_state:
             label: Počáteční životní stav účtu
+          observed_at:
+            label: Čas zjištění expirace
           old_dns_resolver_addrs:
             label: Adresy nastavené na předchozím DNS resolveru
           old_dns_resolver_id:
@@ -1114,6 +1150,8 @@ cs:
             label: ID uloženého OOM reportu
           ooms_in_period:
             label: Počet OOM reportů zaznamenaných ve sledovaném období
+          opens_at:
+            label: Minuta otevření v rámci dne po změně
           operation:
             label: Operace VPS zastoupená transakčním řetězcem
           original_refquota:
@@ -1140,12 +1178,22 @@ cs:
             label: Délka období přehledu v sekundách
           period_start:
             label: Začátek období přehledu
+          previous_closes_at:
+            label: Předchozí minuta zavření v rámci dne
+          previous_expiration_date:
+            label: Předchozí datum expirace
+          previous_is_open:
+            label: Zda bylo okno před změnou otevřené
+          previous_opens_at:
+            label: Předchozí minuta otevření v rámci dne
           previous_state:
             label: Stav transakčního řetězce před změnou
           previous_status:
             label: Status transferu před touto událostí
           primary_addr:
             label: Adresa primárního DNS serveru použitá pro transfer
+          processing_started_at:
+            label: Čas zařazení zpracování expirace
           producer_event_id:
             label: Stabilní identifikátor události přidělený nodem
           progress:
@@ -1192,6 +1240,8 @@ cs:
             label: Zda jsou dotčená VPS během migrace restartována
           roles:
             label: Notifikační role deklarované typem události
+          runtime_event_type:
+            label: Normalizovaný typ události běhu
           scope:
             label: Rozsah přístupu udělený tokenu
           serial:
@@ -1232,6 +1282,8 @@ cs:
             label: Delší souhrn události
           swap:
             label: Swap limit přiřazený VPS po změně, v MiB
+          target_state:
+            label: Životní stav požadovaný plánovačem
           terminal:
             label: Zda řetězec dosáhl koncového stavu
           text:
@@ -1244,8 +1296,12 @@ cs:
             label: ID TOTP zařízení, jehož obnovovací kód byl použit
           totp_device_label:
             label: Uživatelsky viditelný popisek dotčeného TOTP zařízení
+          transaction_chain_id:
+            label: ID zařazeného transakčního řetězce životního cyklu
           transfer_log_id:
             label: ID řádku logu DNS transferu
+          trigger:
+            label: Subsystém, který vytvořil událost
           update_id:
             label: ID aktualizace outage reportu
           update_summary:
@@ -1256,6 +1312,8 @@ cs:
             label: HTTP hlavička User-Agent použitá klientem
           user_count:
             label: Počet uživatelů dotčených odpovědí
+          user_data_id:
+            label: ID záznamu uživatelských dat VPS
           user_device_id:
             label: ID zapamatovaného uživatelského zařízení použitého při přihlášení
           user_id:
@@ -1274,6 +1332,10 @@ cs:
             label: ID dotčeného VPS
           vps_ids:
             label: ID všech VPS dotčených operací
+          weekday:
+            label: Den v týdnu zastoupený oknem
+          window_count:
+            label: Počet aktualizovaných maintenance windows
         label: Pole
       field_type:
         label: Typ pole
@@ -3839,6 +3901,67 @@ cs:
             description: Hostname VPS, jehož resolver se změnil
           vps_id:
             description: ID VPS, jehož resolver se změnil
+        vps_expiration_changed:
+          changed_by_id:
+            description: ID uživatele, který provedl změnu
+          changed_by_login:
+            description: Login uživatele, který provedl změnu
+          expiration_date:
+            description: Nové datum expirace
+          previous_expiration_date:
+            description: Předchozí datum expirace
+          reason:
+            description: Důvod uvedený při změně expirace
+          remind_after_date:
+            description: Nové datum potlačení připomenutí
+          state:
+            description: Aktuální životní stav VPS
+          vps_hostname:
+            description: Hostname dotčeného VPS
+          vps_id:
+            description: ID dotčeného VPS
+        vps_expiration_processing_started:
+          expiration_date:
+            description: Datum expirace zjištěné plánovačem
+          observed_at:
+            description: Čas zjištění expirace
+          previous_state:
+            description: Životní stav před zpracováním
+          processing_started_at:
+            description: Čas zařazení zpracování expirace
+          state:
+            description: Životní stav zjištěný plánovačem
+          target_state:
+            description: Životní stav požadovaný plánovačem
+          transaction_chain_id:
+            description: ID zařazeného transakčního řetězce životního cyklu
+          trigger:
+            description: Subsystém, který vytvořil událost
+          vps_hostname:
+            description: Hostname dotčeného VPS
+          vps_id:
+            description: ID dotčeného VPS
+        vps_expiration_reached:
+          expiration_date:
+            description: Datum expirace zjištěné plánovačem
+          observed_at:
+            description: Čas zjištění expirace
+          previous_state:
+            description: Životní stav před zpracováním
+          processing_started_at:
+            description: Čas zařazení zpracování expirace
+          state:
+            description: Životní stav zjištěný plánovačem
+          target_state:
+            description: Životní stav požadovaný plánovačem
+          transaction_chain_id:
+            description: ID zařazeného transakčního řetězce životního cyklu
+          trigger:
+            description: Subsystém, který vytvořil událost
+          vps_hostname:
+            description: Hostname dotčeného VPS
+          vps_id:
+            description: ID dotčeného VPS
         vps_incident_report:
           codename:
             description: Kódové označení incidentu přidělené vpsAdminem
@@ -3850,6 +3973,44 @@ cs:
             description: Text těla přijatý s incidentem
           vps_id:
             description: ID VPS spojeného s incidentem
+        vps_maintenance_window_updated:
+          changed_by_id:
+            description: ID uživatele, který provedl změnu
+          changed_by_login:
+            description: Login uživatele, který provedl změnu
+          closes_at:
+            description: Minuta zavření v rámci dne po změně
+          is_open:
+            description: Zda je okno po změně otevřené
+          maintenance_window_id:
+            description: ID maintenance window
+          opens_at:
+            description: Minuta otevření v rámci dne po změně
+          previous_closes_at:
+            description: Předchozí minuta zavření v rámci dne
+          previous_is_open:
+            description: Zda bylo okno před změnou otevřené
+          previous_opens_at:
+            description: Předchozí minuta otevření v rámci dne
+          vps_hostname:
+            description: Hostname dotčeného VPS
+          vps_id:
+            description: ID dotčeného VPS
+          weekday:
+            description: Den v týdnu zastoupený oknem
+        vps_maintenance_windows_updated:
+          changed_by_id:
+            description: ID uživatele, který provedl změnu
+          changed_by_login:
+            description: Login uživatele, který provedl změnu
+          changed_fields:
+            description: Pole maintenance window změněná pro každý den
+          vps_hostname:
+            description: Hostname dotčeného VPS
+          vps_id:
+            description: ID dotčeného VPS
+          window_count:
+            description: Počet aktualizovaných maintenance windows
         vps_migration_begun:
           custom_window:
             description: Zda je použit vlastní maintenance window
@@ -4080,6 +4241,70 @@ cs:
             description: Hostname VPS, jehož stav životního cyklu se změnil
           vps_id:
             description: ID VPS, jehož stav životního cyklu se změnil
+        vps_runtime_halted:
+          incident_report_id:
+            description: ID souvisejícího hlášení incidentu
+          node_id:
+            description: ID nodu, který nahlásil událost běhu
+          node_name:
+            description: Název nodu, který nahlásil událost běhu
+          producer_event_id:
+            description: Stabilní identifikátor přidělený nodem pro deduplikaci doručení
+              události běhu
+          runtime_event_type:
+            description: Normalizovaný typ události běhu
+          vps_hostname:
+            description: Hostname dotčeného VPS
+          vps_id:
+            description: ID dotčeného VPS
+        vps_runtime_oom_restarted:
+          incident_report_id:
+            description: ID souvisejícího hlášení incidentu
+          node_id:
+            description: ID nodu, který nahlásil událost běhu
+          node_name:
+            description: Název nodu, který nahlásil událost běhu
+          producer_event_id:
+            description: Stabilní identifikátor přidělený nodem pro deduplikaci doručení
+              události běhu
+          runtime_event_type:
+            description: Normalizovaný typ události běhu
+          vps_hostname:
+            description: Hostname dotčeného VPS
+          vps_id:
+            description: ID dotčeného VPS
+        vps_runtime_oom_stopped:
+          incident_report_id:
+            description: ID souvisejícího hlášení incidentu
+          node_id:
+            description: ID nodu, který nahlásil událost běhu
+          node_name:
+            description: Název nodu, který nahlásil událost běhu
+          producer_event_id:
+            description: Stabilní identifikátor přidělený nodem pro deduplikaci doručení
+              události běhu
+          runtime_event_type:
+            description: Normalizovaný typ události běhu
+          vps_hostname:
+            description: Hostname dotčeného VPS
+          vps_id:
+            description: ID dotčeného VPS
+        vps_runtime_rebooted:
+          incident_report_id:
+            description: ID souvisejícího hlášení incidentu
+          node_id:
+            description: ID nodu, který nahlásil událost běhu
+          node_name:
+            description: Název nodu, který nahlásil událost běhu
+          producer_event_id:
+            description: Stabilní identifikátor přidělený nodem pro deduplikaci doručení
+              události běhu
+          runtime_event_type:
+            description: Normalizovaný typ události běhu
+          vps_hostname:
+            description: Hostname dotčeného VPS
+          vps_id:
+            description: ID dotčeného VPS
         vps_stopped_over_quota:
           added_space:
             description: Prostor přidaný do refquota datasetu v bajtech
@@ -4123,6 +4348,57 @@ cs:
             description: Hostname VPS, jehož stav životního cyklu se změnil
           vps_id:
             description: ID VPS, jehož stav životního cyklu se změnil
+        vps_user_data_created:
+          changed_by_id:
+            description: ID uživatele, který provedl změnu
+          changed_by_login:
+            description: Login uživatele, který provedl změnu
+          changed_fields:
+            description: Názvy polí změněných operací
+          format:
+            description: Formát uživatelských dat
+          label:
+            description: Uživatelsky viditelný popisek uživatelských dat
+          user_data_id:
+            description: ID záznamu uživatelských dat VPS
+          user_id:
+            description: ID vlastníka uživatelských dat
+          user_login:
+            description: Login vlastníka uživatelských dat
+        vps_user_data_deleted:
+          changed_by_id:
+            description: ID uživatele, který provedl změnu
+          changed_by_login:
+            description: Login uživatele, který provedl změnu
+          changed_fields:
+            description: Názvy polí změněných operací
+          format:
+            description: Formát uživatelských dat
+          label:
+            description: Uživatelsky viditelný popisek uživatelských dat
+          user_data_id:
+            description: ID záznamu uživatelských dat VPS
+          user_id:
+            description: ID vlastníka uživatelských dat
+          user_login:
+            description: Login vlastníka uživatelských dat
+        vps_user_data_updated:
+          changed_by_id:
+            description: ID uživatele, který provedl změnu
+          changed_by_login:
+            description: Login uživatele, který provedl změnu
+          changed_fields:
+            description: Názvy polí změněných operací
+          format:
+            description: Formát uživatelských dat
+          label:
+            description: Uživatelsky viditelný popisek uživatelských dat
+          user_data_id:
+            description: ID záznamu uživatelských dat VPS
+          user_id:
+            description: ID vlastníka uživatelských dat
+          user_login:
+            description: Login vlastníka uživatelských dat
       types:
         dataset_migration_begun:
           label: Migrace datasetu zahájena
@@ -4190,8 +4466,18 @@ cs:
           label: Dataset VPS zmenšen
         vps_dns_resolver_changed:
           label: DNS resolver VPS změněn
+        vps_expiration_changed:
+          label: Expirace VPS změněna
+        vps_expiration_processing_started:
+          label: Zpracování expirace VPS zahájeno
+        vps_expiration_reached:
+          label: Expirace VPS nastala
         vps_incident_report:
           label: Incident
+        vps_maintenance_window_updated:
+          label: Maintenance window VPS aktualizováno
+        vps_maintenance_windows_updated:
+          label: Maintenance windows VPS aktualizována
         vps_migration_begun:
           label: Migrace VPS zahájena
         vps_migration_finished:
@@ -4216,10 +4502,24 @@ cs:
           label: Prostředky VPS změněny
         vps_resumed:
           label: VPS obnoveno
+        vps_runtime_halted:
+          label: Běh VPS zastaven
+        vps_runtime_oom_restarted:
+          label: VPS restartováno kvůli nadměrnému OOM
+        vps_runtime_oom_stopped:
+          label: VPS zastaveno kvůli nadměrnému OOM
+        vps_runtime_rebooted:
+          label: VPS restartováno
         vps_stopped_over_quota:
           label: VPS zastaveno kvůli překročení kvóty
         vps_suspended:
           label: VPS suspendováno
+        vps_user_data_created:
+          label: Uživatelská data VPS vytvořena
+        vps_user_data_deleted:
+          label: Uživatelská data VPS odstraněna
+        vps_user_data_updated:
+          label: Uživatelská data VPS aktualizována
     resources:
       action_state:
         attributes:

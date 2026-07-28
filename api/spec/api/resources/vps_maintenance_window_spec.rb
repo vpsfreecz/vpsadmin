@@ -232,7 +232,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS::MaintenanceWindow' do
       expect(response_message).to include('provide parameters to change')
     end
 
-    it 'closes a window when is_open is false' do
+    it 'closes a window when is_open is false', :with_event_delivery do
       as(SpecSeed.user) { json_put update_path(user_vps, 1), maintenance_window: { is_open: false } }
 
       expect_status(200)
@@ -247,6 +247,22 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS::MaintenanceWindow' do
       expect(window.opens_at).to be_nil
       expect(window.closes_at).to be_nil
       expect(ObjectHistory.where(tracked_object: user_vps, event_type: 'maintenance_window').exists?).to be(true)
+      event = Event.find_by!(event_type: 'vps.maintenance_window_updated', vps: user_vps)
+      expect(event).to have_attributes(
+        user: user_vps.user,
+        source: window
+      )
+      expect(event.payload).to include(
+        'weekday' => 1,
+        'previous_is_open' => true,
+        'previous_opens_at' => 0,
+        'previous_closes_at' => 24 * 60,
+        'is_open' => false,
+        'opens_at' => nil,
+        'closes_at' => nil,
+        'changed_by_id' => SpecSeed.user.id
+      )
+      expect(VpsAdmin::API::Events.default_routed?('vps.maintenance_window_updated')).to be(false)
     end
 
     it 'resizes a window with valid values' do
@@ -276,6 +292,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS::MaintenanceWindow' do
       expect(json['status']).to be(false)
       expect(response_message).to include('update failed')
       expect(response_errors.keys.map(&:to_s)).to include('opens_at')
+      expect(Event.where(event_type: 'vps.maintenance_window_updated', vps: user_vps)).to be_empty
     end
 
     it 'blocks updates during maintenance for non-admins' do
@@ -316,7 +333,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS::MaintenanceWindow' do
       expect(json['status']).to be(false)
     end
 
-    it 'updates all week days with valid input' do
+    it 'updates all week days with valid input', :with_event_delivery do
       payload = { is_open: true, opens_at: 60, closes_at: 180 }
 
       as(SpecSeed.user) { json_put update_all_path(user_vps), maintenance_window: payload }
@@ -341,6 +358,14 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS::MaintenanceWindow' do
         expect(window.closes_at).to eq(180)
       end
       expect(ObjectHistory.where(tracked_object: user_vps, event_type: 'maintenance_windows').exists?).to be(true)
+      event = Event.find_by!(event_type: 'vps.maintenance_windows_updated', vps: user_vps)
+      expect(event).to have_attributes(user: user_vps.user, source: user_vps)
+      expect(event.payload).to include(
+        'changed_fields' => %w[closes_at is_open opens_at],
+        'window_count' => 7,
+        'changed_by_id' => SpecSeed.user.id
+      )
+      expect(VpsAdmin::API::Events.default_routed?('vps.maintenance_windows_updated')).to be(false)
     end
 
     it 'rejects empty input' do

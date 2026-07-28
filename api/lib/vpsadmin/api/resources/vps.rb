@@ -1609,13 +1609,25 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
           input[:closes_at] = nil
         end
 
-        window.update!(input)
-        vps.log(:maintenance_window, {
-                  weekday: window.weekday,
-                  is_open: window.is_open,
-                  opens_at: window.opens_at,
-                  closes_at: window.closes_at
-                })
+        previous = {
+          is_open: window.is_open,
+          opens_at: window.opens_at,
+          closes_at: window.closes_at
+        }
+        ::VpsMaintenanceWindow.transaction do
+          window.update!(input)
+          vps.log(:maintenance_window, {
+                    weekday: window.weekday,
+                    is_open: window.is_open,
+                    opens_at: window.opens_at,
+                    closes_at: window.closes_at
+                  })
+          VpsAdmin::API::Events::VpsLifecycle.emit_maintenance_window_updated!(
+            vps,
+            window,
+            previous:
+          )
+        end
         window
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', e.record.errors.to_hash)
@@ -1654,6 +1666,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
           input[:opens_at] = nil
           input[:closes_at] = nil
         end
+        changed_fields = input.keys
 
         ::Vps.transaction do
           data = []
@@ -1669,6 +1682,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
           end
 
           vps.log(:maintenance_windows, data)
+          VpsAdmin::API::Events::VpsLifecycle.emit_maintenance_windows_updated!(
+            vps,
+            changed_fields:
+          )
         end
 
         vps.vps_maintenance_windows.order('weekday')
