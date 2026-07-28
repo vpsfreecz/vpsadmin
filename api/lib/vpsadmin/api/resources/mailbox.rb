@@ -87,7 +87,15 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ::Mailbox.create!(input)
+        mailbox = nil
+        self.class.model.transaction do
+          mailbox = ::Mailbox.create!(input)
+          VpsAdmin::API::Events::ResourceOperations.created!(
+            mailbox,
+            changed_fields: input.keys
+          )
+        end
+        mailbox
       rescue ActiveRecord::RecordInvalid => e
         error!('create failed', e.record.errors.to_hash)
       end
@@ -110,7 +118,13 @@ module VpsAdmin::API::Resources
 
       def exec
         m = ::Mailbox.find(path_params['mailbox_id'])
-        m.update!(input)
+        self.class.model.transaction do
+          m.update!(input)
+          VpsAdmin::API::Events::ResourceOperations.updated!(
+            m,
+            changed_fields: input.keys
+          )
+        end
         m
       end
     end
@@ -123,7 +137,11 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ::Mailbox.find(path_params['mailbox_id']).destroy!
+        mailbox = ::Mailbox.find(path_params['mailbox_id'])
+        self.class.model.transaction do
+          mailbox.destroy!
+          VpsAdmin::API::Events::ResourceOperations.deleted!(mailbox)
+        end
         ok!
       end
     end
@@ -213,9 +231,17 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          ::MailboxHandler.create!(input.merge(
-                                     mailbox: ::Mailbox.find(path_params['mailbox_id'])
-                                   ))
+          handler = nil
+          self.class.model.transaction do
+            handler = ::MailboxHandler.create!(input.merge(
+                                                 mailbox: ::Mailbox.find(path_params['mailbox_id'])
+                                               ))
+            VpsAdmin::API::Events::ResourceOperations.created!(
+              handler,
+              changed_fields: input.keys
+            )
+          end
+          handler
         end
       end
 
@@ -239,7 +265,13 @@ module VpsAdmin::API::Resources
             mailboxes: { id: path_params['mailbox_id'] },
             id: path_params['handler_id']
           )
-          h.update!(input)
+          self.class.model.transaction do
+            h.update!(input)
+            VpsAdmin::API::Events::ResourceOperations.updated!(
+              h,
+              changed_fields: input.keys
+            )
+          end
           h
         end
       end
@@ -252,10 +284,14 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          ::MailboxHandler.joins(:mailbox).find_by!(
+          handler = ::MailboxHandler.joins(:mailbox).find_by!(
             mailboxes: { id: path_params['mailbox_id'] },
             id: path_params['handler_id']
-          ).destroy!
+          )
+          self.class.model.transaction do
+            handler.destroy!
+            VpsAdmin::API::Events::ResourceOperations.deleted!(handler)
+          end
           ok!
         end
       end

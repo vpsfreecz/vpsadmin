@@ -229,6 +229,14 @@ RSpec.describe 'VpsAdmin::API::Resources::MetricsAccessToken' do
       expect(token_user_id(token_obj)).to eq(user.id)
       expect(token_obj['access_token']).not_to be_nil
       expect(token_obj['metric_prefix']).to eq('spec_created')
+
+      event = Event.where(
+        event_type: 'resource.created',
+        source_class: 'MetricsAccessToken',
+        source_id: token_obj['id']
+      ).sole
+      expect(event.user).to eq(user)
+      expect(event.payload_json).not_to include(token_obj['access_token'])
     end
 
     it 'denies creating a token while suspended' do
@@ -292,6 +300,13 @@ RSpec.describe 'VpsAdmin::API::Resources::MetricsAccessToken' do
       expect_status(200)
       expect(json['status']).to be(true)
       expect(MetricsAccessToken.where(id: user_primary.id)).to be_empty
+
+      event = Event.where(
+        event_type: 'resource.deleted',
+        source_class: 'MetricsAccessToken',
+        source_id: user_primary.id
+      ).sole
+      expect(event.user).to eq(user)
     end
 
     it 'denies deleting own token while suspended' do
