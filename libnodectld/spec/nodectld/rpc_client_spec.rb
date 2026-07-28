@@ -19,6 +19,52 @@ RSpec.describe NodeCtld::RpcClient do
     allow(reply_queue).to receive(:subscribe)
   end
 
+  describe '#authenticate_console_session_context' do
+    let(:rpc) { described_class.allocate }
+    let(:token) { 'console-token' }
+
+    it 'prefers the actor-aware v2 response' do
+      context = {
+        'vps_id' => 101,
+        'user_id' => 202,
+        'vps_console_id' => 303
+      }
+      allow(rpc).to receive(:send_read_request)
+        .with('authenticate_console_session_v2', args: [token])
+        .and_return(context)
+
+      expect(rpc.authenticate_console_session_context(token)).to eq(context)
+      expect(rpc).not_to have_received(:send_read_request)
+        .with('authenticate_console_session', args: [token])
+    end
+
+    it 'falls back to the legacy integer response from an older API' do
+      allow(rpc).to receive(:send_read_request)
+        .with('authenticate_console_session_v2', args: [token])
+        .and_raise(
+          described_class::Error,
+          'Command "authenticate_console_session_v2" not found'
+        )
+      allow(rpc).to receive(:send_read_request)
+        .with('authenticate_console_session', args: [token])
+        .and_return(101)
+
+      expect(rpc.authenticate_console_session_context(token)).to eq(
+        'vps_id' => 101
+      )
+    end
+
+    it 'does not hide unrelated v2 authentication errors' do
+      allow(rpc).to receive(:send_read_request)
+        .with('authenticate_console_session_v2', args: [token])
+        .and_raise(described_class::Error, 'database unavailable')
+
+      expect do
+        rpc.authenticate_console_session_context(token)
+      end.to raise_error(described_class::Error, 'database unavailable')
+    end
+  end
+
   it 'retries channel creation after it times out' do
     calls = 0
 

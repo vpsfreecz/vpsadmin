@@ -12,6 +12,7 @@ module VpsAdmin::Supervisor
 
     def start
       klasses = [
+        Node::ConsoleEvents,
         Node::DatasetExpansions,
         Node::DnsStatus,
         Node::DnsTransferLog,

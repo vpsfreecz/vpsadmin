@@ -118,8 +118,8 @@ class Cli
     case type
     when 'console'
       [
-        '^(amq\\.gen.*|console:rpc|console:output:.+|console:[^:]+:(input|output))$',
-        '^(amq\\.gen.*|console:rpc|console:output:.+|console:[^:]+:(input|output))$',
+        '^(amq\\.gen.*|console:rpc|console:output:.+|console:[^:]+:(input|output|control))$',
+        '^(amq\\.gen.*|console:rpc|console:output:.+|console:[^:]+:(input|output|control))$',
         '^(amq\\.gen.*|console:rpc|console:output:.+|console:[^:]+:(input|output))$'
       ]
     when 'node'
@@ -129,7 +129,7 @@ class Cli
       [
         "^(amq\\.gen.*|node:#{rx_name}|console:#{rx_name}:.+|#{notification_exchange})$",
         "^(amq\\.gen.*|node:#{rx_name}|console:#{rx_name}:.+|#{notification_exchange})$",
-        "^(amq\\.gen.*|node:#{rx_name}|node:#{rx_name}:.+|console:#{rx_name}:input)$"
+        "^(amq\\.gen.*|node:#{rx_name}|node:#{rx_name}:.+|console:#{rx_name}:(input|control))$"
       ]
     when 'notification'
       notification_exchange = 'vpsadmin\.notifications'
@@ -194,4 +194,4 @@ class Cli
   end
 end
 
-Cli.run(ARGV)
+Cli.run(ARGV) if $0 == __FILE__

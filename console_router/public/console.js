@@ -1,7 +1,10 @@
-function VpsAdminConsole(element, vpsId, session) {
+function VpsAdminConsole(element, vpsId, session, clientId) {
   this.element = element;
   this.url = "/console/feed/" + vpsId;
+  this.closeUrl = "/console/close/" + vpsId;
   this.session = session;
+  this.clientId = clientId;
+  this.closed = false;
   this.outputDecoder = typeof TextDecoder === 'undefined' ? null : new TextDecoder('utf-8');
 
   this.term = new Terminal();
@@ -103,6 +106,7 @@ VpsAdminConsole.prototype.sendData = function () {
   body += '&height=' + this.term.rows;
   body += '&keys=' + encodeURIComponent(this.pendingData);
   body += '&session=' + encodeURIComponent(this.session);
+  body += '&client_id=' + encodeURIComponent(this.clientId);
 
   var that = this;
 
@@ -131,11 +135,34 @@ VpsAdminConsole.prototype.sendData = function () {
 };
 
 VpsAdminConsole.prototype.scheduleNextRequest = function () {
+  if (this.closed) {
+    return;
+  }
+
   var that = this;
 
   this.timeout = setTimeout(function () {
     that.sendData();
   }, this.rate);
+};
+
+VpsAdminConsole.prototype.close = function () {
+  if (this.closed) {
+    return;
+  }
+
+  this.closed = true;
+  clearTimeout(this.timeout);
+
+  if (typeof navigator.sendBeacon === 'function') {
+    var body = 'session=' + encodeURIComponent(this.session);
+    body += '&client_id=' + encodeURIComponent(this.clientId);
+
+    navigator.sendBeacon(
+      this.closeUrl,
+      new Blob([body], {type: 'application/x-www-form-urlencoded;charset=UTF-8'})
+    );
+  }
 };
 
 VpsAdminConsole.prototype.decodeOutput = function (v) {

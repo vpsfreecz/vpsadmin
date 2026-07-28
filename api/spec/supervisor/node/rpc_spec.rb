@@ -254,6 +254,29 @@ RSpec.describe 'VpsAdmin::Supervisor::Node::Rpc::Handler' do
     end
   end
 
+  describe '#authenticate_console_session_v2' do
+    it 'returns safe actor and console record identifiers' do
+      vps = build_standalone_vps_fixture(node:).fetch(:vps)
+      console = VpsConsole.create!(
+        user: SpecSeed.admin,
+        vps:,
+        token: SecureRandom.hex(50),
+        expiration: Time.now + 60
+      )
+
+      expect(handler.authenticate_console_session_v2(console.token)).to eq(
+        vps_id: vps.id,
+        user_id: SpecSeed.admin.id,
+        vps_console_id: console.id
+      )
+      expect(handler.authenticate_console_session(console.token)).to eq(vps.id)
+    end
+
+    it 'returns nil context for an invalid token' do
+      expect(handler.authenticate_console_session_v2('invalid')).to be_nil
+    end
+  end
+
   describe VpsAdmin::Supervisor::Node::Rpc::Request do
     def build_request
       acks = []
