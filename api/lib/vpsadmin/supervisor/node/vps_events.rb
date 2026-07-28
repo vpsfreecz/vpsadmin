@@ -2,6 +2,14 @@ require_relative 'base'
 
 module VpsAdmin::Supervisor
   class Node::VpsEvents < Node::Base
+    RUNTIME_EVENT_TYPES = %w[
+      vps.runtime_halted
+      vps.runtime_rebooted
+      vps.runtime_oom_stopped
+      vps.runtime_oom_restarted
+    ].freeze
+    PRODUCER_EVENT_ID_PATTERN = /\A[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\z/
+
     def start
       exchange = channel.direct(exchange_name)
       queue = channel.queue(
@@ -12,57 +20,99 @@ module VpsAdmin::Supervisor
 
       queue.bind(exchange, routing_key: 'vps_events')
 
-      queue.subscribe do |_delivery_info, _properties, payload|
+      queue.subscribe(manual_ack: true) do |delivery_info, _properties, payload|
         process_event(JSON.parse(payload))
+        channel.ack(delivery_info.delivery_tag)
       end
     end
 
     protected
 
     def process_event(event)
-      vps = ::Vps.find_by(id: event['id'], node_id: node.id)
-      return if vps.nil?
+      ::Event.transaction(requires_new: true) do
+        vps = ::Vps.lock.find_by(id: event['id'], node_id: node.id)
+        next if vps.nil?
 
-      time = Time.at(event['time'])
+        producer_event_id = normalize_producer_event_id(event)
+        next if event.has_key?('producer_event_id') && producer_event_id.nil?
+        next if producer_event_id && processed_event?(vps, producer_event_id)
 
-      case event['type']
-      when 'exit'
-        case event['opts']['exit_type']
-        when 'halt'
-          vps.log(:halt, time:)
+        time = Time.at(event['time'])
+        event_payload = { producer_event_id: }.compact
 
-          st = vps.vps_current_status
-          st.update!(halted: true) if st
-        when 'reboot'
-          vps.log(:reboot, time:)
-        end
+        case event['type']
+        when 'exit'
+          case event['opts']['exit_type']
+          when 'halt'
+            vps.log(:halt, time:)
 
-      when 'oomd'
-        action_past =
-          case event['opts']['action']
-          when 'restart'
-            'restarted'
-          when 'stop'
-            'stopped'
-          else
-            raise "Unsupported oomd action #{event['opts']['action'].inspect}"
+            st = vps.vps_current_status
+            st.update!(halted: true) if st
+            VpsAdmin::API::Events::VpsLifecycle.emit_runtime!(
+              'vps.runtime_halted',
+              vps,
+              occurred_at: time,
+              payload: event_payload
+            )
+          when 'reboot'
+            vps.log(:reboot, time:)
+            VpsAdmin::API::Events::VpsLifecycle.emit_runtime!(
+              'vps.runtime_rebooted',
+              vps,
+              occurred_at: time,
+              payload: event_payload
+            )
           end
 
-        vps.log(event['opts']['action'].to_sym, time:)
+        when 'oomd'
+          action_past =
+            case event['opts']['action']
+            when 'restart'
+              'restarted'
+            when 'stop'
+              'stopped'
+            else
+              raise "Unsupported oomd action #{event['opts']['action'].inspect}"
+            end
 
-        incident = ::IncidentReport.create!(
-          user: vps.user,
-          vps: vps,
-          subject: "#{event['opts']['action'].capitalize} due to abuse",
-          text: <<~END,
-            VPS ##{vps.id} #{vps.hostname} abused shared system resources and was #{action_past}.
-          END
-          codename: 'oomd',
-          detected_at: time
-        )
+          vps.log(event['opts']['action'].to_sym, time:)
 
-        TransactionChains::IncidentReport::Utils.fire_new(incident)
+          incident = ::IncidentReport.create!(
+            user: vps.user,
+            vps: vps,
+            subject: "#{event['opts']['action'].capitalize} due to abuse",
+            text: <<~END,
+              VPS ##{vps.id} #{vps.hostname} abused shared system resources and was #{action_past}.
+            END
+            codename: 'oomd',
+            detected_at: time
+          )
+
+          TransactionChains::IncidentReport::Utils.fire_new(incident)
+          VpsAdmin::API::Events::VpsLifecycle.emit_runtime!(
+            "vps.runtime_oom_#{action_past}",
+            vps,
+            occurred_at: time,
+            source: incident,
+            payload: event_payload.merge(incident_report_id: incident.id)
+          )
+        end
       end
+    end
+
+    def processed_event?(vps, producer_event_id)
+      ::Event
+        .where(vps:, event_type: RUNTIME_EVENT_TYPES)
+        .where(
+          "JSON_UNQUOTE(JSON_EXTRACT(parameters, '$.producer_event_id')) = ?",
+          producer_event_id
+        )
+        .exists?
+    end
+
+    def normalize_producer_event_id(event)
+      value = event['producer_event_id'].to_s
+      value if PRODUCER_EVENT_ID_PATTERN.match?(value)
     end
   end
 end
