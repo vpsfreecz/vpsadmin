@@ -1,5 +1,6 @@
 require 'json'
 require 'nodectld/daemon'
+require 'securerandom'
 
 module NodeCtld
   # Interface to `osctl monitor`
@@ -109,6 +110,7 @@ module NodeCtld
         @exchange,
         {
           id: vps_id,
+          producer_event_id: SecureRandom.uuid,
           time: (time || Time.now).to_i,
           type:,
           opts:

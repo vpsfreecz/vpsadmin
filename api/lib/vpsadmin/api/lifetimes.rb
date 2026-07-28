@@ -357,20 +357,39 @@ module VpsAdmin::API
 
         # Keep the same state and just set new expiration date.
         def set_expiration(expiration, save: true, user: nil, remind_after: nil, reason: nil)
+          previous_expiration = expiration_date
+          previous_remind_after = remind_after_date
           self.expiration_date = expiration
           self.remind_after_date = remind_after
+          changed_by = user || ::User.current
 
-          log = ::ObjectState.create!(
-            class_name: self.class.name,
-            row_id: id,
-            state: object_state,
-            expiration_date: expiration,
-            remind_after_date: remind_after,
-            reason:,
-            user: user || ::User.current
-          )
+          log = nil
+          ::ObjectState.transaction do
+            log = ::ObjectState.create!(
+              class_name: self.class.name,
+              row_id: id,
+              state: object_state,
+              expiration_date: expiration,
+              remind_after_date: remind_after,
+              reason:,
+              user: changed_by
+            )
 
-          save! if save
+            save! if save
+            if save \
+               && is_a?(::Vps) \
+               && (
+                 previous_expiration != expiration_date \
+                 || previous_remind_after != remind_after_date
+               )
+              VpsAdmin::API::Events::VpsLifecycle.emit_expiration_changed!(
+                self,
+                previous_expiration:,
+                reason:,
+                changed_by:
+              )
+            end
+          end
           log
         end
 

@@ -55,8 +55,19 @@ module VpsAdmin::API::Tasks
 
           next if ENV['EXECUTE'] != 'yes'
 
+          if instance.is_a?(::Vps)
+            previous_state = instance.object_state
+            target_state = next_object_state(instance)
+            observed_at = Time.now.utc
+            VpsAdmin::API::Events::VpsLifecycle.emit_expiration_reached!(
+              instance,
+              observed_at:,
+              target_state:
+            )
+          end
+
           begin
-            instance.progress_object_state(
+            transaction_chain = instance.progress_object_state(
               :enter,
               reason: get_reason(instance),
               expiration:
@@ -65,6 +76,16 @@ module VpsAdmin::API::Tasks
             puts '    resource locked'
             next
           end
+
+          next unless instance.is_a?(::Vps)
+
+          VpsAdmin::API::Events::VpsLifecycle.emit_expiration_processing_started!(
+            instance,
+            observed_at:,
+            previous_state:,
+            target_state:,
+            transaction_chain:
+          )
         end
       end
     end
@@ -122,6 +143,11 @@ module VpsAdmin::API::Tasks
     end
 
     protected
+
+    def next_object_state(instance)
+      states = VpsAdmin::API::Lifetimes::Private.states(instance.class)
+      states[states.index(instance.object_state.to_sym) + 1]
+    end
 
     def send_notification?(obj, now, force_days, force_only)
       do_remind = obj.remind_after_date.nil? || obj.remind_after_date < now

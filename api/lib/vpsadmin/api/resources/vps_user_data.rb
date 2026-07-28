@@ -105,7 +105,16 @@ module VpsAdmin::API::Resources
 
         object_state_check!(input[:user])
 
-        self.class.model.create!(input)
+        data = nil
+        self.class.model.transaction do
+          data = self.class.model.create!(input)
+          VpsAdmin::API::Events::VpsLifecycle.emit_user_data!(
+            'vps.user_data_created',
+            data,
+            changed_fields: input.keys
+          )
+        end
+        data
       rescue ActiveRecord::RecordInvalid => e
         error!('create failed', e.record.errors.to_hash)
       end
@@ -136,7 +145,15 @@ module VpsAdmin::API::Resources
         data = self.class.model.find_by!(with_restricted(id: path_params['vps_user_data_id']))
         object_state_check!(data.user)
 
-        data.update!(input)
+        changed_fields = input.keys
+        self.class.model.transaction do
+          data.update!(input)
+          VpsAdmin::API::Events::VpsLifecycle.emit_user_data!(
+            'vps.user_data_updated',
+            data,
+            changed_fields:
+          )
+        end
         data
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', e.record.errors.to_hash)
@@ -199,7 +216,14 @@ module VpsAdmin::API::Resources
         data = self.class.model.find_by!(with_restricted(id: path_params['vps_user_data_id']))
         object_state_check!(data.user)
 
-        data.destroy!
+        self.class.model.transaction do
+          data.destroy!
+          VpsAdmin::API::Events::VpsLifecycle.emit_user_data!(
+            'vps.user_data_deleted',
+            data,
+            changed_fields: []
+          )
+        end
 
         ok!
       end
