@@ -95,13 +95,22 @@ module VpsAdmin::API::Resources
           error!('access denied')
         end
 
-        self.class.model.create!(
-          user: owner,
-          label: input[:label],
-          description: input[:description],
-          enabled: input.has_key?(:enabled) ? input[:enabled] : true,
-          mute: input.has_key?(:mute) ? input[:mute] : false
-        )
+        receiver = nil
+        self.class.model.transaction do
+          receiver = self.class.model.create!(
+            user: owner,
+            label: input[:label],
+            description: input[:description],
+            enabled: input.has_key?(:enabled) ? input[:enabled] : true,
+            mute: input.has_key?(:mute) ? input[:mute] : false
+          )
+          VpsAdmin::API::Events::ResourceOperations.created!(
+            receiver,
+            owner:,
+            changed_fields: input.keys
+          )
+        end
+        receiver
       rescue ActiveRecord::RecordInvalid => e
         error!('create failed', e.record.errors.to_hash)
       end
@@ -126,7 +135,14 @@ module VpsAdmin::API::Resources
 
       def exec
         receiver = self.class.model.find_by!(with_restricted(id: path_params['notification_receiver_id']))
-        receiver.update!(input)
+        self.class.model.transaction do
+          receiver.update!(input)
+          VpsAdmin::API::Events::ResourceOperations.updated!(
+            receiver,
+            owner: receiver.user,
+            changed_fields: input.keys
+          )
+        end
         receiver
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', e.record.errors.to_hash)
@@ -144,7 +160,13 @@ module VpsAdmin::API::Resources
 
       def exec
         receiver = self.class.model.find_by!(with_restricted(id: path_params['notification_receiver_id']))
-        receiver.destroy!
+        self.class.model.transaction do
+          receiver.destroy!
+          VpsAdmin::API::Events::ResourceOperations.deleted!(
+            receiver,
+            owner: receiver.user
+          )
+        end
         ok!
       end
     end
@@ -272,10 +294,19 @@ module VpsAdmin::API::Resources
             id: input[:notification_target_id].id
           )
 
-          receiver.notification_receiver_targets.create!(
-            notification_target: target,
-            position: input[:position] || ::NotificationReceiver.next_receiver_target_position(receiver)
-          )
+          link = nil
+          self.class.model.transaction do
+            link = receiver.notification_receiver_targets.create!(
+              notification_target: target,
+              position: input[:position] || ::NotificationReceiver.next_receiver_target_position(receiver)
+            )
+            VpsAdmin::API::Events::ResourceOperations.created!(
+              link,
+              owner: receiver.user,
+              changed_fields: input.keys
+            )
+          end
+          link
         rescue ActiveRecord::RecordInvalid => e
           error!('create failed', e.record.errors.to_hash)
         end
@@ -308,7 +339,14 @@ module VpsAdmin::API::Resources
 
           attrs = {}
           attrs[:position] = input[:position] if input.has_key?(:position)
-          link.update!(attrs)
+          self.class.model.transaction do
+            link.update!(attrs)
+            VpsAdmin::API::Events::ResourceOperations.updated!(
+              link,
+              owner: link.notification_receiver.user,
+              changed_fields: attrs.keys
+            )
+          end
           link
         rescue ActiveRecord::RecordInvalid => e
           error!('update failed', e.record.errors.to_hash)
@@ -331,7 +369,11 @@ module VpsAdmin::API::Resources
               id: path_params['target_id']
             )
           )
-          link.destroy!
+          owner = link.notification_receiver.user
+          self.class.model.transaction do
+            link.destroy!
+            VpsAdmin::API::Events::ResourceOperations.deleted!(link, owner:)
+          end
           ok!
         end
       end
