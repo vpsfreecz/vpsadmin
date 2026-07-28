@@ -3,6 +3,7 @@ module TransactionChains
     label 'Unblock'
 
     def link_chain(vps, target, _state, log)
+      concerns(:affect, [vps.class.name, vps.id])
       use_chain(Vps::Start, args: vps)
 
       return unless target

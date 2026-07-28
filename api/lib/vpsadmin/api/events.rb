@@ -1102,13 +1102,16 @@ module VpsAdmin::API
     end
 
     def emit_transaction_chain_state!(chain, previous_state: nil, state: nil,
-                                      changed_at: nil, node: nil)
+                                      changed_at: nil, node: nil,
+                                      producer_event_id: nil)
       state ||= chain.state
       return unless state
 
+      vps = transaction_chain_vps(chain)
       emit!(
         'transaction_chain.state_changed',
-        user: chain.user,
+        user: vps&.user || transaction_chain_target_owner(chain) || chain.user,
+        vps:,
         source: chain,
         source_class: ::TransactionChain.name,
         subject: transaction_chain_subject(chain, state),
@@ -1119,12 +1122,15 @@ module VpsAdmin::API
           previous_state:,
           state:,
           changed_at:,
-          node:
-        )
+          node:,
+          producer_event_id:
+        ),
+        persist: :always
       )
     end
 
-    def transaction_chain_parameters(chain, previous_state:, state:, changed_at: nil, node: nil)
+    def transaction_chain_parameters(chain, previous_state:, state:, changed_at: nil, node: nil,
+                                     producer_event_id: nil)
       terminal = TRANSACTION_CHAIN_TERMINAL_STATES.include?(state.to_s)
       failed = TRANSACTION_CHAIN_FAILED_STATES.include?(state.to_s)
       event_time = changed_at || Time.now
@@ -1138,16 +1144,18 @@ module VpsAdmin::API
         previous_state:,
         state:,
         terminal:,
-        successful: terminal && !failed,
+        successful: state.to_s == 'done',
         failed:,
         size: chain.size,
         progress: chain.progress,
+        actor_user_id: chain.user_id,
         user_session_id: chain.user_session_id,
         concerns:,
         concern_classes: concern_objects.map { |item| Array(item).first }.compact.uniq,
         concern_object_ids: concern_objects.map { |item| Array(item)[1] }.compact,
         node_id: node&.id,
         node_name: node&.domain_name,
+        producer_event_id:,
         changed_at: event_time.iso8601,
         changed_at_timestamp: event_time.to_f
       }.compact
@@ -1172,6 +1180,24 @@ module VpsAdmin::API
       chain.format_concerns
     rescue StandardError
       { type: nil, objects: [] }
+    end
+
+    def transaction_chain_vps(chain)
+      concern = chain.transaction_chain_concerns
+                     .select { |item| item.class_name == ::Vps.name }
+                     .max_by(&:id)
+      ::Vps.find_by(id: concern.row_id) if concern
+    end
+
+    def transaction_chain_target_owner(chain)
+      concerns = chain.transaction_chain_concerns.sort_by(&:id)
+      vps_concern = concerns.reverse.find { |item| item.class_name == ::Vps.name }
+      return unless vps_concern
+
+      owner_concern = concerns.reverse.find do |item|
+        item.id > vps_concern.id && item.class_name == ::User.name
+      end
+      ::User.find_by(id: owner_concern.row_id) if owner_concern
     end
 
     def emit_dns_transfer_event!(log, previous_status:)
@@ -1944,3 +1970,4 @@ module VpsAdmin::API
 end
 
 require_relative 'events/core'
+require_relative 'events/vps_operations'
