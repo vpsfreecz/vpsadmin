@@ -1971,5 +1971,6 @@ end
 
 require_relative 'events/core'
 require_relative 'events/resource_operations'
+require_relative 'events/vps_console'
 require_relative 'events/vps_lifecycle'
 require_relative 'events/vps_operations'
