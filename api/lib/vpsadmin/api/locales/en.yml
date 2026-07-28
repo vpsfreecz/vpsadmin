@@ -792,8 +792,18 @@ en:
             label: VPS dataset shrunk
           vps_dns_resolver_changed:
             label: VPS DNS resolver changed
+          vps_expiration_changed:
+            label: VPS expiration changed
+          vps_expiration_processing_started:
+            label: VPS expiration processing started
+          vps_expiration_reached:
+            label: VPS expiration reached
           vps_incident_report:
             label: Incident report
+          vps_maintenance_window_updated:
+            label: VPS maintenance window updated
+          vps_maintenance_windows_updated:
+            label: VPS maintenance windows updated
           vps_migration_begun:
             label: VPS migration begun
           vps_migration_finished:
@@ -818,10 +828,24 @@ en:
             label: VPS resources changed
           vps_resumed:
             label: VPS resumed
+          vps_runtime_halted:
+            label: VPS runtime halted
+          vps_runtime_oom_restarted:
+            label: VPS runtime restarted after OOM abuse
+          vps_runtime_oom_stopped:
+            label: VPS runtime stopped after OOM abuse
+          vps_runtime_rebooted:
+            label: VPS runtime rebooted
           vps_stopped_over_quota:
             label: VPS stopped over quota
           vps_suspended:
             label: VPS suspended
+          vps_user_data_created:
+            label: VPS user data created
+          vps_user_data_deleted:
+            label: VPS user data deleted
+          vps_user_data_updated:
+            label: VPS user data updated
         description: Match one exact event type; leave empty to match all types or
           use an event type pattern
       event_type_pattern:
@@ -925,7 +949,9 @@ en:
           changed_at_timestamp:
             label: Unix timestamp of the state change
           changed_by_id:
-            label: ID of the user who changed the VPS lifecycle state
+            label: ID of the user who made the change
+          changed_by_login:
+            label: Login of the user who made the change
           changed_by_name:
             label: Name of the user who changed the VPS lifecycle state
           changed_fields:
@@ -934,6 +960,8 @@ en:
             label: Client IP address reported by the API client
           client_version:
             label: Version string reported by the API client
+          closes_at:
+            label: Closing minute of day after the change
           codename:
             label: Incident report codename assigned by vpsAdmin
           concern_classes:
@@ -1042,6 +1070,8 @@ en:
             label: Number of incident reports matched by the reply
           incident_ids:
             label: IDs of incident reports matched by the reply
+          incident_report_id:
+            label: ID of the related incident report
           incoming_payment_count:
             label: Number of incoming payments included in the report
           incoming_payment_id:
@@ -1054,6 +1084,8 @@ en:
             label: IP address mentioned by the incident report
           ip_addrs:
             label: Client IP addresses observed in failed attempts
+          is_open:
+            label: Whether the window is open after the change
           killed_name:
             label: Name of the process killed by the kernel
           label:
@@ -1070,6 +1102,8 @@ en:
             label: ID of the mail thread used for request notification
           maintenance_window:
             label: Whether a maintenance window constrains the migration
+          maintenance_window_id:
+            label: ID of the maintenance window
           max_over_refquota_seconds:
             label: Maximum allowed time over quota before action, in seconds
           memory:
@@ -1104,6 +1138,8 @@ en:
             label: User-visible label of the expiring object
           object_state:
             label: Initial lifecycle state of the account
+          observed_at:
+            label: Time when expiration was observed
           old_dns_resolver_addrs:
             label: Addresses configured on the previous DNS resolver
           old_dns_resolver_id:
@@ -1116,6 +1152,8 @@ en:
             label: ID of the persisted OOM report
           ooms_in_period:
             label: Number of OOM reports seen in the tracked period
+          opens_at:
+            label: Opening minute of day after the change
           operation:
             label: VPS operation represented by the transaction chain
           original_refquota:
@@ -1142,12 +1180,22 @@ en:
             label: Length of the report period in seconds
           period_start:
             label: Beginning of the report period
+          previous_closes_at:
+            label: Previous closing minute of day
+          previous_expiration_date:
+            label: Previous expiration date
+          previous_is_open:
+            label: Whether the window was previously open
+          previous_opens_at:
+            label: Previous opening minute of day
           previous_state:
             label: Transaction chain state before the change
           previous_status:
             label: Transfer status before this event
           primary_addr:
             label: Primary DNS server address used for transfer
+          processing_started_at:
+            label: Time when expiration processing was queued
           producer_event_id:
             label: Stable node-assigned identifier for this state transition
           progress:
@@ -1194,6 +1242,8 @@ en:
             label: Whether affected VPSes are restarted during migration
           roles:
             label: Notification roles declared by the event type
+          runtime_event_type:
+            label: Normalized runtime event type
           scope:
             label: Access scope granted to the token
           serial:
@@ -1234,6 +1284,8 @@ en:
             label: Longer event summary
           swap:
             label: Swap limit assigned to the VPS after the change, in MiB
+          target_state:
+            label: Lifecycle state requested by the scheduler
           terminal:
             label: Whether the chain reached a terminal state
           text:
@@ -1246,8 +1298,12 @@ en:
             label: ID of the TOTP device whose recovery code was used
           totp_device_label:
             label: User-visible label of the affected TOTP device
+          transaction_chain_id:
+            label: ID of the queued lifecycle transaction chain
           transfer_log_id:
             label: ID of the DNS transfer log row
+          trigger:
+            label: Subsystem that produced the event
           update_id:
             label: ID of the outage report update
           update_summary:
@@ -1258,6 +1314,8 @@ en:
             label: HTTP User-Agent header used by the client
           user_count:
             label: Number of users affected by the reply
+          user_data_id:
+            label: ID of the VPS user-data record
           user_device_id:
             label: ID of the remembered user device used for sign-in
           user_id:
@@ -1276,6 +1334,10 @@ en:
             label: ID of the VPS whose dataset quota changed
           vps_ids:
             label: IDs of all VPSes affected by the operation
+          weekday:
+            label: Week day represented by the window
+          window_count:
+            label: Number of maintenance windows updated
         label: Field
       field_type:
         label: Field_type
@@ -3854,6 +3916,67 @@ en:
             description: Hostname of the VPS whose resolver changed
           vps_id:
             description: ID of the VPS whose resolver changed
+        vps_expiration_changed:
+          changed_by_id:
+            description: ID of the user who made the change
+          changed_by_login:
+            description: Login of the user who made the change
+          expiration_date:
+            description: New expiration date
+          previous_expiration_date:
+            description: Previous expiration date
+          reason:
+            description: Reason supplied with the expiration change
+          remind_after_date:
+            description: New reminder suppression date
+          state:
+            description: Current VPS lifecycle state
+          vps_hostname:
+            description: Hostname of the affected VPS
+          vps_id:
+            description: ID of the affected VPS
+        vps_expiration_processing_started:
+          expiration_date:
+            description: Expiration date observed by the scheduler
+          observed_at:
+            description: Time when expiration was observed
+          previous_state:
+            description: Lifecycle state before processing
+          processing_started_at:
+            description: Time when expiration processing was queued
+          state:
+            description: Lifecycle state observed by the scheduler
+          target_state:
+            description: Lifecycle state requested by the scheduler
+          transaction_chain_id:
+            description: ID of the queued lifecycle transaction chain
+          trigger:
+            description: Subsystem that produced the event
+          vps_hostname:
+            description: Hostname of the affected VPS
+          vps_id:
+            description: ID of the affected VPS
+        vps_expiration_reached:
+          expiration_date:
+            description: Expiration date observed by the scheduler
+          observed_at:
+            description: Time when expiration was observed
+          previous_state:
+            description: Lifecycle state before processing
+          processing_started_at:
+            description: Time when expiration processing was queued
+          state:
+            description: Lifecycle state observed by the scheduler
+          target_state:
+            description: Lifecycle state requested by the scheduler
+          transaction_chain_id:
+            description: ID of the queued lifecycle transaction chain
+          trigger:
+            description: Subsystem that produced the event
+          vps_hostname:
+            description: Hostname of the affected VPS
+          vps_id:
+            description: ID of the affected VPS
         vps_incident_report:
           codename:
             description: Incident report codename assigned by vpsAdmin
@@ -3865,6 +3988,44 @@ en:
             description: Body text received with the incident report
           vps_id:
             description: ID of the VPS associated with the incident report
+        vps_maintenance_window_updated:
+          changed_by_id:
+            description: ID of the user who changed the window
+          changed_by_login:
+            description: Login of the user who changed the window
+          closes_at:
+            description: Closing minute of day after the change
+          is_open:
+            description: Whether the window is open after the change
+          maintenance_window_id:
+            description: ID of the maintenance window
+          opens_at:
+            description: Opening minute of day after the change
+          previous_closes_at:
+            description: Previous closing minute of day
+          previous_is_open:
+            description: Whether the window was previously open
+          previous_opens_at:
+            description: Previous opening minute of day
+          vps_hostname:
+            description: Hostname of the affected VPS
+          vps_id:
+            description: ID of the affected VPS
+          weekday:
+            description: Week day represented by the window
+        vps_maintenance_windows_updated:
+          changed_by_id:
+            description: ID of the user who changed the windows
+          changed_by_login:
+            description: Login of the user who changed the windows
+          changed_fields:
+            description: Maintenance-window fields changed on every day
+          vps_hostname:
+            description: Hostname of the affected VPS
+          vps_id:
+            description: ID of the affected VPS
+          window_count:
+            description: Number of maintenance windows updated
         vps_migration_begun:
           custom_window:
             description: Whether a custom maintenance window is used
@@ -4093,6 +4254,70 @@ en:
             description: Hostname of the VPS whose lifecycle state changed
           vps_id:
             description: ID of the VPS whose lifecycle state changed
+        vps_runtime_halted:
+          incident_report_id:
+            description: ID of the related incident report
+          node_id:
+            description: ID of the node reporting the runtime event
+          node_name:
+            description: Name of the node reporting the runtime event
+          producer_event_id:
+            description: Stable node-assigned identifier used to deduplicate runtime
+              event delivery
+          runtime_event_type:
+            description: Normalized runtime event type
+          vps_hostname:
+            description: Hostname of the affected VPS
+          vps_id:
+            description: ID of the affected VPS
+        vps_runtime_oom_restarted:
+          incident_report_id:
+            description: ID of the related incident report
+          node_id:
+            description: ID of the node reporting the runtime event
+          node_name:
+            description: Name of the node reporting the runtime event
+          producer_event_id:
+            description: Stable node-assigned identifier used to deduplicate runtime
+              event delivery
+          runtime_event_type:
+            description: Normalized runtime event type
+          vps_hostname:
+            description: Hostname of the affected VPS
+          vps_id:
+            description: ID of the affected VPS
+        vps_runtime_oom_stopped:
+          incident_report_id:
+            description: ID of the related incident report
+          node_id:
+            description: ID of the node reporting the runtime event
+          node_name:
+            description: Name of the node reporting the runtime event
+          producer_event_id:
+            description: Stable node-assigned identifier used to deduplicate runtime
+              event delivery
+          runtime_event_type:
+            description: Normalized runtime event type
+          vps_hostname:
+            description: Hostname of the affected VPS
+          vps_id:
+            description: ID of the affected VPS
+        vps_runtime_rebooted:
+          incident_report_id:
+            description: ID of the related incident report
+          node_id:
+            description: ID of the node reporting the runtime event
+          node_name:
+            description: Name of the node reporting the runtime event
+          producer_event_id:
+            description: Stable node-assigned identifier used to deduplicate runtime
+              event delivery
+          runtime_event_type:
+            description: Normalized runtime event type
+          vps_hostname:
+            description: Hostname of the affected VPS
+          vps_id:
+            description: ID of the affected VPS
         vps_stopped_over_quota:
           added_space:
             description: Space added to the dataset refquota, in bytes
@@ -4136,6 +4361,57 @@ en:
             description: Hostname of the VPS whose lifecycle state changed
           vps_id:
             description: ID of the VPS whose lifecycle state changed
+        vps_user_data_created:
+          changed_by_id:
+            description: ID of the user who changed the record
+          changed_by_login:
+            description: Login of the user who changed the record
+          changed_fields:
+            description: Names of fields changed by the operation
+          format:
+            description: User-data format
+          label:
+            description: User-visible user-data label
+          user_data_id:
+            description: ID of the VPS user-data record
+          user_id:
+            description: ID of the user-data owner
+          user_login:
+            description: Login of the user-data owner
+        vps_user_data_deleted:
+          changed_by_id:
+            description: ID of the user who changed the record
+          changed_by_login:
+            description: Login of the user who changed the record
+          changed_fields:
+            description: Names of fields changed by the operation
+          format:
+            description: User-data format
+          label:
+            description: User-visible user-data label
+          user_data_id:
+            description: ID of the VPS user-data record
+          user_id:
+            description: ID of the user-data owner
+          user_login:
+            description: Login of the user-data owner
+        vps_user_data_updated:
+          changed_by_id:
+            description: ID of the user who changed the record
+          changed_by_login:
+            description: Login of the user who changed the record
+          changed_fields:
+            description: Names of fields changed by the operation
+          format:
+            description: User-data format
+          label:
+            description: User-visible user-data label
+          user_data_id:
+            description: ID of the VPS user-data record
+          user_id:
+            description: ID of the user-data owner
+          user_login:
+            description: Login of the user-data owner
       types:
         dataset_migration_begun:
           label: Dataset migration begun
@@ -4203,8 +4479,18 @@ en:
           label: VPS dataset shrunk
         vps_dns_resolver_changed:
           label: VPS DNS resolver changed
+        vps_expiration_changed:
+          label: VPS expiration changed
+        vps_expiration_processing_started:
+          label: VPS expiration processing started
+        vps_expiration_reached:
+          label: VPS expiration reached
         vps_incident_report:
           label: Incident report
+        vps_maintenance_window_updated:
+          label: VPS maintenance window updated
+        vps_maintenance_windows_updated:
+          label: VPS maintenance windows updated
         vps_migration_begun:
           label: VPS migration begun
         vps_migration_finished:
@@ -4229,10 +4515,24 @@ en:
           label: VPS resources changed
         vps_resumed:
           label: VPS resumed
+        vps_runtime_halted:
+          label: VPS runtime halted
+        vps_runtime_oom_restarted:
+          label: VPS runtime restarted after OOM abuse
+        vps_runtime_oom_stopped:
+          label: VPS runtime stopped after OOM abuse
+        vps_runtime_rebooted:
+          label: VPS runtime rebooted
         vps_stopped_over_quota:
           label: VPS stopped over quota
         vps_suspended:
           label: VPS suspended
+        vps_user_data_created:
+          label: VPS user data created
+        vps_user_data_deleted:
+          label: VPS user data deleted
+        vps_user_data_updated:
+          label: VPS user data updated
     resources:
       action_state:
         attributes:

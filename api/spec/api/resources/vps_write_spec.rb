@@ -846,7 +846,8 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
       ObjectState.where(class_name: 'Vps', row_id: vps.id).count
     end
 
-    it 'updates expiration_date without changing state' do
+    it 'updates expiration_date without changing state',
+       :with_event_delivery do
       set_state(vps, :active)
       expiration = Time.utc(2040, 1, 1, 12, 0, 0)
 
@@ -862,6 +863,19 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
       record = Vps.unscoped.find(vps.id)
       expect(record.object_state).to eq('active')
       expect(record.expiration_date.to_i).to eq(expiration.to_i)
+      event = Event.find_by!(event_type: 'vps.expiration_changed', vps: record)
+      expect(event).to have_attributes(
+        user: record.user,
+        source: record
+      )
+      expect(event.payload).to include(
+        'previous_expiration_date' => nil,
+        'expiration_date' => expiration.iso8601,
+        'state' => 'active',
+        'changed_by_id' => admin.id,
+        'changed_by_login' => admin.login
+      )
+      expect(VpsAdmin::API::Events.default_routed?('vps.expiration_changed')).to be(false)
     end
 
     states = %w[active suspended soft_delete hard_delete deleted]

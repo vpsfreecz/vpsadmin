@@ -361,7 +361,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VpsUserData' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows normal user to create for self' do
+    it 'allows normal user to create for self', :with_event_delivery do
       expect do
         as(SpecSeed.user) { json_post index_path, vps_user_data: payload }
       end.to change(VpsUserData, :count).by(1)
@@ -372,6 +372,21 @@ RSpec.describe 'VpsAdmin::API::Resources::VpsUserData' do
 
       record = VpsUserData.find_by!(label: payload[:label])
       expect(record.user_id).to eq(SpecSeed.user.id)
+      event = Event.find_by!(
+        event_type: 'vps.user_data_created',
+        source_class: 'VpsUserData',
+        source_id: record.id
+      )
+      expect(event.user).to eq(SpecSeed.user)
+      expect(event.payload).to include(
+        'user_data_id' => record.id,
+        'label' => record.label,
+        'format' => 'script',
+        'changed_by_id' => SpecSeed.user.id
+      )
+      expect(event.payload).not_to have_key('content')
+      expect(event.payload.to_json).not_to include(script_content)
+      expect(VpsAdmin::API::Events.default_routed?('vps.user_data_created')).to be(false)
     end
 
     it 'ignores user field for non-admins' do
@@ -408,6 +423,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VpsUserData' do
       expect_status(200)
       expect(json['status']).to be(false)
       expect(errors.keys.map(&:to_s)).to include('label')
+      expect(Event.where(event_type: 'vps.user_data_created')).to be_empty
     end
 
     it 'returns validation errors for missing format' do
@@ -533,7 +549,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VpsUserData' do
       expect(user_row.reload.label).to eq(new_label)
     end
 
-    it 'allows owner to update format and content' do
+    it 'allows owner to update format and content', :with_event_delivery do
       as(SpecSeed.user) do
         json_put show_path(user_row.id), vps_user_data: {
           format: 'cloudinit_config',
@@ -545,6 +561,17 @@ RSpec.describe 'VpsAdmin::API::Resources::VpsUserData' do
       expect(json['status']).to be(true)
       expect(user_row.reload.format).to eq('cloudinit_config')
       expect(user_row.content).to eq(cloudinit_config_content)
+      event = Event.find_by!(
+        event_type: 'vps.user_data_updated',
+        source_class: 'VpsUserData',
+        source_id: user_row.id
+      )
+      expect(event.payload).to include(
+        'changed_fields' => %w[content format],
+        'format' => 'cloudinit_config'
+      )
+      expect(event.payload).not_to have_key('content')
+      expect(event.payload.to_json).not_to include(cloudinit_config_content)
     end
 
     it 'returns validation errors for invalid update' do
@@ -750,7 +777,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VpsUserData' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows owner to delete' do
+    it 'allows owner to delete', :with_event_delivery do
       user_row
       expect do
         as(SpecSeed.user) { json_delete show_path(user_row.id) }
@@ -759,6 +786,18 @@ RSpec.describe 'VpsAdmin::API::Resources::VpsUserData' do
       expect_status(200)
       expect(json['status']).to be(true)
       expect(VpsUserData.find_by(id: user_row.id)).to be_nil
+      event = Event.find_by!(
+        event_type: 'vps.user_data_deleted',
+        source_class: 'VpsUserData',
+        source_id: user_row.id
+      )
+      expect(event).to have_attributes(user: SpecSeed.user)
+      expect(event.payload).to include(
+        'user_data_id' => user_row.id,
+        'label' => user_row.label,
+        'format' => user_row.format
+      )
+      expect(event.payload).not_to have_key('content')
     end
 
     it 'prevents users from deleting other user data' do
