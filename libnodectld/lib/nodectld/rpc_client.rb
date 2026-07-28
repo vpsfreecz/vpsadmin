@@ -111,6 +111,20 @@ module NodeCtld
       send_read_request('authenticate_console_session', args: [token])
     end
 
+    # Authenticate a console token and return safe session context. Fall back
+    # to the original integer response when connected to an older API.
+    #
+    # @param token [String]
+    # @return [Hash, nil]
+    def authenticate_console_session_context(token)
+      send_read_request('authenticate_console_session_v2', args: [token])
+    rescue Error => e
+      raise unless e.message == 'Command "authenticate_console_session_v2" not found'
+
+      vps_id = authenticate_console_session(token)
+      vps_id && { 'vps_id' => vps_id }
+    end
+
     def log_type
       'rpc'
     end

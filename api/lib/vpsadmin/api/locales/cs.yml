@@ -790,6 +790,10 @@ cs:
             label: Testovací notifikace
           user_totp_recovery_code_used:
             label: Použit obnovovací kód TOTP
+          vps_console_closed:
+            label: Konzole VPS zavřena
+          vps_console_opened:
+            label: Konzole VPS otevřena
           vps_dataset_expanded:
             label: Dataset VPS rozšířen
           vps_dataset_shrunk:
@@ -968,6 +972,8 @@ cs:
             label: IP adresa klienta nahlášená API klientem
           client_version:
             label: Verze nahlášená API klientem
+          close_reason:
+            label: Důvod zavření klienta konzole
           closes_at:
             label: Minuta zavření v rámci dne po změně
           codename:
@@ -976,6 +982,8 @@ cs:
             label: Třídy objektů dotčených řetězcem
           concern_object_ids:
             label: ID objektů dotčených řetězcem
+          console_client_id:
+            label: Dočasný identifikátor propojující otevření a zavření konzole
           count:
             label: Počet OOM killů zastoupených tímto reportem
           cpu:
@@ -1338,6 +1346,8 @@ cs:
             label: Celé jméno vlastníka datasetu
           user_session_id:
             label: ID uživatelského sezení souvisejícího s událostí
+          vps_console_id:
+            label: ID záznamu autorizace konzole použitého klientem
           vps_count:
             label: Počet VPS dotčených odpovědí
           vps_hostname:
@@ -3893,6 +3903,46 @@ cs:
             description: Uživatelsky viditelný popisek dotčeného TOTP zařízení
           used_at:
             description: Čas přijetí obnovovacího kódu
+        vps_console_closed:
+          actor_user_id:
+            description: ID uživatele, jehož token konzole ověřil klienta
+          close_reason:
+            description: Důvod zavření klienta konzole
+          console_client_id:
+            description: Dočasný identifikátor propojující otevření a zavření konzole
+          node_id:
+            description: ID nodu hostujícího konzoli VPS
+          node_name:
+            description: Doménové jméno nodu hostujícího konzoli VPS
+          producer_event_id:
+            description: Stabilní identifikátor přidělený nodem pro deduplikaci doručení
+              události konzole
+          vps_console_id:
+            description: ID záznamu autorizace konzole použitého klientem
+          vps_hostname:
+            description: Hostname dotčeného VPS
+          vps_id:
+            description: ID dotčeného VPS
+        vps_console_opened:
+          actor_user_id:
+            description: ID uživatele, jehož token konzole ověřil klienta
+          close_reason:
+            description: Důvod zavření klienta konzole
+          console_client_id:
+            description: Dočasný identifikátor propojující otevření a zavření konzole
+          node_id:
+            description: ID nodu hostujícího konzoli VPS
+          node_name:
+            description: Doménové jméno nodu hostujícího konzoli VPS
+          producer_event_id:
+            description: Stabilní identifikátor přidělený nodem pro deduplikaci doručení
+              události konzole
+          vps_console_id:
+            description: ID záznamu autorizace konzole použitého klientem
+          vps_hostname:
+            description: Hostname dotčeného VPS
+          vps_id:
+            description: ID dotčeného VPS
         vps_dataset_expanded:
           added_space:
             description: Prostor přidaný do refquota datasetu v bajtech
@@ -4531,6 +4581,10 @@ cs:
           label: Testovací notifikace
         user_totp_recovery_code_used:
           label: Použit obnovovací kód TOTP
+        vps_console_closed:
+          label: Konzole VPS zavřena
+        vps_console_opened:
+          label: Konzole VPS otevřena
         vps_dataset_expanded:
           label: Dataset VPS rozšířen
         vps_dataset_shrunk:

@@ -252,4 +252,23 @@ RSpec.describe NodeCtld::Daemon do
     expect(queues).to have_received(:execute).with(cmd)
     expect(daemon.instance_variable_get(:@cmd_counter)).to eq(1)
   end
+
+  it 'orderly closes console sessions when the daemon loop exits' do
+    console = instance_double(NodeCtld::Console::Server, stop: nil)
+    daemon.instance_variable_set(:@console, console)
+    allow(daemon).to receive(:sleep).and_raise(Interrupt)
+
+    expect { daemon.start }.to raise_error(Interrupt)
+    expect(console).to have_received(:stop).with(reason: 'node_shutdown')
+  end
+
+  it 'reports a daemon restart truthfully when closing console sessions' do
+    console = instance_double(NodeCtld::Console::Server, stop: nil)
+    daemon.instance_variable_set(:@console, console)
+    allow(daemon).to receive(:sleep).and_raise(Interrupt)
+    allow(daemon).to receive(:exitstatus).and_return(NodeCtld::EXIT_RESTART)
+
+    expect { daemon.start }.to raise_error(Interrupt)
+    expect(console).to have_received(:stop).with(reason: 'node_restart')
+  end
 end
