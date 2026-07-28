@@ -156,6 +156,11 @@ module VpsAdmin::API::Resources
             target.generate_email_verification_token!
           end
           enable_delivery_method_for_admin!(owner, target.action)
+          VpsAdmin::API::Events::ResourceOperations.created!(
+            target,
+            owner:,
+            changed_fields: input.keys
+          )
         end
 
         auto_send_email_verification!(target)
@@ -205,6 +210,11 @@ module VpsAdmin::API::Resources
           send_email_verification = target.saved_change_to_target_kind? || target.saved_change_to_target_value?
           target.mark_verified! if current_user.role == :admin && target.admin_verification_skippable?
           enable_delivery_method_for_admin!(target.user, target.action)
+          VpsAdmin::API::Events::ResourceOperations.updated!(
+            target,
+            owner: target.user,
+            changed_fields: input.keys
+          )
         end
 
         auto_send_email_verification!(target) if send_email_verification
@@ -225,7 +235,13 @@ module VpsAdmin::API::Resources
 
       def exec
         target = self.class.model.find_by!(with_restricted(id: path_params['notification_target_id']))
-        target.destroy!
+        self.class.model.transaction do
+          target.destroy!
+          VpsAdmin::API::Events::ResourceOperations.deleted!(
+            target,
+            owner: target.user
+          )
+        end
         ok!
       end
     end
@@ -255,6 +271,12 @@ module VpsAdmin::API::Resources
         target.ensure_email_verification_token!
         VpsAdmin::API::Notifications.send_email_verification!(target)
         target.reload
+        VpsAdmin::API::Events::ResourceOperations.updated!(
+          target,
+          owner: target.user,
+          changed_fields: %i[email_verification_sent]
+        )
+        target
       rescue VpsAdmin::API::Notifications::EmailVerificationDeliveryError => e
         error!(e.message)
       rescue ActiveRecord::RecordInvalid => e
@@ -284,8 +306,16 @@ module VpsAdmin::API::Resources
       def exec
         target = ::NotificationTarget.find_by!(with_restricted(id: path_params['notification_target_id']))
         error!('notification target is not a custom e-mail') unless target.email_verification_required?
-        unless target.confirm_email_verification_token!(input[:token])
-          error!('e-mail verification token is invalid or expired')
+        self.class.model.transaction do
+          unless target.confirm_email_verification_token!(input[:token])
+            error!('e-mail verification token is invalid or expired')
+          end
+
+          VpsAdmin::API::Events::ResourceOperations.updated!(
+            target,
+            owner: target.user,
+            changed_fields: %i[verified_at]
+          )
         end
 
         target
@@ -314,7 +344,14 @@ module VpsAdmin::API::Resources
         error!('notification target is not Telegram') unless target.telegram_action?
         error!('Telegram delivery is not configured') unless target.action_available?
 
-        target.generate_verification_token!
+        self.class.model.transaction do
+          target.generate_verification_token!
+          VpsAdmin::API::Events::ResourceOperations.updated!(
+            target,
+            owner: target.user,
+            changed_fields: %i[pairing_token]
+          )
+        end
         target
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', e.record.errors.to_hash)
@@ -346,6 +383,12 @@ module VpsAdmin::API::Resources
         target.ensure_sms_verification_code!
         VpsAdmin::API::Notifications.send_sms_verification_code!(target)
         target.reload
+        VpsAdmin::API::Events::ResourceOperations.updated!(
+          target,
+          owner: target.user,
+          changed_fields: %i[sms_verification_sent]
+        )
+        target
       rescue VpsAdmin::API::Notifications::SmsGatewayResponseError => e
         target&.update(last_error: e.message)
         error!(e.message)
@@ -376,8 +419,17 @@ module VpsAdmin::API::Resources
       def exec
         target = ::NotificationTarget.find_by!(with_restricted(id: path_params['notification_target_id']))
         error!('notification target is not SMS') unless target.sms_action?
-        error!('SMS verification code is invalid or expired') unless target.confirm_sms_verification_code!(input[:code])
+        self.class.model.transaction do
+          unless target.confirm_sms_verification_code!(input[:code])
+            error!('SMS verification code is invalid or expired')
+          end
 
+          VpsAdmin::API::Events::ResourceOperations.updated!(
+            target,
+            owner: target.user,
+            changed_fields: %i[verified_at]
+          )
+        end
         target
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', e.record.errors.to_hash)
