@@ -122,6 +122,8 @@ module NodeCtld
         $stdout.flush
         $stderr.flush
       end
+    ensure
+      @console.stop(reason: console_shutdown_reason)
     end
 
     def work
@@ -429,6 +431,10 @@ module NodeCtld
 
     def can_stop?
       !@pause && @queues.empty? && @blockers_mutex.synchronize { @chain_blockers.empty? }
+    end
+
+    def console_shutdown_reason
+      exitstatus == EXIT_RESTART ? 'node_restart' : 'node_shutdown'
     end
 
     def exitstatus

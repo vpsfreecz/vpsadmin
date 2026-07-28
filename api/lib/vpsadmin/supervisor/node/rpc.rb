@@ -107,6 +107,7 @@ module VpsAdmin::Supervisor
         list_vps_user_namespace_maps
         list_exports
         authenticate_console_session
+        authenticate_console_session_v2
       ].freeze
 
       def initialize(node)
@@ -392,20 +393,39 @@ module VpsAdmin::Supervisor
       # @param token [String]
       # @return [Integer, nil] VPS id
       def authenticate_console_session(token)
-        console = ::VpsConsole
-                  .select('vps_id')
-                  .joins(:user, :vps)
-                  .where(token:, vpses: { node_id: @node.id })
-                  .where('expiration > ?', Time.now)
-                  .where(
-                    'users.level >= ? OR (users.object_state = ? AND vpses.object_state = ?)',
-                    90,
-                    ::User.object_states[:active],
-                    ::Vps.object_states[:active]
-                  )
-                  .take
+        authenticate_console(token)&.vps_id
+      end
 
-        console && console.vps_id
+      # @param token [String]
+      # @return [Hash, nil] safe authenticated console context
+      def authenticate_console_session_v2(token)
+        console = authenticate_console(token)
+        return if console.nil?
+
+        {
+          vps_id: console.vps_id,
+          user_id: console.user_id,
+          vps_console_id: console.id
+        }
+      end
+
+      protected
+
+      def authenticate_console(token)
+        ::VpsConsole
+          .select(
+            'vps_consoles.id, vps_consoles.vps_id, vps_consoles.user_id'
+          )
+          .joins(:user, :vps)
+          .where(token:, vpses: { node_id: @node.id })
+          .where('expiration > ?', Time.now)
+          .where(
+            'users.level >= ? OR (users.object_state = ? AND vpses.object_state = ?)',
+            90,
+            ::User.object_states[:active],
+            ::Vps.object_states[:active]
+          )
+          .take
       end
     end
   end

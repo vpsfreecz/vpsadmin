@@ -79,7 +79,7 @@ class RouterFakeExchange
 end
 
 class RouterFakeQueue
-  attr_reader :bindings, :name, :opts
+  attr_reader :bindings, :deleted, :name, :opts
   attr_accessor :payloads, :raise_timeout
 
   def initialize(name, opts)
@@ -88,6 +88,7 @@ class RouterFakeQueue
     @bindings = []
     @payloads = []
     @raise_timeout = false
+    @deleted = false
   end
 
   def bind(exchange, routing_key:)
@@ -100,10 +101,15 @@ class RouterFakeQueue
     payload = @payloads.shift
     [nil, nil, payload]
   end
+
+  def delete
+    @deleted = true
+  end
 end
 
 RSpec.describe VpsAdmin::ConsoleRouter::Router do
   let(:connection) { RouterFakeConnection.new }
+  let(:client_id) { '0123456789abcdef0123456789abcdef' }
   let(:rpc) do
     RouterFakeRpc.new(
       session_nodes: {
@@ -199,6 +205,79 @@ RSpec.describe VpsAdmin::ConsoleRouter::Router do
       'height' => 40,
       'keys' => Base64.strict_encode64("ls\n")
     )
+  end
+
+  it 'uses an additive client-specific output route and forwards the client id' do
+    router = build_router
+
+    router.read_write_console(
+      101,
+      'session-token',
+      nil,
+      120,
+      40,
+      client_id:
+    )
+
+    channel = connection.channels.fetch(0)
+    queue = channel.queues.fetch("console:output:101-#{client_id}")
+    message = JSON.parse(
+      channel.exchanges
+             .fetch('console:node1.example.test:input')
+             .published
+             .fetch(0)
+             .fetch(:payload)
+    )
+
+    expect(queue.bindings.map { |binding| binding.fetch(:routing_key) }).to contain_exactly(
+      "101-#{client_id}",
+      '101-session-token'
+    )
+    expect(message).to include(
+      'session' => 'session-token',
+      'client_id' => client_id
+    )
+  end
+
+  it 'publishes a best-effort client close without exposing it to old input consumers' do
+    router = build_router
+    router.check_session(101, 'session-token', client_id)
+
+    expect(router.close_console(101, 'session-token', client_id)).to be(true)
+
+    channel = connection.channels.fetch(0)
+    close_message = JSON.parse(
+      channel.exchanges
+             .fetch('console:node1.example.test:control')
+             .published
+             .fetch(0)
+             .fetch(:payload)
+    )
+    expect(close_message).to eq(
+      'session' => 'session-token',
+      'client_id' => client_id,
+      'reason' => 'client_closed'
+    )
+    expect(
+      channel.queues.fetch("console:output:101-#{client_id}").deleted
+    ).to be(true)
+    expect(channel).to be_closed
+  end
+
+  it 'ignores untrusted client identifiers' do
+    router = build_router
+
+    router.read_write_console(
+      101,
+      'session-token',
+      nil,
+      80,
+      25,
+      client_id: 'not-valid'
+    )
+
+    message = JSON.parse(input_exchange.published.fetch(0).fetch(:payload))
+    expect(message).not_to have_key('client_id')
   end
 
   it 'omits keys when no input was provided' do

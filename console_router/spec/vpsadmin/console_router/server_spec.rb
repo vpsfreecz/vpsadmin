@@ -29,6 +29,9 @@ RSpec.describe VpsAdmin::ConsoleRouter::Server do
     end
 
     it 'renders the console page for a valid session' do
+      allow(SecureRandom).to receive(:hex).with(16).and_return(
+        '0123456789abcdef0123456789abcdef'
+      )
       router = instance_spy(
         VpsAdmin::ConsoleRouter::Router,
         api_url: 'http://api.example.test',
@@ -43,10 +46,17 @@ RSpec.describe VpsAdmin::ConsoleRouter::Server do
           auth_token: 'auth-token'
 
       expect(last_response).to be_ok
-      expect(router).to have_received(:check_session).with(101, 'session-token')
+      expect(router).to have_received(:check_session).with(
+        101,
+        'session-token',
+        '0123456789abcdef0123456789abcdef'
+      )
       expect(last_response.body).to include('new VpsAdminConsole')
       expect(last_response.body).to include('101')
       expect(last_response.body).to include("'session-token'")
+      expect(last_response.body).to include(
+        "'0123456789abcdef0123456789abcdef'"
+      )
     end
 
     it 'does not render legacy API credential query params' do
@@ -64,7 +74,11 @@ RSpec.describe VpsAdmin::ConsoleRouter::Server do
           auth_token: 'secret-api-token'
 
       expect(last_response).to be_ok
-      expect(router).to have_received(:check_session).with(101, 'session-token')
+      expect(router).to have_received(:check_session).with(
+        101,
+        'session-token',
+        match(/\A[0-9a-f]{32}\z/)
+      )
       expect(last_response.body).not_to include('secret-api-token')
       expect(last_response.body).not_to include('auth_token')
       expect(last_response.body).not_to include('auth_type')
@@ -78,7 +92,11 @@ RSpec.describe VpsAdmin::ConsoleRouter::Server do
       get '/console/101', session: 'bad-token'
 
       expect(last_response).to be_ok
-      expect(router).to have_received(:check_session).with(101, 'bad-token')
+      expect(router).to have_received(:check_session).with(
+        101,
+        'bad-token',
+        match(/\A[0-9a-f]{32}\z/)
+      )
       expect(last_response.body).to eq('Access denied, invalid session')
     end
   end
@@ -94,6 +112,7 @@ RSpec.describe VpsAdmin::ConsoleRouter::Server do
 
       post '/console/feed/101',
            session: 'session-token',
+           client_id: '0123456789abcdef0123456789abcdef',
            keys: "ls\n",
            width: '80',
            height: '25'
@@ -102,7 +121,14 @@ RSpec.describe VpsAdmin::ConsoleRouter::Server do
 
       expect(last_response).to be_ok
       expect(router).to have_received(:read_write_console)
-        .with(101, 'session-token', "ls\n", 80, 25)
+        .with(
+          101,
+          'session-token',
+          "ls\n",
+          80,
+          25,
+          client_id: '0123456789abcdef0123456789abcdef'
+        )
       expect(response.fetch('session')).to be(true)
       expect(Base64.decode64(response.fetch('data'))).to eq("output\n")
     end
@@ -124,10 +150,31 @@ RSpec.describe VpsAdmin::ConsoleRouter::Server do
 
       expect(last_response).to be_ok
       expect(router).to have_received(:read_write_console)
-        .with(101, 'bad-token', nil, 80, 25)
+        .with(101, 'bad-token', nil, 80, 25, client_id: nil)
       expect(response).to eq(
         'data' => 'Access denied, invalid session',
         'session' => nil
+      )
+    end
+  end
+
+  describe 'POST /console/close/:vps_id' do
+    it 'forwards the browser client close and returns no content' do
+      router = instance_spy(
+        VpsAdmin::ConsoleRouter::Router,
+        close_console: true
+      )
+      described_class.set(:router, router)
+
+      post '/console/close/101',
+           session: 'session-token',
+           client_id: '0123456789abcdef0123456789abcdef'
+
+      expect(last_response.status).to eq(204)
+      expect(router).to have_received(:close_console).with(
+        101,
+        'session-token',
+        '0123456789abcdef0123456789abcdef'
       )
     end
   end
