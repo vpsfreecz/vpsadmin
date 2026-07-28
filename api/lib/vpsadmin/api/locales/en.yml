@@ -754,6 +754,12 @@ en:
             label: Request resolved
           request_updated:
             label: Request updated
+          resource_created:
+            label: Resource created
+          resource_deleted:
+            label: Resource deleted
+          resource_updated:
+            label: Resource updated
           security_advisory_announced:
             label: Security advisory announced
           security_advisory_updated:
@@ -893,7 +899,9 @@ en:
           active:
             label: Whether the account was activated immediately
           actor_user_id:
-            label: ID of the user who created the chain
+            label: ID of the user who performed the action
+          actor_user_login:
+            label: Login of the user who performed the action
           added_space:
             label: Space added to the dataset refquota, in bytes
           admin_id:
@@ -902,6 +910,8 @@ en:
             label: Login of the admin who resolved the request
           admin_name:
             label: Name of the admin who changed the resources
+          admin_user_id:
+            label: ID of the administrator behind an impersonated session
           advisory_id:
             label: ID of the security advisory
           advisory_name:
@@ -1238,6 +1248,10 @@ en:
             label: Request state after the event
           request_type:
             label: Type of request being handled
+          resource_id:
+            label: ID of the affected resource
+          resource_type:
+            label: ActiveRecord class of the affected resource
           restart_vps:
             label: Whether affected VPSes are restarted during migration
           roles:
@@ -1325,7 +1339,7 @@ en:
           user_name:
             label: Full name of the dataset owner
           user_session_id:
-            label: ID of the user session that created the chain
+            label: ID of the user session associated with the event
           vps_count:
             label: Number of VPSes affected by the reply
           vps_hostname:
@@ -3642,6 +3656,57 @@ en:
             description: ID of the user who owns the request
           user_login:
             description: Login of the user who owns the request
+        resource_created:
+          action:
+            description: Completed create, update or delete action
+          actor_user_id:
+            description: ID of the user who performed the action
+          actor_user_login:
+            description: Login of the user who performed the action
+          admin_user_id:
+            description: ID of the administrator behind an impersonated session
+          changed_fields:
+            description: Names of fields submitted to a successful update
+          resource_id:
+            description: ID of the affected resource
+          resource_type:
+            description: ActiveRecord class of the affected resource
+          user_session_id:
+            description: ID of the user session associated with the event
+        resource_deleted:
+          action:
+            description: Completed create, update or delete action
+          actor_user_id:
+            description: ID of the user who performed the action
+          actor_user_login:
+            description: Login of the user who performed the action
+          admin_user_id:
+            description: ID of the administrator behind an impersonated session
+          changed_fields:
+            description: Names of fields submitted to a successful update
+          resource_id:
+            description: ID of the affected resource
+          resource_type:
+            description: ActiveRecord class of the affected resource
+          user_session_id:
+            description: ID of the user session associated with the event
+        resource_updated:
+          action:
+            description: Completed create, update or delete action
+          actor_user_id:
+            description: ID of the user who performed the action
+          actor_user_login:
+            description: Login of the user who performed the action
+          admin_user_id:
+            description: ID of the administrator behind an impersonated session
+          changed_fields:
+            description: Names of fields submitted to a successful update
+          resource_id:
+            description: ID of the affected resource
+          resource_type:
+            description: ActiveRecord class of the affected resource
+          user_session_id:
+            description: ID of the user session associated with the event
         security_advisory_announced:
           advisory_id:
             description: ID of the security advisory
@@ -4441,6 +4506,12 @@ en:
           label: Request resolved
         request_updated:
           label: Request updated
+        resource_created:
+          label: Resource created
+        resource_deleted:
+          label: Resource deleted
+        resource_updated:
+          label: Resource updated
         security_advisory_announced:
           label: Security advisory announced
         security_advisory_updated:

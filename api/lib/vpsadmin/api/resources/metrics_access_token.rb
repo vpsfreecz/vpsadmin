@@ -97,7 +97,16 @@ module VpsAdmin::API::Resources
           end
 
         object_state_check!(target_user)
-        ::MetricsAccessToken.create_for!(target_user, input[:metric_prefix])
+        token = nil
+        self.class.model.transaction do
+          token = ::MetricsAccessToken.create_for!(target_user, input[:metric_prefix])
+          VpsAdmin::API::Events::ResourceOperations.created!(
+            token,
+            owner: target_user,
+            changed_fields: %i[metric_prefix]
+          )
+        end
+        token
       end
     end
 
@@ -115,7 +124,10 @@ module VpsAdmin::API::Resources
       def exec
         token = self.class.model.find_by!(with_restricted(id: path_params['metrics_access_token_id']))
         object_state_check!(token.user)
-        token.destroy!
+        self.class.model.transaction do
+          token.destroy!
+          VpsAdmin::API::Events::ResourceOperations.deleted!(token, owner: token.user)
+        end
         ok!
       end
     end

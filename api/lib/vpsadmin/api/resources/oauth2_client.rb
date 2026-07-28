@@ -90,11 +90,19 @@ module VpsAdmin::API::Resources
       end
 
       def exec
+        changed_fields = input.keys
         secret = input.delete(:client_secret)
+        client = nil
 
-        client = ::Oauth2Client.new(input)
-        client.set_secret(secret)
-        client.save!
+        self.class.model.transaction do
+          client = ::Oauth2Client.new(input)
+          client.set_secret(secret)
+          client.save!
+          VpsAdmin::API::Events::ResourceOperations.created!(
+            client,
+            changed_fields:
+          )
+        end
         client
       rescue ActiveRecord::RecordInvalid => e
         error!('create failed', e.record.errors.to_hash)
@@ -115,12 +123,19 @@ module VpsAdmin::API::Resources
       end
 
       def exec
+        changed_fields = input.keys
         secret = input.delete(:client_secret)
 
         client = self.class.model.find(path_params['oauth2_client_id'])
-        client.set_secret(secret) if secret
-        client.assign_attributes(input)
-        client.save!
+        self.class.model.transaction do
+          client.set_secret(secret) if secret
+          client.assign_attributes(input)
+          client.save!
+          VpsAdmin::API::Events::ResourceOperations.updated!(
+            client,
+            changed_fields:
+          )
+        end
         client
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', e.record.errors.to_hash)
@@ -134,7 +149,10 @@ module VpsAdmin::API::Resources
 
       def exec
         client = self.class.model.find(path_params['oauth2_client_id'])
-        client.destroy!
+        self.class.model.transaction do
+          client.destroy!
+          VpsAdmin::API::Events::ResourceOperations.deleted!(client)
+        end
         ok!
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', e.record.errors.to_hash)

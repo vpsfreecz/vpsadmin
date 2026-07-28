@@ -754,6 +754,12 @@ cs:
             label: Žádost vyřešena
           request_updated:
             label: Žádost aktualizována
+          resource_created:
+            label: Prostředek vytvořen
+          resource_deleted:
+            label: Prostředek odstraněn
+          resource_updated:
+            label: Prostředek aktualizován
           security_advisory_announced:
             label: Bezpečnostní upozornění oznámeno
           security_advisory_updated:
@@ -894,6 +900,8 @@ cs:
             label: Zda byl účet ihned aktivován
           actor_user_id:
             label: ID uživatele, který provedl akci
+          actor_user_login:
+            label: Login uživatele, který provedl akci
           added_space:
             label: Prostor přidaný do refquota datasetu v bajtech
           admin_id:
@@ -902,6 +910,8 @@ cs:
             label: Login administrátora, který žádost vyřešil
           admin_name:
             label: Jméno administrátora, který změnil prostředky
+          admin_user_id:
+            label: ID administrátora zastupujícího uživatele v relaci
           advisory_id:
             label: ID bezpečnostního upozornění
           advisory_name:
@@ -1238,6 +1248,10 @@ cs:
             label: Stav žádosti po události
           request_type:
             label: Typ zpracovávané žádosti
+          resource_id:
+            label: ID dotčeného prostředku
+          resource_type:
+            label: Třída ActiveRecord dotčeného prostředku
           restart_vps:
             label: Zda jsou dotčená VPS během migrace restartována
           roles:
@@ -3637,6 +3651,57 @@ cs:
             description: ID uživatele, který vlastní žádost
           user_login:
             description: Login uživatele, který vlastní žádost
+        resource_created:
+          action:
+            description: Dokončená akce vytvoření, aktualizace nebo odstranění
+          actor_user_id:
+            description: ID uživatele, který provedl akci
+          actor_user_login:
+            description: Login uživatele, který provedl akci
+          admin_user_id:
+            description: ID administrátora zastupujícího uživatele v relaci
+          changed_fields:
+            description: Názvy polí odeslaných při úspěšné aktualizaci
+          resource_id:
+            description: ID dotčeného prostředku
+          resource_type:
+            description: Třída ActiveRecord dotčeného prostředku
+          user_session_id:
+            description: ID API relace, která provedla akci
+        resource_deleted:
+          action:
+            description: Dokončená akce vytvoření, aktualizace nebo odstranění
+          actor_user_id:
+            description: ID uživatele, který provedl akci
+          actor_user_login:
+            description: Login uživatele, který provedl akci
+          admin_user_id:
+            description: ID administrátora zastupujícího uživatele v relaci
+          changed_fields:
+            description: Názvy polí odeslaných při úspěšné aktualizaci
+          resource_id:
+            description: ID dotčeného prostředku
+          resource_type:
+            description: Třída ActiveRecord dotčeného prostředku
+          user_session_id:
+            description: ID API relace, která provedla akci
+        resource_updated:
+          action:
+            description: Dokončená akce vytvoření, aktualizace nebo odstranění
+          actor_user_id:
+            description: ID uživatele, který provedl akci
+          actor_user_login:
+            description: Login uživatele, který provedl akci
+          admin_user_id:
+            description: ID administrátora zastupujícího uživatele v relaci
+          changed_fields:
+            description: Názvy polí odeslaných při úspěšné aktualizaci
+          resource_id:
+            description: ID dotčeného prostředku
+          resource_type:
+            description: Třída ActiveRecord dotčeného prostředku
+          user_session_id:
+            description: ID API relace, která provedla akci
         security_advisory_announced:
           advisory_id:
             description: ID bezpečnostního upozornění
@@ -4439,6 +4504,12 @@ cs:
           label: Žádost vyřešena
         request_updated:
           label: Žádost aktualizována
+        resource_created:
+          label: Prostředek vytvořen
+        resource_deleted:
+          label: Prostředek odstraněn
+        resource_updated:
+          label: Prostředek aktualizován
         security_advisory_announced:
           label: Bezpečnostní upozornění oznámeno
         security_advisory_updated:

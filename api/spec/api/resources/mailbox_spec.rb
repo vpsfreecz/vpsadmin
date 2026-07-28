@@ -285,6 +285,16 @@ RSpec.describe 'VpsAdmin::API::Resources::Mailbox' do
 
       record = Mailbox.find(mailbox_obj['id'])
       expect(record.password).to eq(payload[:password])
+
+      event = Event.where(
+        event_type: 'resource.created',
+        source_class: 'Mailbox',
+        source_id: record.id
+      ).sole
+      expect(event.parameters['changed_fields']).to match_array(
+        payload.keys.map(&:to_s)
+      )
+      expect(event.payload_json).not_to include(payload[:password])
     end
 
     it 'uses defaults for port and enable_ssl' do
@@ -410,6 +420,13 @@ RSpec.describe 'VpsAdmin::API::Resources::Mailbox' do
       mailbox_a.reload
       expect(mailbox_a.label).to eq(new_label)
       expect(mailbox_a.enable_ssl).to be(false)
+      expect(
+        Event.where(
+          event_type: 'resource.updated',
+          source_class: 'Mailbox',
+          source_id: mailbox_a.id
+        ).sole.parameters['changed_fields']
+      ).to contain_exactly('enable_ssl', 'label')
     end
 
     it 'returns 404 for unknown mailbox' do
@@ -468,6 +485,13 @@ RSpec.describe 'VpsAdmin::API::Resources::Mailbox' do
       expect_status(200)
       expect(json['status']).to be(true)
       expect(MailboxHandler.where(mailbox_id: mailbox.id)).to be_empty
+      expect(
+        Event.where(
+          event_type: 'resource.deleted',
+          source_class: 'Mailbox',
+          source_id: mailbox.id
+        )
+      ).to exist
     end
 
     it 'returns 404 for unknown mailbox' do
