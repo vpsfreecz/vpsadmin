@@ -332,12 +332,15 @@ RSpec.describe NodeCtld::Command do
   it 'publishes chain state changes with subsecond event time' do
     stub_node_bunny
     now = Time.at(1_780_000_000, 123_456)
+    producer_event_id = 'ca7f7c25-4d87-4bb8-81f2-80978a09bf4b'
     payload = nil
     allow(Time).to receive(:now).and_return(now)
-    allow(NodeCtld::NodeBunny).to receive(:publish_drop) do |_exchange, body, **opts|
+    allow(SecureRandom).to receive(:uuid).and_return(producer_event_id)
+    allow(NodeCtld::NodeBunny).to receive(:publish_wait) do |_exchange, body, **opts|
       expect(opts).to include(
         routing_key: NodeCtld::TransactionChainEvents::ROUTING_KEY,
-        persistent: true
+        persistent: true,
+        message_id: producer_event_id
       )
       payload = JSON.parse(body)
     end
@@ -354,6 +357,7 @@ RSpec.describe NodeCtld::Command do
       'chain_id' => 42,
       'previous_state' => 'queued',
       'state' => 'done',
+      'producer_event_id' => producer_event_id,
       'time' => now.to_i,
       'time_f' => now.to_f
     )

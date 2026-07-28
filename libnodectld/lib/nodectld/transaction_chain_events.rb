@@ -1,4 +1,5 @@
 require 'json'
+require 'securerandom'
 
 module NodeCtld
   module TransactionChainEvents
@@ -24,9 +25,10 @@ module NodeCtld
       return unless defined?(NodeCtld::NodeBunny)
 
       now = Time.now
+      producer_event_id = SecureRandom.uuid
       channel = NodeCtld::NodeBunny.create_channel
       exchange = channel.direct(NodeCtld::NodeBunny.exchange_name)
-      NodeCtld::NodeBunny.publish_drop(
+      NodeCtld::NodeBunny.publish_wait(
         exchange,
         JSON.dump(
           events: [
@@ -34,13 +36,15 @@ module NodeCtld
               chain_id:,
               previous_state: state_name(previous_state),
               state: state_name(state),
+              producer_event_id:,
               time: now.to_i,
               time_f: now.to_f
             }
           ]
         ),
         routing_key: ROUTING_KEY,
-        persistent: true
+        persistent: true,
+        message_id: producer_event_id
       )
     ensure
       channel.close if channel && channel.respond_to?(:open?) && channel.open?

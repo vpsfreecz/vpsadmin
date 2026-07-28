@@ -106,6 +106,7 @@ class TransactionChain < ApplicationRecord
 
       end
 
+      chain.capture_event_owner_concern!
       chain.state = :queued
       chain.save!
     end
@@ -467,6 +468,26 @@ class TransactionChain < ApplicationRecord
         row_id: obj[1]
       )
     end
+  end
+
+  # Preserve the owner of the primary VPS as part of the successfully built
+  # chain. The VPS itself can be deleted while the chain is running, but its
+  # concerns remain available when node state changes are projected to Events.
+  def capture_event_owner_concern!
+    vps_concern = transaction_chain_concerns
+                  .where(class_name: ::Vps.name)
+                  .order(:id)
+                  .last
+    return unless vps_concern
+
+    owner_id = ::Vps.where(id: vps_concern.row_id).pick(:user_id)
+    return unless owner_id
+
+    TransactionChainConcern.create!(
+      transaction_chain: self,
+      class_name: ::User.name,
+      row_id: owner_id
+    )
   end
 
   def format_concerns

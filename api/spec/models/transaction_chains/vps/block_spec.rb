@@ -32,6 +32,13 @@ RSpec.describe TransactionChains::Vps::Block do
       Transactions::Vps::Stop,
       Transactions::EventDelivery::Notify
     )
+    expect(chain.transaction_chain_concerns.find_by!(class_name: 'Vps')).to have_attributes(
+      class_name: 'Vps',
+      row_id: vps.id
+    )
+    expect(chain.transaction_chain_concerns.find_by!(class_name: 'User')).to have_attributes(
+      row_id: vps.user_id
+    )
     event = expect_routed_event!('vps.suspended', user: vps.user)
     expect(event.vps).to eq(vps)
     expect(event.source).to eq(state)
