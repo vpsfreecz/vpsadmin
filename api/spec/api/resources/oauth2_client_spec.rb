@@ -234,6 +234,14 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       record = Oauth2Client.find_by!(client_id: 'spec-created')
       expect(record.name).to eq('Spec Created')
       expect(record.check_secret('spec-created-secret')).to be(true)
+
+      event = Event.where(
+        event_type: 'resource.created',
+        source_class: 'Oauth2Client',
+        source_id: record.id
+      ).sole
+      expect(event.parameters['changed_fields']).to include('client_secret')
+      expect(event.payload_json).not_to include('spec-created-secret')
     end
 
     it 'returns validation errors for missing name' do
@@ -300,6 +308,13 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       primary_client.reload
       expect(primary_client.name).to eq('Spec Client A Updated')
       expect(primary_client.redirect_uri).to eq('https://example.invalid/callback-updated')
+
+      event = Event.where(
+        event_type: 'resource.updated',
+        source_class: 'Oauth2Client',
+        source_id: primary_client.id
+      ).sole
+      expect(event.parameters['changed_fields']).to contain_exactly('name', 'redirect_uri')
     end
 
     it 'allows admin to update client secret' do
@@ -355,6 +370,13 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect_status(200)
       expect(json['status']).to be(true)
       expect(Oauth2Client.find_by(id: primary_client.id)).to be_nil
+      expect(
+        Event.where(
+          event_type: 'resource.deleted',
+          source_class: 'Oauth2Client',
+          source_id: primary_client.id
+        )
+      ).to exist
     end
   end
 end
