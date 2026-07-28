@@ -43,6 +43,14 @@ module SpecChains
     end
   end
 
+  class Failing < ::TransactionChain
+    def link_chain(node)
+      concerns(:affect, ['Vps', 987_654])
+      append_t(SpecTransactions::ChainTx, args: [node], kwargs: { tag: 'never queued' })
+      raise 'link failed'
+    end
+  end
+
   class Linear < ::TransactionChain
     def link_chain(node)
       seen_state = state.to_sym
@@ -103,6 +111,13 @@ module SpecChains
       release_event_deliveries!(event)
     end
   end
+
+  class VpsConcern < ::TransactionChain
+    def link_chain(node, vps)
+      concerns(:affect, [vps.class.name, vps.id])
+      append_t(SpecTransactions::ChainTx, args: [node], kwargs: { tag: 'vps' })
+    end
+  end
 end
 
 RSpec.describe TransactionChain do
@@ -137,6 +152,73 @@ RSpec.describe TransactionChain do
     expect(chain.user_session_id).to eq(UserSession.current.id)
   end
 
+  it 'persists the queued event after chain construction commits' do
+    chain, = SpecChains::Linear.fire2(args: [node], kwargs: {})
+    event = Event.where(
+      event_type: 'transaction_chain.state_changed',
+      source_class: 'TransactionChain',
+      source_id: chain.id
+    ).sole
+
+    expect(event.parameters).to include(
+      'chain_id' => chain.id,
+      'previous_state' => 'staged',
+      'state' => 'queued',
+      'terminal' => false,
+      'successful' => false,
+      'failed' => false,
+      'actor_user_id' => chain.user_id
+    )
+  end
+
+  it 'persists the primary VPS owner in chain concerns during construction' do
+    vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
+
+    chain, = SpecChains::VpsConcern.fire2(args: [node, vps], kwargs: {})
+    concerns = chain.transaction_chain_concerns.order(:id).pluck(:class_name, :row_id)
+
+    expect(concerns.last(2)).to eq(
+      [
+        ['Vps', vps.id],
+        ['User', vps.user_id]
+      ]
+    )
+    expect(chain.user).to eq(SpecSeed.admin)
+  end
+
+  it 'does not roll back a built chain when its queued Event cannot be emitted' do
+    allow(VpsAdmin::API::Events)
+      .to receive(:emit_transaction_chain_state!)
+      .and_raise('event persistence unavailable')
+    allow(SpecChains::Linear).to receive(:warn)
+
+    chain, = SpecChains::Linear.fire2(args: [node], kwargs: {})
+
+    expect(chain).to be_persisted
+    expect(chain.reload).to be_queued
+    expect(chain.transactions.count).to eq(2)
+    expect(SpecChains::Linear).to have_received(:warn).with(
+      /Unable to emit transaction chain event for chain ##{chain.id}/
+    )
+  end
+
+  it 'does not emit an event when chain construction is rolled back' do
+    before_counts = {
+      chains: described_class.count,
+      concerns: TransactionChainConcern.count,
+      events: Event.where(event_type: 'transaction_chain.state_changed').count
+    }
+
+    expect do
+      SpecChains::Failing.fire2(args: [node], kwargs: {})
+    end.to raise_error(RuntimeError, 'link failed')
+
+    expect(described_class.count).to eq(before_counts[:chains])
+    expect(TransactionChainConcern.count).to eq(before_counts[:concerns])
+    expect(Event.where(event_type: 'transaction_chain.state_changed').count)
+      .to eq(before_counts[:events])
+  end
+
   it 'queues chains without signing when the transaction key is absent' do
     key = SysConfig.find_by!(category: 'core', name: 'transaction_key')
     original_value = key.value
@@ -157,10 +239,12 @@ RSpec.describe TransactionChain do
   end
 
   it 'returns nil for allowed empty chains' do
-    chain, ret = SpecChains::AllowedEmpty.fire2(args: [], kwargs: {})
+    expect do
+      chain, ret = SpecChains::AllowedEmpty.fire2(args: [], kwargs: {})
 
-    expect(chain).to be_nil
-    expect(ret).to be_nil
+      expect(chain).to be_nil
+      expect(ret).to be_nil
+    end.not_to change(Event.where(event_type: 'transaction_chain.state_changed'), :count)
   end
 
   it 'releases acquired locks when allowed empty chains are discarded' do

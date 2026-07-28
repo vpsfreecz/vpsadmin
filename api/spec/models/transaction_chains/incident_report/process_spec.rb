@@ -46,7 +46,12 @@ RSpec.describe TransactionChains::IncidentReport::Process do
 
     chain, = described_class.fire2(args: [incidents])
 
-    expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to eq([['Vps', vps.id]])
+    expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to eq(
+      [
+        ['Vps', vps.id],
+        ['User', vps.user_id]
+      ]
+    )
   end
 
   it 'uses Vps::Update for incidents with CPU limits' do

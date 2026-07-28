@@ -788,11 +788,16 @@ VpsAdmin::API::Events.define do
       },
       size: { description: 'Number of transactions in the chain', type: :integer },
       progress: { description: 'Number of transactions already finished', type: :integer },
+      actor_user_id: { description: 'ID of the user who created the chain', type: :integer },
       user_session_id: { description: 'ID of the user session that created the chain', type: :integer },
       concern_classes: { description: 'Classes of objects affected by the chain', type: :string_list },
       concern_object_ids: { description: 'IDs of objects affected by the chain', type: :integer_list },
       node_id: { description: 'ID of the node that reported the state change', type: :integer },
       node_name: { description: 'Domain name of the node that reported the state change', type: :string },
+      producer_event_id: {
+        description: 'Stable node-assigned identifier for this state transition',
+        type: :string
+      },
       changed_at: { description: 'Time when the chain state changed', type: :datetime },
       changed_at_timestamp: { description: 'Unix timestamp of the state change', type: :number }
     )
