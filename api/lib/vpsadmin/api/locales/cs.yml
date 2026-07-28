@@ -808,6 +808,10 @@ cs:
             label: Prevence OOM
           vps_oom_report:
             label: OOM report
+          vps_operation_failed:
+            label: Operace VPS selhala
+          vps_operation_succeeded:
+            label: Operace VPS proběhla úspěšně
           vps_replaced:
             label: VPS nahrazeno
           vps_resources_changed:
@@ -864,6 +868,8 @@ cs:
             label: Akce workflow žádosti, která vytvořila notifikaci
           active:
             label: Zda byl účet ihned aktivován
+          actor_user_id:
+            label: ID uživatele, který provedl akci
           added_space:
             label: Prostor přidaný do refquota datasetu v bajtech
           admin_id:
@@ -912,12 +918,14 @@ cs:
             label: Uživatelsky viditelný popisek transakčního řetězce
           chain_name:
             label: Interní název transakčního řetězce
+          chain_type:
+            label: Uložený typ transakčního řetězce
           changed_at:
             label: Čas změny stavu řetězce
           changed_at_timestamp:
             label: Unixový timestamp změny stavu
           changed_by_id:
-            label: ID uživatele, který změnil životní stav VPS
+            label: ID uživatele, který provedl změnu
           changed_by_name:
             label: Jméno uživatele, který změnil životní stav VPS
           changed_fields:
@@ -1108,6 +1116,8 @@ cs:
             label: ID uloženého OOM reportu
           ooms_in_period:
             label: Počet OOM reportů zaznamenaných ve sledovaném období
+          operation:
+            label: Operace VPS zastoupená transakčním řetězcem
           original_refquota:
             label: Refquota datasetu před automatickou expanzí nebo shrinkem, v bajtech
           original_vps_hostname:
@@ -1138,6 +1148,8 @@ cs:
             label: Status transferu před touto událostí
           primary_addr:
             label: Adresa primárního DNS serveru použitá pro transfer
+          producer_event_id:
+            label: Stabilní identifikátor události přidělený nodem
           progress:
             label: Počet již dokončených transakcí
           published_at:
@@ -1255,13 +1267,15 @@ cs:
           user_name:
             label: Celé jméno vlastníka datasetu
           user_session_id:
-            label: ID uživatelského sezení, které vytvořilo řetězec
+            label: ID uživatelského sezení souvisejícího s událostí
           vps_count:
             label: Počet VPS dotčených odpovědí
           vps_hostname:
-            label: Hostname VPS, jehož kvóta datasetu se změnila
+            label: Hostname dotčeného VPS
           vps_id:
-            label: ID VPS, jehož kvóta datasetu se změnila
+            label: ID dotčeného VPS
+          vps_ids:
+            label: ID všech VPS dotčených operací
         label: Pole
       field_type:
         label: Typ pole
@@ -3628,6 +3642,8 @@ cs:
           period_start:
             description: Začátek období přehledu
         transaction_chain_state_changed:
+          actor_user_id:
+            description: ID uživatele, který vytvořil řetězec
           chain_id:
             description: ID transakčního řetězce, jehož stav se změnil
           chain_label:
@@ -3650,6 +3666,9 @@ cs:
             description: Doménový název nodu, který nahlásil změnu stavu
           previous_state:
             description: Stav transakčního řetězce před změnou
+          producer_event_id:
+            description: Stabilní identifikátor přidělený nodem pro tento přechod
+              stavu
           progress:
             description: Počet již dokončených transakcí
           size:
@@ -3959,6 +3978,70 @@ cs:
             description: Hostname VPS ovlivněného OOM reportem
           vps_id:
             description: ID VPS ovlivněného OOM reportem
+        vps_operation_failed:
+          actor_user_id:
+            description: ID uživatele, který zahájil transakční řetězec
+          chain_id:
+            description: ID transakčního řetězce
+          chain_name:
+            description: Uložený název transakčního řetězce
+          chain_type:
+            description: Uložený typ transakčního řetězce
+          changed_at:
+            description: Čas nahlášení koncového stavu
+          node_id:
+            description: ID nodu, který nahlásil koncový stav
+          node_name:
+            description: Název nodu, který nahlásil koncový stav
+          operation:
+            description: Operace VPS zastoupená transakčním řetězcem
+          producer_event_id:
+            description: Stabilní identifikátor přidělený nodem pro tento přechod
+              stavu
+          state:
+            description: Koncový stav transakčního řetězce
+          successful:
+            description: Zda operace VPS proběhla úspěšně
+          user_session_id:
+            description: ID relace, která zahájila transakční řetězec
+          vps_hostname:
+            description: Aktuální hostname primárního VPS, pokud je dostupný
+          vps_id:
+            description: ID primárního VPS dotčeného operací
+          vps_ids:
+            description: ID všech VPS dotčených operací
+        vps_operation_succeeded:
+          actor_user_id:
+            description: ID uživatele, který zahájil transakční řetězec
+          chain_id:
+            description: ID transakčního řetězce
+          chain_name:
+            description: Uložený název transakčního řetězce
+          chain_type:
+            description: Uložený typ transakčního řetězce
+          changed_at:
+            description: Čas nahlášení koncového stavu
+          node_id:
+            description: ID nodu, který nahlásil koncový stav
+          node_name:
+            description: Název nodu, který nahlásil koncový stav
+          operation:
+            description: Operace VPS zastoupená transakčním řetězcem
+          producer_event_id:
+            description: Stabilní identifikátor přidělený nodem pro tento přechod
+              stavu
+          state:
+            description: Koncový stav transakčního řetězce
+          successful:
+            description: Zda operace VPS proběhla úspěšně
+          user_session_id:
+            description: ID relace, která zahájila transakční řetězec
+          vps_hostname:
+            description: Aktuální hostname primárního VPS, pokud je dostupný
+          vps_id:
+            description: ID primárního VPS dotčeného operací
+          vps_ids:
+            description: ID všech VPS dotčených operací
         vps_replaced:
           new_vps_hostname:
             description: Hostname nově vytvořeného náhradního VPS
@@ -4134,6 +4217,10 @@ cs:
           label: Prevence OOM
         vps_oom_report:
           label: OOM report
+        vps_operation_failed:
+          label: Operace VPS selhala
+        vps_operation_succeeded:
+          label: Operace VPS proběhla úspěšně
         vps_replaced:
           label: VPS nahrazeno
         vps_resources_changed:
