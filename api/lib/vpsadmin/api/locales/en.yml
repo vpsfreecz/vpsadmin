@@ -806,6 +806,10 @@ en:
             label: OOM prevention
           vps_oom_report:
             label: OOM report
+          vps_operation_failed:
+            label: VPS operation failed
+          vps_operation_succeeded:
+            label: VPS operation succeeded
           vps_replaced:
             label: VPS replaced
           vps_resources_changed:
@@ -864,6 +868,8 @@ en:
             label: Request workflow action that produced the notification
           active:
             label: Whether the account was activated immediately
+          actor_user_id:
+            label: ID of the user who created the chain
           added_space:
             label: Space added to the dataset refquota, in bytes
           admin_id:
@@ -912,6 +918,8 @@ en:
             label: User-visible transaction chain label
           chain_name:
             label: Internal transaction chain name
+          chain_type:
+            label: Persisted transaction chain type
           changed_at:
             label: Time when the chain state changed
           changed_at_timestamp:
@@ -1108,6 +1116,8 @@ en:
             label: ID of the persisted OOM report
           ooms_in_period:
             label: Number of OOM reports seen in the tracked period
+          operation:
+            label: VPS operation represented by the transaction chain
           original_refquota:
             label: Dataset refquota before automatic expansion or shrink, in bytes
           original_vps_hostname:
@@ -1138,6 +1148,8 @@ en:
             label: Transfer status before this event
           primary_addr:
             label: Primary DNS server address used for transfer
+          producer_event_id:
+            label: Stable node-assigned identifier for this state transition
           progress:
             label: Number of transactions already finished
           published_at:
@@ -1262,6 +1274,8 @@ en:
             label: Hostname of the VPS whose dataset quota changed
           vps_id:
             label: ID of the VPS whose dataset quota changed
+          vps_ids:
+            label: IDs of all VPSes affected by the operation
         label: Field
       field_type:
         label: Field_type
@@ -3625,6 +3639,8 @@ en:
           period_start:
             description: Beginning of the report period
         transaction_chain_state_changed:
+          actor_user_id:
+            description: ID of the user who created the chain
           chain_id:
             description: ID of the transaction chain whose state changed
           chain_label:
@@ -3647,6 +3663,8 @@ en:
             description: Domain name of the node that reported the state change
           previous_state:
             description: Transaction chain state before the change
+          producer_event_id:
+            description: Stable node-assigned identifier for this state transition
           progress:
             description: Number of transactions already finished
           size:
@@ -3956,6 +3974,68 @@ en:
             description: Hostname of the VPS affected by the OOM report
           vps_id:
             description: ID of the VPS affected by the OOM report
+        vps_operation_failed:
+          actor_user_id:
+            description: ID of the user who initiated the transaction chain
+          chain_id:
+            description: ID of the transaction chain
+          chain_name:
+            description: Persisted transaction chain name
+          chain_type:
+            description: Persisted transaction chain type
+          changed_at:
+            description: Time when the terminal state was reported
+          node_id:
+            description: ID of the node reporting the terminal state
+          node_name:
+            description: Name of the node reporting the terminal state
+          operation:
+            description: VPS operation represented by the transaction chain
+          producer_event_id:
+            description: Stable node-assigned identifier for this state transition
+          state:
+            description: Terminal transaction chain state
+          successful:
+            description: Whether the VPS operation succeeded
+          user_session_id:
+            description: ID of the session that initiated the transaction chain
+          vps_hostname:
+            description: Current hostname of the primary VPS, when available
+          vps_id:
+            description: ID of the primary VPS affected by the operation
+          vps_ids:
+            description: IDs of all VPSes affected by the operation
+        vps_operation_succeeded:
+          actor_user_id:
+            description: ID of the user who initiated the transaction chain
+          chain_id:
+            description: ID of the transaction chain
+          chain_name:
+            description: Persisted transaction chain name
+          chain_type:
+            description: Persisted transaction chain type
+          changed_at:
+            description: Time when the terminal state was reported
+          node_id:
+            description: ID of the node reporting the terminal state
+          node_name:
+            description: Name of the node reporting the terminal state
+          operation:
+            description: VPS operation represented by the transaction chain
+          producer_event_id:
+            description: Stable node-assigned identifier for this state transition
+          state:
+            description: Terminal transaction chain state
+          successful:
+            description: Whether the VPS operation succeeded
+          user_session_id:
+            description: ID of the session that initiated the transaction chain
+          vps_hostname:
+            description: Current hostname of the primary VPS, when available
+          vps_id:
+            description: ID of the primary VPS affected by the operation
+          vps_ids:
+            description: IDs of all VPSes affected by the operation
         vps_replaced:
           new_vps_hostname:
             description: Hostname of the newly created replacement VPS
@@ -4131,6 +4211,10 @@ en:
           label: OOM prevention
         vps_oom_report:
           label: OOM report
+        vps_operation_failed:
+          label: VPS operation failed
+        vps_operation_succeeded:
+          label: VPS operation succeeded
         vps_replaced:
           label: VPS replaced
         vps_resources_changed:

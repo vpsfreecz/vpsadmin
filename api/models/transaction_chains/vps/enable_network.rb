@@ -7,6 +7,7 @@ module TransactionChains
     # @param reason [String]
     def link_chain(vps, enable, reason: '')
       lock(vps)
+      concerns(:affect, [vps.class.name, vps.id])
 
       vps.network_interfaces.each do |netif|
         use_chain(NetworkInterface::Update, args: [netif, { enable: }])

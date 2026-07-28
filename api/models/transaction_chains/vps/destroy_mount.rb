@@ -5,6 +5,7 @@ module TransactionChains
     def link_chain(mnt, *_args)
       lock(mnt)
       concerns(:affect, [mnt.class.name, mnt.id])
+      concerns(:affect, [mnt.vps.class.name, mnt.vps_id])
 
       raise 'snapshot mounts are not supported' if mnt.snapshot_in_pool_id
 
