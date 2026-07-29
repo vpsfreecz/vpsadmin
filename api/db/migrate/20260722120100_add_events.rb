@@ -10,7 +10,8 @@ class AddEvents < ActiveRecord::Migration[8.1]
     ret = []
 
     %w[create update].each do |action|
-      event_type = action == 'create' ? 'request.created' : 'request.updated'
+      event_type =
+        action == 'create' ? 'request.submitted' : 'request.update_submitted'
 
       REQUEST_TEMPLATE_AUDIENCES.each do |audience|
         REQUEST_TEMPLATE_TYPES.each do |type|
@@ -104,7 +105,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
   end.freeze
   ADVANCED_NOTIFICATION_EVENT_TEMPLATES = [
     {
-      event_type: 'user.created',
+      event_type: 'user.account_created',
       template_name: 'user_create',
       label: 'User account created',
       roles: %w[account],
@@ -204,7 +205,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
       matchers: []
     },
     {
-      event_type: 'outage.updated',
+      event_type: 'outage.update_reported',
       template_name: 'outage_report_user_update',
       legacy_template_names: %w[outage_report_user_update],
       label: 'Outage updated',
@@ -219,7 +220,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
       matchers: []
     },
     {
-      event_type: 'security_advisory.updated',
+      event_type: 'security_advisory.update_published',
       template_name: 'security_advisory_user_update',
       label: 'Security advisory updated',
       roles: %w[admin],

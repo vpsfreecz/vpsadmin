@@ -85,7 +85,8 @@ RSpec.describe VpsAdmin::API::Operations::Environment::Update do
     expect(Environment).to have_received(:transaction)
   end
 
-  it 'emits the fields propagated through the bulk default update' do
+  it 'emits the fields propagated through the bulk default update',
+     :with_event_delivery do
     config = create_environment_user_config!(
       environment: environment,
       user: SpecSeed.user,
@@ -111,7 +112,7 @@ RSpec.describe VpsAdmin::API::Operations::Environment::Update do
     end
 
     event = Event.where(
-      event_type: 'resource.updated',
+      event_type: 'user_environment_config.updated',
       source_class: 'EnvironmentUserConfig',
       source_id: config.id
     ).sole

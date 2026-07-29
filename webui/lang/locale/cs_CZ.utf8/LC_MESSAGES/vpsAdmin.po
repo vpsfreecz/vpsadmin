@@ -220,7 +220,7 @@ msgstr "Bezpečnostní upozornění"
 msgid "Monitoring"
 msgstr "Monitoring"
 
-#: forms/cluster.forms.php forms/notifications.forms.php
+#: forms/cluster.forms.php
 msgid "Event log"
 msgstr "Události"
 
@@ -639,8 +639,8 @@ msgstr "Prostředí"
 msgid "Cluster resources"
 msgstr "Prostředky clusteru"
 
-#: forms/cluster.forms.php forms/vps.forms.php pages/page_adminm.php
-#: pages/page_jumpto.php
+#: forms/cluster.forms.php forms/notifications.forms.php forms/vps.forms.php
+#: pages/page_adminm.php pages/page_jumpto.php
 msgid "Resource"
 msgstr "Zdroj"
 
@@ -2467,6 +2467,10 @@ msgid "initial baseline"
 msgstr "počáteční stav"
 
 #: forms/notifications.forms.php
+msgid "Delivery history"
+msgstr "Historie doručování"
+
+#: forms/notifications.forms.php
 msgid "Notification groups"
 msgstr "Skupiny notifikací"
 
@@ -2503,8 +2507,12 @@ msgid "Event types"
 msgstr "Typy událostí"
 
 #: forms/notifications.forms.php
-msgid "Test event"
-msgstr "Testovací událost"
+msgid "Test notification"
+msgstr "Testovací notifikace"
+
+#: forms/notifications.forms.php
+msgid "Composite ID attributes"
+msgstr "Atributy složeného ID"
 
 #: forms/notifications.forms.php
 msgid "Any event type"
@@ -3924,6 +3932,38 @@ msgid "yes"
 msgstr "ano"
 
 #: forms/notifications.forms.php
+msgid "Resource change payload"
+msgstr "Data změny zdroje"
+
+#: forms/notifications.forms.php
+msgid "Schema version"
+msgstr "Verze schématu"
+
+#: forms/notifications.forms.php
+msgid "ID type"
+msgstr "Typ ID"
+
+#: forms/notifications.forms.php pages/page_jumpto.php
+msgid "Attribute"
+msgstr "Atribut"
+
+#: forms/notifications.forms.php
+msgid "Nullable"
+msgstr "Může být null"
+
+#: forms/notifications.forms.php
+msgid "Possible values"
+msgstr "Možné hodnoty"
+
+#: forms/notifications.forms.php
+msgid "Matchable changes"
+msgstr "Filtrovatelné změny"
+
+#: forms/notifications.forms.php
+msgid "Payload value"
+msgstr "Hodnota v payloadu"
+
+#: forms/notifications.forms.php
 msgid "Example"
 msgstr "Příklad"
 
@@ -3932,28 +3972,24 @@ msgid "No matchable fields were reported by the API."
 msgstr "API nevrátilo žádná matchovatelná pole."
 
 #: forms/notifications.forms.php
-msgid "Test notification event"
-msgstr "Testovací notifikační událost"
+msgid "Test notification routing"
+msgstr "Testování routování notifikace"
 
 #: forms/notifications.forms.php
-msgid "Create test event"
-msgstr "Vytvořit testovací událost"
+msgid "Send test notification"
+msgstr "Odeslat testovací notifikaci"
 
 #: forms/notifications.forms.php
 msgid "Subject scope"
 msgstr "Rozsah subjektu"
 
 #: forms/notifications.forms.php
-msgid "Test notification"
-msgstr "Testovací notifikace"
+msgid "This notification was sent from notification settings."
+msgstr "Tato notifikace byla odeslána z nastavení notifikací."
 
 #: forms/notifications.forms.php
-msgid "This event was created from notification settings."
-msgstr "Tato událost byla vytvořena z nastavení notifikací."
-
-#: forms/notifications.forms.php
-msgid "Create event"
-msgstr "Vytvořit událost"
+msgid "Send notification"
+msgstr "Odeslat notifikaci"
 
 #: forms/object_history.forms.php
 msgid "Object history"
@@ -9113,10 +9149,6 @@ msgstr "Teplotní mapa"
 msgid "Found these bros"
 msgstr "Nalezené položky"
 
-#: pages/page_jumpto.php
-msgid "Attribute"
-msgstr "Atribut"
-
 #: pages/page_lifetimes.php pages/page_outage.php
 msgid "State set"
 msgstr "Stav nastaven"
@@ -9584,12 +9616,12 @@ msgid "Failed to update delivery limits"
 msgstr "Aktualizace limitů doručování se nezdařila"
 
 #: pages/page_notifications.php
-msgid "Test event created"
-msgstr "Testovací událost vytvořena"
+msgid "Test notification queued for delivery"
+msgstr "Testovací notifikace byla zařazena k doručení"
 
 #: pages/page_notifications.php
-msgid "Failed to create test event"
-msgstr "Vytvoření testovací události se nezdařilo"
+msgid "Failed to send test notification"
+msgstr "Odeslání testovací notifikace se nezdařilo"
 
 #: pages/page_oom_reports.php
 msgid "OOM report rules moved"
@@ -9945,6 +9977,21 @@ msgstr "Pomoc"
 
 #~ msgid "Live patch enabled"
 #~ msgstr "Živá záplata povolena"
+
+#~ msgid "Test event"
+#~ msgstr "Testovací událost"
+
+#~ msgid "Create test event"
+#~ msgstr "Vytvořit testovací událost"
+
+#~ msgid "Create event"
+#~ msgstr "Vytvořit událost"
+
+#~ msgid "Test event created"
+#~ msgstr "Testovací událost vytvořena"
+
+#~ msgid "Failed to create test event"
+#~ msgstr "Vytvoření testovací události se nezdařilo"
 
 #~ msgid "Order"
 #~ msgstr "Pořadí"

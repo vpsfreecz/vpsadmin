@@ -574,7 +574,7 @@ module VpsAdmin::API::Events::Core
 
     update = security_advisory_update_source(event, advisory) ||
              security_advisory_update_from_parameters(event, advisory)
-    if event.event_type == 'security_advisory.updated' && update.nil?
+    if event.event_type == 'security_advisory.update_published' && update.nil?
       raise ArgumentError, 'security advisory update is missing'
     end
 
@@ -596,7 +596,7 @@ module VpsAdmin::API::Events::Core
 end
 
 VpsAdmin::API::Events.define do
-  event 'user.created',
+  event 'user.account_created',
         label: 'User account created',
         category: 'account',
         severity: :info,
@@ -715,7 +715,7 @@ VpsAdmin::API::Events.define do
 
   event 'user.test_notification',
         label: 'Test notification',
-        category: 'test',
+        category: 'notifications',
         severity: :info,
         roles: %i[account],
         default_routed: true do
@@ -778,7 +778,7 @@ VpsAdmin::API::Events.define do
 
   event 'transaction_chain.state_changed',
         label: 'Transaction chain state changed',
-        category: 'transactions',
+        category: 'system',
         severity: :info,
         roles: %i[admin],
         default_routed: false,
@@ -906,9 +906,12 @@ VpsAdmin::API::Events.define do
     end
   end
 
-  %w[security_advisory.announced security_advisory.updated].each do |event_name|
+  %w[
+    security_advisory.announced
+    security_advisory.update_published
+  ].each do |event_name|
     event event_name,
-          label: event_name.end_with?('announced') ? 'Security advisory announced' : 'Security advisory updated',
+          label: event_name.end_with?('announced') ? 'Security advisory announced' : 'Security advisory update published',
           category: 'security',
           severity: :warning,
           roles: %i[admin],
@@ -923,7 +926,7 @@ VpsAdmin::API::Events.define do
         affected_vps_ids: { description: 'IDs of affected VPSes included in the payload sample', type: :integer_list },
         affected_vps_hostnames: { description: 'Hostnames of affected VPSes included in the payload sample', type: :string_list }
       }
-      if event_name.end_with?('updated')
+      if event_name.end_with?('update_published')
         params = {
           advisory_id: { description: 'ID of the security advisory', type: :integer },
           advisory_name: { description: 'Name of the security advisory', type: :string },

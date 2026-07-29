@@ -51,7 +51,7 @@ RSpec.describe TransactionChains::DnsZone::DestroyRecord do
     expect(record.reload.confirmed).to eq(:confirm_destroy)
     expect(deferred_result_events(chain)).to contain_exactly(
       include(
-        'event_type' => 'resource.deleted',
+        'event_type' => 'dns_record.deleted',
         'source_class' => 'DnsRecord',
         'source_id' => record.id
       )

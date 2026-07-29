@@ -37,7 +37,7 @@ RSpec.describe 'requests plugin update chain', requires_plugins: :requests do # 
       ['ChangeRequest', request.id]
     )
 
-    event = request_events('request.updated', request).sole
+    event = request_events('request.update_submitted', request).sole
     user_delivery = event.event_deliveries.detect do |delivery|
       delivery.event_routing_context&.user_id == request.user_id
     end
@@ -115,7 +115,7 @@ RSpec.describe 'requests plugin update chain', requires_plugins: :requests do # 
                                  full_name: 'New Public Name'
                                  }])
     request.reload
-    event = request_events('request.updated', request).sole
+    event = request_events('request.update_submitted', request).sole
     delivery = event.event_deliveries.find(&:direct_email_delivery?)
     mail = delivery.mail_log
 

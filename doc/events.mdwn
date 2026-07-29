@@ -1,0 +1,218 @@
+# Events
+
+vpsAdmin Events are consumer-facing notification delivery history for
+completed changes, operation lifecycle transitions, security observations,
+and domain notifications. They are not an audit log. An Event row is retained
+only when notification routing produces delivery work, so the absence of an
+Event does not prove that the underlying action did not happen.
+
+Consumers that require an external audit stream must configure an explicit
+catch-all route to a durable receiver and retain the delivered events
+themselves. Event Type discovery, the Event index, default notification
+routes, and database retention do not provide audit completeness.
+
+## Event kinds
+
+Resource mutations use one event type per logical resource and completed
+action:
+
+    vps.created
+    vps.updated
+    vps.deleted
+    dns_record.updated
+
+There is no generic `resource.*` prefix. The event name tells consumers which
+resource contract applies. Domain facts that are more specific than CRUD keep
+their semantic names, for example `vps.console_opened`,
+`payment.accepted`, or `outage.announced`.
+
+Non-empty transaction chains have a correlated lifecycle:
+
+    operation.started
+    <resource and domain completion facts>
+    operation.succeeded
+
+`operation.started`, `operation.failed`, `operation.resolved`, and
+`operation.succeeded` identify the chain with `operation_id`. Completion facts
+contain the same `operation_id`; `operation.succeeded.result_event_ids` lists
+the correlated completion facts.
+
+A failed or fatal chain emits `operation.failed`, but never emits the deferred
+resource/domain facts that would have claimed success. If chain construction
+rolls back, neither the provisional objects nor `operation.started` survive.
+An allowed-empty chain is treated as a synchronous operation: committed facts
+are emitted without a chain lifecycle.
+
+`transaction_chain.state_changed` remains a lower-level administrative event.
+Consumers should use `operation.*` for the logical lifecycle.
+
+## Resource payload contract
+
+Every resource event carries:
+
+- `resource_schema_version`: version of the common resource payload;
+- `resource_name`: stable logical resource name;
+- `resource_action`: `created`, `updated`, or `deleted`;
+- `resource_id`: the resource's public identifier; composite primary keys are
+  encoded as an object keyed by primary-key attribute;
+- actor/session identifiers when available;
+- `changed_fields`: sorted logical attribute names;
+- `changes`: old/new value envelopes keyed by attribute.
+
+An envelope has one of these forms:
+
+    {"kind":"value","value":"active"}
+    {"kind":"redacted"}
+    {"kind":"digest","algorithm":"sha256","digest":"...","bytes":12345}
+
+Create events contain `new` sides and delete events contain `old` sides.
+Update events contain both sides when the old value was observed reliably. A
+literal JSON `null` is a real value and is distinct from an omitted side.
+
+Credential-like attributes and model-specific sensitive content are always
+redacted. This includes tokens, passwords, secrets, private/key material,
+authentication challenges, opaque OS-template and notification-target
+configuration, notification-template text and HTML, system configuration
+values, nested delivery/history payloads, transaction inputs/outputs and
+confirmation changes, and VPS user-data content. Individual values larger
+than 4 KiB are represented by a SHA-256 digest. The whole resource payload is
+kept within 48 KiB by digesting the largest remaining inline values as needed.
+
+The Event Type API is the authoritative contract for a resource event. Its
+`resource` object describes the logical name, action, schema version, ID type,
+and every attribute's type, nullability, enum choices, value policy, and
+available old/new matchers. The WebUI Event Types page renders the same
+contract. Enum attributes are emitted and matched by their symbolic string
+names. Serialized YAML/JSON attributes are described as `json`, irrespective
+of the text column used to store them. Decimal values are lossless JSON
+strings, not binary floating-point numbers. Composite identifiers are JSON
+objects and list their component names and types in `id_attributes`.
+
+Generated resource types come from the explicit public resource catalog in
+`ResourceOperations`, not from the set of loaded Active Record models. A
+catalog entry references the mounted model-backed HaveAPI resource and declares
+its supported CRUD actions, stable product topic, logical name, and audience.
+The catalog includes only externally meaningful mutable resources. Storage
+placement rows, authentication implementation rows, translations, joins,
+delivery internals, accounting, telemetry, and read-only projections are not
+made public merely because their models are loaded.
+
+Account catalog entries publish roles `account, admin` and require an explicit
+owner resolver. Administrative entries publish only role `admin`. Event Type
+listing is caller-specific: ordinary and support users receive only types with
+the `account` role, while administrators receive the complete public and
+administrative catalog. `category` is a stable machine topic and
+`category_label` is its localized display name. The WebUI groups Event Types by
+these product topics.
+
+## Routing and querying
+
+All event types expose common route fields such as `event_type`, `category`,
+`severity`, `roles`, and `operation_id`. Resource types additionally expose
+`resource_name` and `resource_action`. Exact resource types with a scalar
+identifier also expose `resource_id`; composite identifiers remain available
+in the event payload but are not route-matchable as one scalar value.
+
+Selected stable scalar resource attributes can be matched as
+`old_<attribute>` and `new_<attribute>`. Redacted and digest-only values are
+not matchable. The exact matcher set is published by the Event Type API; it is
+not inferred by consumers.
+
+The Event index can be filtered by exact `resource_name` and
+`resource_action`, but it contains delivery history rather than every emitted
+fact. Resource facts use the same routing and delivery retention contract as
+other public events. Configure an explicit catch-all route to a durable
+external receiver when complete off-system auditing is required.
+
+## Emitting events
+
+Normal HaveAPI CRUD actions are captured by
+`VpsAdmin::API::Events::ActionPolicies`. Synchronous facts are written only
+after the mutation succeeds, in the same database transaction when the action
+is atomic. Recorder state is resolved against the final persisted rows, so a
+rolled-back or reverted change does not produce a false fact.
+
+The recorder silently ignores uncataloged model callbacks. This keeps an
+operation's internal persistence details out of the consumer contract while
+preserving `operation.*` lifecycle events for the accepted transaction chain.
+Direct code that attempts to define or emit a CRUD event for an uncataloged
+model raises, so a new public contract has to be reviewed and registered
+explicitly.
+
+Emission does not unconditionally create an Event row. Public resource,
+domain, and operation events are retained only when routing produces delivery
+work. Do not use unconditional persistence to turn the notification subsystem
+into an internal audit database.
+
+Transaction-chain builders must use `defer_resource_event!` or
+`defer_result_event!` for successful outcomes. Deferred descriptors are stored
+in the existing signed final no-op transaction input and are materialized
+idempotently only after the supervisor observes `done`. Do not call
+`route_event!` with a past-tense success event while constructing a chain.
+
+Security observations and runtime facts that are true immediately may be
+emitted immediately. If they occur inside a transaction-chain context, include
+the operation correlation without presenting them as completed mutations.
+
+The names `<logical_resource>.created`, `.updated`, and `.deleted` are reserved
+for this resource envelope. A notification or workflow event that has a
+different source or payload contract must use a distinct semantic name, such
+as `outage.update_reported`, `request.submitted`, or
+`user.account_created`, even when it is triggered by the same operation.
+
+Bulk SQL writes and callback-bypassing deletes must call the explicit recorder
+helpers in `ActionPolicies`; Active Record callbacks cannot observe them.
+Logical ownership and related VPS resolution are declared in
+`ResourceOperations`, never guessed from arbitrary associations.
+
+## Adding or changing an API resource
+
+For every POST, PUT, PATCH, or DELETE action:
+
+1. Decide whether the model is an externally meaningful mutable API resource.
+   Do not catalog an internal row, read-only projection, accounting/telemetry
+   model, translation, join, authentication implementation detail, or delivery
+   implementation detail.
+2. For a public resource, add an explicit catalog entry referencing its
+   mounted HaveAPI resource. Declare only supported CRUD actions and select a
+   stable topic and `account` or `admin` audience. Plugin resources register
+   their entries from the owning plugin.
+3. For an account entry, register and test its owner resolver. Add a related
+   VPS resolver when the event should carry VPS context. An admin entry may be
+   system-owned.
+4. Confirm that the default CRUD classification describes every row it
+   changes. Register a custom action policy when it does not.
+5. Register every model mutated by a custom operation, authentication flow,
+   callback, or background entry point. Give intentionally read-only,
+   bookkeeping, transport, or domain-event policies a specific kind and
+   reason.
+6. Use `defer_resource_event!` for chain-backed CRUD results. Use a typed
+   semantic event only when CRUD does not express the fact.
+7. Call `record_many` for `update_all`, `delete_all`, counters, or other writes
+   that bypass callbacks, and register real callback-bypassing delete
+   cascades.
+8. Add a stable logical name when the Active Record class name is an
+   implementation detail. Internal translation/join rows should normally be
+   represented by their public parent resource rather than introduced as a
+   new public event family.
+9. Reserve `<logical_resource>.created|updated|deleted` for the versioned
+   resource envelope. Give notification and workflow facts a distinct
+   semantic name when their source or payload differs.
+10. Treat decimal values and composite primary keys as JSON-contract cases:
+   decimals are emitted as lossless strings, while composite IDs are keyed
+   objects and do not expose a scalar `resource_id` route matcher.
+11. Extend the model-specific sensitive-field policy before recording any
+   configuration, content, credential, delivery payload, or opaque provider
+   value.
+12. Add specs for successful create/update/delete, rollback or chain failure,
+   old/new/null values, redaction, ownership, event correlation, and Event Type
+   metadata. Assert that ordinary callers cannot see admin-only types and that
+   representative internal models do not produce CRUD events.
+
+The coverage specs enumerate mutating HaveAPI actions, operation entry points,
+external mutation boundaries, and callback-bypassing cascades. A new surface
+must not be merged by weakening those checks or by using a broad undocumented
+fallback.
+
+Plugins own their event declarations and policies. Core vpsAdmin must not list
+plugin event types directly merely to make coverage pass.

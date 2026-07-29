@@ -262,7 +262,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Mailbox' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows admins to create a mailbox' do
+    it 'allows admins to create a mailbox', :with_event_delivery do
       token = SecureRandom.hex(4)
       payload = {
         label: "Spec Mailbox #{token}",
@@ -287,7 +287,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Mailbox' do
       expect(record.password).to eq(payload[:password])
 
       event = Event.where(
-        event_type: 'resource.created',
+        event_type: 'mailbox.created',
         source_class: 'Mailbox',
         source_id: record.id
       ).sole
@@ -401,7 +401,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Mailbox' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows admins to update a mailbox' do
+    it 'allows admins to update a mailbox', :with_event_delivery do
       new_label = "Spec Mailbox Updated #{SecureRandom.hex(3)}"
 
       as(SpecSeed.admin) do
@@ -422,7 +422,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Mailbox' do
       expect(mailbox_a.enable_ssl).to be(false)
       expect(
         Event.where(
-          event_type: 'resource.updated',
+          event_type: 'mailbox.updated',
           source_class: 'Mailbox',
           source_id: mailbox_a.id
         ).sole.parameters['changed_fields']
@@ -460,7 +460,8 @@ RSpec.describe 'VpsAdmin::API::Resources::Mailbox' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows admins to delete a mailbox and its handlers' do
+    it 'allows admins to delete a mailbox and its handlers',
+       :with_event_delivery do
       mailbox = Mailbox.create!(
         label: 'Spec Mailbox Delete',
         server: 'imap-delete.example.test',
@@ -487,7 +488,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Mailbox' do
       expect(MailboxHandler.where(mailbox_id: mailbox.id)).to be_empty
       expect(
         Event.where(
-          event_type: 'resource.deleted',
+          event_type: 'mailbox.deleted',
           source_class: 'Mailbox',
           source_id: mailbox.id
         )

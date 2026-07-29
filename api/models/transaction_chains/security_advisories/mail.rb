@@ -6,7 +6,7 @@ module TransactionChains
 
       EVENT_TYPES = {
         announce: 'security_advisory.announced',
-        update: 'security_advisory.updated'
+        update: 'security_advisory.update_published'
       }.freeze
 
       def link_chain(advisory, action, update = nil)

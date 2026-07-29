@@ -3,6 +3,15 @@
 require 'spec_helper'
 
 RSpec.describe VpsAdmin::API::Events::ResourceOperations do
+  before do
+    create_spec_event_route!(user: SpecSeed.user)
+    create_spec_event_route!(user: SpecSeed.admin)
+    create_spec_event_route!(
+      user: SpecSeed.admin,
+      subject_scope: :visible
+    )
+  end
+
   def policy_constant(name, plugin: nil)
     klass = name.safe_constantize
     return klass if klass
@@ -11,7 +20,23 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
     raise NameError, "event policy constant #{name} is not loaded"
   end
 
-  it 'records a user-owned resource mutation without copying submitted values' do
+  it 'does not persist a typed resource fact without a delivery route' do
+    EventRoute.where(user: [SpecSeed.user, SpecSeed.admin]).delete_all
+    event = nil
+
+    expect do
+      event = with_current_context(user: SpecSeed.user) do
+        described_class.updated!(
+          SpecSeed.user,
+          changed_fields: [:login]
+        )
+      end
+    end.not_to(change { event_storage_counts })
+
+    expect(event).to be_nil
+  end
+
+  it 'records typed changes and redacts sensitive values' do
     event = with_current_context(user: SpecSeed.user) do |session|
       described_class.updated!(
         SpecSeed.user,
@@ -23,18 +48,242 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
     end
 
     expect(event).to be_persisted
-    expect(event.event_type).to eq('resource.updated')
+    expect(event.event_type).to eq('user.updated')
     expect(event.source_class).to eq('User')
     expect(event.source_id).to eq(SpecSeed.user.id)
     expect(event.parameters).to include(
-      'resource_type' => 'User',
+      'resource_name' => 'user',
       'resource_id' => SpecSeed.user.id,
-      'action' => 'updated',
+      'resource_action' => 'updated',
+      'resource_schema_version' => 1,
       'actor_user_id' => SpecSeed.user.id,
       'actor_user_login' => SpecSeed.user.login,
       'changed_fields' => %w[login password]
     )
+    expect(event.parameters.dig('changes', 'password', 'new'))
+      .to eq('kind' => 'redacted')
     expect(event.payload_json).not_to include(SpecSeed::PASSWORD)
+  end
+
+  it 'preserves explicit nulls and digests oversized values' do
+    payload = described_class.payload_for(
+      :updated,
+      SpecSeed.os_family,
+      changes: {
+        description: {
+          old: nil,
+          new: 'x' * (described_class::MAX_INLINE_VALUE_BYTES + 1)
+        }
+      },
+      actor: nil,
+      session: nil
+    )
+
+    expect(payload.dig(:changes, 'description', 'old')).to eq(
+      'kind' => 'value',
+      'value' => nil
+    )
+    expect(payload.dig(:changes, 'description', 'new')).to include(
+      'kind' => 'digest',
+      'algorithm' => 'sha256',
+      'bytes' => described_class::MAX_INLINE_VALUE_BYTES + 3
+    )
+    expect(payload.dig(:changes, 'description', 'new', 'digest'))
+      .to match(/\A[0-9a-f]{64}\z/)
+  end
+
+  it 'redacts model-specific configuration, content, and user-data values' do
+    sysconfig = SysConfig.new(id: 42, category: 'test', name: 'secret', value: 'do not expose')
+    user_data = VpsUserData.new(id: 43, content: 'private bootstrap script')
+    os_template = OsTemplate.new(id: 44, config: { 'provider_token' => 'do not expose' })
+    template_variant = NotificationTemplateVariant.new(
+      id: 45,
+      text: 'private plaintext template',
+      html: '<p>private HTML template</p>'
+    )
+
+    sysconfig_payload = described_class.payload_for(
+      :updated,
+      sysconfig,
+      changes: { value: { old: 'before', new: 'after' } },
+      actor: nil,
+      session: nil
+    )
+    user_data_payload = described_class.payload_for(
+      :updated,
+      user_data,
+      changes: { content: { old: 'before', new: 'after' } },
+      actor: nil,
+      session: nil
+    )
+    os_template_payloads = %i[created updated deleted].to_h do |action|
+      [
+        action,
+        described_class.payload_for(
+          action,
+          os_template,
+          changes: {
+            config: {
+              old: { 'provider_token' => 'before' },
+              new: { 'provider_token' => 'after' }
+            }
+          },
+          actor: nil,
+          session: nil
+        )
+      ]
+    end
+    template_variant_payloads = %i[created updated deleted].to_h do |action|
+      [
+        action,
+        described_class.payload_for(
+          action,
+          template_variant,
+          changes: {
+            text: { old: 'old text', new: 'new text' },
+            html: { old: 'old html', new: 'new html' }
+          },
+          actor: nil,
+          session: nil
+        )
+      ]
+    end
+
+    expect(sysconfig_payload.dig(:changes, 'value')).to eq(
+      'old' => { 'kind' => 'redacted' },
+      'new' => { 'kind' => 'redacted' }
+    )
+    expect(user_data_payload.dig(:changes, 'content')).to eq(
+      'old' => { 'kind' => 'redacted' },
+      'new' => { 'kind' => 'redacted' }
+    )
+    expect(os_template_payloads[:created].dig(:changes, 'config')).to eq(
+      'new' => { 'kind' => 'redacted' }
+    )
+    expect(os_template_payloads[:updated].dig(:changes, 'config')).to eq(
+      'old' => { 'kind' => 'redacted' },
+      'new' => { 'kind' => 'redacted' }
+    )
+    expect(os_template_payloads[:deleted].dig(:changes, 'config')).to eq(
+      'old' => { 'kind' => 'redacted' }
+    )
+    expect(template_variant_payloads[:created].dig(:changes, 'text')).to eq(
+      'new' => { 'kind' => 'redacted' }
+    )
+    expect(template_variant_payloads[:updated].dig(:changes, 'html')).to eq(
+      'old' => { 'kind' => 'redacted' },
+      'new' => { 'kind' => 'redacted' }
+    )
+    expect(template_variant_payloads[:deleted].dig(:changes, 'text')).to eq(
+      'old' => { 'kind' => 'redacted' }
+    )
+
+    %i[created updated deleted].each do |action|
+      descriptor = described_class.resource_descriptor(OsTemplate, action)
+      config = descriptor.fetch(:attributes).detect { |attribute| attribute.fetch(:name) == 'config' }
+      expect(config).to include(
+        type: 'json',
+        value_policy: 'redacted',
+        old_matcher: false,
+        new_matcher: false
+      )
+    end
+
+    %i[created updated deleted].each do |action|
+      descriptor = described_class.resource_descriptor(
+        NotificationTemplateVariant,
+        action
+      )
+      %w[html text].each do |name|
+        attribute = descriptor.fetch(:attributes).detect do |candidate|
+          candidate.fetch(:name) == name
+        end
+        expect(attribute).to include(
+          type: 'string',
+          value_policy: 'redacted',
+          old_matcher: false,
+          new_matcher: false
+        )
+      end
+    end
+  end
+
+  it 'exposes only inline old and new values to route matchers' do
+    event = described_class.updated!(
+      SpecSeed.os_family,
+      changed_fields: %i[label description],
+      changes: {
+        label: { old: 'Before', new: 'After' },
+        description: {
+          old: 'small',
+          new: 'x' * (described_class::MAX_INLINE_VALUE_BYTES + 1)
+        }
+      }
+    )
+
+    expect(EventRouteMatcher.field_value(event, 'old_label')).to eq('Before')
+    expect(EventRouteMatcher.field_value(event, 'new_label')).to eq('After')
+    expect(EventRouteMatcher.field_value(event, 'new_description')).to be_nil
+  end
+
+  it 'predicts sequential transaction confirmation counter changes' do
+    policies = VpsAdmin::API::Events::ActionPolicies
+    recorder = policies::Recorder.new(
+      policies::Policy.new(
+        kind: :transaction_chain,
+        models: %w[SnapshotInPool],
+        reason: 'sequential counter confirmation spec',
+        atomic: false
+      )
+    )
+    snapshot = SnapshotInPool.new(reference_count: 10)
+    increment = TransactionConfirmation.new(
+      confirm_type: :increment_type,
+      attr_changes: 'reference_count'
+    )
+    first_changes = recorder.send(
+      :confirmation_changes,
+      increment,
+      snapshot,
+      previous: nil
+    )
+    first = policies::Recorder::Fact.new(
+      action: :updated,
+      object: snapshot,
+      owner: nil,
+      vps: nil,
+      changed_fields: %w[reference_count],
+      changes: first_changes
+    )
+    second_changes = recorder.send(
+      :confirmation_changes,
+      increment,
+      snapshot,
+      previous: first
+    )
+    second = policies::Recorder::Fact.new(
+      action: :updated,
+      object: snapshot,
+      owner: nil,
+      vps: nil,
+      changed_fields: %w[reference_count],
+      changes: second_changes
+    )
+    decrement = TransactionConfirmation.new(
+      confirm_type: :decrement_type,
+      attr_changes: { 'reference_count' => 3 }
+    )
+
+    expect(first_changes.fetch('reference_count')).to eq(old: 10, new: 11)
+    expect(second_changes.fetch('reference_count')).to eq(old: 11, new: 12)
+    expect(
+      recorder.send(
+        :confirmation_changes,
+        decrement,
+        snapshot,
+        previous: second
+      ).fetch('reference_count')
+    ).to eq(old: 12, new: 9)
   end
 
   it 'records an administrator mutation of a system resource as a system event' do
@@ -47,9 +296,9 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
     expect(event.source_class).to eq('Node')
     expect(event.source_id).to eq(SpecSeed.node.id)
     expect(event.parameters).to include(
-      'resource_type' => 'Node',
+      'resource_name' => 'node',
       'resource_id' => SpecSeed.node.id,
-      'action' => 'created',
+      'resource_action' => 'created',
       'actor_user_id' => SpecSeed.admin.id
     )
   end
@@ -67,9 +316,322 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
     )
   end
 
-  it 'publishes all generic resource event types in the event catalog' do
-    expect(described_class::ACTIONS.map { |action| "resource.#{action}" })
-      .to all(satisfy { |event_type| VpsAdmin::API::Events.type_for(event_type) })
+  it 'publishes typed resource events and their attribute contracts' do
+    described_class.refresh_event_types!
+
+    type = VpsAdmin::API::Events.type_for('vps.updated')
+    expect(type).to be_present
+    expect(type.resource).to include(
+      name: 'vps',
+      action: 'updated',
+      schema_version: 1,
+      id_type: 'integer'
+    )
+    expect(type.resource.fetch(:attributes).map { |field| field.fetch(:name) })
+      .to include('hostname', 'object_state')
+    expect(VpsAdmin::API::Events.type_for('resource.updated')).to be_nil
+    object_state = type.resource.fetch(:attributes).detect do |field|
+      field.fetch(:name) == 'object_state'
+    end
+    expect(object_state).to include(
+      type: 'string',
+      choices: VpsAdmin::API::Lifetimes::STATES.map(&:to_s),
+      old_matcher: true,
+      new_matcher: true
+    )
+
+    route = EventRoute.new(
+      user: SpecSeed.user,
+      label: 'Typed resource matcher',
+      event_type: 'vps.updated'
+    )
+    matcher = EventRouteMatcher.new(
+      event_route: route,
+      field: 'new_hostname',
+      operator: '==',
+      value: 'vps.example.test'
+    )
+    expect(matcher).to be_valid
+
+    state_event = Event.new(
+      event_type: 'vps.updated',
+      payload: described_class.payload_for(
+        :updated,
+        Vps.new(id: 42),
+        changes: {
+          object_state: {
+            old: 'active',
+            new: 'suspended'
+          }
+        },
+        actor: nil,
+        session: nil
+      )
+    )
+    state_matcher = EventRouteMatcher.new(
+      event_route: route,
+      field: 'new_object_state',
+      operator: '==',
+      value: 'suspended'
+    )
+    expect(state_matcher).to be_valid
+    expect(state_matcher.field_type).to eq('string')
+    expect(state_matcher.matches?(state_event)).to be(true)
+
+    descriptor = described_class.resource_descriptor(EventTimeInterval, :updated)
+    serialized = descriptor.fetch(:attributes).detect do |field|
+      field.fetch(:name) == 'specs'
+    end
+    expect(serialized).to include(
+      type: 'json',
+      value_policy: 'value_or_digest',
+      old_matcher: false,
+      new_matcher: false
+    )
+  end
+
+  it 'publishes only catalogued public resource actions and topics' do
+    described_class.refresh_event_types!
+
+    expect(VpsAdmin::API::Events.type_for('vps.updated')).to have_attributes(
+      category: 'vps',
+      roles: contain_exactly('account', 'admin')
+    )
+    expect(
+      VpsAdmin::API::Events.type_for('os_family.updated')
+    ).to have_attributes(
+      category: 'operating_systems',
+      roles: contain_exactly('admin')
+    )
+    expect(VpsAdmin::API::Events.type_for('cluster_resource.deleted')).to be_nil
+    expect(VpsAdmin::API::Events.type_for('vps_feature.created')).to be_nil
+
+    %w[
+      auth_token
+      network_interface_daily_accounting
+      network_interface_monthly_accounting
+      network_interface_yearly_accounting
+      snapshot_in_pool
+      snapshot_in_pool_clone
+      snapshot_in_pool_in_branch
+      token
+      webauthn_challenge
+    ].each do |resource_name|
+      described_class::ACTIONS.each do |action|
+        expect(
+          VpsAdmin::API::Events.type_for("#{resource_name}.#{action}")
+        ).to be_nil
+      end
+    end
+
+    categories = VpsAdmin::API::Events.types.map(&:category).uniq
+    expect(categories - described_class::TOPICS).to be_empty
+
+    expect do
+      described_class.ensure_event_type!(SnapshotInPool, :updated)
+    end.to raise_error(
+      ArgumentError,
+      /not an outside-visible resource event model/
+    )
+  end
+
+  it 'silently ignores internal models captured by broad mutation policies' do
+    policies = VpsAdmin::API::Events::ActionPolicies
+    recorder = policies::Recorder.new(
+      policies::Policy.new(
+        kind: :transaction_chain,
+        models: :all,
+        reason: 'internal model filtering spec',
+        atomic: false
+      )
+    )
+
+    recorder.record(
+      :created,
+      SnapshotInPool.new(id: 123, reference_count: 1)
+    )
+    recorder.record(:created, Token.new(id: 456))
+
+    expect(recorder).not_to be_pending
+  end
+
+  it 'keeps semantic update notifications separate from resource facts' do
+    described_class.refresh_event_types!
+
+    reserved_types = VpsAdmin::API::Events.types.select do |type|
+      type.name.match?(/\.(created|updated|deleted)\z/)
+    end
+    malformed_types = reserved_types.reject do |type|
+      resource_name, action = type.name.split('.', 2)
+
+      type.resource_generated &&
+        type.resource&.values_at(:name, :action) == [resource_name, action]
+    end
+    expect(malformed_types).to be_empty,
+                               'Reserved mutation event types must be generated ' \
+                               "resource facts: #{malformed_types.map(&:name).sort.join(', ')}"
+
+    expect(VpsAdmin::API::Events.type_for('user.created').resource).to include(
+      name: 'user',
+      action: 'created'
+    )
+    if SpecPlugins.enabled?(:outage_reports)
+      expect(VpsAdmin::API::Events.type_for('outage.updated').resource).to include(
+        name: 'outage',
+        action: 'updated'
+      )
+      expect(
+        VpsAdmin::API::Events.type_for('outage.update_reported').resource
+      ).to be_nil
+    end
+
+    expect(
+      VpsAdmin::API::Events.type_for('security_advisory.updated').resource
+    ).to include(
+      name: 'security_advisory',
+      action: 'updated'
+    )
+    expect(
+      VpsAdmin::API::Events.type_for(
+        'security_advisory.update_published'
+      ).resource
+    ).to be_nil
+    expect(
+      VpsAdmin::API::Events.type_for('user.account_created').resource
+    ).to be_nil
+
+    if SpecPlugins.enabled?(:requests)
+      expect(
+        VpsAdmin::API::Events.type_for('request.created').resource
+      ).to include(name: 'request', action: 'created')
+      expect(
+        VpsAdmin::API::Events.type_for('request.updated').resource
+      ).to include(name: 'request', action: 'updated')
+      expect(
+        VpsAdmin::API::Events.type_for('request.submitted').resource
+      ).to be_nil
+      expect(
+        VpsAdmin::API::Events.type_for('request.update_submitted').resource
+      ).to be_nil
+    end
+
+    malformed = Event.new(
+      event_type: 'outage.updated',
+      payload: { 'changes' => [] }
+    )
+    expect(EventRouteMatcher.field_value(malformed, 'new_state')).to be_nil
+  end
+
+  it 'describes encoded values without publishing network accounting events' do
+    decimal = ClusterResource.new(id: 42)
+    decimal_payload = described_class.payload_for(
+      :updated,
+      decimal,
+      changes: {
+        max: {
+          old: BigDecimal('1.25'),
+          new: BigDecimal('2.50')
+        }
+      },
+      actor: nil,
+      session: nil
+    )
+    decimal_descriptor = described_class.resource_descriptor(
+      ClusterResource,
+      :updated
+    )
+    max_attribute = decimal_descriptor.fetch(:attributes).detect do |attribute|
+      attribute.fetch(:name) == 'max'
+    end
+
+    expect(max_attribute.fetch(:type)).to eq('string')
+    expect(decimal_payload.dig(:changes, 'max')).to eq(
+      'old' => { 'kind' => 'value', 'value' => '1.25' },
+      'new' => { 'kind' => 'value', 'value' => '2.5' }
+    )
+
+    accounting = NetworkInterfaceMonthlyAccounting.new(
+      network_interface_id: 11,
+      user_id: 22,
+      year: 2026,
+      month: 7
+    )
+    composite_payload = described_class.payload_for(
+      :updated,
+      accounting,
+      changes: { bytes_in: { old: 10, new: 20 } },
+      actor: nil,
+      session: nil
+    )
+    composite_descriptor = described_class.resource_descriptor(
+      NetworkInterfaceMonthlyAccounting,
+      :updated
+    )
+
+    expect(composite_payload.fetch(:resource_id)).to eq(
+      'network_interface_id' => 11,
+      'user_id' => 22,
+      'year' => 2026,
+      'month' => 7
+    )
+    expect(composite_descriptor).to include(
+      id_type: 'object',
+      id_attributes: [
+        { name: 'network_interface_id', type: 'integer' },
+        { name: 'user_id', type: 'integer' },
+        { name: 'year', type: 'integer' },
+        { name: 'month', type: 'integer' }
+      ]
+    )
+
+    expect(described_class.catalogued?(NetworkInterfaceMonthlyAccounting))
+      .to be(false)
+    expect do
+      described_class.ensure_event_type!(
+        NetworkInterfaceMonthlyAccounting,
+        :updated
+      )
+    end.to raise_error(
+      ArgumentError,
+      /not an outside-visible resource event model/
+    )
+
+    now = Time.now
+    accounting_id = [
+      9_000_000 + Process.pid,
+      SpecSeed.user.id,
+      2026,
+      7
+    ]
+    NetworkInterfaceMonthlyAccounting.insert!({
+      network_interface_id: accounting_id[0],
+      user_id: accounting_id[1],
+      year: accounting_id[2],
+      month: accounting_id[3],
+      bytes_in: 10,
+      bytes_out: 20,
+      packets_in: 1,
+      packets_out: 2,
+      created_at: now,
+      updated_at: now
+    })
+    persisted_accounting = NetworkInterfaceMonthlyAccounting.find(accounting_id)
+    policy = VpsAdmin::API::Events::ActionPolicies::Policy.new(
+      kind: :resource,
+      models: %w[NetworkInterfaceMonthlyAccounting],
+      reason: nil,
+      atomic: true
+    )
+    VpsAdmin::API::Events::ActionPolicies.capture(policy) do
+      persisted_accounting.update!(bytes_in: 20)
+    end
+
+    expect(
+      Event.where(
+        event_type: 'network_interface_monthly_accounting.updated',
+        source_class: 'NetworkInterfaceMonthlyAccounting'
+      ).count
+    ).to eq(0)
   end
 
   it 'classifies every mutating API action' do
@@ -96,6 +658,44 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
 
     expect(missing).to be_empty,
                        "Unclassified mutating actions:\n#{missing.map(&:name).sort.join("\n")}"
+  end
+
+  it 'catalogues every mounted model-backed CRUD resource' do
+    ApiAppHelper.app_instance
+
+    walk_resource = lambda do |resource|
+      resources = [resource]
+      resource.resources { |child| resources.concat(walk_resource.call(child)) }
+      resources
+    end
+    resources =
+      HaveAPI.get_version_resources(VpsAdmin::API::Resources, '7.0').flat_map do |resource|
+        walk_resource.call(resource)
+      end
+
+    missing = resources.filter_map do |resource|
+      next unless resource.model
+
+      actions = resource.actions.filter_map do |action|
+        if action <= HaveAPI::Actions::Default::Create
+          'created'
+        elsif action <= HaveAPI::Actions::Default::Update
+          'updated'
+        elsif action <= HaveAPI::Actions::Default::Delete
+          'deleted'
+        end
+      end.uniq
+      next if actions.empty?
+
+      entry = described_class.catalog_entry_for(resource.model)
+      missing_actions = entry ? actions - entry.actions : actions
+      next if missing_actions.empty?
+
+      "#{resource.name}: #{missing_actions.sort.join(', ')}"
+    end
+
+    expect(missing).to be_empty,
+                       "Uncatalogued public CRUD actions:\n#{missing.sort.join("\n")}"
   end
 
   it 'maps every generic blocking action to its target model and CRUD intent' do
@@ -299,12 +899,12 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
     end
 
     child_event = Event.where(
-      event_type: 'resource.deleted',
+      event_type: 'event_route.deleted',
       source_class: 'EventRoute',
       source_id: child.id
     ).sole
     matcher_event = Event.where(
-      event_type: 'resource.deleted',
+      event_type: 'event_route_matcher.deleted',
       source_class: 'EventRouteMatcher',
       source_id: matcher.id
     ).sole
@@ -339,7 +939,7 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
     expect(os_family.reload.description).to eq('before')
     expect(
       Event.where(
-        event_type: 'resource.updated',
+        event_type: 'os_family.updated',
         source_class: 'OsFamily',
         source_id: os_family.id
       )
@@ -371,7 +971,7 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
     expect(os_family.reload.description).to eq('before')
     expect(
       Event.where(
-        event_type: 'resource.updated',
+        event_type: 'os_family.updated',
         source_class: 'OsFamily',
         source_id: os_family.id
       )
@@ -401,7 +1001,7 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
 
     expect(os_family.reload.description).to eq('before')
     event = Event.where(
-      event_type: 'resource.updated',
+      event_type: 'os_family.updated',
       source_class: 'OsFamily',
       source_id: os_family.id
     ).sole
@@ -427,7 +1027,7 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
     end
 
     event = Event.where(
-      event_type: 'resource.updated',
+      event_type: 'os_family.updated',
       source_class: 'OsFamily',
       source_id: os_family.id
     ).sole
@@ -454,7 +1054,7 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
 
     expect(OsFamily.where(id: os_family.id)).to exist
     event = Event.where(
-      event_type: 'resource.created',
+      event_type: 'os_family.created',
       source_class: 'OsFamily',
       source_id: os_family.id
     ).sole
@@ -478,7 +1078,7 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
     expect(OsFamily.where(id: os_family.id)).not_to exist
     expect(
       Event.where(
-        event_type: 'resource.created',
+        event_type: 'os_family.created',
         source_class: 'OsFamily',
         source_id: os_family.id
       )
@@ -496,29 +1096,25 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
       label: "Partial row audit #{Process.pid}",
       description: 'before'
     )
-    policy = VpsAdmin::API::Events::ActionPolicies::Policy.new(
-      kind: :resource,
-      models: %w[AuditSpecOsFamily],
-      reason: nil,
-      atomic: true
-    )
     partial = model.select(:id, :description).find(os_family.id)
 
-    VpsAdmin::API::Events::ActionPolicies.capture(policy) do
-      partial[:description] = 'after'
-      partial.save!(validate: false, touch: false)
-    end
+    partial[:description] = 'after'
+    partial.save!(validate: false, touch: false)
+    payload = described_class.payload_for(
+      :updated,
+      partial,
+      changed_fields: %i[description]
+    )
 
     expect(os_family.reload[:description]).to eq('after')
-    event = Event.where(
-      event_type: 'resource.updated',
-      source_class: 'AuditSpecOsFamily',
-      source_id: os_family.id
-    ).sole
-    expect(event.parameters['changed_fields']).to eq(['description'])
+    expect(payload.fetch(:changed_fields)).to eq(['description'])
+    expect(payload.dig(:changes, 'description')).to eq(
+      'old' => { 'kind' => 'value', 'value' => 'before' },
+      'new' => { 'kind' => 'value', 'value' => 'after' }
+    )
   end
 
-  it 'applies default CRUD intent only to the action target model' do
+  it 'captures secondary public models without applying the target CRUD intent' do
     policies = VpsAdmin::API::Events::ActionPolicies
     policy = policies::Policy.new(
       kind: :transaction_chain,
@@ -534,28 +1130,27 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
       os_family = OsFamily.create!(
         label: "Mixed blocking action #{SecureRandom.hex(4)}"
       )
-      recorder.allow_models(%w[Node])
       SpecSeed.node.update!(active: !SpecSeed.node.active)
     end
     recorder.emit!
 
     expect(
       Event.where(
-        event_type: 'resource.created',
+        event_type: 'os_family.created',
         source_class: 'OsFamily',
         source_id: os_family.id
       )
     ).to exist
     expect(
       Event.where(
-        event_type: 'resource.updated',
+        event_type: 'node.updated',
         source_class: 'Node',
         source_id: SpecSeed.node.id
       )
     ).to exist
     expect(
       Event.where(
-        event_type: 'resource.created',
+        event_type: 'node.created',
         source_class: 'Node',
         source_id: SpecSeed.node.id
       )
@@ -602,7 +1197,7 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
     expect(os_family).to be_persisted
 
     events = Event.where(
-      event_type: 'resource.created',
+      event_type: 'os_family.created',
       source_class: 'OsFamily',
       source_id: os_family.id
     )
@@ -611,7 +1206,7 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
       .to contain_exactly('description', 'label')
     expect(
       Event.where(
-        event_type: 'resource.updated',
+        event_type: 'os_family.updated',
         source_class: 'OsFamily',
         source_id: os_family.id
       )
@@ -619,7 +1214,7 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
 
     failed_label = "#{label} failed"
     event_count = Event.where(
-      event_type: 'resource.created',
+      event_type: 'os_family.created',
       source_class: 'OsFamily'
     ).count
     expect do
@@ -633,10 +1228,28 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
     expect(OsFamily.where(label: failed_label)).to be_empty
     expect(
       Event.where(
-        event_type: 'resource.created',
+        event_type: 'os_family.created',
         source_class: 'OsFamily'
       ).count
     ).to eq(event_count)
+  end
+
+  it 'ignores resource actions that the public catalog does not publish' do
+    policies = VpsAdmin::API::Events::ActionPolicies
+    device = create_user_device!(user: SpecSeed.user, known: true)
+
+    expect do
+      policies.capture(policies.external_policy('oauth2.authorize_post')) do
+        device.update!(last_seen_at: Time.now)
+      end
+    end.not_to change(
+      Event.where(
+        event_type: 'user_known_device.updated',
+        source_class: 'UserDevice',
+        source_id: device.id
+      ),
+      :count
+    )
   end
 
   it 'rolls back records and events when an atomic operation fails' do
@@ -654,14 +1267,14 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
     )
     label = "Audit operation rollback #{Process.pid}"
     event_count = Event.where(
-      event_type: 'resource.created',
+      event_type: 'os_family.created',
       source_class: 'OsFamily'
     ).count
 
     expect { operation.run(label:) }.to raise_error('operation failed')
     expect(OsFamily.where(label:)).to be_empty
     expect(
-      Event.where(event_type: 'resource.created', source_class: 'OsFamily').count
+      Event.where(event_type: 'os_family.created', source_class: 'OsFamily').count
     ).to eq(event_count)
   end
 end

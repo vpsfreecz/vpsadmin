@@ -13,6 +13,7 @@ RSpec.describe TransactionChains::Vps::Update do
   before do
     ensure_user_notification_templates!
     ensure_mailer_available!
+    create_spec_event_route!(user:, event_type: 'vps.updated')
   end
 
   def create_update_vps_fixture
@@ -96,6 +97,20 @@ RSpec.describe TransactionChains::Vps::Update do
     expect(tx_payload(chain, Transactions::Vps::DnsResolver)).to include(
       'nameserver' => ['192.0.2.54'],
       'original' => ['192.0.2.53']
+    )
+    expect_deferred_event!(chain, 'vps.updated')
+
+    complete_chain_operation!(chain)
+    event = expect_resource_event!(:updated, vps, operation: chain)
+    expect(event.parameters.dig('changes', 'hostname')).to eq(
+      'old' => {
+        'kind' => 'value',
+        'value' => original_hostname
+      },
+      'new' => {
+        'kind' => 'value',
+        'value' => 'new-update-host'
+      }
     )
   end
 
