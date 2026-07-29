@@ -3,7 +3,7 @@
 require 'spec_helper'
 require 'digest'
 require 'timeout'
-require 'vpsadmin/api/events/vps_operations'
+require 'vpsadmin/api/events/operation_lifecycle'
 
 RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
   def create_chain!(state: :queued, name: 'spec_chain_state',
@@ -27,6 +27,37 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       handle: Transactions::EventDelivery::Notify.t_type,
       queue: 'general',
       input: '{}',
+      done: :waiting,
+      reversible: :keep_going
+    )
+  end
+
+  def add_result_descriptor!(chain, event_type: 'resource.updated',
+                             user_id: chain.user_id)
+    Transaction.create!(
+      transaction_chain: chain,
+      node: SpecSeed.node,
+      handle: Transactions::Utils::NoOp.t_type,
+      queue: 'general',
+      input: {
+        input: {
+          result_events: [
+            {
+              event_type:,
+              user_id:,
+              source_class: 'User',
+              source_id: chain.user_id,
+              subject: 'Deferred result fact',
+              payload: {
+                resource_type: 'User',
+                resource_id: chain.user_id,
+                action: 'updated',
+                changed_fields: ['state']
+              }
+            }
+          ]
+        }
+      }.to_json,
       done: :waiting,
       reversible: :keep_going
     )
@@ -117,28 +148,12 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     )
   end
 
-  it 'maps every concrete top-level VPS chain by its persisted type and name' do
-    chain_names = TransactionChain.descendants
-                                  .select { |klass| klass.name.start_with?('TransactionChains::Vps::') }
-                                  .reject { |klass| klass == TransactionChains::Vps::Migrate::Base }
-                                  .to_h { |klass| [klass.name, klass.chain_name] }
-    mapped_names = VpsAdmin::API::Events::VpsOperations::CHAIN_OPERATIONS
-                   .slice(*chain_names.keys)
-                   .transform_values(&:first)
-
-    expect(mapped_names).to eq(chain_names)
-    expect(VpsAdmin::API::Events::VpsOperations::CHAIN_OPERATIONS)
-      .to include(
-        'TransactionChains::Lifetimes::Wrapper' => %w[wrapper lifecycle_change]
-      )
-  end
-
-  it 'defines non-default-routed VPS operation event types' do
-    %w[vps.operation_succeeded vps.operation_failed].each do |event_name|
+  it 'defines non-default-routed operation lifecycle event types' do
+    VpsAdmin::API::Events::OperationLifecycle::EVENT_TYPES.each do |event_name|
       definition = VpsAdmin::API::Events.type_for(event_name)
 
       expect(definition).to have_attributes(
-        category: 'vps',
+        category: 'transactions',
         roles: %w[account admin],
         default_routed: false
       )
@@ -271,18 +286,72 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       source_id: chain.id,
       event_type: %w[
         transaction_chain.state_changed
-        vps.operation_succeeded
+        operation.succeeded
       ]
     )
     expect(events.group(:event_type).count).to eq(
       'transaction_chain.state_changed' => 1,
-      'vps.operation_succeeded' => 1
+      'operation.succeeded' => 1
     )
     expect(events.map { |event| event.parameters['producer_event_id'] }.uniq)
       .to eq(['00000000-0000-4000-8000-000000000004'])
   end
 
-  it 'persists a successful top-level VPS operation for the current VPS owner' do
+  it 'orders and deduplicates deferred result facts after operation success' do
+    chain = create_chain!(state: :done)
+    add_result_descriptor!(chain)
+    supervisor = described_class.new(nil, SpecSeed.node)
+
+    2.times do
+      process_chain_event(
+        supervisor,
+        chain,
+        previous_state: 'queued',
+        state: 'done',
+        producer_event_id: '10000000-0000-4000-8000-000000000004'
+      )
+    end
+
+    success = Event.where(
+      event_type: 'operation.succeeded',
+      source_class: 'TransactionChain',
+      source_id: chain.id
+    ).sole
+    result = Event.where(event_type: 'resource.updated', subject: 'Deferred result fact').sole
+
+    expect(success.id).to be < result.id
+    expect(success.parameters['result_event_ids']).to eq([result.id])
+    expect(result.parameters).to include(
+      'operation_id' => chain.id,
+      'operation_attempt' => 1,
+      'operation_result_index' => 0
+    )
+  end
+
+  it 'does not materialize deferred result facts when an operation fails' do
+    chain = create_chain!(state: :failed)
+    add_result_descriptor!(chain)
+    supervisor = described_class.new(nil, SpecSeed.node)
+
+    process_chain_event(
+      supervisor,
+      chain,
+      previous_state: 'rollbacking',
+      state: 'failed',
+      producer_event_id: '10000000-0000-4000-8000-000000000005'
+    )
+
+    expect(Event.where(event_type: 'resource.updated', subject: 'Deferred result fact')).to be_empty
+    expect(
+      Event.where(
+        event_type: 'operation.failed',
+        source_class: 'TransactionChain',
+        source_id: chain.id
+      )
+    ).to exist
+  end
+
+  it 'persists a successful operation for the affected VPS owner' do
     vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
     chain = create_chain!(
       state: :done,
@@ -300,7 +369,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     process_chain_event(supervisor, chain, previous_state: 'queued', state: 'done')
 
     event = Event.find_by!(
-      event_type: 'vps.operation_succeeded',
+      event_type: 'operation.succeeded',
       source_class: 'TransactionChain',
       source_id: chain.id
     )
@@ -312,18 +381,39 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       created_at: Time.utc(2026, 6, 19, 12, 0, 0, 123_456)
     )
     expect(event.payload).to include(
-      'operation' => 'start',
+      'operation_id' => chain.id,
+      'attempt' => 1,
+      'operation' => 'vps.start',
       'state' => 'done',
       'successful' => true,
-      'vps_id' => vps.id,
-      'vps_ids' => [vps.id],
+      'concern_classes' => ['Vps'],
+      'concern_object_ids' => [vps.id],
       'actor_user_id' => SpecSeed.admin.id,
       'user_session_id' => chain.user_session_id,
       'node_id' => SpecSeed.node.id
     )
   end
 
-  it 'retains the accepted VPS owner after a terminal operation removes the VPS' do
+  it 'keeps an unowned admin operation distinct from its actor' do
+    chain = create_chain!(state: :done, user: SpecSeed.admin)
+    add_result_descriptor!(chain, user_id: nil)
+    supervisor = described_class.new(nil, SpecSeed.node)
+
+    process_chain_event(supervisor, chain, previous_state: 'queued', state: 'done')
+
+    lifecycle = Event.where(
+      event_type: 'operation.succeeded',
+      source_class: 'TransactionChain',
+      source_id: chain.id
+    ).sole
+    result = Event.where(event_type: 'resource.updated', subject: 'Deferred result fact').sole
+
+    expect(lifecycle).to have_attributes(user: nil)
+    expect(lifecycle.parameters['actor_user_id']).to eq(SpecSeed.admin.id)
+    expect(result).to have_attributes(user: nil)
+  end
+
+  it 'retains the accepted owner after an operation removes its resource' do
     vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
     chain = create_chain!(
       state: :queued,
@@ -336,18 +426,12 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       class_name: 'Vps',
       row_id: vps.id
     )
-    VpsAdmin::API::Events.emit_transaction_chain_state!(
-      chain,
-      previous_state: 'staged',
-      state: 'queued'
+    TransactionChainConcern.create!(
+      transaction_chain: chain,
+      class_name: 'User',
+      row_id: vps.user_id
     )
-    accepted = Event.find_by!(
-      event_type: 'transaction_chain.state_changed',
-      source_class: 'TransactionChain',
-      source_id: chain.id
-    )
-    expect(accepted).to have_attributes(user: vps.user, vps:)
-    expect(accepted.parameters['actor_user_id']).to eq(SpecSeed.admin.id)
+    VpsAdmin::API::Events::OperationLifecycle.emit_started!(chain)
 
     vps.delete
     chain.update!(state: :done)
@@ -355,54 +439,38 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     process_chain_event(supervisor, chain, previous_state: 'queued', state: 'done')
 
     terminal = Event.find_by!(
-      event_type: 'vps.operation_succeeded',
+      event_type: 'operation.succeeded',
       source_class: 'TransactionChain',
       source_id: chain.id
     )
     expect(terminal).to have_attributes(user: SpecSeed.user, vps: nil)
     expect(terminal.parameters).to include(
-      'operation' => 'destroy',
-      'vps_id' => vps.id
+      'operation' => 'vps.destroy',
+      'attempt' => 1,
+      'concern_object_ids' => [vps.id, SpecSeed.user.id]
     )
   end
 
-  it 'associates a transform operation with its destination VPS and retains all VPS IDs' do
-    source_vps = build_standalone_vps_fixture(user: SpecSeed.other_user).fetch(:vps)
-    destination_vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
+  it 'emits lifecycle events for non-VPS chains without a central map' do
     chain = create_chain!(
       state: :done,
-      name: 'os_to_os',
-      type: 'TransactionChains::Vps::Clone::OsToOs',
-      user: SpecSeed.admin
+      name: 'create',
+      type: 'TransactionChains::Dataset::Create'
     )
-    [source_vps, destination_vps].each do |vps|
-      TransactionChainConcern.create!(
-        transaction_chain: chain,
-        class_name: 'Vps',
-        row_id: vps.id
-      )
-    end
     supervisor = described_class.new(nil, SpecSeed.node)
 
     process_chain_event(supervisor, chain, previous_state: 'queued', state: 'done')
 
     event = Event.find_by!(
-      event_type: 'vps.operation_succeeded',
+      event_type: 'operation.succeeded',
       source_class: 'TransactionChain',
       source_id: chain.id
     )
-    expect(event).to have_attributes(
-      user: destination_vps.user,
-      vps: destination_vps
-    )
-    expect(event.payload).to include(
-      'operation' => 'clone',
-      'vps_id' => destination_vps.id,
-      'vps_ids' => [source_vps.id, destination_vps.id]
-    )
+    expect(event.user).to eq(chain.user)
+    expect(event.payload['operation']).to eq('dataset.create')
   end
 
-  it 'retains a failed create owner across a retry after its VPS was removed' do
+  it 'correlates failed and retried attempts with one operation ID' do
     provisional_vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
     chain = create_chain!(
       state: :queued,
@@ -420,6 +488,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       class_name: 'User',
       row_id: provisional_vps.user_id
     )
+    VpsAdmin::API::Events::OperationLifecycle.emit_started!(chain)
 
     provisional_vps.delete
     supervisor = described_class.new(nil, SpecSeed.node)
@@ -430,36 +499,64 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       state: 'failed',
       producer_event_id: '00000000-0000-4000-8000-000000000005'
     )
-    VpsAdmin::API::Events.emit_transaction_chain_state!(
+    process_chain_event(
+      supervisor,
       chain,
       previous_state: 'failed',
-      state: 'queued'
+      state: 'queued',
+      producer_event_id: '00000000-0000-4000-8000-000000000006'
     )
     process_chain_event(
       supervisor,
       chain,
-      previous_state: 'rollbacking',
-      state: 'failed',
-      producer_event_id: '00000000-0000-4000-8000-000000000006'
+      previous_state: 'queued',
+      state: 'done',
+      producer_event_id: '00000000-0000-4000-8000-000000000007'
     )
 
-    failures = Event.where(
-      event_type: 'vps.operation_failed',
+    lifecycle = Event.where(
+      event_type: VpsAdmin::API::Events::OperationLifecycle::EVENT_TYPES,
       source_class: 'TransactionChain',
       source_id: chain.id
     ).order(:id)
-    expect(failures.size).to eq(2)
-    expect(failures.map(&:user_id)).to eq(
-      [SpecSeed.user.id, SpecSeed.user.id]
-    )
-    expect(failures.map { |event| event.parameters['vps_id'] }).to eq(
-      [provisional_vps.id, provisional_vps.id]
-    )
-    expect(failures.map { |event| event.parameters['producer_event_id'] }).to eq(
+    expect(lifecycle.map(&:event_type)).to eq(
       %w[
-        00000000-0000-4000-8000-000000000005
-        00000000-0000-4000-8000-000000000006
+        operation.started
+        operation.failed
+        operation.started
+        operation.succeeded
       ]
+    )
+    expect(lifecycle.map { |event| event.parameters['operation_id'] }.uniq)
+      .to eq([chain.id])
+    expect(lifecycle.map { |event| event.parameters['attempt'] })
+      .to eq([1, 1, 2, 2])
+    expect(lifecycle.map(&:user_id).uniq).to eq([SpecSeed.user.id])
+  end
+
+  it 'emits a resolved event for the current failed attempt' do
+    chain = create_chain!(state: :resolved)
+    VpsAdmin::API::Events::OperationLifecycle.emit_started!(chain)
+    VpsAdmin::API::Events::OperationLifecycle.emit_failed!(chain, state: 'failed')
+    supervisor = described_class.new(nil, SpecSeed.node)
+
+    process_chain_event(
+      supervisor,
+      chain,
+      previous_state: 'failed',
+      state: 'resolved',
+      producer_event_id: '00000000-0000-4000-8000-000000000008'
+    )
+
+    event = Event.find_by!(
+      event_type: 'operation.resolved',
+      source_class: 'TransactionChain',
+      source_id: chain.id
+    )
+    expect(event.parameters).to include(
+      'operation_id' => chain.id,
+      'attempt' => 1,
+      'state' => 'resolved'
     )
   end
 
@@ -474,7 +571,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       chain,
       previous_state: 'queued',
       state: 'done',
-      producer_event_id: '00000000-0000-4000-8000-000000000007',
+      producer_event_id: '00000000-0000-4000-8000-000000000009',
       at: newer_time
     )
     process_chain_event(
@@ -482,7 +579,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       chain,
       previous_state: 'queued',
       state: 'rollbacking',
-      producer_event_id: '00000000-0000-4000-8000-000000000008',
+      producer_event_id: '00000000-0000-4000-8000-00000000000a',
       at: older_time
     )
 
@@ -492,52 +589,25 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       source_id: chain.id
     ).index_by { |event| event.parameters['producer_event_id'] }
     expect(transitions.keys).to contain_exactly(
-      '00000000-0000-4000-8000-000000000008',
-      '00000000-0000-4000-8000-000000000007'
+      '00000000-0000-4000-8000-00000000000a',
+      '00000000-0000-4000-8000-000000000009'
     )
     expect(
-      transitions.fetch('00000000-0000-4000-8000-000000000008').parameters
+      transitions.fetch('00000000-0000-4000-8000-00000000000a').parameters
     ).to include(
       'state' => 'rollbacking',
       'changed_at_timestamp' => older_time.to_f
     )
     expect(
-      transitions.fetch('00000000-0000-4000-8000-000000000007').parameters
+      transitions.fetch('00000000-0000-4000-8000-000000000009').parameters
     ).to include(
       'state' => 'done',
       'changed_at_timestamp' => newer_time.to_f
     )
   end
 
-  it 'classifies the shared lifetime wrapper when it concerns a VPS' do
-    vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
-    chain = create_chain!(
-      state: :done,
-      name: 'wrapper',
-      type: 'TransactionChains::Lifetimes::Wrapper'
-    )
-    TransactionChainConcern.create!(
-      transaction_chain: chain,
-      class_name: 'Vps',
-      row_id: vps.id
-    )
-    supervisor = described_class.new(nil, SpecSeed.node)
-
-    process_chain_event(supervisor, chain, previous_state: 'queued', state: 'done')
-
-    event = Event.find_by!(
-      event_type: 'vps.operation_succeeded',
-      source_class: 'TransactionChain',
-      source_id: chain.id
-    )
-    expect(event.parameters).to include(
-      'operation' => 'lifecycle_change',
-      'vps_id' => vps.id
-    )
-  end
-
   %w[failed fatal].each do |state|
-    it "persists a #{state} VPS create operation using its provisional concern ID" do
+    it "persists a #{state} operation using its provisional concern ID" do
       missing_vps_id = Vps.maximum(:id).to_i + 10_000
       chain = create_chain!(
         state: state,
@@ -554,7 +624,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       process_chain_event(supervisor, chain, previous_state: 'rollbacking', state:)
 
       event = Event.find_by!(
-        event_type: 'vps.operation_failed',
+        event_type: 'operation.failed',
         source_class: 'TransactionChain',
         source_id: chain.id
       )
@@ -564,68 +634,15 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
         severity: state == 'fatal' ? 'critical' : 'error'
       )
       expect(event.payload).to include(
-        'operation' => 'create',
+        'operation_id' => chain.id,
+        'attempt' => 1,
+        'operation' => 'vps.create',
         'state' => state,
         'successful' => false,
-        'vps_id' => missing_vps_id,
-        'vps_ids' => [missing_vps_id],
+        'concern_object_ids' => [missing_vps_id],
         'actor_user_id' => chain.user_id
       )
     end
-  end
-
-  %w[rollbacking resolved].each do |state|
-    it "does not emit a VPS operation for the #{state} state" do
-      chain = create_chain!(
-        state: state,
-        name: 'start',
-        type: 'TransactionChains::Vps::Start'
-      )
-      TransactionChainConcern.create!(
-        transaction_chain: chain,
-        class_name: 'Vps',
-        row_id: 123
-      )
-      supervisor = described_class.new(nil, SpecSeed.node)
-
-      expect do
-        process_chain_event(supervisor, chain, previous_state: 'queued', state:)
-      end.not_to change(Event.where(event_type: %w[
-                                      vps.operation_succeeded
-                                      vps.operation_failed
-                                    ]), :count)
-    end
-  end
-
-  it 'does not classify a non-VPS chain with a colliding persisted name' do
-    chain = create_chain!(
-      state: :done,
-      name: 'create',
-      type: 'TransactionChains::Dataset::Create'
-    )
-    TransactionChainConcern.create!(
-      transaction_chain: chain,
-      class_name: 'Vps',
-      row_id: 123
-    )
-    supervisor = described_class.new(nil, SpecSeed.node)
-
-    expect do
-      process_chain_event(supervisor, chain, previous_state: 'queued', state: 'done')
-    end.not_to change(Event.where(event_type: 'vps.operation_succeeded'), :count)
-  end
-
-  it 'does not invent a VPS identity for a mapped chain without a VPS concern' do
-    chain = create_chain!(
-      state: :done,
-      name: 'enable_network',
-      type: 'TransactionChains::Vps::EnableNetwork'
-    )
-    supervisor = described_class.new(nil, SpecSeed.node)
-
-    expect do
-      process_chain_event(supervisor, chain, previous_state: 'queued', state: 'done')
-    end.not_to change(Event.where(event_type: 'vps.operation_succeeded'), :count)
   end
 
   it 'aborts unsent notification deliveries when their transaction chain fails' do

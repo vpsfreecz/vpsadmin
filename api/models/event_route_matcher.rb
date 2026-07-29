@@ -37,6 +37,11 @@ class EventRouteMatcher < ApplicationRecord
       example: %w[account],
       choices: %w[account admin]
     },
+    'operation_id' => {
+      description: 'ID of the transaction-chain operation related to the event',
+      type: 'integer',
+      example: 123
+    },
     'subject_relation' => {
       description: 'Relationship between route owner and event subject',
       type: 'string',
