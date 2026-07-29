@@ -9,6 +9,14 @@ RSpec.describe TransactionChains::DnsResolver::Destroy do
 
   let(:user) { SpecSeed.user }
 
+  before do
+    create_spec_event_route!(
+      user: SpecSeed.admin,
+      event_type: 'dns_resolver.deleted',
+      subject_scope: :visible
+    )
+  end
+
   def create_vps_on(node:, resolver:)
     pool = create_pool!(node: node, role: :hypervisor)
     dataset, dip = create_dataset_with_pool!(
@@ -47,6 +55,7 @@ RSpec.describe TransactionChains::DnsResolver::Destroy do
     expect(tx_classes(chain)).to eq(
       [
         Transactions::Vps::DnsResolver,
+        Transactions::Utils::NoOp,
         Transactions::Utils::NoOp
       ]
     )
@@ -72,5 +81,6 @@ RSpec.describe TransactionChains::DnsResolver::Destroy do
 
     expect(chain).to be_nil
     expect(DnsResolver.where(id: resolver.id)).to be_empty
+    expect_resource_event!(:deleted, resolver)
   end
 end

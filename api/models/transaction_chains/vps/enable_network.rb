@@ -17,7 +17,7 @@ module TransactionChains
         t.edit(vps, enable_network: enable)
       end
 
-      route_event!(
+      defer_result_event!(
         enable ? 'vps.network_enabled' : 'vps.network_disabled',
         user: vps.user,
         vps:,

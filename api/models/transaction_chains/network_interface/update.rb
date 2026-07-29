@@ -15,6 +15,12 @@ module TransactionChains
 
       return netif unless netif.changed?
 
+      defer_resource_event!(
+        :updated,
+        netif,
+        changed_fields: netif.changed
+      )
+
       # Handle rename first, so that other transactions can use `netif.name`,
       # which contains the new name.
       if netif.changed.include?('name')

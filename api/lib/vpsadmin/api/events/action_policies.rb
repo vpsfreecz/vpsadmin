@@ -1,13 +1,21 @@
 module VpsAdmin::API::Events::ActionPolicies
   MUTATING_HTTP_METHODS = %i[delete patch post put].freeze
 
-  Policy = Data.define(:kind, :models, :reason, :atomic, :emit_on_failure) do
+  Policy = Data.define(
+    :kind,
+    :models,
+    :reason,
+    :atomic,
+    :emit_on_failure,
+    :resource_action
+  ) do
     def initialize(
       kind:,
       models:,
       reason:,
       atomic:,
-      emit_on_failure: false
+      emit_on_failure: false,
+      resource_action: nil
     )
       super
     end
@@ -15,11 +23,25 @@ module VpsAdmin::API::Events::ActionPolicies
     def records_resources?
       kind == :resource
     end
+
+    def records_transaction_chain_resources?
+      kind == :transaction_chain && (models == :all || models.any?)
+    end
   end
 
   class Recorder
     UNKNOWN_VALUE = Object.new.freeze
     NONEXISTENT_VALUE = Object.new.freeze
+    CONFIRM_ACTIONS = {
+      'create_type' => :created,
+      'just_create_type' => :created,
+      'edit_before_type' => :updated,
+      'edit_after_type' => :updated,
+      'destroy_type' => :deleted,
+      'just_destroy_type' => :deleted,
+      'decrement_type' => :updated,
+      'increment_type' => :updated
+    }.freeze
 
     FieldState = Data.define(:before_value, :observed_values)
     Entry = Data.define(
@@ -30,9 +52,14 @@ module VpsAdmin::API::Events::ActionPolicies
       :vps,
       :field_states
     )
+    Fact = Data.define(:action, :object, :owner, :vps, :changed_fields)
 
     def initialize(policy)
       @model_names = policy.models
+      @resource_action = policy.resource_action&.to_sym
+      @resource_action_model_names =
+        policy.models == :all ? :all : policy.models.dup.freeze
+      @transaction_chain = policy.records_transaction_chain_resources?
       @entries = {}
       @already_emitted = {}
       @pending_updates = {}
@@ -113,13 +140,15 @@ module VpsAdmin::API::Events::ActionPolicies
           next unless resolved
 
           action, changed_fields = resolved
+          action = resource_action_for(entry.object, action)
+          changed_fields = [] if action == :deleted
 
           key = [
             entry.object.class.base_class.name,
             entry.object.id,
             action.to_s
           ]
-          next if @already_emitted[key]
+          next if already_emitted?(key)
 
           VpsAdmin::API::Events::ResourceOperations.emit!(
             action,
@@ -132,7 +161,184 @@ module VpsAdmin::API::Events::ActionPolicies
       end
     end
 
+    def transaction_chain?
+      @transaction_chain
+    end
+
+    def pending?
+      @entries.any?
+    end
+
+    def defer_to!(chain)
+      facts = resolved_facts
+      merge_confirmation_facts!(facts, chain)
+
+      without_capture do
+        facts.each_value do |fact|
+          action = resource_action_for(fact.object, fact.action)
+          changed_fields = action == :deleted ? [] : fact.changed_fields
+          key = resource_event_key(fact.object, action)
+          next if already_emitted?(key)
+
+          remove_deferred_resource_events!(
+            chain,
+            fact.object,
+            action: resource_action_for(fact.object, nil) ? nil : action
+          )
+          chain.defer_resource_event!(
+            action,
+            fact.object,
+            owner: fact.owner,
+            vps: fact.vps,
+            changed_fields:
+          )
+        end
+      end
+    end
+
+    def consume!
+      @entries.clear
+      @pending_updates.clear
+    end
+
     protected
+
+    def resolved_facts
+      @entries.each_value.with_object({}) do |entry, ret|
+        resolved = resolve(entry)
+        next unless resolved
+
+        action, changed_fields = resolved
+        key = resource_key(entry.object)
+        ret[key] = merge_fact(
+          ret[key],
+          Fact.new(
+            action:,
+            object: entry.object,
+            owner: entry.owner,
+            vps: entry.vps,
+            changed_fields:
+          )
+        )
+      end
+    end
+
+    def merge_confirmation_facts!(facts, chain)
+      chain.transactions.includes(:transaction_confirmations).find_each do |transaction|
+        transaction.transaction_confirmations.each do |confirmation|
+          action = CONFIRM_ACTIONS[confirmation.confirm_type]
+          next unless action
+
+          object = confirmation_object(confirmation)
+          next unless object && records_model?(object)
+
+          operations = VpsAdmin::API::Events::ResourceOperations
+          vps = operations.related_vps(object)
+          key = resource_key(object)
+          facts[key] = merge_fact(
+            facts[key],
+            Fact.new(
+              action:,
+              object:,
+              owner: operations.resource_owner(object, vps:),
+              vps:,
+              changed_fields: confirmation_changed_fields(confirmation)
+            )
+          )
+        end
+      end
+    end
+
+    def merge_fact(old, new)
+      return new unless old
+
+      action =
+        if old.action == :created || new.action == :created
+          :created
+        elsif old.action == :deleted || new.action == :deleted
+          :deleted
+        else
+          :updated
+        end
+
+      Fact.new(
+        action:,
+        object: new.object,
+        owner: old.owner || new.owner,
+        vps: old.vps || new.vps,
+        changed_fields: (old.changed_fields + new.changed_fields).uniq.sort
+      )
+    end
+
+    def confirmation_object(confirmation)
+      klass = confirmation.class_name.safe_constantize
+      return unless klass && klass < ::ApplicationRecord
+      return unless records_model_class?(klass)
+
+      klass.unscoped.find_by(confirmation.row_pks)
+    end
+
+    def confirmation_changed_fields(confirmation)
+      changes = confirmation.attr_changes
+
+      if changes.is_a?(Hash)
+        changes.keys.map(&:to_s)
+      elsif changes
+        [changes.to_s]
+      else
+        []
+      end
+    end
+
+    def resource_key(object)
+      [object.class.base_class.name, object.id]
+    end
+
+    def resource_event_key(object, action)
+      [object.class.base_class.name, object.id, action.to_s]
+    end
+
+    def already_emitted?(key)
+      event_id = @already_emitted[key]
+      return false unless event_id
+
+      resource_type, resource_id, action = key
+      return true if ::Event.where(
+        id: event_id,
+        event_type: "resource.#{action}",
+        source_class: resource_type,
+        source_id: resource_id
+      ).exists?
+
+      @already_emitted.delete(key)
+      false
+    end
+
+    def resource_action_for(object, fallback)
+      return fallback unless @resource_action
+
+      model_name = object.class.base_class.name
+      if @resource_action_model_names == :all ||
+         @resource_action_model_names.include?(model_name)
+        @resource_action
+      else
+        fallback
+      end
+    end
+
+    def remove_deferred_resource_events!(chain, object, action:)
+      descriptors = chain.deferred_result_events
+      return unless descriptors
+
+      resource_type, resource_id = resource_key(object)
+      descriptors.reject! do |descriptor|
+        next false unless descriptor['source_class'] == resource_type &&
+                          descriptor['source_id'] == resource_id
+        next false unless descriptor['event_type'].start_with?('resource.')
+
+        action.nil? || descriptor['event_type'] == "resource.#{action}"
+      end
+    end
 
     def merge(old, action, object, owner, vps, observed_fields)
       initially_persisted = old ? old.initially_persisted : action != :created
@@ -266,7 +472,11 @@ module VpsAdmin::API::Events::ActionPolicies
     end
 
     def records_model?(object)
-      model_name = object.class.base_class.name
+      records_model_class?(object.class)
+    end
+
+    def records_model_class?(model)
+      model_name = model.base_class.name
       @model_names == :all || @model_names.include?(model_name)
     end
 
@@ -296,7 +506,7 @@ module VpsAdmin::API::Events::ActionPolicies
       return unless event.event_type.start_with?('resource.')
 
       action = event.event_type.delete_prefix('resource.')
-      @already_emitted[[event.source_class, event.source_id, action]] = true
+      @already_emitted[[event.source_class, event.source_id, action]] = event.id
     end
 
     def without_capture(&)
@@ -306,7 +516,18 @@ module VpsAdmin::API::Events::ActionPolicies
 
   module ActionExecution
     def safe_exec
-      policy = VpsAdmin::API::Events::ActionPolicies.for(self.class)
+      policies = VpsAdmin::API::Events::ActionPolicies
+      policy = policies.for(self.class)
+
+      if policy&.records_transaction_chain_resources?
+        recorder = VpsAdmin::API::Events::ActionPolicies::Recorder.new(policy)
+        response = policies.with_recorder(recorder) { super }
+
+        recorder.emit! if recorder.pending?
+
+        return response
+      end
+
       return super unless policy&.records_resources?
 
       recorder = VpsAdmin::API::Events::ActionPolicies::Recorder.new(policy)
@@ -476,11 +697,13 @@ module VpsAdmin::API::Events::ActionPolicies
     return Policy.new(kind: :read, models: [], reason: nil, atomic: false) unless MUTATING_HTTP_METHODS.include?(method)
 
     if action.blocking
+      model_name = action.model&.base_class&.name
       return Policy.new(
         kind: :transaction_chain,
-        models: [],
+        models: model_name ? [model_name] : [],
         reason: 'covered by transaction-chain operation lifecycle events',
-        atomic: false
+        atomic: false,
+        resource_action: default_resource_action(action)
       )
     end
 
@@ -553,6 +776,14 @@ module VpsAdmin::API::Events::ActionPolicies
     objects = collect_delete_cascades(object, {})
     recorder.allow_models(objects.map { |record| record.class.base_class.name })
     record_many(:deleted, objects)
+  end
+
+  def defer_transaction_chain_resources!(chain)
+    recorder = current_recorder
+    return unless recorder&.transaction_chain?
+
+    recorder.defer_to!(chain)
+    ActiveRecord.after_all_transactions_commit { recorder.consume! }
   end
 
   def collect_delete_cascades(object, visited)

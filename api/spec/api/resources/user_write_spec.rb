@@ -776,7 +776,6 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       basic_authorize(target.login, SpecSeed::PASSWORD)
       json_get current_path
 
-      pending('Soft-deleted users can still authenticate until the state change chain runs')
       expect(last_response.status).to be_in([401, 403])
     ensure
       clear_login

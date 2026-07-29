@@ -24,19 +24,17 @@ RSpec.describe TransactionChains::User::Resume do
     classes = tx_classes(chain)
 
     expect(classes).to include(
-      Transactions::EventDelivery::Notify,
       Transactions::Vps::Start,
       Transactions::DnsServerZone::Update,
       Transactions::DnsServerZone::CreateRecords
     )
-    release_idx = classes.index(Transactions::EventDelivery::Notify)
-    expect(classes.rindex(Transactions::Vps::Start)).to be < release_idx
-    expect(classes.rindex(Transactions::DnsServerZone::Update)).to be < release_idx
-    expect(classes.rindex(Transactions::DnsServerZone::CreateRecords)).to be < release_idx
+    expect_deferred_event!(chain, 'user.resumed')
+    complete_chain_operation!(chain)
+
     expect(MailLog.joins(:notification_template).exists?(notification_templates: { name: 'user_resume' })).to be(true)
-    event = expect_routed_event!('user.resumed', user: fixture.fetch(:user))
+    event = expect_completed_event!('user.resumed', user: fixture.fetch(:user))
     expect(event.source_class).to eq('ObjectState')
-    expect(event.parameters).to include('state' => 'active')
+    expect(event.parameters).to include('operation_id' => chain.id, 'state' => 'active')
     expect(confirmations_for(chain).any? do |row|
       row.class_name == 'DnsRecord' &&
         row.row_pks == { 'id' => fixture.fetch(:user_record).id } &&

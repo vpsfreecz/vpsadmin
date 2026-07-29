@@ -1182,6 +1182,8 @@ cs:
             label: Stabilní ID operace transakčního řetězce
           operation_label:
             label: Uživatelsky čitelný název operace
+          operation_result_index:
+            label: Pořadí výsledné události operace
           original_refquota:
             label: Refquota datasetu před automatickou expanzí nebo shrinkem, v bajtech
           original_vps_hostname:
@@ -3231,6 +3233,8 @@ cs:
             description: Den v týdnu, kdy má maintenance window skončit
           maintenance_window:
             description: Zda migraci omezuje maintenance window
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
           reason:
             description: Důvod migrace zadaný operátorem
           restart_vps:
@@ -3270,6 +3274,11 @@ cs:
             description: Den v týdnu, kdy má maintenance window skončit
           maintenance_window:
             description: Zda migraci omezuje maintenance window
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pořadí této události ve výsledcích operace, číslované od
+              nuly
           reason:
             description: Důvod migrace zadaný operátorem
           restart_vps:
@@ -3933,6 +3942,11 @@ cs:
             description: Název připraveného archivu ke stažení
           format:
             description: Formát připraveného stažení
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pořadí této události ve výsledcích operace, číslované od
+              nuly
           snapshot_id:
             description: ID zdrojového snapshotu
           snapshot_name:
@@ -4001,6 +4015,11 @@ cs:
             description: Login vytvořeného uživatelského účtu
           object_state:
             description: Počáteční životní stav účtu
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pořadí této události ve výsledcích operace, číslované od
+              nuly
         user_failed_logins:
           attempt_count:
             description: Celkový počet neúspěšných přihlášení v přehledu
@@ -4047,6 +4066,11 @@ cs:
         user_resumed:
           expiration_date:
             description: Datum vypršení stavu životního cyklu
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pořadí této události ve výsledcích operace, číslované od
+              nuly
           reason:
             description: Důvod změny stavu životního cyklu zadaný operátorem
           state:
@@ -4054,6 +4078,11 @@ cs:
         user_revived:
           expiration_date:
             description: Datum vypršení stavu životního cyklu
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pořadí této události ve výsledcích operace, číslované od
+              nuly
           reason:
             description: Důvod změny stavu životního cyklu zadaný operátorem
           state:
@@ -4061,6 +4090,11 @@ cs:
         user_soft_deleted:
           expiration_date:
             description: Datum vypršení stavu životního cyklu
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pořadí této události ve výsledcích operace, číslované od
+              nuly
           reason:
             description: Důvod změny stavu životního cyklu zadaný operátorem
           state:
@@ -4068,6 +4102,11 @@ cs:
         user_suspended:
           expiration_date:
             description: Datum vypršení stavu životního cyklu
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pořadí této události ve výsledcích operace, číslované od
+              nuly
           reason:
             description: Důvod změny stavu životního cyklu zadaný operátorem
           state:
@@ -4143,6 +4182,11 @@ cs:
             description: ID záznamu expanze datasetu
           max_over_refquota_seconds:
             description: Maximální povolený čas nad kvótou před akcí, v sekundách
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pořadí této události ve výsledcích operace, číslované od
+              nuly
           original_refquota:
             description: Refquota datasetu před automatickou expanzí nebo shrinkem,
               v bajtech
@@ -4171,6 +4215,11 @@ cs:
             description: ID záznamu expanze datasetu
           max_over_refquota_seconds:
             description: Maximální povolený čas nad kvótou před akcí, v sekundách
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pořadí této události ve výsledcích operace, číslované od
+              nuly
           original_refquota:
             description: Refquota datasetu před automatickou expanzí nebo shrinkem,
               v bajtech
@@ -4193,6 +4242,11 @@ cs:
             description: ID předchozího DNS resolveru
           old_dns_resolver_label:
             description: Popisek předchozího DNS resolveru
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pořadí této události ve výsledcích operace, číslované od
+              nuly
           vps_hostname:
             description: Hostname VPS, jehož resolver se změnil
           vps_id:
@@ -4322,6 +4376,8 @@ cs:
             description: Zda migraci omezuje maintenance window
           migration_id:
             description: ID záznamu migrace VPS
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
           reason:
             description: Důvod migrace zadaný operátorem
           src_node_domain_name:
@@ -4347,6 +4403,11 @@ cs:
             description: Zda migraci omezuje maintenance window
           migration_id:
             description: ID záznamu migrace VPS
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pořadí této události ve výsledcích operace, číslované od
+              nuly
           reason:
             description: Důvod migrace zadaný operátorem
           src_node_domain_name:
@@ -4372,6 +4433,8 @@ cs:
             description: Zda migraci omezuje maintenance window
           migration_id:
             description: ID záznamu migrace VPS
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
           reason:
             description: Důvod migrace zadaný operátorem
           src_node_domain_name:
@@ -4383,6 +4446,11 @@ cs:
           vps_id:
             description: ID migrovaného VPS
         vps_network_disabled:
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pořadí této události ve výsledcích operace, číslované od
+              nuly
           reason:
             description: Důvod změny stavu sítě zadaný operátorem
           vps_hostname:
@@ -4390,6 +4458,11 @@ cs:
           vps_id:
             description: ID VPS, jehož stav sítě se změnil
         vps_network_enabled:
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pořadí této události ve výsledcích operace, číslované od
+              nuly
           reason:
             description: Důvod změny stavu sítě zadaný operátorem
           vps_hostname:
@@ -4429,6 +4502,11 @@ cs:
             description: Hostname nově vytvořeného náhradního VPS
           new_vps_id:
             description: ID nově vytvořeného náhradního VPS
+          operation_id:
+            description: Stabilní ID operace transakčního řetězce
+          operation_result_index:
+            description: Pořadí této události ve výsledcích operace, číslované od
+              nuly
           original_vps_hostname:
             description: Hostname původního nahrazovaného VPS
           original_vps_id:
@@ -4450,6 +4528,11 @@ cs:
             description: CPU limit přiřazený VPS po změně
           memory:
             description: Limit paměti přiřazený VPS po změně, v MiB
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pořadí této události ve výsledcích operace, číslované od
+              nuly
           reason:
             description: Důvod změny prostředků zadaný operátorem
           swap:
@@ -4465,6 +4548,11 @@ cs:
             description: Jméno uživatele, který změnil životní stav VPS
           expiration_date:
             description: Datum vypršení stavu životního cyklu
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pořadí této události ve výsledcích operace, číslované od
+              nuly
           reason:
             description: Důvod změny stavu životního cyklu zadaný operátorem
           state:
@@ -4556,6 +4644,11 @@ cs:
             description: ID záznamu expanze datasetu
           max_over_refquota_seconds:
             description: Maximální povolený čas nad kvótou před akcí, v sekundách
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pořadí této události ve výsledcích operace, číslované od
+              nuly
           original_refquota:
             description: Refquota datasetu před automatickou expanzí nebo shrinkem,
               v bajtech
@@ -4572,6 +4665,11 @@ cs:
             description: Jméno uživatele, který změnil životní stav VPS
           expiration_date:
             description: Datum vypršení stavu životního cyklu
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pořadí této události ve výsledcích operace, číslované od
+              nuly
           reason:
             description: Důvod změny stavu životního cyklu zadaný operátorem
           state:

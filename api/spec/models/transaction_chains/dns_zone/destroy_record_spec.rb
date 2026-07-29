@@ -44,10 +44,18 @@ RSpec.describe TransactionChains::DnsZone::DestroyRecord do
       [
         Transactions::DnsServerZone::DeleteRecords,
         Transactions::DnsServer::Reload,
+        Transactions::Utils::NoOp,
         Transactions::Utils::NoOp
       ]
     )
     expect(record.reload.confirmed).to eq(:confirm_destroy)
+    expect(deferred_result_events(chain)).to contain_exactly(
+      include(
+        'event_type' => 'resource.deleted',
+        'source_class' => 'DnsRecord',
+        'source_id' => record.id
+      )
+    )
   end
 
   it 'confirms record destruction, log creation, and token removal' do

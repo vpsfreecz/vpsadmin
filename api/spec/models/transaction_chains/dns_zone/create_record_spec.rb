@@ -9,6 +9,10 @@ RSpec.describe TransactionChains::DnsZone::CreateRecord do
 
   let(:user) { SpecSeed.user }
 
+  before do
+    create_spec_event_route!(user:, event_type: 'dns_record.created')
+  end
+
   def create_record_fixture(primary_count: 2)
     zone = create_dns_zone!(
       user: user,
@@ -52,6 +56,7 @@ RSpec.describe TransactionChains::DnsZone::CreateRecord do
         Transactions::DnsServer::Reload,
         Transactions::DnsServerZone::CreateRecords,
         Transactions::DnsServer::Reload,
+        Transactions::Utils::NoOp,
         Transactions::Utils::NoOp
       ]
     )
@@ -80,6 +85,7 @@ RSpec.describe TransactionChains::DnsZone::CreateRecord do
 
     expect(chain).to be_nil
     expect(created.reload.confirmed).to eq(:confirmed)
+    expect_resource_event!(:created, created)
   end
 
   it 'confirms record logs and update tokens with the runtime change' do

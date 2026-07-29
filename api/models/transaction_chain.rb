@@ -6,6 +6,8 @@ require 'vpsadmin/api/hash_options'
 # All transaction must be in a chain. Transaction without a chain does not
 # have a meaning.
 class TransactionChain < ApplicationRecord
+  INFER_RESOURCE_EVENT_RELATION = Object.new.freeze
+
   CONCERN_CLASS_LABELS = {
     'Branch' => 'Dataset branch',
     'ChangeRequest' => 'Request',
@@ -97,6 +99,9 @@ class TransactionChain < ApplicationRecord
       # a lock. It will cause the transaction to be rolled back
       # and the exception will be propagated.
       ret = chain.link_chain(*args, **kwargs)
+      VpsAdmin::API::Events::ActionPolicies.defer_transaction_chain_resources!(
+        chain
+      )
 
       if chain.empty?
         raise 'empty' unless chain.class.allow_empty?
@@ -489,6 +494,59 @@ class TransactionChain < ApplicationRecord
       ip_addr:,
       vps_ids: vpses&.map { |item| record_id(item) }
     }.compact.deep_stringify_keys
+  end
+
+  def defer_resource_event!(action, object, changed_fields: [],
+                            owner: INFER_RESOURCE_EVENT_RELATION,
+                            vps: INFER_RESOURCE_EVENT_RELATION)
+    operations = VpsAdmin::API::Events::ResourceOperations
+    action = action.to_s
+    unless operations::ACTIONS.include?(action)
+      raise ArgumentError, "unsupported resource event action #{action.inspect}"
+    end
+
+    related_vps = if vps.equal?(INFER_RESOURCE_EVENT_RELATION)
+                    operations.related_vps(object)
+                  else
+                    vps
+                  end
+    resource_owner = if owner.equal?(INFER_RESOURCE_EVENT_RELATION)
+                       operations.resource_owner(object, vps: related_vps)
+                     else
+                       owner
+                     end
+    actor = ::User.current
+    session = ::UserSession.current
+    resource_type = object.class.base_class.name
+    resource_id = object.id
+    fields = Array(changed_fields).map(&:to_s).uniq -
+             operations::IGNORED_CHANGED_FIELDS
+
+    defer_result_event!(
+      "resource.#{action}",
+      user: resource_owner,
+      vps: related_vps,
+      source_class: resource_type,
+      source_id: resource_id,
+      subject: "#{resource_type} ##{resource_id} #{action}",
+      summary: operations.resource_summary(
+        action,
+        resource_type,
+        resource_id,
+        actor:
+      ),
+      payload: {
+        resource_type:,
+        resource_id:,
+        action:,
+        actor_user_id: actor&.id,
+        actor_user_login: actor&.login,
+        admin_user_id: session&.admin_id,
+        user_session_id: session&.id,
+        changed_fields: fields.sort
+      }.compact,
+      ip_addr: session&.client_ip_addr || session&.api_ip_addr
+    )
   end
 
   def append_deferred_result_events!

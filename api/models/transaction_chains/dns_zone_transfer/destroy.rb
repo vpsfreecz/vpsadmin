@@ -12,6 +12,7 @@ module TransactionChains
 
       dns_zone = zone_transfer.dns_zone
       lock(dns_zone)
+      defer_resource_event!(:deleted, zone_transfer)
 
       dns_zone.dns_server_zones.each do |dns_server_zone|
         if dns_zone.internal_source? && dns_server_zone.primary_type?
