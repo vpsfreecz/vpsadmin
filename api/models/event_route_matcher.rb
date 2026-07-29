@@ -2,39 +2,32 @@ class EventRouteMatcher < ApplicationRecord
   COMMON_FIELDS = {
     'event_type' => {
       description: 'Unique event type name',
-      type: 'string',
-      example: 'vps.oom_report'
+      type: 'string'
     },
     'default_routed' => {
       description: 'Whether the event is delivered by the default route',
-      type: 'boolean',
-      example: true
+      type: 'boolean'
     },
     'category' => {
       description: 'Event category used for grouping',
-      type: 'string',
-      example: 'vps'
+      type: 'string'
     },
     'severity' => {
       description: 'Event severity',
       type: 'string',
-      example: 'warning',
       choices: -> { ::Event.severity_labels.keys }
     },
     'subject' => {
       description: 'Short event subject',
-      type: 'string',
-      example: 'OOM report for VPS #123'
+      type: 'string'
     },
     'summary' => {
       description: 'Longer event summary',
-      type: 'string',
-      example: 'vpsAdmin recorded 3 out-of-memory events'
+      type: 'string'
     },
     'roles' => {
       description: 'Notification roles declared by the event type',
       type: 'string_list',
-      example: %w[account],
       choices: %w[account admin]
     },
     'operation_id' => {
@@ -105,13 +98,23 @@ class EventRouteMatcher < ApplicationRecord
   end
 
   def self.field_metadata(event_type: nil)
+    exact_type =
+      if event_type.present? && event_type != '__any__'
+        VpsAdmin::API::Events.type_for(event_type)
+      end
+
     fields = COMMON_FIELDS.map do |name, config|
-      field_metadata_hash(name, config)
+      field_metadata_hash(
+        name,
+        exact_type ? exact_type_common_field_config(name, config, exact_type) : config
+      )
     end
 
     event_types =
-      if event_type.present? && event_type != '__any__'
-        [VpsAdmin::API::Events.type_for(event_type)].compact
+      if exact_type
+        [exact_type]
+      elsif event_type.present? && event_type != '__any__'
+        []
       else
         VpsAdmin::API::Events.types
       end
@@ -135,11 +138,11 @@ class EventRouteMatcher < ApplicationRecord
       name:,
       description: config.fetch(:description),
       type:,
-      example: config.fetch(:example),
       operators: VpsAdmin::API::Events::FIELD_TYPE_OPERATORS.fetch(type),
       common: true,
       groupable: !%w[string_list integer_list].include?(type)
     }.tap do |ret|
+      ret[:example] = config[:example] if config.has_key?(:example)
       ret[:choices] = choices if choices
     end
   end
@@ -256,6 +259,42 @@ class EventRouteMatcher < ApplicationRecord
 
   class << self
     protected
+
+    def exact_type_common_field_config(name, config, event_type)
+      return config unless %w[
+        event_type
+        default_routed
+        category
+        severity
+        subject
+        summary
+        roles
+      ].include?(name)
+
+      example =
+        case name
+        when 'event_type'
+          event_type.name
+        when 'default_routed'
+          event_type.default_routed
+        when 'category'
+          event_type.category
+        when 'severity'
+          event_type.severity
+        when 'subject'
+          return config unless event_type.examples&.has_key?(:subject)
+
+          event_type.examples.fetch(:subject)
+        when 'summary'
+          return config unless event_type.examples&.has_key?(:summary)
+
+          event_type.examples.fetch(:summary)
+        when 'roles'
+          event_type.roles
+        end
+
+      config.merge(example:)
+    end
 
     def event_payload_value(event, field)
       field = field.to_s

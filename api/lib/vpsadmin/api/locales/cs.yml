@@ -4204,8 +4204,6 @@ cs:
         vps_console_opened:
           actor_user_id:
             description: ID uživatele, jehož token konzole ověřil klienta
-          close_reason:
-            description: Důvod zavření klienta konzole
           console_client_id:
             description: Dočasný identifikátor propojující otevření a zavření konzole
           node_id:

@@ -3,14 +3,7 @@ require_relative 'base'
 module VpsAdmin::Supervisor
   class Node::ConsoleEvents < Node::Base
     ACTIONS = %w[opened closed].freeze
-    CLOSE_REASONS = %w[
-      client_closed
-      console_ended
-      node_restart
-      node_shutdown
-      router_timeout
-      session_timeout
-    ].freeze
+    CLOSE_REASONS = VpsAdmin::API::Events::VpsConsole::CLOSE_REASONS
     EVENT_TYPES = ACTIONS.map { |action| "vps.console_#{action}" }.freeze
     PRODUCER_EVENT_ID_PATTERN = /\A[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\z/
 

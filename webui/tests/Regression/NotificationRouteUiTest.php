@@ -511,6 +511,22 @@ final class NotificationRouteUiTest extends TestCase
         self::assertSame(['contains', 'not_contains'], $jsonFields['cgroups']['operators']);
     }
 
+    public function testEventTypeFieldExamplesRenderFalseListsAndMissingValues(): void
+    {
+        require_once dirname(__DIR__, 2) . '/lib/functions.lib.php';
+        require_once dirname(__DIR__, 2) . '/forms/notifications.forms.php';
+
+        self::assertSame(
+            '<code>false</code>',
+            notifications_field_example_html(['example' => false])
+        );
+        self::assertSame(
+            '<code>[&quot;account&quot;,&quot;admin&quot;]</code>',
+            notifications_field_example_html(['example' => ['account', 'admin']])
+        );
+        self::assertSame('-', notifications_field_example_html([]));
+    }
+
     public function testEventTypesPageUsesSectionLayout(): void
     {
         $source = $this->notificationsFormsSource();
