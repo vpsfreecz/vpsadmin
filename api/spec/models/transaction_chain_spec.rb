@@ -48,7 +48,7 @@ module SpecChains
 
     def link_chain
       defer_result_event!(
-        'resource.updated',
+        'os_family.updated',
         user: ::User.current,
         source: ::User.current,
         subject: 'Allowed empty result fact',
@@ -80,7 +80,7 @@ module SpecChains
       concerns(:affect, ['Vps', 987_654])
       append_t(SpecTransactions::ChainTx, args: [node], kwargs: { tag: 'never queued' })
       defer_result_event!(
-        'resource.updated',
+        'os_family.updated',
         user: ::User.current,
         source: ::User.current,
         subject: 'Rolled back result fact',
@@ -166,7 +166,7 @@ module SpecChains
   class ImmediateEvent < ::TransactionChain
     def link_chain(node)
       event = prepare_event!(
-        'resource.updated',
+        'os_family.updated',
         user: ::User.current,
         source: ::User.current,
         subject: 'Immediate chain fact',
@@ -446,7 +446,7 @@ RSpec.describe TransactionChain do
       SpecChains::ResourceMutation.fire(node, resource, :create)
     end
 
-    expect_deferred_event!(chain, 'resource.created')
+    expect_deferred_event!(chain, 'os_family.created')
     complete_chain_operation!(chain)
     event = expect_resource_event!(:created, resource, operation: chain)
     succeeded = Event.where(
@@ -470,7 +470,7 @@ RSpec.describe TransactionChain do
     fail_chain_operation!(chain)
     expect(
       Event.where(
-        event_type: 'resource.created',
+        event_type: 'os_family.created',
         source_class: 'OsFamily',
         source_id: resource.id
       )
@@ -507,7 +507,7 @@ RSpec.describe TransactionChain do
     expect(OsFamily.where(id: resource.id)).to be_empty
     expect(
       Event.where(
-        event_type: 'resource.created',
+        event_type: 'os_family.created',
         source_class: 'OsFamily',
         source_id: resource.id
       )
@@ -544,7 +544,7 @@ RSpec.describe TransactionChain do
     expect(OsFamily.where(id: resource.id)).to be_empty
     expect(
       Event.where(
-        event_type: 'resource.created',
+        event_type: 'os_family.created',
         source_class: 'OsFamily',
         source_id: resource.id
       )
@@ -581,7 +581,7 @@ RSpec.describe TransactionChain do
     expect(OsFamily.where(id: resource.id)).to be_empty
     expect(
       Event.where(
-        event_type: 'resource.created',
+        event_type: 'os_family.created',
         source_class: 'OsFamily',
         source_id: resource.id
       )
@@ -598,10 +598,20 @@ RSpec.describe TransactionChain do
       SpecChains::ResourceMutation.fire(node, resource, :update)
     end
 
-    expect_deferred_event!(chain, 'resource.updated')
+    expect_deferred_event!(chain, 'os_family.updated')
     complete_chain_operation!(chain)
     event = expect_resource_event!(:updated, resource, operation: chain)
     expect(event.parameters['changed_fields']).to eq(['description'])
+    expect(event.parameters.dig('changes', 'description')).to eq(
+      'old' => {
+        'kind' => 'value',
+        'value' => 'before'
+      },
+      'new' => {
+        'kind' => 'value',
+        'value' => 'updated in transaction chain'
+      }
+    )
   end
 
   it 'carries a target mutation made before fire into the root chain' do
@@ -615,7 +625,7 @@ RSpec.describe TransactionChain do
       SpecChains::Linear.fire(node)
     end
 
-    expect_deferred_event!(chain, 'resource.updated')
+    expect_deferred_event!(chain, 'os_family.updated')
     complete_chain_operation!(chain)
     event = expect_resource_event!(:updated, resource, operation: chain)
     expect(event.parameters['changed_fields']).to eq(['description'])
@@ -631,12 +641,12 @@ RSpec.describe TransactionChain do
       SpecChains::ResourceMutation.fire(node, resource, :logical_delete)
     end
 
-    expect_deferred_event!(chain, 'resource.deleted')
+    expect_deferred_event!(chain, 'os_family.deleted')
     complete_chain_operation!(chain)
     expect_resource_event!(:deleted, resource, operation: chain)
     expect(
       Event.where(
-        event_type: 'resource.updated',
+        event_type: 'os_family.updated',
         source_class: 'OsFamily',
         source_id: resource.id
       )
@@ -653,7 +663,7 @@ RSpec.describe TransactionChain do
       SpecChains::ResourceMutation.fire(node, resource, :confirmed_delete)
     end
 
-    expect_deferred_event!(chain, 'resource.deleted')
+    expect_deferred_event!(chain, 'os_family.deleted')
     complete_chain_operation!(chain)
     expect_resource_event!(:deleted, resource, operation: chain)
   end
@@ -684,7 +694,7 @@ RSpec.describe TransactionChain do
     expect_resource_event!(:deleted, vps)
     expect(
       Event.where(
-        event_type: 'resource.updated',
+        event_type: 'vps.updated',
         source_class: 'Vps',
         source_id: vps.id
       )

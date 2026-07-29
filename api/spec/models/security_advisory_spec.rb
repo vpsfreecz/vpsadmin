@@ -204,7 +204,7 @@ RSpec.describe SecurityAdvisory do
     )
     events = Event
              .where(
-               event_type: 'security_advisory.updated',
+               event_type: 'security_advisory.update_published',
                source_class: update.class.name,
                source_id: update.id
              )
@@ -267,7 +267,7 @@ RSpec.describe SecurityAdvisory do
       send_mail: false
     )
     event = VpsAdmin::API::Events.emit!(
-      'security_advisory.updated',
+      'security_advisory.update_published',
       user: SpecSeed.user,
       payload: {
         advisory_id: advisory.id,

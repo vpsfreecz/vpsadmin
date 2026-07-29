@@ -92,6 +92,8 @@ module VpsAdmin::API::Resources
       def exec
         changed_fields = input.keys
         secret = input.delete(:client_secret)
+        changed_fields.delete(:client_secret)
+        changed_fields << :client_secret_hash
         client = nil
 
         self.class.model.transaction do
@@ -125,6 +127,8 @@ module VpsAdmin::API::Resources
       def exec
         changed_fields = input.keys
         secret = input.delete(:client_secret)
+        changed_fields.delete(:client_secret)
+        changed_fields << :client_secret_hash if secret
 
         client = self.class.model.find(path_params['oauth2_client_id'])
         self.class.model.transaction do

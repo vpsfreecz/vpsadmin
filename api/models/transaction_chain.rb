@@ -496,7 +496,7 @@ class TransactionChain < ApplicationRecord
     }.compact.deep_stringify_keys
   end
 
-  def defer_resource_event!(action, object, changed_fields: [],
+  def defer_resource_event!(action, object, changed_fields: [], changes: nil,
                             owner: INFER_RESOURCE_EVENT_RELATION,
                             vps: INFER_RESOURCE_EVENT_RELATION)
     operations = VpsAdmin::API::Events::ResourceOperations
@@ -518,33 +518,33 @@ class TransactionChain < ApplicationRecord
     actor = ::User.current
     session = ::UserSession.current
     resource_type = object.class.base_class.name
-    resource_id = object.id
+    resource_name = operations.resource_name_for(object)
+    resource_id = operations.resource_id_for(object)
+    resource_id_label = operations.resource_id_label(resource_id)
     fields = Array(changed_fields).map(&:to_s).uniq -
              operations::IGNORED_CHANGED_FIELDS
 
     defer_result_event!(
-      "resource.#{action}",
+      operations.ensure_event_type!(object.class.base_class, action),
       user: resource_owner,
       vps: related_vps,
       source_class: resource_type,
-      source_id: resource_id,
-      subject: "#{resource_type} ##{resource_id} #{action}",
+      source_id: operations.source_id_for(object),
+      subject: "#{resource_name.humanize} ##{resource_id_label} #{action}",
       summary: operations.resource_summary(
         action,
-        resource_type,
-        resource_id,
+        resource_name,
+        resource_id_label,
         actor:
       ),
-      payload: {
-        resource_type:,
-        resource_id:,
-        action:,
-        actor_user_id: actor&.id,
-        actor_user_login: actor&.login,
-        admin_user_id: session&.admin_id,
-        user_session_id: session&.id,
-        changed_fields: fields.sort
-      }.compact,
+      payload: operations.payload_for(
+        action,
+        object,
+        changed_fields: fields,
+        changes:,
+        actor:,
+        session:
+      ),
       ip_addr: session&.client_ip_addr || session&.api_ip_addr
     )
   end

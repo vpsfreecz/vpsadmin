@@ -287,7 +287,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Mailbox' do
       expect(record.password).to eq(payload[:password])
 
       event = Event.where(
-        event_type: 'resource.created',
+        event_type: 'mailbox.created',
         source_class: 'Mailbox',
         source_id: record.id
       ).sole
@@ -422,7 +422,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Mailbox' do
       expect(mailbox_a.enable_ssl).to be(false)
       expect(
         Event.where(
-          event_type: 'resource.updated',
+          event_type: 'mailbox.updated',
           source_class: 'Mailbox',
           source_id: mailbox_a.id
         ).sole.parameters['changed_fields']
@@ -487,7 +487,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Mailbox' do
       expect(MailboxHandler.where(mailbox_id: mailbox.id)).to be_empty
       expect(
         Event.where(
-          event_type: 'resource.deleted',
+          event_type: 'mailbox.deleted',
           source_class: 'Mailbox',
           source_id: mailbox.id
         )

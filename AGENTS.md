@@ -112,6 +112,46 @@ not prove that external documentation remains current.
   When adding/renaming/moving API spec files, you **must** update the workflow's topic patterns so every spec is covered
   exactly once. The CI job "API specs - topic coverage" will fail if any spec is missing or matches multiple topics.
 
+## Event Coverage
+
+- Read `doc/events.mdwn` before adding or changing an API mutation, operation,
+  authentication flow, callback, bulk write, or transaction chain.
+- Every mutating HaveAPI action and non-action mutation entry point must have
+  an `ActionPolicies` classification. Register all models changed by custom
+  code; classifications for read-only, bookkeeping, transport, or semantic
+  event paths must include a concrete reason.
+- Resource events are typed `<logical_resource>.created`, `.updated`, and
+  `.deleted` events. Do not add generic `resource.*` event types, and do not
+  reuse these reserved names for a notification/workflow payload with a
+  different source or contract.
+- Add generated CRUD types only through the explicit public resource catalog.
+  Each entry must reference a mounted model-backed HaveAPI resource and declare
+  its supported actions, logical name, stable topic, and `account` or `admin`
+  audience. Plugin resources register entries in their owning plugin.
+- Do not catalog internal storage-placement/clone rows, authentication
+  implementation rows, translations, joins, delivery internals, accounting,
+  telemetry, or read-only projections. Uncataloged callbacks are intentionally
+  ignored; direct uncataloged resource emission is an error.
+- Account catalog entries require an explicit owner resolver and publish roles
+  `account, admin`; admin entries publish role `admin`. Event Type API tests
+  must cover ordinary/support/admin visibility and matching filtered counts.
+- Describe and match logical emitted values, not database storage values:
+  enums use their symbolic strings and serialized YAML/JSON attributes use
+  `json`. Decimals are emitted as lossless strings. Composite primary keys are
+  keyed objects and do not expose a scalar `resource_id` route matcher.
+- Emit synchronous resource facts only after a successful mutation. Chain
+  builders must defer past-tense resource/domain facts until `done`; a failed
+  chain emits `operation.failed` and no false completion facts.
+- Extend logical-name, owner/VPS, callback-bypassing cascade, and sensitive
+  field registries when a new resource requires them. Never expose secrets,
+  tokens, private/key material, opaque configuration, notification-template
+  bodies, delivery payloads, or VPS user-data content in event changes.
+- Use explicit recorder helpers for bulk SQL writes that skip Active Record
+  callbacks. Represent internal translation/join rows through the logical
+  public parent where practical.
+- Update resource event specs and Event Type metadata expectations. Keep the
+  action/operation/external-boundary coverage checks strict.
+
 ## Commit & Pull Request Guidelines
 - Use short imperative subjects, often scoped (`api: add StoragePool resource`, `webui: fix payset form`); keep one logical change per commit.
 - Every commit message must explain what the change does and why it is

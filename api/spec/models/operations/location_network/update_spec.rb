@@ -84,7 +84,7 @@ RSpec.describe VpsAdmin::API::Operations::LocationNetwork::Update do
     end
 
     event = Event.where(
-      event_type: 'resource.updated',
+      event_type: 'location_network.updated',
       source_class: 'LocationNetwork',
       source_id: current.id
     ).sole

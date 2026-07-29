@@ -327,6 +327,7 @@ module VpsAdmin
       @configure && @configure.call(api)
 
       VpsAdmin::API::Plugin::Loader.load('api')
+      VpsAdmin::API::Events::ResourceOperations.refresh_event_types!
 
       api.mount('/')
 

@@ -111,7 +111,7 @@ module TransactionChains
       end
 
       defer_result_event!(
-        'user.created',
+        'user.account_created',
         user:,
         source: user,
         subject: 'User account created',

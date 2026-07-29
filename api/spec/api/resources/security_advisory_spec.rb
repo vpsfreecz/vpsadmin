@@ -1028,13 +1028,13 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       expect(advisory.reload.published_at.utc).to eq(published_at)
       expect(
         Event.where(
-          event_type: 'resource.created',
+          event_type: 'security_advisory_update.created',
           source_class: 'SecurityAdvisoryUpdate',
           source_id: update_id
         )
       ).to exist
       advisory_event = Event.where(
-        event_type: 'resource.updated',
+        event_type: 'security_advisory.updated',
         source_class: 'SecurityAdvisory',
         source_id: advisory.id
       ).sole
@@ -1068,14 +1068,14 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       expect(update).to be_present
       expect(
         Event.where(
-          event_type: 'resource.created',
+          event_type: 'security_advisory_update.created',
           source_class: 'SecurityAdvisoryUpdate',
           source_id: update.id
         )
       ).to exist
       expect(
         Event.where(
-          event_type: 'resource.created',
+          event_type: 'security_advisory_translation.created',
           source_class: 'SecurityAdvisoryTranslation',
           source_id: update.security_advisory_translations.first.id
         )

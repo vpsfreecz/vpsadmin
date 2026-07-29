@@ -12,6 +12,7 @@ network settings based on OpenVZ and ZFS.
 # Subsystems
  - [[VPS]]
  - [[Transactions]]
+ - [[Events]]
  - [[Networking]]
  - [[Storage]]
  - [[Plugins]]

@@ -130,6 +130,7 @@ module VpsAdmin::API::Events::OperationLifecycle
     existing = find_event(chain, SUCCEEDED_EVENT_TYPE, attempt)
     return existing if existing
 
+    result_events = materialize_result_events!(chain, attempt:, changed_at:)
     event = emit_operation!(
       chain,
       SUCCEEDED_EVENT_TYPE,
@@ -138,15 +139,12 @@ module VpsAdmin::API::Events::OperationLifecycle
       changed_at:,
       node:,
       producer_event_id:,
-      extra_payload: { result_event_ids: [] },
+      extra_payload: { result_event_ids: result_events.map(&:id) },
       route: false,
       release: false
     )
-    result_events = materialize_result_events!(chain, attempt:, changed_at:)
-    event.parameters['result_event_ids'] = result_events.map(&:id)
-    event.save!
-    route_event!(event)
     result_events.each { |result_event| route_event!(result_event) }
+    route_event!(event)
     event
   end
 
@@ -463,7 +461,7 @@ VpsAdmin::API::Events.define do
 
     event event_name,
           label:,
-          category: 'transactions',
+          category: 'system',
           severity:,
           roles: %i[account admin],
           default_routed: false,
