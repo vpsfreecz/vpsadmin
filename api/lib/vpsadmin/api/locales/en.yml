@@ -4178,8 +4178,6 @@ en:
         vps_console_opened:
           actor_user_id:
             description: ID of the user whose console token authenticated the client
-          close_reason:
-            description: Reason why the console client was closed
           console_client_id:
             description: Ephemeral identifier correlating console open and close events
           node_id:
