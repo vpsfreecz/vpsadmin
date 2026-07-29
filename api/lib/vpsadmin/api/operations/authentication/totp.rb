@@ -67,6 +67,11 @@ module VpsAdmin::API
             last_use_at: Time.now
           )
           ::UserTotpDevice.increment_counter(:use_count, dev.id)
+          VpsAdmin::API::Events::ActionPolicies.record(
+            :updated,
+            dev,
+            changed_fields: %i[use_count]
+          )
         else
           # Recovery code was used, disable the device
           dev.update!(enabled: false)

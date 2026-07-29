@@ -464,6 +464,18 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect(json['status']).to be(true)
       expect(user_obj['full_name']).to eq('Spec Updated')
       expect(User.find(SpecSeed.other_user.id).full_name).to eq('Spec Updated')
+
+      event = Event.where(
+        event_type: 'resource.updated',
+        source_class: 'User',
+        source_id: SpecSeed.other_user.id
+      ).order(:id).last
+      expect(event).to be_present
+      expect(event.user).to eq(SpecSeed.other_user)
+      expect(event.parameters).to include(
+        'actor_user_id' => SpecSeed.admin.id,
+        'changed_fields' => ['full_name']
+      )
     end
 
     it 'lists effective notification delivery methods for the current user' do
