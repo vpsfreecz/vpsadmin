@@ -3827,7 +3827,13 @@ en:
           admin_user_id:
             description: ID of the administrator behind an impersonated session
           changed_fields:
-            description: Names of fields submitted to a successful update
+            description: Names of persisted fields changed by the operation
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           resource_id:
             description: ID of the affected resource
           resource_type:
@@ -3844,7 +3850,13 @@ en:
           admin_user_id:
             description: ID of the administrator behind an impersonated session
           changed_fields:
-            description: Names of fields submitted to a successful update
+            description: Names of persisted fields changed by the operation
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           resource_id:
             description: ID of the affected resource
           resource_type:
@@ -3861,7 +3873,13 @@ en:
           admin_user_id:
             description: ID of the administrator behind an impersonated session
           changed_fields:
-            description: Names of fields submitted to a successful update
+            description: Names of persisted fields changed by the operation
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           resource_id:
             description: ID of the affected resource
           resource_type:

@@ -3827,6 +3827,11 @@ cs:
             description: ID administrátora zastupujícího uživatele v relaci
           changed_fields:
             description: Názvy polí odeslaných při úspěšné aktualizaci
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pozice této události v seznamu výsledků operace číslovaná
+              od nuly
           resource_id:
             description: ID dotčeného prostředku
           resource_type:
@@ -3844,6 +3849,11 @@ cs:
             description: ID administrátora zastupujícího uživatele v relaci
           changed_fields:
             description: Názvy polí odeslaných při úspěšné aktualizaci
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pozice této události v seznamu výsledků operace číslovaná
+              od nuly
           resource_id:
             description: ID dotčeného prostředku
           resource_type:
@@ -3861,6 +3871,11 @@ cs:
             description: ID administrátora zastupujícího uživatele v relaci
           changed_fields:
             description: Názvy polí odeslaných při úspěšné aktualizaci
+          operation_id:
+            description: ID operace transakčního řetězce, která vytvořila tuto událost
+          operation_result_index:
+            description: Pozice této události v seznamu výsledků operace číslovaná
+              od nuly
           resource_id:
             description: ID dotčeného prostředku
           resource_type:

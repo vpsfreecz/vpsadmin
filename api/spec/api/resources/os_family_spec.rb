@@ -178,14 +178,27 @@ RSpec.describe 'VpsAdmin::API::Resources::OsFamily' do
       expect(record.description).to eq('desc')
       expect(os_family['label']).to eq('Spec Created Family')
       expect(os_family['description']).to eq('desc')
+
+      event = Event.find_by!(
+        event_type: 'resource.created',
+        source_class: 'OsFamily',
+        source_id: record.id
+      )
+      expect(event.user).to be_nil
+      expect(event.parameters['actor_user_id']).to eq(SpecSeed.admin.id)
+      expect(event.parameters['changed_fields']).to contain_exactly('description', 'label')
     end
 
     it 'returns validation errors for missing label' do
+      event_count = Event.where(event_type: 'resource.created', source_class: 'OsFamily').count
+
       as(SpecSeed.admin) { json_post index_path, os_family: { description: 'x' } }
 
       expect_status(200)
       expect(json['status']).to be(false)
       expect(errors.keys.map(&:to_s)).to include('label')
+      expect(Event.where(event_type: 'resource.created', source_class: 'OsFamily').count)
+        .to eq(event_count)
     end
   end
 
@@ -217,6 +230,14 @@ RSpec.describe 'VpsAdmin::API::Resources::OsFamily' do
       expect(to_update.description).to eq('new')
       expect(os_family['label']).to eq('Updated')
       expect(os_family['description']).to eq('new')
+
+      event = Event.find_by!(
+        event_type: 'resource.updated',
+        source_class: 'OsFamily',
+        source_id: to_update.id
+      )
+      expect(event.user).to be_nil
+      expect(event.parameters['changed_fields']).to contain_exactly('description', 'label')
     end
 
     it 'returns validation errors for blank label' do
@@ -262,6 +283,13 @@ RSpec.describe 'VpsAdmin::API::Resources::OsFamily' do
       expect_status(200)
       expect(json['status']).to be(true)
       expect(OsFamily.where(id: to_delete.id)).to be_empty
+      expect(
+        Event.where(
+          event_type: 'resource.deleted',
+          source_class: 'OsFamily',
+          source_id: to_delete.id
+        )
+      ).to exist
     end
 
     it 'rejects delete when os family is in use' do

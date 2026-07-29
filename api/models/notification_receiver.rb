@@ -137,7 +137,14 @@ class NotificationReceiver < ApplicationRecord
       t.skip_delivery_method_enabled_validation = true
     end
     if target.label != DEFAULT_EMAIL_LABEL
+      old_label = target[:label]
       target.update_columns(label: DEFAULT_EMAIL_LABEL, updated_at: Time.now)
+      VpsAdmin::API::Events::ActionPolicies.record(
+        :updated,
+        target,
+        changed_fields: %i[label],
+        before_values: { label: old_label }
+      )
     end
 
     receiver.notification_receiver_targets.find_or_create_by!(
