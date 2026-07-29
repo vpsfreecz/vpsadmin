@@ -784,6 +784,8 @@ cs:
             label: Uživatelský účet vytvořen
           user_failed_logins:
             label: Přehled neúspěšných přihlášení
+          user_login_failed:
+            label: Neúspěšné přihlášení
           user_new_login:
             label: Nové přihlášení
           user_new_token:
@@ -1068,6 +1070,10 @@ cs:
             label: Počet exportů dotčených migrací
           failed:
             label: Zda je koncový stav selhaný nebo fatální
+          failed_at:
+            label: Čas zaznamenání neúspěšného přihlášení
+          failed_login_id:
+            label: ID zaznamenaného neúspěšného pokusu o přihlášení
           file_name:
             label: Název připraveného archivu ke stažení
           finish_minutes:
@@ -4042,6 +4048,21 @@ cs:
             description: IP adresy klientů zaznamenané při neúspěšných pokusech
           reasons:
             description: Důvody selhání nahlášené autentizací
+        user_login_failed:
+          api_ip_addr:
+            description: IP adresa zaznamenaná vpsAdmin API
+          auth_type:
+            description: Metoda autentizace použitá při neúspěšném přihlášení
+          client_ip_addr:
+            description: IP adresa klienta nahlášená vpsAdmin API
+          client_version:
+            description: Verze nebo řetězec user-agent nahlášený klientem
+          failed_at:
+            description: Čas zaznamenání neúspěšného přihlášení
+          failed_login_id:
+            description: ID zaznamenaného neúspěšného pokusu o přihlášení
+          reason:
+            description: Důvod selhání autentizace
         user_new_login:
           api_ip_addr:
             description: IP adresa zaznamenaná vpsAdmin API
@@ -4801,6 +4822,8 @@ cs:
           label: Uživatelský účet vytvořen
         user_failed_logins:
           label: Přehled neúspěšných přihlášení
+        user_login_failed:
+          label: Neúspěšné přihlášení
         user_new_login:
           label: Nové přihlášení
         user_new_token:
