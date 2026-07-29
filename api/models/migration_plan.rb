@@ -44,19 +44,31 @@ class MigrationPlan < ApplicationRecord
 
   def cancel!
     update!(state: self.class.states[:cancelling])
-    vps_migrations.where(
+    queued = vps_migrations.where(
       state: ::VpsMigration.states[:queued]
-    ).update_all(
+    ).to_a
+    ::VpsMigration.where(id: queued.map(&:id)).update_all(
       state: ::VpsMigration.states[:cancelled]
+    )
+    VpsAdmin::API::Events::ActionPolicies.record_many(
+      :updated,
+      queued,
+      changed_fields: %i[state]
     )
   end
 
   def fail!
     update!(state: self.class.states[:failing])
-    vps_migrations.where(
+    queued = vps_migrations.where(
       state: ::VpsMigration.states[:queued]
-    ).update_all(
+    ).to_a
+    ::VpsMigration.where(id: queued.map(&:id)).update_all(
       state: ::VpsMigration.states[:cancelled]
+    )
+    VpsAdmin::API::Events::ActionPolicies.record_many(
+      :updated,
+      queued,
+      changed_fields: %i[state]
     )
   end
 

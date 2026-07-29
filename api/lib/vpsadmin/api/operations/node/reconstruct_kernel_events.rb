@@ -239,14 +239,25 @@ module VpsAdmin::API
 
     def mark_current_kernel_event(node)
       events = node.node_kernel_events.kernel_history
-      events.update_all(current: false)
       current = events.node_report.order(observed_before: :desc, id: :desc).first
       current ||= events.order(observed_before: :desc, id: :desc).first
-      current&.update!(current: true)
+      previous = events.where(current: true)
+      previous = previous.where.not(id: current.id) if current
+      previous = previous.to_a
+
+      ::NodeKernelEvent.where(id: previous.map(&:id)).update_all(current: false)
+      VpsAdmin::API::Events::ActionPolicies.record_many(
+        :updated,
+        previous,
+        changed_fields: %i[current]
+      )
+      current&.update!(current: true) unless current&.current?
     end
 
     def replace_gaps(state, gaps)
-      state.kernel_history_gaps.delete_all
+      previous = state.kernel_history_gaps.to_a
+      ::NodeKernelHistoryGap.where(id: previous.map(&:id)).delete_all
+      VpsAdmin::API::Events::ActionPolicies.record_many(:deleted, previous)
       gaps.each do |gap|
         state.kernel_history_gaps.create!(from: gap.from, to: gap.to, reason: gap.reason)
       end
