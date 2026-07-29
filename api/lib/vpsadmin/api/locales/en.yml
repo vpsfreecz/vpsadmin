@@ -782,6 +782,8 @@ en:
             label: User account created
           user_failed_logins:
             label: Failed sign-in report
+          user_login_failed:
+            label: Failed sign-in
           user_new_login:
             label: New sign-in
           user_new_token:
@@ -945,7 +947,7 @@ en:
           attempt_count:
             label: Total number of failed sign-in attempts in the report
           auth_type:
-            label: Authentication method used for the sign-in
+            label: Authentication method used by the failed sign-in
           auth_types:
             label: Authentication methods used in failed attempts
           authorization_id:
@@ -977,9 +979,9 @@ en:
           changed_fields:
             label: Names of outage fields changed by the update
           client_ip_addr:
-            label: Client IP address reported by the API client
+            label: Client IP address reported to the vpsAdmin API
           client_version:
-            label: Version string reported by the API client
+            label: Version or user-agent string reported by the client
           close_reason:
             label: Reason why the console client was closed
           closes_at:
@@ -1070,6 +1072,10 @@ en:
             label: Number of exports affected by the migration
           failed:
             label: Whether the operation failed
+          failed_at:
+            label: Time when the failed sign-in was recorded
+          failed_login_id:
+            label: ID of the recorded failed sign-in attempt
           file_name:
             label: File name of the prepared download archive
           finish_minutes:
@@ -4065,6 +4071,21 @@ en:
             description: Client IP addresses observed in failed attempts
           reasons:
             description: Failure reasons reported by authentication
+        user_login_failed:
+          api_ip_addr:
+            description: IP address observed by the vpsAdmin API
+          auth_type:
+            description: Authentication method used by the failed sign-in
+          client_ip_addr:
+            description: Client IP address reported to the vpsAdmin API
+          client_version:
+            description: Version or user-agent string reported by the client
+          failed_at:
+            description: Time when the failed sign-in was recorded
+          failed_login_id:
+            description: ID of the recorded failed sign-in attempt
+          reason:
+            description: Reason why authentication failed
         user_new_login:
           api_ip_addr:
             description: IP address observed by the vpsAdmin API
@@ -4869,6 +4890,8 @@ en:
           label: User account created
         user_failed_logins:
           label: Failed sign-in report
+        user_login_failed:
+          label: Failed sign-in
         user_new_login:
           label: New sign-in
         user_new_token:
