@@ -8,7 +8,7 @@ module TransactionChains
 
       return unless target
 
-      route_event!(
+      defer_result_event!(
         'vps.resumed',
         user: vps.user,
         vps:,

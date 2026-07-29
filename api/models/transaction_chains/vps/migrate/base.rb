@@ -188,7 +188,9 @@ module TransactionChains
 
     def route_migration_event!(event_type)
       state = event_type.end_with?('_begun') ? 'started' : 'finished'
-      route_event!(
+      emitter = event_type.end_with?('_finished') ? :defer_result_event! : :route_event!
+      public_send(
+        emitter,
         event_type,
         user: vps_user,
         vps: src_vps,

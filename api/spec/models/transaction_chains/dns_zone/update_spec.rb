@@ -9,6 +9,10 @@ RSpec.describe TransactionChains::DnsZone::Update do
 
   let(:user) { SpecSeed.user }
 
+  before do
+    create_spec_event_route!(user:, event_type: 'dns_zone.updated')
+  end
+
   def create_zone_with_server_zones
     zone = create_dns_zone!(
       user: user,
@@ -48,6 +52,7 @@ RSpec.describe TransactionChains::DnsZone::Update do
         Transactions::DnsServer::Reload,
         Transactions::DnsServerZone::Update,
         Transactions::DnsServer::Reload,
+        Transactions::Utils::NoOp,
         Transactions::Utils::NoOp
       ]
     )
@@ -82,6 +87,8 @@ RSpec.describe TransactionChains::DnsZone::Update do
 
     expect(chain).to be_nil
     expect(updated.reload.label).to eq('new label')
+    event = expect_resource_event!(:updated, updated)
+    expect(event.parameters['changed_fields']).to eq(['label'])
   end
 
   it 'confirms original values for changed runtime attrs and database-only attrs' do

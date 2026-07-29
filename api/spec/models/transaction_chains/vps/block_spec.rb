@@ -28,10 +28,7 @@ RSpec.describe TransactionChains::Vps::Block do
 
     chain, = described_class.fire(vps, true, nil, state)
 
-    expect(tx_classes(chain)).to include(
-      Transactions::Vps::Stop,
-      Transactions::EventDelivery::Notify
-    )
+    expect(tx_classes(chain)).to include(Transactions::Vps::Stop, Transactions::Utils::NoOp)
     expect(chain.transaction_chain_concerns.find_by!(class_name: 'Vps')).to have_attributes(
       class_name: 'Vps',
       row_id: vps.id
@@ -39,14 +36,26 @@ RSpec.describe TransactionChains::Vps::Block do
     expect(chain.transaction_chain_concerns.find_by!(class_name: 'User')).to have_attributes(
       row_id: vps.user_id
     )
-    event = expect_routed_event!('vps.suspended', user: vps.user)
+    expect_deferred_event!(chain, 'vps.suspended')
+
+    fail_chain_operation!(chain)
+    expect(Event.where(event_type: 'vps.suspended')).to be_empty
+
+    chain.update!(state: :queued)
+    VpsAdmin::API::Events::OperationLifecycle.emit_started!(chain)
+    2.times { complete_chain_operation!(chain) }
+
+    event = expect_completed_event!('vps.suspended', user: vps.user)
+    expect(Event.where(event_type: 'vps.suspended').count).to eq(1)
     expect(event.vps).to eq(vps)
     expect(event.source).to eq(state)
     expect(event.parameters).to include(
+      'operation_id' => chain.id,
       'vps_id' => vps.id,
       'vps_hostname' => vps.hostname,
       'state' => 'suspended',
       'reason' => 'policy violation'
     )
+    expect(event.parameters).not_to have_key('operation_attempt')
   end
 end

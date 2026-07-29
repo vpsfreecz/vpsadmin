@@ -9,6 +9,10 @@ RSpec.describe TransactionChains::DnsZone::UpdateRecord do
 
   let(:user) { SpecSeed.user }
 
+  before do
+    create_spec_event_route!(user:, event_type: 'dns_record.updated')
+  end
+
   def create_update_record_fixture(enabled: true)
     zone = create_dns_zone!(
       user: user,
@@ -43,6 +47,7 @@ RSpec.describe TransactionChains::DnsZone::UpdateRecord do
       [
         Transactions::DnsServerZone::UpdateRecords,
         Transactions::DnsServer::Reload,
+        Transactions::Utils::NoOp,
         Transactions::Utils::NoOp
       ]
     )
@@ -84,6 +89,8 @@ RSpec.describe TransactionChains::DnsZone::UpdateRecord do
 
     expect(chain).to be_nil
     expect(updated.reload.content).to eq('192.0.2.62')
+    event = expect_resource_event!(:updated, updated)
+    expect(event.parameters['changed_fields']).to eq(['content'])
   end
 
   it 'confirms old record values with edit_before' do

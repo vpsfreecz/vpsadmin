@@ -13,7 +13,7 @@ RSpec.describe TransactionChains::Mail::VpsDatasetExpanded do
     ensure_mailer_available!
   end
 
-  it 'targets the affected VPS and routes a dataset expansion event' do
+  it 'routes a standalone dataset expansion event without operation correlation' do
     fixture = build_active_dataset_expansion_fixture(user: SpecSeed.user)
     expansion = fixture.fetch(:expansion)
     vps = fixture.fetch(:vps)
@@ -21,17 +21,11 @@ RSpec.describe TransactionChains::Mail::VpsDatasetExpanded do
 
     chain, = described_class.fire(expansion, new_refquota:)
 
-    expect(chain).to be_present
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
-    expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to eq(
-      [
-        ['Vps', vps.id],
-        ['User', vps.user_id]
-      ]
-    )
-    event = expect_routed_event!('vps.dataset_expanded', user: vps.user)
+    expect(chain).to be_nil
+    event = expect_completed_event!('vps.dataset_expanded', user: vps.user)
     expect(event.vps).to eq(vps)
     expect(event.source).to eq(expansion)
+    expect(event.parameters).not_to have_key('operation_id')
     expect(event.parameters).to include(
       'vps_id' => vps.id,
       'vps_hostname' => vps.hostname,

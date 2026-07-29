@@ -14,7 +14,7 @@ module TransactionChains
 
       vps = dataset_expansion.vps
       dataset = dataset_expansion.dataset
-      route_event!(
+      defer_result_event!(
         'vps.stopped_over_quota',
         user: vps.user,
         vps:,

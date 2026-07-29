@@ -34,6 +34,11 @@ module TransactionChains
       unless dns_record.enabled
         dns_record.confirmed = ::DnsRecord.confirmed(:confirmed)
         dns_record.save!
+        defer_resource_event!(
+          :created,
+          dns_record,
+          owner: dns_zone.user
+        )
         return dns_record
       end
 
@@ -69,6 +74,11 @@ module TransactionChains
         end
       end
 
+      defer_resource_event!(
+        :created,
+        dns_record,
+        owner: dns_zone.user
+      )
       dns_record
     end
   end

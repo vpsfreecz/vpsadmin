@@ -47,7 +47,7 @@ module TransactionChains
 
       if opts[:send_mail]
         dataset = snapshot.dataset
-        route_event!(
+        defer_result_event!(
           'snapshot.download_ready',
           user: ::User.current,
           source: dl,

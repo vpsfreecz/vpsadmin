@@ -32,9 +32,9 @@ RSpec.describe TransactionChains::Vps::ExpandDataset do
     expect(returned_expansion).to eq(expansion)
     expect(tx_classes(chain)).to include(
       Transactions::Storage::SetDataset,
-      Transactions::EventDelivery::Notify,
       Transactions::Utils::NoOp
     )
+    expect(tx_classes(chain)).not_to include(Transactions::EventDelivery::Notify)
     expect(tx_payload(chain, Transactions::Storage::SetDataset)).to include(
       'properties' => include('refquota' => [original_refquota, original_refquota + expansion.added_space])
     )
@@ -67,14 +67,19 @@ RSpec.describe TransactionChains::Vps::ExpandDataset do
         row.attr_changes['dataset_expansion_id'] == expansion.id
     end).to be(true)
 
-    event = expect_routed_event!('vps.dataset_expanded', user: user)
+    expect_deferred_event!(chain, 'vps.dataset_expanded')
+    complete_chain_operation!(chain)
+    event = expect_completed_event!('vps.dataset_expanded', user: user)
     expect(event.vps).to eq(fixture.fetch(:vps))
     expect(event.source).to eq(expansion)
     expect(event.parameters).to include(
       'dataset_id' => fixture.fetch(:dataset).id,
       'dataset_full_name' => fixture.fetch(:dataset).full_name,
-      'added_space' => expansion.added_space
+      'added_space' => expansion.added_space,
+      'operation_id' => chain.id,
+      'operation_result_index' => 0
     )
+    expect(event.parameters).not_to have_key('operation_attempt')
   end
 
   it 'does not enqueue mail when notifications are disabled' do

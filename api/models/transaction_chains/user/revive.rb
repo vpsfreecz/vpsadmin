@@ -3,7 +3,7 @@ module TransactionChains
     label 'Revive'
 
     def link_chain(user, _target, _state, log)
-      event = prepare_event!(
+      defer_result_event!(
         'user.revived',
         user:,
         source: log,
@@ -23,8 +23,6 @@ module TransactionChains
       user.vpses.where(object_state: ::Vps.object_states[:soft_delete]).each do |vps|
         vps.set_object_state(:active, reason: 'User was revived', chain: self)
       end
-
-      release_event_deliveries!(event)
     end
   end
 end

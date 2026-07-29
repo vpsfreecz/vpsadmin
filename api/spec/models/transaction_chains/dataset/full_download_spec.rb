@@ -85,7 +85,7 @@ RSpec.describe TransactionChains::Dataset::FullDownload do
     )
   end
 
-  it 'routes a notification event when download mail is requested' do
+  it 'routes the ready event only after the download operation succeeds' do
     dataset, primary_dip = create_dataset_pair!(
       user: user,
       pool: primary_pool,
@@ -95,13 +95,14 @@ RSpec.describe TransactionChains::Dataset::FullDownload do
 
     chain, download = described_class.fire(snapshot, format: :stream, send_mail: true)
 
-    expect(tx_classes(chain)).to include(
-      Transactions::Storage::DownloadSnapshot,
-      Transactions::EventDelivery::Notify
-    )
-    event = expect_routed_event!('snapshot.download_ready', user: user)
+    expect(tx_classes(chain)).to include(Transactions::Storage::DownloadSnapshot)
+    expect_deferred_event!(chain, 'snapshot.download_ready')
+    complete_chain_operation!(chain)
+
+    event = expect_completed_event!('snapshot.download_ready', user: user)
     expect(event.source).to eq(download)
     expect(event.parameters).to include(
+      'operation_id' => chain.id,
       'download_id' => download.id,
       'snapshot_id' => snapshot.id,
       'snapshot_name' => 'snap-mail',
@@ -110,6 +111,7 @@ RSpec.describe TransactionChains::Dataset::FullDownload do
       'file_name' => download.file_name,
       'format' => 'stream'
     )
+    expect(event.parameters).not_to have_key('operation_attempt')
   end
 
   it 'uses the general queue for archive downloads' do

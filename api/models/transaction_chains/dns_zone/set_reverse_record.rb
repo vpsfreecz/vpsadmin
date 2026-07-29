@@ -101,6 +101,19 @@ module TransactionChains
 
       record.save!
       host_ip_address.save!
+      defer_resource_event!(
+        created ? :created : :updated,
+        record,
+        changed_fields: created ? [] : ['content'],
+        owner: dns_zone.user
+      )
+      defer_resource_event!(
+        :updated,
+        host_ip_address,
+        changed_fields: %w[reverse_dns_record_id reverse_record_value],
+        owner: host_ip_address.current_owner,
+        vps: host_ip_address.ip_address.network_interface&.vps
+      )
       host_ip_address
     end
   end

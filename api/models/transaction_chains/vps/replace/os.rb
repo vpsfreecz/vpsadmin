@@ -5,6 +5,7 @@ module TransactionChains
   # Replace an unresponsive VPS with a new one
   class Vps::Replace::Os < ::TransactionChain
     label 'Replace'
+    event_operation 'vps.replace'
 
     include Vps::Clone::Base
 
@@ -328,7 +329,7 @@ module TransactionChains
 
       dst_vps.save!
 
-      route_event!(
+      defer_result_event!(
         'vps.replaced',
         user: vps.user,
         vps:,

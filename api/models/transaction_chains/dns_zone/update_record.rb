@@ -12,6 +12,7 @@ module TransactionChains
         :affect,
         [dns_zone.class.name, dns_zone.id]
       )
+      changed_fields = dns_record.changed.dup
 
       log = ::DnsRecordLog.create!(
         user: ::User.current || dns_zone.user, # dynamic updates are unauthenticated
@@ -84,6 +85,12 @@ module TransactionChains
         end
       end
 
+      defer_resource_event!(
+        :updated,
+        dns_record,
+        changed_fields:,
+        owner: dns_zone.user
+      )
       dns_record.save!
       dns_record
     end

@@ -11,6 +11,7 @@ module TransactionChains
 
       lock(dns_zone)
       concerns(:affect, [dns_zone.class.name, dns_zone.id])
+      defer_resource_event!(:created, dns_zone)
 
       seeded_records, seeded_logs = records_for_vps(dns_zone, seed_vps)
 

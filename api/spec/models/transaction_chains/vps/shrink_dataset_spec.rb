@@ -29,13 +29,8 @@ RSpec.describe TransactionChains::Vps::ShrinkDataset do
 
     expect(tx_classes(chain)).to include(
       Transactions::Storage::SetDataset,
-      Transactions::EventDelivery::Notify,
       Transactions::Utils::NoOp
     )
-    classes = tx_classes(chain)
-    release_idx = classes.index(Transactions::EventDelivery::Notify)
-    expect(classes.rindex(Transactions::Storage::SetDataset)).to be < release_idx
-    expect(classes.rindex(Transactions::Utils::NoOp)).to be < release_idx
     expect(tx_payload(chain, Transactions::Storage::SetDataset)).to include(
       'properties' => include('refquota' => [fixture.fetch(:current_refquota), expansion.original_refquota])
     )
@@ -51,10 +46,14 @@ RSpec.describe TransactionChains::Vps::ShrinkDataset do
     end).to be(true)
     expect(chain.locks.map { |lock| [lock.resource, lock.row_id] }).to include(['DatasetInPool', dip.id])
 
-    event = expect_routed_event!('vps.dataset_shrunk', user: user)
+    expect_deferred_event!(chain, 'vps.dataset_shrunk')
+    complete_chain_operation!(chain)
+
+    event = expect_completed_event!('vps.dataset_shrunk', user: user)
     expect(event.vps).to eq(fixture.fetch(:vps))
     expect(event.source).to eq(expansion)
     expect(event.parameters).to include(
+      'operation_id' => chain.id,
       'dataset_id' => fixture.fetch(:dataset).id,
       'dataset_full_name' => fixture.fetch(:dataset).full_name,
       'added_space' => expansion.added_space

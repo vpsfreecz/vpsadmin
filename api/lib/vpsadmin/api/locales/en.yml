@@ -1184,6 +1184,8 @@ en:
             label: ID of the transaction-chain operation related to the event
           operation_label:
             label: User-visible operation label
+          operation_result_index:
+            label: Zero-based position of this fact in the operation result list
           original_refquota:
             label: Dataset refquota before automatic expansion or shrink, in bytes
           original_vps_hostname:
@@ -3249,6 +3251,9 @@ en:
             description: Weekday when the maintenance window should finish
           maintenance_window:
             description: Whether a maintenance window constrains the migration
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
           reason:
             description: Operator-provided reason for the migration
           restart_vps:
@@ -3288,6 +3293,12 @@ en:
             description: Weekday when the maintenance window should finish
           maintenance_window:
             description: Whether a maintenance window constrains the migration
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           reason:
             description: Operator-provided reason for the migration
           restart_vps:
@@ -3948,6 +3959,12 @@ en:
             description: File name of the prepared download archive
           format:
             description: Archive format of the prepared download
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           snapshot_id:
             description: ID of the source snapshot
           snapshot_name:
@@ -4015,6 +4032,12 @@ en:
             description: Login of the created user account
           object_state:
             description: Initial lifecycle state of the account
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
         user_failed_logins:
           attempt_count:
             description: Total number of failed sign-in attempts in the report
@@ -4061,6 +4084,12 @@ en:
         user_resumed:
           expiration_date:
             description: Date when the lifecycle state expires
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           reason:
             description: Operator-provided reason for the lifecycle change
           state:
@@ -4068,6 +4097,12 @@ en:
         user_revived:
           expiration_date:
             description: Date when the lifecycle state expires
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           reason:
             description: Operator-provided reason for the lifecycle change
           state:
@@ -4075,6 +4110,12 @@ en:
         user_soft_deleted:
           expiration_date:
             description: Date when the lifecycle state expires
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           reason:
             description: Operator-provided reason for the lifecycle change
           state:
@@ -4082,6 +4123,12 @@ en:
         user_suspended:
           expiration_date:
             description: Date when the lifecycle state expires
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           reason:
             description: Operator-provided reason for the lifecycle change
           state:
@@ -4157,6 +4204,12 @@ en:
             description: ID of the dataset expansion record
           max_over_refquota_seconds:
             description: Maximum allowed time over quota before action, in seconds
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           original_refquota:
             description: Dataset refquota before automatic expansion or shrink, in
               bytes
@@ -4185,6 +4238,12 @@ en:
             description: ID of the dataset expansion record
           max_over_refquota_seconds:
             description: Maximum allowed time over quota before action, in seconds
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           original_refquota:
             description: Dataset refquota before automatic expansion or shrink, in
               bytes
@@ -4207,6 +4266,12 @@ en:
             description: ID of the previous DNS resolver
           old_dns_resolver_label:
             description: Label of the previous DNS resolver
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           vps_hostname:
             description: Hostname of the VPS whose resolver changed
           vps_id:
@@ -4336,6 +4401,9 @@ en:
             description: Whether a maintenance window constrains the migration
           migration_id:
             description: ID of the VPS migration record
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
           reason:
             description: Operator-provided reason for the migration
           src_node_domain_name:
@@ -4361,6 +4429,12 @@ en:
             description: Whether a maintenance window constrains the migration
           migration_id:
             description: ID of the VPS migration record
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           reason:
             description: Operator-provided reason for the migration
           src_node_domain_name:
@@ -4386,6 +4460,9 @@ en:
             description: Whether a maintenance window constrains the migration
           migration_id:
             description: ID of the VPS migration record
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
           reason:
             description: Operator-provided reason for the migration
           src_node_domain_name:
@@ -4397,6 +4474,12 @@ en:
           vps_id:
             description: ID of the VPS being migrated
         vps_network_disabled:
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           reason:
             description: Operator-provided reason for the network state change
           vps_hostname:
@@ -4404,6 +4487,12 @@ en:
           vps_id:
             description: ID of the VPS whose network state changed
         vps_network_enabled:
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           reason:
             description: Operator-provided reason for the network state change
           vps_hostname:
@@ -4443,6 +4532,11 @@ en:
             description: Hostname of the newly created replacement VPS
           new_vps_id:
             description: ID of the newly created replacement VPS
+          operation_id:
+            description: ID of the operation that completed the replacement
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           original_vps_hostname:
             description: Hostname of the original VPS being replaced
           original_vps_id:
@@ -4464,6 +4558,12 @@ en:
             description: CPU limit assigned to the VPS after the change
           memory:
             description: Memory limit assigned to the VPS after the change, in MiB
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           reason:
             description: Operator-provided reason for the resource change
           swap:
@@ -4479,6 +4579,12 @@ en:
             description: Name of the user who changed the VPS lifecycle state
           expiration_date:
             description: Date when the lifecycle state expires
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           reason:
             description: Operator-provided reason for the lifecycle change
           state:
@@ -4570,6 +4676,12 @@ en:
             description: ID of the dataset expansion record
           max_over_refquota_seconds:
             description: Maximum allowed time over quota before action, in seconds
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           original_refquota:
             description: Dataset refquota before automatic expansion or shrink, in
               bytes
@@ -4586,6 +4698,12 @@ en:
             description: Name of the user who changed the VPS lifecycle state
           expiration_date:
             description: Date when the lifecycle state expires
+          operation_id:
+            description: ID of the transaction-chain operation that produced this
+              fact
+          operation_result_index:
+            description: Zero-based position of this fact in the operation result
+              list
           reason:
             description: Operator-provided reason for the lifecycle change
           state:

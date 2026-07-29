@@ -309,16 +309,26 @@ RSpec.describe TransactionChains::Vps::Replace::Os do
       expiration_date: nil,
       reason: 'replace without mail'
     )
+    expect(Event.where(event_type: 'vps.replaced')).to be_empty
+
+    success = VpsAdmin::API::Events::OperationLifecycle.emit_succeeded!(chain)
     event = Event.where(event_type: 'vps.replaced').sole
 
+    expect(success.id).to be < event.id
     expect(event).to be_suppressed_routing_state
     expect(event.vps).to eq(vps)
     expect(event.source).to eq(dst_vps)
     expect(event.parameters).to include(
       'original_vps_id' => vps.id,
       'new_vps_id' => dst_vps.id,
+      'operation_id' => chain.id,
       'reason' => 'replace without mail'
     )
+    expect(event.parameters).not_to have_key('operation_attempt')
+    expect(success.parameters['result_event_ids']).to eq([event.id])
+    expect do
+      VpsAdmin::API::Events::OperationLifecycle.emit_succeeded!(chain)
+    end.not_to change(Event, :count)
     expect(tx_classes(chain)).not_to include(Transactions::EventDelivery::Notify)
     expect(NotificationTemplate).not_to have_received(:send_email!)
   end

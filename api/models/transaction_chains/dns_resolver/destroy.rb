@@ -6,6 +6,7 @@ module TransactionChains
     def link_chain(ns)
       lock(ns)
       concerns(:affect, [ns.class.name, ns.id])
+      defer_resource_event!(:deleted, ns)
 
       ::Vps.including_deleted.where(dns_resolver: ns).each do |vps|
         lock(vps)

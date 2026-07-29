@@ -10,7 +10,7 @@ module TransactionChains
 
       concerns(:affect, [vps.class.name, vps.id])
 
-      route_event!(
+      defer_result_event!(
         'vps.dataset_expanded',
         user: vps.user,
         vps:,
