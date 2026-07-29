@@ -18,6 +18,16 @@ RSpec.describe VpsAdmin::API::Operations::User::IncompleteLogin do
     expect(failed.reason).to eq('authentication token expired')
     expect(failed.api_ip_addr).to eq(auth_token.api_ip_addr)
     expect(failed.client_ip_addr).to eq(auth_token.client_ip_addr)
+    expect(
+      Event.find_by!(
+        event_type: 'user.login_failed',
+        source_class: 'UserFailedLogin',
+        source_id: failed.id
+      ).payload
+    ).to include(
+      'auth_type' => 'totp',
+      'reason' => 'authentication token expired'
+    )
   end
 
   it 'records a failed login from a WebauthnChallenge' do
@@ -33,6 +43,16 @@ RSpec.describe VpsAdmin::API::Operations::User::IncompleteLogin do
     expect(failed.reason).to eq('authentication challenge expired')
     expect(failed.api_ip_addr).to eq(challenge.api_ip_addr)
     expect(failed.client_ip_addr).to eq(challenge.client_ip_addr)
+    expect(
+      Event.find_by!(
+        event_type: 'user.login_failed',
+        source_class: 'UserFailedLogin',
+        source_id: failed.id
+      ).payload
+    ).to include(
+      'auth_type' => 'webauthn',
+      'reason' => 'authentication challenge expired'
+    )
   end
 
   it 'no-ops when the associated user is gone' do

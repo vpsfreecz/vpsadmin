@@ -10,7 +10,7 @@ module VpsAdmin::API
       return if auth_token_or_challenge.user.nil?
 
       ActiveRecord::Base.transaction do
-        ::UserFailedLogin.create!(
+        attempt = ::UserFailedLogin.create!(
           user: auth_token_or_challenge.user,
           auth_type: mechanism,
           reason:,
@@ -22,6 +22,7 @@ module VpsAdmin::API
           client_version: auth_token_or_challenge.client_version
         )
         ::User.increment_counter(:failed_login_count, auth_token_or_challenge.user.id)
+        Events::SecurityOperations.emit_failed_login!(attempt)
       end
     end
   end

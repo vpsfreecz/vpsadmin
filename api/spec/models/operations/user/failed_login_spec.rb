@@ -32,5 +32,24 @@ RSpec.describe VpsAdmin::API::Operations::User::FailedLogin do
     expect(failed.client_ip_ptr).to eq('ptr.example.test')
     expect(failed.user_agent.agent).to eq('RSpec/FailedLogin')
     expect(failed.client_version).to eq('RSpec/FailedLogin')
+
+    event = Event.find_by!(
+      event_type: 'user.login_failed',
+      source_class: 'UserFailedLogin',
+      source_id: failed.id
+    )
+    expect(event).to have_attributes(
+      user:,
+      severity: 'warning',
+      ip_addr: '203.0.113.51'
+    )
+    expect(event.payload).to include(
+      'failed_login_id' => failed.id,
+      'auth_type' => 'password',
+      'reason' => 'invalid password',
+      'api_ip_addr' => '198.51.100.51',
+      'client_ip_addr' => '203.0.113.51',
+      'client_version' => 'RSpec/FailedLogin'
+    )
   end
 end
