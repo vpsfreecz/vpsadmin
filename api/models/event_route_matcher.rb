@@ -35,6 +35,22 @@ class EventRouteMatcher < ApplicationRecord
       type: 'integer',
       example: 123
     },
+    'resource_name' => {
+      description: 'Stable logical name of the changed resource',
+      type: 'string',
+      example: 'vps'
+    },
+    'resource_action' => {
+      description: 'Completed resource mutation',
+      type: 'string',
+      choices: VpsAdmin::API::Events::ResourceOperations::ACTIONS,
+      example: 'updated'
+    },
+    'resource_id' => {
+      description: 'Public ID of the changed resource',
+      type: 'integer',
+      example: 123
+    },
     'subject_relation' => {
       description: 'Relationship between route owner and event subject',
       type: 'string',
@@ -79,6 +95,7 @@ class EventRouteMatcher < ApplicationRecord
   NUMERIC_OPERATORS = %w[> >= < <=].freeze
   GLOB_FLAGS = File::FNM_PATHNAME | File::FNM_EXTGLOB
   REGEXP_TIMEOUT = 0.05
+  RESOURCE_VALUE_NOT_FOUND = Object.new.freeze
 
   belongs_to :event_route
 
@@ -103,7 +120,16 @@ class EventRouteMatcher < ApplicationRecord
         VpsAdmin::API::Events.type_for(event_type)
       end
 
-    fields = COMMON_FIELDS.map do |name, config|
+    common_fields =
+      if exact_type && !exact_type.resource
+        COMMON_FIELDS.except('resource_name', 'resource_action', 'resource_id')
+      elsif exact_type.nil? || exact_type.resource&.fetch(:id_type) == 'object'
+        COMMON_FIELDS.except('resource_id')
+      else
+        COMMON_FIELDS
+      end
+
+    fields = common_fields.map do |name, config|
       field_metadata_hash(
         name,
         exact_type ? exact_type_common_field_config(name, config, exact_type) : config
@@ -116,11 +142,12 @@ class EventRouteMatcher < ApplicationRecord
       elsif event_type.present? && event_type != '__any__'
         []
       else
-        VpsAdmin::API::Events.types
+        VpsAdmin::API::Events.types.reject(&:resource_generated)
       end
 
     event_types.each do |type|
       type.fields.each do |field|
+        next if !exact_type && field[:resource_attribute]
         next if fields.any? { |existing| existing.fetch(:name) == field.fetch(:name) }
 
         fields << field
@@ -229,7 +256,7 @@ class EventRouteMatcher < ApplicationRecord
   protected
 
   def check_field
-    return if self.class.field?(field)
+    return if field_metadata
 
     errors.add(:field, 'is not a supported event field')
   end
@@ -269,8 +296,12 @@ class EventRouteMatcher < ApplicationRecord
         subject
         summary
         roles
+        resource_name
+        resource_action
+        resource_id
       ].include?(name)
 
+      resource = event_type.resource
       example =
         case name
         when 'event_type'
@@ -291,13 +322,33 @@ class EventRouteMatcher < ApplicationRecord
           event_type.examples.fetch(:summary)
         when 'roles'
           event_type.roles
+        when 'resource_name'
+          return config unless resource
+
+          resource.fetch(:name)
+        when 'resource_action'
+          return config unless resource
+
+          resource.fetch(:action)
+        when 'resource_id'
+          return config unless resource
+
+          resource.fetch(:id_type) == 'integer' ? 42 : 'example-id'
         end
 
-      config.merge(example:)
+      if name == 'resource_id' && resource
+        type = resource.fetch(:id_type)
+        config.merge(example:, type:)
+      else
+        config.merge(example:)
+      end
     end
 
     def event_payload_value(event, field)
       field = field.to_s
+      resource_value = resource_change_value(event, field)
+      return resource_value unless resource_value.equal?(RESOURCE_VALUE_NOT_FOUND)
+
       definition = VpsAdmin::API::Events.type_for(event.event_type)&.definition
       return definition.payload_value(event, field) if definition&.field_for(field)
       return unless COMMON_FIELDS.has_key?(field)
@@ -309,6 +360,22 @@ class EventRouteMatcher < ApplicationRecord
       elsif payload.has_key?(field_sym)
         payload[field_sym]
       end
+    end
+
+    def resource_change_value(event, field)
+      match = field.match(/\A(old|new)_(.+)\z/)
+      return RESOURCE_VALUE_NOT_FOUND unless match
+
+      changes = event.payload.fetch('changes', {})
+      return RESOURCE_VALUE_NOT_FOUND unless changes.is_a?(Hash)
+
+      change = changes[match[2]]
+      return RESOURCE_VALUE_NOT_FOUND unless change.is_a?(Hash)
+
+      envelope = change[match[1]]
+      return nil unless envelope.is_a?(Hash) && envelope['kind'] == 'value'
+
+      envelope['value']
     end
 
     def context_field_value(field, route_context)
@@ -353,7 +420,8 @@ class EventRouteMatcher < ApplicationRecord
   end
 
   def field_metadata
-    self.class.field_map.fetch(field, nil)
+    event_type = event_route&.event_type.presence || '__any__'
+    self.class.field_map(event_type:).fetch(field, nil)
   end
 
   def boolean_field?

@@ -37,7 +37,7 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
     )
     expect(tx_classes(chain)).to all(eq(Transactions::EventDelivery::Notify))
 
-    event = request_events('request.created', request).sole
+    event = request_events('request.submitted', request).sole
     deliveries = event.event_deliveries.to_a
     direct_delivery = deliveries.find(&:direct_email_delivery?)
     admin_deliveries = deliveries.select(&:event_routing_context)
@@ -82,7 +82,7 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
     )
 
     chain, = chain_class.fire2(args: [request])
-    event = request_events('request.created', request).sole
+    event = request_events('request.submitted', request).sole
     delivery = event.event_deliveries.find(&:direct_email_delivery?)
     mail = delivery.mail_log
 
@@ -106,7 +106,7 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
     request = build_registration_request!
 
     chain, = chain_class.fire2(args: [request])
-    event = request_events('request.created', request).sole
+    event = request_events('request.submitted', request).sole
 
     expect(chain).to be_nil.or have_attributes(transactions: be_empty)
     expect(event.event_deliveries.map(&:state)).to all(eq('failed'))
@@ -118,7 +118,7 @@ RSpec.describe 'requests plugin create chain', requires_plugins: :requests do # 
   it 'does not rehydrate another user request from event parameters' do
     other_request = build_change_request!(user: SpecSeed.other_user)
     event = VpsAdmin::API::Events.emit!(
-      'request.updated',
+      'request.update_submitted',
       user: SpecSeed.user,
       subject: 'foreign request',
       route: false,

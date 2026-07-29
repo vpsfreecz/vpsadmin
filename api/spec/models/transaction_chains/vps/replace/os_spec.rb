@@ -294,7 +294,7 @@ RSpec.describe TransactionChains::Vps::Replace::Os do
     expect_snapshot_reference(payload.fetch('from_snapshot'), replace_snapshot)
   end
 
-  it 'suppresses replacement mail when default notifications are muted' do
+  it 'does not persist replacement facts when default notifications are muted' do
     fixture = create_replace_fixture(same_node: true)
     vps = fixture.fetch(:vps)
     mute_default_notifications_for!(vps.user)
@@ -310,24 +310,17 @@ RSpec.describe TransactionChains::Vps::Replace::Os do
     )
     expect(Event.where(event_type: 'vps.replaced')).to be_empty
 
-    success = VpsAdmin::API::Events::OperationLifecycle.emit_succeeded!(chain)
-    event = Event.where(event_type: 'vps.replaced').sole
+    success = nil
+    expect do
+      success = VpsAdmin::API::Events::OperationLifecycle.emit_succeeded!(chain)
+    end.not_to(change { event_storage_counts })
 
-    expect(success.id).to be < event.id
-    expect(event).to be_suppressed_routing_state
-    expect(event.vps).to eq(vps)
-    expect(event.source).to eq(dst_vps)
-    expect(event.parameters).to include(
-      'original_vps_id' => vps.id,
-      'new_vps_id' => dst_vps.id,
-      'operation_id' => chain.id,
-      'reason' => 'replace without mail'
-    )
-    expect(event.parameters).not_to have_key('operation_attempt')
-    expect(success.parameters['result_event_ids']).to eq([event.id])
+    expect(success).to be_nil
+    expect(Event.where(event_type: 'vps.replaced')).to be_empty
+
     expect do
       VpsAdmin::API::Events::OperationLifecycle.emit_succeeded!(chain)
-    end.not_to change(Event, :count)
+    end.not_to(change { event_storage_counts })
     expect(tx_classes(chain)).not_to include(Transactions::EventDelivery::Notify)
     expect(NotificationTemplate).not_to have_received(:send_email!)
   end

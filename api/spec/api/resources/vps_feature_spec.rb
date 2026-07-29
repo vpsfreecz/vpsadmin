@@ -285,9 +285,24 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS::Feature' do
       expect(confirmation.attr_changes['enabled']).to eq(target ? 1 : 0)
       expect(deferred_result_events(chain)).to contain_exactly(
         include(
-          'event_type' => 'resource.updated',
+          'event_type' => 'vps_feature.updated',
           'source_class' => 'VpsFeature',
-          'source_id' => user_feature.id
+          'source_id' => user_feature.id,
+          'payload' => include(
+            'changed_fields' => ['enabled'],
+            'changes' => include(
+              'enabled' => {
+                'old' => {
+                  'kind' => 'value',
+                  'value' => !target
+                },
+                'new' => {
+                  'kind' => 'value',
+                  'value' => target
+                }
+              }
+            )
+          )
         )
       )
     end
@@ -374,7 +389,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS::Feature' do
       expect(result_events).not_to be_empty
       expect(result_events).to all(
         include(
-          'event_type' => 'resource.updated',
+          'event_type' => 'vps_feature.updated',
           'source_class' => 'VpsFeature'
         )
       )

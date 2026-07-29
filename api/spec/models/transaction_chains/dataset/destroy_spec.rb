@@ -53,7 +53,19 @@ RSpec.describe TransactionChains::Dataset::Destroy do
       branch: child_branch
     )
 
-    chain, = described_class.fire(parent, nil, nil, nil)
+    policies = VpsAdmin::API::Events::ActionPolicies
+    recorder = policies::Recorder.new(
+      policies::Policy.new(
+        kind: :transaction_chain,
+        models: %w[Dataset],
+        reason: 'dataset cascade resource event spec',
+        atomic: false,
+        resource_action: :deleted
+      )
+    )
+    chain, = policies.with_recorder(recorder) do
+      described_class.fire(parent, nil, nil, nil)
+    end
 
     expect(tx_classes(chain)).to include(
       Transactions::Storage::DestroySnapshot,
@@ -94,5 +106,18 @@ RSpec.describe TransactionChains::Dataset::Destroy do
       'pool_fs' => stale_backup_pool.filesystem,
       'name' => parent.full_name
     )
+
+    deferred = Array(chain.deferred_result_events)
+    snapshot_ids = deferred.filter_map do |descriptor|
+      next unless descriptor['event_type'] == 'snapshot.deleted'
+
+      descriptor.dig('payload', 'resource_id')
+    end
+    expect(snapshot_ids).to contain_exactly(parent_snap.id, child_snap.id)
+    expect(
+      deferred.select do |descriptor|
+        descriptor['source_class'] == 'SnapshotInPool'
+      end
+    ).to be_empty
   end
 end

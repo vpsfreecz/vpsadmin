@@ -299,7 +299,7 @@ VpsAdmin::API::Events.define owner: :outage_reports do
       entity_labels: { description: 'Labels of infrastructure entities affected by the outage', type: :string_list },
       handler_names: { description: 'Names of admins handling the outage', type: :string_list }
     }],
-    'outage.updated' => ['Outage updated', {
+    'outage.update_reported' => ['Outage update reported', {
       changed_fields: { description: 'Names of outage fields changed by the update', type: :string_list }
     }]
   }.each do |event_name, (label, event_fields)|

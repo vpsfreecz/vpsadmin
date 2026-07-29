@@ -213,7 +213,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows admin to create a client' do
+    it 'allows admin to create a client', :with_event_delivery do
       as(admin) do
         json_post index_path, oauth2_client: {
           name: 'Spec Created',
@@ -236,11 +236,13 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(record.check_secret('spec-created-secret')).to be(true)
 
       event = Event.where(
-        event_type: 'resource.created',
+        event_type: 'oauth2_client.created',
         source_class: 'Oauth2Client',
         source_id: record.id
       ).sole
-      expect(event.parameters['changed_fields']).to include('client_secret')
+      expect(event.parameters['changed_fields']).to include('client_secret_hash')
+      expect(event.parameters.dig('changes', 'client_secret_hash', 'new'))
+        .to eq('kind' => 'redacted')
       expect(event.payload_json).not_to include('spec-created-secret')
     end
 
@@ -291,7 +293,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows admin to update client attributes' do
+    it 'allows admin to update client attributes', :with_event_delivery do
       as(admin) do
         json_put show_path(primary_client.id), oauth2_client: {
           name: 'Spec Client A Updated',
@@ -310,14 +312,14 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(primary_client.redirect_uri).to eq('https://example.invalid/callback-updated')
 
       event = Event.where(
-        event_type: 'resource.updated',
+        event_type: 'oauth2_client.updated',
         source_class: 'Oauth2Client',
         source_id: primary_client.id
       ).sole
       expect(event.parameters['changed_fields']).to contain_exactly('name', 'redirect_uri')
     end
 
-    it 'allows admin to update client secret' do
+    it 'allows admin to update client secret', :with_event_delivery do
       old_hash = primary_client.client_secret_hash
 
       as(admin) { json_put show_path(primary_client.id), oauth2_client: { client_secret: 'spec-new-secret' } }
@@ -328,6 +330,16 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       primary_client.reload
       expect(primary_client.client_secret_hash).not_to eq(old_hash)
       expect(primary_client.check_secret('spec-new-secret')).to be(true)
+
+      event = Event.where(
+        event_type: 'oauth2_client.updated',
+        source_class: 'Oauth2Client',
+        source_id: primary_client.id
+      ).sole
+      expect(event.parameters['changed_fields']).to eq(['client_secret_hash'])
+      expect(event.parameters.dig('changes', 'client_secret_hash', 'new'))
+        .to eq('kind' => 'redacted')
+      expect(event.payload_json).not_to include('spec-new-secret')
     end
 
     it 'returns validation errors for invalid name' do
@@ -364,7 +376,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows admin to delete a client' do
+    it 'allows admin to delete a client', :with_event_delivery do
       as(admin) { json_delete show_path(primary_client.id) }
 
       expect_status(200)
@@ -372,7 +384,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(Oauth2Client.find_by(id: primary_client.id)).to be_nil
       expect(
         Event.where(
-          event_type: 'resource.deleted',
+          event_type: 'oauth2_client.deleted',
           source_class: 'Oauth2Client',
           source_id: primary_client.id
         )

@@ -116,7 +116,7 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
       integer :position
       bool :enabled
       string :event_type,
-             choices: { values: VpsAdmin::API::Events.type_labels },
+             choices: { values: VpsAdmin::API::Events.type_choice_labels },
              load_validators: false,
              nullable: true
       string :event_type_pattern, label: 'Event type pattern', nullable: true

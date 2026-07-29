@@ -81,7 +81,7 @@ module VpsAdmin::API::Resources
       input do
         resource User, value_label: :login, nullable: true
         string :event_type,
-               choices: { values: VpsAdmin::API::Events.type_labels },
+               choices: { values: VpsAdmin::API::Events.type_choice_labels },
                load_validators: false,
                nullable: true
         string :action,

@@ -9,6 +9,10 @@ RSpec.describe TransactionChains::Export::Update do
 
   let(:user) { SpecSeed.user }
 
+  before do
+    create_spec_event_route!(user:, event_type: 'export.updated')
+  end
+
   def create_update_fixture(enabled: true)
     pool = create_pool!(node: SpecSeed.node, role: :primary)
     ensure_available_node_status!(pool.node)
@@ -33,7 +37,7 @@ RSpec.describe TransactionChains::Export::Update do
 
     chain, = described_class.fire(export, enabled: false, threads: 12)
 
-    expect_deferred_event!(chain, 'resource.updated')
+    expect_deferred_event!(chain, 'export.updated')
     expect(tx_classes(chain)).to include(
       Transactions::Export::Disable,
       Transactions::Export::Set
@@ -52,7 +56,7 @@ RSpec.describe TransactionChains::Export::Update do
 
     complete_chain_operation!(chain)
     event = Event.where(
-      event_type: 'resource.updated',
+      event_type: 'export.updated',
       source_class: 'Export',
       source_id: export.id
     ).sole
@@ -111,12 +115,12 @@ RSpec.describe TransactionChains::Export::Update do
     expect(returned.id).to eq(export.id)
     expect(export.reload).to have_attributes(rw: false, sync: false)
     event = Event.where(
-      event_type: 'resource.updated',
+      event_type: 'export.updated',
       source_class: 'Export',
       source_id: export.id
     ).sole
     expect(event.parameters).to include(
-      'action' => 'updated',
+      'resource_action' => 'updated',
       'changed_fields' => %w[rw sync]
     )
     expect(event.parameters).not_to have_key('operation_id')

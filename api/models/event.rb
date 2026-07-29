@@ -79,9 +79,29 @@ class Event < ApplicationRecord
   end
 
   def source
-    return if source_class.blank? || source_id.blank?
+    return if source_class.blank?
 
-    source_class.safe_constantize&.find_by(id: source_id)
+    klass = source_class.safe_constantize
+    return unless klass < ActiveRecord::Base
+
+    return klass.find_by(id: source_id) if source_id.present?
+
+    resource_id = parameters&.fetch('resource_id', nil)
+    primary_key = Array(klass.primary_key).map(&:to_s)
+    return if primary_key.empty?
+
+    lookup =
+      if resource_id.is_a?(Hash)
+        return unless primary_key.all? { |field| resource_id.has_key?(field) }
+
+        resource_id.slice(*primary_key)
+      elsif primary_key.length == 1 && resource_id.present?
+        { primary_key.first => resource_id }
+      else
+        return
+      end
+
+    klass.find_by(lookup)
   end
 
   def payload_json
@@ -94,18 +114,6 @@ class Event < ApplicationRecord
 
   def payload=(value)
     self.parameters = value
-  end
-
-  def suppressed_by_mute?
-    suppressed_routing_state? &&
-      event_deliveries.any? do |delivery|
-        delivery.error_summary == 'route is muted by a time interval' ||
-          (
-            delivery.error_summary == 'receiver does not notify' &&
-            delivery.notification_receiver.enabled? &&
-            delivery.notification_receiver.mute?
-          )
-      end
   end
 
   protected

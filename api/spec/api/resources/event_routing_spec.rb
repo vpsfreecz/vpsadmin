@@ -231,8 +231,23 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     json.dig('response', 'errors') || json['errors'] || {}
   end
 
+  def response_message
+    json['message'] || json.dig('response', 'message') || json['error']
+  end
+
   def event_obj
     json.dig('response', 'event') || json['response']
+  end
+
+  def event_storage_counts
+    {
+      events: Event.count,
+      contexts: EventRoutingContext.count,
+      matches: EventRouteMatch.count,
+      deliveries: EventDelivery.count,
+      attempts: EventDeliveryAttempt.count,
+      groups: EventDeliveryGroup.count
+    }
   end
 
   def delivery_obj
@@ -371,14 +386,22 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       receiver_target_create = action_input_params('notification_receiver.target', :create)
       receiver_target_update = action_input_params('notification_receiver.target', :update)
       event_index = action_input_params(:event, :index)
-      expected_type_labels = VpsAdmin::API::Events.type_labels.except(
+      published_type_labels =
+        route_create.dig('event_type', 'validators', 'include', 'values')
+      current_type_labels = VpsAdmin::API::Events.type_choice_labels
+                                                 .transform_values(&:to_s)
+
+      expect(published_type_labels)
+        .to eq(current_type_labels.slice(*published_type_labels.keys))
+      expect(published_type_labels).to include(
+        'operation.started' => current_type_labels.fetch('operation.started'),
+        'os_family.updated' => current_type_labels.fetch('os_family.updated'),
+        'vps.updated' => current_type_labels.fetch('vps.updated')
+      )
+      expect(published_type_labels).not_to include(
         'monitoring.alert_chain',
         'monitoring.spec_alert'
       )
-
-      expect(
-        route_create.dig('event_type', 'validators', 'include', 'values')
-      ).to eq(expected_type_labels)
       expect(
         route_create.dig('subject_scope', 'validators', 'include', 'values')
       ).to eq(::EventRoute.subject_scope_labels)
@@ -416,9 +439,17 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         'notification_receiver_id',
         'notification_target_id',
         'notification_receiver_target_id',
+        'resource_name',
+        'resource_action',
         'subject_relation'
       )
       expect(event_index.dig('routing_state', 'label')).to eq('Routing state')
+      expect(
+        event_index.dig('routing_state', 'validators', 'include', 'values')
+      ).to eq(
+        'routed' => 'routed',
+        'aborted' => 'aborted'
+      )
     end
 
     it 'keeps dedicated system report migration routes matcher-free' do
@@ -832,7 +863,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(params.dig('continue', 'description')).to include('later sibling routes')
     expect(params.dig('group_by', 'description')).to include('common fields only')
 
-    as(SpecSeed.user) { json_get event_types_path }
+    as(SpecSeed.admin) { json_get event_types_path }
     expect_status(200)
 
     oom_type = event_types.find { |type| type['name'] == 'vps.oom_report' }
@@ -1578,7 +1609,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         user: SpecSeed.user,
         subject: 'Spec disabled default e-mail event'
       )
-    end.not_to change(Event, :count)
+    end.not_to(change { event_storage_counts })
     receiver = default_email_receiver_for(SpecSeed.user)
     action = receiver.notification_receiver_actions.sole
 
@@ -1609,7 +1640,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         user: SpecSeed.user,
         subject: 'Spec disabled delivery event'
       )
-    end.not_to change(Event, :count)
+    end.not_to(change { event_storage_counts })
 
     expect(route.reload.notification_receiver).to eq(receiver)
     expect(event).to be_nil
@@ -1856,8 +1887,49 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(json['status']).to be(false)
   end
 
+  it 'filters event types and counts by the caller role' do
+    json_get event_types_path
+    expect_status(401)
+
+    as(SpecSeed.user) do
+      json_get event_types_path, _meta: { count: true }
+    end
+    expect_status(200)
+    user_types = event_types
+    user_count = json.dig('response', '_meta', 'total_count')
+    expect(user_count).to eq(user_types.count)
+    expect(user_types).to all(
+      satisfy { |type| type.fetch('roles').include?('account') }
+    )
+    expect(user_types.map { |type| type.fetch('name') }).to include(
+      'vps.updated',
+      'user.updated'
+    )
+    expect(user_types.map { |type| type.fetch('name') }).not_to include(
+      'os_family.updated',
+      'transaction_chain.state_changed'
+    )
+
+    as(SpecSeed.support) { json_get event_types_path }
+    expect_status(200)
+    expect(event_types.map { |type| type.fetch('name') })
+      .to match_array(user_types.map { |type| type.fetch('name') })
+
+    as(SpecSeed.admin) do
+      json_get event_types_path, _meta: { count: true }
+    end
+    expect_status(200)
+    admin_types = event_types
+    expect(json.dig('response', '_meta', 'total_count')).to eq(admin_types.count)
+    expect(admin_types.count).to be > user_types.count
+    expect(admin_types.map { |type| type.fetch('name') }).to include(
+      'os_family.updated',
+      'transaction_chain.state_changed'
+    )
+  end
+
   it 'lists event types and fields' do
-    as(SpecSeed.user) { json_get event_types_path }
+    as(SpecSeed.admin) { json_get event_types_path }
 
     expect_status(200)
     incident = event_types.detect { |row| row['name'] == 'vps.incident_report' }
@@ -1873,6 +1945,11 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(incident_fields.dig('severity', 'example')).to eq('warning')
     expect(incident_fields.dig('roles', 'example')).to eq(%w[admin])
     expect(incident_fields.dig('default_routed', 'example')).to be(true)
+    expect(incident_fields).not_to include(
+      'resource_name',
+      'resource_action',
+      'resource_id'
+    )
     expect(incident_fields.fetch('subject')).not_to have_key('example')
     expect(incident_fields.fetch('summary')).not_to have_key('example')
     expect(incident_fields.dig('codename', 'description')).to eq('Incident report codename assigned by vpsAdmin')
@@ -1890,7 +1967,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     chain_fields = chain['fields'].index_by { |field| field['name'] }
     expect(chain['default_routed']).to be(false)
     expect(chain_fields.dig('event_type', 'example')).to eq('transaction_chain.state_changed')
-    expect(chain_fields.dig('category', 'example')).to eq('transactions')
+    expect(chain_fields.dig('category', 'example')).to eq('system')
     expect(chain_fields.dig('severity', 'example')).to eq('info')
     expect(chain_fields.dig('roles', 'example')).to eq(%w[admin])
     expect(chain_fields.dig('default_routed', 'example')).to be(false)
@@ -1911,7 +1988,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     operation_started_fields = operation_started['fields'].index_by { |field| field['name'] }
     expect(operation_started_fields.dig('subject', 'example')).to eq('Start started')
     expect(operation_started_fields.dig('summary', 'example'))
-      .to eq('Operation #123 attempt #1 started')
+      .to eq('Operation #123 started')
     expect(operation_started_fields.dig('state', 'example')).to eq('queued')
     expect(operation_started_fields.dig('successful', 'example')).to be(false)
     expect(operation_started_fields.dig('failed', 'example')).to be(false)
@@ -1933,16 +2010,91 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     console_opened_fields = console_opened['fields'].index_by { |field| field['name'] }
     expect(console_opened_fields).not_to have_key('close_reason')
 
-    resource_updated = event_types.detect { |row| row['name'] == 'resource.updated' }
+    resource_updated = event_types.detect { |row| row['name'] == 'os_family.updated' }
     resource_updated_fields = resource_updated['fields'].index_by { |field| field['name'] }
-    expect(resource_updated_fields.dig('subject', 'example')).to eq('OsFamily #42 updated')
-    expect(resource_updated_fields.dig('action', 'example')).to eq('updated')
-    expect(resource_updated_fields.dig('changed_fields', 'example')).to eq(%w[label])
+    expect(resource_updated).to include(
+      'category' => 'operating_systems',
+      'category_label' => 'Operating systems',
+      'roles' => %w[admin]
+    )
+    expect(resource_updated_fields.dig('subject', 'example')).to eq('Os family #42 updated')
+    expect(resource_updated_fields.dig('resource_name', 'example')).to eq('os_family')
+    expect(resource_updated_fields.dig('resource_action', 'example')).to eq('updated')
+    expect(resource_updated_fields.dig('changed_fields', 'choices')).to include('label', 'description')
+    expect(resource_updated['resource']).to include(
+      'name' => 'os_family',
+      'action' => 'updated',
+      'schema_version' => 1,
+      'id_type' => 'integer'
+    )
+    label_attribute = resource_updated['resource']['attributes'].detect do |attribute|
+      attribute['name'] == 'label'
+    end
+    expect(label_attribute).to include(
+      'type' => 'string',
+      'value_policy' => 'value_or_digest'
+    )
 
-    resource_deleted = event_types.detect { |row| row['name'] == 'resource.deleted' }
+    vps_updated = event_types.detect { |row| row['name'] == 'vps.updated' }
+    vps_updated_fields = vps_updated['fields'].index_by { |field| field['name'] }
+    object_state_attribute = vps_updated['resource']['attributes'].detect do |attribute|
+      attribute['name'] == 'object_state'
+    end
+    expect(object_state_attribute).to include(
+      'type' => 'string',
+      'choices' => VpsAdmin::API::Lifetimes::STATES.map(&:to_s),
+      'old_matcher' => true,
+      'new_matcher' => true
+    )
+    expect(vps_updated_fields.fetch('new_object_state')).to include(
+      'type' => 'string',
+      'choices' => VpsAdmin::API::Lifetimes::STATES.map(&:to_s)
+    )
+
+    os_template_created = event_types.detect do |row|
+      row['name'] == 'os_template.created'
+    end
+    config_attribute = os_template_created['resource']['attributes'].detect do |attribute|
+      attribute['name'] == 'config'
+    end
+    expect(config_attribute).to include(
+      'type' => 'json',
+      'value_policy' => 'redacted',
+      'old_matcher' => false,
+      'new_matcher' => false
+    )
+
+    resource_deleted = event_types.detect { |row| row['name'] == 'os_family.deleted' }
     resource_deleted_fields = resource_deleted['fields'].index_by { |field| field['name'] }
-    expect(resource_deleted_fields.dig('action', 'example')).to eq('deleted')
-    expect(resource_deleted_fields.dig('changed_fields', 'example')).to eq([])
+    expect(resource_deleted_fields.dig('resource_action', 'example')).to eq('deleted')
+    expect(resource_deleted['resource']['action']).to eq('deleted')
+  end
+
+  it 'filters the event stream by logical resource and action' do
+    create_spec_event_route!(user: SpecSeed.user, event_type: 'user.updated')
+    resource_event = with_current_context(user: SpecSeed.user) do
+      VpsAdmin::API::Events::ResourceOperations.updated!(
+        SpecSeed.user,
+        changed_fields: %i[login],
+        changes: { login: { old: 'before', new: SpecSeed.user.login } }
+      )
+    end
+    VpsAdmin::API::Events.emit!(
+      'vps.incident_report',
+      user: SpecSeed.user,
+      subject: 'Non-resource event',
+      payload: { codename: 'event-filter-control' }
+    )
+
+    as(SpecSeed.user) do
+      json_get event_index_path, event: {
+        resource_name: 'user',
+        resource_action: 'updated'
+      }
+    end
+
+    expect_status(200)
+    expect(events.map { |event| event['id'] }).to eq([resource_event.id])
   end
 
   it 'omits type-dependent examples from aggregate field metadata' do
@@ -1955,14 +2107,15 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
   it 'localizes event type labels and field descriptions' do
     cs = Language.find_or_create_by!(code: 'cs') { |lang| lang.label = 'Čeština' }
-    SpecSeed.user.update!(language: cs)
+    SpecSeed.admin.update!(language: cs)
 
-    as(SpecSeed.user) { json_get event_types_path }
+    as(SpecSeed.admin) { json_get event_types_path }
 
     expect_status(200)
     incident = event_types.detect { |row| row['name'] == 'vps.incident_report' }
     incident_fields = incident['fields'].index_by { |field| field['name'] }
     expect(incident['label']).to eq('Incident')
+    expect(incident['category_label']).to eq('Incidenty')
     expect(incident_fields.dig('category', 'description')).to eq('Kategorie události používaná pro seskupení')
     expect(incident_fields.dig('codename', 'description')).to eq('Kódové označení incidentu přidělené vpsAdminem')
   end
@@ -1976,7 +2129,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       fields: %i[vps]
     )
 
-    as(SpecSeed.user) { json_get event_types_path }
+    as(SpecSeed.admin) { json_get event_types_path }
 
     expect_status(200)
     monitoring = event_types.detect { |row| row['name'] == 'monitoring.spec_alert' }
@@ -1995,9 +2148,9 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       fields: %i[vps]
     )
     cs = Language.find_or_create_by!(code: 'cs') { |lang| lang.label = 'Čeština' }
-    SpecSeed.user.update!(language: cs)
+    SpecSeed.admin.update!(language: cs)
 
-    as(SpecSeed.user) { json_get event_types_path }
+    as(SpecSeed.admin) { json_get event_types_path }
 
     expect_status(200)
     monitoring = event_types.detect { |row| row['name'] == 'monitoring.spec_alert' }
@@ -2055,6 +2208,55 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
   it 'does not register monitoring event types in core-only mode', without_plugins: :monitoring do
     expect(VpsAdmin::API::Events.type_for('monitoring.monitor_state_changed')).to be_nil
     expect(VpsAdmin::API::Events.type_for('monitoring.alert')).to be_nil
+  end
+
+  it 'rejects an unrouted test event without retaining routing rows' do
+    expect do
+      as(SpecSeed.user) do
+        json_post event_test_path, event: {
+          event_type: 'transaction_chain.state_changed',
+          subject: 'Unrouted spec test event',
+          payload_json: JSON.dump(state: 'queued', terminal: false)
+        }
+      end
+    end.not_to(change { event_storage_counts })
+
+    expect(json['status']).to be(false)
+    expect(response_message).to include('no enabled route produced a delivery')
+  end
+
+  it 'creates a routed test event when an enabled route produces a delivery' do
+    receiver = NotificationReceiver.create!(
+      user: SpecSeed.user,
+      label: 'Routed test event receiver'
+    )
+    receiver.notification_receiver_actions.create!(
+      action: :webhook,
+      target_kind: :custom,
+      target_value: 'https://example.test/routed-test-event'
+    )
+    route = EventRoute.create!(
+      user: SpecSeed.user,
+      notification_receiver: receiver,
+      event_type: 'transaction_chain.state_changed',
+      position: 1
+    )
+
+    as(SpecSeed.user) do
+      json_post event_test_path, event: {
+        event_type: 'transaction_chain.state_changed',
+        subject: 'Routed spec test event',
+        payload_json: JSON.dump(state: 'queued', terminal: false)
+      }
+    end
+
+    expect_status(200)
+    expect(json['status']).to be(true)
+
+    event = Event.find(event_obj['id'])
+    expect(event.reload).to be_routed_routing_state
+    expect(event.event_route_matches.sole.event_route).to eq(route)
+    expect(event.event_deliveries.sole).to be_released_state
   end
 
   it 'creates test events for the current user' do

@@ -20,7 +20,7 @@ module VpsAdmin::API::Resources
       string :event_type,
              label: 'Event type',
              desc: 'Match one exact event type; leave empty to match all types or use an event type pattern',
-             choices: { values: VpsAdmin::API::Events.type_labels },
+             choices: { values: VpsAdmin::API::Events.type_choice_labels },
              load_validators: false,
              nullable: true
       string :event_type_pattern,

@@ -106,7 +106,11 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
     end
 
     def outage_event_type(attrs)
-      attrs[:state] == ::Outage.states[:announced] ? 'outage.announced' : 'outage.updated'
+      if attrs[:state] == ::Outage.states[:announced]
+        'outage.announced'
+      else
+        'outage.update_reported'
+      end
     end
 
     def outage_notification_event(attrs)
