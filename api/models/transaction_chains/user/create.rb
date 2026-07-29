@@ -110,7 +110,7 @@ module TransactionChains
         end
       end
 
-      route_event!(
+      defer_result_event!(
         'user.created',
         user:,
         source: user,

@@ -7,6 +7,14 @@ RSpec.describe TransactionChains::Ip::Update do
     with_current_context(user: SpecSeed.admin) { example.run }
   end
 
+  before do
+    create_spec_event_route!(
+      user: SpecSeed.admin,
+      event_type: 'ip_address.updated',
+      subject_scope: :visible
+    )
+  end
+
   def resource_use_value(user:, environment:, resource:)
     user_env = user.environment_user_configs.find_by!(environment: environment)
 
@@ -54,6 +62,8 @@ RSpec.describe TransactionChains::Ip::Update do
     expect(resource_use_value(user: SpecSeed.other_user, environment: SpecSeed.environment, resource: :ipv4)).to eq(
       before_new + 1
     )
+    event = expect_resource_event!(:updated, ip)
+    expect(event.parameters['changed_fields']).to eq(%w[user_id])
   end
 
   it 'clears ownership and chains host address cleanup' do
@@ -70,7 +80,12 @@ RSpec.describe TransactionChains::Ip::Update do
     expect(resource_use_value(user: SpecSeed.user, environment: SpecSeed.environment, resource: :ipv4)).to eq(
       before_old - 1
     )
-    expect(tx_classes(chain)).to eq([Transactions::Utils::NoOp])
+    expect(tx_classes(chain)).to eq(
+      [
+        Transactions::Utils::NoOp,
+        Transactions::Utils::NoOp
+      ]
+    )
     expect(
       confirmations_for(chain).find { |row| row.class_name == 'HostIpAddress' && row.row_pks == { 'id' => host_ip.id } }
         .confirm_type

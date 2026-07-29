@@ -17,6 +17,14 @@ module TransactionChains
       end
 
       dns_zone.assign_attributes(attrs)
+      changed_fields = dns_zone.changed.dup
+      if changed_fields.any?
+        defer_resource_event!(
+          :updated,
+          dns_zone,
+          changed_fields:
+        )
+      end
 
       if !dns_zone.default_ttl_changed? \
          && !dns_zone.email_changed? \

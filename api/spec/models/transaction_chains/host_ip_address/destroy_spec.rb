@@ -9,6 +9,14 @@ RSpec.describe TransactionChains::HostIpAddress::Destroy do
 
   let(:user) { SpecSeed.user }
 
+  before do
+    create_spec_event_route!(
+      user: SpecSeed.admin,
+      event_type: 'host_ip_address.deleted',
+      subject_scope: :visible
+    )
+  end
+
   def create_host_ip
     network = create_private_network!(
       location: SpecSeed.location,
@@ -29,6 +37,7 @@ RSpec.describe TransactionChains::HostIpAddress::Destroy do
 
     expect(chain).to be_nil
     expect(HostIpAddress.where(id: host_ip.id)).to be_empty
+    expect_resource_event!(:deleted, host_ip)
   end
 
   it 'unsets reverse DNS and confirms host address destruction' do
@@ -55,6 +64,7 @@ RSpec.describe TransactionChains::HostIpAddress::Destroy do
       [
         Transactions::DnsServerZone::DeleteRecords,
         Transactions::DnsServer::Reload,
+        Transactions::Utils::NoOp,
         Transactions::Utils::NoOp,
         Transactions::Utils::NoOp
       ]

@@ -34,9 +34,9 @@ RSpec.describe TransactionChains::Vps::ExpandDatasetAgain do
     expect(returned_history).to eq(history)
     expect(tx_classes(chain)).to include(
       Transactions::Storage::SetDataset,
-      Transactions::EventDelivery::Notify,
       Transactions::Utils::NoOp
     )
+    expect(tx_classes(chain)).not_to include(Transactions::EventDelivery::Notify)
     expect(tx_payload(chain, Transactions::Storage::SetDataset)).to include(
       'properties' => include('refquota' => [fixture.fetch(:current_refquota), fixture.fetch(:current_refquota) + 1_024])
     )
@@ -51,12 +51,17 @@ RSpec.describe TransactionChains::Vps::ExpandDatasetAgain do
     end).to be(true)
     expect(chain.locks.map { |lock| [lock.resource, lock.row_id] }).to include(['DatasetInPool', dip.id])
 
-    event = expect_routed_event!('vps.dataset_expanded', user: user)
+    expect_deferred_event!(chain, 'vps.dataset_expanded')
+    complete_chain_operation!(chain)
+    event = expect_completed_event!('vps.dataset_expanded', user: user)
     expect(event.vps).to eq(fixture.fetch(:vps))
     expect(event.source).to eq(expansion)
     expect(event.parameters).to include(
       'dataset_id' => fixture.fetch(:dataset).id,
-      'added_space' => expansion.added_space
+      'added_space' => expansion.added_space,
+      'operation_id' => chain.id,
+      'operation_result_index' => 0
     )
+    expect(event.parameters).not_to have_key('operation_attempt')
   end
 end

@@ -11,6 +11,11 @@ module TransactionChains
         :affect,
         [dns_zone.class.name, dns_zone.id]
       )
+      defer_resource_event!(
+        :deleted,
+        dns_record,
+        owner: dns_zone.user
+      )
 
       log = ::DnsRecordLog.create!(
         user: ::User.current,

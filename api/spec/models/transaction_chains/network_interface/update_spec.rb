@@ -9,6 +9,16 @@ RSpec.describe TransactionChains::NetworkInterface::Update do
 
   let(:user) { SpecSeed.user }
 
+  def expect_deferred_update(chain, network_interface)
+    expect(deferred_result_events(chain)).to contain_exactly(
+      include(
+        'event_type' => 'resource.updated',
+        'source_class' => 'NetworkInterface',
+        'source_id' => network_interface.id
+      )
+    )
+  end
+
   it 'renames first, then updates the shaper, and writes a rename log' do
     fixture = create_netif_vps_fixture!(
       user: user,
@@ -26,7 +36,8 @@ RSpec.describe TransactionChains::NetworkInterface::Update do
     expect(tx_classes(chain)).to eq(
       [
         Transactions::NetworkInterface::Rename,
-        Transactions::NetworkInterface::SetShaper
+        Transactions::NetworkInterface::SetShaper,
+        Transactions::Utils::NoOp
       ]
     )
     expect(tx_payload(chain, Transactions::NetworkInterface::SetShaper)).to include(
@@ -48,6 +59,7 @@ RSpec.describe TransactionChains::NetworkInterface::Update do
         'new_name' => 'lan0'
       }
     )
+    expect_deferred_update(chain, fixture[:netif])
   end
 
   it 'emits enable and disable transactions with log rows' do
@@ -59,7 +71,12 @@ RSpec.describe TransactionChains::NetworkInterface::Update do
 
     enable_chain, = described_class.fire(disabled_fixture[:netif], enable: true)
 
-    expect(tx_classes(enable_chain)).to eq([Transactions::NetworkInterface::Enable])
+    expect(tx_classes(enable_chain)).to eq(
+      [
+        Transactions::NetworkInterface::Enable,
+        Transactions::Utils::NoOp
+      ]
+    )
     expect(
       disabled_fixture[:vps].object_histories.where(event_type: 'netif_enable').pluck(:event_data)
     ).to include(
@@ -69,6 +86,7 @@ RSpec.describe TransactionChains::NetworkInterface::Update do
         'enable' => true
       }
     )
+    expect_deferred_update(enable_chain, disabled_fixture[:netif])
 
     enabled_fixture = create_netif_vps_fixture!(
       user: user,
@@ -78,7 +96,12 @@ RSpec.describe TransactionChains::NetworkInterface::Update do
 
     disable_chain, = described_class.fire(enabled_fixture[:netif], enable: false)
 
-    expect(tx_classes(disable_chain)).to eq([Transactions::NetworkInterface::Disable])
+    expect(tx_classes(disable_chain)).to eq(
+      [
+        Transactions::NetworkInterface::Disable,
+        Transactions::Utils::NoOp
+      ]
+    )
     expect(
       enabled_fixture[:vps].object_histories.where(event_type: 'netif_enable').pluck(:event_data)
     ).to include(
@@ -88,6 +111,7 @@ RSpec.describe TransactionChains::NetworkInterface::Update do
         'enable' => false
       }
     )
+    expect_deferred_update(disable_chain, enabled_fixture[:netif])
   end
 
   it 'returns an empty chain when the interface stays unchanged' do
