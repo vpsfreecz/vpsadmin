@@ -1102,11 +1102,60 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       update_id = security_advisory_update_obj.fetch('id')
       expect(VpsAdmin::API::NotificationEvents).not_to have_received(:run_chain)
       expect(advisory.reload.published_at.utc).to eq(published_at)
+      expect(
+        Event.where(
+          event_type: 'resource.created',
+          source_class: 'SecurityAdvisoryUpdate',
+          source_id: update_id
+        )
+      ).to exist
+      advisory_event = Event.where(
+        event_type: 'resource.updated',
+        source_class: 'SecurityAdvisory',
+        source_id: advisory.id
+      ).sole
+      expect(advisory_event.parameters['changed_fields']).to eq(%w[published_at])
 
       json_get update_index_path, security_advisory_update: { security_advisory: advisory.id }
 
       expect_status(200)
       expect(security_advisory_updates.map { |row| row['id'] }).to include(update_id)
+    end
+
+    it 'keeps resource facts when notification routing fails after commit' do
+      advisory = build_published_advisory
+      allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain)
+        .and_raise('notification routing failed')
+
+      as(SpecSeed.admin) do
+        json_post update_index_path, security_advisory_update: {
+          security_advisory: advisory.id,
+          en_summary: 'Persisted failed notification update',
+          cs_summary: 'Ulozena aktualizace',
+          send_mail: true
+        }
+      end
+
+      expect_status(500)
+      expect(json['status']).to be(false)
+      update = ::SecurityAdvisoryUpdate.where(
+        security_advisory: advisory
+      ).order(:id).last
+      expect(update).to be_present
+      expect(
+        Event.where(
+          event_type: 'resource.created',
+          source_class: 'SecurityAdvisoryUpdate',
+          source_id: update.id
+        )
+      ).to exist
+      expect(
+        Event.where(
+          event_type: 'resource.created',
+          source_class: 'SecurityAdvisoryTranslation',
+          source_id: update.security_advisory_translations.first.id
+        )
+      ).to exist
     end
 
     it 'rejects updates for missing advisories' do

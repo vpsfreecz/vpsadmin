@@ -222,7 +222,9 @@ class Outage < ApplicationRecord
       end
     end
 
-    outage_users.where.not(user_id: users.map(&:id)).delete_all
+    removed = outage_users.where.not(user_id: users.map(&:id)).to_a
+    ::OutageUser.where(id: removed.map(&:id)).delete_all
+    VpsAdmin::API::Events::ActionPolicies.record_many(:deleted, removed)
   end
 
   def affected_user_count

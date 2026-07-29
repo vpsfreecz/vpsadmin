@@ -229,6 +229,11 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
           )
 
           ::WebauthnCredential.increment_counter(:use_count, stored_credential.id)
+          VpsAdmin::API::Events::ActionPolicies.record(
+            :updated,
+            stored_credential,
+            changed_fields: %i[use_count]
+          )
 
           auth_token.update!(fulfilled: true)
         end

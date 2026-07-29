@@ -72,7 +72,14 @@ class SecurityAdvisory < ApplicationRecord
       end
 
       result = yield
+      old_content_revision = self[:content_revision]
       update_columns(content_revision: content_revision + 1, updated_at: Time.current)
+      VpsAdmin::API::Events::ActionPolicies.record(
+        :updated,
+        self,
+        changed_fields: %i[content_revision],
+        before_values: { content_revision: old_content_revision }
+      )
       result
     end
   end
@@ -104,7 +111,9 @@ class SecurityAdvisory < ApplicationRecord
     end
 
     transaction do
-      security_advisory_cves.where.not(cve_id: ids).delete_all
+      removed = security_advisory_cves.where.not(cve_id: ids).to_a
+      ::SecurityAdvisoryCve.where(id: removed.map(&:id)).delete_all
+      VpsAdmin::API::Events::ActionPolicies.record_many(:deleted, removed)
 
       ids.each do |cve_id|
         security_advisory_cves.find_or_create_by!(cve_id:)
@@ -180,7 +189,11 @@ class SecurityAdvisory < ApplicationRecord
         rec.save!
       end
 
-      security_advisory_vpses.where.not(vps_id: affected.map(&:id)).delete_all
+      removed = security_advisory_vpses
+                .where.not(vps_id: affected.map(&:id))
+                .to_a
+      ::SecurityAdvisoryVps.where(id: removed.map(&:id)).delete_all
+      VpsAdmin::API::Events::ActionPolicies.record_many(:deleted, removed)
       rebuild_affected_users!
     end
   end
@@ -195,7 +208,9 @@ class SecurityAdvisory < ApplicationRecord
       end
     end
 
-    security_advisory_users.where.not(user_id: user_ids).delete_all
+    removed = security_advisory_users.where.not(user_id: user_ids).to_a
+    ::SecurityAdvisoryUser.where(id: removed.map(&:id)).delete_all
+    VpsAdmin::API::Events::ActionPolicies.record_many(:deleted, removed)
   end
 
   def validate_publishable!
@@ -233,7 +248,7 @@ class SecurityAdvisory < ApplicationRecord
   end
 
   def create_update!(attrs = {}, translations = {}, advisory_attrs: {}, send_mail: false)
-    transaction do
+    advisory_update = transaction do
       advisory_update = security_advisory_updates.create!(
         attrs.merge(reported_by: ::User.current)
       )
@@ -248,13 +263,24 @@ class SecurityAdvisory < ApplicationRecord
 
       if attrs[:state]
         update!(state: attrs[:state])
-        update_column(:retracted_at, Time.now) if attrs[:state].to_s == 'retracted'
+        if attrs[:state].to_s == 'retracted'
+          old_retracted_at = self[:retracted_at]
+          update_column(:retracted_at, Time.now)
+          VpsAdmin::API::Events::ActionPolicies.record(
+            :updated,
+            self,
+            changed_fields: %i[retracted_at],
+            before_values: { retracted_at: old_retracted_at }
+          )
+        end
       end
 
       advisory_update.load_translations
-      mail_chain(:update, update: advisory_update) if send_mail
       advisory_update
     end
+
+    mail_chain(:update, update: advisory_update) if send_mail
+    advisory_update
   end
 
   def load_translations

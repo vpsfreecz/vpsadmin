@@ -66,6 +66,33 @@ RSpec.describe VpsAdmin::API::Operations::Node::ReconstructKernelEvents do
             ]])
   end
 
+  it 'emits the previous current event demoted by the bulk update' do
+    previous = NodeKernelEvent.create!(
+      node:,
+      event_type: :boot,
+      source: :reconstructed_node_status,
+      confidence: :inferred,
+      booted_at: t0,
+      booted_release: '6.12.93',
+      reported_release: '6.12.93',
+      observed_before: t0 + 50,
+      current: true
+    )
+    create_status(time: t0 + 100, uptime: 100, kernel: '6.12.95')
+
+    with_current_context(user: SpecSeed.admin) do
+      described_class.run(node)
+    end
+
+    expect(previous.reload).not_to be_current
+    event = Event.where(
+      event_type: 'resource.updated',
+      source_class: 'NodeKernelEvent',
+      source_id: previous.id
+    ).sole
+    expect(event.parameters['changed_fields']).to eq(%w[current])
+  end
+
   it 'is idempotent' do
     create_status(time: t0 + 100, uptime: 100, kernel: '6.12.95')
 

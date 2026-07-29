@@ -45,7 +45,9 @@ class NewsLog < ApplicationRecord
           self.message = value
           save!
         elsif value.blank?
-          news_log_translations.where(language: lang).delete_all
+          removed = news_log_translations.where(language: lang).to_a
+          ::NewsLogTranslation.where(id: removed.map(&:id)).delete_all
+          VpsAdmin::API::Events::ActionPolicies.record_many(:deleted, removed)
           next
         end
 

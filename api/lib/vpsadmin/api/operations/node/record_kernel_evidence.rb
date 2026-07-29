@@ -383,7 +383,15 @@ module VpsAdmin::API
       confidence: :inferred,
       public_event: true
     )
-      node.node_kernel_events.kernel_history.update_all(current: false) if public_event
+      if public_event
+        previous = node.node_kernel_events.kernel_history.where(current: true).to_a
+        ::NodeKernelEvent.where(id: previous.map(&:id)).update_all(current: false)
+        VpsAdmin::API::Events::ActionPolicies.record_many(
+          :updated,
+          previous,
+          changed_fields: %i[current]
+        )
+      end
       kernel = report.kernel
       ::NodeKernelEvent.create!(
         node:,
