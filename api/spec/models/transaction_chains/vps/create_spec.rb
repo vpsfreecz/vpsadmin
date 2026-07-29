@@ -235,7 +235,7 @@ RSpec.describe TransactionChains::Vps::Create do
       )
     end
 
-    expect_deferred_event!(chain, 'resource.created')
+    expect_deferred_event!(chain, 'vps.created')
     complete_chain_operation!(chain)
     event = expect_resource_event!(:created, vps, operation: chain)
     succeeded = Event.where(
@@ -243,7 +243,15 @@ RSpec.describe TransactionChains::Vps::Create do
       source_class: 'TransactionChain',
       source_id: chain.id
     ).sole
-    expect(succeeded.parameters['result_event_ids']).to eq([event.id])
+    result_events = Event.where(id: succeeded.parameters['result_event_ids'])
+    expect(result_events.pluck(:event_type)).to contain_exactly(
+      'dataset.created',
+      'vps.created',
+      'vps_feature.updated',
+      'vps_feature.updated',
+      'vps_feature.updated'
+    )
+    expect(result_events).to include(event)
   end
 
   it 'raises when a template mount references a missing dataset' do

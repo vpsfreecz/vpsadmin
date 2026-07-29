@@ -32,7 +32,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     )
   end
 
-  def add_result_descriptor!(chain, event_type: 'resource.updated',
+  def add_result_descriptor!(chain, event_type: 'user.updated',
                              user_id: chain.user_id)
     Transaction.create!(
       transaction_chain: chain,
@@ -153,7 +153,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       definition = VpsAdmin::API::Events.type_for(event_name)
 
       expect(definition).to have_attributes(
-        category: 'transactions',
+        category: 'system',
         roles: %w[account admin],
         default_routed: false
       )
@@ -297,7 +297,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       .to eq(['00000000-0000-4000-8000-000000000004'])
   end
 
-  it 'orders and deduplicates deferred result facts after operation success' do
+  it 'orders and deduplicates deferred facts before operation success' do
     chain = create_chain!(state: :done)
     add_result_descriptor!(chain)
     supervisor = described_class.new(nil, SpecSeed.node)
@@ -317,9 +317,9 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       source_class: 'TransactionChain',
       source_id: chain.id
     ).sole
-    result = Event.where(event_type: 'resource.updated', subject: 'Deferred result fact').sole
+    result = Event.where(event_type: 'user.updated', subject: 'Deferred result fact').sole
 
-    expect(success.id).to be < result.id
+    expect(result.id).to be < success.id
     expect(success.parameters['result_event_ids']).to eq([result.id])
     expect(result.parameters).to include(
       'operation_id' => chain.id,
@@ -341,7 +341,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       producer_event_id: '10000000-0000-4000-8000-000000000005'
     )
 
-    expect(Event.where(event_type: 'resource.updated', subject: 'Deferred result fact')).to be_empty
+    expect(Event.where(event_type: 'user.updated', subject: 'Deferred result fact')).to be_empty
     expect(
       Event.where(
         event_type: 'operation.failed',
@@ -406,7 +406,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       source_class: 'TransactionChain',
       source_id: chain.id
     ).sole
-    result = Event.where(event_type: 'resource.updated', subject: 'Deferred result fact').sole
+    result = Event.where(event_type: 'user.updated', subject: 'Deferred result fact').sole
 
     expect(lifecycle).to have_attributes(user: nil)
     expect(lifecycle.parameters['actor_user_id']).to eq(SpecSeed.admin.id)

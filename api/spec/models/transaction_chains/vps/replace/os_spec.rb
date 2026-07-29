@@ -313,7 +313,7 @@ RSpec.describe TransactionChains::Vps::Replace::Os do
     success = VpsAdmin::API::Events::OperationLifecycle.emit_succeeded!(chain)
     event = Event.where(event_type: 'vps.replaced').sole
 
-    expect(success.id).to be < event.id
+    expect(event.id).to be < success.id
     expect(event).to be_suppressed_routing_state
     expect(event.vps).to eq(vps)
     expect(event.source).to eq(dst_vps)

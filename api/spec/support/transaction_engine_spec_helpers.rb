@@ -87,15 +87,18 @@ module TransactionEngineSpecHelpers
   end
 
   def expect_resource_event!(action, object, operation: nil)
+    resource_name =
+      VpsAdmin::API::Events::ResourceOperations.resource_name_for(object)
     event = Event.where(
-      event_type: "resource.#{action}",
+      event_type: "#{resource_name}.#{action}",
       source_class: object.class.base_class.name,
       source_id: object.id
     ).sole
     expect(event.parameters).to include(
-      'resource_type' => object.class.base_class.name,
+      'resource_name' => resource_name,
       'resource_id' => object.id,
-      'action' => action.to_s
+      'resource_action' => action.to_s,
+      'resource_schema_version' => 1
     )
 
     if operation

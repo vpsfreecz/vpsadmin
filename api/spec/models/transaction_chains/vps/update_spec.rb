@@ -97,6 +97,20 @@ RSpec.describe TransactionChains::Vps::Update do
       'nameserver' => ['192.0.2.54'],
       'original' => ['192.0.2.53']
     )
+    expect_deferred_event!(chain, 'vps.updated')
+
+    complete_chain_operation!(chain)
+    event = expect_resource_event!(:updated, vps, operation: chain)
+    expect(event.parameters.dig('changes', 'hostname')).to eq(
+      'old' => {
+        'kind' => 'value',
+        'value' => original_hostname
+      },
+      'new' => {
+        'kind' => 'value',
+        'value' => 'new-update-host'
+      }
+    )
   end
 
   it 'queues unmanage transactions when hostname and DNS resolver management are disabled' do

@@ -111,7 +111,7 @@ RSpec.describe VpsAdmin::API::Operations::Environment::Update do
     end
 
     event = Event.where(
-      event_type: 'resource.updated',
+      event_type: 'user_environment_config.updated',
       source_class: 'EnvironmentUserConfig',
       source_id: config.id
     ).sole

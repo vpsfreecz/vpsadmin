@@ -6,7 +6,7 @@ module VpsAdmin::API::Resources
     params(:common) do
       resource User, value_label: :login, nullable: true
       string :event_type,
-             choices: { values: VpsAdmin::API::Events.type_labels },
+             choices: { values: VpsAdmin::API::Events.type_choice_labels },
              load_validators: false
       string :category
       string :severity,
@@ -41,6 +41,16 @@ module VpsAdmin::API::Resources
 
       input do
         use :common, include: %i[user event_type category severity routing_state]
+        string :resource_name,
+               label: 'Resource name',
+               desc: 'Filter by exact logical resource name',
+               nullable: true
+        string :resource_action,
+               label: 'Resource action',
+               desc: 'Filter by completed resource mutation',
+               choices: { values: VpsAdmin::API::Events::ResourceOperations::ACTIONS },
+               load_validators: false,
+               nullable: true
         integer :event_route_id, nullable: true
         resource EventDeliveryGroup,
                  name: :event_delivery_group,
@@ -80,6 +90,7 @@ module VpsAdmin::API::Resources
         %i[user event_type category severity routing_state].each do |v|
           q = q.where(v => input[v]) if input.has_key?(v)
         end
+        q = resource_filter(q)
         q = event_route_filter(q)
         q = subject_relation_filter(q)
 
@@ -113,6 +124,22 @@ module VpsAdmin::API::Resources
       end
 
       protected
+
+      def resource_filter(scope)
+        filters = {
+          resource_name: input[:resource_name],
+          resource_action: input[:resource_action]
+        }.compact_blank
+        return scope if filters.empty?
+
+        filters.reduce(scope) do |ret, (field, value)|
+          ret.where(
+            'JSON_UNQUOTE(JSON_EXTRACT(parameters, ?)) = ?',
+            "$.#{field}",
+            value
+          )
+        end
+      end
 
       def event_route_filter(scope)
         return scope unless input.has_key?(:event_route_id)
@@ -242,7 +269,7 @@ module VpsAdmin::API::Resources
       input do
         resource User, value_label: :login, nullable: true
         string :event_type,
-               choices: { values: VpsAdmin::API::Events.type_labels },
+               choices: { values: VpsAdmin::API::Events.type_choice_labels },
                load_validators: false,
                nullable: true
         string :subject, nullable: true

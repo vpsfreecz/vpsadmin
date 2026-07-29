@@ -466,7 +466,7 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect(User.find(SpecSeed.other_user.id).full_name).to eq('Spec Updated')
 
       event = Event.where(
-        event_type: 'resource.updated',
+        event_type: 'user.updated',
         source_class: 'User',
         source_id: SpecSeed.other_user.id
       ).order(:id).last

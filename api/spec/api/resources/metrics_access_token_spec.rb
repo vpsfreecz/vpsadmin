@@ -231,7 +231,7 @@ RSpec.describe 'VpsAdmin::API::Resources::MetricsAccessToken' do
       expect(token_obj['metric_prefix']).to eq('spec_created')
 
       event = Event.where(
-        event_type: 'resource.created',
+        event_type: 'metrics_access_token.created',
         source_class: 'MetricsAccessToken',
         source_id: token_obj['id']
       ).sole
@@ -302,7 +302,7 @@ RSpec.describe 'VpsAdmin::API::Resources::MetricsAccessToken' do
       expect(MetricsAccessToken.where(id: user_primary.id)).to be_empty
 
       event = Event.where(
-        event_type: 'resource.deleted',
+        event_type: 'metrics_access_token.deleted',
         source_class: 'MetricsAccessToken',
         source_id: user_primary.id
       ).sole

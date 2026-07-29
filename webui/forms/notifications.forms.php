@@ -206,6 +206,68 @@ function notifications_event_type_field_metadata_from_type($type)
     return $ret;
 }
 
+function notifications_event_type_resource_metadata_from_type($type)
+{
+    $resource = notifications_event_type_metadata_array(
+        notifications_prop($type, 'resource'),
+        true
+    );
+
+    if (!$resource) {
+        return [];
+    }
+
+    $attributes = notifications_event_type_metadata_array(
+        $resource['attributes'] ?? [],
+        true
+    );
+    $resource['attributes'] = array_values(array_filter(array_map(
+        function ($attribute) {
+            $attribute = notifications_event_type_metadata_array($attribute);
+
+            if (isset($attribute['choices'])) {
+                $attribute['choices'] = array_values(
+                    notifications_event_type_metadata_array($attribute['choices'], true)
+                );
+            }
+
+            return $attribute;
+        },
+        $attributes
+    )));
+
+    $id_attributes = notifications_event_type_metadata_array(
+        $resource['id_attributes'] ?? [],
+        true
+    );
+    $resource['id_attributes'] = array_values(array_filter(array_map(
+        function ($attribute) {
+            return notifications_event_type_metadata_array($attribute);
+        },
+        $id_attributes
+    )));
+
+    return $resource;
+}
+
+function notifications_resource_id_attributes_html($resource)
+{
+    $attributes = $resource['id_attributes'] ?? [];
+
+    if (!$attributes) {
+        return '';
+    }
+
+    return '<br><strong>' . _('Composite ID attributes') . ':</strong> '
+        . implode(', ', array_map(
+            function ($attribute) {
+                return '<code>' . h($attribute['name'] ?? '') . '</code> (<code>'
+                    . h($attribute['type'] ?? '') . '</code>)';
+            },
+            $attributes
+        ));
+}
+
 function notifications_event_type_metadata_array($value, $decode_json = false)
 {
     if ($decode_json && is_string($value)) {
@@ -5537,20 +5599,27 @@ function notifications_event_types($user_id = null)
     $groups = [];
 
     foreach (notifications_event_types_cached() as $type) {
-        $groups[notifications_prop($type, 'category') ?: _('Other')][] = $type;
+        $category = notifications_prop($type, 'category') ?: 'other';
+        $groups[$category]['label'] = notifications_prop($type, 'category_label')
+            ?: ($category === 'other' ? _('Other') : $category);
+        $groups[$category]['types'][] = $type;
     }
 
-    ksort($groups);
+    uasort($groups, function ($a, $b) {
+        return strcasecmp($a['label'], $b['label']);
+    });
     $html = '<div class="notification-event-types">';
 
-    foreach ($groups as $category => $types) {
+    foreach ($groups as $group) {
+        $category_label = $group['label'];
+        $types = $group['types'];
         usort($types, function ($a, $b) {
             return strcmp(notifications_prop($a, 'name', ''), notifications_prop($b, 'name', ''));
         });
 
         $html .= '<details class="notification-event-type-category">'
             . '<summary><span class="notification-event-type-category-title">'
-            . h($category) . '</span> <span class="notification-event-type-category-count">'
+            . h($category_label) . '</span> <span class="notification-event-type-category-count">'
             . h(sprintf(_('%d events'), count($types))) . '</span></summary>'
             . '<div class="notification-event-type-list">';
 
@@ -5562,6 +5631,7 @@ function notifications_event_types($user_id = null)
             $template = notifications_prop($type, 'template');
             $label = notifications_prop($type, 'label', $name);
             $severity = notifications_prop($type, 'severity');
+            $resource = notifications_event_type_resource_metadata_from_type($type);
 
             $html .= '<section id="' . h($anchor) . '" class="notification-event-type">'
                 . '<h3><code>' . h($name) . '</code></h3>'
@@ -5577,8 +5647,51 @@ function notifications_event_types($user_id = null)
                 $html .= '<p><strong>' . _('Template') . ':</strong> <code>' . h($template) . '</code></p>';
             }
 
-            $html .= '</div>'
-                . '<table class="table-style01 notification-event-type-fields">'
+            $html .= '</div>';
+
+            if ($resource) {
+                $html .= '<h4>' . _('Resource change payload') . '</h4>'
+                    . '<p><strong>' . _('Resource') . ':</strong> <code>'
+                    . h($resource['name'] ?? '') . '</code>; <strong>'
+                    . _('Action') . ':</strong> <code>' . h($resource['action'] ?? '')
+                    . '</code>; <strong>' . _('Schema version') . ':</strong> <code>'
+                    . h($resource['schema_version'] ?? '') . '</code>; <strong>'
+                    . _('ID type') . ':</strong> <code>' . h($resource['id_type'] ?? '')
+                    . '</code>' . notifications_resource_id_attributes_html($resource)
+                    . '</p>'
+                    . '<table class="table-style01 notification-event-type-resource">'
+                    . '<tr><th>' . _('Attribute') . '</th><th>' . _('Type') . '</th><th>'
+                    . _('Nullable') . '</th><th>' . _('Possible values') . '</th><th>'
+                    . _('Payload value') . '</th><th>' . _('Matchable changes') . '</th></tr>';
+
+                foreach ($resource['attributes'] as $attribute) {
+                    $attribute_name = $attribute['name'] ?? '';
+                    $choices = $attribute['choices'] ?? [];
+                    $choice_html = $choices
+                        ? implode(', ', array_map(fn($choice) => '<code>' . h($choice) . '</code>', $choices))
+                        : '-';
+                    $matchers = [];
+
+                    if ($attribute['old_matcher'] ?? false) {
+                        $matchers[] = '<code>old_' . h($attribute_name) . '</code>';
+                    }
+
+                    if ($attribute['new_matcher'] ?? false) {
+                        $matchers[] = '<code>new_' . h($attribute_name) . '</code>';
+                    }
+
+                    $html .= '<tr><td><code>' . h($attribute_name) . '</code></td>'
+                        . '<td><code>' . h($attribute['type'] ?? '') . '</code></td>'
+                        . '<td>' . (($attribute['nullable'] ?? false) ? h(_('yes')) : h(_('no'))) . '</td>'
+                        . '<td>' . $choice_html . '</td>'
+                        . '<td><code>' . h($attribute['value_policy'] ?? '') . '</code></td>'
+                        . '<td>' . ($matchers ? implode(' ', $matchers) : '-') . '</td></tr>';
+                }
+
+                $html .= '</table>';
+            }
+
+            $html .= '<table class="table-style01 notification-event-type-fields">'
                 . '<tr><th>' . _('Field') . '</th><th>' . _('Type') . '</th><th>' . _('Example') . '</th><th>' . _('Meaning') . '</th></tr>';
 
             foreach ($fields as $name => $field) {
@@ -5643,12 +5756,14 @@ function notifications_event_types_sidebar($groups, $user_id = null)
     $html = '<div class="notification-event-type-sidebar">'
         . '<h3>' . _('Event types') . '</h3>';
 
-    foreach ($groups as $category => $types) {
+    foreach ($groups as $group) {
+        $category_label = $group['label'];
+        $types = $group['types'];
         usort($types, function ($a, $b) {
             return strcmp(notifications_prop($a, 'name', ''), notifications_prop($b, 'name', ''));
         });
 
-        $html .= '<h4>' . h($category) . '</h4><ul>';
+        $html .= '<h4>' . h($category_label) . '</h4><ul>';
 
         foreach ($types as $type) {
             $name = notifications_prop($type, 'name');

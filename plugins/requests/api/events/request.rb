@@ -1,7 +1,7 @@
 module VpsAdmin::API::Plugins::Requests::Events
   REQUEST_TEMPLATE_CANDIDATES = {
-    'request.created' => :request_action_template_candidates,
-    'request.updated' => :request_action_template_candidates,
+    'request.submitted' => :request_action_template_candidates,
+    'request.update_submitted' => :request_action_template_candidates,
     'request.resolved' => :request_resolve_template_candidates
   }.freeze
 
@@ -151,10 +151,10 @@ end
 
 VpsAdmin::API::Events.define owner: :requests do
   {
-    'request.created' => ['Request created', {
+    'request.submitted' => ['Request submitted', {
       mail_id: { description: 'ID of the mail thread used for request notification', type: :integer }
     }],
-    'request.updated' => ['Request updated', {
+    'request.update_submitted' => ['Request update submitted', {
       mail_id: { description: 'ID of the mail thread used for request notification', type: :integer },
       reply_to_mail_id: { description: 'ID of the previous mail thread this update replies to', type: :integer }
     }],

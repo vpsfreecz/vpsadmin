@@ -11,7 +11,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
       concerns(:affect, [request.class.name, request.id])
 
       route_request_event!(
-        'request.created',
+        'request.submitted',
         request,
         action: 'create',
         recipient_email: request.user_mail

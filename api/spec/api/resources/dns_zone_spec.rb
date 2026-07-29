@@ -324,12 +324,12 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsZone' do
 
       record = DnsZone.find_by!(name: payload[:name])
       event = Event.where(
-        event_type: 'resource.created',
+        event_type: 'dns_zone.created',
         source_class: 'DnsZone',
         source_id: record.id
       ).sole
       expect(event.parameters).to include(
-        'action' => 'created',
+        'resource_action' => 'created',
         'actor_user_id' => SpecSeed.admin.id
       )
     end
@@ -453,7 +453,7 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsZone' do
       expect(DnsRecord.where(id: zone_record.id)).to be_empty
       expect(
         Event.where(
-          event_type: 'resource.deleted',
+          event_type: 'dns_zone.deleted',
           source_class: 'DnsZone',
           source_id: zone_id
         )

@@ -20,7 +20,7 @@ module VpsAdmin::API::Plugins::Requests::TransactionChains
       request.save!
 
       route_request_event!(
-        'request.updated',
+        'request.update_submitted',
         request,
         action: 'update',
         reply_to_mail_id: reply_to,

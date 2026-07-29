@@ -639,8 +639,8 @@ msgstr "Prostředí"
 msgid "Cluster resources"
 msgstr "Prostředky clusteru"
 
-#: forms/cluster.forms.php forms/vps.forms.php pages/page_adminm.php
-#: pages/page_jumpto.php
+#: forms/cluster.forms.php forms/notifications.forms.php forms/vps.forms.php
+#: pages/page_adminm.php pages/page_jumpto.php
 msgid "Resource"
 msgstr "Zdroj"
 
@@ -2484,6 +2484,10 @@ msgid "Test event"
 msgstr "Testovací událost"
 
 #: forms/notifications.forms.php
+msgid "Composite ID attributes"
+msgstr "Atributy složeného ID"
+
+#: forms/notifications.forms.php
 msgid "Any event type"
 msgstr "Libovolný typ události"
 
@@ -3899,6 +3903,38 @@ msgstr "ne"
 #: forms/notifications.forms.php
 msgid "yes"
 msgstr "ano"
+
+#: forms/notifications.forms.php
+msgid "Resource change payload"
+msgstr "Data změny zdroje"
+
+#: forms/notifications.forms.php
+msgid "Schema version"
+msgstr "Verze schématu"
+
+#: forms/notifications.forms.php
+msgid "ID type"
+msgstr "Typ ID"
+
+#: forms/notifications.forms.php pages/page_jumpto.php
+msgid "Attribute"
+msgstr "Atribut"
+
+#: forms/notifications.forms.php
+msgid "Nullable"
+msgstr "Může být null"
+
+#: forms/notifications.forms.php
+msgid "Possible values"
+msgstr "Možné hodnoty"
+
+#: forms/notifications.forms.php
+msgid "Matchable changes"
+msgstr "Filtrovatelné změny"
+
+#: forms/notifications.forms.php
+msgid "Payload value"
+msgstr "Hodnota v payloadu"
 
 #: forms/notifications.forms.php
 msgid "Example"
@@ -9093,10 +9129,6 @@ msgstr "Teplotní mapa"
 #: pages/page_jumpto.php
 msgid "Found these bros"
 msgstr "Nalezené položky"
-
-#: pages/page_jumpto.php
-msgid "Attribute"
-msgstr "Atribut"
 
 #: pages/page_lifetimes.php pages/page_outage.php
 msgid "State set"

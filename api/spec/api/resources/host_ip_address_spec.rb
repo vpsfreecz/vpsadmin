@@ -77,6 +77,11 @@ RSpec.describe 'VpsAdmin::API::Resources::HostIpAddress' do
     json['message'] || json.dig('response', 'message')
   end
 
+  def action_state_id
+    json.dig('response', '_meta', 'action_state_id') ||
+      json.dig('_meta', 'action_state_id')
+  end
+
   def expect_status(code)
     path = last_request&.path
     message = "Expected status #{code} for #{path}, got #{last_response.status} body=#{last_response.body}"
@@ -737,7 +742,26 @@ RSpec.describe 'VpsAdmin::API::Resources::HostIpAddress' do
 
       expect_status(200)
       expect(json['status']).to be(true)
-      expect(host.reload.order).not_to be_nil
+      assigned_order = host.reload.order
+      expect(assigned_order).not_to be_nil
+
+      chain = TransactionChain.find(action_state_id)
+      descriptor = deferred_result_events(chain).detect do |event|
+        event['event_type'] == 'host_ip_address.updated' &&
+          event['source_id'] == host.id
+      end
+      expect(descriptor).to be_present
+      expect(descriptor.dig('payload', 'changed_fields')).to include('order')
+      expect(descriptor.dig('payload', 'changes', 'order')).to eq(
+        'old' => {
+          'kind' => 'value',
+          'value' => nil
+        },
+        'new' => {
+          'kind' => 'value',
+          'value' => assigned_order
+        }
+      )
     end
   end
 

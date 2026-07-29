@@ -211,6 +211,38 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(response.body).not_to include('DOMContentLoaded')
   end
 
+  it 'completes password authorization with an existing known device' do
+    device = create_user_device!(user:, known: true)
+    cookie_handler = OAuth2ConfigSpecFixtures::FakeSinatraHandler.new(
+      described_class::DEVICES_COOKIE => device.token.token
+    )
+
+    result = config.handle_post_authorize(
+      sinatra_handler: cookie_handler,
+      sinatra_request: request,
+      sinatra_params: {
+        login_credentials: '1',
+        user: user.login,
+        password: 'secret'
+      },
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(result.authenticated).to be(true)
+    expect(result.complete).to be(true)
+    expect(result.authorization).to be_present
+    expect(result.authorization.user_device).to eq(device)
+    expect(
+      Event.where(
+        event_type: 'user_known_device.updated',
+        source_class: 'UserDevice',
+        source_id: device.id
+      )
+    ).to be_empty
+  end
+
   it 'completes TOTP authentication and creates an authorization code' do
     device = create_totp_device!(user:)
     auth_token = create_auth_token!(user:, purpose: 'mfa')

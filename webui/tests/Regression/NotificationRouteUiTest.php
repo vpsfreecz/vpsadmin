@@ -447,6 +447,7 @@ final class NotificationRouteUiTest extends TestCase
 
     public function testEventTypeFieldMetadataHandlesCustomPayloadShapes(): void
     {
+        require_once dirname(__DIR__, 2) . '/lib/functions.lib.php';
         require_once dirname(__DIR__, 2) . '/forms/notifications.forms.php';
 
         $magicType = new class {
@@ -464,6 +465,33 @@ final class NotificationRouteUiTest extends TestCase
                         ],
                     ],
                     'default_routed' => false,
+                    'resource' => [
+                        'name' => 'vps',
+                        'action' => 'updated',
+                        'schema_version' => 1,
+                        'id_type' => 'object',
+                        'id_attributes' => json_encode([
+                            [
+                                'name' => 'vps_id',
+                                'type' => 'integer',
+                            ],
+                            [
+                                'name' => 'ip_address',
+                                'type' => 'string',
+                            ],
+                        ]),
+                        'attributes' => [
+                            (object) [
+                                'name' => 'object_state',
+                                'type' => 'string',
+                                'nullable' => false,
+                                'choices' => ['active', 'soft_delete'],
+                                'value_policy' => 'value_or_digest',
+                                'old_matcher' => true,
+                                'new_matcher' => true,
+                            ],
+                        ],
+                    ],
                 ];
             }
 
@@ -500,15 +528,33 @@ final class NotificationRouteUiTest extends TestCase
 
         self::assertFalse(isset($magicType->fields));
         $magicFields = notifications_event_type_field_metadata_from_type($magicType);
+        $resource = notifications_event_type_resource_metadata_from_type($magicType);
         $objectFields = notifications_event_type_field_metadata_from_type($objectType);
         $jsonFields = notifications_event_type_field_metadata_from_type($jsonType);
 
         self::assertSame('Processing stage', $magicFields['stage']['description']);
         self::assertFalse(notifications_prop($magicType, 'default_routed', true));
+        self::assertSame('vps', $resource['name']);
+        self::assertSame('updated', $resource['action']);
+        self::assertSame([
+            ['name' => 'vps_id', 'type' => 'integer'],
+            ['name' => 'ip_address', 'type' => 'string'],
+        ], $resource['id_attributes']);
+        self::assertSame('object_state', $resource['attributes'][0]['name']);
+        self::assertSame(
+            ['active', 'soft_delete'],
+            $resource['attributes'][0]['choices']
+        );
         self::assertSame('Incident codename', $objectFields['codename']['description']);
         self::assertSame(['==', '=~'], $objectFields['codename']['operators']);
         self::assertSame('string_list', $jsonFields['cgroups']['type']);
         self::assertSame(['contains', 'not_contains'], $jsonFields['cgroups']['operators']);
+        self::assertSame(
+            '<br><strong>Composite ID attributes:</strong> '
+                . '<code>vps_id</code> (<code>integer</code>), '
+                . '<code>ip_address</code> (<code>string</code>)',
+            notifications_resource_id_attributes_html($resource)
+        );
     }
 
     public function testEventTypeFieldExamplesRenderFalseListsAndMissingValues(): void
@@ -539,11 +585,21 @@ final class NotificationRouteUiTest extends TestCase
         self::assertStringContainsString('notification-event-types', $eventTypes);
         self::assertStringContainsString('notification-event-type-category', $eventTypes);
         self::assertStringContainsString('notification-event-type-fields', $eventTypes);
+        self::assertStringContainsString('notification-event-type-resource', $eventTypes);
+        self::assertStringContainsString('Resource change payload', $eventTypes);
+        self::assertStringContainsString('notifications_resource_id_attributes_html($resource)', $eventTypes);
+        self::assertStringContainsString('Matchable changes', $eventTypes);
+        self::assertStringContainsString('old_', $eventTypes);
+        self::assertStringContainsString('new_', $eventTypes);
         self::assertStringContainsString('<section id="', $eventTypes);
         self::assertStringContainsString('<h3><code>', $eventTypes);
         self::assertStringContainsString('notification-event-type-label', $eventTypes);
         self::assertStringContainsString('notification-event-type-category-title', $eventTypes);
         self::assertStringContainsString('notification-event-type-category-count', $eventTypes);
+        self::assertStringContainsString("notifications_prop(\$type, 'category_label')", $eventTypes);
+        self::assertStringContainsString("\$groups[\$category]['types'][] = \$type;", $eventTypes);
+        self::assertStringContainsString('uasort($groups', $eventTypes);
+        self::assertStringContainsString("\$category_label = \$group['label'];", $eventTypes);
         self::assertStringContainsString("sprintf(_('%d events'), count(\$types))", $eventTypes);
         self::assertStringNotContainsString('class="notification-event-type-category" open', $eventTypes);
         self::assertStringContainsString('notifications_event_types_hash_script();', $eventTypes);
@@ -576,7 +632,8 @@ final class NotificationRouteUiTest extends TestCase
 
         self::assertStringContainsString('notification-event-type-sidebar', $eventTypesSidebar);
         self::assertStringContainsString("<h3>' . _('Event types') . '</h3>", $eventTypesSidebar);
-        self::assertStringContainsString("'<h4>' . h(\$category) . '</h4><ul>'", $eventTypesSidebar);
+        self::assertStringContainsString("\$category_label = \$group['label'];", $eventTypesSidebar);
+        self::assertStringContainsString("'<h4>' . h(\$category_label) . '</h4><ul>'", $eventTypesSidebar);
         self::assertStringContainsString('$xtpl->sbar_add_fragment($html);', $eventTypesSidebar);
     }
 

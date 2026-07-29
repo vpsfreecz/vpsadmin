@@ -57,7 +57,7 @@ RSpec.describe TransactionChains::User::Create do
 
     expect(created).to be_persisted
     expect(chain).to be_nil
-    event = expect_completed_event!('user.created', user: created)
+    event = expect_completed_event!('user.account_created', user: created)
     expect(event.parameters).to include(
       'login' => created.login,
       'email' => created.email,
@@ -116,16 +116,16 @@ RSpec.describe TransactionChains::User::Create do
       false
     )
 
-    expect_deferred_event!(chain, 'user.created')
+    expect_deferred_event!(chain, 'user.account_created')
     fail_chain_operation!(chain)
-    expect(Event.where(event_type: 'user.created')).to be_empty
+    expect(Event.where(event_type: 'user.account_created')).to be_empty
 
     chain.update!(state: :queued)
     VpsAdmin::API::Events::OperationLifecycle.emit_started!(chain)
     2.times { complete_chain_operation!(chain) }
 
-    event = expect_completed_event!('user.created', user: created)
-    expect(Event.where(event_type: 'user.created').count).to eq(1)
+    event = expect_completed_event!('user.account_created', user: created)
+    expect(Event.where(event_type: 'user.account_created').count).to eq(1)
     expect(event.parameters).to include(
       'operation_id' => chain.id,
       'operation_attempt' => 2,

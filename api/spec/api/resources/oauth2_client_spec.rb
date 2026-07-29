@@ -236,11 +236,13 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(record.check_secret('spec-created-secret')).to be(true)
 
       event = Event.where(
-        event_type: 'resource.created',
+        event_type: 'oauth2_client.created',
         source_class: 'Oauth2Client',
         source_id: record.id
       ).sole
-      expect(event.parameters['changed_fields']).to include('client_secret')
+      expect(event.parameters['changed_fields']).to include('client_secret_hash')
+      expect(event.parameters.dig('changes', 'client_secret_hash', 'new'))
+        .to eq('kind' => 'redacted')
       expect(event.payload_json).not_to include('spec-created-secret')
     end
 
@@ -310,7 +312,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(primary_client.redirect_uri).to eq('https://example.invalid/callback-updated')
 
       event = Event.where(
-        event_type: 'resource.updated',
+        event_type: 'oauth2_client.updated',
         source_class: 'Oauth2Client',
         source_id: primary_client.id
       ).sole
@@ -328,6 +330,16 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       primary_client.reload
       expect(primary_client.client_secret_hash).not_to eq(old_hash)
       expect(primary_client.check_secret('spec-new-secret')).to be(true)
+
+      event = Event.where(
+        event_type: 'oauth2_client.updated',
+        source_class: 'Oauth2Client',
+        source_id: primary_client.id
+      ).sole
+      expect(event.parameters['changed_fields']).to eq(['client_secret_hash'])
+      expect(event.parameters.dig('changes', 'client_secret_hash', 'new'))
+        .to eq('kind' => 'redacted')
+      expect(event.payload_json).not_to include('spec-new-secret')
     end
 
     it 'returns validation errors for invalid name' do
@@ -372,7 +384,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(Oauth2Client.find_by(id: primary_client.id)).to be_nil
       expect(
         Event.where(
-          event_type: 'resource.deleted',
+          event_type: 'oauth2_client.deleted',
           source_class: 'Oauth2Client',
           source_id: primary_client.id
         )

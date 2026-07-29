@@ -39,6 +39,8 @@ module VpsAdmin::API
       :default_routed,
       :severity_description,
       :examples,
+      :resource,
+      :resource_generated,
       :definition
     )
 
@@ -721,8 +723,19 @@ module VpsAdmin::API
         default_routed: definition.default_routed,
         severity_description: definition.severity_description,
         examples: definition.examples,
+        resource: nil,
+        resource_generated: false,
         definition:
       )
+    end
+
+    def attach_resource_descriptor(event_type, descriptor, generated: false)
+      type = type_for(event_type)
+      raise ArgumentError, "unknown event type #{event_type.inspect}" unless type
+
+      type.resource = descriptor.deep_symbolize_keys.freeze
+      type.resource_generated ||= generated
+      type
     end
 
     def types
@@ -739,6 +752,22 @@ module VpsAdmin::API
 
     def type_labels
       types.to_h { |type| [type.name, type.label] }
+    end
+
+    def type_choice_labels
+      types.to_h do |type|
+        label =
+          if type.resource_generated
+            HaveAPI.message(
+              "vpsadmin.events.types.#{i18n_key_fragment(type.name)}.label",
+              default: type.label
+            )
+          else
+            type.label
+          end
+
+        [type.name, label]
+      end
     end
 
     def field_labels(event_type: nil)
@@ -797,11 +826,18 @@ module VpsAdmin::API
     def i18n_defaults
       ret = {}
 
+      ResourceOperations::TOPICS.each do |category|
+        ret["events.categories.#{category}"] =
+          ResourceOperations::TOPIC_LABELS.fetch(category)
+      end
+
       EventRouteMatcher::COMMON_FIELDS.each do |name, config|
         ret["events.fields.common.#{name}.description"] = config.fetch(:description)
       end
 
       types.each do |type|
+        next if type.resource_generated
+
         type_key = i18n_key_fragment(type.name)
         ret["events.types.#{type_key}.label"] = type.label
         if type.severity_description
@@ -809,6 +845,8 @@ module VpsAdmin::API
         end
 
         type.fields.each do |field|
+          next if field[:resource_attribute]
+
           field_key = field.fetch(:name)
           ret["events.fields.#{type_key}.#{field_key}.description"] = field.fetch(:description)
         end

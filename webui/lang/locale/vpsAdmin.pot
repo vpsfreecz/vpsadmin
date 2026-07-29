@@ -640,8 +640,8 @@ msgstr ""
 msgid "Cluster resources"
 msgstr ""
 
-#: forms/cluster.forms.php forms/vps.forms.php pages/page_adminm.php
-#: pages/page_jumpto.php
+#: forms/cluster.forms.php forms/notifications.forms.php forms/vps.forms.php
+#: pages/page_adminm.php pages/page_jumpto.php
 msgid "Resource"
 msgstr ""
 
@@ -2468,6 +2468,10 @@ msgid "Test event"
 msgstr ""
 
 #: forms/notifications.forms.php
+msgid "Composite ID attributes"
+msgstr ""
+
+#: forms/notifications.forms.php
 msgid "Any event type"
 msgstr ""
 
@@ -3863,6 +3867,38 @@ msgstr ""
 
 #: forms/notifications.forms.php
 msgid "yes"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Resource change payload"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Schema version"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "ID type"
+msgstr ""
+
+#: forms/notifications.forms.php pages/page_jumpto.php
+msgid "Attribute"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Nullable"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Possible values"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Matchable changes"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Payload value"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -8958,10 +8994,6 @@ msgstr ""
 
 #: pages/page_jumpto.php
 msgid "Found these bros"
-msgstr ""
-
-#: pages/page_jumpto.php
-msgid "Attribute"
 msgstr ""
 
 #: pages/page_lifetimes.php pages/page_outage.php

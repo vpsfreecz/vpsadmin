@@ -19,7 +19,8 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
     ret = []
 
     %w[create update].each do |action|
-      event_type = action == 'create' ? 'request.created' : 'request.updated'
+      event_type =
+        action == 'create' ? 'request.submitted' : 'request.update_submitted'
 
       REQUEST_TEMPLATE_AUDIENCES.each do |audience|
         REQUEST_TEMPLATE_TYPES.each do |type|
@@ -159,7 +160,7 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
       matchers: []
     },
     'outage_report_user_update' => {
-      event_type: 'outage.updated',
+      event_type: 'outage.update_reported',
       template_name: 'outage_report_user_update',
       relation: 'other_user',
       matchers: []
@@ -171,7 +172,7 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
       matchers: []
     },
     'security_advisory_user_update' => {
-      event_type: 'security_advisory.updated',
+      event_type: 'security_advisory.update_published',
       template_name: 'security_advisory_user_update',
       relation: 'other_user',
       matchers: []
@@ -304,7 +305,7 @@ class MigrateLegacyEmailRecipientsToRoutes < ActiveRecord::Migration[8.1]
       matchers: []
     },
     'user_create' => {
-      event_type: 'user.created',
+      event_type: 'user.account_created',
       template_name: 'user_create',
       relation: 'other_user',
       matchers: []
