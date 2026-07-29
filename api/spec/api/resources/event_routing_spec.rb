@@ -1522,7 +1522,9 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect_status(200)
     expect(json['status']).to be(true), last_response.body
     expect(SpecSeed.user.reload.notification_delivery_method_enabled?(:webhook)).to be(true)
-    expect(NotificationTarget.where(user: SpecSeed.user).sole.action).to eq('webhook')
+    expect(
+      NotificationTarget.where(user: SpecSeed.user, action: 'webhook').sole.action
+    ).to eq('webhook')
   end
 
   it 'does not auto-enable a delivery method when admin target create fails' do
@@ -1875,9 +1877,16 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(incident).to be_present
     expect(incident['default_routed']).to be(true)
     expect(incident_fields.dig('default_routed', 'type')).to eq('boolean')
+    expect(incident_fields.dig('event_type', 'example')).to eq('vps.incident_report')
     expect(incident_fields.dig('operation_id', 'type')).to eq('integer')
     expect(incident_fields.dig('operation_id', 'example')).to eq(123)
     expect(incident_fields.dig('operation_id', 'common')).to be(true)
+    expect(incident_fields.dig('category', 'example')).to eq('incidents')
+    expect(incident_fields.dig('severity', 'example')).to eq('warning')
+    expect(incident_fields.dig('roles', 'example')).to eq(%w[admin])
+    expect(incident_fields.dig('default_routed', 'example')).to be(true)
+    expect(incident_fields.fetch('subject')).not_to have_key('example')
+    expect(incident_fields.fetch('summary')).not_to have_key('example')
     expect(incident_fields.dig('codename', 'description')).to eq('Incident report codename assigned by vpsAdmin')
     expect(incident_fields.dig('codename', 'type')).to eq('string')
     expect(incident_fields.dig('codename', 'operators')).to include('==', '=~')
@@ -1892,12 +1901,68 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     chain = event_types.detect { |row| row['name'] == 'transaction_chain.state_changed' }
     chain_fields = chain['fields'].index_by { |field| field['name'] }
     expect(chain['default_routed']).to be(false)
+    expect(chain_fields.dig('event_type', 'example')).to eq('transaction_chain.state_changed')
+    expect(chain_fields.dig('category', 'example')).to eq('transactions')
+    expect(chain_fields.dig('severity', 'example')).to eq('info')
+    expect(chain_fields.dig('roles', 'example')).to eq(%w[admin])
+    expect(chain_fields.dig('default_routed', 'example')).to be(false)
     expect(chain_fields.dig('terminal', 'description')).to eq('Whether the chain reached a terminal state')
     expect(chain_fields.dig('terminal', 'type')).to eq('boolean')
     expect(chain_fields.dig('successful', 'type')).to eq('boolean')
     expect(chain_fields.dig('failed', 'type')).to eq('boolean')
     dns = event_types.detect { |row| row['name'] == 'dns.zone_transfer.failed' }
     expect(dns['default_routed']).to be(false)
+
+    failed_login = event_types.detect { |row| row['name'] == 'user.login_failed' }
+    failed_login_fields = failed_login['fields'].index_by { |field| field['name'] }
+    expect(failed_login_fields.dig('subject', 'example')).to eq('Failed sign-in attempt')
+    expect(failed_login_fields.dig('summary', 'example'))
+      .to eq('A password sign-in failed from 198.51.100.10: invalid password')
+
+    operation_started = event_types.detect { |row| row['name'] == 'operation.started' }
+    operation_started_fields = operation_started['fields'].index_by { |field| field['name'] }
+    expect(operation_started_fields.dig('subject', 'example')).to eq('Start started')
+    expect(operation_started_fields.dig('summary', 'example'))
+      .to eq('Operation #123 attempt #1 started')
+    expect(operation_started_fields.dig('state', 'example')).to eq('queued')
+    expect(operation_started_fields.dig('successful', 'example')).to be(false)
+    expect(operation_started_fields.dig('failed', 'example')).to be(false)
+    expect(operation_started_fields).not_to have_key('result_event_ids')
+
+    operation_succeeded = event_types.detect { |row| row['name'] == 'operation.succeeded' }
+    operation_succeeded_fields = operation_succeeded['fields'].index_by { |field| field['name'] }
+    expect(operation_succeeded_fields.dig('state', 'example')).to eq('done')
+    expect(operation_succeeded_fields.dig('successful', 'example')).to be(true)
+    expect(operation_succeeded_fields).to have_key('result_event_ids')
+
+    console_closed = event_types.detect { |row| row['name'] == 'vps.console_closed' }
+    console_closed_fields = console_closed['fields'].index_by { |field| field['name'] }
+    expect(console_closed_fields.dig('subject', 'example')).to eq('VPS #123 console closed')
+    expect(console_closed_fields.dig('close_reason', 'example')).to eq('session_timeout')
+    expect(console_closed_fields.dig('close_reason', 'choices')).to include('router_timeout')
+
+    console_opened = event_types.detect { |row| row['name'] == 'vps.console_opened' }
+    console_opened_fields = console_opened['fields'].index_by { |field| field['name'] }
+    expect(console_opened_fields).not_to have_key('close_reason')
+
+    resource_updated = event_types.detect { |row| row['name'] == 'resource.updated' }
+    resource_updated_fields = resource_updated['fields'].index_by { |field| field['name'] }
+    expect(resource_updated_fields.dig('subject', 'example')).to eq('OsFamily #42 updated')
+    expect(resource_updated_fields.dig('action', 'example')).to eq('updated')
+    expect(resource_updated_fields.dig('changed_fields', 'example')).to eq(%w[label])
+
+    resource_deleted = event_types.detect { |row| row['name'] == 'resource.deleted' }
+    resource_deleted_fields = resource_deleted['fields'].index_by { |field| field['name'] }
+    expect(resource_deleted_fields.dig('action', 'example')).to eq('deleted')
+    expect(resource_deleted_fields.dig('changed_fields', 'example')).to eq([])
+  end
+
+  it 'omits type-dependent examples from aggregate field metadata' do
+    fields = EventRouteMatcher.field_metadata.index_by { |field| field.fetch(:name) }
+
+    %w[event_type default_routed category severity subject summary roles].each do |name|
+      expect(fields.fetch(name)).not_to have_key(:example)
+    end
   end
 
   it 'localizes event type labels and field descriptions' do
