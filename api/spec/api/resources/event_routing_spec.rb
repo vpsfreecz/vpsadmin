@@ -1875,6 +1875,9 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(incident).to be_present
     expect(incident['default_routed']).to be(true)
     expect(incident_fields.dig('default_routed', 'type')).to eq('boolean')
+    expect(incident_fields.dig('operation_id', 'type')).to eq('integer')
+    expect(incident_fields.dig('operation_id', 'example')).to eq(123)
+    expect(incident_fields.dig('operation_id', 'common')).to be(true)
     expect(incident_fields.dig('codename', 'description')).to eq('Incident report codename assigned by vpsAdmin')
     expect(incident_fields.dig('codename', 'type')).to eq('string')
     expect(incident_fields.dig('codename', 'operators')).to include('==', '=~')

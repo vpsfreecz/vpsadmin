@@ -53,7 +53,7 @@ class TransactionChain < ApplicationRecord
 
   attr_reader :acquired_locks
   attr_accessor :last_id, :last_node_id, :dst_chain, :named, :global_locks,
-                :locks, :urgent, :prio, :reversible
+                :locks, :urgent, :prio, :reversible, :deferred_result_events
 
   include HaveAPI::Hookable
   include VpsAdmin::API::HashOptions
@@ -78,6 +78,7 @@ class TransactionChain < ApplicationRecord
 
     ret = nil
     chain = nil
+    started_event = nil
 
     TransactionChain.transaction(requires_new: true) do
       chain = new
@@ -88,6 +89,7 @@ class TransactionChain < ApplicationRecord
       chain.user_session = ::UserSession.current
       chain.urgent_rollback = urgent_rollback? || false
       chain.save
+      started_event = VpsAdmin::API::Events::OperationLifecycle.prepare_started!(chain)
 
       chain.global_locks = locks
 
@@ -99,19 +101,27 @@ class TransactionChain < ApplicationRecord
       if chain.empty?
         raise 'empty' unless chain.class.allow_empty?
 
+        VpsAdmin::API::Events::OperationLifecycle.emit_deferred_immediately!(chain)
         chain.release_locks
+        started_event.destroy!
         chain.destroy!
         chain = nil
+        started_event = nil
         next
 
       end
 
       chain.capture_event_owner_concern!
+      chain.append_deferred_result_events!
       chain.state = :queued
       chain.save!
+      VpsAdmin::API::Events::OperationLifecycle.finalize_started!(started_event, chain)
     end
 
-    emit_state_changed_event(chain, previous_state: 'staged', state: 'queued') if chain
+    if chain
+      route_started_event(started_event)
+      emit_state_changed_event(chain, previous_state: 'staged', state: 'queued')
+    end
 
     [chain, ret]
   end
@@ -124,6 +134,12 @@ class TransactionChain < ApplicationRecord
     )
   rescue StandardError => e
     warn "Unable to emit transaction chain event for chain ##{chain.id}: #{e.class}: #{e.message}"
+  end
+
+  def self.route_started_event(event)
+    VpsAdmin::API::Events::OperationLifecycle.route_started!(event)
+  rescue StandardError => e
+    warn "Unable to route operation start event ##{event.id}: #{e.class}: #{e.message}"
   end
 
   # The chain name is a class name in lowercase with added
@@ -194,6 +210,17 @@ class TransactionChain < ApplicationRecord
 
   def self.label_i18n_key
     "transaction_chains.labels.#{transaction_chain_i18n_path(name)}"
+  end
+
+  # Override the stable, public operation name emitted for this chain.
+  def self.event_operation(value = nil)
+    if value
+      @event_operation = value.to_s
+    elsif instance_variable_defined?(:@event_operation)
+      @event_operation
+    elsif superclass.respond_to?(:event_operation)
+      superclass.event_operation
+    end
   end
 
   def self.transaction_chain_label_defaults
@@ -270,6 +297,7 @@ class TransactionChain < ApplicationRecord
     @dst_chain = self
     @urgent = false
     @prio = 0
+    @deferred_result_events = []
   end
 
   # All chains must implement this method.
@@ -429,8 +457,48 @@ class TransactionChain < ApplicationRecord
     event
   end
 
-  def prepare_event!(event_type, **)
-    VpsAdmin::API::Events.emit!(event_type, **, release: false)
+  def prepare_event!(event_type, payload: nil, **)
+    VpsAdmin::API::Events.emit!(
+      event_type,
+      **,
+      payload:,
+      payload_additions: operation_event_payload,
+      release: false
+    )
+  end
+
+  # Store a completion event in the signed input of a final no-op transaction.
+  # The supervisor materializes it only after the whole chain reaches +done+.
+  def defer_result_event!(event_type, user: nil, vps: nil, source: nil,
+                          source_class: nil, source_id: nil, subject: nil,
+                          summary: nil, payload: nil, severity: nil,
+                          category: nil, ip_addr: nil, vpses: nil)
+    target = current_chain
+    target.deferred_result_events ||= []
+    target.deferred_result_events << {
+      event_type: event_type.to_s,
+      user_id: record_id(user),
+      vps_id: record_id(vps),
+      source_class: source_class || source&.class&.name,
+      source_id: source_id || record_id(source),
+      subject:,
+      summary:,
+      payload: (payload || {}).dup,
+      severity: severity&.to_s,
+      category: category&.to_s,
+      ip_addr:,
+      vps_ids: vpses&.map { |item| record_id(item) }
+    }.compact.deep_stringify_keys
+  end
+
+  def append_deferred_result_events!
+    return if deferred_result_events.blank?
+
+    append_t(
+      Transactions::Utils::NoOp,
+      args: [find_node_id],
+      kwargs: { result_events: deferred_result_events }
+    )
   end
 
   def release_event_deliveries!(event)
@@ -470,23 +538,20 @@ class TransactionChain < ApplicationRecord
     end
   end
 
-  # Preserve the owner of the primary VPS as part of the successfully built
-  # chain. The VPS itself can be deleted while the chain is running, but its
-  # concerns remain available when node state changes are projected to Events.
+  # Preserve the affected account as part of the successfully built chain.
+  # Concerned objects can be deleted while the chain is running, but the owner
+  # concern remains available when node state changes are projected to Events.
   def capture_event_owner_concern!
-    vps_concern = transaction_chain_concerns
-                  .where(class_name: ::Vps.name)
-                  .order(:id)
-                  .last
-    return unless vps_concern
+    owner = VpsAdmin::API::Events::OperationLifecycle.owner_from_live_concerns(self)
+    return unless owner
 
-    owner_id = ::Vps.where(id: vps_concern.row_id).pick(:user_id)
-    return unless owner_id
+    last_concern = transaction_chain_concerns.order(:id).last
+    return if last_concern&.class_name == ::User.name && last_concern.row_id == owner.id
 
     TransactionChainConcern.create!(
       transaction_chain: self,
       class_name: ::User.name,
-      row_id: owner_id
+      row_id: owner.id
     )
   end
 
@@ -526,6 +591,19 @@ class TransactionChain < ApplicationRecord
   # transactions have been appended yet.
   def find_node_id
     @last_node_id || @last_node_id = ::Node.first_available_transaction_runner.id
+  end
+
+  protected
+
+  def operation_event_payload
+    chain = current_chain
+    return {} unless chain&.id
+
+    { operation_id: chain.id }
+  end
+
+  def record_id(record)
+    record.respond_to?(:id) ? record.id : record
   end
 
   private

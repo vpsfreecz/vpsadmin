@@ -27,7 +27,15 @@ RSpec.describe TransactionChains::User::NewLogin do
     expect(event.source).to eq(auth.fetch(:token_session))
     expect(event.parameters).to include(
       'client_ip_addr' => '127.0.0.1',
-      'authorization_id' => auth.fetch(:oauth2_authorization).id
+      'authorization_id' => auth.fetch(:oauth2_authorization).id,
+      'operation_id' => chain.id
     )
+
+    matcher = EventRouteMatcher.new(
+      field: 'operation_id',
+      operator: '==',
+      value: chain.id.to_s
+    )
+    expect(matcher.matches?(event)).to be(true)
   end
 end

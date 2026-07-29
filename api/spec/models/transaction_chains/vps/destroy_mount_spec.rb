@@ -78,19 +78,25 @@ RSpec.describe TransactionChains::Vps::DestroyMount do
       chain, = described_class.fire(mount)
       chain.update!(state:)
 
-      VpsAdmin::API::Events::VpsOperations.emit_terminal!(chain, state:)
+      VpsAdmin::API::Events::OperationLifecycle.emit_transition!(
+        chain,
+        previous_state: state == 'done' ? 'queued' : 'rollbacking',
+        state:
+      )
 
       event = Event.where(
-        event_type: state == 'done' ? 'vps.operation_succeeded' : 'vps.operation_failed',
+        event_type: state == 'done' ? 'operation.succeeded' : 'operation.failed',
         source_class: 'TransactionChain',
         source_id: chain.id
       ).sole
       expect(event).to have_attributes(user:, vps: fixture.fetch(:vps))
       expect(event.parameters).to include(
-        'operation' => 'destroy_mount',
+        'operation_id' => chain.id,
+        'attempt' => 1,
+        'operation' => 'vps.destroy_mount',
         'state' => state,
         'successful' => state == 'done',
-        'vps_id' => fixture.fetch(:vps).id
+        'concern_object_ids' => include(mount.id)
       )
     end
   end
