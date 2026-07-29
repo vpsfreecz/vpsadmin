@@ -7,6 +7,7 @@ module TransactionChains
     def link_chain(dns_zone)
       lock(dns_zone)
       concerns(:affect, [dns_zone.class.name, dns_zone.id])
+      defer_resource_event!(:deleted, dns_zone)
 
       dns_zone.dns_server_zones.each do |dns_server_zone|
         append_t(Transactions::DnsServerZone::Destroy, args: [dns_server_zone]) do |t|

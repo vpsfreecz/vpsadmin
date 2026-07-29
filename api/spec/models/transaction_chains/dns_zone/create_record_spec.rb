@@ -52,6 +52,7 @@ RSpec.describe TransactionChains::DnsZone::CreateRecord do
         Transactions::DnsServer::Reload,
         Transactions::DnsServerZone::CreateRecords,
         Transactions::DnsServer::Reload,
+        Transactions::Utils::NoOp,
         Transactions::Utils::NoOp
       ]
     )
@@ -80,6 +81,7 @@ RSpec.describe TransactionChains::DnsZone::CreateRecord do
 
     expect(chain).to be_nil
     expect(created.reload.confirmed).to eq(:confirmed)
+    expect_resource_event!(:created, created)
   end
 
   it 'confirms record logs and update tokens with the runtime change' do

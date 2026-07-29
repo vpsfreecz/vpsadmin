@@ -29,6 +29,7 @@ RSpec.describe TransactionChains::HostIpAddress::Destroy do
 
     expect(chain).to be_nil
     expect(HostIpAddress.where(id: host_ip.id)).to be_empty
+    expect_resource_event!(:deleted, host_ip)
   end
 
   it 'unsets reverse DNS and confirms host address destruction' do
@@ -55,6 +56,7 @@ RSpec.describe TransactionChains::HostIpAddress::Destroy do
       [
         Transactions::DnsServerZone::DeleteRecords,
         Transactions::DnsServer::Reload,
+        Transactions::Utils::NoOp,
         Transactions::Utils::NoOp,
         Transactions::Utils::NoOp
       ]

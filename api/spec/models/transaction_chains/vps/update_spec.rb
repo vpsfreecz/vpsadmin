@@ -131,12 +131,14 @@ RSpec.describe TransactionChains::Vps::Update do
       include('resource' => 'swap', 'value' => 256, 'original' => 0)
     )
     expect(ObjectHistory.where(tracked_object: vps, event_type: 'resources').count).to eq(1)
-    classes = tx_classes(chain)
-    expect(classes).to include(Transactions::EventDelivery::Notify)
-    expect(classes.index(Transactions::Vps::Resources)).to be < classes.index(Transactions::EventDelivery::Notify)
-    event = expect_routed_event!('vps.resources_changed', user: vps.user)
+    expect_deferred_event!(chain, 'vps.resources_changed')
+    complete_chain_operation!(chain)
+
+    event = expect_completed_event!('vps.resources_changed', user: vps.user)
     expect(event.vps).to eq(vps)
     expect(event.parameters).to include(
+      'operation_id' => chain.id,
+      'operation_attempt' => 1,
       'vps_id' => vps.id,
       'vps_hostname' => vps.hostname,
       'cpu' => 3,
@@ -241,10 +243,14 @@ RSpec.describe TransactionChains::Vps::Update do
       'new_map_mode' => 'zfs',
       'original_map_mode' => 'native'
     )
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
-    event = expect_routed_event!('vps.network_disabled', user: vps.user)
+    expect_deferred_event!(chain, 'vps.network_disabled')
+    complete_chain_operation!(chain)
+
+    event = expect_completed_event!('vps.network_disabled', user: vps.user)
     expect(event.vps).to eq(vps)
     expect(event.parameters).to include(
+      'operation_id' => chain.id,
+      'operation_attempt' => 1,
       'vps_id' => vps.id,
       'vps_hostname' => vps.hostname,
       'reason' => 'disable for maintenance'
@@ -263,5 +269,7 @@ RSpec.describe TransactionChains::Vps::Update do
     expect(chain).to be_nil
     expect(updated_vps.reload.info).to eq('db-only update')
     expect(updated_vps.autostart_priority).to eq(original_priority + 50)
+    event = expect_resource_event!(:updated, updated_vps)
+    expect(event.parameters['changed_fields']).to eq(%w[autostart_priority info])
   end
 end

@@ -211,6 +211,41 @@ RSpec.describe TransactionChains::Vps::Create do
     )
   end
 
+  it 'defers the API create fact and correlates it with successful completion' do
+    template = create_os_template!(
+      manage_dns_resolver: false,
+      config: { 'datasets' => [{ 'name' => '/' }] }
+    )
+    _pool, vps = build_create_vps(
+      os_template: template,
+      hostname: 'vps-create-resource-fact'
+    )
+    policies = VpsAdmin::API::Events::ActionPolicies
+    policy = policies.for(VpsAdmin::API::Resources::VPS::Create)
+    recorder = policies::Recorder.new(policy)
+
+    chain, = policies.with_recorder(recorder) do
+      described_class.fire(
+        vps,
+        ipv4: 0,
+        ipv4_private: 0,
+        ipv6: 0,
+        start: false,
+        vps_user_data: nil
+      )
+    end
+
+    expect_deferred_event!(chain, 'resource.created')
+    complete_chain_operation!(chain)
+    event = expect_resource_event!(:created, vps, operation: chain)
+    succeeded = Event.where(
+      event_type: 'operation.succeeded',
+      source_class: 'TransactionChain',
+      source_id: chain.id
+    ).sole
+    expect(succeeded.parameters['result_event_ids']).to eq([event.id])
+  end
+
   it 'raises when a template mount references a missing dataset' do
     template = create_os_template!(
       config: {

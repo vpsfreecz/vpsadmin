@@ -33,6 +33,23 @@ RSpec.describe TransactionChains::DnsResolver::Update do
     end
   end
 
+  it 'emits an uncorrelated fact for a synchronous resolver update' do
+    resolver = DnsResolver.create!(
+      label: "resolver-label-#{SecureRandom.hex(4)}",
+      addrs: '192.0.2.199',
+      is_universal: true,
+      location: nil,
+      ip_version: 4
+    )
+
+    chain, updated = described_class.fire(resolver, label: 'New resolver label')
+
+    expect(chain).to be_nil
+    expect(updated.reload.label).to eq('New resolver label')
+    event = expect_resource_event!(:updated, resolver)
+    expect(event.parameters['changed_fields']).to eq(['label'])
+  end
+
   it 'updates resolver addresses on every VPS using the resolver' do
     resolver = DnsResolver.create!(
       label: "resolver-update-#{SecureRandom.hex(4)}",
@@ -52,20 +69,19 @@ RSpec.describe TransactionChains::DnsResolver::Update do
     expect(updated.addrs).to eq('192.0.2.201')
     expect(tx_classes(chain)).to include(
       Transactions::Vps::DnsResolver,
-      Transactions::EventDelivery::Notify,
       Transactions::Utils::NoOp
     )
-    classes = tx_classes(chain)
-    release_idx = classes.index(Transactions::EventDelivery::Notify)
-    expect(classes.rindex(Transactions::Vps::DnsResolver)).to be < release_idx
-    expect(classes.rindex(Transactions::Utils::NoOp)).to be < release_idx
     expect(tx_payload(chain, Transactions::Vps::DnsResolver, vps_id: vps.id)).to eq(
       'nameserver' => ['192.0.2.201'],
       'original' => ['192.0.2.200']
     )
-    event = expect_routed_event!('vps.dns_resolver_changed', user:)
+    expect_deferred_event!(chain, 'vps.dns_resolver_changed')
+    complete_chain_operation!(chain)
+
+    event = expect_completed_event!('vps.dns_resolver_changed', user:)
     expect(event.vps).to eq(vps)
     expect(event.parameters).to include(
+      'operation_id' => chain.id,
       'old_dns_resolver_addrs' => '192.0.2.200',
       'new_dns_resolver_addrs' => '192.0.2.201'
     )
@@ -108,19 +124,17 @@ RSpec.describe TransactionChains::DnsResolver::Update do
 
     expect(tx_classes(chain)).to include(
       Transactions::Vps::DnsResolver,
-      Transactions::EventDelivery::Notify,
       Transactions::Utils::NoOp
     )
-    classes = tx_classes(chain)
-    release_idx = classes.index(Transactions::EventDelivery::Notify)
-    expect(classes.rindex(Transactions::Vps::DnsResolver)).to be < release_idx
-    expect(classes.rindex(Transactions::Utils::NoOp)).to be < release_idx
     expect(transactions_for(chain).select { |tx| tx.vps_id == local_vps.id }).to be_empty
     expect(tx_payload(chain, Transactions::Vps::DnsResolver, vps_id: remote_vps.id)).to eq(
       'nameserver' => [other_resolver.addrs],
       'original' => ['192.0.2.210']
     )
-    event = expect_routed_event!('vps.dns_resolver_changed', user:)
+    expect_deferred_event!(chain, 'vps.dns_resolver_changed')
+    complete_chain_operation!(chain)
+
+    event = expect_completed_event!('vps.dns_resolver_changed', user:)
     expect(event.vps).to eq(remote_vps)
     expect(event.parameters).to include(
       'old_dns_resolver_addrs' => '192.0.2.210',

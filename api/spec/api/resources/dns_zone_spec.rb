@@ -316,6 +316,24 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsZone' do
       expect(record.user_id).to eq(SpecSeed.user.id)
     end
 
+    it 'emits a synchronous create fact when an admin creates a system zone' do
+      as(SpecSeed.admin) { json_post index_path, dns_zone: payload }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      record = DnsZone.find_by!(name: payload[:name])
+      event = Event.where(
+        event_type: 'resource.created',
+        source_class: 'DnsZone',
+        source_id: record.id
+      ).sole
+      expect(event.parameters).to include(
+        'action' => 'created',
+        'actor_user_id' => SpecSeed.admin.id
+      )
+    end
+
     it 'returns validation errors for missing name' do
       as(SpecSeed.admin) { json_post index_path, dns_zone: payload.except(:name) }
 
@@ -425,12 +443,21 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsZone' do
     end
 
     it 'allows admins to delete system zones and removes records' do
+      zone_id = zone_a.id
+
       as(SpecSeed.admin) { json_delete show_path(zone_a.id) }
 
       expect_status(200)
       expect(json['status']).to be(true)
       expect(DnsZone.where(id: zone_a.id)).to be_empty
       expect(DnsRecord.where(id: zone_record.id)).to be_empty
+      expect(
+        Event.where(
+          event_type: 'resource.deleted',
+          source_class: 'DnsZone',
+          source_id: zone_id
+        )
+      ).to exist
     end
 
     it 'returns 404 for unknown zone' do

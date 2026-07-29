@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'base64'
+require 'json'
 require 'openssl'
 
 module TransactionEngineSpecHelpers
@@ -42,6 +43,71 @@ module TransactionEngineSpecHelpers
     expect(
       signer_private_key.public_key.verify(digest, Base64.decode64(signature), data)
     ).to be(true)
+  end
+
+  def complete_chain_operation!(chain)
+    chain.update!(state: :done)
+    VpsAdmin::API::Events::OperationLifecycle.emit_succeeded!(chain)
+  end
+
+  def fail_chain_operation!(chain, state: :failed)
+    chain.update!(state:)
+    VpsAdmin::API::Events::OperationLifecycle.emit_failed!(chain, state:)
+  end
+
+  def expect_deferred_event!(chain, event_type)
+    expect(Event.where(event_type:)).to be_empty
+
+    expect(deferred_result_events(chain).count do |descriptor|
+      descriptor['event_type'] == event_type
+    end).to eq(1)
+  end
+
+  def deferred_result_events(chain)
+    chain.transactions
+         .where(handle: Transactions::Utils::NoOp.t_type)
+         .order(id: :desc)
+         .filter_map do |transaction|
+           JSON.parse(transaction.input).dig('input', 'result_events')
+         rescue JSON::ParserError
+           nil
+         end.flatten
+  end
+
+  def expect_completed_event!(event_type, user:)
+    event = Event.where(event_type:, user:).order(:id).last
+    expect(event).to be_present
+    expect(event).to be_routed_routing_state
+
+    delivery = event.event_deliveries.sole
+    expect(delivery).to be_released_state
+    expect(delivery.mail_log).to be_present
+
+    event
+  end
+
+  def expect_resource_event!(action, object, operation: nil)
+    event = Event.where(
+      event_type: "resource.#{action}",
+      source_class: object.class.base_class.name,
+      source_id: object.id
+    ).sole
+    expect(event.parameters).to include(
+      'resource_type' => object.class.base_class.name,
+      'resource_id' => object.id,
+      'action' => action.to_s
+    )
+
+    if operation
+      expect(event.parameters).to include(
+        'operation_id' => operation.id,
+        'operation_attempt' => 1
+      )
+    else
+      expect(event.parameters).not_to have_key('operation_id')
+    end
+
+    event
   end
 end
 

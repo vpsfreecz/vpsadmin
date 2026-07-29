@@ -98,6 +98,53 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
                        "Unclassified mutating actions:\n#{missing.map(&:name).sort.join("\n")}"
   end
 
+  it 'maps every generic blocking action to its target model and CRUD intent' do
+    ApiAppHelper.app_instance
+
+    walk_resource = lambda do |resource|
+      actions = []
+      resource.actions { |action| actions << action }
+      resource.resources { |child| actions.concat(walk_resource.call(child)) }
+      actions
+    end
+    policies = VpsAdmin::API::Events::ActionPolicies
+    actions =
+      HaveAPI.get_version_resources(VpsAdmin::API::Resources, '7.0').flat_map do |resource|
+        walk_resource.call(resource)
+      end
+    generic_blocking = actions.select do |action|
+      action.blocking && policies.for(action)&.kind == :transaction_chain
+    end
+    blocking = generic_blocking.select(&:model)
+
+    expect(blocking).not_to be_empty
+    blocking.each do |action|
+      policy = policies.for(action)
+      model_name = action.model&.base_class&.name
+
+      expect(policy.models).to eq([model_name]), action.name
+      expect(policy).to be_records_transaction_chain_resources
+
+      intent =
+        if action <= HaveAPI::Actions::Default::Create
+          :created
+        elsif action <= HaveAPI::Actions::Default::Update
+          :updated
+        elsif action <= HaveAPI::Actions::Default::Delete
+          :deleted
+        end
+
+      expect(policy.resource_action).to eq(intent), action.name
+    end
+
+    generic_blocking.reject(&:model).each do |action|
+      expect(policies.for(action)).to have_attributes(
+        models: [],
+        resource_action: nil
+      )
+    end
+  end
+
   it 'records resources for blocking actions with synchronous mutation paths' do
     policies = VpsAdmin::API::Events::ActionPolicies
     action_plugins = {
@@ -469,6 +516,50 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
       source_id: os_family.id
     ).sole
     expect(event.parameters['changed_fields']).to eq(['description'])
+  end
+
+  it 'applies default CRUD intent only to the action target model' do
+    policies = VpsAdmin::API::Events::ActionPolicies
+    policy = policies::Policy.new(
+      kind: :transaction_chain,
+      models: %w[OsFamily],
+      reason: 'mixed synchronous blocking action',
+      atomic: false,
+      resource_action: :created
+    )
+    recorder = policies::Recorder.new(policy)
+    os_family = nil
+
+    policies.with_recorder(recorder) do
+      os_family = OsFamily.create!(
+        label: "Mixed blocking action #{SecureRandom.hex(4)}"
+      )
+      recorder.allow_models(%w[Node])
+      SpecSeed.node.update!(active: !SpecSeed.node.active)
+    end
+    recorder.emit!
+
+    expect(
+      Event.where(
+        event_type: 'resource.created',
+        source_class: 'OsFamily',
+        source_id: os_family.id
+      )
+    ).to exist
+    expect(
+      Event.where(
+        event_type: 'resource.updated',
+        source_class: 'Node',
+        source_id: SpecSeed.node.id
+      )
+    ).to exist
+    expect(
+      Event.where(
+        event_type: 'resource.created',
+        source_class: 'Node',
+        source_id: SpecSeed.node.id
+      )
+    ).to be_empty
   end
 
   it 'captures an OAuth callback and deduplicates its nested operation' do

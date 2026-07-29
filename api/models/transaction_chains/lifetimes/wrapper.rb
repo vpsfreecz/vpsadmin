@@ -47,6 +47,12 @@ module TransactionChains
           end
         end
       end
+
+      defer_resource_event!(
+        :updated,
+        obj,
+        changed_fields: %w[object_state expiration_date remind_after_date]
+      )
     end
   end
 end

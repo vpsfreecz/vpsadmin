@@ -19,6 +19,8 @@ module TransactionChains
       vps.assign_attributes(attrs)
       raise ActiveRecord::RecordInvalid, vps unless vps.valid?
 
+      changed_fields = vps.changed.dup
+
       db_changes = { vps => {} }
 
       vps.changed.each do |attr|
@@ -159,8 +161,6 @@ module TransactionChains
         lock_type: opts[:admin_lock_type]
       )
 
-      resource_event = nil
-
       if !resources.empty? || vps.cpu_limit_changed?
         append(Transactions::Utils::NoOp, args: find_node_id) do
           data = {}
@@ -177,7 +177,7 @@ module TransactionChains
         use_chain(Vps::SetResources, args: [vps, resources])
         if opts[:change_reason]
           effective_admin = admin || ::User.current
-          resource_event = prepare_event!(
+          defer_result_event!(
             'vps.resources_changed',
             user: vps.user,
             vps:,
@@ -198,8 +198,15 @@ module TransactionChains
         end
       end
 
+      if changed_fields.any? || resources.any?
+        defer_resource_event!(
+          :updated,
+          vps,
+          changed_fields:
+        )
+      end
+
       if db_changes.empty?
-        release_event_deliveries!(resource_event)
         return vps
       end
 
@@ -217,9 +224,6 @@ module TransactionChains
           end
         end
       end
-
-      release_event_deliveries!(resource_event)
-
       vps
     end
 

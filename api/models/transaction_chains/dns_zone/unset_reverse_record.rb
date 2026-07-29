@@ -20,6 +20,18 @@ module TransactionChains
       return if record.nil?
 
       host_ip_address.reverse_dns_record = nil
+      defer_resource_event!(
+        :deleted,
+        record,
+        owner: dns_zone.user
+      )
+      defer_resource_event!(
+        :updated,
+        host_ip_address,
+        changed_fields: %w[reverse_dns_record_id reverse_record_value],
+        owner: host_ip_address.current_owner,
+        vps: host_ip_address.ip_address.network_interface&.vps
+      )
 
       log = ::DnsRecordLog.create!(
         user: ::User.current,

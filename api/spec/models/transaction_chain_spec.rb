@@ -62,6 +62,19 @@ module SpecChains
     end
   end
 
+  class AllowedEmptyCleanupFailure < ::TransactionChain
+    allow_empty
+
+    def link_chain(object)
+      object&.save!
+    end
+
+    def release_locks
+      super
+      raise 'allowed-empty cleanup failed'
+    end
+  end
+
   class Failing < ::TransactionChain
     def link_chain(node)
       concerns(:affect, ['Vps', 987_654])
@@ -170,6 +183,67 @@ module SpecChains
       event
     end
   end
+
+  class ResourceMutation < ::TransactionChain
+    def link_chain(node, object, action)
+      case action
+      when :create
+        object.save!
+        append_t(SpecTransactions::ChainTx, args: [node], kwargs: { tag: 'create' }) do |t|
+          t.just_create(object)
+        end
+
+      when :update
+        original = object.description
+        object.update!(description: 'updated in transaction chain')
+        defer_resource_event!(:updated, object, changed_fields: %w[description])
+        append_t(SpecTransactions::ChainTx, args: [node], kwargs: { tag: 'update' }) do |t|
+          t.edit_before(object, description: original)
+        end
+
+      when :logical_delete
+        original = object.description
+        object.update!(description: 'logically deleted in transaction chain')
+        defer_resource_event!(:updated, object, changed_fields: %w[description])
+        append_t(SpecTransactions::ChainTx, args: [node], kwargs: { tag: 'logical-delete' }) do |t|
+          t.edit_before(object, description: original)
+        end
+
+      when :confirmed_delete
+        append_t(SpecTransactions::ChainTx, args: [node], kwargs: { tag: 'confirmed-delete' }) do |t|
+          t.just_destroy(object)
+        end
+
+      else
+        raise ArgumentError, "unsupported resource action #{action.inspect}"
+      end
+
+      object
+    end
+  end
+
+  class ConstructionFailure < ::TransactionChain
+    def link_chain(_node, object)
+      object&.save!
+      raise 'transaction chain construction failed'
+    end
+  end
+
+  class PostDeferralFailure < ::TransactionChain
+    def link_chain(node, object)
+      object&.save!
+      append_t(
+        SpecTransactions::ChainTx,
+        args: [node],
+        kwargs: { tag: 'post-deferral-failure' }
+      )
+    end
+
+    def append_deferred_result_events!
+      super
+      raise 'deferred result finalization failed'
+    end
+  end
 end
 
 RSpec.describe TransactionChain do
@@ -184,6 +258,40 @@ RSpec.describe TransactionChain do
       environment: SpecSeed.environment,
       cluster_resource: ClusterResource.find_by!(name: 'ipv4')
     )
+  end
+
+  def with_transaction_chain_resource_policy(action, model: OsFamily, &)
+    policy = VpsAdmin::API::Events::ActionPolicies::Policy.new(
+      kind: :transaction_chain,
+      models: [model.base_class.name],
+      reason: 'transaction-chain resource event spec',
+      atomic: false,
+      resource_action: action
+    )
+    recorder = VpsAdmin::API::Events::ActionPolicies::Recorder.new(policy)
+
+    VpsAdmin::API::Events::ActionPolicies.with_recorder(recorder, &)
+  end
+
+  def blocking_action_boundary(&block)
+    action = Class.new do
+      define_singleton_method(:http_method) { :post }
+      define_singleton_method(:blocking) { true }
+      define_singleton_method(:model) { OsFamily }
+
+      define_method(:initialize) do |work|
+        @work = work
+      end
+
+      define_method(:safe_exec) do
+        @work.call
+        [true, {}, {}]
+      rescue StandardError => e
+        [false, e.message, {}]
+      end
+    end
+    action.prepend(VpsAdmin::API::Events::ActionPolicies::ActionExecution)
+    action.new(block)
   end
 
   around do |example|
@@ -326,6 +434,261 @@ RSpec.describe TransactionChain do
       .to eq(before_counts[:events])
     expect(Event.where(subject: 'Rolled back result fact').count)
       .to eq(before_counts[:result_events])
+  end
+
+  it 'defers an action-scoped created resource fact until operation success' do
+    resource = OsFamily.new(
+      label: "Deferred create #{SecureRandom.hex(4)}",
+      description: 'created by transaction chain'
+    )
+
+    chain, = with_transaction_chain_resource_policy(:created) do
+      SpecChains::ResourceMutation.fire(node, resource, :create)
+    end
+
+    expect_deferred_event!(chain, 'resource.created')
+    complete_chain_operation!(chain)
+    event = expect_resource_event!(:created, resource, operation: chain)
+    succeeded = Event.where(
+      event_type: 'operation.succeeded',
+      source_class: 'TransactionChain',
+      source_id: chain.id
+    ).sole
+    expect(succeeded.parameters['result_event_ids']).to eq([event.id])
+  end
+
+  it 'does not materialize an action-scoped created fact when the operation fails' do
+    resource = OsFamily.new(
+      label: "Failed create #{SecureRandom.hex(4)}",
+      description: 'created by failed transaction chain'
+    )
+
+    chain, = with_transaction_chain_resource_policy(:created) do
+      SpecChains::ResourceMutation.fire(node, resource, :create)
+    end
+
+    fail_chain_operation!(chain)
+    expect(
+      Event.where(
+        event_type: 'resource.created',
+        source_class: 'OsFamily',
+        source_id: resource.id
+      )
+    ).to be_empty
+  end
+
+  it 'emits a committed pre-fire mutation when chain construction later fails' do
+    resource = nil
+    boundary = blocking_action_boundary do
+      resource = OsFamily.create!(
+        label: "Committed before failed construction #{SecureRandom.hex(4)}"
+      )
+      SpecChains::ConstructionFailure.fire(node, nil)
+    end
+
+    response = boundary.safe_exec
+
+    expect(response.first).to be(false)
+    expect(resource.reload).to be_persisted
+    expect_resource_event!(:created, resource)
+  end
+
+  it 'suppresses a construction-only mutation rolled back with its chain' do
+    resource = OsFamily.new(
+      label: "Rolled back construction #{SecureRandom.hex(4)}"
+    )
+    boundary = blocking_action_boundary do
+      SpecChains::ConstructionFailure.fire(node, resource)
+    end
+
+    response = boundary.safe_exec
+
+    expect(response.first).to be(false)
+    expect(OsFamily.where(id: resource.id)).to be_empty
+    expect(
+      Event.where(
+        event_type: 'resource.created',
+        source_class: 'OsFamily',
+        source_id: resource.id
+      )
+    ).to be_empty
+  end
+
+  it 'emits a pre-fire mutation when construction fails after deferral' do
+    resource = nil
+    boundary = blocking_action_boundary do
+      resource = OsFamily.create!(
+        label: "Committed before failed finalization #{SecureRandom.hex(4)}"
+      )
+      SpecChains::PostDeferralFailure.fire(node, nil)
+    end
+
+    response = boundary.safe_exec
+
+    expect(response.first).to be(false)
+    expect(resource.reload).to be_persisted
+    expect_resource_event!(:created, resource)
+  end
+
+  it 'suppresses a construction mutation when post-deferral work fails' do
+    resource = OsFamily.new(
+      label: "Rolled back after deferral #{SecureRandom.hex(4)}"
+    )
+    boundary = blocking_action_boundary do
+      SpecChains::PostDeferralFailure.fire(node, resource)
+    end
+
+    response = boundary.safe_exec
+
+    expect(response.first).to be(false)
+    expect(OsFamily.where(id: resource.id)).to be_empty
+    expect(
+      Event.where(
+        event_type: 'resource.created',
+        source_class: 'OsFamily',
+        source_id: resource.id
+      )
+    ).to be_empty
+  end
+
+  it 'emits a pre-fire mutation when allowed-empty cleanup rolls back' do
+    resource = nil
+    boundary = blocking_action_boundary do
+      resource = OsFamily.create!(
+        label: "Committed before allowed-empty rollback #{SecureRandom.hex(4)}"
+      )
+      SpecChains::AllowedEmptyCleanupFailure.fire(nil)
+    end
+
+    response = boundary.safe_exec
+
+    expect(response.first).to be(false)
+    expect(resource.reload).to be_persisted
+    expect_resource_event!(:created, resource)
+  end
+
+  it 'suppresses an allowed-empty construction mutation after rollback' do
+    resource = OsFamily.new(
+      label: "Rolled back with allowed-empty chain #{SecureRandom.hex(4)}"
+    )
+    boundary = blocking_action_boundary do
+      SpecChains::AllowedEmptyCleanupFailure.fire(resource)
+    end
+
+    response = boundary.safe_exec
+
+    expect(response.first).to be(false)
+    expect(OsFamily.where(id: resource.id)).to be_empty
+    expect(
+      Event.where(
+        event_type: 'resource.created',
+        source_class: 'OsFamily',
+        source_id: resource.id
+      )
+    ).to be_empty
+  end
+
+  it 'deduplicates an explicit update descriptor against action-scoped capture' do
+    resource = OsFamily.create!(
+      label: "Deferred update #{SecureRandom.hex(4)}",
+      description: 'before'
+    )
+
+    chain, = with_transaction_chain_resource_policy(:updated) do
+      SpecChains::ResourceMutation.fire(node, resource, :update)
+    end
+
+    expect_deferred_event!(chain, 'resource.updated')
+    complete_chain_operation!(chain)
+    event = expect_resource_event!(:updated, resource, operation: chain)
+    expect(event.parameters['changed_fields']).to eq(['description'])
+  end
+
+  it 'carries a target mutation made before fire into the root chain' do
+    resource = OsFamily.create!(
+      label: "Pre-fire update #{SecureRandom.hex(4)}",
+      description: 'before'
+    )
+
+    chain, = with_transaction_chain_resource_policy(:updated) do
+      resource.update!(description: 'updated before fire')
+      SpecChains::Linear.fire(node)
+    end
+
+    expect_deferred_event!(chain, 'resource.updated')
+    complete_chain_operation!(chain)
+    event = expect_resource_event!(:updated, resource, operation: chain)
+    expect(event.parameters['changed_fields']).to eq(['description'])
+  end
+
+  it 'uses default delete intent for a logical update descriptor' do
+    resource = OsFamily.create!(
+      label: "Logical delete #{SecureRandom.hex(4)}",
+      description: 'before'
+    )
+
+    chain, = with_transaction_chain_resource_policy(:deleted) do
+      SpecChains::ResourceMutation.fire(node, resource, :logical_delete)
+    end
+
+    expect_deferred_event!(chain, 'resource.deleted')
+    complete_chain_operation!(chain)
+    expect_resource_event!(:deleted, resource, operation: chain)
+    expect(
+      Event.where(
+        event_type: 'resource.updated',
+        source_class: 'OsFamily',
+        source_id: resource.id
+      )
+    ).to be_empty
+  end
+
+  it 'derives a default delete fact from a confirmation-only mutation' do
+    resource = OsFamily.create!(
+      label: "Confirmed delete #{SecureRandom.hex(4)}",
+      description: 'before'
+    )
+
+    chain, = with_transaction_chain_resource_policy(:deleted) do
+      SpecChains::ResourceMutation.fire(node, resource, :confirmed_delete)
+    end
+
+    expect_deferred_event!(chain, 'resource.deleted')
+    complete_chain_operation!(chain)
+    expect_resource_event!(:deleted, resource, operation: chain)
+  end
+
+  it 'reports a synchronous lifetime transition using API delete intent' do
+    vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
+    log = ObjectState.new_log(
+      vps,
+      :soft_delete,
+      'Deletion requested',
+      User.current,
+      nil,
+      nil
+    )
+
+    chain, = with_transaction_chain_resource_policy(:deleted, model: Vps) do
+      TransactionChains::Lifetimes::Wrapper.fire(
+        vps,
+        :soft_delete,
+        [:soft_delete],
+        true,
+        {},
+        log
+      )
+    end
+
+    expect(chain).to be_nil
+    expect_resource_event!(:deleted, vps)
+    expect(
+      Event.where(
+        event_type: 'resource.updated',
+        source_class: 'Vps',
+        source_id: vps.id
+      )
+    ).to be_empty
   end
 
   it 'rolls back chain construction when the operation start cannot be persisted' do

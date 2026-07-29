@@ -48,6 +48,7 @@ RSpec.describe TransactionChains::DnsZone::Update do
         Transactions::DnsServer::Reload,
         Transactions::DnsServerZone::Update,
         Transactions::DnsServer::Reload,
+        Transactions::Utils::NoOp,
         Transactions::Utils::NoOp
       ]
     )
@@ -82,6 +83,8 @@ RSpec.describe TransactionChains::DnsZone::Update do
 
     expect(chain).to be_nil
     expect(updated.reload.label).to eq('new label')
+    event = expect_resource_event!(:updated, updated)
+    expect(event.parameters['changed_fields']).to eq(['label'])
   end
 
   it 'confirms original values for changed runtime attrs and database-only attrs' do

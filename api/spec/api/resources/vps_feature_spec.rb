@@ -255,7 +255,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS::Feature' do
           json_put update_path(user_vps.id, user_feature.id), feature: { enabled: target }
         end
       end.to change(TransactionChain, :count).by(1)
-         .and change(Transaction, :count).by(1)
+         .and change(Transaction, :count).by(2)
          .and change(ObjectHistory, :count).by(1)
 
       expect_status(200)
@@ -267,11 +267,11 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS::Feature' do
       expect(chain.type).to eq('TransactionChains::Vps::Features')
       expect(chain.name).to eq('features')
       expect(chain.state).to eq('queued')
-      expect(chain.size).to eq(1)
+      expect(chain.size).to eq(2)
       expect(chain.concern_type).to eq('chain_affect')
       expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(['Vps', user_vps.id])
 
-      transaction = chain.transactions.first
+      transaction = chain.transactions.find_by!(handle: 8001)
       expect(transaction.handle).to eq(8001)
       expect(transaction.vps_id).to eq(user_vps.id)
 
@@ -283,6 +283,13 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS::Feature' do
 
       expect(confirmation).not_to be_nil
       expect(confirmation.attr_changes['enabled']).to eq(target ? 1 : 0)
+      expect(deferred_result_events(chain)).to contain_exactly(
+        include(
+          'event_type' => 'resource.updated',
+          'source_class' => 'VpsFeature',
+          'source_id' => user_feature.id
+        )
+      )
     end
 
     it 'prevents users from updating other VPS features' do
@@ -349,11 +356,11 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS::Feature' do
       expect(chain.type).to eq('TransactionChains::Vps::Features')
       expect(chain.name).to eq('features')
       expect(chain.state).to eq('queued')
-      expect(chain.size).to eq(1)
+      expect(chain.size).to eq(2)
       expect(chain.concern_type).to eq('chain_affect')
       expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(['Vps', user_vps.id])
 
-      transaction = chain.transactions.first
+      transaction = chain.transactions.find_by!(handle: 8001)
       expect(transaction.handle).to eq(8001)
       expect(transaction.vps_id).to eq(user_vps.id)
 
@@ -363,6 +370,14 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS::Feature' do
         confirm_type: :edit_after_type
       )
       expect(confirmations).not_to be_empty
+      result_events = deferred_result_events(chain)
+      expect(result_events).not_to be_empty
+      expect(result_events).to all(
+        include(
+          'event_type' => 'resource.updated',
+          'source_class' => 'VpsFeature'
+        )
+      )
 
       expect(ObjectHistory.where(tracked_object: user_vps, event_type: 'features').exists?).to be(true)
     end

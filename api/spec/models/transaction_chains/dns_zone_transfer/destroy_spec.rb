@@ -52,6 +52,7 @@ RSpec.describe TransactionChains::DnsZoneTransfer::Destroy do
         Transactions::DnsServer::Reload,
         Transactions::DnsServerZone::RemoveServers,
         Transactions::DnsServer::Reload,
+        Transactions::Utils::NoOp,
         Transactions::Utils::NoOp
       ]
     )
@@ -102,5 +103,6 @@ RSpec.describe TransactionChains::DnsZoneTransfer::Destroy do
 
     expect(chain).to be_nil
     expect(DnsZoneTransfer.where(id: transfer.id)).to be_empty
+    expect_resource_event!(:deleted, transfer)
   end
 end

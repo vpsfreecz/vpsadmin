@@ -67,6 +67,7 @@ RSpec.describe TransactionChains::DnsZoneTransfer::Create do
         Transactions::DnsServer::Reload,
         Transactions::DnsServerZone::AddServers,
         Transactions::DnsServer::Reload,
+        Transactions::Utils::NoOp,
         Transactions::Utils::NoOp
       ]
     )
@@ -131,5 +132,6 @@ RSpec.describe TransactionChains::DnsZoneTransfer::Create do
 
     expect(chain).to be_nil
     expect(created.reload.confirmed).to eq(:confirmed)
+    expect_resource_event!(:created, created)
   end
 end
