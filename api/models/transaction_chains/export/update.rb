@@ -18,6 +18,7 @@ module TransactionChains
 
       new_export = ::Export.find(export.id)
       new_export.assign_attributes(opts)
+      changed_fields = new_export.changed.dup
 
       db_changes = {}
       toggle = nil
@@ -42,6 +43,12 @@ module TransactionChains
         new_export.save!
         return new_export
       end
+
+      defer_resource_event!(
+        :updated,
+        new_export,
+        changed_fields:
+      )
 
       if toggle === false
         append_t(Transactions::Export::Disable, args: [new_export]) do |t|

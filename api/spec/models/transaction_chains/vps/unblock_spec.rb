@@ -28,10 +28,7 @@ RSpec.describe TransactionChains::Vps::Unblock do
 
     chain, = described_class.fire(vps, true, nil, state)
 
-    expect(tx_classes(chain)).to include(
-      Transactions::Vps::Start,
-      Transactions::EventDelivery::Notify
-    )
+    expect(tx_classes(chain)).to include(Transactions::Vps::Start, Transactions::Utils::NoOp)
     expect(chain.transaction_chain_concerns.find_by!(class_name: 'Vps')).to have_attributes(
       class_name: 'Vps',
       row_id: vps.id
@@ -39,10 +36,15 @@ RSpec.describe TransactionChains::Vps::Unblock do
     expect(chain.transaction_chain_concerns.find_by!(class_name: 'User')).to have_attributes(
       row_id: vps.user_id
     )
-    event = expect_routed_event!('vps.resumed', user: vps.user)
+    expect_deferred_event!(chain, 'vps.resumed')
+    complete_chain_operation!(chain)
+
+    event = expect_completed_event!('vps.resumed', user: vps.user)
     expect(event.vps).to eq(vps)
     expect(event.source).to eq(state)
     expect(event.parameters).to include(
+      'operation_id' => chain.id,
+      'operation_attempt' => 1,
       'vps_id' => vps.id,
       'vps_hostname' => vps.hostname,
       'state' => 'active',

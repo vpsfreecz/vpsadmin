@@ -33,6 +33,7 @@ RSpec.describe TransactionChains::Export::Update do
 
     chain, = described_class.fire(export, enabled: false, threads: 12)
 
+    expect_deferred_event!(chain, 'resource.updated')
     expect(tx_classes(chain)).to include(
       Transactions::Export::Disable,
       Transactions::Export::Set
@@ -48,6 +49,18 @@ RSpec.describe TransactionChains::Export::Update do
       row.class_name == 'Export' && row.row_pks == { 'id' => export.id }
     end
     expect(confirmation.attr_changes).to eq('enabled' => 0)
+
+    complete_chain_operation!(chain)
+    event = Event.where(
+      event_type: 'resource.updated',
+      source_class: 'Export',
+      source_id: export.id
+    ).sole
+    expect(event.parameters).to include(
+      'operation_id' => chain.id,
+      'operation_attempt' => 1,
+      'changed_fields' => %w[enabled threads]
+    )
   end
 
   it 'persists db changes, creates missing hosts, and enables last' do
@@ -60,7 +73,8 @@ RSpec.describe TransactionChains::Export::Update do
         Transactions::Export::Set,
         Transactions::Utils::NoOp,
         Transactions::Export::AddHosts,
-        Transactions::Export::Enable
+        Transactions::Export::Enable,
+        Transactions::Utils::NoOp
       ]
     )
     expect(export.reload.export_hosts.count).to eq(1)
@@ -96,6 +110,16 @@ RSpec.describe TransactionChains::Export::Update do
     expect(chain).to be_nil
     expect(returned.id).to eq(export.id)
     expect(export.reload).to have_attributes(rw: false, sync: false)
+    event = Event.where(
+      event_type: 'resource.updated',
+      source_class: 'Export',
+      source_id: export.id
+    ).sole
+    expect(event.parameters).to include(
+      'action' => 'updated',
+      'changed_fields' => %w[rw sync]
+    )
+    expect(event.parameters).not_to have_key('operation_id')
   end
 
   it 'returns an empty chain when nothing changes' do

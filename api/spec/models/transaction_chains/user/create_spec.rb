@@ -49,20 +49,21 @@ RSpec.describe TransactionChains::User::Create do
     pkg
   end
 
-  it 'creates user infrastructure, links default packages, and sends welcome mail' do
+  it 'creates user infrastructure and emits an uncorrelated fact when no chain is needed' do
     default_pkg = create_default_package!(environment: SpecSeed.environment)
     user = build_user
 
     chain, created = described_class.fire(user, false, nil, nil, true)
 
     expect(created).to be_persisted
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
-    event = expect_routed_event!('user.created', user: created)
+    expect(chain).to be_nil
+    event = expect_completed_event!('user.created', user: created)
     expect(event.parameters).to include(
       'login' => created.login,
       'email' => created.email,
       'active' => true
     )
+    expect(event.parameters).not_to have_key('operation_id')
     expect(EnvironmentUserConfig.where(user: created).count).to eq(Environment.count)
     expect(UserClusterResource.where(user: created).count).to eq(
       Environment.count * ClusterResource.count
@@ -83,9 +84,53 @@ RSpec.describe TransactionChains::User::Create do
   it 'records inactive user creation as suspended' do
     user = build_user
 
-    chain, created = described_class.fire(user, false, nil, nil, false)
+    _chain, created = described_class.fire(user, false, nil, nil, false)
 
     expect(created.object_state).to eq('suspended')
+  end
+
+  it 'emits a correlated creation fact only after a nonempty chain succeeds' do
+    user = build_user
+
+    # The nested VPS chain is outside this example's scope. Append a signed
+    # no-op so the real user-create chain remains nonempty without provisioning
+    # a complete VPS fixture.
+    # rubocop:disable RSpec/AnyInstance
+    allow_any_instance_of(described_class).to receive(:use_chain).and_wrap_original do |method, chain_class, opts|
+      if chain_class == TransactionChains::Vps::Create
+        method.receiver.append_t(
+          Transactions::Utils::NoOp,
+          args: [SpecSeed.node.id]
+        )
+      else
+        method.call(chain_class, opts)
+      end
+    end
+    # rubocop:enable RSpec/AnyInstance
+
+    chain, created = described_class.fire(
+      user,
+      true,
+      SpecSeed.node,
+      SpecSeed.os_template,
+      false
+    )
+
+    expect_deferred_event!(chain, 'user.created')
+    fail_chain_operation!(chain)
+    expect(Event.where(event_type: 'user.created')).to be_empty
+
+    chain.update!(state: :queued)
+    VpsAdmin::API::Events::OperationLifecycle.emit_started!(chain)
+    2.times { complete_chain_operation!(chain) }
+
+    event = expect_completed_event!('user.created', user: created)
+    expect(Event.where(event_type: 'user.created').count).to eq(1)
+    expect(event.parameters).to include(
+      'operation_id' => chain.id,
+      'operation_attempt' => 2,
+      'login' => created.login
+    )
   end
 
   it 'passes the initial VPS start flag from activation state' do

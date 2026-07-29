@@ -20,17 +20,16 @@ RSpec.describe TransactionChains::User::Revive do
     classes = tx_classes(chain)
 
     expect(classes).to include(
-      Transactions::EventDelivery::Notify,
       Transactions::Export::Enable,
       Transactions::Vps::Start
     )
-    release_idx = classes.index(Transactions::EventDelivery::Notify)
-    expect(classes.rindex(Transactions::Export::Enable)).to be < release_idx
-    expect(classes.rindex(Transactions::Vps::Start)).to be < release_idx
+    expect_deferred_event!(chain, 'user.revived')
+    complete_chain_operation!(chain)
+
     expect(MailLog.joins(:notification_template).exists?(notification_templates: { name: 'user_revive' })).to be(true)
-    event = expect_routed_event!('user.revived', user: fixture.fetch(:user))
+    event = expect_completed_event!('user.revived', user: fixture.fetch(:user))
     expect(event.source_class).to eq('ObjectState')
-    expect(event.parameters).to include('state' => 'active')
+    expect(event.parameters).to include('operation_id' => chain.id, 'state' => 'active')
     expect(confirmations_for(chain).any? do |row|
       row.class_name == 'Vps' &&
         row.row_pks == { 'id' => fixture.fetch(:vps).id } &&

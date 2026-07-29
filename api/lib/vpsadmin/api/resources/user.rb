@@ -439,7 +439,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     def state_id
-      @chain.id
+      @chain&.id
     end
   end
 

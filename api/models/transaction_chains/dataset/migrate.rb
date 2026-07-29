@@ -406,7 +406,9 @@ module TransactionChains
         VpsAdmin::API::Events::PARAMETER_SAMPLE_LIMIT
       )
 
-      route_event!(
+      emitter = event_type.end_with?('_finished') ? :defer_result_event! : :route_event!
+      public_send(
+        emitter,
         event_type,
         vpses: affected_vpses,
         user: dataset_user,

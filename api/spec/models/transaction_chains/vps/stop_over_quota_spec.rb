@@ -27,14 +27,15 @@ RSpec.describe TransactionChains::Vps::StopOverQuota do
       ['Vps', fixture.fetch(:vps).id],
       ['Dataset', fixture.fetch(:dataset).id]
     )
-    expect(tx_classes(chain)).to include(
-      Transactions::Vps::Stop,
-      Transactions::EventDelivery::Notify
-    )
-    event = expect_routed_event!('vps.stopped_over_quota', user: fixture.fetch(:vps).user)
+    expect(tx_classes(chain)).to include(Transactions::Vps::Stop, Transactions::Utils::NoOp)
+    expect_deferred_event!(chain, 'vps.stopped_over_quota')
+    complete_chain_operation!(chain)
+
+    event = expect_completed_event!('vps.stopped_over_quota', user: fixture.fetch(:vps).user)
     expect(event.vps).to eq(fixture.fetch(:vps))
     expect(event.source).to eq(expansion)
     expect(event.parameters).to include(
+      'operation_id' => chain.id,
       'dataset_id' => fixture.fetch(:dataset).id,
       'dataset_full_name' => fixture.fetch(:dataset).full_name,
       'expansion_id' => expansion.id,

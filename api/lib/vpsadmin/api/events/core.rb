@@ -606,6 +606,7 @@ VpsAdmin::API::Events.define do
         severity: :info,
         roles: %i[account],
         default_routed: true do
+    fields VpsAdmin::API::Events::Core::OPERATION_RESULT_FIELDS
     fields(
       login: { description: 'Login of the created user account', type: :string },
       email: { description: 'E-mail address set on the created account', type: :string },
@@ -641,6 +642,7 @@ VpsAdmin::API::Events.define do
           severity:,
           roles: %i[account],
           default_routed: true do
+      fields VpsAdmin::API::Events::Core::OPERATION_RESULT_FIELDS
       fields(
         state: { description: 'Account lifecycle state after the change', type: :string },
         reason: { description: 'Operator-provided reason for the lifecycle change', type: :string },
@@ -1053,6 +1055,7 @@ VpsAdmin::API::Events.define do
           severity:,
           roles: %i[account admin],
           default_routed: true do
+      fields VpsAdmin::API::Events::Core::OPERATION_RESULT_FIELDS
       fields(
         vps_id: { description: 'ID of the VPS whose lifecycle state changed', type: :integer },
         vps_hostname: { description: 'Hostname of the VPS whose lifecycle state changed', type: :string },
@@ -1076,6 +1079,7 @@ VpsAdmin::API::Events.define do
         severity: :info,
         roles: %i[admin],
         default_routed: true do
+    fields VpsAdmin::API::Events::Core::OPERATION_RESULT_FIELDS
     fields(
       vps_id: { description: 'ID of the VPS whose resources changed', type: :integer },
       vps_hostname: { description: 'Hostname of the VPS whose resources changed', type: :string },
@@ -1100,6 +1104,7 @@ VpsAdmin::API::Events.define do
         severity: :info,
         roles: %i[admin],
         default_routed: true do
+    fields VpsAdmin::API::Events::Core::OPERATION_RESULT_FIELDS
     fields(
       vps_id: { description: 'ID of the VPS whose resolver changed', type: :integer },
       vps_hostname: { description: 'Hostname of the VPS whose resolver changed', type: :string },
@@ -1127,6 +1132,7 @@ VpsAdmin::API::Events.define do
           severity:,
           roles: %i[admin],
           default_routed: true do
+      fields VpsAdmin::API::Events::Core::OPERATION_RESULT_FIELDS
       fields(
         vps_id: { description: 'ID of the VPS whose network state changed', type: :integer },
         vps_hostname: { description: 'Hostname of the VPS whose network state changed', type: :string },
@@ -1151,6 +1157,7 @@ VpsAdmin::API::Events.define do
           severity:,
           roles: %i[admin],
           default_routed: true do
+      fields VpsAdmin::API::Events::Core::OPERATION_RESULT_FIELDS
       fields(
         vps_id: { description: 'ID of the VPS whose dataset quota changed', type: :integer },
         vps_hostname: { description: 'Hostname of the VPS whose dataset quota changed', type: :string },
@@ -1180,6 +1187,7 @@ VpsAdmin::API::Events.define do
         severity: :info,
         roles: %i[admin],
         default_routed: true do
+    fields VpsAdmin::API::Events::Core::OPERATION_RESULT_FIELDS
     fields(
       download_id: { description: 'ID of the prepared snapshot download', type: :integer },
       snapshot_id: { description: 'ID of the source snapshot', type: :integer },
@@ -1206,6 +1214,12 @@ VpsAdmin::API::Events.define do
           default_routed: true do
       argument :vpses, type: Array, optional: true
 
+      operation_fields = if event_name.end_with?('finished')
+                           VpsAdmin::API::Events::Core::OPERATION_RESULT_FIELDS
+                         else
+                           VpsAdmin::API::Events::Core::OPERATION_REFERENCE_FIELDS
+                         end
+      fields operation_fields
       fields(
         dataset_id: { description: 'ID of the dataset being migrated', type: :integer },
         dataset_full_name: { description: 'Full name of the dataset being migrated', type: :string },
@@ -1251,6 +1265,12 @@ VpsAdmin::API::Events.define do
           severity:,
           roles: %i[admin],
           default_routed: true do
+      operation_fields = if event_name.end_with?('finished')
+                           VpsAdmin::API::Events::Core::OPERATION_RESULT_FIELDS
+                         else
+                           VpsAdmin::API::Events::Core::OPERATION_REFERENCE_FIELDS
+                         end
+      fields operation_fields
       fields(
         migration_id: { description: 'ID of the VPS migration record', type: :integer },
         vps_id: { description: 'ID of the VPS being migrated', type: :integer },
@@ -1278,15 +1298,58 @@ VpsAdmin::API::Events.define do
         category: 'vps',
         severity: :warning,
         roles: %i[admin],
-        default_routed: true do
+        default_routed: true,
+        examples: {
+          subject: 'VPS #123 replaced',
+          summary: 'New VPS #456 vps2.example.org'
+        } do
     fields(
-      vps_id: { description: 'ID of the VPS record that initiated replacement', type: :integer },
-      vps_hostname: { description: 'Hostname of the VPS record that initiated replacement', type: :string },
-      original_vps_id: { description: 'ID of the original VPS being replaced', type: :integer },
-      original_vps_hostname: { description: 'Hostname of the original VPS being replaced', type: :string },
-      new_vps_id: { description: 'ID of the newly created replacement VPS', type: :integer },
-      new_vps_hostname: { description: 'Hostname of the newly created replacement VPS', type: :string },
-      reason: { description: 'Operator-provided reason for the replacement', type: :string }
+      vps_id: {
+        description: 'ID of the VPS record that initiated replacement',
+        type: :integer,
+        example: 123
+      },
+      vps_hostname: {
+        description: 'Hostname of the VPS record that initiated replacement',
+        type: :string,
+        example: 'vps1.example.org'
+      },
+      original_vps_id: {
+        description: 'ID of the original VPS being replaced',
+        type: :integer,
+        example: 123
+      },
+      original_vps_hostname: {
+        description: 'Hostname of the original VPS being replaced',
+        type: :string,
+        example: 'vps1.example.org'
+      },
+      new_vps_id: {
+        description: 'ID of the newly created replacement VPS',
+        type: :integer,
+        example: 456
+      },
+      new_vps_hostname: {
+        description: 'Hostname of the newly created replacement VPS',
+        type: :string,
+        example: 'vps2.example.org'
+      },
+      operation_id: { description: 'ID of the operation that completed the replacement', type: :integer },
+      operation_attempt: {
+        description: 'Execution attempt that completed the replacement',
+        type: :integer,
+        example: 1
+      },
+      operation_result_index: {
+        description: 'Zero-based position of this fact in the operation result list',
+        type: :integer,
+        example: 0
+      },
+      reason: {
+        description: 'Operator-provided reason for the replacement',
+        type: :string,
+        example: 'unresponsive system'
+      }
     )
 
     deliver :email do

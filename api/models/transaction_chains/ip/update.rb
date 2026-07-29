@@ -31,6 +31,11 @@ module TransactionChains
         user:,
         charged_environment: env
       )
+      defer_resource_event!(
+        :updated,
+        @ip,
+        changed_fields: @ip.saved_changes.keys
+      )
 
       return if user
 

@@ -210,7 +210,7 @@ RSpec.describe TransactionChains::Dataset::Migrate do
     expect(classes.index(Transactions::Export::Create)).to be < classes.rindex(Transactions::Export::Destroy)
   end
 
-  it 'routes begun and finished notification events when mail is requested' do
+  it 'routes begun immediately and finished only after migration succeeds' do
     src_pool, dst_pool = create_primary_pool_pair
     dataset, src_dip = create_dataset_with_pool!(
       user: user,
@@ -221,15 +221,18 @@ RSpec.describe TransactionChains::Dataset::Migrate do
     create_export_for_dataset!(dataset_in_pool: src_dip)
 
     chain, = described_class.fire(src_dip, dst_pool, send_mail: true, reason: 'rebalance')
-    events = Event.where(event_type: %w[dataset.migration_begun dataset.migration_finished])
-                  .order(:id)
+    begun = Event.where(event_type: 'dataset.migration_begun').sole
+    expect(tx_classes(chain).count(Transactions::EventDelivery::Notify)).to eq(1)
+    expect_deferred_event!(chain, 'dataset.migration_finished')
 
-    expect(tx_classes(chain).count(Transactions::EventDelivery::Notify)).to eq(2)
-    expect(events.map(&:event_type)).to eq(%w[dataset.migration_begun dataset.migration_finished])
-    events.each do |event|
+    complete_chain_operation!(chain)
+
+    finished = expect_completed_event!('dataset.migration_finished', user:)
+    [begun, finished].each do |event|
       expect(event).to be_routed_routing_state
       expect(event.source).to eq(dataset)
       expect(event.parameters).to include(
+        'operation_id' => chain.id,
         'dataset_id' => dataset.id,
         'dataset_full_name' => dataset.full_name,
         'src_pool_id' => src_pool.id,
@@ -237,8 +240,9 @@ RSpec.describe TransactionChains::Dataset::Migrate do
         'export_count' => 1,
         'reason' => 'rebalance'
       )
-      expect(event.event_deliveries.sole).to be_prepared_state
     end
+    expect(begun.event_deliveries.sole).to be_prepared_state
+    expect(finished.parameters['operation_attempt']).to eq(1)
   end
 
   it 'stores only a bounded affected VPS sample in event payload' do
