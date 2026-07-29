@@ -66,4 +66,28 @@ RSpec.describe VpsAdmin::API::Operations::LocationNetwork::Update do
     expect(promoted.reload.primary).to be(true)
     expect(network.reload.primary_location).to eq(loc_b)
   end
+
+  it 'emits the sibling primary flag cleared by the bulk update' do
+    current = LocationNetwork.create!(
+      location: loc_a,
+      network: network,
+      primary: true
+    )
+    promoted = LocationNetwork.create!(
+      location: loc_b,
+      network: network,
+      primary: false
+    )
+
+    with_current_context(user: SpecSeed.admin) do
+      described_class.run(promoted, { primary: true })
+    end
+
+    event = Event.where(
+      event_type: 'resource.updated',
+      source_class: 'LocationNetwork',
+      source_id: current.id
+    ).sole
+    expect(event.parameters['changed_fields']).to eq(%w[primary])
+  end
 end

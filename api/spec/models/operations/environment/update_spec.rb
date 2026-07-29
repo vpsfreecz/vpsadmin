@@ -84,4 +84,43 @@ RSpec.describe VpsAdmin::API::Operations::Environment::Update do
 
     expect(Environment).to have_received(:transaction)
   end
+
+  it 'emits the fields propagated through the bulk default update' do
+    config = create_environment_user_config!(
+      environment: environment,
+      user: SpecSeed.user,
+      default: true,
+      attrs: {
+        can_create_vps: false,
+        can_destroy_vps: false,
+        vps_lifetime: 7,
+        max_vps_count: 1
+      }
+    )
+
+    with_current_context(user: SpecSeed.admin) do
+      described_class.run(
+        environment,
+        {
+          can_create_vps: true,
+          can_destroy_vps: true,
+          vps_lifetime: 30,
+          max_vps_count: 3
+        }
+      )
+    end
+
+    event = Event.where(
+      event_type: 'resource.updated',
+      source_class: 'EnvironmentUserConfig',
+      source_id: config.id
+    ).sole
+    expect(event.user).to eq(config.user)
+    expect(event.parameters['changed_fields']).to contain_exactly(
+      'can_create_vps',
+      'can_destroy_vps',
+      'max_vps_count',
+      'vps_lifetime'
+    )
+  end
 end

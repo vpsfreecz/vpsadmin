@@ -50,6 +50,8 @@ VpsAdmin::API.load_configurable(:incident_reports)
 require_rel 'vpsadmin/api/resources'
 require_rel 'vpsadmin/api/operations'
 
+VpsAdmin::API::Events::ActionPolicies.install!
+
 require_rel 'vpsadmin/supervisor/*.rb'
 require_rel 'vpsadmin/supervisor/console/*.rb'
 require_rel 'vpsadmin/supervisor/node/*.rb'
