@@ -221,7 +221,7 @@ msgstr ""
 msgid "Monitoring"
 msgstr ""
 
-#: forms/cluster.forms.php forms/notifications.forms.php
+#: forms/cluster.forms.php
 msgid "Event log"
 msgstr ""
 
@@ -640,8 +640,8 @@ msgstr ""
 msgid "Cluster resources"
 msgstr ""
 
-#: forms/cluster.forms.php forms/vps.forms.php pages/page_adminm.php
-#: pages/page_jumpto.php
+#: forms/cluster.forms.php forms/notifications.forms.php forms/vps.forms.php
+#: pages/page_adminm.php pages/page_jumpto.php
 msgid "Resource"
 msgstr ""
 
@@ -2424,6 +2424,10 @@ msgid "initial baseline"
 msgstr ""
 
 #: forms/notifications.forms.php
+msgid "Delivery history"
+msgstr ""
+
+#: forms/notifications.forms.php
 msgid "Notification groups"
 msgstr ""
 
@@ -2460,7 +2464,11 @@ msgid "Event types"
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Test event"
+msgid "Test notification"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Composite ID attributes"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -3862,6 +3870,38 @@ msgid "yes"
 msgstr ""
 
 #: forms/notifications.forms.php
+msgid "Resource change payload"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Schema version"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "ID type"
+msgstr ""
+
+#: forms/notifications.forms.php pages/page_jumpto.php
+msgid "Attribute"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Nullable"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Possible values"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Matchable changes"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Payload value"
+msgstr ""
+
+#: forms/notifications.forms.php
 msgid "Example"
 msgstr ""
 
@@ -3870,11 +3910,11 @@ msgid "No matchable fields were reported by the API."
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Test notification event"
+msgid "Test notification routing"
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Create test event"
+msgid "Send test notification"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -3882,15 +3922,11 @@ msgid "Subject scope"
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Test notification"
+msgid "This notification was sent from notification settings."
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "This event was created from notification settings."
-msgstr ""
-
-#: forms/notifications.forms.php
-msgid "Create event"
+msgid "Send notification"
 msgstr ""
 
 #: forms/object_history.forms.php
@@ -8952,10 +8988,6 @@ msgstr ""
 msgid "Found these bros"
 msgstr ""
 
-#: pages/page_jumpto.php
-msgid "Attribute"
-msgstr ""
-
 #: pages/page_lifetimes.php pages/page_outage.php
 msgid "State set"
 msgstr ""
@@ -9417,11 +9449,11 @@ msgid "Failed to update delivery limits"
 msgstr ""
 
 #: pages/page_notifications.php
-msgid "Test event created"
+msgid "Test notification queued for delivery"
 msgstr ""
 
 #: pages/page_notifications.php
-msgid "Failed to create test event"
+msgid "Failed to send test notification"
 msgstr ""
 
 #: pages/page_oom_reports.php

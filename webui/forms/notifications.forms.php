@@ -40,7 +40,7 @@ function notifications_sidebar($current, $user_id = null)
         : $user_qs;
 
     $xtpl->sbar_add(
-        _('Event log'),
+        _('Delivery history'),
         '?page=notifications&action=events' . $user_qs,
         'notifications.events'
     );
@@ -67,7 +67,7 @@ function notifications_sidebar($current, $user_id = null)
     );
     $xtpl->sbar_add(_('Limits'), '?page=notifications&action=limits' . $user_qs);
     $xtpl->sbar_add(_('Event types'), '?page=notifications&action=event_types' . $user_qs);
-    $xtpl->sbar_add(_('Test event'), '?page=notifications&action=test' . $user_qs);
+    $xtpl->sbar_add(_('Test notification'), '?page=notifications&action=test' . $user_qs);
 }
 
 function notifications_param_choices($desc, $empty = false)
@@ -204,6 +204,68 @@ function notifications_event_type_field_metadata_from_type($type)
     }
 
     return $ret;
+}
+
+function notifications_event_type_resource_metadata_from_type($type)
+{
+    $resource = notifications_event_type_metadata_array(
+        notifications_prop($type, 'resource'),
+        true
+    );
+
+    if (!$resource) {
+        return [];
+    }
+
+    $attributes = notifications_event_type_metadata_array(
+        $resource['attributes'] ?? [],
+        true
+    );
+    $resource['attributes'] = array_values(array_filter(array_map(
+        function ($attribute) {
+            $attribute = notifications_event_type_metadata_array($attribute);
+
+            if (isset($attribute['choices'])) {
+                $attribute['choices'] = array_values(
+                    notifications_event_type_metadata_array($attribute['choices'], true)
+                );
+            }
+
+            return $attribute;
+        },
+        $attributes
+    )));
+
+    $id_attributes = notifications_event_type_metadata_array(
+        $resource['id_attributes'] ?? [],
+        true
+    );
+    $resource['id_attributes'] = array_values(array_filter(array_map(
+        function ($attribute) {
+            return notifications_event_type_metadata_array($attribute);
+        },
+        $id_attributes
+    )));
+
+    return $resource;
+}
+
+function notifications_resource_id_attributes_html($resource)
+{
+    $attributes = $resource['id_attributes'] ?? [];
+
+    if (!$attributes) {
+        return '';
+    }
+
+    return '<br><strong>' . _('Composite ID attributes') . ':</strong> '
+        . implode(', ', array_map(
+            function ($attribute) {
+                return '<code>' . h($attribute['name'] ?? '') . '</code> (<code>'
+                    . h($attribute['type'] ?? '') . '</code>)';
+            },
+            $attributes
+        ));
 }
 
 function notifications_event_type_metadata_array($value, $decode_json = false)
@@ -3409,7 +3471,7 @@ function notifications_targets($user_id = null)
             . boolean_icon($target->enabled) . '</a>'
         );
         $xtpl->table_td(notifications_target_status_html($target));
-        $xtpl->table_td(notifications_event_log_link(_('Event log'), $user_id, [
+        $xtpl->table_td(notifications_event_log_link(_('Delivery history'), $user_id, [
             'notification_target_id' => $target->id,
         ]));
         $xtpl->table_td('<a href="' . notifications_target_url($target->id, $user_id) . '"><img src="template/icons/vps_edit.png" title="' . _('Edit') . '"></a>');
@@ -3484,7 +3546,7 @@ function notifications_receivers($user_id = null)
             . boolean_icon($receiver->enabled) . '</a>'
         );
         $xtpl->table_td(boolean_icon($receiver->mute));
-        $xtpl->table_td(notifications_event_log_link(_('Event log'), $user_id, [
+        $xtpl->table_td(notifications_event_log_link(_('Delivery history'), $user_id, [
             'notification_receiver_id' => $receiver->id,
         ]));
         $xtpl->table_td('<a href="?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($user_id) . '"><img src="template/icons/vps_edit.png" title="' . _('Edit') . '"></a>');
@@ -4052,7 +4114,7 @@ function notifications_receiver_edit($receiver_id)
         $xtpl->table_td(notifications_receiver_action_target_html($target), false, true);
         $xtpl->table_td(boolean_icon(notifications_prop($target, 'target_enabled', true)));
         $xtpl->table_td(notifications_receiver_action_secret_html($target));
-        $xtpl->table_td(notifications_event_log_link(_('Event log'), $receiver->user_id, [
+        $xtpl->table_td(notifications_event_log_link(_('Delivery history'), $receiver->user_id, [
             'notification_receiver_id' => $receiver->id,
             'notification_target_id' => notifications_prop($target, 'notification_target_id'),
             'notification_receiver_target_id' => $target->id,
@@ -4857,7 +4919,7 @@ function notifications_events()
     $pagination = new \Pagination\System($events);
     $input = $api->event->list->getParameters('input');
 
-    $xtpl->title(_('Event log'));
+    $xtpl->title(_('Delivery history'));
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'notification-events', false);
     $xtpl->form_set_hidden_fields([
@@ -5537,20 +5599,27 @@ function notifications_event_types($user_id = null)
     $groups = [];
 
     foreach (notifications_event_types_cached() as $type) {
-        $groups[notifications_prop($type, 'category') ?: _('Other')][] = $type;
+        $category = notifications_prop($type, 'category') ?: 'other';
+        $groups[$category]['label'] = notifications_prop($type, 'category_label')
+            ?: ($category === 'other' ? _('Other') : $category);
+        $groups[$category]['types'][] = $type;
     }
 
-    ksort($groups);
+    uasort($groups, function ($a, $b) {
+        return strcasecmp($a['label'], $b['label']);
+    });
     $html = '<div class="notification-event-types">';
 
-    foreach ($groups as $category => $types) {
+    foreach ($groups as $group) {
+        $category_label = $group['label'];
+        $types = $group['types'];
         usort($types, function ($a, $b) {
             return strcmp(notifications_prop($a, 'name', ''), notifications_prop($b, 'name', ''));
         });
 
         $html .= '<details class="notification-event-type-category">'
             . '<summary><span class="notification-event-type-category-title">'
-            . h($category) . '</span> <span class="notification-event-type-category-count">'
+            . h($category_label) . '</span> <span class="notification-event-type-category-count">'
             . h(sprintf(_('%d events'), count($types))) . '</span></summary>'
             . '<div class="notification-event-type-list">';
 
@@ -5562,6 +5631,7 @@ function notifications_event_types($user_id = null)
             $template = notifications_prop($type, 'template');
             $label = notifications_prop($type, 'label', $name);
             $severity = notifications_prop($type, 'severity');
+            $resource = notifications_event_type_resource_metadata_from_type($type);
 
             $html .= '<section id="' . h($anchor) . '" class="notification-event-type">'
                 . '<h3><code>' . h($name) . '</code></h3>'
@@ -5577,8 +5647,51 @@ function notifications_event_types($user_id = null)
                 $html .= '<p><strong>' . _('Template') . ':</strong> <code>' . h($template) . '</code></p>';
             }
 
-            $html .= '</div>'
-                . '<table class="table-style01 notification-event-type-fields">'
+            $html .= '</div>';
+
+            if ($resource) {
+                $html .= '<h4>' . _('Resource change payload') . '</h4>'
+                    . '<p><strong>' . _('Resource') . ':</strong> <code>'
+                    . h($resource['name'] ?? '') . '</code>; <strong>'
+                    . _('Action') . ':</strong> <code>' . h($resource['action'] ?? '')
+                    . '</code>; <strong>' . _('Schema version') . ':</strong> <code>'
+                    . h($resource['schema_version'] ?? '') . '</code>; <strong>'
+                    . _('ID type') . ':</strong> <code>' . h($resource['id_type'] ?? '')
+                    . '</code>' . notifications_resource_id_attributes_html($resource)
+                    . '</p>'
+                    . '<table class="table-style01 notification-event-type-resource">'
+                    . '<tr><th>' . _('Attribute') . '</th><th>' . _('Type') . '</th><th>'
+                    . _('Nullable') . '</th><th>' . _('Possible values') . '</th><th>'
+                    . _('Payload value') . '</th><th>' . _('Matchable changes') . '</th></tr>';
+
+                foreach ($resource['attributes'] as $attribute) {
+                    $attribute_name = $attribute['name'] ?? '';
+                    $choices = $attribute['choices'] ?? [];
+                    $choice_html = $choices
+                        ? implode(', ', array_map(fn($choice) => '<code>' . h($choice) . '</code>', $choices))
+                        : '-';
+                    $matchers = [];
+
+                    if ($attribute['old_matcher'] ?? false) {
+                        $matchers[] = '<code>old_' . h($attribute_name) . '</code>';
+                    }
+
+                    if ($attribute['new_matcher'] ?? false) {
+                        $matchers[] = '<code>new_' . h($attribute_name) . '</code>';
+                    }
+
+                    $html .= '<tr><td><code>' . h($attribute_name) . '</code></td>'
+                        . '<td><code>' . h($attribute['type'] ?? '') . '</code></td>'
+                        . '<td>' . (($attribute['nullable'] ?? false) ? h(_('yes')) : h(_('no'))) . '</td>'
+                        . '<td>' . $choice_html . '</td>'
+                        . '<td><code>' . h($attribute['value_policy'] ?? '') . '</code></td>'
+                        . '<td>' . ($matchers ? implode(' ', $matchers) : '-') . '</td></tr>';
+                }
+
+                $html .= '</table>';
+            }
+
+            $html .= '<table class="table-style01 notification-event-type-fields">'
                 . '<tr><th>' . _('Field') . '</th><th>' . _('Type') . '</th><th>' . _('Example') . '</th><th>' . _('Meaning') . '</th></tr>';
 
             foreach ($fields as $name => $field) {
@@ -5643,12 +5756,14 @@ function notifications_event_types_sidebar($groups, $user_id = null)
     $html = '<div class="notification-event-type-sidebar">'
         . '<h3>' . _('Event types') . '</h3>';
 
-    foreach ($groups as $category => $types) {
+    foreach ($groups as $group) {
+        $category_label = $group['label'];
+        $types = $group['types'];
         usort($types, function ($a, $b) {
             return strcmp(notifications_prop($a, 'name', ''), notifications_prop($b, 'name', ''));
         });
 
-        $html .= '<h4>' . h($category) . '</h4><ul>';
+        $html .= '<h4>' . h($category_label) . '</h4><ul>';
 
         foreach ($types as $type) {
             $name = notifications_prop($type, 'name');
@@ -5672,8 +5787,8 @@ function notifications_test_event($user_id = null)
     $user_id = notifications_target_user_id($user_id);
     $input = $api->event->test->getParameters('input');
 
-    $xtpl->title(_('Test notification event'));
-    $xtpl->table_title(_('Create test event'));
+    $xtpl->title(_('Test notification routing'));
+    $xtpl->table_title(_('Send test notification'));
     $xtpl->form_create('?page=notifications&action=test' . notifications_user_qs($user_id), 'post');
 
     if (isAdmin()) {
@@ -5693,9 +5808,9 @@ function notifications_test_event($user_id = null)
         post_val('event_type', 'user.test_notification')
     );
     api_param_to_form('subject', $input->subject, post_val('subject', _('Test notification')));
-    api_param_to_form('summary', $input->summary, post_val('summary', _('This event was created from notification settings.')));
+    api_param_to_form('summary', $input->summary, post_val('summary', _('This notification was sent from notification settings.')));
     $xtpl->form_add_textarea(_('Payload') . ':', 70, 8, 'payload_json', post_val('payload_json', "{\n  \"note\": \"testing notification routing\"\n}"));
-    $xtpl->form_out(_('Create event'));
+    $xtpl->form_out(_('Send notification'));
 
     notifications_sidebar('test', $user_id);
 }

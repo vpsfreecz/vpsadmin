@@ -52,7 +52,7 @@ module VpsAdmin::API::Events::ActionPolicies
       :vps,
       :field_states
     )
-    Fact = Data.define(:action, :object, :owner, :vps, :changed_fields)
+    Fact = Data.define(:action, :object, :owner, :vps, :changed_fields, :changes)
 
     def initialize(policy)
       @model_names = policy.models
@@ -66,7 +66,7 @@ module VpsAdmin::API::Events::ActionPolicies
     end
 
     def prepare_update(object)
-      return unless records_model?(object)
+      return unless records_model?(object, :updated)
 
       fields = object.changes_to_save.keys.map(&:to_s).reject do |field|
         VpsAdmin::API::Events::ResourceOperations::IGNORED_CHANGED_FIELDS.include?(field)
@@ -86,10 +86,9 @@ module VpsAdmin::API::Events::ActionPolicies
         return
       end
 
-      return unless records_model?(object)
+      return unless records_model?(object, action)
 
-      model_name = object.class.base_class.name
-      key = [model_name, object.id]
+      key = resource_key(object)
       old = @entries[key]
       operations = VpsAdmin::API::Events::ResourceOperations
       vps = operations.related_vps(object)
@@ -139,15 +138,11 @@ module VpsAdmin::API::Events::ActionPolicies
           resolved = resolve(entry)
           next unless resolved
 
-          action, changed_fields = resolved
+          action, changed_fields, changes = resolved
           action = resource_action_for(entry.object, action)
           changed_fields = [] if action == :deleted
 
-          key = [
-            entry.object.class.base_class.name,
-            entry.object.id,
-            action.to_s
-          ]
+          key = resource_event_key(entry.object, action)
           next if already_emitted?(key)
 
           VpsAdmin::API::Events::ResourceOperations.emit!(
@@ -155,7 +150,8 @@ module VpsAdmin::API::Events::ActionPolicies
             entry.object,
             owner: entry.owner,
             vps: entry.vps,
-            changed_fields:
+            changed_fields:,
+            changes:
           )
         end
       end
@@ -179,6 +175,12 @@ module VpsAdmin::API::Events::ActionPolicies
           changed_fields = action == :deleted ? [] : fact.changed_fields
           key = resource_event_key(fact.object, action)
           next if already_emitted?(key)
+          next if merge_deferred_resource_event!(
+            chain,
+            fact,
+            action,
+            changed_fields:
+          )
 
           remove_deferred_resource_events!(
             chain,
@@ -190,9 +192,56 @@ module VpsAdmin::API::Events::ActionPolicies
             fact.object,
             owner: fact.owner,
             vps: fact.vps,
-            changed_fields:
+            changed_fields:,
+            changes: fact.changes
           )
         end
+      end
+    end
+
+    def merge_deferred_resource_event!(chain, fact, action, changed_fields:)
+      operations = VpsAdmin::API::Events::ResourceOperations
+      event_type = operations.ensure_event_type!(
+        fact.object.class.base_class,
+        action
+      )
+      descriptor = Array(chain.deferred_result_events).detect do |item|
+        item['event_type'] == event_type &&
+          item['source_class'] == fact.object.class.base_class.name &&
+          item.dig('payload', 'resource_id') ==
+            operations.resource_id_for(fact.object)
+      end
+      return false unless descriptor
+
+      resource_payload = operations.payload_for(
+        action,
+        fact.object,
+        changed_fields:,
+        changes: fact.changes
+      ).deep_stringify_keys
+      descriptor['payload'] = merge_resource_payloads(
+        resource_payload,
+        descriptor.fetch('payload', {}).deep_stringify_keys
+      )
+      true
+    end
+
+    def merge_resource_payloads(observed, declared)
+      observed.merge(declared).tap do |payload|
+        payload['changed_fields'] = (
+          Array(observed['changed_fields']) +
+          Array(declared['changed_fields'])
+        ).uniq.sort
+        payload['changes'] = merge_payload_changes(
+          observed.fetch('changes', {}),
+          declared.fetch('changes', {})
+        )
+      end
+    end
+
+    def merge_payload_changes(observed, declared)
+      observed.merge(declared) do |_field, observed_change, declared_change|
+        observed_change.merge(declared_change)
       end
     end
 
@@ -208,7 +257,7 @@ module VpsAdmin::API::Events::ActionPolicies
         resolved = resolve(entry)
         next unless resolved
 
-        action, changed_fields = resolved
+        action, changed_fields, changes = resolved
         key = resource_key(entry.object)
         ret[key] = merge_fact(
           ret[key],
@@ -217,32 +266,39 @@ module VpsAdmin::API::Events::ActionPolicies
             object: entry.object,
             owner: entry.owner,
             vps: entry.vps,
-            changed_fields:
+            changed_fields:,
+            changes:
           )
         )
       end
     end
 
     def merge_confirmation_facts!(facts, chain)
-      chain.transactions.includes(:transaction_confirmations).find_each do |transaction|
-        transaction.transaction_confirmations.each do |confirmation|
+      chain.transactions.includes(:transaction_confirmations).order(:id).each do |transaction|
+        transaction.transaction_confirmations.sort_by(&:id).each do |confirmation|
           action = CONFIRM_ACTIONS[confirmation.confirm_type]
           next unless action
 
-          object = confirmation_object(confirmation)
-          next unless object && records_model?(object)
+          object = confirmation_object(confirmation, action:)
+          next unless object && records_model?(object, action)
 
           operations = VpsAdmin::API::Events::ResourceOperations
           vps = operations.related_vps(object)
           key = resource_key(object)
+          previous = facts[key]
           facts[key] = merge_fact(
-            facts[key],
+            previous,
             Fact.new(
               action:,
               object:,
               owner: operations.resource_owner(object, vps:),
               vps:,
-              changed_fields: confirmation_changed_fields(confirmation)
+              changed_fields: confirmation_changed_fields(confirmation),
+              changes: confirmation_changes(
+                confirmation,
+                object,
+                previous:
+              )
             )
           )
         end
@@ -266,14 +322,33 @@ module VpsAdmin::API::Events::ActionPolicies
         object: new.object,
         owner: old.owner || new.owner,
         vps: old.vps || new.vps,
-        changed_fields: (old.changed_fields + new.changed_fields).uniq.sort
+        changed_fields: (old.changed_fields + new.changed_fields).uniq.sort,
+        changes: merge_changes(old.changes, new.changes)
       )
     end
 
-    def confirmation_object(confirmation)
+    def merge_changes(old, new)
+      old.to_h.merge(new.to_h) do |_field, previous, current|
+        {}.tap do |change|
+          if previous.has_key?(:old)
+            change[:old] = previous[:old]
+          elsif current.has_key?(:old)
+            change[:old] = current[:old]
+          end
+
+          if current.has_key?(:new)
+            change[:new] = current[:new]
+          elsif previous.has_key?(:new)
+            change[:new] = previous[:new]
+          end
+        end
+      end
+    end
+
+    def confirmation_object(confirmation, action:)
       klass = confirmation.class_name.safe_constantize
       return unless klass && klass < ::ApplicationRecord
-      return unless records_model_class?(klass)
+      return unless records_model_class?(klass, action)
 
       klass.unscoped.find_by(confirmation.row_pks)
     end
@@ -290,12 +365,89 @@ module VpsAdmin::API::Events::ActionPolicies
       end
     end
 
+    def confirmation_changes(confirmation, object, previous:)
+      attrs = confirmation.attr_changes
+
+      case confirmation.confirm_type
+      when 'edit_before_type'
+        return {} unless attrs.is_a?(Hash)
+
+        attrs.to_h do |field, value|
+          field = field.to_s
+          change = { old: cast_confirmation_value(object, field, value) }
+          unless predicted_change(previous, field)&.has_key?(:new)
+            change[:new] = object[field]
+          end
+          [field, change]
+        end
+      when 'edit_after_type'
+        return {} unless attrs.is_a?(Hash)
+
+        attrs.to_h do |field, value|
+          field = field.to_s
+          [
+            field,
+            {
+              old: predicted_value(previous, object, field),
+              new: cast_confirmation_value(object, field, value)
+            }
+          ]
+        end
+      when 'increment_type', 'decrement_type'
+        counter_confirmation_changes(
+          confirmation,
+          object,
+          previous:
+        )
+      else
+        {}
+      end
+    end
+
+    def counter_confirmation_changes(confirmation, object, previous:)
+      attrs =
+        if confirmation.attr_changes.is_a?(Hash)
+          confirmation.attr_changes
+        elsif confirmation.attr_changes
+          { confirmation.attr_changes => 1 }
+        else
+          {}
+        end
+      direction = confirmation.confirm_type == 'increment_type' ? 1 : -1
+
+      attrs.to_h do |field, delta|
+        field = field.to_s
+        old_value = predicted_value(previous, object, field)
+        delta = cast_confirmation_value(object, field, delta)
+        new_value = old_value.nil? ? nil : old_value + (direction * delta)
+        [field, { old: old_value, new: new_value }]
+      end
+    end
+
+    def predicted_value(previous, object, field)
+      change = predicted_change(previous, field)
+      return change[:new] if change&.has_key?(:new)
+
+      object[field]
+    end
+
+    def predicted_change(previous, field)
+      previous&.changes&.[](field)
+    end
+
+    def cast_confirmation_value(object, field, value)
+      object.class.type_for_attribute(field).cast(value)
+    end
+
     def resource_key(object)
-      [object.class.base_class.name, object.id]
+      [
+        object.class.base_class.name,
+        VpsAdmin::API::Events::ResourceOperations.resource_id_for(object)
+      ]
     end
 
     def resource_event_key(object, action)
-      [object.class.base_class.name, object.id, action.to_s]
+      [*resource_key(object), action.to_s]
     end
 
     def already_emitted?(key)
@@ -303,21 +455,31 @@ module VpsAdmin::API::Events::ActionPolicies
       return false unless event_id
 
       resource_type, resource_id, action = key
-      return true if ::Event.where(
+      resource_class = resource_type.safe_constantize
+      event_type =
+        if resource_class
+          VpsAdmin::API::Events::ResourceOperations.event_name(action, resource_class)
+        end
+      event = ::Event.find_by(
         id: event_id,
-        event_type: "resource.#{action}",
-        source_class: resource_type,
-        source_id: resource_id
-      ).exists?
+        event_type:,
+        source_class: resource_type
+      )
+      return true if event &&
+                     event.parameters['resource_id'] == resource_id
 
       @already_emitted.delete(key)
       false
     end
 
     def resource_action_for(object, fallback)
+      resource_action_for_model(object.class.base_class, fallback)
+    end
+
+    def resource_action_for_model(model, fallback)
       return fallback unless @resource_action
 
-      model_name = object.class.base_class.name
+      model_name = model.base_class.name
       if @resource_action_model_names == :all ||
          @resource_action_model_names.include?(model_name)
         @resource_action
@@ -331,12 +493,24 @@ module VpsAdmin::API::Events::ActionPolicies
       return unless descriptors
 
       resource_type, resource_id = resource_key(object)
+      expected_event_type =
+        if action
+          VpsAdmin::API::Events::ResourceOperations.event_name(action, object)
+        end
       descriptors.reject! do |descriptor|
         next false unless descriptor['source_class'] == resource_type &&
-                          descriptor['source_id'] == resource_id
-        next false unless descriptor['event_type'].start_with?('resource.')
+                          descriptor.dig('payload', 'resource_id') == resource_id
+        next false unless descriptor['event_type'] == expected_event_type ||
+                          VpsAdmin::API::Events::ResourceOperations.resource_event?(
+                            descriptor['event_type']
+                          )
 
-        action.nil? || descriptor['event_type'] == "resource.#{action}"
+        action.nil? ||
+          descriptor['event_type'] ==
+            VpsAdmin::API::Events::ResourceOperations.event_name(
+              action,
+              object
+            )
       end
     end
 
@@ -431,7 +605,14 @@ module VpsAdmin::API::Events::ActionPolicies
       row = persisted_row(entry.object, fields)
 
       unless row
-        return [:deleted, []] if entry.initially_persisted
+        if entry.initially_persisted
+          fields = VpsAdmin::API::Events::ResourceOperations
+                   .auditable_attribute_names(entry.object.class.base_class)
+          changes = fields.to_h do |field|
+            [field, { old: entry.initial_values[field] }]
+          end
+          return [:deleted, fields, changes]
+        end
 
         return
       end
@@ -449,9 +630,21 @@ module VpsAdmin::API::Events::ActionPolicies
       if entry.initially_persisted
         return if changed_fields.empty?
 
-        [:updated, changed_fields]
+        changes = changed_fields.to_h do |field|
+          before_value = entry.field_states.fetch(field).before_value
+          [
+            field,
+            { new: row[field] }.tap do |change|
+              unless before_value.equal?(UNKNOWN_VALUE) ||
+                     before_value.equal?(NONEXISTENT_VALUE)
+                change[:old] = before_value
+              end
+            end
+          ]
+        end
+        [:updated, changed_fields, changes]
       else
-        [:created, changed_fields]
+        [:created, changed_fields, {}]
       end
     end
 
@@ -471,12 +664,23 @@ module VpsAdmin::API::Events::ActionPolicies
       end
     end
 
-    def records_model?(object)
-      records_model_class?(object.class)
+    def records_model?(object, action)
+      records_model_class?(object.class, action)
     end
 
-    def records_model_class?(model)
+    def records_model_class?(model, action)
       model_name = model.base_class.name
+      published_action = resource_action_for_model(model, action)
+      return false unless VpsAdmin::API::Events::ResourceOperations.catalogued?(
+        model,
+        published_action
+      )
+      # A transaction chain can change public resources other than the API
+      # action's target through nested chains and confirmations. Capture every
+      # catalogued model; @resource_action_model_names still limits the
+      # action-target CRUD intent override to the declared target model.
+      return true if @transaction_chain
+
       @model_names == :all || @model_names.include?(model_name)
     end
 
@@ -499,14 +703,29 @@ module VpsAdmin::API::Events::ActionPolicies
 
     def persisted_relation(object)
       model = object.class.base_class
-      model.unscoped.where(model.primary_key => object.id)
+      resource_id =
+        VpsAdmin::API::Events::ResourceOperations.resource_id_for(object)
+      conditions =
+        if resource_id.is_a?(Hash)
+          resource_id
+        else
+          { model.primary_key => resource_id }
+        end
+
+      model.unscoped.where(conditions)
     end
 
     def record_existing_event(event)
-      return unless event.event_type.start_with?('resource.')
+      operations = VpsAdmin::API::Events::ResourceOperations
+      return unless operations.resource_event?(event)
 
-      action = event.event_type.delete_prefix('resource.')
-      @already_emitted[[event.source_class, event.source_id, action]] = event.id
+      type = VpsAdmin::API::Events.type_for(event.event_type)
+      action = type.resource.fetch(:action)
+      @already_emitted[[
+        event.source_class,
+        event.parameters['resource_id'],
+        action
+      ]] = event.id
     end
 
     def without_capture(&)

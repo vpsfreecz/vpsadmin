@@ -12,7 +12,7 @@ RSpec.describe TransactionChains::NetworkInterface::Update do
   def expect_deferred_update(chain, network_interface)
     expect(deferred_result_events(chain)).to contain_exactly(
       include(
-        'event_type' => 'resource.updated',
+        'event_type' => 'network_interface.updated',
         'source_class' => 'NetworkInterface',
         'source_id' => network_interface.id
       )

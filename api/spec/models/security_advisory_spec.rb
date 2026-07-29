@@ -180,7 +180,7 @@ RSpec.describe SecurityAdvisory do
     add_mitigated_status!(advisory)
     add_not_affected_status!(advisory)
     user_vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node, hostname: 'spec-advisory-mail')
-    other_vps = create_vps!(
+    create_vps!(
       user: SpecSeed.other_user,
       node: SpecSeed.node,
       hostname: 'spec-advisory-muted'
@@ -204,7 +204,7 @@ RSpec.describe SecurityAdvisory do
     )
     events = Event
              .where(
-               event_type: 'security_advisory.updated',
+               event_type: 'security_advisory.update_published',
                source_class: update.class.name,
                source_id: update.id
              )
@@ -213,7 +213,7 @@ RSpec.describe SecurityAdvisory do
     user_event = events.detect { |event| event.user_id == SpecSeed.user.id }
     muted_event = events.detect { |event| event.user_id == SpecSeed.other_user.id }
 
-    expect(events.size).to eq(2)
+    expect(events.size).to eq(1)
     expect(user_event).to be_routed_routing_state
     expect(user_event.parameters).to include(
       'advisory_id' => advisory.id,
@@ -230,15 +230,14 @@ RSpec.describe SecurityAdvisory do
     expect(user_event.event_deliveries.sole).to be_released_state
     expect(user_event.event_deliveries.sole.mail_log).to be_present
 
-    expect(muted_event).to be_suppressed_routing_state
-    expect(muted_event.parameters.fetch('affected_vpses')).to contain_exactly(
-      a_hash_including(
-        'vps_id' => other_vps.id,
-        'vps_hostname' => other_vps.hostname
-      )
-    )
-    expect(muted_event.event_deliveries.sole).to be_skipped_state
-    expect(muted_event.event_deliveries.sole.error_summary).to eq('delivery method is disabled')
+    expect(muted_event).to be_nil
+    expect(EventRoutingContext.where(user_id: SpecSeed.other_user.id)).to be_empty
+    expect(EventRouteMatch.where(route_owner: SpecSeed.other_user)).to be_empty
+    expect(
+      EventDelivery
+        .joins(:event_routing_context)
+        .where(event_routing_contexts: { user_id: SpecSeed.other_user.id })
+    ).to be_empty
     expect(advisory.last_chain).to be_nil
   end
 
@@ -267,7 +266,7 @@ RSpec.describe SecurityAdvisory do
       send_mail: false
     )
     event = VpsAdmin::API::Events.emit!(
-      'security_advisory.updated',
+      'security_advisory.update_published',
       user: SpecSeed.user,
       payload: {
         advisory_id: advisory.id,

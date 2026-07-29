@@ -301,6 +301,8 @@ cs:
         label: Může zrušit VPS
       category:
         label: Kategorie
+      category_label:
+        label: Popisek kategorie
       cc:
         label: Cc
       cgroup:
@@ -746,30 +748,24 @@ cs:
             label: Operace dokončena úspěšně
           outage_announced:
             label: Odstávka nebo výpadek oznámen
-          outage_updated:
-            label: Odstávka nebo výpadek aktualizován
+          outage_update_reported:
+            label: Aktualizace odstávky nebo výpadku nahlášena
           payment_accepted:
             label: Platba přijata
           payments_overview:
             label: Přehled plateb
           reported_release_change:
             label: Změna hlášeného jádra
-          request_created:
-            label: Žádost vytvořena
           request_resolved:
             label: Žádost vyřešena
-          request_updated:
-            label: Žádost aktualizována
-          resource_created:
-            label: Prostředek vytvořen
-          resource_deleted:
-            label: Prostředek odstraněn
-          resource_updated:
-            label: Prostředek aktualizován
+          request_submitted:
+            label: Žádost odeslána
+          request_update_submitted:
+            label: Aktualizace žádosti odeslána
           security_advisory_announced:
             label: Bezpečnostní upozornění oznámeno
-          security_advisory_updated:
-            label: Bezpečnostní upozornění aktualizováno
+          security_advisory_update_published:
+            label: Aktualizace bezpečnostního upozornění publikována
           snapshot_download_ready:
             label: Stažení snapshotu připraveno
           sysctl_change:
@@ -778,7 +774,7 @@ cs:
             label: Denní report
           transaction_chain_state_changed:
             label: Stav transakčního řetězce změněn
-          user_created:
+          user_account_created:
             label: Uživatelský účet vytvořen
           user_failed_logins:
             label: Přehled neúspěšných přihlášení
@@ -908,8 +904,6 @@ cs:
             label: Zda byl účet ihned aktivován
           actor_user_id:
             label: ID uživatele, který provedl akci
-          actor_user_login:
-            label: Login uživatele, který provedl akci
           added_space:
             label: Prostor přidaný do refquota datasetu v bajtech
           admin_id:
@@ -1272,10 +1266,10 @@ cs:
             label: Stav žádosti po události
           request_type:
             label: Typ zpracovávané žádosti
-          resource_id:
-            label: ID dotčeného prostředku
-          resource_type:
-            label: Třída ActiveRecord dotčeného prostředku
+          resource_action:
+            label: Dokončená změna prostředku
+          resource_name:
+            label: Stabilní logický název změněného prostředku
           restart_vps:
             label: Zda jsou dotčená VPS během migrace restartována
           result_event_ids:
@@ -2367,6 +2361,19 @@ cs:
       resource:
         description: Název zdroje nalezeného objektu
         label: Zdroj
+      resource_action:
+        choices:
+          created:
+            label: vytvořen
+          deleted:
+            label: odstraněn
+          updated:
+            label: aktualizován
+        description: Filtrovat podle dokončené změny prostředku
+        label: Akce prostředku
+      resource_name:
+        description: Filtrovat podle přesného logického názvu prostředku
+        label: Název prostředku
       resource_type:
         choices:
           numeric:
@@ -3188,6 +3195,23 @@ cs:
         pro inkrementální stažení
       snapshot_download_unavailable: snapshot není dostupný ke stažení
     events:
+      categories:
+        account: Účet
+        dns: DNS
+        incidents: Incidenty
+        infrastructure: Infrastruktura
+        mail: E-mail
+        monitoring: Monitoring
+        network: Síť
+        notifications: Notifikace
+        operating_systems: Operační systémy
+        outages: Odstávky a výpadky
+        payments: Platby
+        requests: Požadavky
+        security: Zabezpečení
+        storage: Úložiště
+        system: Systém
+        vps: VPS
       fields:
         common:
           category:
@@ -3198,6 +3222,12 @@ cs:
             description: Jedinečný název typu události
           operation_id:
             description: ID operace transakčního řetězce související s událostí
+          resource_action:
+            description: Dokončená změna prostředku
+          resource_id:
+            description: Veřejné ID změněného prostředku
+          resource_name:
+            description: Stabilní logický název změněného prostředku
           roles:
             description: Notifikační role deklarované typem události
           severity:
@@ -3678,7 +3708,7 @@ cs:
             description: Souhrnný text aktualizace odstávky
           update_id:
             description: ID aktualizace outage reportu
-        outage_updated:
+        outage_update_reported:
           affected_export_count:
             description: Počet exportů dotčených odstávkou nebo výpadkem
           affected_user_id:
@@ -3763,25 +3793,6 @@ cs:
             description: Délka období přehledu v sekundách
           period_start:
             description: Začátek období přehledu
-        request_created:
-          action:
-            description: Akce workflow žádosti, která vytvořila notifikaci
-          mail_id:
-            description: ID mailového vlákna použitého pro notifikaci žádosti
-          recipient_email:
-            description: Vlastní e-mailový příjemce této notifikace žádosti
-          request_id:
-            description: ID žádosti
-          request_label:
-            description: Uživatelsky viditelný popisek žádosti
-          request_state:
-            description: Stav žádosti po události
-          request_type:
-            description: Typ zpracovávané žádosti
-          user_id:
-            description: ID uživatele, který vlastní žádost
-          user_login:
-            description: Login uživatele, který vlastní žádost
         request_resolved:
           action:
             description: Akce workflow žádosti, která vytvořila notifikaci
@@ -3809,7 +3820,26 @@ cs:
             description: ID uživatele, který vlastní žádost
           user_login:
             description: Login uživatele, který vlastní žádost
-        request_updated:
+        request_submitted:
+          action:
+            description: Akce workflow žádosti, která vytvořila notifikaci
+          mail_id:
+            description: ID mailového vlákna použitého pro notifikaci žádosti
+          recipient_email:
+            description: Vlastní e-mailový příjemce této notifikace žádosti
+          request_id:
+            description: ID žádosti
+          request_label:
+            description: Uživatelsky viditelný popisek žádosti
+          request_state:
+            description: Stav žádosti po události
+          request_type:
+            description: Typ zpracovávané žádosti
+          user_id:
+            description: ID uživatele, který vlastní žádost
+          user_login:
+            description: Login uživatele, který vlastní žádost
+        request_update_submitted:
           action:
             description: Akce workflow žádosti, která vytvořila notifikaci
           mail_id:
@@ -3831,72 +3861,6 @@ cs:
             description: ID uživatele, který vlastní žádost
           user_login:
             description: Login uživatele, který vlastní žádost
-        resource_created:
-          action:
-            description: Dokončená akce vytvoření, aktualizace nebo odstranění
-          actor_user_id:
-            description: ID uživatele, který provedl akci
-          actor_user_login:
-            description: Login uživatele, který provedl akci
-          admin_user_id:
-            description: ID administrátora zastupujícího uživatele v relaci
-          changed_fields:
-            description: Názvy polí odeslaných při úspěšné aktualizaci
-          operation_id:
-            description: ID operace transakčního řetězce, která vytvořila tuto událost
-          operation_result_index:
-            description: Pozice této události v seznamu výsledků operace číslovaná
-              od nuly
-          resource_id:
-            description: ID dotčeného prostředku
-          resource_type:
-            description: Třída ActiveRecord dotčeného prostředku
-          user_session_id:
-            description: ID API relace, která provedla akci
-        resource_deleted:
-          action:
-            description: Dokončená akce vytvoření, aktualizace nebo odstranění
-          actor_user_id:
-            description: ID uživatele, který provedl akci
-          actor_user_login:
-            description: Login uživatele, který provedl akci
-          admin_user_id:
-            description: ID administrátora zastupujícího uživatele v relaci
-          changed_fields:
-            description: Názvy polí odeslaných při úspěšné aktualizaci
-          operation_id:
-            description: ID operace transakčního řetězce, která vytvořila tuto událost
-          operation_result_index:
-            description: Pozice této události v seznamu výsledků operace číslovaná
-              od nuly
-          resource_id:
-            description: ID dotčeného prostředku
-          resource_type:
-            description: Třída ActiveRecord dotčeného prostředku
-          user_session_id:
-            description: ID API relace, která provedla akci
-        resource_updated:
-          action:
-            description: Dokončená akce vytvoření, aktualizace nebo odstranění
-          actor_user_id:
-            description: ID uživatele, který provedl akci
-          actor_user_login:
-            description: Login uživatele, který provedl akci
-          admin_user_id:
-            description: ID administrátora zastupujícího uživatele v relaci
-          changed_fields:
-            description: Názvy polí odeslaných při úspěšné aktualizaci
-          operation_id:
-            description: ID operace transakčního řetězce, která vytvořila tuto událost
-          operation_result_index:
-            description: Pozice této události v seznamu výsledků operace číslovaná
-              od nuly
-          resource_id:
-            description: ID dotčeného prostředku
-          resource_type:
-            description: Třída ActiveRecord dotčeného prostředku
-          user_session_id:
-            description: ID API relace, která provedla akci
         security_advisory_announced:
           advisory_id:
             description: ID bezpečnostního upozornění
@@ -3914,7 +3878,7 @@ cs:
             description: Čas publikování bezpečnostního upozornění
           state:
             description: Aktuální stav životního cyklu advisoria
-        security_advisory_updated:
+        security_advisory_update_published:
           advisory_id:
             description: ID bezpečnostního upozornění
           advisory_name:
@@ -4008,7 +3972,7 @@ cs:
             description: Zda řetězec dosáhl koncového stavu
           user_session_id:
             description: ID uživatelského sezení, které vytvořilo řetězec
-        user_created:
+        user_account_created:
           active:
             description: Zda byl účet ihned aktivován
           create_vps:
@@ -4775,28 +4739,22 @@ cs:
           label: Operace dokončena úspěšně
         outage_announced:
           label: Odstávka nebo výpadek oznámen
-        outage_updated:
-          label: Odstávka nebo výpadek aktualizován
+        outage_update_reported:
+          label: Aktualizace odstávky nebo výpadku nahlášena
         payment_accepted:
           label: Platba přijata
         payments_overview:
           label: Přehled plateb
-        request_created:
-          label: Žádost vytvořena
         request_resolved:
           label: Žádost vyřešena
-        request_updated:
-          label: Žádost aktualizována
-        resource_created:
-          label: Prostředek vytvořen
-        resource_deleted:
-          label: Prostředek odstraněn
-        resource_updated:
-          label: Prostředek aktualizován
+        request_submitted:
+          label: Žádost odeslána
+        request_update_submitted:
+          label: Aktualizace žádosti odeslána
         security_advisory_announced:
           label: Bezpečnostní upozornění oznámeno
-        security_advisory_updated:
-          label: Bezpečnostní upozornění aktualizováno
+        security_advisory_update_published:
+          label: Aktualizace bezpečnostního upozornění publikována
         snapshot_download_ready:
           label: Stažení snapshotu připraveno
         system_daily_report:
@@ -4805,7 +4763,7 @@ cs:
           label: Stav transakčního řetězce změněn
           severity_description: Závažnost je odvozena z nového stavu transakčního
             řetězce
-        user_created:
+        user_account_created:
           label: Uživatelský účet vytvořen
         user_failed_logins:
           label: Přehled neúspěšných přihlášení

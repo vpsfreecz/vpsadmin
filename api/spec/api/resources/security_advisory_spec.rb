@@ -1003,7 +1003,8 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
   end
 
   describe 'Advisory updates' do
-    it 'creates public updates without sending mail by default' do
+    it 'creates public updates without sending mail by default',
+       :with_event_delivery do
       advisory = build_published_advisory
       published_at = Time.utc(2026, 1, 2, 12, 0, 0)
       allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain)
@@ -1028,13 +1029,13 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       expect(advisory.reload.published_at.utc).to eq(published_at)
       expect(
         Event.where(
-          event_type: 'resource.created',
+          event_type: 'security_advisory_update.created',
           source_class: 'SecurityAdvisoryUpdate',
           source_id: update_id
         )
       ).to exist
       advisory_event = Event.where(
-        event_type: 'resource.updated',
+        event_type: 'security_advisory.updated',
         source_class: 'SecurityAdvisory',
         source_id: advisory.id
       ).sole
@@ -1046,7 +1047,8 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       expect(security_advisory_updates.map { |row| row['id'] }).to include(update_id)
     end
 
-    it 'keeps resource facts when notification routing fails after commit' do
+    it 'keeps the public resource fact when notification routing fails after commit',
+       :with_event_delivery do
       advisory = build_published_advisory
       allow(VpsAdmin::API::NotificationEvents).to receive(:run_chain)
         .and_raise('notification routing failed')
@@ -1068,16 +1070,9 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       expect(update).to be_present
       expect(
         Event.where(
-          event_type: 'resource.created',
+          event_type: 'security_advisory_update.created',
           source_class: 'SecurityAdvisoryUpdate',
           source_id: update.id
-        )
-      ).to exist
-      expect(
-        Event.where(
-          event_type: 'resource.created',
-          source_class: 'SecurityAdvisoryTranslation',
-          source_id: update.security_advisory_translations.first.id
         )
       ).to exist
     end

@@ -32,7 +32,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     )
   end
 
-  def add_result_descriptor!(chain, event_type: 'resource.updated',
+  def add_result_descriptor!(chain, event_type: 'user.updated',
                              user_id: chain.user_id)
     Transaction.create!(
       transaction_chain: chain,
@@ -148,12 +148,62 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     )
   end
 
+  def create_delivery_route!(label:, event_type: nil, event_type_pattern: nil,
+                             user: SpecSeed.user, subject_scope: :self)
+    receiver = NotificationReceiver.create!(
+      user:,
+      label:
+    )
+    receiver.notification_receiver_actions.create!(
+      action: :webhook,
+      target_kind: :custom,
+      target_value: "https://example.test/#{label.parameterize}"
+    )
+
+    EventRoute.create!(
+      user:,
+      notification_receiver: receiver,
+      event_type:,
+      event_type_pattern:,
+      subject_scope:,
+      position: EventRoute.where(user:).maximum(:position).to_i + 1
+    )
+  end
+
+  def route_lifecycle_events!(result_event: false, state_change: false,
+                              user: SpecSeed.user, subject_scope: :self)
+    create_delivery_route!(
+      event_type_pattern: 'operation.*',
+      label: 'Operation lifecycle receiver',
+      user:,
+      subject_scope:
+    )
+
+    if result_event
+      create_delivery_route!(
+        event_type: 'user.updated',
+        label: 'Operation result receiver',
+        user:,
+        subject_scope:
+      )
+    end
+
+    return unless state_change
+
+    create_delivery_route!(
+      event_type: 'transaction_chain.state_changed',
+      label: 'Transaction state receiver',
+      user:,
+      subject_scope:
+    )
+  end
+
   it 'defines non-default-routed operation lifecycle event types' do
     VpsAdmin::API::Events::OperationLifecycle::EVENT_TYPES.each do |event_name|
       definition = VpsAdmin::API::Events.type_for(event_name)
 
       expect(definition).to have_attributes(
-        category: 'transactions',
+        category: 'system',
         roles: %w[account admin],
         default_routed: false
       )
@@ -161,6 +211,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
   end
 
   it 'persists a transaction chain state-change event from node messages' do
+    route_lifecycle_events!(state_change: true)
     chain = create_chain!(state: :failed)
     TransactionChainConcern.create!(
       transaction_chain: chain,
@@ -175,6 +226,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
   end
 
   it 'commits a node message before manually acknowledging it' do
+    route_lifecycle_events!(state_change: true)
     chain = create_chain!(
       state: :done,
       name: 'start',
@@ -221,6 +273,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
   end
 
   it 'does not acknowledge or retain partial Events when a message fails' do
+    route_lifecycle_events!(state_change: true)
     chain = create_chain!(state: :done)
     channel = SupervisorConsumerHelpers::FakeSupervisorChannel.new
     described_class.new(channel, SpecSeed.node).start
@@ -258,6 +311,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
   end
 
   it 'deduplicates a redelivered producer transition using the persisted Event' do
+    route_lifecycle_events!(state_change: true)
     vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
     chain = create_chain!(
       state: :done,
@@ -295,9 +349,12 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     )
     expect(events.map { |event| event.parameters['producer_event_id'] }.uniq)
       .to eq(['00000000-0000-4000-8000-000000000004'])
+    expect(events.flat_map { |event| event.event_deliveries.pluck(:state) })
+      .to contain_exactly('released', 'released')
   end
 
-  it 'orders and deduplicates deferred result facts after operation success' do
+  it 'orders and deduplicates deferred facts before operation success' do
+    route_lifecycle_events!(result_event: true)
     chain = create_chain!(state: :done)
     add_result_descriptor!(chain)
     supervisor = described_class.new(nil, SpecSeed.node)
@@ -317,7 +374,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       source_class: 'TransactionChain',
       source_id: chain.id
     ).sole
-    result = Event.where(event_type: 'resource.updated', subject: 'Deferred result fact').sole
+    result = Event.where(event_type: 'user.updated', subject: 'Deferred result fact').sole
 
     expect(result.id).to be < success.id
     expect(success.parameters['result_event_ids']).to eq([result.id])
@@ -330,6 +387,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
   end
 
   it 'does not materialize deferred result facts when an operation fails' do
+    route_lifecycle_events!(result_event: true)
     chain = create_chain!(state: :failed)
     add_result_descriptor!(chain)
     supervisor = described_class.new(nil, SpecSeed.node)
@@ -342,7 +400,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       producer_event_id: '10000000-0000-4000-8000-000000000005'
     )
 
-    expect(Event.where(event_type: 'resource.updated', subject: 'Deferred result fact')).to be_empty
+    expect(Event.where(event_type: 'user.updated', subject: 'Deferred result fact')).to be_empty
     expect(
       Event.where(
         event_type: 'operation.failed',
@@ -350,9 +408,17 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
         source_id: chain.id
       )
     ).to exist
+    expect(
+      Event.find_by!(
+        event_type: 'operation.failed',
+        source_class: 'TransactionChain',
+        source_id: chain.id
+      ).parameters
+    ).not_to have_key('attempt')
   end
 
   it 'persists a successful operation for the affected VPS owner' do
+    route_lifecycle_events!
     vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
     chain = create_chain!(
       state: :done,
@@ -378,12 +444,12 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       user: vps.user,
       vps:,
       severity: 'info',
-      routing_state: 'suppressed',
+      routing_state: 'routed',
       created_at: Time.utc(2026, 6, 19, 12, 0, 0, 123_456)
     )
+    expect(event.event_deliveries.sole).to be_released_state
     expect(event.payload).to include(
       'operation_id' => chain.id,
-      'attempt' => 1,
       'operation' => 'vps.start',
       'state' => 'done',
       'successful' => true,
@@ -393,9 +459,15 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       'user_session_id' => chain.user_session_id,
       'node_id' => SpecSeed.node.id
     )
+    expect(event.payload).not_to have_key('attempt')
   end
 
   it 'keeps an unowned admin operation distinct from its actor' do
+    route_lifecycle_events!(
+      result_event: true,
+      user: SpecSeed.admin,
+      subject_scope: :visible
+    )
     chain = create_chain!(state: :done, user: SpecSeed.admin)
     add_result_descriptor!(chain, user_id: nil)
     supervisor = described_class.new(nil, SpecSeed.node)
@@ -407,7 +479,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       source_class: 'TransactionChain',
       source_id: chain.id
     ).sole
-    result = Event.where(event_type: 'resource.updated', subject: 'Deferred result fact').sole
+    result = Event.where(event_type: 'user.updated', subject: 'Deferred result fact').sole
 
     expect(lifecycle).to have_attributes(user: nil)
     expect(lifecycle.parameters['actor_user_id']).to eq(SpecSeed.admin.id)
@@ -415,6 +487,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
   end
 
   it 'retains the accepted owner after an operation removes its resource' do
+    route_lifecycle_events!
     vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
     chain = create_chain!(
       state: :queued,
@@ -447,12 +520,13 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     expect(terminal).to have_attributes(user: SpecSeed.user, vps: nil)
     expect(terminal.parameters).to include(
       'operation' => 'vps.destroy',
-      'attempt' => 1,
       'concern_object_ids' => [vps.id, SpecSeed.user.id]
     )
+    expect(terminal.parameters).not_to have_key('attempt')
   end
 
   it 'emits lifecycle events for non-VPS chains without a central map' do
+    route_lifecycle_events!
     chain = create_chain!(
       state: :done,
       name: 'create',
@@ -471,7 +545,8 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     expect(event.payload['operation']).to eq('dataset.create')
   end
 
-  it 'correlates failed and retried attempts with one operation ID' do
+  it 'requeues one operation ID without exposing internal attempt fields' do
+    route_lifecycle_events!
     provisional_vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
     chain = create_chain!(
       state: :queued,
@@ -530,12 +605,17 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     )
     expect(lifecycle.map { |event| event.parameters['operation_id'] }.uniq)
       .to eq([chain.id])
-    expect(lifecycle.map { |event| event.parameters['attempt'] })
-      .to eq([1, 1, 2, 2])
+    expect(lifecycle).to all(
+      satisfy do |event|
+        event.parameters.exclude?('attempt') &&
+          event.parameters.exclude?('operation_attempt')
+      end
+    )
     expect(lifecycle.map(&:user_id).uniq).to eq([SpecSeed.user.id])
   end
 
-  it 'emits a resolved event for the current failed attempt' do
+  it 'emits a resolved event for the failed operation' do
+    route_lifecycle_events!
     chain = create_chain!(state: :resolved)
     VpsAdmin::API::Events::OperationLifecycle.emit_started!(chain)
     VpsAdmin::API::Events::OperationLifecycle.emit_failed!(chain, state: 'failed')
@@ -556,12 +636,13 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     )
     expect(event.parameters).to include(
       'operation_id' => chain.id,
-      'attempt' => 1,
       'state' => 'resolved'
     )
+    expect(event.parameters).not_to have_key('attempt')
   end
 
   it 'retains out-of-order state transitions with distinct producer IDs' do
+    route_lifecycle_events!(state_change: true)
     chain = create_chain!(state: :done)
     supervisor = described_class.new(nil, SpecSeed.node)
     newer_time = Time.utc(2026, 6, 19, 12, 0, 2)
@@ -609,6 +690,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
 
   %w[failed fatal].each do |state|
     it "persists a #{state} operation using its provisional concern ID" do
+      route_lifecycle_events!
       missing_vps_id = Vps.maximum(:id).to_i + 10_000
       chain = create_chain!(
         state: state,
@@ -636,13 +718,13 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
       )
       expect(event.payload).to include(
         'operation_id' => chain.id,
-        'attempt' => 1,
         'operation' => 'vps.create',
         'state' => state,
         'successful' => false,
         'concern_object_ids' => [missing_vps_id],
         'actor_user_id' => chain.user_id
       )
+      expect(event.payload).not_to have_key('attempt')
     end
   end
 

@@ -302,6 +302,8 @@ en:
         label: Can destroy a VPS
       category:
         label: Category
+      category_label:
+        label: Category label
       cc:
         label: Cc
       cgroup:
@@ -746,30 +748,24 @@ en:
             label: Operation succeeded
           outage_announced:
             label: Outage announced
-          outage_updated:
-            label: Outage updated
+          outage_update_reported:
+            label: Outage update reported
           payment_accepted:
             label: Payment accepted
           payments_overview:
             label: Payments overview
           reported_release_change:
             label: reported_release_change
-          request_created:
-            label: Request created
           request_resolved:
             label: Request resolved
-          request_updated:
-            label: Request updated
-          resource_created:
-            label: Resource created
-          resource_deleted:
-            label: Resource deleted
-          resource_updated:
-            label: Resource updated
+          request_submitted:
+            label: Request submitted
+          request_update_submitted:
+            label: Request update submitted
           security_advisory_announced:
             label: Security advisory announced
-          security_advisory_updated:
-            label: Security advisory updated
+          security_advisory_update_published:
+            label: Security advisory update published
           snapshot_download_ready:
             label: Snapshot download ready
           sysctl_change:
@@ -778,7 +774,7 @@ en:
             label: Daily report
           transaction_chain_state_changed:
             label: Transaction chain state changed
-          user_created:
+          user_account_created:
             label: User account created
           user_failed_logins:
             label: Failed sign-in report
@@ -908,8 +904,6 @@ en:
             label: Whether the account was activated immediately
           actor_user_id:
             label: ID of the user who initiated the operation
-          actor_user_login:
-            label: Login of the user who performed the action
           added_space:
             label: Space added to the dataset refquota, in bytes
           admin_id:
@@ -1272,10 +1266,10 @@ en:
             label: Request state after the event
           request_type:
             label: Type of request being handled
-          resource_id:
-            label: ID of the affected resource
-          resource_type:
-            label: ActiveRecord class of the affected resource
+          resource_action:
+            label: Completed resource mutation
+          resource_name:
+            label: Stable logical name of the changed resource
           restart_vps:
             label: Whether affected VPSes are restarted during migration
           result_event_ids:
@@ -2372,6 +2366,19 @@ en:
       resource:
         description: Resource name of the located object
         label: Resource
+      resource_action:
+        choices:
+          created:
+            label: created
+          deleted:
+            label: deleted
+          updated:
+            label: updated
+        description: Filter by completed resource mutation
+        label: Resource action
+      resource_name:
+        description: Filter by exact logical resource name
+        label: Resource name
       resource_type:
         choices:
           numeric:
@@ -2449,8 +2456,6 @@ en:
             label: aborted
           routed:
             label: routed
-          suppressed:
-            label: suppressed
         label: Routing state
       row_id:
         description: Search by concerned row id
@@ -3195,6 +3200,23 @@ en:
         source for incremental download
       snapshot_download_unavailable: snapshot is not available for download
     events:
+      categories:
+        account: Account
+        dns: DNS
+        incidents: Incidents
+        infrastructure: Infrastructure
+        mail: Mail
+        monitoring: Monitoring
+        network: Network
+        notifications: Notifications
+        operating_systems: Operating systems
+        outages: Outages
+        payments: Payments
+        requests: Requests
+        security: Security
+        storage: Storage
+        system: System
+        vps: VPS
       fields:
         common:
           category:
@@ -3205,6 +3227,12 @@ en:
             description: Unique event type name
           operation_id:
             description: ID of the transaction-chain operation related to the event
+          resource_action:
+            description: Completed resource mutation
+          resource_id:
+            description: Public ID of the changed resource
+          resource_name:
+            description: Stable logical name of the changed resource
           roles:
             description: Notification roles declared by the event type
           severity:
@@ -3682,7 +3710,7 @@ en:
             description: Summary text of the outage update
           update_id:
             description: ID of the outage report update
-        outage_updated:
+        outage_update_reported:
           affected_export_count:
             description: Number of exports affected by the outage
           affected_user_id:
@@ -3767,25 +3795,6 @@ en:
             description: Length of the report period in seconds
           period_start:
             description: Beginning of the report period
-        request_created:
-          action:
-            description: Request workflow action that produced the notification
-          mail_id:
-            description: ID of the mail thread used for request notification
-          recipient_email:
-            description: Custom recipient e-mail address for this request notification
-          request_id:
-            description: ID of the request
-          request_label:
-            description: User-visible request label
-          request_state:
-            description: Request state after the event
-          request_type:
-            description: Type of request being handled
-          user_id:
-            description: ID of the user who owns the request
-          user_login:
-            description: Login of the user who owns the request
         request_resolved:
           action:
             description: Request workflow action that produced the notification
@@ -3813,7 +3822,26 @@ en:
             description: ID of the user who owns the request
           user_login:
             description: Login of the user who owns the request
-        request_updated:
+        request_submitted:
+          action:
+            description: Request workflow action that produced the notification
+          mail_id:
+            description: ID of the mail thread used for request notification
+          recipient_email:
+            description: Custom recipient e-mail address for this request notification
+          request_id:
+            description: ID of the request
+          request_label:
+            description: User-visible request label
+          request_state:
+            description: Request state after the event
+          request_type:
+            description: Type of request being handled
+          user_id:
+            description: ID of the user who owns the request
+          user_login:
+            description: Login of the user who owns the request
+        request_update_submitted:
           action:
             description: Request workflow action that produced the notification
           mail_id:
@@ -3834,75 +3862,6 @@ en:
             description: ID of the user who owns the request
           user_login:
             description: Login of the user who owns the request
-        resource_created:
-          action:
-            description: Completed create, update or delete action
-          actor_user_id:
-            description: ID of the user who performed the action
-          actor_user_login:
-            description: Login of the user who performed the action
-          admin_user_id:
-            description: ID of the administrator behind an impersonated session
-          changed_fields:
-            description: Names of persisted fields changed by the operation
-          operation_id:
-            description: ID of the transaction-chain operation that produced this
-              fact
-          operation_result_index:
-            description: Zero-based position of this fact in the operation result
-              list
-          resource_id:
-            description: ID of the affected resource
-          resource_type:
-            description: ActiveRecord class of the affected resource
-          user_session_id:
-            description: ID of the user session associated with the event
-        resource_deleted:
-          action:
-            description: Completed create, update or delete action
-          actor_user_id:
-            description: ID of the user who performed the action
-          actor_user_login:
-            description: Login of the user who performed the action
-          admin_user_id:
-            description: ID of the administrator behind an impersonated session
-          changed_fields:
-            description: Names of persisted fields changed by the operation
-          operation_id:
-            description: ID of the transaction-chain operation that produced this
-              fact
-          operation_result_index:
-            description: Zero-based position of this fact in the operation result
-              list
-          resource_id:
-            description: ID of the affected resource
-          resource_type:
-            description: ActiveRecord class of the affected resource
-          user_session_id:
-            description: ID of the user session associated with the event
-        resource_updated:
-          action:
-            description: Completed create, update or delete action
-          actor_user_id:
-            description: ID of the user who performed the action
-          actor_user_login:
-            description: Login of the user who performed the action
-          admin_user_id:
-            description: ID of the administrator behind an impersonated session
-          changed_fields:
-            description: Names of persisted fields changed by the operation
-          operation_id:
-            description: ID of the transaction-chain operation that produced this
-              fact
-          operation_result_index:
-            description: Zero-based position of this fact in the operation result
-              list
-          resource_id:
-            description: ID of the affected resource
-          resource_type:
-            description: ActiveRecord class of the affected resource
-          user_session_id:
-            description: ID of the user session associated with the event
         security_advisory_announced:
           advisory_id:
             description: ID of the security advisory
@@ -3920,7 +3879,7 @@ en:
             description: Time when the advisory was published
           state:
             description: Current lifecycle state of the advisory
-        security_advisory_updated:
+        security_advisory_update_published:
           advisory_id:
             description: ID of the security advisory
           advisory_name:
@@ -4014,7 +3973,7 @@ en:
             description: Whether the chain reached a terminal state
           user_session_id:
             description: ID of the user session that created the chain
-        user_created:
+        user_account_created:
           active:
             description: Whether the account was activated immediately
           create_vps:
@@ -4797,28 +4756,22 @@ en:
           label: Operation succeeded
         outage_announced:
           label: Outage announced
-        outage_updated:
-          label: Outage updated
+        outage_update_reported:
+          label: Outage update reported
         payment_accepted:
           label: Payment accepted
         payments_overview:
           label: Payments overview
-        request_created:
-          label: Request created
         request_resolved:
           label: Request resolved
-        request_updated:
-          label: Request updated
-        resource_created:
-          label: Resource created
-        resource_deleted:
-          label: Resource deleted
-        resource_updated:
-          label: Resource updated
+        request_submitted:
+          label: Request submitted
+        request_update_submitted:
+          label: Request update submitted
         security_advisory_announced:
           label: Security advisory announced
-        security_advisory_updated:
-          label: Security advisory updated
+        security_advisory_update_published:
+          label: Security advisory update published
         snapshot_download_ready:
           label: Snapshot download ready
         system_daily_report:
@@ -4827,7 +4780,7 @@ en:
           label: Transaction chain state changed
           severity_description: Severity is derived from the new transaction chain
             state
-        user_created:
+        user_account_created:
           label: User account created
         user_failed_logins:
           label: Failed sign-in report
