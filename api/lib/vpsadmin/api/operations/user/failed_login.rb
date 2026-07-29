@@ -17,7 +17,7 @@ module VpsAdmin::API
       client_ip_ptr = client_ip_addr == api_ip_addr ? api_ip_ptr : get_ptr(client_ip_addr)
 
       ActiveRecord::Base.transaction do
-        ::UserFailedLogin.create!(
+        attempt = ::UserFailedLogin.create!(
           user:,
           auth_type: mechanism,
           reason:,
@@ -29,6 +29,7 @@ module VpsAdmin::API
           client_version: request.user_agent || ''
         )
         ::User.increment_counter(:failed_login_count, user.id)
+        Events::SecurityOperations.emit_failed_login!(attempt)
       end
     end
   end
