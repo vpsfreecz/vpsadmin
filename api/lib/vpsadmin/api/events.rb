@@ -688,10 +688,6 @@ module VpsAdmin::API
         deliveries.any? { |delivery| delivery.state != 'skipped' }
       end
 
-      def persistable?
-        releasable? || route_matches.any?
-      end
-
       def suppressed_by_mute?
         routing_state == 'suppressed' &&
           deliveries.any? do |delivery|
@@ -700,6 +696,39 @@ module VpsAdmin::API
               (delivery.route_time_interval_state == 'active' &&
                 receiver&.enabled? && receiver.mute?)
           end
+      end
+    end
+
+    class PreparedEmission
+      attr_reader :event, :result
+
+      def initialize(event, router, result)
+        @event = event
+        @router = router
+        @result = result
+      end
+
+      def releasable?
+        result.releasable?
+      end
+
+      def suppressed_by_mute?
+        result.suppressed_by_mute?
+      end
+
+      def commit!(release: true, record_route_hits_on_drop: false)
+        unless releasable?
+          @router.record_dropped!(result) if record_route_hits_on_drop
+          return nil
+        end
+
+        @router.persist!(result)
+        if release
+          VpsAdmin::API::Notifications::Release.release!(
+            event.event_deliveries.where(state: 'prepared')
+          )
+        end
+        event
       end
     end
 
@@ -1062,40 +1091,110 @@ module VpsAdmin::API
     def plan(event_type, user: nil, vps: nil, subject: nil, summary: nil,
              payload: nil, severity: nil, category: nil, ip_addr: nil,
              occurred_at: nil, record_route_hits: false, **event_args)
-      type = type_for(event_type)
-      context = event_context_for(type, event_args)
-      attrs = context ? type.definition.build_attributes(context) : {}
-      if user && vps && vps.user_id != user.id
-        raise ArgumentError, 'user and VPS owner do not match'
-      end
-
-      user ||= attrs[:user]
-      vps ||= attrs[:vps]
-      owner = user || vps&.user
-      event = ::Event.new(
-        user: owner,
+      event = build_event(
+        event_type,
+        user:,
         vps:,
-        event_type: event_type.to_s,
-        category: category || attrs[:category] || type&.category || 'general',
-        severity: severity || attrs[:severity] || type&.severity || 'info',
-        subject: subject || attrs[:subject] || type&.label || event_type.to_s,
-        summary: summary || attrs[:summary],
-        parameters: payload_with_defaults(type, payload || attrs[:payload] || {}),
-        ip_addr: ip_addr || attrs[:ip_addr],
-        created_at: occurred_at
+        subject:,
+        summary:,
+        payload:,
+        severity:,
+        category:,
+        ip_addr:,
+        occurred_at:,
+        **event_args
       )
-      context.event = event if context
-      event.runtime_event_context = context
 
       Router.new(event).plan(record_route_hits:)
+    end
+
+    def prepare(event_type, user: nil, vps: nil, source: nil,
+                source_class: nil, source_id: nil, subject: nil, summary: nil,
+                payload: nil, payload_additions: nil, severity: nil,
+                category: nil, ip_addr: nil, route_context_mode: nil,
+                route_owner: nil, occurred_at: nil, **event_args)
+      event = build_event(
+        event_type,
+        user:,
+        vps:,
+        source:,
+        source_class:,
+        source_id:,
+        subject:,
+        summary:,
+        payload:,
+        payload_additions:,
+        severity:,
+        category:,
+        ip_addr:,
+        occurred_at:,
+        **event_args
+      )
+      router = Router.new(
+        event,
+        route_context_mode:,
+        route_owner:
+      )
+      result = router.plan
+
+      PreparedEmission.new(event, router, result)
     end
 
     def emit!(event_type, user: nil, vps: nil, source: nil, source_class: nil,
               source_id: nil, subject: nil, summary: nil, payload: nil,
               payload_additions: nil,
               severity: nil, category: nil, ip_addr: nil, route: true,
-              release: true, persist: :routed, route_context_mode: nil,
-              route_owner: nil, occurred_at: nil, **event_args)
+              release: true, route_context_mode: nil, route_owner: nil,
+              occurred_at: nil, record_route_hits_on_drop: false, **event_args,
+              &callback)
+      unless route
+        return build_event(
+          event_type,
+          user:,
+          vps:,
+          source:,
+          source_class:,
+          source_id:,
+          subject:,
+          summary:,
+          payload:,
+          payload_additions:,
+          severity:,
+          category:,
+          ip_addr:,
+          occurred_at:,
+          **event_args
+        )
+      end
+
+      prepared = prepare(
+        event_type,
+        user:,
+        vps:,
+        source:,
+        source_class:,
+        source_id:,
+        subject:,
+        summary:,
+        payload:,
+        payload_additions:,
+        severity:,
+        category:,
+        ip_addr:,
+        route_context_mode:,
+        route_owner:,
+        occurred_at:,
+        **event_args
+      )
+      callback&.call(prepared)
+      prepared.commit!(release:, record_route_hits_on_drop:)
+    end
+
+    def build_event(event_type, user: nil, vps: nil, source: nil,
+                    source_class: nil, source_id: nil, subject: nil,
+                    summary: nil, payload: nil, payload_additions: nil,
+                    severity: nil, category: nil, ip_addr: nil,
+                    occurred_at: nil, **event_args)
       type = type_for(event_type)
       context = event_context_for(type, event_args)
       attrs = context ? type.definition.build_attributes(context) : {}
@@ -1114,9 +1213,9 @@ module VpsAdmin::API
         user: owner,
         vps:,
         event_type: event_type.to_s,
-        category: category || attrs[:category] || type&.category,
-        severity: severity || attrs[:severity] || type&.severity,
-        subject: subject || attrs[:subject] || type&.label,
+        category: category || attrs[:category] || type&.category || 'general',
+        severity: severity || attrs[:severity] || type&.severity || 'info',
+        subject: subject || attrs[:subject] || type&.label || event_type.to_s,
         summary: summary || attrs[:summary],
         parameters: payload_with_defaults(type, event_payload),
         source_class: source_class || source&.class&.name,
@@ -1126,22 +1225,6 @@ module VpsAdmin::API
       )
       context.event = event if context
       event.runtime_event_context = context
-
-      if route
-        router = Router.new(
-          event,
-          route_context_mode:,
-          route_owner:
-        )
-        result = router.plan
-
-        return nil if persist != :always && !result.persistable?
-
-        router.persist!(result)
-        VpsAdmin::API::Notifications::Release.release!(event.event_deliveries.where(state: 'prepared')) if release
-      else
-        event.save!
-      end
 
       event
     end
@@ -1198,8 +1281,7 @@ module VpsAdmin::API
           changed_at:,
           node:,
           producer_event_id:
-        ),
-        persist: :always
+        )
       )
     end
 
@@ -1358,10 +1440,15 @@ module VpsAdmin::API
       end
 
       def route!
-        persist!(plan)
+        result = plan
+        return nil unless result.releasable?
+
+        persist!(result)
       end
 
       def persist!(result)
+        return nil unless result.releasable?
+
         event.class.transaction do
           if event.persisted?
             event.lock!
@@ -1389,6 +1476,13 @@ module VpsAdmin::API
         end
 
         event
+      end
+
+      def record_dropped!(result)
+        event.class.transaction do
+          record_route_hits!
+          spend_single_use_routes(result.spent_event_routes)
+        end
       end
 
       def plan(record_route_hits: false)

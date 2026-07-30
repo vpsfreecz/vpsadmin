@@ -221,7 +221,8 @@ RSpec.describe 'VpsAdmin::API::Resources::MetricsAccessToken' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows normal users to create a token for themselves' do
+    it 'allows normal users to create a token for themselves',
+       :with_event_delivery do
       as(user) { json_post index_path, metrics_access_token: { metric_prefix: 'spec_created' } }
 
       expect_status(200)
@@ -294,7 +295,7 @@ RSpec.describe 'VpsAdmin::API::Resources::MetricsAccessToken' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows normal users to delete their token' do
+    it 'allows normal users to delete their token', :with_event_delivery do
       as(user) { json_delete show_path(user_primary.id) }
 
       expect_status(200)

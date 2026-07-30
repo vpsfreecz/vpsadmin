@@ -846,7 +846,8 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
       ObjectState.where(class_name: 'Vps', row_id: vps.id).count
     end
 
-    it 'updates expiration_date without changing state' do
+    it 'updates expiration_date without changing state',
+       :with_event_delivery do
       set_state(vps, :active)
       expiration = Time.utc(2040, 1, 1, 12, 0, 0)
 

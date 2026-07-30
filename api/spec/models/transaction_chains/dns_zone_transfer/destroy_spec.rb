@@ -9,6 +9,10 @@ RSpec.describe TransactionChains::DnsZoneTransfer::Destroy do
 
   let(:user) { SpecSeed.user }
 
+  before do
+    create_spec_event_route!(user:, event_type: 'dns_zone_transfer.deleted')
+  end
+
   def create_transfer_host_ip
     network = create_private_network!(
       location: SpecSeed.location,

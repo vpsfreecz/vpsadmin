@@ -176,8 +176,7 @@ module SpecChains
           action: 'updated',
           changed_fields: ['state'],
           'operation_id' => -1
-        },
-        persist: :always
+        }
       )
       append_t(SpecTransactions::ChainTx, args: [node], kwargs: { tag: 'event' })
       event
@@ -261,6 +260,16 @@ RSpec.describe TransactionChain do
   end
 
   def with_transaction_chain_resource_policy(action, model: OsFamily, &)
+    resource_name =
+      VpsAdmin::API::Events::ResourceOperations.resource_name_for(model)
+    create_delivery_route!(
+      "#{resource_name}.#{action}",
+      subject_scope: :visible
+    )
+    create_delivery_route!(
+      'operation.succeeded',
+      subject_scope: :visible
+    )
     policy = VpsAdmin::API::Events::ActionPolicies::Policy.new(
       kind: :transaction_chain,
       models: [model.base_class.name],
@@ -274,6 +283,10 @@ RSpec.describe TransactionChain do
   end
 
   def blocking_action_boundary(&block)
+    create_delivery_route!(
+      'os_family.created',
+      subject_scope: :visible
+    )
     action = Class.new do
       define_singleton_method(:http_method) { :post }
       define_singleton_method(:blocking) { true }
@@ -294,6 +307,15 @@ RSpec.describe TransactionChain do
     action.new(block)
   end
 
+  def create_delivery_route!(event_type, subject_scope: :self)
+    create_spec_event_route!(
+      user: SpecSeed.admin,
+      event_type:,
+      subject_scope:,
+      label: "Spec #{event_type} receiver"
+    )
+  end
+
   around do |example|
     with_current_context do
       lock_transaction_signer!
@@ -312,43 +334,34 @@ RSpec.describe TransactionChain do
     expect(chain.user_session_id).to eq(UserSession.current.id)
   end
 
-  it 'persists the queued event after chain construction commits' do
+  it 'does not persist the queued event without a delivery route' do
     chain, = SpecChains::Linear.fire2(args: [node], kwargs: {})
-    event = Event.where(
-      event_type: 'transaction_chain.state_changed',
-      source_class: 'TransactionChain',
-      source_id: chain.id
-    ).sole
-
-    expect(event.parameters).to include(
-      'chain_id' => chain.id,
-      'previous_state' => 'staged',
-      'state' => 'queued',
-      'terminal' => false,
-      'successful' => false,
-      'failed' => false,
-      'actor_user_id' => chain.user_id
-    )
+    expect(
+      Event.where(
+        event_type: 'transaction_chain.state_changed',
+        source_class: 'TransactionChain',
+        source_id: chain.id
+      )
+    ).to be_empty
   end
 
-  it 'persists and routes the correlated operation start after construction' do
+  it 'does not persist the operation start without a delivery route' do
     chain, = SpecChains::Linear.fire2(args: [node], kwargs: {})
-    event = Event.where(
-      event_type: 'operation.started',
-      source_class: 'TransactionChain',
-      source_id: chain.id
-    ).sole
-
-    expect(event).to be_suppressed_routing_state
-    expect(event.parameters).to include(
-      'operation_id' => chain.id,
-      'attempt' => 1,
-      'operation' => 'spec_chains.linear',
-      'state' => 'queued'
-    )
+    expect(
+      Event.where(
+        event_type: 'operation.started',
+        source_class: 'TransactionChain',
+        source_id: chain.id
+      )
+    ).to be_empty
   end
 
   it 'allocates the operation start before correlated immediate facts' do
+    create_delivery_route!(
+      'operation.started',
+      subject_scope: :visible
+    )
+    create_delivery_route!('os_family.updated')
     chain, fact = SpecChains::ImmediateEvent.fire2(args: [node], kwargs: {})
     started = Event.where(
       event_type: 'operation.started',
@@ -356,8 +369,14 @@ RSpec.describe TransactionChain do
       source_id: chain.id
     ).sole
 
-    expect(started.id).to be < fact.id
+    started_delivery = started.event_deliveries.sole
+    fact_delivery = fact.event_deliveries.sole
+    expect(started_delivery).to be_released_state
+    expect(started_delivery.released_at).to be_present
+    expect(fact_delivery).to be_prepared_state
+    expect(fact_delivery.released_at).to be_nil
     expect(fact.parameters['operation_id']).to eq(chain.id)
+    expect(started.parameters['operation_id']).to eq(chain.id)
     expect(EventRouteMatcher.field_value(fact, 'operation_id')).to eq(chain.id)
   end
 
@@ -393,6 +412,10 @@ RSpec.describe TransactionChain do
   end
 
   it 'does not report chain construction failure when start routing fails' do
+    create_delivery_route!(
+      'operation.started',
+      subject_scope: :visible
+    )
     allow(VpsAdmin::API::Events::OperationLifecycle)
       .to receive(:route_started!)
       .and_raise('event routing unavailable')
@@ -406,9 +429,10 @@ RSpec.describe TransactionChain do
     ).sole
 
     expect(chain.reload).to be_queued
-    expect(started).to be_pending_routing_state
+    expect(started).to be_routed_routing_state
+    expect(started.event_deliveries.sole).to be_prepared_state
     expect(SpecChains::Linear).to have_received(:warn).with(
-      /Unable to route operation start event ##{started.id}/
+      /Unable to route operation start event: RuntimeError: event routing unavailable/
     )
   end
 
@@ -746,6 +770,7 @@ RSpec.describe TransactionChain do
   end
 
   it 'emits an allowed empty result fact atomically without operation correlation' do
+    create_delivery_route!('os_family.updated')
     chain, = SpecChains::AllowedEmptyDeferred.fire2(args: [], kwargs: {})
 
     expect(chain).to be_nil

@@ -47,7 +47,6 @@ module VpsAdmin::API::Events::OperationLifecycle
     emit_operation!(
       chain,
       STARTED_EVENT_TYPE,
-      attempt: 1,
       state: 'staged',
       route: false,
       release: false
@@ -59,28 +58,29 @@ module VpsAdmin::API::Events::OperationLifecycle
     attributes = operation_attributes(
       chain,
       STARTED_EVENT_TYPE,
-      attempt: 1,
       state: 'queued'
     )
     event.assign_attributes(attributes.except(:occurred_at))
     event.created_at = attributes[:occurred_at]
-    event.save!
-    event
+    VpsAdmin::API::Events.route!(event)
   end
 
   def route_started!(event)
-    route_event!(event)
+    return nil unless event
+
+    VpsAdmin::API::Notifications::Release.release!(
+      event.event_deliveries.where(state: 'prepared')
+    )
+    event
   end
 
   def emit_started!(chain, changed_at: nil, node: nil, producer_event_id: nil)
-    attempt = next_attempt(chain)
-    existing = find_event(chain, STARTED_EVENT_TYPE, attempt)
+    existing = find_event(chain, STARTED_EVENT_TYPE, producer_event_id:)
     return existing if existing
 
     emit_operation!(
       chain,
       STARTED_EVENT_TYPE,
-      attempt:,
       state: 'queued',
       changed_at:,
       node:,
@@ -126,38 +126,29 @@ module VpsAdmin::API::Events::OperationLifecycle
   end
 
   def emit_succeeded!(chain, changed_at: nil, node: nil, producer_event_id: nil)
-    attempt = current_attempt(chain)
-    existing = find_event(chain, SUCCEEDED_EVENT_TYPE, attempt)
+    existing = find_event(chain, SUCCEEDED_EVENT_TYPE, producer_event_id:)
     return existing if existing
 
-    result_events = materialize_result_events!(chain, attempt:, changed_at:)
-    event = emit_operation!(
+    result_events = materialize_result_events!(chain, changed_at:)
+    emit_operation!(
       chain,
       SUCCEEDED_EVENT_TYPE,
-      attempt:,
       state: 'done',
       changed_at:,
       node:,
       producer_event_id:,
-      extra_payload: { result_event_ids: result_events.map(&:id) },
-      route: false,
-      release: false
+      extra_payload: { result_event_ids: result_events.map(&:id) }
     )
-    result_events.each { |result_event| route_event!(result_event) }
-    route_event!(event)
-    event
   end
 
   def emit_failed!(chain, state:, changed_at: nil, node: nil,
                    producer_event_id: nil)
-    attempt = current_attempt(chain)
-    existing = find_event(chain, FAILED_EVENT_TYPE, attempt)
+    existing = find_event(chain, FAILED_EVENT_TYPE, producer_event_id:)
     return existing if existing
 
     emit_operation!(
       chain,
       FAILED_EVENT_TYPE,
-      attempt:,
       state: state.to_s,
       changed_at:,
       node:,
@@ -166,14 +157,12 @@ module VpsAdmin::API::Events::OperationLifecycle
   end
 
   def emit_resolved!(chain, changed_at: nil, node: nil, producer_event_id: nil)
-    attempt = current_attempt(chain)
-    existing = find_event(chain, RESOLVED_EVENT_TYPE, attempt)
+    existing = find_event(chain, RESOLVED_EVENT_TYPE, producer_event_id:)
     return existing if existing
 
     emit_operation!(
       chain,
       RESOLVED_EVENT_TYPE,
-      attempt:,
       state: 'resolved',
       changed_at:,
       node:,
@@ -181,7 +170,7 @@ module VpsAdmin::API::Events::OperationLifecycle
     )
   end
 
-  def emit_operation!(chain, event_type, attempt:, state:, changed_at: nil,
+  def emit_operation!(chain, event_type, state:, changed_at: nil,
                       node: nil, producer_event_id: nil, extra_payload: {},
                       route: true, release: true)
     VpsAdmin::API::Events.emit!(
@@ -189,7 +178,6 @@ module VpsAdmin::API::Events::OperationLifecycle
       **operation_attributes(
         chain,
         event_type,
-        attempt:,
         state:,
         changed_at:,
         node:,
@@ -197,12 +185,11 @@ module VpsAdmin::API::Events::OperationLifecycle
         extra_payload:
       ),
       route:,
-      release:,
-      persist: :always
+      release:
     )
   end
 
-  def operation_attributes(chain, event_type, attempt:, state:, changed_at: nil,
+  def operation_attributes(chain, event_type, state:, changed_at: nil,
                            node: nil, producer_event_id: nil, extra_payload: {})
     vps = VpsAdmin::API::Events.transaction_chain_vps(chain)
     owner = VpsAdmin::API::Events.transaction_chain_target_owner(chain) ||
@@ -219,11 +206,10 @@ module VpsAdmin::API::Events::OperationLifecycle
       source_class: ::TransactionChain.name,
       source_id: chain.id,
       subject: "#{operation_label(chain)} #{outcome}"[0, 255],
-      summary: "Operation ##{chain.id} attempt ##{attempt} #{outcome}",
+      summary: "Operation ##{chain.id} #{outcome}",
       severity: severity(event_type, state),
       payload: operation_payload(
         chain,
-        attempt:,
         state:,
         successful:,
         failed:,
@@ -236,20 +222,11 @@ module VpsAdmin::API::Events::OperationLifecycle
     }
   end
 
-  def route_event!(event)
-    VpsAdmin::API::Events.route!(event)
-    VpsAdmin::API::Notifications::Release.release!(
-      event.event_deliveries.where(state: 'prepared')
-    )
-    event
-  end
-
-  def operation_payload(chain, attempt:, state:, successful:, failed:,
+  def operation_payload(chain, state:, successful:, failed:,
                         changed_at:, node:, producer_event_id:)
     concerns = chain.transaction_chain_concerns.sort_by(&:id)
     {
       operation_id: chain.id,
-      attempt:,
       operation: operation_key(chain),
       operation_label: operation_label(chain),
       chain_name: chain.name,
@@ -292,24 +269,11 @@ module VpsAdmin::API::Events::OperationLifecycle
     :info
   end
 
-  def next_attempt(chain)
-    operation_events(chain, STARTED_EVENT_TYPE)
-      .filter_map { |event| event.parameters['attempt'] }
-      .map(&:to_i)
-      .max
-      .to_i + 1
-  end
+  def find_event(chain, event_type, producer_event_id:)
+    return nil if producer_event_id.blank?
 
-  def current_attempt(chain)
-    operation_events(chain, STARTED_EVENT_TYPE)
-      .filter_map { |event| event.parameters['attempt'] }
-      .map(&:to_i)
-      .max || 1
-  end
-
-  def find_event(chain, event_type, attempt)
     operation_events(chain, event_type).detect do |event|
-      event.parameters['attempt'].to_i == attempt
+      event.parameters['producer_event_id'] == producer_event_id
     end
   end
 
@@ -321,20 +285,19 @@ module VpsAdmin::API::Events::OperationLifecycle
     ).order(:id)
   end
 
-  def materialize_result_events!(chain, attempt:, changed_at: nil)
-    result_descriptors(chain).each_with_index.map do |descriptor, index|
+  def materialize_result_events!(chain, changed_at: nil)
+    result_descriptors(chain).each_with_index.filter_map do |descriptor, index|
       existing = result_event(chain, index)
       next existing if existing
 
       emit_result_descriptor!(
         chain,
         descriptor,
-        attempt:,
         index:,
         changed_at:,
         correlate: true,
-        route: false,
-        release: false
+        route: true,
+        release: true
       )
     end
   end
@@ -352,12 +315,11 @@ module VpsAdmin::API::Events::OperationLifecycle
   end
 
   def emit_result_descriptor!(chain, descriptor, correlate:, route:, release:,
-                              attempt: nil, index: nil, changed_at: nil)
+                              index: nil, changed_at: nil)
     payload = descriptor.fetch('payload', {}).dup
     if correlate
       payload.merge!(
         'operation_id' => chain.id,
-        'operation_attempt' => attempt,
         'operation_result_index' => index
       )
     end
@@ -383,7 +345,6 @@ module VpsAdmin::API::Events::OperationLifecycle
       ip_addr: descriptor['ip_addr'],
       route:,
       release:,
-      persist: :always,
       occurred_at: changed_at,
       **event_args
     )
@@ -468,15 +429,10 @@ VpsAdmin::API::Events.define do
           severity_description:,
           examples: {
             subject: "Start #{outcome}",
-            summary: "Operation #123 attempt #1 #{outcome}"
+            summary: "Operation #123 #{outcome}"
           } do
       fields(
         operation_id: { description: 'Stable transaction-chain operation ID', type: :integer },
-        attempt: {
-          description: 'One-based execution attempt number',
-          type: :integer,
-          example: 1
-        },
         operation: {
           description: 'Stable operation name',
           type: :string,

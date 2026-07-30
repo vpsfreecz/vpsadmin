@@ -83,14 +83,14 @@ RSpec.describe TransactionChains::IncidentReport::Send do
     incident = create_send_incident!(subject: 'Muted')
     mute_default_notifications_for!(incident.user)
 
-    chain, = described_class.fire2(
-      args: [VpsAdmin::API::IncidentReports::Result.new(incidents: [incident])]
-    )
-    event = expect_suppressed_event!('vps.incident_report', user: incident.user)
+    chain = nil
+    expect do
+      chain, = described_class.fire2(
+        args: [VpsAdmin::API::IncidentReports::Result.new(incidents: [incident])]
+      )
+    end.not_to(change { event_storage_counts })
 
     expect(chain).to be_nil
     expect(NotificationTemplate).not_to have_received(:send_email!)
-    expect(event.source).to eq(incident)
-    expect(event.event_deliveries.sole.error_summary).to eq('delivery method is disabled')
   end
 end

@@ -66,9 +66,9 @@ RSpec.describe TransactionChains::Vps::ExpandDataset do
       'dataset_full_name' => fixture.fetch(:dataset).full_name,
       'added_space' => expansion.added_space,
       'operation_id' => chain.id,
-      'operation_attempt' => 1,
       'operation_result_index' => 0
     )
+    expect(event.parameters).not_to have_key('operation_attempt')
   end
 
   it 'does not enqueue mail when notifications are disabled' do

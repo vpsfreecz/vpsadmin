@@ -13,6 +13,7 @@ RSpec.describe TransactionChains::Vps::Update do
   before do
     ensure_user_notification_templates!
     ensure_mailer_available!
+    create_spec_event_route!(user:, event_type: 'vps.updated')
   end
 
   def create_update_vps_fixture
@@ -152,7 +153,6 @@ RSpec.describe TransactionChains::Vps::Update do
     expect(event.vps).to eq(vps)
     expect(event.parameters).to include(
       'operation_id' => chain.id,
-      'operation_attempt' => 1,
       'vps_id' => vps.id,
       'vps_hostname' => vps.hostname,
       'cpu' => 3,
@@ -160,6 +160,7 @@ RSpec.describe TransactionChains::Vps::Update do
       'swap' => 256,
       'reason' => 'scale up'
     )
+    expect(event.parameters).not_to have_key('operation_attempt')
   end
 
   it 'queues Autostart only when autostart is enabled' do
@@ -264,11 +265,11 @@ RSpec.describe TransactionChains::Vps::Update do
     expect(event.vps).to eq(vps)
     expect(event.parameters).to include(
       'operation_id' => chain.id,
-      'operation_attempt' => 1,
       'vps_id' => vps.id,
       'vps_hostname' => vps.hostname,
       'reason' => 'disable for maintenance'
     )
+    expect(event.parameters).not_to have_key('operation_attempt')
   end
 
   it 'persists DB-only changes immediately when the chain stays empty' do

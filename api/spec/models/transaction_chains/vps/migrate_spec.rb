@@ -147,7 +147,7 @@ RSpec.describe TransactionChains::Vps::Migrate do
       )
     end
     expect(begun.event_deliveries.sole).to be_prepared_state
-    expect(finished.parameters['operation_attempt']).to eq(1)
+    expect(finished.parameters).not_to have_key('operation_attempt')
   end
 
   it 'omits destination start when no_start is true' do

@@ -20,8 +20,7 @@ module VpsAdmin::API::Events::SecurityOperations
         failed_at: attempt.created_at&.iso8601
       }.compact,
       ip_addr: attempt.client_ip_addr || attempt.api_ip_addr,
-      occurred_at: attempt.created_at,
-      persist: :always
+      occurred_at: attempt.created_at
     )
   end
 

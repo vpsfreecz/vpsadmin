@@ -5,7 +5,7 @@ require 'spec_helper'
 RSpec.describe VpsAdmin::API::Operations::User::IncompleteLogin do
   let(:user) { SpecSeed.user }
 
-  it 'records a failed login from an AuthToken' do
+  it 'records a failed login from an AuthToken', :with_event_delivery do
     auth_token = create_auth_token!(user:, purpose: 'mfa')
 
     expect do
@@ -30,7 +30,8 @@ RSpec.describe VpsAdmin::API::Operations::User::IncompleteLogin do
     )
   end
 
-  it 'records a failed login from a WebauthnChallenge' do
+  it 'records a failed login from a WebauthnChallenge',
+     :with_event_delivery do
     challenge = create_webauthn_challenge!(user:, type: 'authentication')
 
     expect do

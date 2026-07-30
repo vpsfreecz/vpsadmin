@@ -60,16 +60,17 @@ RSpec.describe TransactionChains::User::ReportFailedLogins do
     expect(attempt.reload.reported_at).to be_nil
   end
 
-  it 'marks attempts reported when notification routing is muted' do
+  it 'marks attempts reported without persisting muted notification routing' do
     user = create_lifecycle_user!
     mute_default_notifications_for!(user)
     attempt = create_failed_login!(user:)
 
-    chain, = described_class.fire(user => [[attempt]])
-    event = expect_suppressed_event!('user.failed_logins', user:)
+    chain = nil
+    expect do
+      chain, = described_class.fire(user => [[attempt]])
+    end.not_to(change { event_storage_counts })
 
     expect(chain).to be_nil
     expect(attempt.reload.reported_at).to be_present
-    expect(event.event_deliveries.sole.error_summary).to include('does not notify')
   end
 end

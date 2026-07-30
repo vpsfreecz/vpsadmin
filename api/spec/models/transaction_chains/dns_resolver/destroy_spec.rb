@@ -9,6 +9,14 @@ RSpec.describe TransactionChains::DnsResolver::Destroy do
 
   let(:user) { SpecSeed.user }
 
+  before do
+    create_spec_event_route!(
+      user: SpecSeed.admin,
+      event_type: 'dns_resolver.deleted',
+      subject_scope: :visible
+    )
+  end
+
   def create_vps_on(node:, resolver:)
     pool = create_pool!(node: node, role: :hypervisor)
     dataset, dip = create_dataset_with_pool!(

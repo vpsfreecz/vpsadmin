@@ -51,11 +51,11 @@ RSpec.describe TransactionChains::Vps::Block do
     expect(event.source).to eq(state)
     expect(event.parameters).to include(
       'operation_id' => chain.id,
-      'operation_attempt' => 2,
       'vps_id' => vps.id,
       'vps_hostname' => vps.hostname,
       'state' => 'suspended',
       'reason' => 'policy violation'
     )
+    expect(event.parameters).not_to have_key('operation_attempt')
   end
 end

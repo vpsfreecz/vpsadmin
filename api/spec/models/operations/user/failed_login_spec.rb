@@ -17,7 +17,8 @@ RSpec.describe VpsAdmin::API::Operations::User::FailedLogin do
     stub_ptr_lookup!(op, ptr: 'ptr.example.test')
   end
 
-  it 'records request metadata and increments failed_login_count' do
+  it 'records request metadata and increments failed_login_count',
+     :with_event_delivery do
     expect do
       op.run(user, :password, 'invalid password', request)
     end.to change { user.reload.failed_login_count }.by(1)

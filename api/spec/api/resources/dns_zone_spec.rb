@@ -316,7 +316,8 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsZone' do
       expect(record.user_id).to eq(SpecSeed.user.id)
     end
 
-    it 'emits a synchronous create fact when an admin creates a system zone' do
+    it 'emits a synchronous create fact when an admin creates a system zone',
+       :with_event_delivery do
       as(SpecSeed.admin) { json_post index_path, dns_zone: payload }
 
       expect_status(200)
@@ -442,7 +443,8 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsZone' do
       expect(DnsZone.where(id: zone.id)).to be_empty
     end
 
-    it 'allows admins to delete system zones and removes records' do
+    it 'allows admins to delete system zones and removes records',
+       :with_event_delivery do
       zone_id = zone_a.id
 
       as(SpecSeed.admin) { json_delete show_path(zone_a.id) }

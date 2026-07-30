@@ -3,12 +3,37 @@
 require 'spec_helper'
 
 RSpec.describe VpsAdmin::API::Events::ResourceOperations do
+  before do
+    create_spec_event_route!(user: SpecSeed.user)
+    create_spec_event_route!(user: SpecSeed.admin)
+    create_spec_event_route!(
+      user: SpecSeed.admin,
+      subject_scope: :visible
+    )
+  end
+
   def policy_constant(name, plugin: nil)
     klass = name.safe_constantize
     return klass if klass
     return if plugin && !SpecPlugins.enabled?(plugin)
 
     raise NameError, "event policy constant #{name} is not loaded"
+  end
+
+  it 'does not persist a typed resource fact without a delivery route' do
+    EventRoute.where(user: [SpecSeed.user, SpecSeed.admin]).delete_all
+    event = nil
+
+    expect do
+      event = with_current_context(user: SpecSeed.user) do
+        described_class.updated!(
+          SpecSeed.user,
+          changed_fields: [:login]
+        )
+      end
+    end.not_to(change { event_storage_counts })
+
+    expect(event).to be_nil
   end
 
   it 'records typed changes and redacts sensitive values' do

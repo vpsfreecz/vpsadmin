@@ -6,10 +6,6 @@ module VpsAdmin::API::Events::Core
     }
   }.freeze
   OPERATION_RESULT_FIELDS = OPERATION_REFERENCE_FIELDS.merge(
-    operation_attempt: {
-      description: 'Execution attempt that produced this fact',
-      type: :integer
-    },
     operation_result_index: {
       description: 'Zero-based position of this fact in the operation result list',
       type: :integer
@@ -1338,11 +1334,6 @@ VpsAdmin::API::Events.define do
         example: 'vps2.example.org'
       },
       operation_id: { description: 'ID of the operation that completed the replacement', type: :integer },
-      operation_attempt: {
-        description: 'Execution attempt that completed the replacement',
-        type: :integer,
-        example: 1
-      },
       operation_result_index: {
         description: 'Zero-based position of this fact in the operation result list',
         type: :integer,

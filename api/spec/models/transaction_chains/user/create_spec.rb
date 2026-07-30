@@ -128,9 +128,9 @@ RSpec.describe TransactionChains::User::Create do
     expect(Event.where(event_type: 'user.account_created').count).to eq(1)
     expect(event.parameters).to include(
       'operation_id' => chain.id,
-      'operation_attempt' => 2,
       'login' => created.login
     )
+    expect(event.parameters).not_to have_key('operation_attempt')
   end
 
   it 'passes the initial VPS start flag from activation state' do

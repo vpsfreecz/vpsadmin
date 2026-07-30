@@ -231,8 +231,23 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     json.dig('response', 'errors') || json['errors'] || {}
   end
 
+  def response_message
+    json['message'] || json.dig('response', 'message') || json['error']
+  end
+
   def event_obj
     json.dig('response', 'event') || json['response']
+  end
+
+  def event_storage_counts
+    {
+      events: Event.count,
+      contexts: EventRoutingContext.count,
+      matches: EventRouteMatch.count,
+      deliveries: EventDelivery.count,
+      attempts: EventDeliveryAttempt.count,
+      groups: EventDeliveryGroup.count
+    }
   end
 
   def delivery_obj
@@ -429,6 +444,12 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         'subject_relation'
       )
       expect(event_index.dig('routing_state', 'label')).to eq('Routing state')
+      expect(
+        event_index.dig('routing_state', 'validators', 'include', 'values')
+      ).to eq(
+        'routed' => 'routed',
+        'aborted' => 'aborted'
+      )
     end
 
     it 'keeps dedicated system report migration routes matcher-free' do
@@ -1578,7 +1599,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(target.reload.target_value).to eq('https://example.test/events')
   end
 
-  it 'skips lazy default e-mail actions when the delivery method is disabled' do
+  it 'does not persist lazy default e-mail deliveries when the method is disabled' do
     SpecSeed.user.set_notification_delivery_method!(:email, false)
     event = nil
 
@@ -1588,22 +1609,15 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         user: SpecSeed.user,
         subject: 'Spec disabled default e-mail event'
       )
-    end.to change(Event, :count).by(1)
+    end.not_to(change { event_storage_counts })
     receiver = default_email_receiver_for(SpecSeed.user)
-    route = EventRoute.default_route_for(SpecSeed.user)
     action = receiver.notification_receiver_actions.sole
-    delivery = event.event_deliveries.sole
 
     expect(action.action).to eq('email')
-    expect(event.reload).to be_suppressed_routing_state
-    expect(event.event_route_matches.reload.map(&:event_route)).to include(route)
-    expect(delivery).to be_skipped_state
-    expect(delivery.action).to eq('email')
-    expect(delivery.notification_receiver).to eq(receiver)
-    expect(delivery.error_summary).to eq('delivery method is disabled')
+    expect(event).to be_nil
   end
 
-  it 'skips existing receiver targets when their delivery method is disabled' do
+  it 'does not persist existing receiver targets when their method is disabled' do
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec receiver')
     receiver.notification_receiver_actions.create!(
       action: :webhook,
@@ -1626,15 +1640,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
         user: SpecSeed.user,
         subject: 'Spec disabled delivery event'
       )
-    end.to change(Event, :count).by(1)
-    delivery = event.event_deliveries.sole
+    end.not_to(change { event_storage_counts })
 
-    expect(event.reload).to be_suppressed_routing_state
-    expect(event.event_route_matches.reload.map(&:event_route)).to include(route)
-    expect(delivery).to be_skipped_state
-    expect(delivery.action).to eq('webhook')
-    expect(delivery.notification_receiver).to eq(receiver)
-    expect(delivery.error_summary).to eq('delivery method is disabled')
+    expect(route.reload.notification_receiver).to eq(receiver)
+    expect(event).to be_nil
   end
 
   it 'lets users retry failed deliveries' do
@@ -1979,7 +1988,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     operation_started_fields = operation_started['fields'].index_by { |field| field['name'] }
     expect(operation_started_fields.dig('subject', 'example')).to eq('Start started')
     expect(operation_started_fields.dig('summary', 'example'))
-      .to eq('Operation #123 attempt #1 started')
+      .to eq('Operation #123 started')
     expect(operation_started_fields.dig('state', 'example')).to eq('queued')
     expect(operation_started_fields.dig('successful', 'example')).to be(false)
     expect(operation_started_fields.dig('failed', 'example')).to be(false)
@@ -2062,6 +2071,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
   end
 
   it 'filters the event stream by logical resource and action' do
+    create_spec_event_route!(user: SpecSeed.user, event_type: 'user.updated')
     resource_event = with_current_context(user: SpecSeed.user) do
       VpsAdmin::API::Events::ResourceOperations.updated!(
         SpecSeed.user,
@@ -2198,6 +2208,55 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
   it 'does not register monitoring event types in core-only mode', without_plugins: :monitoring do
     expect(VpsAdmin::API::Events.type_for('monitoring.monitor_state_changed')).to be_nil
     expect(VpsAdmin::API::Events.type_for('monitoring.alert')).to be_nil
+  end
+
+  it 'rejects an unrouted test event without retaining routing rows' do
+    expect do
+      as(SpecSeed.user) do
+        json_post event_test_path, event: {
+          event_type: 'transaction_chain.state_changed',
+          subject: 'Unrouted spec test event',
+          payload_json: JSON.dump(state: 'queued', terminal: false)
+        }
+      end
+    end.not_to(change { event_storage_counts })
+
+    expect(json['status']).to be(false)
+    expect(response_message).to include('no enabled route produced a delivery')
+  end
+
+  it 'creates a routed test event when an enabled route produces a delivery' do
+    receiver = NotificationReceiver.create!(
+      user: SpecSeed.user,
+      label: 'Routed test event receiver'
+    )
+    receiver.notification_receiver_actions.create!(
+      action: :webhook,
+      target_kind: :custom,
+      target_value: 'https://example.test/routed-test-event'
+    )
+    route = EventRoute.create!(
+      user: SpecSeed.user,
+      notification_receiver: receiver,
+      event_type: 'transaction_chain.state_changed',
+      position: 1
+    )
+
+    as(SpecSeed.user) do
+      json_post event_test_path, event: {
+        event_type: 'transaction_chain.state_changed',
+        subject: 'Routed spec test event',
+        payload_json: JSON.dump(state: 'queued', terminal: false)
+      }
+    end
+
+    expect_status(200)
+    expect(json['status']).to be(true)
+
+    event = Event.find(event_obj['id'])
+    expect(event.reload).to be_routed_routing_state
+    expect(event.event_route_matches.sole.event_route).to eq(route)
+    expect(event.event_deliveries.sole).to be_released_state
   end
 
   it 'creates test events for the current user' do

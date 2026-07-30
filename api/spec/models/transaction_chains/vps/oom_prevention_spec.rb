@@ -55,12 +55,14 @@ RSpec.describe TransactionChains::Vps::OomPrevention do
   it 'does not let stale long custom e-mail labels block restart actions' do
     vps = create_vps!
     reset_routing!(vps.user)
+    vps.user.set_notification_delivery_method!(:email, true)
     receiver = NotificationReceiver.create!(user: vps.user, label: 'Spec receiver')
     action = receiver.notification_receiver_actions.create!(
       action: :email,
       target_kind: :custom,
       target_value: 'custom@example.test'
     )
+    action.notification_target.update!(verified_at: Time.now)
     long_target = "#{'a' * 287}@example.test"
     action.notification_target.update_columns(target_value: long_target)
     EventRoute.create!(

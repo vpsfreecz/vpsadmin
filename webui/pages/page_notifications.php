@@ -780,10 +780,10 @@ if (isLoggedIn()) {
                 try {
                     $event = $api->event->test($params);
 
-                    notify_user(_('Test event created'), '');
+                    notify_user(_('Test notification queued for delivery'), '');
                     redirect('?page=notifications&action=event_show&id=' . $event->id);
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-                    $xtpl->perex_format_errors(_('Failed to create test event'), $e->getResponse());
+                    $xtpl->perex_format_errors(_('Failed to send test notification'), $e->getResponse());
                     notifications_test_event(notifications_target_user_id());
                 }
             } else {

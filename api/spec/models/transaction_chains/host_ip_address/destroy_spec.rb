@@ -9,6 +9,14 @@ RSpec.describe TransactionChains::HostIpAddress::Destroy do
 
   let(:user) { SpecSeed.user }
 
+  before do
+    create_spec_event_route!(
+      user: SpecSeed.admin,
+      event_type: 'host_ip_address.deleted',
+      subject_scope: :visible
+    )
+  end
+
   def create_host_ip
     network = create_private_network!(
       location: SpecSeed.location,

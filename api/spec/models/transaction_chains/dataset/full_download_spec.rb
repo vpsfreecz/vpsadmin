@@ -103,7 +103,6 @@ RSpec.describe TransactionChains::Dataset::FullDownload do
     expect(event.source).to eq(download)
     expect(event.parameters).to include(
       'operation_id' => chain.id,
-      'operation_attempt' => 1,
       'download_id' => download.id,
       'snapshot_id' => snapshot.id,
       'snapshot_name' => 'snap-mail',
@@ -112,6 +111,7 @@ RSpec.describe TransactionChains::Dataset::FullDownload do
       'file_name' => download.file_name,
       'format' => 'stream'
     )
+    expect(event.parameters).not_to have_key('operation_attempt')
   end
 
   it 'uses the general queue for archive downloads' do

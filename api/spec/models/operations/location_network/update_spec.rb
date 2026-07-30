@@ -67,7 +67,8 @@ RSpec.describe VpsAdmin::API::Operations::LocationNetwork::Update do
     expect(network.reload.primary_location).to eq(loc_b)
   end
 
-  it 'emits the sibling primary flag cleared by the bulk update' do
+  it 'emits the sibling primary flag cleared by the bulk update',
+     :with_event_delivery do
     current = LocationNetwork.create!(
       location: loc_a,
       network: network,

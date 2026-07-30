@@ -1,10 +1,15 @@
 # Events
 
-vpsAdmin events are a consumer-facing stream of completed changes, operation
-lifecycle transitions, security observations, and domain notifications.
-Consumers can persist the stream and build their own audit log. The event
-system is not a second internal audit database: it uses the existing `events`
-table, Event API, routing, and delivery machinery.
+vpsAdmin Events are consumer-facing notification delivery history for
+completed changes, operation lifecycle transitions, security observations,
+and domain notifications. They are not an audit log. An Event row is retained
+only when notification routing produces delivery work, so the absence of an
+Event does not prove that the underlying action did not happen.
+
+Consumers that require an external audit stream must configure an explicit
+catch-all route to a durable receiver and retain the delivered events
+themselves. Event Type discovery, the Event index, default notification
+routes, and database retention do not provide audit completeness.
 
 ## Event kinds
 
@@ -28,10 +33,9 @@ Non-empty transaction chains have a correlated lifecycle:
     operation.succeeded
 
 `operation.started`, `operation.failed`, `operation.resolved`, and
-`operation.succeeded` identify the chain with `operation_id` and identify a
-retry with `attempt`. Completion facts contain the same `operation_id` and an
-`operation_attempt`. `operation.succeeded.result_event_ids` lists the
-completion facts for that attempt.
+`operation.succeeded` identify the chain with `operation_id`. Completion facts
+contain the same `operation_id`; `operation.succeeded.result_event_ids` lists
+the correlated completion facts.
 
 A failed or fatal chain emits `operation.failed`, but never emits the deferred
 resource/domain facts that would have claimed success. If chain construction
@@ -115,8 +119,10 @@ not matchable. The exact matcher set is published by the Event Type API; it is
 not inferred by consumers.
 
 The Event index can be filtered by exact `resource_name` and
-`resource_action`. Resource facts use `persist: :always`, so their existence
-does not depend on a matching notification route.
+`resource_action`, but it contains delivery history rather than every emitted
+fact. Resource facts use the same routing and delivery retention contract as
+other public events. Configure an explicit catch-all route to a durable
+external receiver when complete off-system auditing is required.
 
 ## Emitting events
 
@@ -132,6 +138,11 @@ preserving `operation.*` lifecycle events for the accepted transaction chain.
 Direct code that attempts to define or emit a CRUD event for an uncataloged
 model raises, so a new public contract has to be reviewed and registered
 explicitly.
+
+Emission does not unconditionally create an Event row. Public resource,
+domain, and operation events are retained only when routing produces delivery
+work. Do not use unconditional persistence to turn the notification subsystem
+into an internal audit database.
 
 Transaction-chain builders must use `defer_resource_event!` or
 `defer_result_event!` for successful outcomes. Deferred descriptors are stored

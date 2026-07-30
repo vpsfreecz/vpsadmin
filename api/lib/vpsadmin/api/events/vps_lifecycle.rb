@@ -121,8 +121,7 @@ module VpsAdmin::API::Events::VpsLifecycle
         changed_fields: changed_fields.map(&:to_s).sort,
         changed_by_id: changed_by&.id,
         changed_by_login: changed_by&.login
-      },
-      persist: :always
+      }
     )
   end
 
@@ -137,8 +136,7 @@ module VpsAdmin::API::Events::VpsLifecycle
         vps_id: vps.id,
         vps_hostname: vps.hostname
       }.merge(payload),
-      occurred_at:,
-      persist: :always
+      occurred_at:
     )
   end
 

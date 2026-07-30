@@ -220,7 +220,7 @@ msgstr "Bezpečnostní upozornění"
 msgid "Monitoring"
 msgstr "Monitoring"
 
-#: forms/cluster.forms.php forms/notifications.forms.php
+#: forms/cluster.forms.php
 msgid "Event log"
 msgstr "Události"
 
@@ -2444,6 +2444,10 @@ msgid "initial baseline"
 msgstr "počáteční stav"
 
 #: forms/notifications.forms.php
+msgid "Delivery history"
+msgstr "Historie doručování"
+
+#: forms/notifications.forms.php
 msgid "Notification groups"
 msgstr "Skupiny notifikací"
 
@@ -2480,8 +2484,8 @@ msgid "Event types"
 msgstr "Typy událostí"
 
 #: forms/notifications.forms.php
-msgid "Test event"
-msgstr "Testovací událost"
+msgid "Test notification"
+msgstr "Testovací notifikace"
 
 #: forms/notifications.forms.php
 msgid "Composite ID attributes"
@@ -3945,28 +3949,24 @@ msgid "No matchable fields were reported by the API."
 msgstr "API nevrátilo žádná matchovatelná pole."
 
 #: forms/notifications.forms.php
-msgid "Test notification event"
-msgstr "Testovací notifikační událost"
+msgid "Test notification routing"
+msgstr "Testování routování notifikace"
 
 #: forms/notifications.forms.php
-msgid "Create test event"
-msgstr "Vytvořit testovací událost"
+msgid "Send test notification"
+msgstr "Odeslat testovací notifikaci"
 
 #: forms/notifications.forms.php
 msgid "Subject scope"
 msgstr "Rozsah subjektu"
 
 #: forms/notifications.forms.php
-msgid "Test notification"
-msgstr "Testovací notifikace"
+msgid "This notification was sent from notification settings."
+msgstr "Tato notifikace byla odeslána z nastavení notifikací."
 
 #: forms/notifications.forms.php
-msgid "This event was created from notification settings."
-msgstr "Tato událost byla vytvořena z nastavení notifikací."
-
-#: forms/notifications.forms.php
-msgid "Create event"
-msgstr "Vytvořit událost"
+msgid "Send notification"
+msgstr "Odeslat notifikaci"
 
 #: forms/object_history.forms.php
 msgid "Object history"
@@ -9597,12 +9597,12 @@ msgid "Failed to update delivery limits"
 msgstr "Aktualizace limitů doručování se nezdařila"
 
 #: pages/page_notifications.php
-msgid "Test event created"
-msgstr "Testovací událost vytvořena"
+msgid "Test notification queued for delivery"
+msgstr "Testovací notifikace byla zařazena k doručení"
 
 #: pages/page_notifications.php
-msgid "Failed to create test event"
-msgstr "Vytvoření testovací události se nezdařilo"
+msgid "Failed to send test notification"
+msgstr "Odeslání testovací notifikace se nezdařilo"
 
 #: pages/page_oom_reports.php
 msgid "OOM report rules moved"
@@ -9947,6 +9947,21 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "Test event"
+#~ msgstr "Testovací událost"
+
+#~ msgid "Create test event"
+#~ msgstr "Vytvořit testovací událost"
+
+#~ msgid "Create event"
+#~ msgstr "Vytvořit událost"
+
+#~ msgid "Test event created"
+#~ msgstr "Testovací událost vytvořena"
+
+#~ msgid "Failed to create test event"
+#~ msgstr "Vytvoření testovací události se nezdařilo"
 
 #~ msgid "Order"
 #~ msgstr "Pořadí"

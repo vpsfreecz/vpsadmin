@@ -262,7 +262,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Mailbox' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows admins to create a mailbox' do
+    it 'allows admins to create a mailbox', :with_event_delivery do
       token = SecureRandom.hex(4)
       payload = {
         label: "Spec Mailbox #{token}",
@@ -401,7 +401,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Mailbox' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows admins to update a mailbox' do
+    it 'allows admins to update a mailbox', :with_event_delivery do
       new_label = "Spec Mailbox Updated #{SecureRandom.hex(3)}"
 
       as(SpecSeed.admin) do
@@ -460,7 +460,8 @@ RSpec.describe 'VpsAdmin::API::Resources::Mailbox' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows admins to delete a mailbox and its handlers' do
+    it 'allows admins to delete a mailbox and its handlers',
+       :with_event_delivery do
       mailbox = Mailbox.create!(
         label: 'Spec Mailbox Delete',
         server: 'imap-delete.example.test',

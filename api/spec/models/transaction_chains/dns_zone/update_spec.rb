@@ -9,6 +9,10 @@ RSpec.describe TransactionChains::DnsZone::Update do
 
   let(:user) { SpecSeed.user }
 
+  before do
+    create_spec_event_route!(user:, event_type: 'dns_zone.updated')
+  end
+
   def create_zone_with_server_zones
     zone = create_dns_zone!(
       user: user,

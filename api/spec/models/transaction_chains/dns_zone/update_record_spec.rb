@@ -9,6 +9,10 @@ RSpec.describe TransactionChains::DnsZone::UpdateRecord do
 
   let(:user) { SpecSeed.user }
 
+  before do
+    create_spec_event_route!(user:, event_type: 'dns_record.updated')
+  end
+
   def create_update_record_fixture(enabled: true)
     zone = create_dns_zone!(
       user: user,

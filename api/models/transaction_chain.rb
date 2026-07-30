@@ -108,7 +108,6 @@ class TransactionChain < ApplicationRecord
 
         VpsAdmin::API::Events::OperationLifecycle.emit_deferred_immediately!(chain)
         chain.release_locks
-        started_event.destroy!
         chain.destroy!
         chain = nil
         started_event = nil
@@ -120,7 +119,10 @@ class TransactionChain < ApplicationRecord
       chain.append_deferred_result_events!
       chain.state = :queued
       chain.save!
-      VpsAdmin::API::Events::OperationLifecycle.finalize_started!(started_event, chain)
+      started_event = VpsAdmin::API::Events::OperationLifecycle.finalize_started!(
+        started_event,
+        chain
+      )
     end
 
     if chain
@@ -144,7 +146,7 @@ class TransactionChain < ApplicationRecord
   def self.route_started_event(event)
     VpsAdmin::API::Events::OperationLifecycle.route_started!(event)
   rescue StandardError => e
-    warn "Unable to route operation start event ##{event.id}: #{e.class}: #{e.message}"
+    warn "Unable to route operation start event: #{e.class}: #{e.message}"
   end
 
   # The chain name is a class name in lowercase with added

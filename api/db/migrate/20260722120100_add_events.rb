@@ -468,7 +468,7 @@ class AddEvents < ActiveRecord::Migration[8.1]
       t.bigint      :source_id,                null: true
       t.references  :vps,                      null: true
       t.string      :ip_addr,                  null: true, limit: 46
-      t.integer     :routing_state,            null: false, default: 0
+      t.integer     :routing_state,            null: false, default: 1
       t.bigint      :matched_event_route_id,   null: true
       t.timestamps                             null: false
     end
