@@ -455,7 +455,7 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect(json['status']).to be(false)
     end
 
-    it 'allows admin to update another user' do
+    it 'allows admin to update another user', :with_event_delivery do
       as(SpecSeed.admin) do
         json_put show_path(SpecSeed.other_user.id), user: { full_name: 'Spec Updated' }
       end

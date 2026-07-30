@@ -232,7 +232,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS::MaintenanceWindow' do
       expect(response_message).to include('provide parameters to change')
     end
 
-    it 'closes a window when is_open is false' do
+    it 'closes a window when is_open is false', :with_event_delivery do
       as(SpecSeed.user) { json_put update_path(user_vps, 1), maintenance_window: { is_open: false } }
 
       expect_status(200)
@@ -333,7 +333,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS::MaintenanceWindow' do
       expect(json['status']).to be(false)
     end
 
-    it 'updates all week days with valid input' do
+    it 'updates all week days with valid input', :with_event_delivery do
       payload = { is_open: true, opens_at: 60, closes_at: 180 }
 
       as(SpecSeed.user) { json_put update_all_path(user_vps), maintenance_window: payload }

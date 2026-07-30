@@ -361,7 +361,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VpsUserData' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows normal user to create for self' do
+    it 'allows normal user to create for self', :with_event_delivery do
       expect do
         as(SpecSeed.user) { json_post index_path, vps_user_data: payload }
       end.to change(VpsUserData, :count).by(1)
@@ -549,7 +549,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VpsUserData' do
       expect(user_row.reload.label).to eq(new_label)
     end
 
-    it 'allows owner to update format and content' do
+    it 'allows owner to update format and content', :with_event_delivery do
       as(SpecSeed.user) do
         json_put show_path(user_row.id), vps_user_data: {
           format: 'cloudinit_config',
@@ -777,7 +777,7 @@ RSpec.describe 'VpsAdmin::API::Resources::VpsUserData' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows owner to delete' do
+    it 'allows owner to delete', :with_event_delivery do
       user_row
       expect do
         as(SpecSeed.user) { json_delete show_path(user_row.id) }

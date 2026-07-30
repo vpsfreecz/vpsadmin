@@ -51,7 +51,8 @@ RSpec.describe VpsAdmin::Supervisor::Node::ConsoleEvents do
   end
 
   describe '#start' do
-    it 'acks each delivery after commit and deduplicates redelivery' do
+    it 'acks each delivery after commit and deduplicates redelivery',
+       :with_event_delivery do
       channel = SupervisorConsumerHelpers::FakeSupervisorChannel.new
       described_class.new(channel, node).start
       queue = channel.queues.fetch("node:#{node.domain_name}:console_events")
@@ -94,7 +95,8 @@ RSpec.describe VpsAdmin::Supervisor::Node::ConsoleEvents do
     end
   end
 
-  it 'persists a console-open event from the node that hosts the VPS' do
+  it 'persists a console-open event from the node that hosts the VPS',
+     :with_event_delivery do
     expect do
       supervisor.send(:process_event, console_event('opened'))
     end.to change(Event.where(event_type: 'vps.console_opened'), :count).by(1)
@@ -118,7 +120,8 @@ RSpec.describe VpsAdmin::Supervisor::Node::ConsoleEvents do
     expect(event.parameters).not_to have_key('token')
   end
 
-  it 'persists a correlated console-close event with its reason' do
+  it 'persists a correlated console-close event with its reason',
+     :with_event_delivery do
     supervisor.send(
       :process_event,
       console_event('closed', reason: 'session_timeout')
@@ -131,7 +134,8 @@ RSpec.describe VpsAdmin::Supervisor::Node::ConsoleEvents do
     )
   end
 
-  it 'accepts actor-less messages from a mixed-version node' do
+  it 'accepts actor-less messages from a mixed-version node',
+     :with_event_delivery do
     message = console_event('opened')
     message.delete('producer_event_id')
     message.delete('actor_user_id')
@@ -169,7 +173,8 @@ RSpec.describe VpsAdmin::Supervisor::Node::ConsoleEvents do
     end.not_to change(Event.where(event_type: 'vps.console_opened'), :count)
   end
 
-  it 'accepts orderly node shutdown as a truthful close reason' do
+  it 'accepts orderly node shutdown as a truthful close reason',
+     :with_event_delivery do
     supervisor.send(
       :process_event,
       console_event('closed', reason: 'node_shutdown')

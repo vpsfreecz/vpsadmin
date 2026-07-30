@@ -213,7 +213,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows admin to create a client' do
+    it 'allows admin to create a client', :with_event_delivery do
       as(admin) do
         json_post index_path, oauth2_client: {
           name: 'Spec Created',
@@ -293,7 +293,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows admin to update client attributes' do
+    it 'allows admin to update client attributes', :with_event_delivery do
       as(admin) do
         json_put show_path(primary_client.id), oauth2_client: {
           name: 'Spec Client A Updated',
@@ -319,7 +319,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(event.parameters['changed_fields']).to contain_exactly('name', 'redirect_uri')
     end
 
-    it 'allows admin to update client secret' do
+    it 'allows admin to update client secret', :with_event_delivery do
       old_hash = primary_client.client_secret_hash
 
       as(admin) { json_put show_path(primary_client.id), oauth2_client: { client_secret: 'spec-new-secret' } }
@@ -376,7 +376,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows admin to delete a client' do
+    it 'allows admin to delete a client', :with_event_delivery do
       as(admin) { json_delete show_path(primary_client.id) }
 
       expect_status(200)

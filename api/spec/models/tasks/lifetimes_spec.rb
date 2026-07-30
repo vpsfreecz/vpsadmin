@@ -80,7 +80,8 @@ RSpec.describe VpsAdmin::API::Tasks::Lifetime do
       expect(vps.reload.object_state).to eq('active')
     end
 
-    it 'records VPS expiration observation and queued scheduler processing' do
+    it 'records VPS expiration observation and queued scheduler processing',
+       :with_event_delivery do
       vps = create_lifetime_vps!
 
       with_env('OBJECTS' => 'Vps', 'STATES' => 'active', 'EXECUTE' => 'yes') do
@@ -107,7 +108,8 @@ RSpec.describe VpsAdmin::API::Tasks::Lifetime do
       ).to be(false)
     end
 
-    it 'records expiration observation but not processing when the VPS is locked' do
+    it 'records expiration observation but not processing when the VPS is locked',
+       :with_event_delivery do
       vps = create_lifetime_vps!
       # rubocop:disable RSpec/AnyInstance
       allow_any_instance_of(Vps).to receive(:progress_object_state).and_raise(

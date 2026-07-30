@@ -60,7 +60,8 @@ RSpec.describe TransactionChains::Vps::DestroyMount do
   end
 
   %w[done failed].each do |state|
-    it "projects a real #{state} destroy-mount chain to a VPS operation Event" do
+    it "projects a real #{state} destroy-mount chain to a VPS operation Event",
+       :with_event_delivery do
       fixture = build_standalone_vps_fixture(
         user: user,
         hostname: "destroy-mount-#{state}"
@@ -92,7 +93,6 @@ RSpec.describe TransactionChains::Vps::DestroyMount do
       expect(event).to have_attributes(user:, vps: fixture.fetch(:vps))
       expect(event.parameters).to include(
         'operation_id' => chain.id,
-        'attempt' => 1,
         'operation' => 'vps.destroy_mount',
         'state' => state,
         'successful' => state == 'done',

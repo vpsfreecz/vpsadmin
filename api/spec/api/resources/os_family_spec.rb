@@ -166,7 +166,7 @@ RSpec.describe 'VpsAdmin::API::Resources::OsFamily' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows admin to create an os family' do
+    it 'allows admin to create an os family', :with_event_delivery do
       as(SpecSeed.admin) do
         json_post index_path, os_family: { label: 'Spec Created Family', description: 'desc' }
       end
@@ -217,7 +217,7 @@ RSpec.describe 'VpsAdmin::API::Resources::OsFamily' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows admin to update an os family' do
+    it 'allows admin to update an os family', :with_event_delivery do
       to_update = OsFamily.create!(label: 'Update Me')
 
       as(SpecSeed.admin) do
@@ -275,7 +275,7 @@ RSpec.describe 'VpsAdmin::API::Resources::OsFamily' do
       expect(json['status']).to be(false)
     end
 
-    it 'allows admin to delete unused os families' do
+    it 'allows admin to delete unused os families', :with_event_delivery do
       to_delete = OsFamily.create!(label: 'Delete Me')
 
       as(SpecSeed.admin) { json_delete show_path(to_delete.id) }

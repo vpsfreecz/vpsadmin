@@ -185,7 +185,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsEvents do
 
       expect do
         2.times { supervisor.send(:process_event, payload) }
-      end.not_to change(-> { event_storage_counts })
+      end.not_to(change { event_storage_counts })
 
       history = ObjectHistory.where(
         tracked_object: vps,
@@ -209,7 +209,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsEvents do
 
       expect do
         2.times { supervisor.send(:process_event, payload) }
-      end.not_to change(-> { event_storage_counts })
+      end.not_to(change { event_storage_counts })
 
       expect(IncidentReport.where(vps:, codename: 'oomd').count).to eq(1)
       expect(ObjectHistory.where(tracked_object: vps, event_type: 'stop').count)

@@ -40,6 +40,15 @@ module NotificationRoutingSpecHelpers
     )
   end
 
+  def create_spec_event_delivery_routes!
+    create_spec_event_route!(user: SpecSeed.user)
+    create_spec_event_route!(user: SpecSeed.admin)
+    create_spec_event_route!(
+      user: SpecSeed.admin,
+      subject_scope: :visible
+    )
+  end
+
   def default_email_receiver_for(user)
     ensure_default_notification_routing!(user)
     NotificationReceiver.default_email_receiver_for(user)
@@ -67,4 +76,8 @@ end
 
 RSpec.configure do |config|
   config.include NotificationRoutingSpecHelpers
+
+  config.before(:each, :with_event_delivery) do
+    create_spec_event_delivery_routes!
+  end
 end
