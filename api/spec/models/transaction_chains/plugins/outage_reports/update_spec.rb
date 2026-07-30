@@ -114,12 +114,7 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
 
     direct = attempts.find { |_name, opts| opts[:user] == SpecSeed.user }
     expect(direct).not_to be_nil
-    generic_event = Event.where(event_type: 'outage.announced', user_id: nil).sole
-    expect(generic_event).to be_suppressed_routing_state
-    expect(generic_event.parameters).to include(
-      'roles' => ['admin'],
-      'event' => 'announce'
-    )
+    expect(Event.where(event_type: 'outage.announced', user_id: nil)).to be_empty
     user_event = Event.where(event_type: 'outage.announced', user: SpecSeed.user).sole
     user_delivery = user_event.event_deliveries.sole
     expect(user_event.source).to eq(report)
@@ -163,7 +158,7 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
     )
   end
 
-  it 'logs muted deliveries for affected users with muted default notifications' do
+  it 'does not persist muted deliveries for affected users' do
     outage = build_outage
     mute_default_notifications_for!(SpecSeed.user)
     OutageUser.create!(outage: outage, user: SpecSeed.user, vps_count: 1, export_count: 0)
@@ -177,23 +172,16 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
       build_mail_log_double
     end
 
-    chain_class.fire2(args: [
-                        outage,
-                        { state: Outage.states[:announced] },
-                        { lang => { summary: 'Announced', description: 'Announced desc' } },
-                        { send_mail: true }
-                      ])
+    expect do
+      chain_class.fire2(args: [
+                          outage,
+                          { state: Outage.states[:announced] },
+                          { lang => { summary: 'Announced', description: 'Announced desc' } },
+                          { send_mail: true }
+                        ])
+    end.not_to(change { event_storage_counts })
 
-    event = Event.where(event_type: 'outage.announced', user: SpecSeed.user).sole
-    delivery = event.event_deliveries.sole
-    expect(event).to be_suppressed_routing_state
-    expect(event.parameters).to include(
-      'roles' => ['account'],
-      'event' => 'announce',
-      'affected_user_id' => SpecSeed.user.id
-    )
-    expect(delivery).to be_skipped_state
-    expect(delivery.error_summary).to eq('receiver does not notify')
+    expect(outage.reload).to be_announced
     expect(attempts.none? { |_name, opts| opts[:user] == SpecSeed.user }).to be(true)
   end
 

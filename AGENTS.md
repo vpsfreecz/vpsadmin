@@ -124,6 +124,12 @@ not prove that external documentation remains current.
   `.deleted` events. Do not add generic `resource.*` event types, and do not
   reuse these reserved names for a notification/workflow payload with a
   different source or contract.
+- The Event API and WebUI are notification delivery history, not an audit log.
+  Public events are retained only when routing produces delivery work; absence
+  from the Event index is not evidence that a mutation did not happen.
+- Consumers that require a complete external audit stream must configure an
+  explicit catch-all route to a durable receiver and retain delivered events
+  themselves. Do not use unconditional Event persistence to bypass routing.
 - Add generated CRUD types only through the explicit public resource catalog.
   Each entry must reference a mounted model-backed HaveAPI resource and declare
   its supported actions, logical name, stable topic, and `account` or `admin`
@@ -142,6 +148,8 @@ not prove that external documentation remains current.
 - Emit synchronous resource facts only after a successful mutation. Chain
   builders must defer past-tense resource/domain facts until `done`; a failed
   chain emits `operation.failed` and no false completion facts.
+- Correlate chain lifecycle and completion facts with `operation_id`. Do not
+  expose execution-attempt counters as part of the public event contract.
 - Extend logical-name, owner/VPS, callback-bypassing cascade, and sensitive
   field registries when a new resource requires them. Never expose secrets,
   tokens, private/key material, opaque configuration, notification-template

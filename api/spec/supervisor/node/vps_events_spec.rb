@@ -19,10 +19,15 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsEvents do
     ret
   end
 
+  def route_runtime_event!(vps, event_type)
+    create_spec_event_route!(user: vps.user, event_type:)
+  end
+
   describe '#start' do
     it 'manually acknowledges committed events and deduplicated redeliveries' do
       vps = build_standalone_vps_fixture(node:).fetch(:vps)
       set_vps_running!(vps)
+      route_runtime_event!(vps, 'vps.runtime_halted')
       channel = SupervisorConsumerHelpers::FakeSupervisorChannel.new
       described_class.new(channel, node).start
       queue = channel.queues.fetch("node:#{node.domain_name}:vps_events")
@@ -62,6 +67,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsEvents do
     it 'logs halt events and marks current status as halted' do
       vps = build_standalone_vps_fixture(node:).fetch(:vps)
       status = set_vps_running!(vps)
+      route_runtime_event!(vps, 'vps.runtime_halted')
 
       supervisor.send(:process_event, event_payload(vps, type: 'exit', opts: { 'exit_type' => 'halt' }))
 
@@ -87,6 +93,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsEvents do
     it 'logs reboot events without marking current status as halted' do
       vps = build_standalone_vps_fixture(node:).fetch(:vps)
       status = set_vps_running!(vps)
+      route_runtime_event!(vps, 'vps.runtime_rebooted')
 
       supervisor.send(:process_event, event_payload(vps, type: 'exit', opts: { 'exit_type' => 'reboot' }))
 
@@ -106,6 +113,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsEvents do
 
     it 'creates an incident report for oomd stop events' do
       vps = build_standalone_vps_fixture(node:).fetch(:vps)
+      route_runtime_event!(vps, 'vps.runtime_oom_stopped')
       allow(TransactionChains::IncidentReport::Utils).to receive(:fire_new)
 
       supervisor.send(:process_event, event_payload(vps, type: 'oomd', opts: { 'action' => 'stop' }))
@@ -132,6 +140,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsEvents do
 
     it 'creates an incident report for oomd restart events' do
       vps = build_standalone_vps_fixture(node:).fetch(:vps)
+      route_runtime_event!(vps, 'vps.runtime_oom_restarted')
       allow(TransactionChains::IncidentReport::Utils).to receive(:fire_new)
 
       supervisor.send(:process_event, event_payload(vps, type: 'oomd', opts: { 'action' => 'restart' }))
@@ -152,6 +161,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsEvents do
 
     it 'does not duplicate OOM incidents or transaction work on redelivery' do
       vps = build_standalone_vps_fixture(node:).fetch(:vps)
+      route_runtime_event!(vps, 'vps.runtime_oom_stopped')
       allow(TransactionChains::IncidentReport::Utils).to receive(:fire_new)
       payload = event_payload(vps, type: 'oomd', opts: { 'action' => 'stop' })
 
@@ -163,8 +173,53 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsEvents do
       expect(TransactionChains::IncidentReport::Utils).to have_received(:fire_new).once
     end
 
+    it 'deduplicates unrouted runtime logging without an Event row' do
+      vps = build_standalone_vps_fixture(node:).fetch(:vps)
+      NotificationReceiver.ensure_defaults_for!(vps.user)
+      EventRoute.update_all(enabled: false)
+      payload = event_payload(
+        vps,
+        type: 'exit',
+        opts: { 'exit_type' => 'halt' }
+      )
+
+      expect do
+        2.times { supervisor.send(:process_event, payload) }
+      end.not_to change(-> { event_storage_counts })
+
+      history = ObjectHistory.where(
+        tracked_object: vps,
+        event_type: 'halt'
+      ).sole
+      expect(history.event_data).to include(
+        'producer_event_id' => payload.fetch('producer_event_id')
+      )
+    end
+
+    it 'deduplicates unrouted OOM incident work without an Event row' do
+      vps = build_standalone_vps_fixture(node:).fetch(:vps)
+      NotificationReceiver.ensure_defaults_for!(vps.user)
+      EventRoute.update_all(enabled: false)
+      allow(TransactionChains::IncidentReport::Utils).to receive(:fire_new)
+      payload = event_payload(
+        vps,
+        type: 'oomd',
+        opts: { 'action' => 'stop' }
+      )
+
+      expect do
+        2.times { supervisor.send(:process_event, payload) }
+      end.not_to change(-> { event_storage_counts })
+
+      expect(IncidentReport.where(vps:, codename: 'oomd').count).to eq(1)
+      expect(ObjectHistory.where(tracked_object: vps, event_type: 'stop').count)
+        .to eq(1)
+      expect(TransactionChains::IncidentReport::Utils).to have_received(:fire_new).once
+    end
+
     it 'continues to process legacy messages without a producer event ID' do
       vps = build_standalone_vps_fixture(node:).fetch(:vps)
+      route_runtime_event!(vps, 'vps.runtime_rebooted')
       payload = event_payload(
         vps,
         type: 'exit',
@@ -200,6 +255,8 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsEvents do
 
     it 'retains distinct runtime events delivered out of timestamp order' do
       vps = build_standalone_vps_fixture(node:).fetch(:vps)
+      route_runtime_event!(vps, 'vps.runtime_rebooted')
+      route_runtime_event!(vps, 'vps.runtime_halted')
       earlier = timestamp - 300
 
       supervisor.send(

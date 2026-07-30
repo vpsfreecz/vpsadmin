@@ -13,10 +13,7 @@ class Event < ApplicationRecord
   }.freeze
 
   ROUTING_STATE_LABELS = {
-    'pending' => 'pending',
     'routed' => 'routed',
-    'suppressed' => 'suppressed',
-    'failed' => 'failed',
     'aborted' => 'aborted'
   }.freeze
 
@@ -35,7 +32,7 @@ class Event < ApplicationRecord
   end
 
   enum :severity, %i[info warning error critical], suffix: true
-  enum :routing_state, %i[pending routed suppressed failed aborted], suffix: true
+  enum :routing_state, { routed: 1, aborted: 4 }, suffix: true
 
   serialize :parameters, coder: JSON
 
@@ -119,18 +116,6 @@ class Event < ApplicationRecord
     self.parameters = value
   end
 
-  def suppressed_by_mute?
-    suppressed_routing_state? &&
-      event_deliveries.any? do |delivery|
-        delivery.error_summary == 'route is muted by a time interval' ||
-          (
-            delivery.error_summary == 'receiver does not notify' &&
-            delivery.notification_receiver.enabled? &&
-            delivery.notification_receiver.mute?
-          )
-      end
-  end
-
   protected
 
   def check_vps_owner
@@ -211,7 +196,7 @@ class Event < ApplicationRecord
     self.category ||= type&.category || 'general'
     self.severity ||= type&.severity || 'info'
     self.subject ||= type&.label || event_type
-    self.routing_state ||= 'pending'
+    self.routing_state ||= 'routed'
     self.parameters ||= {}
   end
 end

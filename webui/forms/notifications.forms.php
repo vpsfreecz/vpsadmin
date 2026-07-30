@@ -40,7 +40,7 @@ function notifications_sidebar($current, $user_id = null)
         : $user_qs;
 
     $xtpl->sbar_add(
-        _('Event log'),
+        _('Delivery history'),
         '?page=notifications&action=events' . $user_qs,
         'notifications.events'
     );
@@ -67,7 +67,7 @@ function notifications_sidebar($current, $user_id = null)
     );
     $xtpl->sbar_add(_('Limits'), '?page=notifications&action=limits' . $user_qs);
     $xtpl->sbar_add(_('Event types'), '?page=notifications&action=event_types' . $user_qs);
-    $xtpl->sbar_add(_('Test event'), '?page=notifications&action=test' . $user_qs);
+    $xtpl->sbar_add(_('Test notification'), '?page=notifications&action=test' . $user_qs);
 }
 
 function notifications_param_choices($desc, $empty = false)
@@ -3471,7 +3471,7 @@ function notifications_targets($user_id = null)
             . boolean_icon($target->enabled) . '</a>'
         );
         $xtpl->table_td(notifications_target_status_html($target));
-        $xtpl->table_td(notifications_event_log_link(_('Event log'), $user_id, [
+        $xtpl->table_td(notifications_event_log_link(_('Delivery history'), $user_id, [
             'notification_target_id' => $target->id,
         ]));
         $xtpl->table_td('<a href="' . notifications_target_url($target->id, $user_id) . '"><img src="template/icons/vps_edit.png" title="' . _('Edit') . '"></a>');
@@ -3546,7 +3546,7 @@ function notifications_receivers($user_id = null)
             . boolean_icon($receiver->enabled) . '</a>'
         );
         $xtpl->table_td(boolean_icon($receiver->mute));
-        $xtpl->table_td(notifications_event_log_link(_('Event log'), $user_id, [
+        $xtpl->table_td(notifications_event_log_link(_('Delivery history'), $user_id, [
             'notification_receiver_id' => $receiver->id,
         ]));
         $xtpl->table_td('<a href="?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($user_id) . '"><img src="template/icons/vps_edit.png" title="' . _('Edit') . '"></a>');
@@ -4114,7 +4114,7 @@ function notifications_receiver_edit($receiver_id)
         $xtpl->table_td(notifications_receiver_action_target_html($target), false, true);
         $xtpl->table_td(boolean_icon(notifications_prop($target, 'target_enabled', true)));
         $xtpl->table_td(notifications_receiver_action_secret_html($target));
-        $xtpl->table_td(notifications_event_log_link(_('Event log'), $receiver->user_id, [
+        $xtpl->table_td(notifications_event_log_link(_('Delivery history'), $receiver->user_id, [
             'notification_receiver_id' => $receiver->id,
             'notification_target_id' => notifications_prop($target, 'notification_target_id'),
             'notification_receiver_target_id' => $target->id,
@@ -4919,7 +4919,7 @@ function notifications_events()
     $pagination = new \Pagination\System($events);
     $input = $api->event->list->getParameters('input');
 
-    $xtpl->title(_('Event log'));
+    $xtpl->title(_('Delivery history'));
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'notification-events', false);
     $xtpl->form_set_hidden_fields([
@@ -5787,8 +5787,8 @@ function notifications_test_event($user_id = null)
     $user_id = notifications_target_user_id($user_id);
     $input = $api->event->test->getParameters('input');
 
-    $xtpl->title(_('Test notification event'));
-    $xtpl->table_title(_('Create test event'));
+    $xtpl->title(_('Test notification routing'));
+    $xtpl->table_title(_('Send test notification'));
     $xtpl->form_create('?page=notifications&action=test' . notifications_user_qs($user_id), 'post');
 
     if (isAdmin()) {
@@ -5808,9 +5808,9 @@ function notifications_test_event($user_id = null)
         post_val('event_type', 'user.test_notification')
     );
     api_param_to_form('subject', $input->subject, post_val('subject', _('Test notification')));
-    api_param_to_form('summary', $input->summary, post_val('summary', _('This event was created from notification settings.')));
+    api_param_to_form('summary', $input->summary, post_val('summary', _('This notification was sent from notification settings.')));
     $xtpl->form_add_textarea(_('Payload') . ':', 70, 8, 'payload_json', post_val('payload_json', "{\n  \"note\": \"testing notification routing\"\n}"));
-    $xtpl->form_out(_('Create event'));
+    $xtpl->form_out(_('Send notification'));
 
     notifications_sidebar('test', $user_id);
 }

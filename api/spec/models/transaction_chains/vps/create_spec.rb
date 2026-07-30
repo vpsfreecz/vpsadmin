@@ -11,6 +11,14 @@ RSpec.describe TransactionChains::Vps::Create do
   let(:user) { SpecSeed.user }
 
   before do
+    %w[
+      dataset.created
+      operation.succeeded
+      vps.created
+      vps_feature.updated
+    ].each do |event_type|
+      create_spec_event_route!(user:, event_type:)
+    end
     # rubocop:disable RSpec/AnyInstance
     allow_any_instance_of(Object).to receive(:get_vps_shaper_limit).and_return(nil)
     allow_any_instance_of(Object).to receive(:get_netif_shaper_limit).and_return(nil)

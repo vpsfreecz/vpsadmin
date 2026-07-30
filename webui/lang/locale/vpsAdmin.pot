@@ -221,7 +221,7 @@ msgstr ""
 msgid "Monitoring"
 msgstr ""
 
-#: forms/cluster.forms.php forms/notifications.forms.php
+#: forms/cluster.forms.php
 msgid "Event log"
 msgstr ""
 
@@ -2428,6 +2428,10 @@ msgid "initial baseline"
 msgstr ""
 
 #: forms/notifications.forms.php
+msgid "Delivery history"
+msgstr ""
+
+#: forms/notifications.forms.php
 msgid "Notification groups"
 msgstr ""
 
@@ -2464,7 +2468,7 @@ msgid "Event types"
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Test event"
+msgid "Test notification"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -3910,11 +3914,11 @@ msgid "No matchable fields were reported by the API."
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Test notification event"
+msgid "Test notification routing"
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Create test event"
+msgid "Send test notification"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -3922,15 +3926,11 @@ msgid "Subject scope"
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "Test notification"
+msgid "This notification was sent from notification settings."
 msgstr ""
 
 #: forms/notifications.forms.php
-msgid "This event was created from notification settings."
-msgstr ""
-
-#: forms/notifications.forms.php
-msgid "Create event"
+msgid "Send notification"
 msgstr ""
 
 #: forms/object_history.forms.php
@@ -9457,11 +9457,11 @@ msgid "Failed to update delivery limits"
 msgstr ""
 
 #: pages/page_notifications.php
-msgid "Test event created"
+msgid "Test notification queued for delivery"
 msgstr ""
 
 #: pages/page_notifications.php
-msgid "Failed to create test event"
+msgid "Failed to send test notification"
 msgstr ""
 
 #: pages/page_oom_reports.php

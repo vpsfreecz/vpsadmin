@@ -94,7 +94,6 @@ module VpsAdmin::API::Plugins::OutageReports::TransactionChains
         source: report,
         subject: outage_event_subject(outage, attrs),
         summary: report.summary,
-        persist: user ? :routed : :always,
         payload: outage_event_parameters(
           user,
           outage,

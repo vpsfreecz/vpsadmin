@@ -9,6 +9,10 @@ RSpec.describe TransactionChains::Export::Update do
 
   let(:user) { SpecSeed.user }
 
+  before do
+    create_spec_event_route!(user:, event_type: 'export.updated')
+  end
+
   def create_update_fixture(enabled: true)
     pool = create_pool!(node: SpecSeed.node, role: :primary)
     ensure_available_node_status!(pool.node)
@@ -58,9 +62,9 @@ RSpec.describe TransactionChains::Export::Update do
     ).sole
     expect(event.parameters).to include(
       'operation_id' => chain.id,
-      'operation_attempt' => 1,
       'changed_fields' => %w[enabled threads]
     )
+    expect(event.parameters).not_to have_key('operation_attempt')
   end
 
   it 'persists db changes, creates missing hosts, and enables last' do

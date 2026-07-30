@@ -60,8 +60,8 @@ RSpec.describe TransactionChains::Vps::ExpandDatasetAgain do
       'dataset_id' => fixture.fetch(:dataset).id,
       'added_space' => expansion.added_space,
       'operation_id' => chain.id,
-      'operation_attempt' => 1,
       'operation_result_index' => 0
     )
+    expect(event.parameters).not_to have_key('operation_attempt')
   end
 end

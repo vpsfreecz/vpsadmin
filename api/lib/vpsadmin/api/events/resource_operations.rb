@@ -381,8 +381,7 @@ module VpsAdmin::API::Events::ResourceOperations
       ),
       payload:,
       ip_addr: session&.client_ip_addr || session&.api_ip_addr,
-      occurred_at:,
-      persist: :always
+      occurred_at:
     )
   end
 

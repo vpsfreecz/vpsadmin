@@ -7,6 +7,14 @@ RSpec.describe TransactionChains::Ip::Update do
     with_current_context(user: SpecSeed.admin) { example.run }
   end
 
+  before do
+    create_spec_event_route!(
+      user: SpecSeed.admin,
+      event_type: 'ip_address.updated',
+      subject_scope: :visible
+    )
+  end
+
   def resource_use_value(user:, environment:, resource:)
     user_env = user.environment_user_configs.find_by!(environment: environment)
 

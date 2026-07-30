@@ -8,6 +8,7 @@ module VpsAdmin::Supervisor
       vps.runtime_oom_stopped
       vps.runtime_oom_restarted
     ].freeze
+    RUNTIME_HISTORY_TYPES = %w[halt reboot stop restart].freeze
     PRODUCER_EVENT_ID_PATTERN = /\A[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\z/
 
     def start
@@ -44,7 +45,7 @@ module VpsAdmin::Supervisor
         when 'exit'
           case event['opts']['exit_type']
           when 'halt'
-            vps.log(:halt, time:)
+            vps.log(:halt, event_payload, time:)
 
             st = vps.vps_current_status
             st.update!(halted: true) if st
@@ -55,7 +56,7 @@ module VpsAdmin::Supervisor
               payload: event_payload
             )
           when 'reboot'
-            vps.log(:reboot, time:)
+            vps.log(:reboot, event_payload, time:)
             VpsAdmin::API::Events::VpsLifecycle.emit_runtime!(
               'vps.runtime_rebooted',
               vps,
@@ -75,7 +76,7 @@ module VpsAdmin::Supervisor
               raise "Unsupported oomd action #{event['opts']['action'].inspect}"
             end
 
-          vps.log(event['opts']['action'].to_sym, time:)
+          vps.log(event['opts']['action'].to_sym, event_payload, time:)
 
           incident = ::IncidentReport.create!(
             user: vps.user,
@@ -101,10 +102,10 @@ module VpsAdmin::Supervisor
     end
 
     def processed_event?(vps, producer_event_id)
-      ::Event
-        .where(vps:, event_type: RUNTIME_EVENT_TYPES)
+      ::ObjectHistory
+        .where(tracked_object: vps, event_type: RUNTIME_HISTORY_TYPES)
         .where(
-          "JSON_UNQUOTE(JSON_EXTRACT(parameters, '$.producer_event_id')) = ?",
+          "JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.producer_event_id')) = ?",
           producer_event_id
         )
         .exists?

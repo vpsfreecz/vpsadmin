@@ -64,8 +64,7 @@ module VpsAdmin::Supervisor
             vps_console_id: positive_id(message['vps_console_id']),
             close_reason:
           }.compact,
-          occurred_at: event_time(message),
-          persist: :always
+          occurred_at: event_time(message)
         )
       end
     end

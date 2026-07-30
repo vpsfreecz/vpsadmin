@@ -12,6 +12,11 @@ RSpec.describe TransactionChains::DnsResolver::Update do
   before do
     ensure_user_notification_templates!
     ensure_mailer_available!
+    create_spec_event_route!(
+      user: SpecSeed.admin,
+      event_type: 'dns_resolver.updated',
+      subject_scope: :visible
+    )
   end
 
   def create_vps_on(node:, resolver:, hostname:)

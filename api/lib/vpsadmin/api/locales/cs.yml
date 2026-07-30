@@ -936,8 +936,6 @@ cs:
             label: Částka připsaná na účet uživatele
           api_ip_addr:
             label: IP adresa zaznamenaná vpsAdmin API
-          attempt:
-            label: Pořadové číslo pokusu o provedení
           attempt_count:
             label: Celkový počet neúspěšných přihlášení v přehledu
           auth_type:
@@ -1182,8 +1180,6 @@ cs:
             label: Minuta otevření v rámci dne po změně
           operation:
             label: Operace VPS zastoupená transakčním řetězcem
-          operation_attempt:
-            label: Pokus, při kterém bylo nahrazení dokončeno
           operation_id:
             label: Stabilní ID operace transakčního řetězce
           operation_label:
@@ -2455,14 +2451,8 @@ cs:
         choices:
           aborted:
             label: zrušeno
-          failed:
-            label: selhalo
-          pending:
-            label: čeká
           routed:
             label: naroutováno
-          suppressed:
-            label: potlačeno
         label: Stav routování
       row_id:
         description: Hledat podle ID dotčeného řádku
@@ -3319,8 +3309,6 @@ cs:
             description: Den v týdnu, kdy má maintenance window skončit
           maintenance_window:
             description: Zda migraci omezuje maintenance window
-          operation_attempt:
-            description: Pokus provedení, který vytvořil tuto událost
           operation_id:
             description: ID operace transakčního řetězce, která vytvořila tuto událost
           operation_result_index:
@@ -3518,8 +3506,6 @@ cs:
             description: ID uživatele, který zahájil operaci
           admin_user_id:
             description: ID administrátora jednajícího prostřednictvím impersonace
-          attempt:
-            description: Pořadové číslo pokusu o provedení
           chain_name:
             description: Uložený název transakčního řetězce
           chain_type:
@@ -3558,8 +3544,6 @@ cs:
             description: ID uživatele, který zahájil operaci
           admin_user_id:
             description: ID administrátora jednajícího prostřednictvím impersonace
-          attempt:
-            description: Pořadové číslo pokusu o provedení
           chain_name:
             description: Uložený název transakčního řetězce
           chain_type:
@@ -3598,8 +3582,6 @@ cs:
             description: ID uživatele, který zahájil operaci
           admin_user_id:
             description: ID administrátora jednajícího prostřednictvím impersonace
-          attempt:
-            description: Pořadové číslo pokusu o provedení
           chain_name:
             description: Uložený název transakčního řetězce
           chain_type:
@@ -3638,8 +3620,6 @@ cs:
             description: ID uživatele, který zahájil operaci
           admin_user_id:
             description: ID administrátora jednajícího prostřednictvím impersonace
-          attempt:
-            description: Pořadové číslo pokusu o provedení
           chain_name:
             description: Uložený název transakčního řetězce
           chain_type:
@@ -3931,8 +3911,6 @@ cs:
             description: Název připraveného archivu ke stažení
           format:
             description: Formát připraveného stažení
-          operation_attempt:
-            description: Pokus provedení, který vytvořil tuto událost
           operation_id:
             description: ID operace transakčního řetězce, která vytvořila tuto událost
           operation_result_index:
@@ -4006,8 +3984,6 @@ cs:
             description: Login vytvořeného uživatelského účtu
           object_state:
             description: Počáteční životní stav účtu
-          operation_attempt:
-            description: Pokus provedení, který vytvořil tuto událost
           operation_id:
             description: ID operace transakčního řetězce, která vytvořila tuto událost
           operation_result_index:
@@ -4074,8 +4050,6 @@ cs:
         user_resumed:
           expiration_date:
             description: Datum vypršení stavu životního cyklu
-          operation_attempt:
-            description: Pokus provedení, který vytvořil tuto událost
           operation_id:
             description: ID operace transakčního řetězce, která vytvořila tuto událost
           operation_result_index:
@@ -4088,8 +4062,6 @@ cs:
         user_revived:
           expiration_date:
             description: Datum vypršení stavu životního cyklu
-          operation_attempt:
-            description: Pokus provedení, který vytvořil tuto událost
           operation_id:
             description: ID operace transakčního řetězce, která vytvořila tuto událost
           operation_result_index:
@@ -4102,8 +4074,6 @@ cs:
         user_soft_deleted:
           expiration_date:
             description: Datum vypršení stavu životního cyklu
-          operation_attempt:
-            description: Pokus provedení, který vytvořil tuto událost
           operation_id:
             description: ID operace transakčního řetězce, která vytvořila tuto událost
           operation_result_index:
@@ -4116,8 +4086,6 @@ cs:
         user_suspended:
           expiration_date:
             description: Datum vypršení stavu životního cyklu
-          operation_attempt:
-            description: Pokus provedení, který vytvořil tuto událost
           operation_id:
             description: ID operace transakčního řetězce, která vytvořila tuto událost
           operation_result_index:
@@ -4196,8 +4164,6 @@ cs:
             description: ID záznamu expanze datasetu
           max_over_refquota_seconds:
             description: Maximální povolený čas nad kvótou před akcí, v sekundách
-          operation_attempt:
-            description: Pokus provedení, který vytvořil tuto událost
           operation_id:
             description: ID operace transakčního řetězce, která vytvořila tuto událost
           operation_result_index:
@@ -4231,8 +4197,6 @@ cs:
             description: ID záznamu expanze datasetu
           max_over_refquota_seconds:
             description: Maximální povolený čas nad kvótou před akcí, v sekundách
-          operation_attempt:
-            description: Pokus provedení, který vytvořil tuto událost
           operation_id:
             description: ID operace transakčního řetězce, která vytvořila tuto událost
           operation_result_index:
@@ -4260,8 +4224,6 @@ cs:
             description: ID předchozího DNS resolveru
           old_dns_resolver_label:
             description: Popisek předchozího DNS resolveru
-          operation_attempt:
-            description: Pokus provedení, který vytvořil tuto událost
           operation_id:
             description: ID operace transakčního řetězce, která vytvořila tuto událost
           operation_result_index:
@@ -4423,8 +4385,6 @@ cs:
             description: Zda migraci omezuje maintenance window
           migration_id:
             description: ID záznamu migrace VPS
-          operation_attempt:
-            description: Pokus provedení, který vytvořil tuto událost
           operation_id:
             description: ID operace transakčního řetězce, která vytvořila tuto událost
           operation_result_index:
@@ -4468,8 +4428,6 @@ cs:
           vps_id:
             description: ID migrovaného VPS
         vps_network_disabled:
-          operation_attempt:
-            description: Pokus provedení, který vytvořil tuto událost
           operation_id:
             description: ID operace transakčního řetězce, která vytvořila tuto událost
           operation_result_index:
@@ -4482,8 +4440,6 @@ cs:
           vps_id:
             description: ID VPS, jehož stav sítě se změnil
         vps_network_enabled:
-          operation_attempt:
-            description: Pokus provedení, který vytvořil tuto událost
           operation_id:
             description: ID operace transakčního řetězce, která vytvořila tuto událost
           operation_result_index:
@@ -4528,8 +4484,6 @@ cs:
             description: Hostname nově vytvořeného náhradního VPS
           new_vps_id:
             description: ID nově vytvořeného náhradního VPS
-          operation_attempt:
-            description: Pokus, při kterém bylo nahrazení dokončeno
           operation_id:
             description: Stabilní ID operace transakčního řetězce
           operation_result_index:
@@ -4556,8 +4510,6 @@ cs:
             description: CPU limit přiřazený VPS po změně
           memory:
             description: Limit paměti přiřazený VPS po změně, v MiB
-          operation_attempt:
-            description: Pokus provedení, který vytvořil tuto událost
           operation_id:
             description: ID operace transakčního řetězce, která vytvořila tuto událost
           operation_result_index:
@@ -4578,8 +4530,6 @@ cs:
             description: Jméno uživatele, který změnil životní stav VPS
           expiration_date:
             description: Datum vypršení stavu životního cyklu
-          operation_attempt:
-            description: Pokus provedení, který vytvořil tuto událost
           operation_id:
             description: ID operace transakčního řetězce, která vytvořila tuto událost
           operation_result_index:
@@ -4676,8 +4626,6 @@ cs:
             description: ID záznamu expanze datasetu
           max_over_refquota_seconds:
             description: Maximální povolený čas nad kvótou před akcí, v sekundách
-          operation_attempt:
-            description: Pokus provedení, který vytvořil tuto událost
           operation_id:
             description: ID operace transakčního řetězce, která vytvořila tuto událost
           operation_result_index:
@@ -4699,8 +4647,6 @@ cs:
             description: Jméno uživatele, který změnil životní stav VPS
           expiration_date:
             description: Datum vypršení stavu životního cyklu
-          operation_attempt:
-            description: Pokus provedení, který vytvořil tuto událost
           operation_id:
             description: ID operace transakčního řetězce, která vytvořila tuto událost
           operation_result_index:

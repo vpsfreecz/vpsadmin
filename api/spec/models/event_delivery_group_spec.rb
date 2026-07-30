@@ -242,7 +242,7 @@ RSpec.describe EventDeliveryGroup do
     expect(delivery.reload).to be_grouping_state
   end
 
-  it 'keeps muted events out of delivery groups' do
+  it 'does not persist muted events or create delivery groups' do
     receiver = NotificationReceiver.create!(
       user: SpecSeed.user,
       label: 'Grouped mute',
@@ -258,18 +258,16 @@ RSpec.describe EventDeliveryGroup do
       group_interval_seconds: 300
     )
 
-    event = VpsAdmin::API::Events.emit!(
-      'user.test_notification',
-      user: SpecSeed.user,
-      subject: 'Muted grouped event',
-      persist: :always
-    )
-    delivery = event.event_deliveries.sole
+    event = nil
+    expect do
+      event = VpsAdmin::API::Events.emit!(
+        'user.test_notification',
+        user: SpecSeed.user,
+        subject: 'Muted grouped event'
+      )
+    end.not_to(change { event_storage_counts })
 
-    expect(event.reload).to be_suppressed_routing_state
-    expect(delivery).to be_skipped_state
-    expect(delivery.group_key).to be_nil
-    expect(described_class.count).to eq(0)
+    expect(event).to be_nil
   end
 
   it 'uses one group and the same event set for every receiver action' do

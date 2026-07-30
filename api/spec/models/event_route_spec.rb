@@ -11,6 +11,21 @@ RSpec.describe EventRoute do
     )
   end
 
+  it 'keeps persisted Event states compatible with node-side aborts' do
+    node_command = File.read(
+      File.expand_path('../../../libnodectld/lib/nodectld/command.rb', __dir__)
+    )
+    node_aborted = node_command.match(
+      /^\s*EVENT_ROUTING_STATE_ABORTED = (?<value>\d+)$/
+    )
+
+    expect(node_aborted).to be_present
+    expect(Event.routing_states).to eq('routed' => 1, 'aborted' => 4)
+    expect(Event.routing_states.fetch('aborted')).to eq(
+      node_aborted[:value].to_i
+    )
+  end
+
   def reset_routing!(user)
     EventRouteMatch.delete_all
     EventRouteMatcher.joins(:event_route).where(event_routes: { user_id: user.id }).delete_all
@@ -130,8 +145,42 @@ RSpec.describe EventRoute do
     event
   end
 
+  def plan_event_at!(time, event_type: 'vps.incident_report', payload: {})
+    VpsAdmin::API::Events.plan(
+      event_type,
+      user: SpecSeed.user,
+      subject: 'Spec event',
+      payload:,
+      occurred_at: time
+    )
+  end
+
   def matched_routes(event)
     event.event_route_matches.reload.map(&:event_route)
+  end
+
+  def event_storage_counts
+    {
+      events: Event.count,
+      contexts: EventRoutingContext.count,
+      matches: EventRouteMatch.count,
+      deliveries: EventDelivery.count,
+      attempts: EventDeliveryAttempt.count,
+      groups: EventDeliveryGroup.count
+    }
+  end
+
+  def emit_opt_in_event!(occurred_at: nil)
+    VpsAdmin::API::Events.emit!(
+      'transaction_chain.state_changed',
+      user: SpecSeed.user,
+      subject: 'Spec transaction state',
+      payload: {
+        'state' => 'queued',
+        'terminal' => false
+      },
+      occurred_at:
+    )
   end
 
   it 'creates and uses the default e-mail receiver when no routes exist' do
@@ -185,16 +234,8 @@ RSpec.describe EventRoute do
     event = nil
 
     expect do
-      event = VpsAdmin::API::Events.emit!(
-        'transaction_chain.state_changed',
-        user: SpecSeed.user,
-        subject: 'Spec transaction state',
-        payload: {
-          'state' => 'queued',
-          'terminal' => false
-        }
-      )
-    end.not_to change(Event, :count)
+      event = emit_opt_in_event!
+    end.not_to(change { event_storage_counts })
 
     expect(event).to be_nil
     expect(described_class.default_route_for(SpecSeed.user).hit_count).to eq(0)
@@ -223,6 +264,129 @@ RSpec.describe EventRoute do
     expect(event.reload).to be_routed_routing_state
     expect(matched_routes(event)).to eq([route])
     expect(event.event_deliveries.sole.action).to eq('webhook')
+  end
+
+  it 'does not persist opt-in events routed only to a mute receiver' do
+    receiver = create_receiver!(label: 'Muted opt-in receiver', mute: true)
+    create_route!(
+      receiver:,
+      event_type: 'transaction_chain.state_changed'
+    )
+    event = nil
+
+    expect do
+      event = emit_opt_in_event!
+    end.not_to(change { event_storage_counts })
+
+    expect(event).to be_nil
+  end
+
+  it 'does not persist opt-in events routed only through a disabled method' do
+    receiver = create_receiver!(
+      label: 'Disabled webhook receiver',
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/disabled'
+      }
+    )
+    create_route!(
+      receiver:,
+      event_type: 'transaction_chain.state_changed'
+    )
+    SpecSeed.user.set_notification_delivery_method!(:webhook, false)
+    event = nil
+
+    expect do
+      event = emit_opt_in_event!
+    end.not_to(change { event_storage_counts })
+
+    expect(event).to be_nil
+  end
+
+  it 'does not persist opt-in events routed only through an inactive route' do
+    receiver = create_receiver!(
+      label: 'Inactive webhook receiver',
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/inactive'
+      }
+    )
+    route = create_route!(
+      receiver:,
+      event_type: 'transaction_chain.state_changed'
+    )
+    interval = create_time_interval!(
+      specs: [{ years: [{ start: 2025 }] }]
+    )
+    route.event_route_time_intervals.create!(
+      event_time_interval: interval,
+      mode: :active
+    )
+    event = nil
+
+    expect do
+      event = emit_opt_in_event!(occurred_at: Time.utc(2026, 7, 22, 12, 0))
+    end.not_to(change { event_storage_counts })
+
+    expect(event).to be_nil
+  end
+
+  it 'persists and releases an opt-in event with a real route' do
+    receiver = create_receiver!(
+      label: 'Enabled webhook receiver',
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/enabled'
+      }
+    )
+    route = create_route!(
+      receiver:,
+      event_type: 'transaction_chain.state_changed'
+    )
+
+    event = emit_opt_in_event!
+
+    expect(event.reload).to be_routed_routing_state
+    expect(matched_routes(event)).to eq([route])
+    expect(event.event_routing_contexts.count).to eq(1)
+    expect(event.event_deliveries.sole).to be_released_state
+  end
+
+  it 'persists mixed real and skipped routes as routed' do
+    muted_receiver = create_receiver!(
+      label: 'Muted continuing receiver',
+      mute: true
+    )
+    enabled_receiver = create_receiver!(
+      label: 'Enabled continuing receiver',
+      action: {
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/mixed'
+      }
+    )
+    muted_route = create_route!(
+      receiver: muted_receiver,
+      event_type: 'transaction_chain.state_changed',
+      position: 1,
+      continue: true
+    )
+    enabled_route = create_route!(
+      receiver: enabled_receiver,
+      event_type: 'transaction_chain.state_changed',
+      position: 2
+    )
+
+    event = emit_opt_in_event!
+
+    expect(event.reload).to be_routed_routing_state
+    expect(matched_routes(event)).to eq([muted_route, enabled_route])
+    expect(event.event_deliveries.order(:id).map(&:state)).to eq(
+      %w[skipped released]
+    )
   end
 
   it 'lets custom routes match default-routed event types through a matcher' do
@@ -352,14 +516,9 @@ RSpec.describe EventRoute do
 
     expect do
       muted_event = emit_incident!
-    end.to change(Event, :count).by(1)
+    end.not_to(change { event_storage_counts })
 
-    muted_route = described_class.default_admin_route_for(SpecSeed.user)
-    muted_delivery = muted_event.event_deliveries.sole
-    expect(muted_event.reload).to be_suppressed_routing_state
-    expect(matched_routes(muted_event)).to eq([muted_route])
-    expect(muted_delivery).to be_skipped_state
-    expect(muted_delivery.notification_receiver).to eq(muted_receiver)
+    expect(muted_event).to be_nil
     expect(muted_receiver.reload).to be_mute
 
     route_default_notifications_to_email_for!(SpecSeed.user, role: 'admin')
@@ -529,14 +688,19 @@ RSpec.describe EventRoute do
     route.event_route_time_intervals.create!(event_time_interval: active, mode: :active)
     route.event_route_time_intervals.create!(event_time_interval: mute, mode: :mute)
 
-    event = route_event_at!(Time.utc(2026, 7, 22, 12, 0))
-    match = event.event_route_matches.sole
-    delivery = event.event_deliveries.sole
+    result = nil
+    expect do
+      result = plan_event_at!(Time.utc(2026, 7, 22, 12, 0))
+    end.not_to(change { event_storage_counts })
+    match = result.route_matches.sole
+    delivery = result.deliveries.sole
 
-    expect(event.reload).to be_suppressed_routing_state
-    expect(match.time_interval_state).to eq('muted')
-    expect(match.time_interval_snapshot.fetch('assignments').map { |row| row.fetch('matched') }).to eq([true, true])
-    expect(delivery).to be_skipped_state
+    expect(result.routing_state).to eq('suppressed')
+    expect(match.time_interval_result.fetch('state')).to eq('muted')
+    expect(
+      match.time_interval_result.fetch('assignments').map { |row| row.fetch('matched') }
+    ).to eq([true, true])
+    expect(delivery.state).to eq('skipped')
     expect(delivery.error_summary).to eq('route is muted by a time interval')
   end
 
@@ -568,10 +732,14 @@ RSpec.describe EventRoute do
     expect(continued.event_deliveries.pluck(:state)).to contain_exactly('skipped', 'prepared')
 
     first.update!(continue: false)
-    stopped = route_event_at!(Time.utc(2026, 7, 22, 12, 0))
+    stopped = nil
+    expect do
+      stopped = plan_event_at!(Time.utc(2026, 7, 22, 12, 0))
+    end.not_to(change { event_storage_counts })
 
-    expect(matched_routes(stopped)).to eq([first])
-    expect(stopped.reload).to be_suppressed_routing_state
+    expect(stopped.route_matches.map(&:event_route)).to eq([first])
+    expect(stopped.routing_state).to eq('suppressed')
+    expect(stopped.deliveries.map(&:state)).to eq(['skipped'])
   end
 
   it 'uses continue on matching sibling routes for additive delivery' do
@@ -605,7 +773,7 @@ RSpec.describe EventRoute do
     )
   end
 
-  it 'skips unverified custom e-mail targets' do
+  it 'does not persist events routed only to an unverified e-mail target' do
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Pending e-mail receiver')
     receiver.notification_receiver_actions.create!(
       action: :email,
@@ -618,12 +786,9 @@ RSpec.describe EventRoute do
 
     expect do
       event = emit_incident!
-    end.to change(Event, :count).by(1)
+    end.not_to(change { event_storage_counts })
 
-    delivery = event.event_deliveries.sole
-    expect(event.reload).to be_suppressed_routing_state
-    expect(delivery).to be_skipped_state
-    expect(delivery.error_summary).to eq('e-mail target is not verified')
+    expect(event).to be_nil
   end
 
   it 'deduplicates equivalent actions from continuing routes' do
@@ -713,21 +878,17 @@ RSpec.describe EventRoute do
     expect(deliveries.first.target_value).to eq('default')
   end
 
-  it 'suppresses events through a mute receiver' do
+  it 'does not persist events routed only through a mute receiver' do
     receiver = create_receiver!(label: 'Mute', mute: true)
     route = create_route!(receiver:)
     event = nil
 
     expect do
       event = emit_incident!
-    end.to change(Event, :count).by(1)
+    end.not_to(change { event_storage_counts })
 
-    delivery = event.event_deliveries.sole
-    expect(event.reload).to be_suppressed_routing_state
-    expect(matched_routes(event)).to eq([route])
-    expect(delivery).to be_skipped_state
-    expect(delivery.error_summary).to include('does not notify')
-    expect(route.reload.hit_count).to eq(1)
+    expect(event).to be_nil
+    expect(route.reload.hit_count).to eq(0)
   end
 
   it 'creates a default mute receiver for every user' do

@@ -936,8 +936,6 @@ en:
             label: Amount credited to the user account
           api_ip_addr:
             label: IP address observed by the vpsAdmin API
-          attempt:
-            label: One-based execution attempt number
           attempt_count:
             label: Total number of failed sign-in attempts in the report
           auth_type:
@@ -1182,8 +1180,6 @@ en:
             label: Opening minute of day after the change
           operation:
             label: Stable operation name
-          operation_attempt:
-            label: Execution attempt that produced this fact
           operation_id:
             label: ID of the transaction-chain operation related to the event
           operation_label:
@@ -2460,14 +2456,8 @@ en:
         choices:
           aborted:
             label: aborted
-          failed:
-            label: failed
-          pending:
-            label: pending
           routed:
             label: routed
-          suppressed:
-            label: suppressed
         label: Routing state
       row_id:
         description: Search by concerned row id
@@ -3325,8 +3315,6 @@ en:
             description: Weekday when the maintenance window should finish
           maintenance_window:
             description: Whether a maintenance window constrains the migration
-          operation_attempt:
-            description: Execution attempt that produced this fact
           operation_id:
             description: ID of the transaction-chain operation that produced this
               fact
@@ -3525,8 +3513,6 @@ en:
             description: ID of the user who initiated the operation
           admin_user_id:
             description: ID of an administrator acting through impersonation
-          attempt:
-            description: One-based execution attempt number
           chain_name:
             description: Persisted transaction chain name
           chain_type:
@@ -3564,8 +3550,6 @@ en:
             description: ID of the user who initiated the operation
           admin_user_id:
             description: ID of an administrator acting through impersonation
-          attempt:
-            description: One-based execution attempt number
           chain_name:
             description: Persisted transaction chain name
           chain_type:
@@ -3603,8 +3587,6 @@ en:
             description: ID of the user who initiated the operation
           admin_user_id:
             description: ID of an administrator acting through impersonation
-          attempt:
-            description: One-based execution attempt number
           chain_name:
             description: Persisted transaction chain name
           chain_type:
@@ -3642,8 +3624,6 @@ en:
             description: ID of the user who initiated the operation
           admin_user_id:
             description: ID of an administrator acting through impersonation
-          attempt:
-            description: One-based execution attempt number
           chain_name:
             description: Persisted transaction chain name
           chain_type:
@@ -3932,8 +3912,6 @@ en:
             description: File name of the prepared download archive
           format:
             description: Archive format of the prepared download
-          operation_attempt:
-            description: Execution attempt that produced this fact
           operation_id:
             description: ID of the transaction-chain operation that produced this
               fact
@@ -4007,8 +3985,6 @@ en:
             description: Login of the created user account
           object_state:
             description: Initial lifecycle state of the account
-          operation_attempt:
-            description: Execution attempt that produced this fact
           operation_id:
             description: ID of the transaction-chain operation that produced this
               fact
@@ -4076,8 +4052,6 @@ en:
         user_resumed:
           expiration_date:
             description: Date when the lifecycle state expires
-          operation_attempt:
-            description: Execution attempt that produced this fact
           operation_id:
             description: ID of the transaction-chain operation that produced this
               fact
@@ -4091,8 +4065,6 @@ en:
         user_revived:
           expiration_date:
             description: Date when the lifecycle state expires
-          operation_attempt:
-            description: Execution attempt that produced this fact
           operation_id:
             description: ID of the transaction-chain operation that produced this
               fact
@@ -4106,8 +4078,6 @@ en:
         user_soft_deleted:
           expiration_date:
             description: Date when the lifecycle state expires
-          operation_attempt:
-            description: Execution attempt that produced this fact
           operation_id:
             description: ID of the transaction-chain operation that produced this
               fact
@@ -4121,8 +4091,6 @@ en:
         user_suspended:
           expiration_date:
             description: Date when the lifecycle state expires
-          operation_attempt:
-            description: Execution attempt that produced this fact
           operation_id:
             description: ID of the transaction-chain operation that produced this
               fact
@@ -4202,8 +4170,6 @@ en:
             description: ID of the dataset expansion record
           max_over_refquota_seconds:
             description: Maximum allowed time over quota before action, in seconds
-          operation_attempt:
-            description: Execution attempt that produced this fact
           operation_id:
             description: ID of the transaction-chain operation that produced this
               fact
@@ -4238,8 +4204,6 @@ en:
             description: ID of the dataset expansion record
           max_over_refquota_seconds:
             description: Maximum allowed time over quota before action, in seconds
-          operation_attempt:
-            description: Execution attempt that produced this fact
           operation_id:
             description: ID of the transaction-chain operation that produced this
               fact
@@ -4268,8 +4232,6 @@ en:
             description: ID of the previous DNS resolver
           old_dns_resolver_label:
             description: Label of the previous DNS resolver
-          operation_attempt:
-            description: Execution attempt that produced this fact
           operation_id:
             description: ID of the transaction-chain operation that produced this
               fact
@@ -4433,8 +4395,6 @@ en:
             description: Whether a maintenance window constrains the migration
           migration_id:
             description: ID of the VPS migration record
-          operation_attempt:
-            description: Execution attempt that produced this fact
           operation_id:
             description: ID of the transaction-chain operation that produced this
               fact
@@ -4480,8 +4440,6 @@ en:
           vps_id:
             description: ID of the VPS being migrated
         vps_network_disabled:
-          operation_attempt:
-            description: Execution attempt that produced this fact
           operation_id:
             description: ID of the transaction-chain operation that produced this
               fact
@@ -4495,8 +4453,6 @@ en:
           vps_id:
             description: ID of the VPS whose network state changed
         vps_network_enabled:
-          operation_attempt:
-            description: Execution attempt that produced this fact
           operation_id:
             description: ID of the transaction-chain operation that produced this
               fact
@@ -4542,8 +4498,6 @@ en:
             description: Hostname of the newly created replacement VPS
           new_vps_id:
             description: ID of the newly created replacement VPS
-          operation_attempt:
-            description: Execution attempt that completed the replacement
           operation_id:
             description: ID of the operation that completed the replacement
           operation_result_index:
@@ -4570,8 +4524,6 @@ en:
             description: CPU limit assigned to the VPS after the change
           memory:
             description: Memory limit assigned to the VPS after the change, in MiB
-          operation_attempt:
-            description: Execution attempt that produced this fact
           operation_id:
             description: ID of the transaction-chain operation that produced this
               fact
@@ -4593,8 +4545,6 @@ en:
             description: Name of the user who changed the VPS lifecycle state
           expiration_date:
             description: Date when the lifecycle state expires
-          operation_attempt:
-            description: Execution attempt that produced this fact
           operation_id:
             description: ID of the transaction-chain operation that produced this
               fact
@@ -4692,8 +4642,6 @@ en:
             description: ID of the dataset expansion record
           max_over_refquota_seconds:
             description: Maximum allowed time over quota before action, in seconds
-          operation_attempt:
-            description: Execution attempt that produced this fact
           operation_id:
             description: ID of the transaction-chain operation that produced this
               fact
@@ -4716,8 +4664,6 @@ en:
             description: Name of the user who changed the VPS lifecycle state
           expiration_date:
             description: Date when the lifecycle state expires
-          operation_attempt:
-            description: Execution attempt that produced this fact
           operation_id:
             description: ID of the transaction-chain operation that produced this
               fact

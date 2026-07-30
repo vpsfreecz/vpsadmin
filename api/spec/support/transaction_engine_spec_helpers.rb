@@ -102,10 +102,8 @@ module TransactionEngineSpecHelpers
     )
 
     if operation
-      expect(event.parameters).to include(
-        'operation_id' => operation.id,
-        'operation_attempt' => 1
-      )
+      expect(event.parameters).to include('operation_id' => operation.id)
+      expect(event.parameters).not_to have_key('operation_attempt')
     else
       expect(event.parameters).not_to have_key('operation_id')
     end

@@ -9,6 +9,10 @@ RSpec.describe TransactionChains::DnsZone::CreateRecord do
 
   let(:user) { SpecSeed.user }
 
+  before do
+    create_spec_event_route!(user:, event_type: 'dns_record.created')
+  end
+
   def create_record_fixture(primary_count: 2)
     zone = create_dns_zone!(
       user: user,

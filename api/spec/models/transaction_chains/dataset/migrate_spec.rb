@@ -242,7 +242,7 @@ RSpec.describe TransactionChains::Dataset::Migrate do
       )
     end
     expect(begun.event_deliveries.sole).to be_prepared_state
-    expect(finished.parameters['operation_attempt']).to eq(1)
+    expect(finished.parameters).not_to have_key('operation_attempt')
   end
 
   it 'stores only a bounded affected VPS sample in event payload' do

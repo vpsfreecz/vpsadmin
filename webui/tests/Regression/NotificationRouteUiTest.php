@@ -230,7 +230,7 @@ final class NotificationRouteUiTest extends TestCase
         self::assertStringContainsString("'notifications.groups'", $source);
     }
 
-    public function testEventLogFiltersAllowEmptySeverityAndRoutingState(): void
+    public function testDeliveryHistoryFiltersAllowEmptySeverityAndRoutingState(): void
     {
         $source = $this->sourceBetween(
             $this->notificationsFormsSource(),
@@ -239,6 +239,7 @@ final class NotificationRouteUiTest extends TestCase
         );
 
         self::assertStringContainsString("\$value !== null && \$value !== ''", $source);
+        self::assertStringContainsString("\$xtpl->title(_('Delivery history'))", $source);
         self::assertStringContainsString("\$delivery_action !== null && \$delivery_action !== ''", $source);
         self::assertStringContainsString("api_get_uint('event_route_id')", $source);
         self::assertStringContainsString("\$params['event_route_id'] = \$route_id", $source);
@@ -282,9 +283,21 @@ final class NotificationRouteUiTest extends TestCase
 
         self::assertStringContainsString('notifications_test_subject_scope_options', $testForm);
         self::assertStringContainsString("'subject_scope'", $testForm);
+        self::assertStringContainsString("_('Send test notification')", $testForm);
+        self::assertStringContainsString("_('Send notification')", $testForm);
         self::assertStringContainsString("\$params['subject_scope'] = api_post('subject_scope')", $testCase);
         self::assertStringContainsString("'payload_json' => api_post('payload_json')", $testCase);
+        self::assertStringContainsString(
+            "_('Test notification queued for delivery')",
+            $testCase
+        );
+        self::assertStringContainsString(
+            "_('Failed to send test notification')",
+            $testCase
+        );
+        self::assertStringContainsString('perex_format_errors', $testCase);
         self::assertStringNotContainsString('parameters' . '_json', $testCase);
+        self::assertStringNotContainsString("_('Test event created')", $testCase);
     }
 
     public function testEventDetailsListMatchedRoutes(): void

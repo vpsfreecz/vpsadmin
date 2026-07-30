@@ -112,8 +112,9 @@ module VpsAdmin::Supervisor
           end
         )
 
-        event = emit_event(new_report, full_cgroup, report, occurred_at:)
-        new_report.update!(ignored: event.suppressed_by_mute?)
+        emit_event(new_report, full_cgroup, report, occurred_at:) do |prepared|
+          new_report.update!(ignored: prepared.suppressed_by_mute?)
+        end
         new_report
       end
     end
@@ -163,7 +164,7 @@ module VpsAdmin::Supervisor
       end
     end
 
-    def emit_event(oom_report, full_cgroup, report, occurred_at:)
+    def emit_event(oom_report, full_cgroup, report, occurred_at:, &)
       vps = oom_report.vps
       count = report.fetch('count')
 
@@ -182,7 +183,8 @@ module VpsAdmin::Supervisor
           killed_name: report.fetch('killed_name')
         },
         occurred_at:,
-        persist: :always
+        record_route_hits_on_drop: true,
+        &
       )
     end
   end

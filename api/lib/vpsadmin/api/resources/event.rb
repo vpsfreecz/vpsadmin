@@ -302,7 +302,7 @@ module VpsAdmin::API::Resources
 
         check_test_event_limit!(event_user)
 
-        VpsAdmin::API::Events.emit!(
+        event = VpsAdmin::API::Events.emit!(
           input[:event_type] || 'user.test_notification',
           user: event_user,
           source_class: TEST_EVENT_SOURCE_CLASS,
@@ -310,9 +310,11 @@ module VpsAdmin::API::Resources
           summary: input[:summary],
           payload: parse_payload,
           route_context_mode:,
-          route_owner:,
-          persist: :always
+          route_owner:
         )
+        error!('no enabled route produced a delivery') unless event
+
+        event
       rescue JSON::ParserError
         error!('payload is not valid JSON')
       rescue ActiveRecord::RecordInvalid => e

@@ -44,11 +44,11 @@ RSpec.describe TransactionChains::Vps::Unblock do
     expect(event.source).to eq(state)
     expect(event.parameters).to include(
       'operation_id' => chain.id,
-      'operation_attempt' => 1,
       'vps_id' => vps.id,
       'vps_hostname' => vps.hostname,
       'state' => 'active',
       'reason' => 'policy resolved'
     )
+    expect(event.parameters).not_to have_key('operation_attempt')
   end
 end
