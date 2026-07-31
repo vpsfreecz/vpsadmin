@@ -1225,7 +1225,7 @@ msgid "Interface"
 msgstr ""
 
 #: forms/dns.forms.php forms/incidents.forms.php forms/networking.forms.php
-#: forms/users.forms.php
+#: forms/notifications.forms.php forms/users.forms.php
 msgid "IP address"
 msgstr ""
 
@@ -1693,7 +1693,7 @@ msgstr ""
 msgid "Subject"
 msgstr ""
 
-#: forms/incidents.forms.php
+#: forms/incidents.forms.php forms/notifications.forms.php
 msgid "Codename"
 msgstr ""
 
@@ -1701,7 +1701,11 @@ msgstr ""
 msgid "Admin"
 msgstr ""
 
-#: forms/incidents.forms.php
+#: forms/incidents.forms.php forms/notifications.forms.php
+msgid "Mute similar incident reports"
+msgstr ""
+
+#: forms/incidents.forms.php forms/notifications.forms.php
 msgid "Incident report"
 msgstr ""
 
@@ -2493,6 +2497,159 @@ msgid "Test notification"
 msgstr ""
 
 #: forms/notifications.forms.php
+msgid "Invalid date and time"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Enter a custom expiration time"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Invalid custom expiration time"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Invalid mute duration"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Expiration time has to be in the future"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No OOM reports were selected"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "At most 30 OOM reports can be reviewed at once"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Select an OOM report"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "No incident report was selected"
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "%s (report account)"
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "%s (administrator)"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Mute for"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "1 hour"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "1 day"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "1 week"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "1 month"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Forever"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Custom expiration"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "The route stops matching automatically when it expires."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Used only when Custom expiration is selected."
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Route owner"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "The route is evaluated for events visible to this account."
+msgstr ""
+
+#: forms/notifications.forms.php forms/oom_reports.forms.php
+msgid "Mute similar OOM reports"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "OOM reports unavailable"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid ""
+"None of the selected OOM reports are available to your account. Create a "
+"route manually if needed."
+msgstr ""
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "invoked by %s, killed %s"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Review mute route"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Reference report"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Matching"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid ""
+"Every selected condition has to match. You can tune the matchers after "
+"creating the route."
+msgstr ""
+
+#: forms/notifications.forms.php forms/oom_reports.forms.php
+msgid "Cgroup"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Invoking process"
+msgstr ""
+
+#: forms/notifications.forms.php forms/oom_reports.forms.php
+msgid "Killed process"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Create mute route"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Incident report unavailable"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid ""
+"The selected incident report is not available to your account. Create a "
+"route manually if needed."
+msgstr ""
+
+#: forms/notifications.forms.php
 msgid "Composite ID attributes"
 msgstr ""
 
@@ -2709,6 +2866,14 @@ msgstr ""
 #: forms/notifications.forms.php
 #, php-format
 msgid "%d matchers"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Expiration time"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Expired"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -2966,6 +3131,10 @@ msgid "Scope"
 msgstr ""
 
 #: forms/notifications.forms.php
+msgid "Expires at"
+msgstr ""
+
+#: forms/notifications.forms.php
 msgid "Back to routes"
 msgstr ""
 
@@ -3014,10 +3183,6 @@ msgstr ""
 
 #: forms/notifications.forms.php
 msgid "Spent at"
-msgstr ""
-
-#: forms/notifications.forms.php
-msgid "Expires at"
 msgstr ""
 
 #: forms/notifications.forms.php
@@ -3987,10 +4152,6 @@ msgstr ""
 msgid "Out-of-memory Reports"
 msgstr ""
 
-#: forms/oom_reports.forms.php
-msgid "Killed process"
-msgstr ""
-
 #: forms/oom_reports.forms.php forms/users.forms.php pages/page_adminm.php
 msgid "Count"
 msgstr ""
@@ -4005,10 +4166,6 @@ msgstr ""
 
 #: forms/oom_reports.forms.php
 msgid "Out-of-memory Report for VPS"
-msgstr ""
-
-#: forms/oom_reports.forms.php
-msgid "Cgroup"
 msgstr ""
 
 #: forms/oom_reports.forms.php
@@ -9239,6 +9396,14 @@ msgstr ""
 
 #: pages/page_notifications.php
 msgid "Failed to add route"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Mute route added"
+msgstr ""
+
+#: pages/page_notifications.php
+msgid "Unable to create mute route"
 msgstr ""
 
 #: pages/page_notifications.php

@@ -87,6 +87,22 @@ async function rootRouteIds(page) {
     .filter(Boolean);
 }
 
+async function deleteRoute(page, routeId, routeLabel, userId = null) {
+  const userParam = userId === null ? '' : `&user=${userId}`;
+
+  await page.goto(`/?page=notifications&action=routes${userParam}`, {
+    waitUntil: 'domcontentloaded',
+  });
+  const routeRow = rowWithText(page, routeLabel);
+  await expect(routeRow).toBeVisible();
+  await acceptNextDialog(page);
+  await linkWithParams(routeRow, {
+    action: 'route_delete',
+    id: routeId,
+  }).click();
+  await expectNotification(page, 'Route deleted');
+}
+
 async function dragBetween(page, source, target, targetVerticalRatio = 0.5) {
   const sourceBox = await source.boundingBox();
   const targetBox = await target.boundingBox();
@@ -157,6 +173,88 @@ test.describe('support and status browser coverage', () => {
     await logout(page, fixtures.user.username);
   });
 
+  test('user incident mute composer falls back from codename to IP address', async ({ page }) => {
+    const s = requireSupportFixtures();
+    const incident = s.incidentReportIpFallback;
+
+    await login(page, fixtures.user);
+    await page.goto(`/?page=incidents&action=show&id=${incident.id}`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await page.locator('[data-vpsadmin-doc-id="incidents.mute-similar"]').click();
+
+    await expect(heading(page)).toContainText('Mute similar incident reports');
+    const form = formByAction(page, 'action=mute_incident_report');
+    await expect(form).toBeVisible();
+    await expect(page.locator('[data-vpsadmin-doc-id="notifications.mute-similar-form"]'))
+      .toBeVisible();
+    await expect(form.locator('input[name="match_vps"]')).toBeChecked();
+    await expect(form.locator('input[name="match_ip_addr"]')).toBeChecked();
+    await expect(form.locator('input[name="match_codename"]')).toBeDisabled();
+    await expect(form.locator('input[name="match_subject"]')).not.toBeChecked();
+    await expect(form).toContainText(incident.ipAddress);
+    await expect(form.locator('select[name="expires_in"]')).toHaveValue('1d');
+
+    await form.locator('select[name="expires_in"]').selectOption('custom');
+    const customExpiry = form.locator('input[name="custom_expires_at"]');
+    await customExpiry.evaluate((input) => {
+      input.type = 'text';
+      input.value = 'not-a-date';
+    });
+    await submitForm(form, 'Create mute route');
+    await expectNotification(page, 'Invalid custom expiration time');
+    const rerenderedForm = formByAction(page, 'action=mute_incident_report');
+    await expect(rerenderedForm).toBeVisible();
+    await expect(rerenderedForm.locator('input[name="custom_expires_at"]'))
+      .not.toHaveValue('not-a-date');
+    await rerenderedForm.locator('select[name="expires_in"]').selectOption('1d');
+
+    await submitForm(rerenderedForm, 'Create mute route');
+    await expectNotification(page, 'Mute route added');
+    const routeId = new URL(page.url()).searchParams.get('id');
+    expect(routeId).toMatch(/^\d+$/);
+    await expect(heading(page)).toContainText(`Notification route #${routeId}`);
+    await deleteRoute(
+      page,
+      routeId,
+      `Mute incident reports like #${incident.id}`,
+    );
+
+    await logout(page, fixtures.user.username);
+  });
+
+  test('admin incident mute composer retains the report account after VPS transfer', async ({ page }) => {
+    const s = requireSupportFixtures();
+    const incident = s.incidentReportTransferred;
+
+    expect(incident.reportUserId).not.toBe(incident.vpsUserId);
+    await login(page, fixtures.admin);
+    await page.goto(`/?page=incidents&action=show&id=${incident.id}`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await page.locator('[data-vpsadmin-doc-id="incidents.mute-similar"]').click();
+
+    const form = formByAction(page, 'action=mute_incident_report');
+    const routeOwner = form.locator('select[name="route_owner_id"]');
+    await expect(routeOwner).toHaveValue(String(incident.reportUserId));
+    await expect(routeOwner.locator(`option[value="${incident.reportUserId}"]`)).toHaveCount(1);
+    await expect(routeOwner.locator(`option[value="${incident.vpsUserId}"]`)).toHaveCount(0);
+    await expect(routeOwner.locator(`option[value="${fixtures.admin.id}"]`)).toHaveCount(1);
+
+    await submitForm(form, 'Create mute route');
+    await expectNotification(page, 'Mute route added');
+    const routeId = new URL(page.url()).searchParams.get('id');
+    expect(routeId).toMatch(/^\d+$/);
+    await deleteRoute(
+      page,
+      routeId,
+      `Mute incident reports like #${incident.id}`,
+      incident.reportUserId,
+    );
+
+    await logout(page, fixtures.admin.username);
+  });
+
   test('admin incident filters, fields, and new report form are visible', async ({ page }) => {
     const s = requireSupportFixtures();
 
@@ -211,13 +309,13 @@ test.describe('support and status browser coverage', () => {
     await page.goto('/?page=notifications', {
       waitUntil: 'domcontentloaded',
     });
-    await expect(heading(page)).toContainText('Event log');
+    await expect(heading(page)).toContainText('Delivery history');
 
     await page.goto('/?page=notifications&action=event_types', {
       waitUntil: 'domcontentloaded',
     });
     await expect(heading(page)).toContainText('Event types');
-    await expect(page.locator('[data-vpsadmin-doc-id="notifications.event-types"]'))
+    await expect(content(page).locator('[data-vpsadmin-doc-id="notifications.event-types"]'))
       .toBeVisible();
     await expect(content(page).locator('details summary').first()).toBeVisible();
     const testEventType = content(page).locator('#event-type-user-test_notification');
@@ -241,20 +339,21 @@ test.describe('support and status browser coverage', () => {
     await page.goto('/?page=notifications&action=events', {
       waitUntil: 'domcontentloaded',
     });
-    await expect(heading(page)).toContainText('Event log');
+    await expect(heading(page)).toContainText('Delivery history');
     const eventLogFilter = formByName(page, 'notification-events');
     await expect(eventLogFilter).toBeVisible();
     await expect(eventLogFilter.locator('select[name="delivery_action"]')).toBeVisible();
     await expect(eventLogFilter.locator('select[name="action"]')).toHaveCount(0);
     await expect(notificationSidebarLinks(page)).toHaveText([
-      'Event log',
+      'Delivery history',
+      'Notification groups',
       'Routes',
       'Receivers',
       'Targets',
       'Time intervals',
       'Limits',
       'Event types',
-      'Test event',
+      'Test notification',
     ]);
 
     await page.goto('/?page=notifications&action=delivery_queue', {
@@ -476,12 +575,12 @@ test.describe('support and status browser coverage', () => {
     await page.goto('/?page=notifications&action=test', {
       waitUntil: 'domcontentloaded',
     });
-    await expect(heading(page)).toContainText('Test notification event');
+    await expect(heading(page)).toContainText('Test notification routing');
     const testForm = formByAction(page, 'action=test');
     const subject = 'Webui notification test event';
     await testForm.locator('input[name="subject"]').fill(subject);
-    await submitForm(testForm, 'Create event');
-    await expectNotification(page, 'Test event created');
+    await submitForm(testForm, 'Send notification');
+    await expectNotification(page, 'Test notification queued for delivery');
     await expect(heading(page)).toContainText('Event #');
     await expect(content(page)).toContainText(subject);
     await expect(content(page)).toContainText('Deliveries');
@@ -536,7 +635,7 @@ test.describe('support and status browser coverage', () => {
       notification_receiver_id: receiverId,
     });
     await receiverEventLink.click();
-    await expect(heading(page)).toContainText('Event log');
+    await expect(heading(page)).toContainText('Delivery history');
     await expect(formByName(page, 'notification-events').locator('input[name="notification_receiver_id"]')).toHaveValue(receiverId);
     await expect(content(page)).toContainText(subject);
 
@@ -548,7 +647,7 @@ test.describe('support and status browser coverage', () => {
       notification_receiver_target_id: receiverTargetId,
     });
     await receiverTargetEventLink.click();
-    await expect(heading(page)).toContainText('Event log');
+    await expect(heading(page)).toContainText('Delivery history');
     await expect(formByName(page, 'notification-events').locator('input[name="notification_receiver_target_id"]')).toHaveValue(receiverTargetId);
     await expect(content(page)).toContainText(subject);
 
@@ -658,9 +757,10 @@ test.describe('support and status browser coverage', () => {
     await page.goto('/?page=notifications&action=events', {
       waitUntil: 'domcontentloaded',
     });
-    await expect(heading(page)).toContainText('Event log');
+    await expect(heading(page)).toContainText('Delivery history');
     await expect(notificationSidebarLinks(page)).toHaveText([
-      'Event log',
+      'Delivery history',
+      'Notification groups',
       'Delivery queue',
       'Delivery log',
       'Routes',
@@ -669,7 +769,7 @@ test.describe('support and status browser coverage', () => {
       'Time intervals',
       'Limits',
       'Event types',
-      'Test event',
+      'Test notification',
     ]);
 
     await page.goto('/?page=notifications&action=delivery_queue', {
@@ -680,6 +780,7 @@ test.describe('support and status browser coverage', () => {
     await expect(notificationDeliveryTable(page).locator('th')).toHaveText([
       'Delivery',
       'Event',
+      'Group',
       'User',
       'VPS',
       'Receiver',
@@ -700,6 +801,7 @@ test.describe('support and status browser coverage', () => {
     await expect(notificationDeliveryTable(page).locator('th')).toHaveText([
       'Delivery',
       'Event',
+      'Group',
       'User',
       'VPS',
       'Receiver',
@@ -737,6 +839,28 @@ test.describe('support and status browser coverage', () => {
     await expect(heading(page)).toContainText(`Out-of-memory Report for VPS ${s.vps.id}`);
     await expect(content(page)).toContainText(s.oomReport.cgroup);
     await expect(content(page)).toContainText(s.oomReport.killedName);
+
+    await page.locator('[data-vpsadmin-doc-id="oom-reports.mute-similar"]').click();
+    await expect(heading(page)).toContainText('Mute similar OOM reports');
+    const muteForm = formByAction(page, 'action=mute_oom_reports');
+    await expect(muteForm).toBeVisible();
+    await expect(page.locator('[data-vpsadmin-doc-id="notifications.mute-similar-form"]'))
+      .toBeVisible();
+    await expect(muteForm.locator(`input[name="source_report_id"][value="${s.oomReport.id}"]`))
+      .toBeChecked();
+    await expect(muteForm.locator('input[name="match_vps"]')).toBeChecked();
+    await expect(muteForm.locator('input[name="match_cgroup"]')).toBeChecked();
+    await expect(muteForm.locator('input[name="match_invoked_by_name"]')).not.toBeChecked();
+    await expect(muteForm.locator('input[name="match_killed_name"]')).not.toBeChecked();
+    await expect(muteForm.locator('select[name="route_owner_id"]')).toHaveCount(0);
+    await expect(muteForm.locator('select[name="expires_in"]')).toHaveValue('1d');
+    await submitForm(muteForm, 'Create mute route');
+    await expectNotification(page, 'Mute route added');
+    const routeId = new URL(page.url()).searchParams.get('id');
+    expect(routeId).toMatch(/^\d+$/);
+    await expect(heading(page)).toContainText(`Notification route #${routeId}`);
+    await expect(content(page)).toContainText('Expires');
+    await deleteRoute(page, routeId, `Mute OOM reports like #${s.oomReport.id}`);
 
     await page.goto(`/?page=oom_reports&action=rule_list&vps=${s.vps.id}`, {
       waitUntil: 'domcontentloaded',
@@ -776,6 +900,25 @@ test.describe('support and status browser coverage', () => {
     });
     await expect(content(page)).toContainText(fixtures.user.username);
     await expect(content(page)).toContainText(s.oomReport.killedName);
+
+    await page.locator('[data-vpsadmin-doc-id="oom-reports.mute-similar"]').click();
+    const muteForm = formByAction(page, 'action=mute_oom_reports');
+    const routeOwner = muteForm.locator('select[name="route_owner_id"]');
+    await expect(routeOwner).toHaveValue(String(fixtures.user.id));
+    await expect(routeOwner.locator(`option[value="${fixtures.user.id}"]`)).toHaveCount(1);
+    await expect(routeOwner.locator(`option[value="${fixtures.admin.id}"]`)).toHaveCount(1);
+    await routeOwner.selectOption(String(fixtures.admin.id));
+    await submitForm(muteForm, 'Create mute route');
+    await expectNotification(page, 'Mute route added');
+    await expect(page).toHaveURL(new RegExp(`user=${fixtures.admin.id}`));
+    const routeId = new URL(page.url()).searchParams.get('id');
+    expect(routeId).toMatch(/^\d+$/);
+    await deleteRoute(
+      page,
+      routeId,
+      `Mute OOM reports like #${s.oomReport.id}`,
+      fixtures.admin.id,
+    );
 
     await page.goto(`/?page=oom_reports&action=rule_list&vps=${s.vps.id}`, {
       waitUntil: 'domcontentloaded',

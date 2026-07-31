@@ -3804,6 +3804,44 @@ import ../make-test.nix (
       )
       support_incident.save! if support_incident.changed? || support_incident.new_record?
 
+      support_incident_ip_fallback = IncidentReport.find_or_initialize_by(
+        user: user,
+        vps: support_vps,
+        subject: 'Webui Fixture Incident IP Fallback'
+      )
+      support_incident_ip_fallback.assign_attributes(
+        filed_by: admin,
+        ip_address_assignment: support_assignment,
+        mailbox: support_mailbox,
+        codename: nil,
+        text: 'Deterministic incident without a codename.',
+        detected_at: Time.now - 1600,
+        reported_at: Time.now - 1500,
+        vps_action: :none
+      )
+      if support_incident_ip_fallback.changed? || support_incident_ip_fallback.new_record?
+        support_incident_ip_fallback.save!
+      end
+
+      support_incident_transferred = IncidentReport.find_or_initialize_by(
+        user: secondary_user,
+        vps: support_vps,
+        subject: 'Webui Fixture Incident Before VPS Transfer'
+      )
+      support_incident_transferred.assign_attributes(
+        filed_by: admin,
+        ip_address_assignment: support_assignment,
+        mailbox: support_mailbox,
+        codename: 'WEBUI-TRANSFERRED',
+        text: 'The report account differs from the current VPS owner.',
+        detected_at: Time.now - 1400,
+        reported_at: Time.now - 1300,
+        vps_action: :none
+      )
+      if support_incident_transferred.changed? || support_incident_transferred.new_record?
+        support_incident_transferred.save!
+      end
+
       oom_report = OomReport.unscoped.find_or_initialize_by(
         vps: support_vps,
         invoked_by_pid: 1234,
@@ -4523,6 +4561,19 @@ import ../make-test.nix (
             'vpsId' => support_vps.id,
             'ipAddress' => support_assignment.ip_addr,
             'assignmentId' => support_assignment.id
+          },
+          'incidentReportIpFallback' => {
+            'id' => support_incident_ip_fallback.id,
+            'subject' => support_incident_ip_fallback.subject,
+            'vpsId' => support_vps.id,
+            'ipAddress' => support_assignment.ip_addr,
+            'assignmentId' => support_assignment.id
+          },
+          'incidentReportTransferred' => {
+            'id' => support_incident_transferred.id,
+            'subject' => support_incident_transferred.subject,
+            'reportUserId' => support_incident_transferred.user_id,
+            'vpsUserId' => support_vps.user_id
           },
           'oomReport' => {
             'id' => oom_report.id,

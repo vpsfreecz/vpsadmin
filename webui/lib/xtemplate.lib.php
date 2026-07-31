@@ -1034,7 +1034,7 @@ class XTemplate
     public function form_add_datetime($label, $name, $value = null, $local = null, $hint = null, $min = null, $max = null, $step = null)
     {
         $this->table_td($label);
-        form_add_datetime_pure($name, $value, $local, $min, $max, $step);
+        $this->form_add_datetime_pure($name, $value, $local, $min, $max, $step);
 
         if ($hint) {
             $this->table_td($hint);

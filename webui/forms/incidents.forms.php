@@ -153,6 +153,13 @@ function incident_show($id)
         'meta' => ['includes' => 'user,vps,ip_address_assignment'],
     ]);
 
+    $xtpl->sbar_add(
+        _('Mute similar incident reports'),
+        '?page=notifications&action=mute_incident_report&incident_report_id=' . $inc->id
+        . '&route_owner_id=' . $inc->user_id,
+        'incidents.mute-similar'
+    );
+
     $xtpl->title(_('Incident report') . ' #' . $inc->id . ': ' . h($inc->subject));
 
     if (isAdmin()) {
