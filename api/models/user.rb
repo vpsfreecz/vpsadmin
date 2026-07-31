@@ -28,6 +28,8 @@ class User < ApplicationRecord
   has_many :event_routes, dependent: :destroy
   has_many :events
   has_many :user_notification_delivery_methods, dependent: :delete_all
+  has_many :user_notification_rate_limits, dependent: :delete_all
+  has_many :notification_rate_limit_states, dependent: :delete_all
   has_many :user_totp_devices
   has_many :user_sessions
   has_many :user_devices
