@@ -41,7 +41,7 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
     NotificationTemplateVariant::TemplateBuilder.new(vars).build(source)
   end
 
-  it 'loads template directories in vpsadmin-notification-templates format' do
+  it 'loads template package directories' do
     Dir.mktmpdir do |dir|
       FileUtils.mkdir_p(File.join(dir, '.gems'))
 
@@ -121,6 +121,114 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
       expect(sms.from).to be_nil
       expect(sms.subject).to be_nil
       expect(sms.text).to eq('SMS body')
+    end
+  end
+
+  it 'creates and updates managed templates from source paths' do
+    template = NotificationTemplate.create!(
+      name: 'spec_managed_template',
+      label: 'Old managed template',
+      template_id: 'daily_report'
+    )
+    template.notification_template_variants.create!(
+      language: SpecSeed.language,
+      protocol: :email,
+      from: 'old@example.test',
+      subject: 'Old subject',
+      text: 'Old body'
+    )
+
+    Dir.mktmpdir do |dir|
+      write_template(
+        dir,
+        'spec_managed_template',
+        meta: <<~RUBY,
+          template :user_create do
+            label 'Managed template'
+            user_visibility true
+            protocol :email do
+              from 'managed@example.test'
+            end
+          end
+        RUBY
+        text: 'Managed body',
+        email_html: '<p>Managed HTML</p>',
+        telegram_text: 'Managed Telegram body',
+        telegram_html: '<b>Managed Telegram HTML</b>',
+        sms_text: 'Managed SMS body'
+      )
+
+      result = described_class.install_managed!(
+        paths: [dir],
+        source_id: 'managed-source-1'
+      )
+
+      template.reload
+      email = template.notification_template_variants.find_by!(
+        language: SpecSeed.language,
+        protocol: 'email'
+      )
+      telegram = template.notification_template_variants.find_by!(
+        language: SpecSeed.language,
+        protocol: 'telegram'
+      )
+      sms = template.notification_template_variants.find_by!(
+        language: SpecSeed.language,
+        protocol: 'sms'
+      )
+
+      expect(result).to eq(
+        source_id: 'managed-source-1',
+        unchanged_source: false,
+        templates_created: 0,
+        templates_updated: 1,
+        variants_created: 2,
+        variants_updated: 1
+      )
+      expect(template.label).to eq('Managed template')
+      expect(template.template_id).to eq('user_create')
+      expect(template.user_visibility).to eq('visible')
+      expect(email.from).to eq('managed@example.test')
+      expect(email.text).to eq('Managed body')
+      expect(email.html).to eq('<p>Managed HTML</p>')
+      expect(telegram.html).to eq('<b>Managed Telegram HTML</b>')
+      expect(sms.text).to eq('Managed SMS body')
+      expect(SysConfig.get('notifications', 'managed_templates_source_id')).to eq('managed-source-1')
+    end
+  end
+
+  it 'skips managed template writes when the source id is unchanged' do
+    SysConfig.create!(
+      category: 'notifications',
+      name: 'managed_templates_source_id',
+      value: 'managed-source-1'
+    )
+
+    Dir.mktmpdir do |dir|
+      write_template(
+        dir,
+        'spec_managed_noop_template',
+        meta: <<~RUBY,
+          template :user_create do
+            label 'Managed no-op template'
+          end
+        RUBY
+        text: 'Managed no-op body'
+      )
+
+      expect do
+        result = described_class.install_managed!(
+          paths: [File.join(dir, 'templates')],
+          source_id: 'managed-source-1'
+        )
+
+        expect(result).to include(
+          source_id: 'managed-source-1',
+          unchanged_source: true,
+          templates_created: 0,
+          variants_created: 0
+        )
+      end.not_to change(NotificationTemplate, :count)
     end
   end
 
