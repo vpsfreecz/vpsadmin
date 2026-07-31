@@ -84,15 +84,15 @@ base
 
   def ensure_operational_alert_templates(services)
     services.api_ruby_json(code: <<~RUBY)
-      result = VpsAdmin::API::MailTemplates.install_defaults!
+      result = VpsAdmin::API::NotificationTemplates.install_defaults!
 
-      daily_report = MailTemplate.find_by!(name: 'daily_report')
-      recipient = MailRecipient.find_or_initialize_by(label: 'alerts daily report')
+      daily_report = NotificationTemplate.find_by!(name: 'daily_report')
+      recipient = EmailRecipient.find_or_initialize_by(label: 'alerts daily report')
       recipient.assign_attributes(to: User.find(#{admin_user_id}).email)
       recipient.save! if recipient.changed?
-      MailTemplateRecipient.find_or_create_by!(
-        mail_template: daily_report,
-        mail_recipient: recipient
+      NotificationTemplateEmailRecipient.find_or_create_by!(
+        notification_template: daily_report,
+        email_recipient: recipient
       )
 
       puts JSON.dump(ok: true, install: result)
@@ -267,7 +267,7 @@ base
     services.mariadb_scalar(sql: <<~SQL).to_i
       SELECT COUNT(*)
       FROM mail_logs ml
-      INNER JOIN mail_templates mt ON mt.id = ml.mail_template_id
+      INNER JOIN notification_templates mt ON mt.id = ml.notification_template_id
       WHERE mt.name = #{template_name.inspect}
     SQL
   end

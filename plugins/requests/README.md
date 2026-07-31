@@ -11,9 +11,9 @@ setup the database:
 
     $ rake vpsadmin:plugins:migrate PLUGIN=requests
 
-This plugin requires some mail templates to be installed in order to work.
-Examples of such templates are in subdirectory `mail_templates/`. Use
-[vpsadmin-mail-templates](https://github.com/vpsfreecz/vpsadmin-mail-templates)
+This plugin requires some notification templates to be installed in order to work.
+Examples of such templates are in subdirectory `notification_templates/`. Use
+[vpsadmin-notification-templates](https://github.com/vpsfreecz/vpsadmin)
 to install them.
 
 ## Changes
@@ -28,7 +28,7 @@ Use actions `UserRequest.Registration#{Create,Resolve}` to manipulate registrati
 requests and `UserRequest.Change#{Create,Resolve}` for requests of changing
 personal information.
 
-Mail templates are searched for in the following order:
+Notification templates are searched for in the following order:
 
 - Requests
   - `request_create_<user role>_<request type>`
@@ -47,4 +47,4 @@ Where
 - request state is one of `approved`, `denied` and `ignored`
 
 The first template that exists for `User` and `Admin` is used. If no templates
-are found, no e-mails are sent.
+are found, no notification e-mails are sent.

@@ -53,19 +53,20 @@ module PluginRequestsSpecHelpers
     }.compact).tap(&:save!)
   end
 
-  def ensure_request_mail_template!(name, template_id)
-    template = MailTemplate.find_or_create_by!(name:) do |tpl|
+  def ensure_request_notification_template!(name, template_id)
+    template = NotificationTemplate.find_or_create_by!(name:) do |tpl|
       tpl.label = name.tr('_', ' ').capitalize
       tpl.template_id = template_id
     end
 
-    return if template.mail_template_translations.where(language: SpecSeed.language).exists?
+    return if template.notification_template_variants.where(language: SpecSeed.language, protocol: :email).exists?
 
-    template.mail_template_translations.create!(
+    template.notification_template_variants.create!(
       language: SpecSeed.language,
+      protocol: :email,
       from: 'noreply@test.invalid',
       subject: "#{name} subject",
-      text_plain: "#{name} body"
+      text: "#{name} body"
     )
   end
 end

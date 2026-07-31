@@ -65,16 +65,16 @@ module VpsAdmin::API::Plugins::Requests::Events
     }
   end
 
-  def request_email_template_name_for(event)
-    params = request_email_template_params(event)
+  def request_template_name_for(event)
+    params = request_template_params(event)
     language = request_email_language(event)
 
     REQUEST_TEMPLATE_CANDIDATES.fetch(event.event_type).find do |candidate|
-      VpsAdmin::API::Events.email_template_available?(candidate, params, language)
+      VpsAdmin::API::Events.template_available?(candidate, params, language)
     end || REQUEST_TEMPLATE_CANDIDATES.fetch(event.event_type).first
   end
 
-  def request_email_template_params(event)
+  def request_template_params(event)
     {
       action: param(event, 'action'),
       role: param(event, 'role'),
@@ -100,7 +100,7 @@ module VpsAdmin::API::Plugins::Requests::Events
     nil
   end
 
-  def request_email_template_options(event)
+  def request_template_options(event)
     ret = {
       language: request_email_language(event),
       message_id: request_message_id(event, 'mail_id')
@@ -155,9 +155,9 @@ VpsAdmin::API::Events.define owner: :requests do
       )
 
       deliver :email do
-        template { VpsAdmin::API::Plugins::Requests::Events.request_email_template_name_for(event) }
-        params { VpsAdmin::API::Plugins::Requests::Events.request_email_template_params(event) }
-        options { VpsAdmin::API::Plugins::Requests::Events.request_email_template_options(event) }
+        template { VpsAdmin::API::Plugins::Requests::Events.request_template_name_for(event) }
+        params { VpsAdmin::API::Plugins::Requests::Events.request_template_params(event) }
+        options { VpsAdmin::API::Plugins::Requests::Events.request_template_options(event) }
         default_target { VpsAdmin::API::Plugins::Requests::Events.default_email_target(event) }
         vars { VpsAdmin::API::Plugins::Requests::Events.request_email_vars(event) }
       end

@@ -10,7 +10,7 @@ RSpec.describe TransactionChains::Vps::Replace::Os do
   let(:user) { SpecSeed.user }
 
   before do
-    allow(MailTemplate).to receive(:send_mail!).and_return(nil)
+    allow(NotificationTemplate).to receive(:send_email!).and_return(nil)
   end
 
   def ensure_user_cluster_resource!(user:, environment:, resource:, value:)
@@ -299,7 +299,7 @@ RSpec.describe TransactionChains::Vps::Replace::Os do
     vps = fixture.fetch(:vps)
     vps.user.update!(mailer_enabled: false)
 
-    allow(MailTemplate).to receive(:send_mail!)
+    allow(NotificationTemplate).to receive(:send_email!)
 
     chain, dst_vps = described_class.fire(
       vps,
@@ -319,7 +319,7 @@ RSpec.describe TransactionChains::Vps::Replace::Os do
       'reason' => 'replace without mail'
     )
     expect(tx_classes(chain)).not_to include(Transactions::EventDelivery::Release)
-    expect(MailTemplate).not_to have_received(:send_mail!)
+    expect(NotificationTemplate).not_to have_received(:send_email!)
   end
 
   it 'marks the source as soft_delete, disables old resources, and schedules interface reassignment' do

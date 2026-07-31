@@ -19,7 +19,7 @@ RSpec.describe SecurityAdvisory do
     SpecSeed.pool
     SpecSeed.os_template
     SpecSeed.dns_resolver
-    ensure_alert_mail_templates!
+    ensure_alert_notification_templates!
     ensure_mailer_available!
   end
 
@@ -271,7 +271,7 @@ RSpec.describe SecurityAdvisory do
       route: false
     )
 
-    vars = VpsAdmin::API::Events.email_vars_for(event)
+    vars = VpsAdmin::API::Events.template_options_for(event).fetch(:vars)
 
     expect(vars).to include(
       advisory:,

@@ -103,15 +103,15 @@ module VpsAdmin::API::Exceptions
   class TooManyParameters < ::StandardError
   end
 
-  class MailTemplateDoesNotExist < ::StandardError
+  class NotificationTemplateDoesNotExist < ::StandardError
     def initialize(name)
-      super("Mail template '#{name}' does not exist")
+      super("Notification template '#{name}' does not exist")
     end
   end
 
-  class MailTemplateDisabled < ::StandardError
+  class NotificationTemplateDisabled < ::StandardError
     def initialize(name)
-      super("Mail template '#{name}' is disabled")
+      super("Notification template '#{name}' is disabled")
     end
   end
 

@@ -141,7 +141,7 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
   it 'uses the generated default route for monitoring alerts' do
     event = build_event
     reset_routing!(event.user)
-    allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
+    allow(NotificationTemplate).to receive(:send_email!).and_return(build_mail_log_double)
     allow(event).to receive(:call_action) do |chain, ev|
       chain.route_monitoring_alert!(ev)
     end
@@ -160,7 +160,7 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
       template_name: 'alert_role_event_state',
       state: 'prepared'
     )
-    expect(MailTemplate).to have_received(:send_mail!).with(
+    expect(NotificationTemplate).to have_received(:send_email!).with(
       :alert_role_event_state,
       hash_including(
         user: event.user,
@@ -175,7 +175,7 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
     reset_routing!(event.user)
     captured = nil
     language = SpecSeed.language
-    allow(MailTemplate).to receive(:send_mail!) do |name, opts|
+    allow(NotificationTemplate).to receive(:send_email!) do |name, opts|
       captured = [name, opts]
       build_mail_log_double
     end
@@ -218,7 +218,7 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
     cfg.update!(value: '<monitor-%{event_id}-%{alert_id}-%{state}@alerts.example>')
     reset_routing!(event.user)
     captured = nil
-    allow(MailTemplate).to receive(:send_mail!) do |_name, opts|
+    allow(NotificationTemplate).to receive(:send_email!) do |_name, opts|
       captured = opts
       build_mail_log_double
     end

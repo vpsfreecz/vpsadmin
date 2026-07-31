@@ -46,7 +46,7 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
       'object_label' => user.login,
       'state' => 'active'
     )
-    expect(event.event_deliveries.sole.mail_log.mail_template.name).to eq('expiration_user_active')
+    expect(event.event_deliveries.sole.mail_log.notification_template.name).to eq('expiration_user_active')
   end
 
   it 'resolves the owner of user-owned objects such as VPSes' do
@@ -65,7 +65,7 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
       'object_label' => vps.hostname,
       'state' => 'active'
     )
-    expect(event.event_deliveries.sole.mail_log.mail_template.name).to eq('expiration_vps_active')
+    expect(event.event_deliveries.sole.mail_log.notification_template.name).to eq('expiration_vps_active')
   end
 
   it 'logs suppressed notifications for users with mailer disabled' do
@@ -126,7 +126,7 @@ RSpec.describe TransactionChains::Lifetimes::ExpirationWarning do
     delivery.reload
 
     expect(delivery).to be_released_state
-    expect(delivery.mail_log.mail_template.name).to eq('expiration_user_active')
+    expect(delivery.mail_log.notification_template.name).to eq('expiration_user_active')
     expect(delivery.mail_log.text_plain).to include('approximately 2 days')
 
     stub_mail_delivery!
