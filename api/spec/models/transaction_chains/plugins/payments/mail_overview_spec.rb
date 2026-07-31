@@ -35,7 +35,7 @@ RSpec.describe 'payments plugin mail overview chain', requires_plugins: :payment
     ).tap(&:save!)
 
     captured = nil
-    allow(MailTemplate).to receive(:send_mail!) do |name, opts|
+    allow(NotificationTemplate).to receive(:send_email!) do |name, opts|
       expect(name).to eq(:payments_overview)
       expect(opts[:language]).to eq(SpecSeed.language)
       captured = opts.fetch(:vars)
@@ -45,7 +45,7 @@ RSpec.describe 'payments plugin mail overview chain', requires_plugins: :payment
     chain, = chain_class.fire2(args: [86_400, SpecSeed.language])
 
     expect(tx_classes(chain)).to eq([Transactions::EventDelivery::Release])
-    expect(MailTemplate).to have_received(:send_mail!).once
+    expect(NotificationTemplate).to have_received(:send_email!).once
     event = Event.where(event_type: 'payments.overview').sole
     delivery = event.event_deliveries.sole
 
@@ -76,7 +76,7 @@ RSpec.describe 'payments plugin mail overview chain', requires_plugins: :payment
   end
 
   it 'raises when the event e-mail delivery cannot be queued' do
-    allow(MailTemplate).to receive(:send_mail!).and_raise(ArgumentError, 'invalid overview')
+    allow(NotificationTemplate).to receive(:send_email!).and_raise(ArgumentError, 'invalid overview')
 
     expect do
       chain_class.fire2(args: [86_400, SpecSeed.language])

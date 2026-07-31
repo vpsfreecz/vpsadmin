@@ -48,7 +48,7 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
 
   it 'creates an update and edits outage translations without mailing while staged' do
     outage = build_outage
-    allow(MailTemplate).to receive(:send_mail!)
+    allow(NotificationTemplate).to receive(:send_email!)
 
     chain, ret = chain_class.fire2(args: [
                                      outage,
@@ -65,7 +65,7 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
     expect(update.outage_translations.find_by!(language: lang).summary).to eq('New summary')
     expect(outage.duration).to eq(45)
     expect(outage.outage_translations.find_by!(language: lang).summary).to eq('New summary')
-    expect(MailTemplate).not_to have_received(:send_mail!)
+    expect(NotificationTemplate).not_to have_received(:send_email!)
   end
 
   it 'announces outages, refreshes affected objects, and threads generic/user mail' do
@@ -89,7 +89,7 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
     allow(outage).to receive(:set_affected_vpses)
     allow(outage).to receive(:set_affected_exports)
     allow(outage).to receive(:set_affected_users)
-    allow(MailTemplate).to receive(:send_mail!) do |name, opts|
+    allow(NotificationTemplate).to receive(:send_email!) do |name, opts|
       attempts << [name, opts]
       build_mail_log_double
     end
@@ -189,7 +189,7 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
     allow(outage).to receive(:set_affected_vpses)
     allow(outage).to receive(:set_affected_exports)
     allow(outage).to receive(:set_affected_users)
-    allow(MailTemplate).to receive(:send_mail!) do |name, opts|
+    allow(NotificationTemplate).to receive(:send_email!) do |name, opts|
       attempts << [name, opts]
       build_mail_log_double
     end
@@ -216,7 +216,7 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
 
   it 'suppresses mail when requested' do
     outage = build_outage(state: :announced)
-    allow(MailTemplate).to receive(:send_mail!)
+    allow(NotificationTemplate).to receive(:send_email!)
 
     chain, = chain_class.fire2(args: [
                                  outage,
@@ -227,6 +227,6 @@ RSpec.describe 'outage reports update chain', requires_plugins: :outage_reports 
 
     expect(chain).to be_nil
     expect(outage.reload.state).to eq('resolved')
-    expect(MailTemplate).not_to have_received(:send_mail!)
+    expect(NotificationTemplate).not_to have_received(:send_email!)
   end
 end

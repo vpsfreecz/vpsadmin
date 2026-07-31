@@ -164,15 +164,15 @@ module VpsAdmin::API::Resources
           attrs[v] = input[v] if input.has_key?(v)
         end
 
-        attrs[:email_template_name] = nil if clears_email_template_name?(route, attrs)
+        attrs[:template_name] = nil if clears_template_name?(route, attrs)
         route.update!(attrs)
         route
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', e.record.errors.to_hash)
       end
 
-      def clears_email_template_name?(route, attrs)
-        return false if route.email_template_name.blank?
+      def clears_template_name?(route, attrs)
+        return false if route.template_name.blank?
 
         %i[parent_id event_type event_type_pattern].any? do |v|
           attrs.has_key?(v) && route.public_send(v) != attrs[v]
@@ -301,7 +301,7 @@ module VpsAdmin::API::Resources
               operator: input[:operator],
               value: input[:value]
             )
-            route.update!(email_template_name: nil) if route.email_template_name.present?
+            route.update!(template_name: nil) if route.template_name.present?
             ret
           end
         rescue ActiveRecord::RecordInvalid => e
@@ -337,17 +337,17 @@ module VpsAdmin::API::Resources
           %i[field operator value].each { |v| attrs[v] = input[v] if input.has_key?(v) }
 
           matcher.transaction do
-            clear_template_name = clears_email_template_name?(matcher, attrs)
+            clear_template_name = clears_template_name?(matcher, attrs)
             matcher.update!(attrs)
-            matcher.event_route.update!(email_template_name: nil) if clear_template_name
+            matcher.event_route.update!(template_name: nil) if clear_template_name
           end
           matcher
         rescue ActiveRecord::RecordInvalid => e
           error!('update failed', e.record.errors.to_hash)
         end
 
-        def clears_email_template_name?(matcher, attrs)
-          return false if matcher.event_route.email_template_name.blank?
+        def clears_template_name?(matcher, attrs)
+          return false if matcher.event_route.template_name.blank?
 
           attrs.any? do |attr, value|
             matcher.public_send(attr) != value
@@ -374,7 +374,7 @@ module VpsAdmin::API::Resources
           matcher.transaction do
             route = matcher.event_route
             matcher.destroy!
-            route.update!(email_template_name: nil) if route.email_template_name.present?
+            route.update!(template_name: nil) if route.template_name.present?
           end
           ok!
         end

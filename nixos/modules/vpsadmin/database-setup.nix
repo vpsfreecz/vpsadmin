@@ -99,9 +99,9 @@ in
         type = lib.types.bool;
         default = vpsadminCfg.api.notificationTemplates.mode != "replace";
         description = ''
-          Install built-in mail templates after migrations. Existing templates
-          and translations are left unchanged. This defaults to false when the
-          API uses a replacement notification template source.
+          Install built-in notification templates after migrations. Existing
+          templates and variants are left unchanged. This option defaults to
+          false when the API uses a replacement notification template source.
         '';
       };
 

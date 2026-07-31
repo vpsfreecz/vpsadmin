@@ -9,9 +9,9 @@ RSpec.describe TransactionChains::Vps::OomReports do
   end
 
   before do
-    ensure_alert_mail_templates!
+    ensure_alert_notification_templates!
     ensure_mailer_available!
-    allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
+    allow(NotificationTemplate).to receive(:send_email!).and_return(build_mail_log_double)
   end
 
   def create_vps!
@@ -30,7 +30,7 @@ RSpec.describe TransactionChains::Vps::OomReports do
     chain, = described_class.fire2(args: [[vps]], kwargs: { cooldown: 1.hour })
 
     expect(chain).to be_nil
-    expect(MailTemplate).not_to have_received(:send_mail!)
+    expect(NotificationTemplate).not_to have_received(:send_email!)
     expect(unreported.reload.reported_at).to be_nil
   end
 
@@ -43,7 +43,7 @@ RSpec.describe TransactionChains::Vps::OomReports do
     chain, = described_class.fire2(args: [[vps]], kwargs: { cooldown: 1.hour })
 
     expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
-    expect(MailTemplate).to have_received(:send_mail!).with(
+    expect(NotificationTemplate).to have_received(:send_email!).with(
       :vps_oom_report,
       hash_including(
         user: vps.user,
@@ -53,8 +53,8 @@ RSpec.describe TransactionChains::Vps::OomReports do
     expect(reports.map { |report| report.reload.reported_at }).to all(be_present)
   end
 
-  it 'renders the installed mail template with the chain variables' do
-    allow(MailTemplate).to receive(:send_mail!).and_call_original
+  it 'renders the installed notification template with the chain variables' do
+    allow(NotificationTemplate).to receive(:send_email!).and_call_original
 
     vps = create_vps!
     2.times do |i|
@@ -62,7 +62,7 @@ RSpec.describe TransactionChains::Vps::OomReports do
     end
 
     chain, = described_class.fire2(args: [[vps]], kwargs: { cooldown: 1.hour })
-    mail = MailLog.where(mail_template: MailTemplate.find_by!(name: 'vps_oom_report')).last
+    mail = MailLog.where(notification_template: NotificationTemplate.find_by!(name: 'vps_oom_report')).last
 
     expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
     expect(mail.text_plain).to include('Selected events: 3 of 3')
@@ -70,7 +70,7 @@ RSpec.describe TransactionChains::Vps::OomReports do
   end
 
   it 'keeps reports retryable when e-mail cannot be queued' do
-    allow(MailTemplate).to receive(:send_mail!).and_raise(
+    allow(NotificationTemplate).to receive(:send_email!).and_raise(
       ArgumentError,
       'render failed'
     )
@@ -87,7 +87,7 @@ RSpec.describe TransactionChains::Vps::OomReports do
 
   it 'considers only reports after the most recently reported report' do
     captured_ids = nil
-    allow(MailTemplate).to receive(:send_mail!) do |_name, opts|
+    allow(NotificationTemplate).to receive(:send_email!) do |_name, opts|
       captured_ids = opts.fetch(:vars).fetch(:all_oom_reports).pluck(:id)
       build_mail_log_double
     end
@@ -106,7 +106,7 @@ RSpec.describe TransactionChains::Vps::OomReports do
 
   it 'limits selected reports to 30 while keeping all reports in the full set' do
     captured = nil
-    allow(MailTemplate).to receive(:send_mail!) do |_name, opts|
+    allow(NotificationTemplate).to receive(:send_email!) do |_name, opts|
       vars = opts.fetch(:vars)
       captured = {
         all_ids: vars.fetch(:all_oom_reports).pluck(:id),

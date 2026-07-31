@@ -27,7 +27,7 @@ Use actions `UserRequest.Registration#{Create,Resolve}` to manipulate registrati
 requests and `UserRequest.Change#{Create,Resolve}` for requests of changing
 personal information.
 
-Mail templates are searched for in the following order:
+Notification templates for request e-mails are searched in this order:
 
 - Requests
   - `request_create_<user role>_<request type>`

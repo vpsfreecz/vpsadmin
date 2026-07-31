@@ -9,9 +9,9 @@ RSpec.describe TransactionChains::Vps::OomPrevention do
   end
 
   before do
-    ensure_alert_mail_templates!
+    ensure_alert_notification_templates!
     ensure_mailer_available!
-    allow(MailTemplate).to receive(:send_mail!).and_return(build_mail_log_double)
+    allow(NotificationTemplate).to receive(:send_email!).and_return(build_mail_log_double)
   end
 
   def create_vps!
@@ -105,7 +105,7 @@ RSpec.describe TransactionChains::Vps::OomPrevention do
     prevention = OomPrevention.last
     expect(prevention.vps).to eq(vps)
     expect(prevention.action).to eq('restart')
-    expect(MailTemplate).to have_received(:send_mail!).with(
+    expect(NotificationTemplate).to have_received(:send_email!).with(
       :vps_oom_prevention,
       hash_including(
         user: vps.user,

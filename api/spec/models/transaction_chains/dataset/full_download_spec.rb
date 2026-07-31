@@ -15,7 +15,7 @@ RSpec.describe TransactionChains::Dataset::FullDownload do
   let(:backup_pool) { create_pool!(node: SpecSeed.other_node, role: :backup) }
 
   before do
-    ensure_alert_mail_templates!
+    ensure_alert_notification_templates!
     ensure_mailer_available!
   end
 

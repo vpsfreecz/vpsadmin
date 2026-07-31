@@ -46,7 +46,7 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
         id: :user_create,
         template_options: { label: 'Example template' }
       )
-      expect(variant).to have_attributes(language: 'en')
+      expect(variant).to have_attributes(protocol: 'email', language: 'en')
       expect(variant.options).to eq(from: 'from@example.test')
       expect(variant.content(:subject)).to eq('Subject for <%= @user.login %>')
       expect(variant.content(:text)).to eq('Text for <%= @user.login %>')
@@ -113,14 +113,128 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
     end
   end
 
-  it 'rejects unknown protocols' do
+  it 'loads protocol and language metadata without evaluating Ruby' do
+    Dir.mktmpdir do |dir|
+      path = write_template(
+        dir,
+        meta: <<~RUBY
+          template do
+            from 'global@example.test'
+
+            protocol :email do
+              from 'email@example.test'
+
+              lang :en do
+                subject 'Protocol subject'
+              end
+            end
+
+            protocol :telegram do
+            end
+          end
+        RUBY
+      )
+      FileUtils.mkdir_p(File.join(path, 'telegram'))
+      File.write(File.join(path, 'telegram', 'en.text.erb'), 'Telegram text')
+      File.write(File.join(path, 'telegram', 'en.html.erb'), '<b>Telegram HTML</b>')
+
+      variants = described_class::Directory.new(dir).templates.first.variants
+      email = variants.find { |variant| variant.protocol == 'email' }
+      telegram = variants.find { |variant| variant.protocol == 'telegram' }
+
+      expect(email.options).to include(
+        from: 'email@example.test',
+        subject: 'Protocol subject'
+      )
+      expect(telegram).to have_attributes(protocol: 'telegram', language: 'en')
+      expect(telegram.options).to be_empty
+      expect(telegram.content(:text)).to eq('Telegram text')
+      expect(telegram.content(:html)).to eq('<b>Telegram HTML</b>')
+    end
+  end
+
+  it 'rejects unsupported protocol directories and declarations' do
     Dir.mktmpdir do |dir|
       path = write_template(dir)
-      FileUtils.mkdir_p(File.join(path, 'telegram'))
+      FileUtils.mkdir_p(File.join(path, 'webhook'))
 
       expect do
         described_class::Directory.new(dir)
-      end.to raise_error(described_class::InvalidTemplate, /unsupported entry "telegram"/)
+      end.to raise_error(described_class::InvalidTemplate, /unsupported entry "webhook"/)
+    end
+
+    Dir.mktmpdir do |dir|
+      write_template(
+        dir,
+        meta: <<~RUBY
+          template do
+            protocol :webhook do
+            end
+          end
+        RUBY
+      )
+
+      expect do
+        described_class::Directory.new(dir)
+      end.to raise_error(described_class::InvalidTemplate, /unsupported template protocol "webhook"/)
+    end
+  end
+
+  it 'rejects duplicate protocols and protocol languages' do
+    invalid_meta = [
+      <<~RUBY,
+        template do
+          protocol :email do
+          end
+          protocol :email do
+          end
+        end
+      RUBY
+      <<~RUBY
+        template do
+          protocol :email do
+            lang :en do
+            end
+            lang :EN do
+            end
+          end
+        end
+      RUBY
+    ]
+
+    invalid_meta.each do |meta|
+      Dir.mktmpdir do |dir|
+        write_template(dir, meta:)
+
+        expect do
+          described_class::Directory.new(dir)
+        end.to raise_error(described_class::InvalidTemplate, /declared more than once/)
+      end
+    end
+  end
+
+  it 'validates Telegram bodies, formats and HTML tags' do
+    [
+      [{ 'en.html.erb' => '<b>Missing text</b>' }, /has no text body/],
+      [
+        { 'en.subject.erb' => 'Unsupported subject', 'en.text.erb' => 'Text' },
+        /unsupported telegram template format/
+      ],
+      [
+        { 'en.text.erb' => 'Text', 'en.html.erb' => '<p>Unsupported paragraph</p>' },
+        /unsupported Telegram HTML tag/
+      ]
+    ].each do |files, error|
+      Dir.mktmpdir do |dir|
+        path = write_template(dir)
+        telegram_path = File.join(path, 'telegram')
+        FileUtils.mkdir_p(telegram_path)
+        files.each { |name, content| File.write(File.join(telegram_path, name), content) }
+
+        expect do
+          described_class::Directory.new(dir)
+        end.to raise_error(described_class::InvalidTemplate, error)
+      end
     end
   end
 
