@@ -12,6 +12,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
   end
 
   def reset_routing!(user)
+    EventRouteMatch.delete_all
     EventRoutingContext.where(user_id: user.id).delete_all
     EventRouteMatcher.joins(:event_route).where(event_routes: { user_id: user.id }).delete_all
     NotificationReceiverTarget
@@ -112,6 +113,14 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     vpath("/events/#{event_id}/deliveries/#{delivery_id}/attempts")
   end
 
+  def route_match_index_path(event_id)
+    vpath("/events/#{event_id}/route_matches")
+  end
+
+  def route_match_path(event_id, route_match_id)
+    vpath("/events/#{event_id}/route_matches/#{route_match_id}")
+  end
+
   def json_get(path, params = nil)
     get path, params, {
       'CONTENT_TYPE' => 'application/json',
@@ -201,6 +210,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
   def attempts
     json.dig('response', 'attempts') || json.dig('response', 'event_delivery_attempts') || []
+  end
+
+  def route_matches
+    json.dig('response', 'route_matches') || json.dig('response', 'event_route_matches') || []
   end
 
   def event_types
@@ -342,6 +355,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       expect(receiver_target_update).to include('position')
       expect(receiver_target_update).not_to include('enabled')
       expect(event_index).to include(
+        'event_route_id',
         'notification_receiver_id',
         'notification_target_id',
         'notification_receiver_target_id',
@@ -436,7 +450,13 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(events.map { |row| row['id'] }).to include(event.id)
     expect(events.find { |row| row['id'] == event.id }).not_to include('matched_event_route_id')
 
-    as(SpecSeed.user) { json_get event_index_path, event: { matched_event_route_id: route.id } }
+    as(SpecSeed.user) { json_get event_index_path, event: { event_route_id: route.id } }
+
+    expect_status(200)
+    expect(events.map { |row| row['id'] }).to eq([event.id])
+
+    default_route = EventRoute.default_route_for(SpecSeed.user)
+    as(SpecSeed.user) { json_get event_index_path, event: { event_route_id: default_route.id } }
 
     expect_status(200)
     expect(events.map { |row| row['id'] }).to eq([event.id])
@@ -483,6 +503,19 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(delivery_obj['notification_receiver_label']).to eq('Spec receiver')
     expect(delivery_obj['notification_target_label']).to eq('Spec webhook')
     expect(delivery_obj).not_to include('template_name')
+
+    as(SpecSeed.user) { json_get route_match_index_path(event.id) }
+    expect_status(200)
+    expect(route_matches.map { |row| row['event_route_id'] }).to eq([route.id, default_route.id])
+    expect(route_matches.first).to include(
+      'route_owner_id' => SpecSeed.user.id,
+      'subject_relation' => 'self',
+      'source' => 'direct_route'
+    )
+
+    as(SpecSeed.user) { json_get route_match_path(event.id, route_matches.first['id']) }
+    expect_status(200)
+    expect(json.dig('response', 'route_match', 'event_route_id')).to eq(route.id)
 
     attempt = delivery.event_delivery_attempts.create!(
       action: delivery.action,
@@ -537,7 +570,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     as(SpecSeed.admin) { json_get event_path(event.id) }
     expect_status(200)
     expect(event_obj['subject_relation']).to eq('other_user')
-    expect(event_obj).to include('matched_event_route_id')
+    expect(event_obj).not_to include('matched_event_route_id')
 
     as(SpecSeed.user) { json_get event_path(event.id) }
     expect_status(200)
@@ -565,9 +598,22 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect_status(200)
     expect(events.map { |row| row['id'] }).not_to include(event.id)
 
-    as(SpecSeed.user) { json_get event_index_path, event: { matched_event_route_id: route.id } }
+    as(SpecSeed.user) { json_get event_index_path, event: { event_route_id: route.id } }
     expect_status(200)
     expect(events.map { |row| row['id'] }).not_to include(event.id)
+
+    as(SpecSeed.admin) { json_get event_index_path, event: { event_route_id: route.id } }
+    expect_status(200)
+    expect(events.map { |row| row['id'] }).to include(event.id)
+
+    as(SpecSeed.admin) { json_get route_match_index_path(event.id) }
+    expect_status(200)
+    expect(route_matches.map { |row| row['event_route_id'] }).to include(route.id)
+
+    admin_route_match = route_matches.find { |row| row['event_route_id'] == route.id }
+    as(SpecSeed.admin) { json_get route_match_path(event.id, admin_route_match['id']) }
+    expect_status(200)
+    expect(json.dig('response', 'route_match', 'route_owner_id')).to eq(SpecSeed.admin.id)
 
     as(SpecSeed.user) { json_get delivery_index_path(event.id) }
     expect_status(200)
@@ -1210,7 +1256,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       subject: 'Spec test event'
     )
 
-    expect(event.reload.matched_event_route).to eq(route)
+    expect(event.event_route_matches.reload.map(&:event_route)).to include(route)
     expect(event.event_deliveries.sole.action).to eq('webhook')
   end
 

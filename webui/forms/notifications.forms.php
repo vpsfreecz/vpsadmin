@@ -139,6 +139,7 @@ function notifications_api_list_to_array($list)
         'matchers',
         'deliveries',
         'attempts',
+        'route_matches',
     ];
 
     foreach ($wrapped_keys as $key) {
@@ -1283,7 +1284,7 @@ function notifications_routes_list($user_id = null)
         $xtpl->table_td($route->matcher_summary ? h($route->matcher_summary) : '<code>*</code>');
         $xtpl->table_td(
             '<a href="?page=notifications&action=events&user=' . $user_id
-            . '&matched_event_route_id=' . $route->id . '">' . $route->hit_count . '</a>',
+            . '&event_route_id=' . $route->id . '">' . $route->hit_count . '</a>',
             false,
             true
         );
@@ -2995,9 +2996,9 @@ function notifications_events()
         }
     }
 
-    $route_id = api_get_uint('matched_event_route_id');
+    $route_id = api_get_uint('event_route_id');
     if ($route_id !== null && $route_id > 0) {
-        $params['matched_event_route_id'] = $route_id;
+        $params['event_route_id'] = $route_id;
     }
 
     $user_id = api_get_uint('user');
@@ -3024,7 +3025,7 @@ function notifications_events()
 
     $xtpl->form_add_input(_('Limit') . ':', 'text', '20', 'limit', get_val('limit', '25'));
     $xtpl->form_add_input(_('From ID') . ':', 'text', '20', 'from_id', get_val('from_id'));
-    $xtpl->form_add_input(_('Route ID') . ':', 'text', '20', 'matched_event_route_id', get_val('matched_event_route_id'));
+    $xtpl->form_add_input(_('Route ID') . ':', 'text', '20', 'event_route_id', get_val('event_route_id'));
     $xtpl->form_add_input(_('Receiver ID') . ':', 'text', '20', 'notification_receiver_id', get_val('notification_receiver_id'));
     $xtpl->form_add_input(_('Target ID') . ':', 'text', '20', 'notification_target_id', get_val('notification_target_id'));
     $xtpl->form_add_input(_('Receiver target ID') . ':', 'text', '20', 'notification_receiver_target_id', get_val('notification_receiver_target_id'));
@@ -3106,6 +3107,43 @@ function notifications_events()
     notifications_sidebar('events', notifications_target_user_id());
 }
 
+function notifications_event_route_matches($event)
+{
+    global $xtpl;
+
+    $matches = notifications_api_list_to_array($event->route_match->list());
+
+    $xtpl->table_title(_('Matched routes'));
+    $xtpl->table_add_category(_('Route'));
+    $xtpl->table_add_category(_('User'));
+    $xtpl->table_add_category(_('Relation'));
+    $xtpl->table_add_category(_('Source'));
+    $xtpl->table_add_category(_('Order'));
+
+    foreach ($matches as $match) {
+        $route_label = notifications_prop($match, 'event_route_label') ?: ('#' . $match->event_route_id);
+        $route_user_qs = notifications_user_qs(notifications_prop($match, 'route_owner_id'));
+        $owner = notifications_prop($match, 'route_owner_login') ?: ('#' . notifications_prop($match, 'route_owner_id'));
+
+        $xtpl->table_td(
+            '<a href="?page=notifications&action=route_edit&id=' . $match->event_route_id . $route_user_qs . '">'
+            . h($route_label) . '</a>'
+        );
+        $xtpl->table_td(h($owner));
+        $xtpl->table_td(h(notifications_prop($match, 'subject_relation')));
+        $xtpl->table_td(h(notifications_prop($match, 'source')));
+        $xtpl->table_td(h(notifications_prop($match, 'match_order')));
+        $xtpl->table_tr();
+    }
+
+    if (!$matches) {
+        $xtpl->table_td(_('No routes matched.'), false, false, 5);
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_out();
+}
+
 function notifications_event_show($event_id)
 {
     global $xtpl, $api;
@@ -3140,10 +3178,6 @@ function notifications_event_show($event_id)
     $xtpl->table_td(h($event->routing_state));
     $xtpl->table_tr();
 
-    $xtpl->table_td(_('Matched route') . ':');
-    $xtpl->table_td($event->matched_event_route_id ? '<a href="?page=notifications&action=route_edit&id=' . $event->matched_event_route_id . notifications_user_qs($event->user_id) . '">' . $event->matched_event_route_id . '</a>' : '-');
-    $xtpl->table_tr();
-
     $xtpl->table_td(_('Summary') . ':');
     $xtpl->table_td(h($event->summary));
     $xtpl->table_tr();
@@ -3152,6 +3186,8 @@ function notifications_event_show($event_id)
     $xtpl->table_td(notifications_json_pre_html($event->parameters_json));
     $xtpl->table_tr();
     $xtpl->table_out();
+
+    notifications_event_route_matches($event);
 
     $xtpl->table_title(_('Deliveries'));
     $xtpl->table_add_category(_('Action'));
