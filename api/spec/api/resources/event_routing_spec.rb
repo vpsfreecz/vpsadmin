@@ -1117,18 +1117,26 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
   it 'skips lazy default e-mail actions when the delivery method is disabled' do
     SpecSeed.user.set_notification_delivery_method!(:email, false)
+    event = nil
 
-    event = VpsAdmin::API::Events.emit!(
-      'user.test_notification',
-      user: SpecSeed.user,
-      subject: 'Spec disabled default e-mail event'
-    )
+    expect do
+      event = VpsAdmin::API::Events.emit!(
+        'user.test_notification',
+        user: SpecSeed.user,
+        subject: 'Spec disabled default e-mail event'
+      )
+    end.to change(Event, :count).by(1)
     receiver = default_email_receiver_for(SpecSeed.user)
+    route = EventRoute.default_route_for(SpecSeed.user)
     action = receiver.notification_receiver_actions.sole
     delivery = event.event_deliveries.sole
 
     expect(action.action).to eq('email')
+    expect(event.reload).to be_suppressed_routing_state
+    expect(event.event_route_matches.reload.map(&:event_route)).to include(route)
     expect(delivery).to be_skipped_state
+    expect(delivery.action).to eq('email')
+    expect(delivery.notification_receiver).to eq(receiver)
     expect(delivery.error_summary).to eq('delivery method is disabled')
   end
 
@@ -1140,21 +1148,29 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       target_kind: :custom,
       target_value: 'https://example.test/events'
     )
-    EventRoute.create!(
+    route = EventRoute.create!(
       user: SpecSeed.user,
       notification_receiver: receiver,
       event_type: 'user.test_notification'
     )
 
     SpecSeed.user.set_notification_delivery_method!(:webhook, false)
-    event = VpsAdmin::API::Events.emit!(
-      'user.test_notification',
-      user: SpecSeed.user,
-      subject: 'Spec disabled delivery event'
-    )
+    event = nil
+
+    expect do
+      event = VpsAdmin::API::Events.emit!(
+        'user.test_notification',
+        user: SpecSeed.user,
+        subject: 'Spec disabled delivery event'
+      )
+    end.to change(Event, :count).by(1)
     delivery = event.event_deliveries.sole
 
+    expect(event.reload).to be_suppressed_routing_state
+    expect(event.event_route_matches.reload.map(&:event_route)).to include(route)
     expect(delivery).to be_skipped_state
+    expect(delivery.action).to eq('webhook')
+    expect(delivery.notification_receiver).to eq(receiver)
     expect(delivery.error_summary).to eq('delivery method is disabled')
   end
 

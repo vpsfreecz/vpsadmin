@@ -495,6 +495,14 @@ module VpsAdmin::API
       :spent_event_routes,
       :routing_context_states
     ) do
+      def releasable?
+        deliveries.any? { |delivery| delivery.state != 'skipped' }
+      end
+
+      def persistable?
+        releasable? || route_matches.any?
+      end
+
       def suppressed_by_mute?
         routing_state == 'suppressed' &&
           deliveries.any? do |delivery|
@@ -734,7 +742,7 @@ module VpsAdmin::API
     def emit!(event_type, user: nil, vps: nil, source: nil, source_class: nil,
               source_id: nil, subject: nil, summary: nil, parameters: nil,
               severity: nil, category: nil, ip_addr: nil, route: true,
-              release: true, **event_args)
+              release: true, persist: :routed, **event_args)
       type = type_for(event_type)
       context = event_context_for(type, event_args)
       attrs = context ? type.definition.build_attributes(context) : {}
@@ -747,7 +755,7 @@ module VpsAdmin::API
       source ||= attrs[:source]
       owner = user || vps&.user
 
-      event = ::Event.create!(
+      event = ::Event.new(
         user: owner,
         vps:,
         event_type: event_type.to_s,
@@ -763,8 +771,17 @@ module VpsAdmin::API
       context.event = event if context
       event.runtime_event_context = context
 
-      route!(event) if route
-      VpsAdmin::API::Notifications::Release.release!(event.event_deliveries.where(state: 'prepared')) if route && release
+      if route
+        router = Router.new(event)
+        result = router.plan
+
+        return nil if persist != :always && !result.persistable?
+
+        router.persist!(result)
+        VpsAdmin::API::Notifications::Release.release!(event.event_deliveries.where(state: 'prepared')) if release
+      else
+        event.save!
+      end
 
       event
     end
@@ -935,16 +952,27 @@ module VpsAdmin::API
       end
 
       def route!
-        event.class.transaction do
-          event.lock!
-          event.event_deliveries.delete_all
-          event.event_routing_contexts.delete_all
-          result = plan
+        persist!(plan)
+      end
 
-          event.update!(
-            routing_state: result.routing_state,
-            matched_event_route: result.matched_event_route
-          )
+      def persist!(result)
+        event.class.transaction do
+          if event.persisted?
+            event.lock!
+            event.event_deliveries.delete_all
+            event.event_routing_contexts.delete_all
+            event.event_route_matches.delete_all
+            event.update!(
+              routing_state: result.routing_state
+            )
+          else
+            event.routing_state = result.routing_state
+            event.save!
+          end
+
+          result.route_matches.each do |route_match|
+            create_route_match!(route_match)
+          end
 
           result.deliveries.each do |delivery|
             create_delivery!(delivery, result.routing_context_states)
