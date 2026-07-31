@@ -1,3 +1,5 @@
+require_relative 'event_time_interval'
+
 module VpsAdmin::API::Resources
   class EventRoute < HaveAPI::Resource
     desc 'Manage event routes'
@@ -381,6 +383,163 @@ module VpsAdmin::API::Resources
             matcher.destroy!
             route.update!(template_name: nil) if route.template_name.present?
           end
+          ok!
+        end
+      end
+    end
+
+    class TimeInterval < HaveAPI::Resource
+      model ::EventRouteTimeInterval
+      route '{event_route_id}/time_intervals'
+      desc 'Manage time intervals assigned to an event route'
+
+      params(:common) do
+        resource VpsAdmin::API::Resources::EventTimeInterval,
+                 name: :event_time_interval,
+                 value_label: :name
+        string :mode,
+               choices: { values: ::EventRouteTimeInterval.mode_labels },
+               load_validators: false
+      end
+
+      params(:all) do
+        id :id
+        use :common
+        datetime :created_at
+        datetime :updated_at
+      end
+
+      class Index < HaveAPI::Actions::Default::Index
+        desc 'List time intervals assigned to an event route'
+
+        output(:object_list) do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict event_routes: { user_id: u.id }
+          allow
+        end
+
+        def query
+          self.class.model.joins(:event_route).where(
+            with_restricted(event_route_id: path_params['event_route_id'])
+          )
+        end
+
+        def count
+          query.count
+        end
+
+        def exec
+          with_pagination(query.includes(:event_time_interval).order(:mode, :id))
+        end
+      end
+
+      class Show < HaveAPI::Actions::Default::Show
+        desc 'Show a time interval assigned to an event route'
+
+        output do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict event_routes: { user_id: u.id }
+          allow
+        end
+
+        def exec
+          self.class.model.joins(:event_route).find_by!(
+            with_restricted(
+              event_route_id: path_params['event_route_id'],
+              id: path_params['time_interval_id']
+            )
+          )
+        end
+      end
+
+      class Create < HaveAPI::Actions::Default::Create
+        desc 'Assign a time interval to an event route'
+
+        input do
+          use :common
+          patch :event_time_interval, required: true
+          patch :mode, required: true
+        end
+
+        output do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict user_id: u.id
+          allow
+        end
+
+        def exec
+          route = ::EventRoute.find_by!(with_restricted(id: path_params['event_route_id']))
+
+          self.class.model.assign!(
+            event_route: route,
+            event_time_interval: input[:event_time_interval],
+            mode: input[:mode]
+          )
+        rescue ActiveRecord::RecordInvalid => e
+          error!('create failed', e.record.errors.to_hash)
+        end
+      end
+
+      class Update < HaveAPI::Actions::Default::Update
+        desc 'Update a time interval assigned to an event route'
+
+        input do
+          use :common, include: %i[mode]
+        end
+
+        output do
+          use :all
+        end
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict event_routes: { user_id: u.id }
+          allow
+        end
+
+        def exec
+          assignment = self.class.model.joins(:event_route).find_by!(
+            with_restricted(
+              event_route_id: path_params['event_route_id'],
+              id: path_params['time_interval_id']
+            )
+          )
+          assignment.update!(mode: input[:mode]) if input.has_key?(:mode)
+          assignment
+        rescue ActiveRecord::RecordInvalid => e
+          error!('update failed', e.record.errors.to_hash)
+        end
+      end
+
+      class Delete < HaveAPI::Actions::Default::Delete
+        desc 'Unassign a time interval from an event route'
+
+        authorize do |u|
+          allow if u.role == :admin
+          restrict event_routes: { user_id: u.id }
+          allow
+        end
+
+        def exec
+          assignment = self.class.model.joins(:event_route).find_by!(
+            with_restricted(
+              event_route_id: path_params['event_route_id'],
+              id: path_params['time_interval_id']
+            )
+          )
+          assignment.destroy!
           ok!
         end
       end

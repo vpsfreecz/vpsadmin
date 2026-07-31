@@ -36,14 +36,27 @@ function notifications_sidebar($current, $user_id = null)
 
     $user_qs = notifications_user_qs($user_id);
 
-    $xtpl->sbar_add(_('Event log'), '?page=notifications&action=events' . $user_qs);
+    $xtpl->sbar_add(
+        _('Event log'),
+        '?page=notifications&action=events' . $user_qs,
+        'notifications.events'
+    );
     if (isAdmin()) {
         $xtpl->sbar_add(_('Delivery queue'), '?page=notifications&action=delivery_queue');
         $xtpl->sbar_add(_('Delivery log'), '?page=notifications&action=delivery_log');
     }
-    $xtpl->sbar_add(_('Routes'), '?page=notifications&action=routes' . $user_qs);
-    $xtpl->sbar_add(_('Receivers'), '?page=notifications&action=receivers' . $user_qs);
-    $xtpl->sbar_add(_('Targets'), '?page=notifications&action=targets' . $user_qs);
+    $xtpl->sbar_add(_('Routes'), '?page=notifications&action=routes' . $user_qs, 'notifications.routes');
+    $xtpl->sbar_add(
+        _('Receivers'),
+        '?page=notifications&action=receivers' . $user_qs,
+        'notifications.receivers'
+    );
+    $xtpl->sbar_add(_('Targets'), '?page=notifications&action=targets' . $user_qs, 'notifications.targets');
+    $xtpl->sbar_add(
+        _('Time intervals'),
+        '?page=notifications&action=time_intervals' . $user_qs,
+        'notifications.time-intervals'
+    );
     $xtpl->sbar_add(_('Limits'), '?page=notifications&action=limits' . $user_qs);
     $xtpl->sbar_add(_('Event types'), '?page=notifications&action=event_types' . $user_qs);
     $xtpl->sbar_add(_('Test event'), '?page=notifications&action=test' . $user_qs);
@@ -1589,6 +1602,541 @@ function notifications_route_move($id, $direction)
     return $route->user_id;
 }
 
+function notifications_time_interval_url($interval_id, $user_id = null)
+{
+    return '?page=notifications&action=time_interval_edit&id='
+        . rawurlencode((string) $interval_id)
+        . notifications_user_qs($user_id);
+}
+
+function notifications_time_interval_modes()
+{
+    return [
+        'active' => _('Active interval'),
+        'mute' => _('Mute interval'),
+    ];
+}
+
+function notifications_time_interval_parse_times($value)
+{
+    $ret = [];
+
+    foreach (array_filter(array_map('trim', explode(',', (string) $value)), 'strlen') as $range) {
+        if (!preg_match(
+            '/\A((?:[01][0-9]|2[0-3]):[0-5][0-9])\s*-\s*((?:(?:[01][0-9]|2[0-3]):[0-5][0-9])|24:00)\z/',
+            $range,
+            $m
+        )) {
+            throw new \InvalidArgumentException(
+                sprintf(_('Invalid time range "%s". Use HH:MM-HH:MM.'), $range)
+            );
+        }
+
+        $start_minutes = ((int) substr($m[1], 0, 2) * 60) + (int) substr($m[1], 3, 2);
+        $end_minutes = $m[2] === '24:00'
+            ? 24 * 60
+            : ((int) substr($m[2], 0, 2) * 60) + (int) substr($m[2], 3, 2);
+        if ($start_minutes >= $end_minutes) {
+            throw new \InvalidArgumentException(
+                sprintf(_('Time range "%s" must end after it starts.'), $range)
+            );
+        }
+
+        $ret[] = [
+            'start_time' => $m[1],
+            'end_time' => $m[2],
+        ];
+    }
+
+    return $ret;
+}
+
+function notifications_time_interval_parse_weekdays($value)
+{
+    $valid = [
+        'sunday',
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+    ];
+    $ret = [];
+
+    foreach (array_filter(array_map('trim', explode(',', (string) $value)), 'strlen') as $range) {
+        if (!preg_match('/\A([a-z]+)(?:\s*-\s*([a-z]+))?\z/i', $range, $m)) {
+            throw new \InvalidArgumentException(
+                sprintf(_('Invalid weekday range "%s".'), $range)
+            );
+        }
+
+        $start = strtolower($m[1]);
+        $end = strtolower($m[2] ?? $m[1]);
+        if (!in_array($start, $valid, true) || !in_array($end, $valid, true)) {
+            throw new \InvalidArgumentException(
+                sprintf(_('Invalid weekday range "%s".'), $range)
+            );
+        }
+        if (array_search($start, $valid, true) > array_search($end, $valid, true)) {
+            throw new \InvalidArgumentException(
+                sprintf(_('Weekday range "%s" cannot wrap.'), $range)
+            );
+        }
+
+        $ret[] = [
+            'start' => $start,
+            'end' => $end,
+        ];
+    }
+
+    return $ret;
+}
+
+function notifications_time_interval_parse_integers($value, $label)
+{
+    $ret = [];
+
+    foreach (array_filter(array_map('trim', explode(',', (string) $value)), 'strlen') as $range) {
+        if (!preg_match('/\A(-?[0-9]+)(?:\s*:\s*(-?[0-9]+))?\z/', $range, $m)) {
+            throw new \InvalidArgumentException(
+                sprintf(_('Invalid %s range "%s". Use start:end.'), $label, $range)
+            );
+        }
+
+        $ret[] = [
+            'start' => (int) $m[1],
+            'end' => (int) ($m[2] ?? $m[1]),
+        ];
+    }
+
+    return $ret;
+}
+
+function notifications_time_interval_specs_from_post()
+{
+    $rows = $_POST['specs'] ?? [];
+    if (!is_array($rows) || !$rows) {
+        throw new \InvalidArgumentException(_('Add at least one time specification.'));
+    }
+
+    $ret = [];
+    foreach ($rows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+
+        $spec = [
+            'times' => notifications_time_interval_parse_times($row['times'] ?? ''),
+            'weekdays' => notifications_time_interval_parse_weekdays($row['weekdays'] ?? ''),
+            'days_of_month' => notifications_time_interval_parse_integers(
+                $row['days_of_month'] ?? '',
+                _('day-of-month')
+            ),
+            'months' => notifications_time_interval_parse_integers($row['months'] ?? '', _('month')),
+            'years' => notifications_time_interval_parse_integers($row['years'] ?? '', _('year')),
+        ];
+
+        if (!array_filter($spec)) {
+            throw new \InvalidArgumentException(
+                _('Each specification must constrain at least one field.')
+            );
+        }
+        $ret[] = $spec;
+    }
+
+    if (!$ret) {
+        throw new \InvalidArgumentException(_('Add at least one time specification.'));
+    }
+
+    return $ret;
+}
+
+function notifications_time_interval_params($create = false)
+{
+    $params = [
+        'name' => api_post('name'),
+        'time_zone' => api_post('time_zone'),
+        'specs' => notifications_time_interval_specs_from_post(),
+    ];
+
+    if ($create && isAdmin()) {
+        $params['user'] = notifications_target_user_id();
+    }
+
+    return $params;
+}
+
+function notifications_time_interval_specs_array($interval)
+{
+    $specs = notifications_prop($interval, 'specs', []);
+    if (is_string($specs)) {
+        $decoded = json_decode($specs, true);
+        $specs = json_last_error() === JSON_ERROR_NONE ? $decoded : [];
+    } elseif (is_object($specs) || is_array($specs)) {
+        $specs = json_decode(json_encode($specs), true);
+    }
+
+    return is_array($specs) ? $specs : [];
+}
+
+function notifications_time_interval_format_ranges($ranges, $names = null)
+{
+    $ret = [];
+
+    foreach ((array) $ranges as $range) {
+        $start = $range['start'] ?? null;
+        $end = $range['end'] ?? $start;
+        if ($names !== null) {
+            $start = $names[$start] ?? $start;
+            $end = $names[$end] ?? $end;
+            $separator = '-';
+        } else {
+            $separator = ':';
+        }
+        $ret[] = ((string) $start === (string) $end) ? $start : ($start . $separator . $end);
+    }
+
+    return implode(', ', $ret);
+}
+
+function notifications_time_interval_editor_rows($interval = null)
+{
+    if (isset($_POST['specs']) && is_array($_POST['specs'])) {
+        return array_values(array_filter($_POST['specs'], 'is_array'));
+    }
+
+    if ($interval === null) {
+        return [[
+            'times' => '09:00-17:00',
+            'weekdays' => 'monday-friday',
+            'days_of_month' => '',
+            'months' => '',
+            'years' => '',
+        ]];
+    }
+
+    $weekday_names = [
+        0 => 'sunday',
+        1 => 'monday',
+        2 => 'tuesday',
+        3 => 'wednesday',
+        4 => 'thursday',
+        5 => 'friday',
+        6 => 'saturday',
+    ];
+    $ret = [];
+
+    foreach (notifications_time_interval_specs_array($interval) as $spec) {
+        $times = [];
+        foreach ($spec['times'] ?? [] as $range) {
+            $times[] = ($range['start_time'] ?? '') . '-' . ($range['end_time'] ?? '');
+        }
+        $ret[] = [
+            'times' => implode(', ', $times),
+            'weekdays' => notifications_time_interval_format_ranges(
+                $spec['weekdays'] ?? [],
+                $weekday_names
+            ),
+            'days_of_month' => notifications_time_interval_format_ranges(
+                $spec['days_of_month'] ?? []
+            ),
+            'months' => notifications_time_interval_format_ranges($spec['months'] ?? []),
+            'years' => notifications_time_interval_format_ranges($spec['years'] ?? []),
+        ];
+    }
+
+    return $ret;
+}
+
+function notifications_time_interval_spec_html($index, $row)
+{
+    $fields = [
+        'times' => [_('Times'), _('Comma-separated HH:MM-HH:MM ranges; ranges cannot cross midnight.')],
+        'weekdays' => [_('Weekdays'), _('For example monday-friday, sunday.')],
+        'days_of_month' => [_('Days of month'), _('Use start:end; negative days count from the end of the month.')],
+        'months' => [_('Months'), _('Use month numbers and start:end ranges.')],
+        'years' => [_('Years'), _('Use full years and start:end ranges.')],
+    ];
+    $html = '<div class="notification-time-interval-spec" data-spec-index="' . (int) $index . '">'
+        . '<hr class="notification-time-interval-spec-separator">';
+
+    foreach ($fields as $name => [$label, $help]) {
+        $html .= '<div><label><strong>' . h($label) . '</strong><br>'
+            . notifications_text_input_html(
+                'specs[' . (int) $index . '][' . $name . ']',
+                $row[$name] ?? '',
+                54
+            )
+            . '</label><br><small>' . h($help) . '</small></div>';
+    }
+
+    return $html
+        . '<button type="button" class="notification-time-interval-remove">'
+        . h(_('Remove specification'))
+        . '</button></div>';
+}
+
+function notifications_time_interval_editor_script($next_index)
+{
+    global $xtpl;
+
+    $template = notifications_time_interval_spec_html('__INDEX__', []);
+    $template = str_replace('data-spec-index="0"', 'data-spec-index="__INDEX__"', $template);
+    $template = str_replace('specs[0]', 'specs[__INDEX__]', $template);
+
+    $xtpl->assign(
+        'AJAX_SCRIPT',
+        ($xtpl->vars['AJAX_SCRIPT'] ?? '')
+        . '<script type="text/javascript">
+$(function () {
+    var nextIndex = ' . (int) $next_index . ';
+    var template = ' . json_encode($template) . ';
+    $("#notification-time-interval-add-spec").on("click", function () {
+        var html = template.replace(/__INDEX__/g, nextIndex++);
+        $("#notification-time-interval-spec-list").append(html);
+    });
+    $(document).on("click", ".notification-time-interval-remove", function () {
+        $(this).closest(".notification-time-interval-spec").remove();
+    });
+});
+</script>'
+    );
+}
+
+function notifications_time_interval_form($interval = null, $user_id = null)
+{
+    global $xtpl, $api;
+
+    $user_id = notifications_target_user_id(
+        $user_id ?: notifications_prop($interval, 'user_id')
+    );
+    $user = $api->user->show($user_id);
+    $rows = notifications_time_interval_editor_rows($interval);
+    $is_new = $interval === null;
+    $action = $is_new
+        ? '?page=notifications&action=time_interval_new' . notifications_user_qs($user_id)
+        : '?page=notifications&action=time_interval_edit&id=' . $interval->id
+            . notifications_user_qs($user_id);
+    $default_time_zone = notifications_prop($user, 'time_zone', 'UTC') ?: 'UTC';
+
+    $xtpl->title($is_new ? _('Add time interval') : _('Time interval') . ' #' . $interval->id);
+    $xtpl->table_title(
+        $is_new ? _('Add time interval') : _('Update time interval'),
+        'notifications.time-interval-form'
+    );
+    $xtpl->form_create($action, 'post', 'notification-time-interval');
+
+    $xtpl->table_td(_('User') . ':');
+    $xtpl->table_td(isAdmin() ? user_link($user) : h($user->login));
+    $xtpl->table_tr();
+    $xtpl->form_add_input(
+        _('Name') . ':',
+        'text',
+        '50',
+        'name',
+        post_val('name', notifications_prop($interval, 'name'))
+    );
+    $xtpl->form_add_select(
+        _('Time zone') . ':',
+        'time_zone',
+        time_zone_options(),
+        post_val('time_zone', notifications_prop($interval, 'time_zone', $default_time_zone)),
+        _('Used to evaluate this interval, including daylight saving time changes.')
+    );
+
+    $xtpl->table_td(_('Specifications') . ':');
+    $specs_html = '<p>'
+        . h(_('A specification matches when all of its filled fields match. Multiple specifications are alternatives.'))
+        . '</p><div id="notification-time-interval-spec-list">';
+    foreach ($rows as $index => $row) {
+        $specs_html .= notifications_time_interval_spec_html($index, $row);
+    }
+    $specs_html .= '</div><button type="button" id="notification-time-interval-add-spec">'
+        . h(_('Add specification')) . '</button>';
+    $xtpl->table_td($specs_html, false, true);
+    $xtpl->table_tr();
+
+    if (!$is_new) {
+        $xtpl->table_td(_('Assigned routes') . ':');
+        $xtpl->table_td((int) notifications_prop($interval, 'route_reference_count', 0));
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_td('');
+    $xtpl->table_td(notifications_submit_html($is_new ? _('Add') : _('Save')));
+    $xtpl->table_tr();
+    $xtpl->form_out_raw();
+    notifications_time_interval_editor_script(count($rows));
+
+    $xtpl->sbar_add(
+        _('Back to time intervals'),
+        '?page=notifications&action=time_intervals' . notifications_user_qs($user_id)
+    );
+    notifications_sidebar('time_intervals', $user_id);
+}
+
+function notifications_time_intervals($user_id = null)
+{
+    global $xtpl, $api;
+
+    $user_id = notifications_target_user_id($user_id);
+    $user = $api->user->show($user_id);
+    $intervals = notifications_api_list_to_array(
+        $api->event_time_interval->list(['user' => $user_id])
+    );
+
+    $xtpl->title(_('Notification time intervals'));
+    if (isAdmin()) {
+        $xtpl->table_title(_('User'));
+        $xtpl->form_create('?page=notifications&action=time_intervals', 'get', 'notification-user', false);
+        $xtpl->form_set_hidden_fields([
+            'page' => 'notifications',
+            'action' => 'time_intervals',
+        ]);
+        $xtpl->form_add_input(_('User ID') . ':', 'text', '20', 'user', $user_id);
+        $xtpl->form_out(_('Show'));
+    }
+
+    $xtpl->table_title(
+        _('Time intervals') . ': ' . h($user->login),
+        'notifications.time-intervals'
+    );
+    $xtpl->table_add_category(_('Name'));
+    $xtpl->table_add_category(_('Time zone'));
+    $xtpl->table_add_category(_('Specifications'));
+    $xtpl->table_add_category(_('Matches now'));
+    $xtpl->table_add_category(_('Routes'));
+    $xtpl->table_add_category('');
+    $xtpl->table_add_category('');
+
+    foreach ($intervals as $interval) {
+        $delete_url = '?page=notifications&action=time_interval_delete&id=' . $interval->id
+            . notifications_user_qs($user_id) . '&t=' . csrf_token();
+        $xtpl->table_td(h($interval->name));
+        $xtpl->table_td('<code>' . h($interval->time_zone) . '</code>', false, true);
+        $xtpl->table_td(h(notifications_prop($interval, 'display_summary')));
+        $xtpl->table_td(boolean_icon(notifications_prop($interval, 'matches_now', false)));
+        $xtpl->table_td((int) notifications_prop($interval, 'route_reference_count', 0));
+        $xtpl->table_td(
+            '<a href="' . notifications_time_interval_url($interval->id, $user_id) . '">'
+            . '<img src="template/icons/vps_edit.png" title="' . h(_('Edit')) . '"></a>'
+        );
+        $xtpl->table_td(
+            '<a href="' . $delete_url . '"'
+            . notifications_confirm_onclick(_('Do you really wish to delete this time interval?'))
+            . '><img src="template/icons/vps_delete.png" title="' . h(_('Delete')) . '"></a>'
+        );
+        $xtpl->table_tr();
+    }
+
+    if (!$intervals) {
+        $xtpl->table_td(_('No time intervals configured.'), false, false, 7);
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_td(
+        '<a href="?page=notifications&action=time_interval_new' . notifications_user_qs($user_id) . '">'
+        . '<img src="template/icons/vps_add.png" title="' . h(_('Add time interval')) . '" alt=""> '
+        . h(_('Add time interval')) . '</a>',
+        false,
+        true,
+        7
+    );
+    $xtpl->table_tr();
+    $xtpl->table_out('notification-time-intervals-table');
+    notifications_sidebar('time_intervals', $user_id);
+}
+
+function notifications_time_interval_options($user_id, $empty = true)
+{
+    global $api;
+
+    $ret = $empty ? ['' => '---'] : [];
+    foreach ($api->event_time_interval->list(['user' => $user_id]) as $interval) {
+        $ret[$interval->id] = $interval->name . ' (' . $interval->time_zone . ')';
+    }
+
+    return $ret;
+}
+
+function notifications_route_time_intervals($route)
+{
+    global $xtpl;
+
+    $assignments = notifications_api_list_to_array($route->time_interval->list());
+    $intervals = notifications_time_interval_options($route->user_id);
+    $modes = notifications_time_interval_modes();
+
+    $xtpl->table_title(_('Route time intervals'), 'notifications.route-time-intervals');
+    $xtpl->table_td(_('Behavior') . ':');
+    $xtpl->table_td(
+        h(_('Intervals gate only this route receiver. Child routes are still evaluated. Mute intervals override active intervals.')),
+        false,
+        true,
+        3
+    );
+    $xtpl->table_tr();
+    $xtpl->form_create(
+        '?page=notifications&action=route_time_intervals_save&route=' . $route->id
+        . notifications_user_qs($route->user_id),
+        'post'
+    );
+    $xtpl->table_add_category(_('Time interval'));
+    $xtpl->table_add_category(_('Mode'));
+    $xtpl->table_add_category('');
+    $xtpl->table_add_category('');
+
+    foreach ($assignments as $assignment) {
+        $interval_id = notifications_prop($assignment, 'event_time_interval_id');
+        $xtpl->table_td(h($intervals[$interval_id] ?? ('#' . $interval_id)));
+        $xtpl->table_td(
+            notifications_select_html(
+                'assignments[' . $assignment->id . '][mode]',
+                $modes,
+                $assignment->mode
+            )
+        );
+        $xtpl->table_td('');
+        $xtpl->table_td(
+            '<a href="?page=notifications&action=route_time_interval_delete&route=' . $route->id
+            . '&id=' . $assignment->id . notifications_user_qs($route->user_id)
+            . '&t=' . csrf_token() . '"'
+            . notifications_confirm_onclick(_('Do you really wish to unassign this time interval?'))
+            . '><img src="template/icons/vps_delete.png" title="'
+            . h(_('Delete')) . '"></a>'
+        );
+        $xtpl->table_tr();
+    }
+
+    if ($assignments) {
+        $xtpl->table_td('');
+        $xtpl->table_td(notifications_submit_html(_('Save changes'), null, 'save_assignments'));
+        $xtpl->table_td('');
+        $xtpl->table_td('');
+        $xtpl->table_tr();
+    }
+
+    if (count($intervals) > 1) {
+        $xtpl->table_td(notifications_select_html('event_time_interval', $intervals, ''));
+        $xtpl->table_td(notifications_select_html('mode', $modes, 'active'));
+        $xtpl->table_td(notifications_submit_html(_('Assign interval'), null, 'add_assignment'));
+        $xtpl->table_td('');
+        $xtpl->table_tr();
+    } else {
+        $xtpl->table_td(
+            '<a href="?page=notifications&action=time_interval_new'
+            . notifications_user_qs($route->user_id) . '">' . h(_('Create a time interval first')) . '</a>',
+            false,
+            true,
+            4
+        );
+        $xtpl->table_tr();
+    }
+
+    $xtpl->form_out_raw();
+}
+
 function notifications_routes_list($user_id = null)
 {
     global $xtpl, $api;
@@ -1614,7 +2162,7 @@ function notifications_routes_list($user_id = null)
         $xtpl->form_out(_('Show'));
     }
 
-    $xtpl->table_title(_('Routes') . ': ' . h($user->login));
+    $xtpl->table_title(_('Routes') . ': ' . h($user->login), 'notifications.routes');
     $xtpl->table_add_category('');
     $xtpl->table_add_category(_('Label'));
     $xtpl->table_add_category(_('Events'));
@@ -1787,7 +2335,7 @@ function notifications_route_edit($route_id)
 
     $xtpl->title(_('Notification route') . ' #' . $route->id);
 
-    $xtpl->table_title(_('Update route'));
+    $xtpl->table_title(_('Update route'), 'notifications.route-form');
     $xtpl->form_create('?page=notifications&action=route_edit&id=' . $route->id . notifications_user_qs($route->user_id), 'post');
 
     $xtpl->table_td(_('User') . ':');
@@ -1823,6 +2371,7 @@ function notifications_route_edit($route_id)
     $xtpl->table_tr();
     $xtpl->table_out();
 
+    notifications_route_time_intervals($route);
     notifications_route_subroutes($route);
 
     $xtpl->table_title(_('Matchers'));
@@ -2449,7 +2998,7 @@ function notifications_targets($user_id = null)
         $xtpl->form_out(_('Show'));
     }
 
-    $xtpl->table_title(_('Targets') . ': ' . h($user->login));
+    $xtpl->table_title(_('Targets') . ': ' . h($user->login), 'notifications.targets');
     $xtpl->table_add_category(_('Action'));
     $xtpl->table_add_category(_('Label'));
     $xtpl->table_add_category(_('Target'));
@@ -2526,7 +3075,7 @@ function notifications_receivers($user_id = null)
         $xtpl->form_out(_('Show'));
     }
 
-    $xtpl->table_title(_('Receivers') . ': ' . h($user->login));
+    $xtpl->table_title(_('Receivers') . ': ' . h($user->login), 'notifications.receivers');
     $xtpl->table_add_category(_('Label'));
     $xtpl->table_add_category(_('Targets'));
     $xtpl->table_add_category(_('Enabled'));
@@ -3084,7 +3633,7 @@ function notifications_receiver_edit($receiver_id)
     $target_labels = notifications_target_all_type_labels();
 
     $xtpl->title(_('Notification receiver') . ' #' . $receiver->id);
-    $xtpl->table_title(_('Update receiver'));
+    $xtpl->table_title(_('Update receiver'), 'notifications.receiver-form');
     $xtpl->form_create('?page=notifications&action=receiver_edit&id=' . $receiver->id . notifications_user_qs($receiver->user_id), 'post');
 
     $xtpl->table_td(_('User') . ':');
@@ -3606,16 +4155,55 @@ function notifications_events()
     notifications_sidebar('events', notifications_target_user_id());
 }
 
+function notifications_time_interval_snapshot_array($value)
+{
+    if (is_string($value)) {
+        $value = json_decode($value, true);
+    } elseif (is_object($value) || is_array($value)) {
+        $value = json_decode(json_encode($value), true);
+    }
+
+    return is_array($value) ? $value : [];
+}
+
+function notifications_route_time_interval_result_html($match)
+{
+    $state = notifications_prop($match, 'time_interval_state', 'active');
+    $snapshot = notifications_time_interval_snapshot_array(
+        notifications_prop($match, 'time_interval_snapshot')
+    );
+    $assignments = $snapshot['assignments'] ?? [];
+    if (!$assignments) {
+        return '<code>' . h($state) . '</code>';
+    }
+
+    $items = [];
+    foreach ($assignments as $assignment) {
+        $label = ($assignment['matched'] ?? false) ? '✓ ' : '– ';
+        $label .= ($assignment['mode'] ?? '') . ': ' . ($assignment['name'] ?? '');
+        $items[] = '<li>' . h($label) . '</li>';
+    }
+
+    $evaluated_at = $snapshot['evaluated_at'] ?? null;
+    $details = $evaluated_at
+        ? '<br><small>' . h(_('Evaluated at') . ': ' . $evaluated_at) . '</small>'
+        : '';
+
+    return '<details><summary><code>' . h($state) . '</code></summary><ul>'
+        . implode('', $items) . '</ul>' . $details . '</details>';
+}
+
 function notifications_event_route_matches($event)
 {
     global $xtpl;
 
     $matches = notifications_api_list_to_array($event->route_match->list());
 
-    $xtpl->table_title(_('Matched routes'));
+    $xtpl->table_title(_('Matched routes'), 'notifications.event-route-matches');
     $xtpl->table_add_category(_('Route'));
     $xtpl->table_add_category(_('User'));
     $xtpl->table_add_category(_('Relation'));
+    $xtpl->table_add_category(_('Time intervals'));
 
     foreach ($matches as $match) {
         $route_label = notifications_prop($match, 'event_route_label') ?: ('#' . $match->event_route_id);
@@ -3628,11 +4216,12 @@ function notifications_event_route_matches($event)
         );
         $xtpl->table_td(h($owner));
         $xtpl->table_td(h(notifications_prop($match, 'subject_relation')));
+        $xtpl->table_td(notifications_route_time_interval_result_html($match), false, true);
         $xtpl->table_tr();
     }
 
     if (!$matches) {
-        $xtpl->table_td(_('No routes matched.'), false, false, 3);
+        $xtpl->table_td(_('No routes matched.'), false, false, 4);
         $xtpl->table_tr();
     }
 

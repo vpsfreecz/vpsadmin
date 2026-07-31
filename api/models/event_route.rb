@@ -1,6 +1,7 @@
 class EventRoute < ApplicationRecord
   MAX_ROUTES = 100
   MAX_MATCHERS = 30
+  MAX_TIME_INTERVALS = 20
   DEFAULT_ROUTE_LABEL = 'Default route'.freeze
   DEFAULT_ADMIN_ROUTE_LABEL = 'Default admin route'.freeze
   DEFAULT_ROUTE_POSITION = 10_000
@@ -30,6 +31,8 @@ class EventRoute < ApplicationRecord
            foreign_key: :parent_id,
            dependent: :destroy
   has_many :event_route_matchers, -> { order(:id) }, dependent: :delete_all
+  has_many :event_route_time_intervals, -> { order(:id) }, dependent: :delete_all
+  has_many :event_time_intervals, through: :event_route_time_intervals
   has_many :event_deliveries, dependent: :nullify
   has_many :event_route_matches, dependent: :delete_all
 
@@ -125,6 +128,42 @@ class EventRoute < ApplicationRecord
 
       ret
     end
+  end
+
+  def time_interval_result(at:)
+    assignments = event_route_time_intervals.to_a
+    active_assignments = assignments.select(&:active_mode?)
+    mute_assignments = assignments.select(&:mute_mode?)
+    results = assignments.map do |assignment|
+      interval = assignment.event_time_interval
+      {
+        'event_time_interval_id' => interval.id,
+        'name' => interval.name,
+        'time_zone' => interval.time_zone,
+        'mode' => assignment.mode,
+        'matched' => interval.matches?(at)
+      }
+    end
+
+    active = active_assignments.empty? || results.any? do |result|
+      result.fetch('mode') == 'active' && result.fetch('matched')
+    end
+    muted = results.any? do |result|
+      result.fetch('mode') == 'mute' && result.fetch('matched')
+    end
+    state = if muted
+              'muted'
+            elsif active
+              'active'
+            else
+              'inactive'
+            end
+
+    {
+      'state' => state,
+      'evaluated_at' => at.utc.iso8601,
+      'assignments' => results
+    }
   end
 
   def matcher_summary
