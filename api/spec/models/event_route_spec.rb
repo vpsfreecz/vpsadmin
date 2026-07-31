@@ -12,6 +12,7 @@ RSpec.describe EventRoute do
   end
 
   def reset_routing!(user)
+    EventRouteMatch.delete_all
     EventRouteMatcher.joins(:event_route).where(event_routes: { user_id: user.id }).delete_all
     NotificationReceiverAction
       .joins(:notification_receiver)
@@ -83,6 +84,7 @@ RSpec.describe EventRoute do
   end
 
   def reset_all_event_routing!
+    EventRouteMatch.delete_all
     EventRoutingContext.delete_all
     EventDelivery.delete_all
     Event.delete_all
@@ -105,13 +107,17 @@ RSpec.describe EventRoute do
     )
   end
 
+  def matched_routes(event)
+    event.event_route_matches.reload.map(&:event_route)
+  end
+
   it 'creates and uses the default e-mail receiver when no routes exist' do
     event = emit_incident!
     delivery = event.event_deliveries.sole
     receivers = SpecSeed.user.notification_receivers.to_a
 
     expect(event.reload).to be_routed_routing_state
-    expect(event.matched_event_route).to be_present
+    expect(matched_routes(event)).not_to be_empty
     expect(receivers.size).to eq(2)
     expect(receivers).to include(default_email_receiver_for(SpecSeed.user))
     expect(receivers).to include(default_mute_receiver_for(SpecSeed.user))
@@ -163,7 +169,7 @@ RSpec.describe EventRoute do
     )
 
     expect(event.reload).to be_routed_routing_state
-    expect(event.matched_event_route).to eq(route)
+    expect(matched_routes(event)).to eq([route])
     expect(event.event_deliveries.sole.action).to eq('webhook')
   end
 
@@ -196,7 +202,7 @@ RSpec.describe EventRoute do
     )
 
     expect(event.reload).to be_routed_routing_state
-    expect(event.matched_event_route).to eq(route)
+    expect(matched_routes(event)).to eq([route])
   end
 
   it 'marks single-use routes as spent after their first match' do
@@ -219,7 +225,7 @@ RSpec.describe EventRoute do
       subject: 'Spec one-shot'
     )
 
-    expect(event.reload.matched_event_route).to eq(route)
+    expect(matched_routes(event.reload)).to eq([route])
     expect(route.reload).to be_single_use
     expect(route).not_to be_enabled
     expect(route.spent_at).to be_present
@@ -297,7 +303,7 @@ RSpec.describe EventRoute do
     event = emit_incident!
     deliveries = event.event_deliveries.order(:id)
 
-    expect(event.reload.matched_event_route).to eq(child)
+    expect(matched_routes(event.reload)).to eq([parent, child])
     expect(deliveries.map(&:action)).to eq(['webhook'])
     expect(deliveries.first.target_value).to eq('https://example.test/events')
     expect(deliveries.first.template_name).to be_nil
@@ -321,13 +327,14 @@ RSpec.describe EventRoute do
         target_value: 'audit@example.test'
       }
     )
-    create_route!(receiver: webhook_receiver, position: 1, continue: true)
-    create_route!(receiver: email_receiver, position: 2)
+    webhook_route = create_route!(receiver: webhook_receiver, position: 1, continue: true)
+    email_route = create_route!(receiver: email_receiver, position: 2)
 
     event = emit_incident!
     deliveries = event.event_deliveries.order(:id)
 
     expect(event.reload).to be_routed_routing_state
+    expect(matched_routes(event)).to eq([webhook_route, email_route])
     expect(deliveries.map(&:action)).to eq(%w[webhook email])
     expect(deliveries.map(&:target_value)).to eq(
       ['https://example.test/events', 'audit@example.test']
@@ -496,7 +503,7 @@ RSpec.describe EventRoute do
     expect(admin_context.recipient_user).to eq(SpecSeed.admin)
     expect(admin_context.subject_relation).to eq('other_user')
     expect(admin_context.source).to eq('visible_route')
-    expect(admin_context.matched_event_route).to eq(route)
+    expect(matched_routes(routed_event)).to include(route)
     expect(admin_delivery.target_value).to eq('default')
     expect(admin_delivery.recipient_user).to eq(SpecSeed.admin)
     expect(NotificationTemplate).to have_received(:send_email!).with(
@@ -568,7 +575,7 @@ RSpec.describe EventRoute do
     delivery = event.event_deliveries.sole
 
     expect(event.reload).to be_routed_routing_state
-    expect(event.matched_event_route).to eq(route)
+    expect(matched_routes(event)).to eq([route])
     expect(delivery.target_kind).to eq('custom')
     expect(delivery.target_value).to eq('account-role@example.test')
     expect(delivery.template_name).to eq('user_suspend')
@@ -599,7 +606,7 @@ RSpec.describe EventRoute do
     )
 
     expect(event.reload).to be_routed_routing_state
-    expect(event.matched_event_route).to eq(route)
+    expect(matched_routes(event)).to eq([route])
   end
 
   it 'matches with sigil operators' do

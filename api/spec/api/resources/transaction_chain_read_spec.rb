@@ -432,6 +432,7 @@ RSpec.describe 'VpsAdmin::API::Resources::TransactionChain' do
 
     describe 'NotifyWhenDone' do
       before do
+        EventRouteMatch.delete_all
         EventRouteMatcher.joins(:event_route).where(event_routes: { user_id: user.id }).delete_all
         NotificationReceiverAction
           .joins(:notification_receiver)
@@ -495,7 +496,7 @@ RSpec.describe 'VpsAdmin::API::Resources::TransactionChain' do
 
         expect(route.reload.spent_at).to be_present
         expect(route).not_to be_enabled
-        expect(event.matched_event_route).to eq(route)
+        expect(event.event_route_matches.reload.map(&:event_route)).to eq([route])
         expect(event.parameters).to include(
           'state' => 'done',
           'terminal' => true,
@@ -530,7 +531,7 @@ RSpec.describe 'VpsAdmin::API::Resources::TransactionChain' do
           changed_at: Time.at(threshold - 60)
         )
 
-        expect(stale_event.reload.matched_event_route).to be_nil
+        expect(stale_event).to be_nil
         expect(route.reload.spent_at).to be_nil
 
         fresh_event = VpsAdmin::API::Events.emit_transaction_chain_state!(
@@ -540,7 +541,7 @@ RSpec.describe 'VpsAdmin::API::Resources::TransactionChain' do
           changed_at: Time.at(threshold + 60)
         )
 
-        expect(fresh_event.reload.matched_event_route).to eq(route)
+        expect(fresh_event.reload.event_route_matches.map(&:event_route)).to eq([route])
         expect(route.reload.spent_at).to be_present
       end
 
