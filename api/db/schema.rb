@@ -586,7 +586,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.string "event_type", limit: 100, null: false
     t.string "ip_addr", limit: 46
     t.text "parameters"
-    t.integer "routing_state", default: 0, null: false
+    t.integer "routing_state", default: 1, null: false
     t.integer "severity", null: false
     t.string "source_class", limit: 100
     t.bigint "source_id"
