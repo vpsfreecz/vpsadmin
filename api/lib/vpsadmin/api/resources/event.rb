@@ -557,6 +557,8 @@ module VpsAdmin::API::Resources
           string :action,
                  choices: { values: ::EventDelivery.action_labels },
                  load_validators: false
+          integer :recipient_user_id, nullable: true
+          string :recipient_user_login, nullable: true
           string :state,
                  choices: { values: ::EventDeliveryAttempt.state_labels },
                  load_validators: false
