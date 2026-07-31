@@ -7,3 +7,7 @@ VPS #<%= @vps.id %> <%= @vps.hostname %>: <%= @all_oom_count %> out-of-memory ev
 
 Open: <%= url %>
 <% end -%>
+<% if defined?(@mute_url) && @mute_url.present? -%>
+
+Mute similar OOM reports: <%= @mute_url %>
+<% end -%>

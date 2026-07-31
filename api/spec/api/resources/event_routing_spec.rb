@@ -675,6 +675,51 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(route.group_interval_seconds).to be_nil
   end
 
+  it 'lets users create, update and clear route expiration' do
+    expires_at = 2.hours.from_now.change(usec: 0)
+
+    as(SpecSeed.user) do
+      json_post route_index_path, event_route: {
+        label: 'Temporary route',
+        event_type: 'user.test_notification',
+        expires_at: expires_at.iso8601
+      }
+    end
+
+    expect_status(200)
+    route = EventRoute.find(route_obj.fetch('id'))
+    expect(route.expires_at).to be_within(1.second).of(expires_at)
+    expect(Time.iso8601(route_obj.fetch('expires_at'))).to be_within(1.second).of(expires_at)
+
+    as(SpecSeed.user) do
+      json_put route_path(route.id), event_route: { expires_at: nil }
+    end
+
+    expect_status(200)
+    expect(route.reload.expires_at).to be_nil
+    expect(route_obj['expires_at']).to be_nil
+  end
+
+  it 'builds non-mutating report mute composer URLs without matcher values' do
+    allow(VpsAdmin::API::Events).to receive(:webui_url).and_return('https://webui.example.test')
+
+    url = VpsAdmin::API::Events::Core.mute_similar_url(
+      action: 'mute_oom_reports',
+      source_params: { oom_report_ids: '10,11' },
+      route_owner: SpecSeed.admin
+    )
+
+    uri = URI(url)
+    expect(uri.path).to eq('/')
+    expect(URI.decode_www_form(uri.query).to_h).to eq(
+      'page' => 'notifications',
+      'action' => 'mute_oom_reports',
+      'oom_report_ids' => '10,11',
+      'route_owner_id' => SpecSeed.admin.id.to_s
+    )
+    expect(url).not_to include('cgroup', 'process', 'token')
+  end
+
   it 'lets owners and admins inspect notification groups and their events' do
     receiver = NotificationReceiver.create!(
       user: SpecSeed.user,

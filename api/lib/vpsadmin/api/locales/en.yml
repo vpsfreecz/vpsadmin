@@ -1102,6 +1102,8 @@ en:
             label: Bank transaction identifier of the incoming payment
           indirect_vps_count:
             label: Number of VPSes indirectly affected by the outage
+          invoked_by_name:
+            label: Name of the process which invoked the OOM killer
           ip_addr:
             label: IP address mentioned by the incident report
           ip_addrs:
@@ -1492,7 +1494,6 @@ en:
       grouping_enabled:
         description: Collect matching events and send them together after the configured
           delay
-        label: Group notifications
       grouping_summary:
         description: Human-readable summary of the grouping configuration
         label: Grouping_summary
@@ -1854,10 +1855,22 @@ en:
         label: Map mode
       master_enabled:
         label: Master enabled
+      match_cgroup:
+        label: Match_cgroup
+      match_codename:
+        label: Match_codename
+      match_invoked_by_name:
+        label: Match_invoked_by_name
+      match_ip_addr:
+        label: Match_ip_addr
+      match_killed_name:
+        label: Match_killed_name
       match_order:
         label: Match_order
-      matcher_count:
-        label: Matcher count
+      match_subject:
+        label: Match_subject
+      match_vps:
+        label: Match_vps
       matcher_summary:
         label: Matcher_summary
       matches_now:
@@ -3039,6 +3052,8 @@ en:
           secondary_type:
             label: secondary_type
         label: User_dns_zone_type
+      user_id:
+        label: User_id
       user_ident:
         label: User_ident
       user_ip_ownership:
@@ -4484,6 +4499,8 @@ en:
             description: Affected cgroup path
           count:
             description: Number of OOM kills represented by this report
+          invoked_by_name:
+            description: Name of the process which invoked the OOM killer
           killed_name:
             description: Name of the process killed by the kernel
           oom_count:
@@ -5299,10 +5316,14 @@ en:
             description: Optional date and time after which this route stops matching
               events
             label: Expires at
+          grouping_enabled:
+            label: Group notifications
           id:
             label: Id
           label:
             description: Optional name used to identify the route
+          matcher_count:
+            label: Matcher count
           notification_receiver_id:
             label: Receiver
           parent_id:
@@ -5423,13 +5444,42 @@ en:
           addr:
             label: Address
       incident_report:
+        actions:
+          create:
+            output:
+              id:
+                label: ID
+          index:
+            output:
+              id:
+                label: ID
+          mute_similar:
+            output:
+              id:
+                label: Id
+          show:
+            output:
+              id:
+                label: ID
         attributes:
           created_at:
             label: Created_at
-          id:
-            label: ID
+          event_type:
+            label: Event_type
+          expires_at:
+            label: Expires at
+          grouping_enabled:
+            label: Grouping_enabled
           ip_addr:
             label: IP address
+          matcher_count:
+            label: Matcher_count
+          notification_receiver_id:
+            label: Notification_receiver_id
+          subject_scope:
+            label: Subject_scope
+          updated_at:
+            label: Updated_at
           vps:
             label: VPS
       incoming_payment:
@@ -5943,8 +5993,22 @@ en:
         attributes:
           created_at:
             label: Created_at
+          event_type:
+            label: Event_type
+          expires_at:
+            label: Expires at
+          grouping_enabled:
+            label: Grouping_enabled
           id:
             label: Id
+          matcher_count:
+            label: Matcher_count
+          notification_receiver_id:
+            label: Notification_receiver_id
+          subject_scope:
+            label: Subject_scope
+          updated_at:
+            label: Updated_at
           vps:
             label: VPS
         stat:

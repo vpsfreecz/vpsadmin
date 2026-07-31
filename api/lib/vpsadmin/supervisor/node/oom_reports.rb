@@ -180,6 +180,7 @@ module VpsAdmin::Supervisor
           cgroup: full_cgroup,
           count:,
           oom_count: count,
+          invoked_by_name: report.fetch('invoked_by_name'),
           killed_name: report.fetch('killed_name')
         },
         occurred_at:,

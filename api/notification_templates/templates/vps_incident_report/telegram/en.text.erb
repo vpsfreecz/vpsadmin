@@ -12,3 +12,7 @@ VPS: #<%= @event.vps.id %> <%= @event.vps.hostname %>
 
 Open: <%= url %>
 <% end -%>
+<% if defined?(@mute_url) && @mute_url.present? -%>
+
+Mute similar incident reports: <%= @mute_url %>
+<% end -%>

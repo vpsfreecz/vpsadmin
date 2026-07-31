@@ -1,3 +1,5 @@
+require_relative '../events/report_mute_route'
+
 module VpsAdmin::API::Resources
   class IncidentReport < HaveAPI::Resource
     model ::IncidentReport
@@ -103,6 +105,98 @@ module VpsAdmin::API::Resources
 
       def exec
         @incident
+      end
+    end
+
+    class MuteSimilar < HaveAPI::Action
+      desc 'Create a mute route matching values from this incident report'
+      route '{%{resource}_id}/mute_similar'
+      http_method :post
+
+      input do
+        resource VpsAdmin::API::Resources::User,
+                 name: :route_owner,
+                 value_label: :login,
+                 nullable: true
+        bool :match_vps, default: false, fill: true
+        bool :match_ip_addr, default: false, fill: true
+        bool :match_codename, default: false, fill: true
+        bool :match_subject, default: false, fill: true
+        datetime :expires_at,
+                 label: 'Expires at',
+                 desc: 'Optional date and time after which this route stops matching events',
+                 desc_key: 'vpsadmin.resources.event_route.attributes.expires_at.description',
+                 nullable: true
+      end
+
+      output namespace: :event_route do
+        id :id
+        integer :user_id
+        integer :notification_receiver_id, nullable: true
+        string :label, nullable: true
+        integer :position
+        bool :enabled
+        string :event_type, nullable: true
+        string :subject_scope
+        bool :grouping_enabled
+        bool :continue
+        bool :single_use
+        datetime :spent_at, nullable: true
+        datetime :expires_at,
+                 label: 'Expires at',
+                 desc: 'Optional date and time after which this route stops matching events',
+                 desc_key: 'vpsadmin.resources.event_route.attributes.expires_at.description',
+                 nullable: true
+        string :matcher_summary
+        integer :matcher_count
+        string :display_label
+        datetime :created_at
+        datetime :updated_at
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict user_id: u.id
+        allow
+      end
+
+      def prepare
+        @incident = with_includes(::IncidentReport).find_by!(with_restricted(
+                                                               id: path_params['incident_report_id']
+                                                             ))
+      end
+
+      def exec
+        VpsAdmin::API::Events::ReportMuteRoute.new(
+          current_user:,
+          source_user: @incident.user,
+          owner: input[:route_owner],
+          event_type: 'vps.incident_report',
+          label: "Mute incident reports like ##{@incident.id}",
+          matchers: selected_matchers,
+          expires_at: input[:expires_at]
+        ).create!
+      rescue VpsAdmin::API::Events::ReportMuteRoute::Error => e
+        error!(e.message)
+      rescue ActiveRecord::RecordInvalid => e
+        error!('create failed', e.record.errors.to_hash)
+      end
+
+      protected
+
+      def selected_matchers
+        {
+          match_vps: [:vps_id, @incident.vps_id],
+          match_ip_addr: [:ip_addr, incident_ip_addr],
+          match_codename: [:codename, @incident.codename],
+          match_subject: [:subject, @incident.subject]
+        }.filter_map do |input_name, (field, value)|
+          { field:, value: } if input[input_name]
+        end
+      end
+
+      def incident_ip_addr
+        @incident.ip_address_assignment&.ip_addr || @incident.ip_address&.ip_addr
       end
     end
 

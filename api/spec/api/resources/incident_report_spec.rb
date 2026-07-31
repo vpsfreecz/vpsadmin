@@ -22,6 +22,10 @@ RSpec.describe 'VpsAdmin::API::Resources::IncidentReport' do
     vpath("/incident_reports/#{id}")
   end
 
+  def mute_similar_path(id)
+    vpath("/incident_reports/#{id}/mute_similar")
+  end
+
   def json_get(path, params = nil)
     get path, params, {
       'CONTENT_TYPE' => 'application/json',
@@ -41,6 +45,10 @@ RSpec.describe 'VpsAdmin::API::Resources::IncidentReport' do
 
   def report_obj
     json.dig('response', 'incident_report') || json['response']
+  end
+
+  def event_route_obj
+    json.dig('response', 'event_route') || json['response']
   end
 
   def errors
@@ -252,7 +260,12 @@ RSpec.describe 'VpsAdmin::API::Resources::IncidentReport' do
   describe 'API description' do
     it 'includes incident_report scopes' do
       scopes = EndpointInventory.scopes_for_version(self, api_version)
-      expect(scopes).to include('incident_report#index', 'incident_report#show', 'incident_report#create')
+      expect(scopes).to include(
+        'incident_report#index',
+        'incident_report#show',
+        'incident_report#create',
+        'incident_report#mute_similar'
+      )
     end
   end
 
@@ -402,6 +415,78 @@ RSpec.describe 'VpsAdmin::API::Resources::IncidentReport' do
 
       expect(last_response.status).to be_in([200, 404])
       expect(json['status']).to be(false)
+    end
+  end
+
+  describe 'MuteSimilar' do
+    it 'creates an exact incident mute route from selected values' do
+      as(SpecSeed.user) do
+        json_post mute_similar_path(user_incident_newer.id), incident_report: {
+          match_vps: true,
+          match_ip_addr: true,
+          match_codename: true,
+          match_subject: true
+        }
+      end
+
+      expect_status(200)
+      route = EventRoute.find(event_route_obj.fetch('id'))
+      expect(route).to have_attributes(
+        user: SpecSeed.user,
+        label: "Mute incident reports like ##{user_incident_newer.id}",
+        event_type: 'vps.incident_report',
+        subject_scope: 'self',
+        grouping_enabled: false,
+        continue: false,
+        expires_at: nil
+      )
+      expect(route.notification_receiver).to be_mute
+      expect(route.event_route_matchers.pluck(:field, :operator, :value)).to contain_exactly(
+        ['vps_id', '==', user_incident_newer.vps_id.to_s],
+        ['ip_addr', '==', assignment_user.ip_addr],
+        ['codename', '==', user_incident_newer.codename],
+        ['subject', '==', user_incident_newer.subject]
+      )
+    end
+
+    it 'rejects unavailable fields and foreign reports atomically' do
+      user_incident_newer.update!(codename: nil)
+
+      expect do
+        as(SpecSeed.user) do
+          json_post mute_similar_path(user_incident_newer.id), incident_report: {
+            match_codename: true
+          }
+        end
+      end.not_to change(EventRoute, :count)
+      expect(json['status']).to be(false)
+
+      expect do
+        as(SpecSeed.user) do
+          json_post mute_similar_path(other_incident.id), incident_report: {
+            match_vps: true
+          }
+        end
+      end.not_to change(EventRoute, :count)
+      expect(json['status']).to be(false)
+    end
+
+    it 'uses visible scope for a notification-recipient admin owner' do
+      as(SpecSeed.admin) do
+        json_post mute_similar_path(user_incident_newer.id), incident_report: {
+          route_owner: SpecSeed.admin.id,
+          match_subject: true,
+          expires_at: 1.day.from_now.iso8601
+        }
+      end
+
+      expect_status(200)
+      route = EventRoute.find(event_route_obj.fetch('id'))
+      expect(route).to have_attributes(
+        user: SpecSeed.admin,
+        subject_scope: 'visible'
+      )
+      expect(route.expires_at).to be > Time.current
     end
   end
 

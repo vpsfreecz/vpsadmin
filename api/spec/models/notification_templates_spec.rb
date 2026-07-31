@@ -746,4 +746,22 @@ RSpec.describe VpsAdmin::API::NotificationTemplates do
       expect(content).not_to match(/\bmember(ship|s)?\b/i)
     end
   end
+
+  it 'ships guarded report mute links in e-mail and Telegram but not SMS' do
+    templates = described_class.find_templates(described_class.default_template_paths).to_h do |template|
+      [template.name, template]
+    end
+
+    %w[vps_oom_report vps_incident_report].each do |name|
+      template = templates.fetch(name)
+      email = template.variants.find { |variant| variant.protocol == 'email' && variant.lang == 'en' }
+      telegram = template.variants.find { |variant| variant.protocol == 'telegram' && variant.lang == 'en' }
+      sms = template.variants.find { |variant| variant.protocol == 'sms' && variant.lang == 'en' }
+
+      [email, telegram].each do |variant|
+        expect(variant.params.fetch(:text)).to include('defined?(@mute_url)', '@mute_url')
+      end
+      expect(sms.params.fetch(:text)).not_to include('@mute_url')
+    end
+  end
 end
