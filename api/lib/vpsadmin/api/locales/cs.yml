@@ -594,6 +594,10 @@ cs:
         label: URL dynamické aktualizace
       effective_at:
         label: Čas účinnosti
+      effective_event_delivery_id:
+        label: ID výsledného doručení
+      effective_event_id:
+        label: ID výsledné události
       effective_value:
         label: Účinná hodnota
       email:
@@ -672,10 +676,14 @@ cs:
         label: Odhadovaný příjem
       event_at:
         label: Čas události
+      event_count:
+        label: Počet událostí
       event_created_at:
         label: Vytvoření události
       event_data:
         label: Data události
+      event_delivery_group_id:
+        label: ID skupiny doručení
       event_delivery_id:
         label: ID doručení události
       event_id:
@@ -925,7 +933,7 @@ cs:
           concern_object_ids:
             label: ID objektů dotčených řetězcem
           count:
-            label: Počet OOM reportů ve vybrané skupině
+            label: Počet OOM killů zastoupených tímto reportem
           cpu:
             label: Počet CPU jader přiřazený VPS po změně
           cpu_limit:
@@ -1345,6 +1353,28 @@ cs:
           current:
             label: Aktuální
         label: Stav systému
+      group_by:
+        label: Seskupovat podle
+      group_event_ids:
+        label: ID událostí ve skupině
+      group_interval_seconds:
+        label: Minimální interval skupiny (sekundy)
+      group_key:
+        label: Klíč skupiny
+      group_labels:
+        label: Hodnoty skupiny
+      group_next_flush_at:
+        label: Čas příštího odeslání skupiny
+      group_truncated_count:
+        label: Počet nezobrazených událostí
+      group_wait_seconds:
+        label: Počáteční čekání skupiny (sekundy)
+      grouped_delivery:
+        label: Seskupené doručení
+      grouping_enabled:
+        label: Seskupovat notifikace
+      grouping_summary:
+        label: Seskupování
       handled_by:
         description: Filtrovat hlášení řešená uživatelem
         label: Řeší
@@ -2506,6 +2536,10 @@ cs:
             label: fatální chyba
           faulted:
             label: faulted
+          grouped:
+            label: součást seskupeného doručení
+          grouping:
+            label: čeká na seskupení
           ignored:
             label: ignorováno
           inactive:

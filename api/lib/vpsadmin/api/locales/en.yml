@@ -594,6 +594,10 @@ en:
         label: Dynamic update URL
       effective_at:
         label: Effective_at
+      effective_event_delivery_id:
+        label: Effective_event_delivery_id
+      effective_event_id:
+        label: Effective_event_id
       effective_value:
         label: Effective_value
       email:
@@ -672,10 +676,14 @@ en:
         label: Estimated_income
       event_at:
         label: Event_at
+      event_count:
+        label: Event_count
       event_created_at:
         label: Event_created_at
       event_data:
         label: Event_data
+      event_delivery_group_id:
+        label: Event_delivery_group_id
       event_delivery_id:
         label: Event_delivery_id
       event_id:
@@ -1346,6 +1354,28 @@ en:
           current:
             label: current
         label: Generation
+      group_by:
+        label: Group_by
+      group_event_ids:
+        label: Group_event_ids
+      group_interval_seconds:
+        label: Group_interval_seconds
+      group_key:
+        label: Group_key
+      group_labels:
+        label: Group_labels
+      group_next_flush_at:
+        label: Group_next_flush_at
+      group_truncated_count:
+        label: Group_truncated_count
+      group_wait_seconds:
+        label: Group_wait_seconds
+      grouped_delivery:
+        label: Grouped_delivery
+      grouping_enabled:
+        label: Group notifications
+      grouping_summary:
+        label: Grouping_summary
       handled_by:
         description: Filter outages handled by user
         label: Handled by
@@ -2511,6 +2541,10 @@ en:
             label: fatal
           faulted:
             label: faulted
+          grouped:
+            label: included in grouped delivery
+          grouping:
+            label: waiting for group
           ignored:
             label: ignored
           inactive:

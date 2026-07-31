@@ -1,0 +1,19 @@
+Hello <%= @user.login %>,
+
+vpsAdmin grouped <%= @group_event_count %> related events:
+
+<% @group_events.each do |event| -%>
+- <%= local_time(event.created_at, '%Y-%m-%d %H:%M %Z') %> [<%= event.severity %>] <%= event.subject %> (<%= event.event_type %>)
+<% end -%>
+<% if @group_truncated_count > 0 -%>
+
+There are <%= @group_truncated_count %> additional events not shown here.
+<% end -%>
+<% if @base_url.present? -%>
+
+vpsAdmin: <%= @base_url %>?page=notifications&action=events
+<% end -%>
+
+Best regards,
+
+vpsAdmin
