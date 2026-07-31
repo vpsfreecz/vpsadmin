@@ -736,6 +736,14 @@ cs:
             label: Změna živé záplaty
           module_change:
             label: Změna modulů
+          operation_failed:
+            label: Operace selhala
+          operation_resolved:
+            label: Selhání operace vyřešeno
+          operation_started:
+            label: Operace zahájena
+          operation_succeeded:
+            label: Operace dokončena úspěšně
           outage_announced:
             label: Odstávka nebo výpadek oznámen
           outage_updated:
@@ -826,10 +834,6 @@ cs:
             label: Prevence OOM
           vps_oom_report:
             label: OOM report
-          vps_operation_failed:
-            label: Operace VPS selhala
-          vps_operation_succeeded:
-            label: Operace VPS proběhla úspěšně
           vps_replaced:
             label: VPS nahrazeno
           vps_resources_changed:
@@ -984,6 +988,8 @@ cs:
             label: Třídy objektů dotčených řetězcem
           concern_object_ids:
             label: ID objektů dotčených řetězcem
+          concern_type:
+            label: Způsob vztahu operace k prostředkům
           console_client_id:
             label: Dočasný identifikátor propojující otevření a zavření konzole
           count:
@@ -1174,6 +1180,10 @@ cs:
             label: Minuta otevření v rámci dne po změně
           operation:
             label: Operace VPS zastoupená transakčním řetězcem
+          operation_id:
+            label: Stabilní ID operace transakčního řetězce
+          operation_label:
+            label: Uživatelsky čitelný název operace
           original_refquota:
             label: Refquota datasetu před automatickou expanzí nebo shrinkem, v bajtech
           original_vps_hostname:
@@ -1262,6 +1272,8 @@ cs:
             label: Třída ActiveRecord dotčeného prostředku
           restart_vps:
             label: Zda jsou dotčená VPS během migrace restartována
+          result_event_ids:
+            label: ID událostí s výslednými fakty emitovaných při úspěchu
           roles:
             label: Notifikační role deklarované typem události
           runtime_event_type:
@@ -1356,8 +1368,6 @@ cs:
             label: Hostname dotčeného VPS
           vps_id:
             label: ID dotčeného VPS
-          vps_ids:
-            label: ID všech VPS dotčených operací
           weekday:
             label: Den v týdnu zastoupený oknem
           window_count:
@@ -3183,6 +3193,8 @@ cs:
             description: Zda je událost doručena výchozí routou
           event_type:
             description: Jedinečný název typu události
+          operation_id:
+            description: ID operace transakčního řetězce související s událostí
           roles:
             description: Notifikační role deklarované typem události
           severity:
@@ -3450,6 +3462,160 @@ cs:
             description: Hostname VPS ovlivněného monitoringovou událostí
           vps_id:
             description: ID VPS ovlivněného monitoringovou událostí
+        operation_failed:
+          actor_user_id:
+            description: ID uživatele, který zahájil operaci
+          admin_user_id:
+            description: ID administrátora jednajícího prostřednictvím impersonace
+          chain_name:
+            description: Uložený název transakčního řetězce
+          chain_type:
+            description: Uložený typ transakčního řetězce
+          changed_at:
+            description: Čas této změny životního cyklu
+          concern_classes:
+            description: Třídy prostředků dotčených operací
+          concern_object_ids:
+            description: ID prostředků dotčených operací
+          concern_type:
+            description: Způsob vztahu operace k prostředkům
+          failed:
+            description: Zda operace selhala
+          node_id:
+            description: ID nodu, který nahlásil stav
+          node_name:
+            description: Název nodu, který nahlásil stav
+          operation:
+            description: Stabilní název operace
+          operation_id:
+            description: Stabilní ID operace transakčního řetězce
+          operation_label:
+            description: Uživatelsky čitelný název operace
+          producer_event_id:
+            description: Stabilní identifikátor přidělený nodem pro tento přechod
+              stavu
+          state:
+            description: Stav transakčního řetězce reprezentovaný touto událostí
+          successful:
+            description: Zda operace proběhla úspěšně
+          user_session_id:
+            description: ID relace, která zahájila operaci
+        operation_resolved:
+          actor_user_id:
+            description: ID uživatele, který zahájil operaci
+          admin_user_id:
+            description: ID administrátora jednajícího prostřednictvím impersonace
+          chain_name:
+            description: Uložený název transakčního řetězce
+          chain_type:
+            description: Uložený typ transakčního řetězce
+          changed_at:
+            description: Čas této změny životního cyklu
+          concern_classes:
+            description: Třídy prostředků dotčených operací
+          concern_object_ids:
+            description: ID prostředků dotčených operací
+          concern_type:
+            description: Způsob vztahu operace k prostředkům
+          failed:
+            description: Zda operace selhala
+          node_id:
+            description: ID nodu, který nahlásil stav
+          node_name:
+            description: Název nodu, který nahlásil stav
+          operation:
+            description: Stabilní název operace
+          operation_id:
+            description: Stabilní ID operace transakčního řetězce
+          operation_label:
+            description: Uživatelsky čitelný název operace
+          producer_event_id:
+            description: Stabilní identifikátor přidělený nodem pro tento přechod
+              stavu
+          state:
+            description: Stav transakčního řetězce reprezentovaný touto událostí
+          successful:
+            description: Zda operace proběhla úspěšně
+          user_session_id:
+            description: ID relace, která zahájila operaci
+        operation_started:
+          actor_user_id:
+            description: ID uživatele, který zahájil operaci
+          admin_user_id:
+            description: ID administrátora jednajícího prostřednictvím impersonace
+          chain_name:
+            description: Uložený název transakčního řetězce
+          chain_type:
+            description: Uložený typ transakčního řetězce
+          changed_at:
+            description: Čas této změny životního cyklu
+          concern_classes:
+            description: Třídy prostředků dotčených operací
+          concern_object_ids:
+            description: ID prostředků dotčených operací
+          concern_type:
+            description: Způsob vztahu operace k prostředkům
+          failed:
+            description: Zda operace selhala
+          node_id:
+            description: ID nodu, který nahlásil stav
+          node_name:
+            description: Název nodu, který nahlásil stav
+          operation:
+            description: Stabilní název operace
+          operation_id:
+            description: Stabilní ID operace transakčního řetězce
+          operation_label:
+            description: Uživatelsky čitelný název operace
+          producer_event_id:
+            description: Stabilní identifikátor přidělený nodem pro tento přechod
+              stavu
+          state:
+            description: Stav transakčního řetězce reprezentovaný touto událostí
+          successful:
+            description: Zda operace proběhla úspěšně
+          user_session_id:
+            description: ID relace, která zahájila operaci
+        operation_succeeded:
+          actor_user_id:
+            description: ID uživatele, který zahájil operaci
+          admin_user_id:
+            description: ID administrátora jednajícího prostřednictvím impersonace
+          chain_name:
+            description: Uložený název transakčního řetězce
+          chain_type:
+            description: Uložený typ transakčního řetězce
+          changed_at:
+            description: Čas této změny životního cyklu
+          concern_classes:
+            description: Třídy prostředků dotčených operací
+          concern_object_ids:
+            description: ID prostředků dotčených operací
+          concern_type:
+            description: Způsob vztahu operace k prostředkům
+          failed:
+            description: Zda operace selhala
+          node_id:
+            description: ID nodu, který nahlásil stav
+          node_name:
+            description: Název nodu, který nahlásil stav
+          operation:
+            description: Stabilní název operace
+          operation_id:
+            description: Stabilní ID operace transakčního řetězce
+          operation_label:
+            description: Uživatelsky čitelný název operace
+          producer_event_id:
+            description: Stabilní identifikátor přidělený nodem pro tento přechod
+              stavu
+          result_event_ids:
+            description: ID událostí s výslednými fakty emitovaných při úspěchu
+          state:
+            description: Stav transakčního řetězce reprezentovaný touto událostí
+          successful:
+            description: Zda operace proběhla úspěšně
+          user_session_id:
+            description: ID relace, která zahájila operaci
         outage_announced:
           affected_export_count:
             description: Počet exportů dotčených odstávkou nebo výpadkem
@@ -4248,70 +4414,6 @@ cs:
             description: Hostname VPS ovlivněného OOM reportem
           vps_id:
             description: ID VPS ovlivněného OOM reportem
-        vps_operation_failed:
-          actor_user_id:
-            description: ID uživatele, který zahájil transakční řetězec
-          chain_id:
-            description: ID transakčního řetězce
-          chain_name:
-            description: Uložený název transakčního řetězce
-          chain_type:
-            description: Uložený typ transakčního řetězce
-          changed_at:
-            description: Čas nahlášení koncového stavu
-          node_id:
-            description: ID nodu, který nahlásil koncový stav
-          node_name:
-            description: Název nodu, který nahlásil koncový stav
-          operation:
-            description: Operace VPS zastoupená transakčním řetězcem
-          producer_event_id:
-            description: Stabilní identifikátor přidělený nodem pro tento přechod
-              stavu
-          state:
-            description: Koncový stav transakčního řetězce
-          successful:
-            description: Zda operace VPS proběhla úspěšně
-          user_session_id:
-            description: ID relace, která zahájila transakční řetězec
-          vps_hostname:
-            description: Aktuální hostname primárního VPS, pokud je dostupný
-          vps_id:
-            description: ID primárního VPS dotčeného operací
-          vps_ids:
-            description: ID všech VPS dotčených operací
-        vps_operation_succeeded:
-          actor_user_id:
-            description: ID uživatele, který zahájil transakční řetězec
-          chain_id:
-            description: ID transakčního řetězce
-          chain_name:
-            description: Uložený název transakčního řetězce
-          chain_type:
-            description: Uložený typ transakčního řetězce
-          changed_at:
-            description: Čas nahlášení koncového stavu
-          node_id:
-            description: ID nodu, který nahlásil koncový stav
-          node_name:
-            description: Název nodu, který nahlásil koncový stav
-          operation:
-            description: Operace VPS zastoupená transakčním řetězcem
-          producer_event_id:
-            description: Stabilní identifikátor přidělený nodem pro tento přechod
-              stavu
-          state:
-            description: Koncový stav transakčního řetězce
-          successful:
-            description: Zda operace VPS proběhla úspěšně
-          user_session_id:
-            description: ID relace, která zahájila transakční řetězec
-          vps_hostname:
-            description: Aktuální hostname primárního VPS, pokud je dostupný
-          vps_id:
-            description: ID primárního VPS dotčeného operací
-          vps_ids:
-            description: ID všech VPS dotčených operací
         vps_replaced:
           new_vps_hostname:
             description: Hostname nově vytvořeného náhradního VPS
@@ -4534,6 +4636,16 @@ cs:
           label: Upozornění na vypršení
         monitoring:
           severity_description: Závažnost je odvozena ze stavu monitoringového alertu
+        operation_failed:
+          label: Operace selhala
+          severity_description: Fatální selhání transakčního řetězce mají kritickou
+            závažnost
+        operation_resolved:
+          label: Selhání operace vyřešeno
+        operation_started:
+          label: Operace zahájena
+        operation_succeeded:
+          label: Operace dokončena úspěšně
         outage_announced:
           label: Odstávka nebo výpadek oznámen
         outage_updated:
@@ -4622,10 +4734,6 @@ cs:
           label: Prevence OOM
         vps_oom_report:
           label: OOM report
-        vps_operation_failed:
-          label: Operace VPS selhala
-        vps_operation_succeeded:
-          label: Operace VPS proběhla úspěšně
         vps_replaced:
           label: VPS nahrazeno
         vps_resources_changed:

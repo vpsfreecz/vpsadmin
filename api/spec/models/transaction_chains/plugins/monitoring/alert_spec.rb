@@ -102,10 +102,12 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
   it 'routes monitoring alerts through the event system' do
     event = build_event
     action, route = create_webhook_route!(event.user)
+    prepared_event = nil
     allow(event).to receive(:call_action) do |chain, ev|
-      chain.route_monitoring_alert!(
+      prepared_event = chain.route_monitoring_alert!(
         ev,
-        event_type: 'monitoring.alert_chain'
+        event_type: 'monitoring.alert_chain',
+        payload: { 'operation_id' => -1 }
       )
     end
 
@@ -132,8 +134,10 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
       'monitored_event_id' => event.id,
       'state' => 'confirmed',
       'object_class' => event.class_name,
-      'object_id' => event.row_id
+      'object_id' => event.row_id,
+      'operation_id' => chain.id
     )
+    expect(EventRouteMatcher.field_value(prepared_event, 'operation_id')).to eq(chain.id)
     expect(routed_event.event_route_matches.reload.map(&:event_route)).to eq([route])
     expect(delivery).to have_attributes(
       action: 'webhook',

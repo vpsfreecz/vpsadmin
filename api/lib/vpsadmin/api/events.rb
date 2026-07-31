@@ -38,6 +38,7 @@ module VpsAdmin::API
       :template,
       :default_routed,
       :severity_description,
+      :examples,
       :definition
     )
 
@@ -93,6 +94,12 @@ module VpsAdmin::API
 
       def default_example
         name_s = name.to_s
+        first_choice = Array(choices).first
+        if first_choice
+          return [first_choice] if %w[string_list integer_list].include?(type)
+
+          return first_choice
+        end
         return true if type == 'boolean'
         return 123 if type == 'integer' || name_s.end_with?('_id')
         return 3.14 if type == 'number'
@@ -230,11 +237,11 @@ module VpsAdmin::API
     class EventDefinition
       attr_reader :name, :owner, :label, :category_name, :default_severity,
                   :default_routed, :roles, :severity_description,
-                  :arguments
+                  :examples, :arguments
 
       def initialize(name, label:, category:, default_routed:, roles:,
                      owner: nil, severity: :info, template: nil,
-                     severity_description: nil)
+                     severity_description: nil, examples: {})
         @name = name.to_s
         @owner = owner
         @label = label
@@ -243,6 +250,7 @@ module VpsAdmin::API
         @default_routed = default_routed ? true : false
         @roles = normalize_roles(roles)
         @severity_description = severity_description
+        @examples = normalize_examples(examples)
         @fallback_template_name = template&.to_s
         @arguments = {}
         @fields = {}
@@ -439,6 +447,20 @@ module VpsAdmin::API
         end
 
         ret
+      end
+
+      def normalize_examples(value)
+        examples = value.to_h.transform_keys(&:to_sym)
+        unsupported = examples.keys - %i[subject summary]
+        if unsupported.any?
+          raise ArgumentError, "event #{name} declares unsupported example #{unsupported.first.inspect}"
+        end
+
+        examples.each_value do |example|
+          raise ArgumentError, "event #{name} examples must be strings" unless example.is_a?(String)
+        end
+
+        examples.freeze
       end
     end
 
@@ -694,6 +716,7 @@ module VpsAdmin::API
         template: definition.template_name,
         default_routed: definition.default_routed,
         severity_description: definition.severity_description,
+        examples: definition.examples,
         definition:
       )
     end
@@ -1027,6 +1050,7 @@ module VpsAdmin::API
 
     def emit!(event_type, user: nil, vps: nil, source: nil, source_class: nil,
               source_id: nil, subject: nil, summary: nil, payload: nil,
+              payload_additions: nil,
               severity: nil, category: nil, ip_addr: nil, route: true,
               release: true, route_context_mode: nil,
               route_owner: nil, occurred_at: nil, **event_args)
@@ -1041,6 +1065,8 @@ module VpsAdmin::API
       vps ||= attrs[:vps]
       source ||= attrs[:source]
       owner = user || vps&.user
+      event_payload = payload || attrs[:payload] || {}
+      event_payload = payload_with_additions(event_payload, payload_additions) if payload_additions
 
       event = ::Event.new(
         user: owner,
@@ -1050,7 +1076,7 @@ module VpsAdmin::API
         severity: severity || attrs[:severity] || type&.severity,
         subject: subject || attrs[:subject] || type&.label,
         summary: summary || attrs[:summary],
-        parameters: payload_with_defaults(type, payload || attrs[:payload] || {}),
+        parameters: payload_with_defaults(type, event_payload),
         source_class: source_class || source&.class&.name,
         source_id: source_id || source&.id,
         ip_addr: ip_addr || attrs[:ip_addr],
@@ -1091,6 +1117,14 @@ module VpsAdmin::API
       ret
     end
 
+    def payload_with_additions(payload, additions)
+      additions.each_with_object(payload.dup) do |(key, value), ret|
+        ret.delete(key.to_s)
+        ret.delete(key.to_sym)
+        ret[key.to_s] = value
+      end
+    end
+
     def route!(event)
       Router.new(event).route!
     end
@@ -1104,7 +1138,9 @@ module VpsAdmin::API
       vps = transaction_chain_vps(chain)
       emit!(
         'transaction_chain.state_changed',
-        user: vps&.user || transaction_chain_target_owner(chain) || chain.user,
+        user: vps&.user ||
+          transaction_chain_target_owner(chain) ||
+          (chain.user if chain.user&.role == :user),
         vps:,
         source: chain,
         source_class: ::TransactionChain.name,
@@ -1184,12 +1220,7 @@ module VpsAdmin::API
 
     def transaction_chain_target_owner(chain)
       concerns = chain.transaction_chain_concerns.sort_by(&:id)
-      vps_concern = concerns.reverse.find { |item| item.class_name == ::Vps.name }
-      return unless vps_concern
-
-      owner_concern = concerns.reverse.find do |item|
-        item.id > vps_concern.id && item.class_name == ::User.name
-      end
+      owner_concern = concerns.reverse.find { |item| item.class_name == ::User.name }
       ::User.find_by(id: owner_concern.row_id) if owner_concern
     end
 
@@ -1971,4 +2002,4 @@ require_relative 'events/core'
 require_relative 'events/resource_operations'
 require_relative 'events/vps_console'
 require_relative 'events/vps_lifecycle'
-require_relative 'events/vps_operations'
+require_relative 'events/operation_lifecycle'
