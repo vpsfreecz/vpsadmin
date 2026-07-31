@@ -135,10 +135,16 @@ RSpec.describe RemoveUsersMailerEnabled do
     expect(enabled_receiver.fetch('label')).to eq('Default e-mail')
     expect(boolish(enabled_receiver.fetch('mute'))).to be(false)
 
+    admin_enabled_route = default_route_for(ids.fetch(:enabled_id), role: 'admin')
+    expect(admin_enabled_route.fetch('notification_receiver_id').to_i).to eq(enabled_receiver.fetch('id').to_i)
+
     disabled_route = default_route_for(ids.fetch(:disabled_id))
     disabled_receiver = find_row(:notification_receivers, id: disabled_route.fetch('notification_receiver_id'))
     expect(disabled_receiver.fetch('label')).to eq('Mute')
     expect(boolish(disabled_receiver.fetch('mute'))).to be(true)
+
+    admin_disabled_route = default_route_for(ids.fetch(:disabled_id), role: 'admin')
+    expect(admin_disabled_route.fetch('notification_receiver_id').to_i).to eq(disabled_receiver.fetch('id').to_i)
 
     legacy_mute = find_row(:notification_receivers, user_id: ids.fetch(:legacy_mute_id), mute: true)
     expect(legacy_mute.fetch('label')).to eq('Mute')
@@ -161,18 +167,24 @@ RSpec.describe RemoveUsersMailerEnabled do
     expect(boolish(find_row(:users, id: ids.fetch(:existing_method_id)).fetch('mailer_enabled'))).to be(false)
   end
 
-  def default_route_for(user_id)
-    found = find_rows(:event_routes, { user_id:, label: 'Default route' }).select do |route|
+  def default_route_for(user_id, role: 'account')
+    label = role == 'admin' ? 'Default admin route' : 'Default route'
+    found = find_rows(:event_routes, { user_id:, label: }).select do |route|
       route.fetch('event_type').nil? &&
         route.fetch('event_type_pattern').nil? &&
         row_count(:event_route_matchers,
                   event_route_id: route.fetch('id'),
                   field: 'default_routed',
                   operator: '==',
-                  value: 'true') == 1
+                  value: 'true') == 1 &&
+        row_count(:event_route_matchers,
+                  event_route_id: route.fetch('id'),
+                  field: 'roles',
+                  operator: 'contains',
+                  value: role) == 1
     end
 
-    expect(found.length).to eq(1), "expected one default route for user #{user_id}, found #{found.length}"
+    expect(found.length).to eq(1), "expected one #{role} default route for user #{user_id}, found #{found.length}"
     found.first
   end
 end

@@ -284,6 +284,73 @@ class RemoveUsersMailerEnabled < ActiveRecord::Migration[8.1]
     SQL
 
     execute <<~SQL.squish
+      INSERT INTO event_routes
+        (user_id, parent_id, notification_receiver_id, label, position,
+         enabled, event_type, event_type_pattern, `continue`,
+         single_use, spent_at, expires_at, hit_count,
+         created_at, updated_at)
+      SELECT
+        users.id,
+        NULL,
+        notification_receivers.id,
+        'Default admin route',
+        10001,
+        1,
+        NULL,
+        NULL,
+        0,
+        0,
+        NULL,
+        NULL,
+        0,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
+      FROM users
+      INNER JOIN notification_receivers
+        ON notification_receivers.id = (
+          SELECT generated_receiver.id
+          FROM notification_receivers AS generated_receiver
+          WHERE generated_receiver.user_id = users.id
+            AND (
+              (
+                users.mailer_enabled = 0
+                AND generated_receiver.mute = 1
+                AND generated_receiver.label = #{quote(DEFAULT_MUTE_LABEL)}
+                AND generated_receiver.description = #{quote(DEFAULT_MUTE_DESCRIPTION)}
+              )
+              OR (
+                users.mailer_enabled != 0
+                AND generated_receiver.mute = 0
+                AND generated_receiver.label = #{quote(DEFAULT_EMAIL_LABEL)}
+                AND generated_receiver.description IN (
+                  #{quote(DEFAULT_EMAIL_DESCRIPTION)},
+                  #{quote(LEGACY_DEFAULT_EMAIL_DESCRIPTION)}
+                )
+              )
+            )
+          ORDER BY generated_receiver.id
+          LIMIT 1
+        )
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM event_routes
+        WHERE event_routes.user_id = users.id
+          AND event_routes.parent_id IS NULL
+          AND event_routes.label = 'Default admin route'
+          AND event_routes.event_type IS NULL
+          AND event_routes.event_type_pattern IS NULL
+          AND EXISTS (
+            SELECT 1
+            FROM event_route_matchers
+            WHERE event_route_matchers.event_route_id = event_routes.id
+              AND event_route_matchers.field = 'default_routed'
+              AND event_route_matchers.operator = '=='
+              AND event_route_matchers.value = 'true'
+          )
+      )
+    SQL
+
+    execute <<~SQL.squish
       INSERT INTO event_route_matchers
         (event_route_id, field, operator, value, created_at, updated_at)
       SELECT
@@ -295,7 +362,7 @@ class RemoveUsersMailerEnabled < ActiveRecord::Migration[8.1]
         CURRENT_TIMESTAMP
       FROM event_routes
       WHERE event_routes.parent_id IS NULL
-        AND event_routes.label = 'Default route'
+        AND event_routes.label IN ('Default route', 'Default admin route')
         AND event_routes.event_type IS NULL
         AND event_routes.event_type_pattern IS NULL
         AND NOT EXISTS (
@@ -303,6 +370,29 @@ class RemoveUsersMailerEnabled < ActiveRecord::Migration[8.1]
           FROM event_route_matchers
           WHERE event_route_matchers.event_route_id = event_routes.id
             AND event_route_matchers.field = 'default_routed'
+        )
+    SQL
+
+    execute <<~SQL.squish
+      INSERT INTO event_route_matchers
+        (event_route_id, field, operator, value, created_at, updated_at)
+      SELECT
+        event_routes.id,
+        'roles',
+        'contains',
+        CASE WHEN event_routes.label = 'Default admin route' THEN 'admin' ELSE 'account' END,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
+      FROM event_routes
+      WHERE event_routes.parent_id IS NULL
+        AND event_routes.label IN ('Default route', 'Default admin route')
+        AND event_routes.event_type IS NULL
+        AND event_routes.event_type_pattern IS NULL
+        AND NOT EXISTS (
+          SELECT 1
+          FROM event_route_matchers
+          WHERE event_route_matchers.event_route_id = event_routes.id
+            AND event_route_matchers.field = 'roles'
         )
     SQL
   end
