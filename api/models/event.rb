@@ -13,7 +13,8 @@ class Event < ApplicationRecord
   }.freeze
 
   ROUTING_STATE_LABELS = {
-    'routed' => 'routed'
+    'routed' => 'routed',
+    'aborted' => 'aborted'
   }.freeze
 
   belongs_to :user, optional: true
@@ -30,7 +31,7 @@ class Event < ApplicationRecord
   end
 
   enum :severity, %i[info warning error critical], suffix: true
-  enum :routing_state, { routed: 1 }, suffix: true
+  enum :routing_state, { routed: 1, aborted: 4 }, suffix: true
 
   serialize :parameters, coder: JSON
 

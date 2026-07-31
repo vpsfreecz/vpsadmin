@@ -42,7 +42,7 @@ RSpec.describe TransactionChains::Vps::OomReports do
 
     chain, = described_class.fire2(args: [[vps]], kwargs: { cooldown: 1.hour })
 
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     expect(NotificationTemplate).to have_received(:send_email!).with(
       :vps_oom_report,
       hash_including(
@@ -80,7 +80,7 @@ RSpec.describe TransactionChains::Vps::OomReports do
     chain, = described_class.fire2(args: [[vps]], kwargs: { cooldown: 1.hour })
     mail = MailLog.where(notification_template: NotificationTemplate.find_by!(name: 'vps_oom_report')).last
 
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     expect(mail.text_plain).to include('Selected events: 3 of 3')
     expect(mail.text_plain).to include("VPS ##{vps.id}")
   end

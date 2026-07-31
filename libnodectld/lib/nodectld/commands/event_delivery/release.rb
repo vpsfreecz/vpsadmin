@@ -8,9 +8,12 @@ module NodeCtld
     EXCHANGE_NAME = 'vpsadmin.notifications'.freeze
     PREPARED_STATE = 0
     RELEASED_STATE = 1
+    ACTION_NAMES = %w[email webhook telegram sms].freeze
     ACTIONS = {
       0 => 'email',
-      1 => 'webhook'
+      1 => 'webhook',
+      '0' => 'email',
+      '1' => 'webhook'
     }.freeze
 
     def exec
@@ -35,7 +38,7 @@ module NodeCtld
       rows.each do |row|
         @released_deliveries << {
           id: row.fetch('id').to_i,
-          action: row.fetch('action').to_i
+          action: normalize_action(row.fetch('action'))
         }
       end
       return if @released_deliveries.empty?
@@ -65,7 +68,7 @@ module NodeCtld
       released_at = Time.now.utc.iso8601
 
       @released_deliveries.each do |delivery|
-        action = ACTIONS[delivery.fetch(:action)]
+        action = delivery.fetch(:action)
         next unless action
 
         NodeBunny.publish_wait(
@@ -89,6 +92,13 @@ module NodeCtld
 
     def delivery_ids
       Array(@delivery_ids).map(&:to_i).uniq
+    end
+
+    def normalize_action(action)
+      normalized = action.to_s
+      return normalized if ACTION_NAMES.include?(normalized)
+
+      ACTIONS[normalized]
     end
   end
 end

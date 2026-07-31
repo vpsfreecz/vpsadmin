@@ -20,11 +20,11 @@ RSpec.describe TransactionChains::User::Revive do
     classes = tx_classes(chain)
 
     expect(classes).to include(
-      Transactions::EventDelivery::Release,
+      Transactions::EventDelivery::Notify,
       Transactions::Export::Enable,
       Transactions::Vps::Start
     )
-    release_idx = classes.index(Transactions::EventDelivery::Release)
+    release_idx = classes.index(Transactions::EventDelivery::Notify)
     expect(classes.rindex(Transactions::Export::Enable)).to be < release_idx
     expect(classes.rindex(Transactions::Vps::Start)).to be < release_idx
     expect(MailLog.joins(:notification_template).exists?(notification_templates: { name: 'user_revive' })).to be(true)

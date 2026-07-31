@@ -43,30 +43,33 @@ RSpec.describe TransactionChains::MigrationPlan::Mail do
 
     chain, = described_class.fire(plan)
     events = Event.where(event_type: 'vps.migration_planned').order(:id)
-    routed_event = events.find(&:routed_routing_state?)
-    suppressed_event = events.find(&:suppressed_routing_state?)
+    routed_event = events.sole
 
     expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(
       ['MigrationPlan', plan.id]
     )
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
-    expect(events.size).to eq(2)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
+    expect(events.size).to eq(1)
     expect(routed_event.user).to eq(mail_user)
     expect(routed_event.event_deliveries.sole).to be_prepared_state
-    expect(suppressed_event.user).to eq(vpses.last.user)
-    expect(suppressed_event.event_deliveries.sole).to be_skipped_state
+    expect(
+      Event.where(
+        event_type: 'vps.migration_planned',
+        user: vpses.last.user
+      )
+    ).to be_empty
+    expect(EventRoutingContext.where(user_id: vpses.last.user_id)).to be_empty
   end
 
-  it 'logs suppressed events and remains empty when all migration users are muted' do
+  it 'does not persist events when all migration users are muted' do
     plan, vpses = create_plan_with_user_migrations!
     vpses.each { |vps| mute_default_notifications_for!(vps.user) }
 
-    chain, = described_class.fire(plan)
-    events = Event.where(event_type: 'vps.migration_planned').order(:id)
+    chain = nil
+    expect do
+      chain, = described_class.fire(plan)
+    end.not_to(change { event_storage_counts })
 
     expect(chain).to be_nil
-    expect(events.size).to eq(2)
-    expect(events).to all(be_suppressed_routing_state)
-    expect(events.flat_map(&:event_deliveries)).to all(be_skipped_state)
   end
 end
