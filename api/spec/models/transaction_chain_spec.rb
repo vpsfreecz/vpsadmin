@@ -43,10 +43,41 @@ module SpecChains
     end
   end
 
+  class AllowedEmptyDeferred < ::TransactionChain
+    allow_empty
+
+    def link_chain
+      defer_result_event!(
+        'resource.updated',
+        user: ::User.current,
+        source: ::User.current,
+        subject: 'Allowed empty result fact',
+        payload: {
+          resource_type: 'User',
+          resource_id: ::User.current.id,
+          action: 'updated',
+          changed_fields: ['state']
+        }
+      )
+    end
+  end
+
   class Failing < ::TransactionChain
     def link_chain(node)
       concerns(:affect, ['Vps', 987_654])
       append_t(SpecTransactions::ChainTx, args: [node], kwargs: { tag: 'never queued' })
+      defer_result_event!(
+        'resource.updated',
+        user: ::User.current,
+        source: ::User.current,
+        subject: 'Rolled back result fact',
+        payload: {
+          resource_type: 'User',
+          resource_id: ::User.current.id,
+          action: 'updated',
+          changed_fields: ['state']
+        }
+      )
       raise 'link failed'
     end
   end
@@ -118,6 +149,26 @@ module SpecChains
       append_t(SpecTransactions::ChainTx, args: [node], kwargs: { tag: 'vps' })
     end
   end
+
+  class ImmediateEvent < ::TransactionChain
+    def link_chain(node)
+      event = prepare_event!(
+        'resource.updated',
+        user: ::User.current,
+        source: ::User.current,
+        subject: 'Immediate chain fact',
+        payload: {
+          resource_type: 'User',
+          resource_id: ::User.current.id,
+          action: 'updated',
+          changed_fields: ['state'],
+          'operation_id' => -1
+        }
+      )
+      append_t(SpecTransactions::ChainTx, args: [node], kwargs: { tag: 'event' })
+      event
+    end
+  end
 end
 
 RSpec.describe TransactionChain do
@@ -171,6 +222,36 @@ RSpec.describe TransactionChain do
     )
   end
 
+  it 'persists and routes the correlated operation start after construction' do
+    chain, = SpecChains::Linear.fire2(args: [node], kwargs: {})
+    event = Event.where(
+      event_type: 'operation.started',
+      source_class: 'TransactionChain',
+      source_id: chain.id
+    ).sole
+
+    expect(event).to be_suppressed_routing_state
+    expect(event.parameters).to include(
+      'operation_id' => chain.id,
+      'attempt' => 1,
+      'operation' => 'spec_chains.linear',
+      'state' => 'queued'
+    )
+  end
+
+  it 'allocates the operation start before correlated immediate facts' do
+    chain, fact = SpecChains::ImmediateEvent.fire2(args: [node], kwargs: {})
+    started = Event.where(
+      event_type: 'operation.started',
+      source_class: 'TransactionChain',
+      source_id: chain.id
+    ).sole
+
+    expect(started.id).to be < fact.id
+    expect(fact.parameters['operation_id']).to eq(chain.id)
+    expect(EventRouteMatcher.field_value(fact, 'operation_id')).to eq(chain.id)
+  end
+
   it 'persists the primary VPS owner in chain concerns during construction' do
     vps = build_standalone_vps_fixture(user: SpecSeed.user).fetch(:vps)
 
@@ -202,11 +283,34 @@ RSpec.describe TransactionChain do
     )
   end
 
+  it 'does not report chain construction failure when start routing fails' do
+    allow(VpsAdmin::API::Events::OperationLifecycle)
+      .to receive(:route_started!)
+      .and_raise('event routing unavailable')
+    allow(SpecChains::Linear).to receive(:warn)
+
+    chain, = SpecChains::Linear.fire2(args: [node], kwargs: {})
+    started = Event.where(
+      event_type: 'operation.started',
+      source_class: 'TransactionChain',
+      source_id: chain.id
+    ).sole
+
+    expect(chain.reload).to be_queued
+    expect(started).to be_pending_routing_state
+    expect(SpecChains::Linear).to have_received(:warn).with(
+      /Unable to route operation start event ##{started.id}/
+    )
+  end
+
   it 'does not emit an event when chain construction is rolled back' do
     before_counts = {
       chains: described_class.count,
       concerns: TransactionChainConcern.count,
-      events: Event.where(event_type: 'transaction_chain.state_changed').count
+      events: Event.where(
+        event_type: ['transaction_chain.state_changed', 'operation.started']
+      ).count,
+      result_events: Event.where(subject: 'Rolled back result fact').count
     }
 
     expect do
@@ -215,8 +319,25 @@ RSpec.describe TransactionChain do
 
     expect(described_class.count).to eq(before_counts[:chains])
     expect(TransactionChainConcern.count).to eq(before_counts[:concerns])
-    expect(Event.where(event_type: 'transaction_chain.state_changed').count)
+    expect(
+      Event.where(event_type: ['transaction_chain.state_changed', 'operation.started']).count
+    )
       .to eq(before_counts[:events])
+    expect(Event.where(subject: 'Rolled back result fact').count)
+      .to eq(before_counts[:result_events])
+  end
+
+  it 'rolls back chain construction when the operation start cannot be persisted' do
+    allow(VpsAdmin::API::Events::OperationLifecycle)
+      .to receive(:prepare_started!)
+      .and_raise('event persistence unavailable')
+
+    expect do
+      SpecChains::Linear.fire2(args: [node], kwargs: {})
+    end.to raise_error(RuntimeError, 'event persistence unavailable')
+
+    expect(Event.where(event_type: 'operation.started')).to be_empty
+    expect(described_class.where(type: 'SpecChains::Linear')).to be_empty
   end
 
   it 'queues chains without signing when the transaction key is absent' do
@@ -244,7 +365,19 @@ RSpec.describe TransactionChain do
 
       expect(chain).to be_nil
       expect(ret).to be_nil
-    end.not_to change(Event.where(event_type: 'transaction_chain.state_changed'), :count)
+    end.not_to change(
+      Event.where(event_type: ['transaction_chain.state_changed', 'operation.started']),
+      :count
+    )
+  end
+
+  it 'emits an allowed empty result fact atomically without operation correlation' do
+    chain, = SpecChains::AllowedEmptyDeferred.fire2(args: [], kwargs: {})
+
+    expect(chain).to be_nil
+    event = Event.where(subject: 'Allowed empty result fact').sole
+    expect(event.parameters).not_to have_key('operation_id')
+    expect(described_class.where(type: 'SpecChains::AllowedEmptyDeferred')).to be_empty
   end
 
   it 'releases acquired locks when allowed empty chains are discarded' do
@@ -337,11 +470,14 @@ RSpec.describe TransactionChain do
   it 'records concerns only on the root chain' do
     chain, = SpecChains::Outer.fire2(args: [node, lock_target], kwargs: {})
 
-    expect(chain.transaction_chain_concerns.count).to eq(1)
-
-    concern = chain.transaction_chain_concerns.take!
-    expect(concern.class_name).to eq(lock_target.class.name)
-    expect(concern.row_id).to eq(lock_target.id)
+    expect(
+      chain.transaction_chain_concerns.order(:id).pluck(:class_name, :row_id)
+    ).to eq(
+      [
+        [lock_target.class.name, lock_target.id],
+        ['User', lock_target.user_id]
+      ]
+    )
   end
 
   it 'deduplicates locks across nested chains' do

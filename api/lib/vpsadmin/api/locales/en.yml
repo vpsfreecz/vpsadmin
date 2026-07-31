@@ -738,6 +738,14 @@ en:
             label: livepatch_inventory_change
           module_change:
             label: module_change
+          operation_failed:
+            label: Operation failed
+          operation_resolved:
+            label: Operation failure resolved
+          operation_started:
+            label: Operation started
+          operation_succeeded:
+            label: Operation succeeded
           outage_announced:
             label: Outage announced
           outage_updated:
@@ -828,10 +836,6 @@ en:
             label: OOM prevention
           vps_oom_report:
             label: OOM report
-          vps_operation_failed:
-            label: VPS operation failed
-          vps_operation_succeeded:
-            label: VPS operation succeeded
           vps_replaced:
             label: VPS replaced
           vps_resources_changed:
@@ -903,7 +907,7 @@ en:
           active:
             label: Whether the account was activated immediately
           actor_user_id:
-            label: ID of the user who performed the action
+            label: ID of the user who initiated the operation
           actor_user_login:
             label: Login of the user who performed the action
           added_space:
@@ -915,7 +919,7 @@ en:
           admin_name:
             label: Name of the admin who changed the resources
           admin_user_id:
-            label: ID of the administrator behind an impersonated session
+            label: ID of an administrator acting through impersonation
           advisory_id:
             label: ID of the security advisory
           advisory_name:
@@ -955,11 +959,11 @@ en:
           chain_label:
             label: User-visible transaction chain label
           chain_name:
-            label: Internal transaction chain name
+            label: Persisted transaction chain name
           chain_type:
             label: Persisted transaction chain type
           changed_at:
-            label: Time when the chain state changed
+            label: Time when this lifecycle change occurred
           changed_at_timestamp:
             label: Unix timestamp of the state change
           changed_by_id:
@@ -981,9 +985,11 @@ en:
           codename:
             label: Incident report codename assigned by vpsAdmin
           concern_classes:
-            label: Classes of objects affected by the chain
+            label: Classes of resources affected by the operation
           concern_object_ids:
-            label: IDs of objects affected by the chain
+            label: IDs of resources affected by the operation
+          concern_type:
+            label: How the operation relates to its resources
           console_client_id:
             label: Ephemeral identifier correlating console open and close events
           count:
@@ -1061,7 +1067,7 @@ en:
           export_count:
             label: Number of exports affected by the migration
           failed:
-            label: Whether the terminal state is failed or fatal
+            label: Whether the operation failed
           file_name:
             label: File name of the prepared download archive
           finish_minutes:
@@ -1173,7 +1179,11 @@ en:
           opens_at:
             label: Opening minute of day after the change
           operation:
-            label: VPS operation represented by the transaction chain
+            label: Stable operation name
+          operation_id:
+            label: ID of the transaction-chain operation related to the event
+          operation_label:
+            label: User-visible operation label
           original_refquota:
             label: Dataset refquota before automatic expansion or shrink, in bytes
           original_vps_hostname:
@@ -1262,6 +1272,8 @@ en:
             label: ActiveRecord class of the affected resource
           restart_vps:
             label: Whether affected VPSes are restarted during migration
+          result_event_ids:
+            label: IDs of completion fact events emitted on success
           roles:
             label: Notification roles declared by the event type
           runtime_event_type:
@@ -1301,7 +1313,7 @@ en:
           subject_user_id:
             label: User ID of the event subject
           successful:
-            label: Whether the terminal state is successful
+            label: Whether the operation succeeded
           summary:
             label: Longer event summary
           swap:
@@ -1347,7 +1359,7 @@ en:
           user_name:
             label: Full name of the dataset owner
           user_session_id:
-            label: ID of the user session associated with the event
+            label: ID of the session that initiated the operation
           vps_console_id:
             label: ID of the console authorization record used by the client
           vps_count:
@@ -1356,8 +1368,6 @@ en:
             label: Hostname of the affected VPS
           vps_id:
             label: ID of the affected VPS
-          vps_ids:
-            label: IDs of all VPSes affected by the operation
           weekday:
             label: Week day represented by the window
           window_count:
@@ -3196,6 +3206,8 @@ en:
             description: Whether the event is delivered by the default route
           event_type:
             description: Unique event type name
+          operation_id:
+            description: ID of the transaction-chain operation related to the event
           roles:
             description: Notification roles declared by the event type
           severity:
@@ -3463,6 +3475,156 @@ en:
             description: Hostname of the VPS affected by the monitoring event
           vps_id:
             description: ID of the VPS affected by the monitoring event
+        operation_failed:
+          actor_user_id:
+            description: ID of the user who initiated the operation
+          admin_user_id:
+            description: ID of an administrator acting through impersonation
+          chain_name:
+            description: Persisted transaction chain name
+          chain_type:
+            description: Persisted transaction chain type
+          changed_at:
+            description: Time when this lifecycle change occurred
+          concern_classes:
+            description: Classes of resources affected by the operation
+          concern_object_ids:
+            description: IDs of resources affected by the operation
+          concern_type:
+            description: How the operation relates to its resources
+          failed:
+            description: Whether the operation failed
+          node_id:
+            description: ID of the node reporting the state
+          node_name:
+            description: Name of the node reporting the state
+          operation:
+            description: Stable operation name
+          operation_id:
+            description: Stable transaction-chain operation ID
+          operation_label:
+            description: User-visible operation label
+          producer_event_id:
+            description: Stable node-assigned identifier for this state transition
+          state:
+            description: Transaction chain state represented by this event
+          successful:
+            description: Whether the operation succeeded
+          user_session_id:
+            description: ID of the session that initiated the operation
+        operation_resolved:
+          actor_user_id:
+            description: ID of the user who initiated the operation
+          admin_user_id:
+            description: ID of an administrator acting through impersonation
+          chain_name:
+            description: Persisted transaction chain name
+          chain_type:
+            description: Persisted transaction chain type
+          changed_at:
+            description: Time when this lifecycle change occurred
+          concern_classes:
+            description: Classes of resources affected by the operation
+          concern_object_ids:
+            description: IDs of resources affected by the operation
+          concern_type:
+            description: How the operation relates to its resources
+          failed:
+            description: Whether the operation failed
+          node_id:
+            description: ID of the node reporting the state
+          node_name:
+            description: Name of the node reporting the state
+          operation:
+            description: Stable operation name
+          operation_id:
+            description: Stable transaction-chain operation ID
+          operation_label:
+            description: User-visible operation label
+          producer_event_id:
+            description: Stable node-assigned identifier for this state transition
+          state:
+            description: Transaction chain state represented by this event
+          successful:
+            description: Whether the operation succeeded
+          user_session_id:
+            description: ID of the session that initiated the operation
+        operation_started:
+          actor_user_id:
+            description: ID of the user who initiated the operation
+          admin_user_id:
+            description: ID of an administrator acting through impersonation
+          chain_name:
+            description: Persisted transaction chain name
+          chain_type:
+            description: Persisted transaction chain type
+          changed_at:
+            description: Time when this lifecycle change occurred
+          concern_classes:
+            description: Classes of resources affected by the operation
+          concern_object_ids:
+            description: IDs of resources affected by the operation
+          concern_type:
+            description: How the operation relates to its resources
+          failed:
+            description: Whether the operation failed
+          node_id:
+            description: ID of the node reporting the state
+          node_name:
+            description: Name of the node reporting the state
+          operation:
+            description: Stable operation name
+          operation_id:
+            description: Stable transaction-chain operation ID
+          operation_label:
+            description: User-visible operation label
+          producer_event_id:
+            description: Stable node-assigned identifier for this state transition
+          state:
+            description: Transaction chain state represented by this event
+          successful:
+            description: Whether the operation succeeded
+          user_session_id:
+            description: ID of the session that initiated the operation
+        operation_succeeded:
+          actor_user_id:
+            description: ID of the user who initiated the operation
+          admin_user_id:
+            description: ID of an administrator acting through impersonation
+          chain_name:
+            description: Persisted transaction chain name
+          chain_type:
+            description: Persisted transaction chain type
+          changed_at:
+            description: Time when this lifecycle change occurred
+          concern_classes:
+            description: Classes of resources affected by the operation
+          concern_object_ids:
+            description: IDs of resources affected by the operation
+          concern_type:
+            description: How the operation relates to its resources
+          failed:
+            description: Whether the operation failed
+          node_id:
+            description: ID of the node reporting the state
+          node_name:
+            description: Name of the node reporting the state
+          operation:
+            description: Stable operation name
+          operation_id:
+            description: Stable transaction-chain operation ID
+          operation_label:
+            description: User-visible operation label
+          producer_event_id:
+            description: Stable node-assigned identifier for this state transition
+          result_event_ids:
+            description: IDs of completion fact events emitted on success
+          state:
+            description: Transaction chain state represented by this event
+          successful:
+            description: Whether the operation succeeded
+          user_session_id:
+            description: ID of the session that initiated the operation
         outage_announced:
           affected_export_count:
             description: Number of exports affected by the outage
@@ -4258,68 +4420,6 @@ en:
             description: Hostname of the VPS affected by the OOM report
           vps_id:
             description: ID of the VPS affected by the OOM report
-        vps_operation_failed:
-          actor_user_id:
-            description: ID of the user who initiated the transaction chain
-          chain_id:
-            description: ID of the transaction chain
-          chain_name:
-            description: Persisted transaction chain name
-          chain_type:
-            description: Persisted transaction chain type
-          changed_at:
-            description: Time when the terminal state was reported
-          node_id:
-            description: ID of the node reporting the terminal state
-          node_name:
-            description: Name of the node reporting the terminal state
-          operation:
-            description: VPS operation represented by the transaction chain
-          producer_event_id:
-            description: Stable node-assigned identifier for this state transition
-          state:
-            description: Terminal transaction chain state
-          successful:
-            description: Whether the VPS operation succeeded
-          user_session_id:
-            description: ID of the session that initiated the transaction chain
-          vps_hostname:
-            description: Current hostname of the primary VPS, when available
-          vps_id:
-            description: ID of the primary VPS affected by the operation
-          vps_ids:
-            description: IDs of all VPSes affected by the operation
-        vps_operation_succeeded:
-          actor_user_id:
-            description: ID of the user who initiated the transaction chain
-          chain_id:
-            description: ID of the transaction chain
-          chain_name:
-            description: Persisted transaction chain name
-          chain_type:
-            description: Persisted transaction chain type
-          changed_at:
-            description: Time when the terminal state was reported
-          node_id:
-            description: ID of the node reporting the terminal state
-          node_name:
-            description: Name of the node reporting the terminal state
-          operation:
-            description: VPS operation represented by the transaction chain
-          producer_event_id:
-            description: Stable node-assigned identifier for this state transition
-          state:
-            description: Terminal transaction chain state
-          successful:
-            description: Whether the VPS operation succeeded
-          user_session_id:
-            description: ID of the session that initiated the transaction chain
-          vps_hostname:
-            description: Current hostname of the primary VPS, when available
-          vps_id:
-            description: ID of the primary VPS affected by the operation
-          vps_ids:
-            description: IDs of all VPSes affected by the operation
         vps_replaced:
           new_vps_hostname:
             description: Hostname of the newly created replacement VPS
@@ -4542,6 +4642,15 @@ en:
           label: Expiration warning
         monitoring:
           severity_description: Severity is derived from the monitoring alert state
+        operation_failed:
+          label: Operation failed
+          severity_description: Fatal transaction-chain failures use critical severity
+        operation_resolved:
+          label: Operation failure resolved
+        operation_started:
+          label: Operation started
+        operation_succeeded:
+          label: Operation succeeded
         outage_announced:
           label: Outage announced
         outage_updated:
@@ -4630,10 +4739,6 @@ en:
           label: OOM prevention
         vps_oom_report:
           label: OOM report
-        vps_operation_failed:
-          label: VPS operation failed
-        vps_operation_succeeded:
-          label: VPS operation succeeded
         vps_replaced:
           label: VPS replaced
         vps_resources_changed:

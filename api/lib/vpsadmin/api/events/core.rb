@@ -1,4 +1,17 @@
 module VpsAdmin::API::Events::Core
+  OPERATION_REFERENCE_FIELDS = {
+    operation_id: {
+      description: 'ID of the transaction-chain operation that produced this fact',
+      type: :integer
+    }
+  }.freeze
+  OPERATION_RESULT_FIELDS = OPERATION_REFERENCE_FIELDS.merge(
+    operation_result_index: {
+      description: 'Zero-based position of this fact in the operation result list',
+      type: :integer
+    }
+  ).freeze
+
   module_function
 
   def param(event, name)
