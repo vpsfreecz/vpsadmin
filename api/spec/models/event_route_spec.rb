@@ -119,6 +119,8 @@ RSpec.describe EventRoute do
     expect(event.reload).to be_routed_routing_state
     expect(matched_routes(event)).not_to be_empty
     expect(receivers.size).to eq(2)
+    expect(default_email_receiver_for(SpecSeed.user).label).to eq('Default')
+    expect(default_email_receiver_for(SpecSeed.user).notification_receiver_actions.sole.label).to eq('Default')
     expect(receivers).to include(default_email_receiver_for(SpecSeed.user))
     expect(receivers).to include(default_mute_receiver_for(SpecSeed.user))
     expect(delivery.action).to eq('email')
@@ -129,17 +131,31 @@ RSpec.describe EventRoute do
     expect(delivery.reload).to be_released_state
   end
 
-  it 'does not route opt-in events through the generated default route' do
-    event = VpsAdmin::API::Events.emit!(
-      'transaction_chain.state_changed',
+  it 'normalizes legacy default e-mail receiver and target labels' do
+    legacy_receiver = NotificationReceiver.create!(
       user: SpecSeed.user,
-      subject: 'Spec transaction state',
-      parameters: {
-        'state' => 'queued',
-        'terminal' => false
-      }
+      label: 'Default e-mail',
+      description: NotificationReceiver::LEGACY_DEFAULT_EMAIL_DESCRIPTION,
+      mute: false
     )
-    delivery = event.event_deliveries.sole
+    legacy_target = SpecSeed.user.notification_targets.new(
+      action: 'email',
+      label: 'Default e-mail',
+      target_kind: :default_recipient,
+      identity_key: 'default'
+    )
+    legacy_target.skip_delivery_method_enabled_validation = true
+    legacy_target.save!
+
+    receiver = NotificationReceiver.ensure_default_email_receiver_for!(SpecSeed.user)
+
+    expect(receiver).to eq(legacy_receiver)
+    expect(receiver.reload.label).to eq('Default')
+    expect(receiver.description).to eq(NotificationReceiver::DEFAULT_EMAIL_DESCRIPTION)
+    expect(legacy_target.reload.label).to eq('Default')
+    expect(SpecSeed.user.notification_receivers.where(mute: false).count).to eq(1)
+    expect(SpecSeed.user.notification_targets.where(action: 'email', identity_key: 'default').count).to eq(1)
+  end
 
   it 'does not route opt-in events through the generated default route' do
     event = nil

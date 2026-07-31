@@ -742,7 +742,8 @@ module VpsAdmin::API
     def emit!(event_type, user: nil, vps: nil, source: nil, source_class: nil,
               source_id: nil, subject: nil, summary: nil, parameters: nil,
               severity: nil, category: nil, ip_addr: nil, route: true,
-              release: true, persist: :routed, **event_args)
+              release: true, persist: :routed, route_context_mode: nil,
+              route_owner: nil, **event_args)
       type = type_for(event_type)
       context = event_context_for(type, event_args)
       attrs = context ? type.definition.build_attributes(context) : {}
@@ -772,7 +773,11 @@ module VpsAdmin::API
       event.runtime_event_context = context
 
       if route
-        router = Router.new(event)
+        router = Router.new(
+          event,
+          route_context_mode:,
+          route_owner:
+        )
         result = router.plan
 
         return nil if persist != :always && !result.persistable?
@@ -944,8 +949,10 @@ module VpsAdmin::API
     class Router
       attr_reader :event
 
-      def initialize(event)
+      def initialize(event, route_context_mode: nil, route_owner: nil)
         @event = event
+        @route_context_mode = route_context_mode&.to_sym
+        @route_owner = route_owner
         @matched_routes = []
         @matched_route_matches = []
         @match_order = 0
@@ -1017,6 +1024,10 @@ module VpsAdmin::API
       end
 
       def route_contexts
+        return [] if @route_context_mode == :self && event.user.nil?
+        return [RouteContext.for(event, event.user)] if @route_context_mode == :self
+        return @route_owner ? [RouteContext.for(event, @route_owner)] : [] if @route_context_mode == :route_owner
+
         ret = []
         ret << RouteContext.for(event, event.user) if event.user
 

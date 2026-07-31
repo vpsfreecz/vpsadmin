@@ -561,6 +561,7 @@ if (isLoggedIn()) {
 
                 if (isAdmin()) {
                     $params['user'] = notifications_target_user_id();
+                    $params['subject_scope'] = api_post('subject_scope');
                 }
 
                 try {

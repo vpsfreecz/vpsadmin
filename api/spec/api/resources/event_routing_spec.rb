@@ -1403,6 +1403,94 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(event.event_deliveries.map(&:action)).to eq(['email'])
   end
 
+  it 'lets admins create visible test events for their visible routes' do
+    receiver = NotificationReceiver.create!(user: SpecSeed.admin, label: 'Admin visible test receiver')
+    receiver.notification_receiver_actions.create!(
+      action: :webhook,
+      target_kind: :custom,
+      target_value: 'https://example.test/admin-visible-test'
+    )
+    route = EventRoute.create!(
+      user: SpecSeed.admin,
+      notification_receiver: receiver,
+      event_type: 'user.test_notification',
+      subject_scope: :visible,
+      position: 1
+    )
+
+    as(SpecSeed.admin) do
+      json_post event_test_path, event: {
+        user: SpecSeed.user.id,
+        subject_scope: 'visible',
+        event_type: 'user.test_notification',
+        subject: 'Spec visible test event'
+      }
+    end
+
+    expect_status(200)
+    event = Event.find(event_obj['id'])
+    match = event.event_route_matches.sole
+    delivery = event.event_deliveries.sole
+
+    expect(event.user).to eq(SpecSeed.user)
+    expect(match.event_route).to eq(route)
+    expect(match.route_owner).to eq(SpecSeed.admin)
+    expect(match.subject_relation).to eq('other_user')
+    expect(delivery.event_route).to eq(route)
+    expect(delivery.recipient_user).to eq(SpecSeed.admin)
+  end
+
+  it 'lets admins create system test events for their visible routes' do
+    receiver = NotificationReceiver.create!(user: SpecSeed.admin, label: 'Admin system test receiver')
+    receiver.notification_receiver_actions.create!(
+      action: :webhook,
+      target_kind: :custom,
+      target_value: 'https://example.test/admin-system-test'
+    )
+    route = EventRoute.create!(
+      user: SpecSeed.admin,
+      notification_receiver: receiver,
+      event_type: 'user.test_notification',
+      subject_scope: :visible,
+      position: 1
+    )
+    route.event_route_matchers.create!(
+      field: 'context.subject_relation',
+      operator: '==',
+      value: 'system'
+    )
+
+    as(SpecSeed.admin) do
+      json_post event_test_path, event: {
+        subject_scope: 'system',
+        event_type: 'user.test_notification',
+        subject: 'Spec system test event'
+      }
+    end
+
+    expect_status(200)
+    event = Event.find(event_obj['id'])
+    match = event.event_route_matches.sole
+
+    expect(event.user).to be_nil
+    expect(match.event_route).to eq(route)
+    expect(match.route_owner).to eq(SpecSeed.admin)
+    expect(match.subject_relation).to eq('system')
+  end
+
+  it 'does not let users create visible test events' do
+    expect do
+      as(SpecSeed.user) do
+        json_post event_test_path, event: {
+          subject_scope: 'visible',
+          subject: 'user visible test'
+        }
+      end
+    end.not_to change(Event, :count)
+
+    expect(json['status']).to be(false)
+  end
+
   it 'rate-limits test events' do
     VpsAdmin::API::Resources::Event::Test::TEST_EVENT_LIMIT.times do |i|
       Event.create!(
