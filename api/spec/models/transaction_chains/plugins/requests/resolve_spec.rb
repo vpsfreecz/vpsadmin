@@ -92,7 +92,7 @@ RSpec.describe 'requests plugin resolve chain', requires_plugins: :requests do #
     delivery = user_event.event_deliveries.sole
     mail = delivery.mail_log
 
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     expect(request.state).to eq('denied')
     expect(user_event.user).to be_nil
     expect(user_event.parameters).to include(

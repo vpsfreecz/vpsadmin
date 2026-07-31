@@ -39,6 +39,62 @@ RSpec.describe NodeCtld::Command do
     }
   end
 
+  def insert_event(routing_state: 1)
+    sql_insert('events', {
+      event_type: 'user.test_notification',
+      category: 'user',
+      severity: 0,
+      subject: 'libnodectld transaction-gated notification',
+      routing_state: routing_state,
+      parameters: '{}',
+      created_at: Time.now.utc,
+      updated_at: Time.now.utc
+    })
+  end
+
+  def insert_event_delivery(event_id:, transaction_id:, state:, attempt_count: 0, mail_log_id: nil)
+    sql_insert('event_deliveries', {
+      event_id: event_id,
+      action: 'email',
+      target_kind: 0,
+      target_value: 'default',
+      target_label: 'Default recipient',
+      state: state,
+      attempt_count: attempt_count,
+      mail_log_id: mail_log_id,
+      transaction_id: transaction_id,
+      created_at: Time.now.utc,
+      updated_at: Time.now.utc
+    })
+  end
+
+  def insert_mail_log
+    sql_insert('mail_logs', {
+      to: 'recipient@example.test',
+      cc: '',
+      bcc: '',
+      from: 'noreply@example.test',
+      subject: 'libnodectld transaction-gated notification',
+      text_plain: 'libnodectld transaction-gated notification body',
+      created_at: Time.now.utc,
+      updated_at: Time.now.utc
+    })
+  end
+
+  def insert_event_delivery_attempt(delivery_id)
+    sql_insert('event_delivery_attempts', {
+      event_delivery_id: delivery_id,
+      action: 'email',
+      state: 2,
+      attempt_number: 1,
+      error_summary: 'already attempted',
+      started_at: Time.now.utc,
+      finished_at: Time.now.utc,
+      created_at: Time.now.utc,
+      updated_at: Time.now.utc
+    })
+  end
+
   def direction_output(tx_id, direction)
     transaction_output(tx_id).fetch(direction.to_s)
   end
@@ -459,6 +515,59 @@ RSpec.describe NodeCtld::Command do
       'generic failure from spec handler'
     )
     expect(direction_output(tx_id, :rollback)).to include('status' => 'ok')
+  end
+
+  it 'aborts unsent transaction-gated event deliveries when a chain fails' do
+    chain_id = insert_chain(size: 1, progress: 0)
+    tx_id = insert_transaction(
+      transaction_chain_id: chain_id,
+      handle: NodeCtldSpec::TestHandles::FAIL_EXEC,
+      reversible: NodeCtldSpec::TxState::TX_REVERSIBLE
+    )
+    unsent_event_id = insert_event
+    unsent_delivery_id = insert_event_delivery(
+      event_id: unsent_event_id,
+      transaction_id: tx_id,
+      state: described_class::EVENT_DELIVERY_STATE_PREPARED
+    )
+    unsent_mail_event_id = insert_event
+    unsent_mail_delivery_id = insert_event_delivery(
+      event_id: unsent_mail_event_id,
+      transaction_id: tx_id,
+      state: described_class::EVENT_DELIVERY_STATE_PREPARED,
+      mail_log_id: insert_mail_log
+    )
+    attempted_event_id = insert_event
+    attempted_delivery_id = insert_event_delivery(
+      event_id: attempted_event_id,
+      transaction_id: tx_id,
+      state: described_class::EVENT_DELIVERY_STATE_RELEASED,
+      attempt_count: 1
+    )
+    insert_event_delivery_attempt(attempted_delivery_id)
+
+    execute_and_save(tx_id)
+
+    expect(sql_value('SELECT state FROM event_deliveries WHERE id = ?', unsent_delivery_id)).to eq(
+      described_class::EVENT_DELIVERY_STATE_ABORTED
+    )
+    expect(sql_value('SELECT routing_state FROM events WHERE id = ?', unsent_event_id)).to eq(
+      described_class::EVENT_ROUTING_STATE_ABORTED
+    )
+    expect(sql_value('SELECT state FROM event_deliveries WHERE id = ?', unsent_mail_delivery_id)).to eq(
+      described_class::EVENT_DELIVERY_STATE_ABORTED
+    )
+    expect(sql_value('SELECT mail_log_id FROM event_deliveries WHERE id = ?', unsent_mail_delivery_id)).not_to be_nil
+    expect(sql_value('SELECT routing_state FROM events WHERE id = ?', unsent_mail_event_id)).to eq(
+      described_class::EVENT_ROUTING_STATE_ABORTED
+    )
+    expect(sql_value('SELECT error_summary FROM event_deliveries WHERE id = ?', unsent_delivery_id)).to include(
+      "transaction chain ##{chain_id} failed"
+    )
+    expect(sql_value('SELECT state FROM event_deliveries WHERE id = ?', attempted_delivery_id)).to eq(
+      described_class::EVENT_DELIVERY_STATE_RELEASED
+    )
+    expect(sql_value('SELECT routing_state FROM events WHERE id = ?', attempted_event_id)).to eq(1)
   end
 
   it 'persists command not implemented failures' do

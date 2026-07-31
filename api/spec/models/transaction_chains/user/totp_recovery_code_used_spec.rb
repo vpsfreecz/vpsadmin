@@ -27,7 +27,7 @@ RSpec.describe TransactionChains::User::TotpRecoveryCodeUsed do
     chain, = described_class.fire(user, device, nil)
 
     expect(chain.transaction_chain_concerns.pluck(:class_name, :row_id)).to include(['User', user.id])
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     expect(MailLog.joins(:notification_template).exists?(
              notification_templates: { name: 'user_totp_recovery_code_used' }
            )).to be(true)

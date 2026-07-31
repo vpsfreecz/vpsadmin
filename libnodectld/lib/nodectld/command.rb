@@ -10,6 +10,13 @@ module NodeCtld
     include OsCtl::Lib::Utils::Log
 
     FAILURE_LOG_ERROR_BYTES = 4096
+    EVENT_DELIVERY_STATE_PREPARED = 0
+    EVENT_DELIVERY_STATE_RELEASED = 1
+    EVENT_DELIVERY_STATE_SKIPPED = 4
+    EVENT_DELIVERY_STATE_CANCELED = 6
+    EVENT_DELIVERY_STATE_ABORTED = 8
+    EVENT_ROUTING_STATE_ABORTED = 4
+    EVENT_ROUTING_CONTEXT_STATE_ABORTED = 6
 
     attr_reader :trans
 
@@ -197,6 +204,7 @@ module NodeCtld
         WHERE id = ?',
         chain_id
       )
+      abort_unsent_event_deliveries(db)
     end
 
     def close_chain(db, fatal = false)
@@ -221,6 +229,7 @@ module NodeCtld
         WHERE id = ?",
         state, chain_id
       )
+      abort_unsent_event_deliveries(db) if [4, 5].include?(state)
 
       # remove signature from all transactions
       db.prepared(
@@ -270,6 +279,110 @@ module NodeCtld
           transaction_chain_id = ?',
         output_json(:execute, { error: 'Chain failed' }),
         chain_id
+      )
+    end
+
+    def abort_unsent_event_deliveries(db)
+      log(:debug, self, 'Abort unsent transaction-gated event deliveries')
+
+      event_ids = []
+      db.prepared(<<~SQL, chain_id).each { |row| event_ids << row.fetch('event_id').to_i }
+        SELECT DISTINCT ed.event_id
+        FROM event_deliveries ed
+        INNER JOIN transactions t ON t.id = ed.transaction_id
+        LEFT JOIN event_delivery_attempts a ON a.event_delivery_id = ed.id
+        WHERE t.transaction_chain_id = ?
+          AND ed.state IN (#{EVENT_DELIVERY_STATE_PREPARED}, #{EVENT_DELIVERY_STATE_RELEASED})
+          AND ed.attempt_count = 0
+          AND ed.provider_message_id IS NULL
+          AND a.id IS NULL
+      SQL
+      return if event_ids.empty?
+
+      now = Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
+      db.prepared(
+        <<~SQL,
+          UPDATE event_deliveries ed
+          INNER JOIN transactions t ON t.id = ed.transaction_id
+          LEFT JOIN event_delivery_attempts a ON a.event_delivery_id = ed.id
+          SET ed.state = ?,
+              ed.next_attempt_at = NULL,
+              ed.error_summary = ?,
+              ed.updated_at = ?
+          WHERE t.transaction_chain_id = ?
+            AND ed.state IN (?, ?)
+            AND ed.attempt_count = 0
+            AND ed.provider_message_id IS NULL
+            AND a.id IS NULL
+        SQL
+        EVENT_DELIVERY_STATE_ABORTED,
+        "transaction chain ##{chain_id} failed before notification was sent",
+        now,
+        chain_id,
+        EVENT_DELIVERY_STATE_PREPARED,
+        EVENT_DELIVERY_STATE_RELEASED
+      )
+
+      event_ids.uniq.each { |event_id| recompute_aborted_event_state(db, event_id, now) }
+    end
+
+    def recompute_aborted_event_state(db, event_id, now)
+      row = db.prepared(
+        <<~SQL,
+          SELECT
+            SUM(CASE WHEN state = ? THEN 1 ELSE 0 END) AS aborted_count,
+            SUM(CASE WHEN state NOT IN (?, ?, ?) THEN 1 ELSE 0 END) AS active_count
+          FROM event_deliveries
+          WHERE event_id = ?
+        SQL
+        EVENT_DELIVERY_STATE_ABORTED,
+        EVENT_DELIVERY_STATE_SKIPPED,
+        EVENT_DELIVERY_STATE_CANCELED,
+        EVENT_DELIVERY_STATE_ABORTED,
+        event_id
+      ).get
+
+      if row && row.fetch('aborted_count').to_i > 0 && row.fetch('active_count').to_i == 0
+        db.prepared(
+          'UPDATE events SET routing_state = ?, updated_at = ? WHERE id = ?',
+          EVENT_ROUTING_STATE_ABORTED,
+          now,
+          event_id
+        )
+      end
+
+      db.prepared(
+        'SELECT DISTINCT event_routing_context_id AS id
+         FROM event_deliveries
+         WHERE event_id = ? AND event_routing_context_id IS NOT NULL',
+        event_id
+      ).each do |context_row|
+        recompute_aborted_context_state(db, context_row.fetch('id').to_i, now)
+      end
+    end
+
+    def recompute_aborted_context_state(db, context_id, now)
+      row = db.prepared(
+        <<~SQL,
+          SELECT
+            SUM(CASE WHEN state = ? THEN 1 ELSE 0 END) AS aborted_count,
+            SUM(CASE WHEN state NOT IN (?, ?, ?) THEN 1 ELSE 0 END) AS active_count
+          FROM event_deliveries
+          WHERE event_routing_context_id = ?
+        SQL
+        EVENT_DELIVERY_STATE_ABORTED,
+        EVENT_DELIVERY_STATE_SKIPPED,
+        EVENT_DELIVERY_STATE_CANCELED,
+        EVENT_DELIVERY_STATE_ABORTED,
+        context_id
+      ).get
+      return unless row && row.fetch('aborted_count').to_i > 0 && row.fetch('active_count').to_i == 0
+
+      db.prepared(
+        'UPDATE event_routing_contexts SET routing_state = ?, updated_at = ? WHERE id = ?',
+        EVENT_ROUTING_CONTEXT_STATE_ABORTED,
+        now,
+        context_id
       )
     end
 

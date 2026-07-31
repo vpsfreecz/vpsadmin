@@ -5,7 +5,7 @@ module VpsAdmin::API::Resources
 
     STATE_GROUPS = {
       'queue' => %w[prepared released sending accepted],
-      'log' => %w[sent failed canceled skipped]
+      'log' => %w[sent failed canceled skipped aborted]
     }.freeze
 
     STATE_GROUP_LABELS = {
@@ -28,6 +28,7 @@ module VpsAdmin::API::Resources
       string :event_severity, nullable: true
       datetime :event_created_at, nullable: true
       integer :event_route_id, nullable: true
+      string :event_route_label, nullable: true
       integer :notification_receiver_id, nullable: true
       string :notification_receiver_label, nullable: true
       integer :notification_target_id, nullable: true
@@ -50,6 +51,8 @@ module VpsAdmin::API::Resources
              load_validators: false
       integer :mail_log_id, nullable: true
       integer :transaction_id, nullable: true
+      integer :delivery_transaction_chain_id, nullable: true
+      string :delivery_transaction_chain_label, nullable: true
       integer :attempt_count
       datetime :released_at, nullable: true
       datetime :next_attempt_at, nullable: true
@@ -105,6 +108,7 @@ module VpsAdmin::API::Resources
                 .includes(
                   { event: %i[user vps] },
                   { event_routing_context: :recipient_user },
+                  { delivery_transaction: :transaction_chain },
                   :event_route,
                   :notification_receiver,
                   :notification_target,

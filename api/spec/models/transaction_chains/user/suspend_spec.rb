@@ -17,12 +17,12 @@ RSpec.describe TransactionChains::User::Suspend do
     classes = tx_classes(chain)
 
     expect(classes).to include(
-      Transactions::EventDelivery::Release,
+      Transactions::EventDelivery::Notify,
       Transactions::Vps::Stop,
       Transactions::DnsServerZone::Update,
       Transactions::DnsServerZone::DeleteRecords
     )
-    release_idx = classes.index(Transactions::EventDelivery::Release)
+    release_idx = classes.index(Transactions::EventDelivery::Notify)
     expect(classes.rindex(Transactions::Vps::Stop)).to be < release_idx
     expect(classes.rindex(Transactions::DnsServerZone::Update)).to be < release_idx
     expect(classes.rindex(Transactions::DnsServerZone::DeleteRecords)).to be < release_idx
@@ -45,7 +45,7 @@ RSpec.describe TransactionChains::User::Suspend do
 
     expect(tx_classes(chain)).to include(Transactions::Vps::Stop)
     expect(tx_classes(chain)).not_to include(
-      Transactions::EventDelivery::Release,
+      Transactions::EventDelivery::Notify,
       Transactions::DnsServerZone::Update,
       Transactions::DnsServerZone::DeleteRecords
     )

@@ -111,7 +111,7 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
     routed_event = Event.where(event_type: 'monitoring.monitor_state_changed').order(:id).last
     delivery = routed_event.event_deliveries.sole
 
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     expect(routed_event).to have_attributes(
       user: event.user,
       event_type: 'monitoring.monitor_state_changed',
@@ -151,7 +151,7 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
     routed_event = Event.where(event_type: 'monitoring.monitor_state_changed').order(:id).last
     delivery = routed_event.event_deliveries.sole
 
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     expect(routed_event.event_type).to eq('monitoring.monitor_state_changed')
     expect(routed_event.event_route_matches.reload.map(&:event_route)).to eq(
       [EventRoute.default_route_for(event.user)]
@@ -198,7 +198,7 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
     delivery = routed_event.event_deliveries.sole
     template_name, opts = captured
 
-    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).to include(Transactions::EventDelivery::Notify)
     expect(routed_event.severity).to eq('critical')
     expect(delivery.template_name).to eq('alert_role_event_state')
     expect(template_name).to eq(:alert_role_event_state)
@@ -279,7 +279,7 @@ RSpec.describe 'monitoring alert chain', requires_plugins: :monitoring do # rubo
     chain, = chain_class.fire2(args: [event])
 
     expect(tx_classes(chain)).to include(
-      Transactions::EventDelivery::Release,
+      Transactions::EventDelivery::Notify,
       Transactions::Utils::NoOp
     )
     expect(event.reload.alert_count).to eq(1)
