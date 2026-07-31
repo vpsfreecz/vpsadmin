@@ -9,7 +9,7 @@ RSpec.describe TransactionChains::User::ReportFailedLogins do
   end
 
   before do
-    ensure_user_mail_templates!
+    ensure_user_notification_templates!
     ensure_available_node_status!(SpecSeed.node)
   end
 
@@ -51,7 +51,7 @@ RSpec.describe TransactionChains::User::ReportFailedLogins do
     user = create_lifecycle_user!
     attempt = create_failed_login!(user:)
 
-    allow(MailTemplate).to receive(:send_mail!).and_raise(ArgumentError, 'render failed')
+    allow(NotificationTemplate).to receive(:send_email!).and_raise(ArgumentError, 'render failed')
 
     expect do
       described_class.fire(user => [[attempt]])

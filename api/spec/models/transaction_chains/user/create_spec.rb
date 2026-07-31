@@ -9,7 +9,7 @@ RSpec.describe TransactionChains::User::Create do
   end
 
   before do
-    ensure_user_mail_templates!
+    ensure_user_notification_templates!
     ensure_available_node_status!(SpecSeed.node)
     ensure_user_namespace_blocks!(count: 12)
     seed_pool_dataset_properties!(create_pool!(node: SpecSeed.node, role: :primary))

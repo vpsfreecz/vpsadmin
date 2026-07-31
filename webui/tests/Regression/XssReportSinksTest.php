@@ -50,8 +50,8 @@ final class XssReportSinksTest extends TestCase
 
         $this->assertFileContains(
             'webui/pages/page_adminm.php',
-            'h(implode(\', \', getUserEmails($u, $mail_role_recipients, \'Account management\')))',
-            'VULN-105 mail role recipient summaries must be escaped.'
+            'h(implode(\', \', getUserEmails($u, $email_role_recipients, \'Account management\')))',
+            'VULN-105 email role recipient summaries must be escaped.'
         );
 
         $this->assertFileContains(

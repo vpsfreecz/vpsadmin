@@ -16,7 +16,7 @@ RSpec.describe TransactionChains::Vps::Replace::Os do
   let(:node) { create_node! }
 
   it 'uses the selected destination pool for both copy and config population' do
-    allow(MailTemplate).to receive(:send_mail!)
+    allow(NotificationTemplate).to receive(:send_email!)
 
     now = Time.now.utc
     dozer = create_hypervisor_pool!(

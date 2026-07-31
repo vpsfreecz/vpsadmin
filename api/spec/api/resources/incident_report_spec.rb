@@ -120,20 +120,21 @@ RSpec.describe 'VpsAdmin::API::Resources::IncidentReport' do
     end
   end
 
-  def ensure_mail_template_incident_report!
-    template = MailTemplate.find_or_create_by!(name: 'vps_incident_report') do |tpl|
+  def ensure_notification_template_incident_report!
+    template = NotificationTemplate.find_or_create_by!(name: 'vps_incident_report') do |tpl|
       tpl.label = 'Spec vps_incident_report'
       tpl.template_id = 'vps_incident_report'
       tpl.user_visibility = :default
     end
 
-    return if template.mail_template_translations.where(language: SpecSeed.user.language).exists?
+    return if template.notification_template_variants.where(language: SpecSeed.user.language, protocol: :email).exists?
 
-    template.mail_template_translations.create!(
+    template.notification_template_variants.create!(
       language: SpecSeed.user.language,
+      protocol: :email,
       from: 'noreply@example.test',
       subject: 'Spec incident report',
-      text_plain: 'Spec incident report body'
+      text: 'Spec incident report body'
     )
   end
 
@@ -417,7 +418,7 @@ RSpec.describe 'VpsAdmin::API::Resources::IncidentReport' do
 
     before do
       ensure_mailer_node!
-      ensure_mail_template_incident_report!
+      ensure_notification_template_incident_report!
       ensure_signer_unlocked!
     end
 
