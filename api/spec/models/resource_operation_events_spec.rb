@@ -395,12 +395,14 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
 
     expect(VpsAdmin::API::Events.type_for('vps.updated')).to have_attributes(
       category: 'vps',
+      audience: :account,
       roles: contain_exactly('account', 'admin')
     )
     expect(
       VpsAdmin::API::Events.type_for('os_family.updated')
     ).to have_attributes(
       category: 'operating_systems',
+      audience: :admin,
       roles: contain_exactly('admin')
     )
     expect(VpsAdmin::API::Events.type_for('cluster_resource.deleted')).to be_nil

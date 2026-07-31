@@ -62,7 +62,7 @@ module VpsAdmin::API::Plugins::Monitoring::Events
   def register_event(event_type, label:, template:, monitors: nil, fields: [],
                      default_routed: true, severity: :warning,
                      severity_description: 'Severity is derived from the monitoring alert state',
-                     roles: %i[admin], mail_thread: true,
+                     audience: :account, roles: %i[admin], mail_thread: true,
                      template_params: nil, vars: nil)
     event_type_s = event_type.to_s
     profile = {
@@ -73,6 +73,7 @@ module VpsAdmin::API::Plugins::Monitoring::Events
       default_routed:,
       severity:,
       severity_description:,
+      audience:,
       roles:,
       mail_thread:,
       template_params:,
@@ -230,6 +231,7 @@ module VpsAdmin::API::Plugins::Monitoring::Events
             label: profile.fetch(:label),
             category: 'monitoring',
             severity: profile.fetch(:severity),
+            audience: profile.fetch(:audience),
             roles: profile.fetch(:roles),
             default_routed: profile.fetch(:default_routed),
             severity_description: profile.fetch(:severity_description) do

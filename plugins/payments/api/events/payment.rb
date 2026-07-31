@@ -71,6 +71,7 @@ VpsAdmin::API::Events.define owner: :payments do
         label: 'Payment accepted',
         category: 'payments',
         severity: :info,
+        audience: :account,
         roles: %i[account],
         default_routed: true do
     fields(
@@ -96,6 +97,7 @@ VpsAdmin::API::Events.define owner: :payments do
         label: 'Payments overview',
         category: 'payments',
         severity: :info,
+        audience: :admin,
         roles: %i[admin],
         default_routed: true do
     argument :report_vars, type: Hash, optional: true

@@ -35,6 +35,7 @@ VpsAdmin::API::Events.define do
         label: 'Failed sign-in',
         category: 'security',
         severity: :warning,
+        audience: :account,
         roles: %i[account admin],
         default_routed: false,
         examples: {

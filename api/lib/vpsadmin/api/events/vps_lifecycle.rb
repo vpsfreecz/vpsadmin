@@ -150,6 +150,7 @@ VpsAdmin::API::Events.define do
         label: 'VPS expiration changed',
         category: 'vps',
         severity: :info,
+        audience: :account,
         roles: %i[account admin],
         default_routed: false do
     fields(
@@ -173,6 +174,7 @@ VpsAdmin::API::Events.define do
           label:,
           category: 'vps',
           severity:,
+          audience: :account,
           roles: %i[account admin],
           default_routed: false do
       fields(
@@ -203,6 +205,7 @@ VpsAdmin::API::Events.define do
           label:,
           category: 'vps',
           severity:,
+          audience: :account,
           roles: %i[account admin],
           default_routed: false do
       fields(
@@ -224,6 +227,7 @@ VpsAdmin::API::Events.define do
         label: 'VPS maintenance window updated',
         category: 'vps',
         severity: :info,
+        audience: :account,
         roles: %i[account admin],
         default_routed: false do
     fields(
@@ -246,6 +250,7 @@ VpsAdmin::API::Events.define do
         label: 'VPS maintenance windows updated',
         category: 'vps',
         severity: :info,
+        audience: :account,
         roles: %i[account admin],
         default_routed: false do
     fields(
@@ -267,6 +272,7 @@ VpsAdmin::API::Events.define do
           label:,
           category: 'vps',
           severity: :info,
+          audience: :account,
           roles: %i[account admin],
           default_routed: false do
       fields(
