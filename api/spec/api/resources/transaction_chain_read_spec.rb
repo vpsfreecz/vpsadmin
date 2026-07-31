@@ -531,6 +531,13 @@ RSpec.describe 'VpsAdmin::API::Resources::TransactionChain' do
         )
 
         expect(stale_event).to be_nil
+        expect(
+          Event.where(
+            event_type: 'transaction_chain.state_changed',
+            source_class: 'TransactionChain',
+            source_id: chain_a.id
+          )
+        ).to be_empty
         expect(route.reload.spent_at).to be_nil
 
         fresh_event = VpsAdmin::API::Events.emit_transaction_chain_state!(

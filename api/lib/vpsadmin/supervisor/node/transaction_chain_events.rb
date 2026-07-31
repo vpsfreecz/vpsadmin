@@ -48,8 +48,9 @@ module VpsAdmin::Supervisor
         node:,
         producer_event_id:
       )
-      VpsAdmin::API::Events::VpsOperations.emit_terminal!(
+      VpsAdmin::API::Events::OperationLifecycle.emit_transition!(
         chain,
+        previous_state: event['previous_state'],
         state: event.fetch('state'),
         changed_at: event_time(event),
         node:,
