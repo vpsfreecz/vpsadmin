@@ -13,8 +13,7 @@ namespace :vpsadmin do
       'console_router/lib/vpsadmin/console_router/version.rb',
       'client/lib/vpsadmin/client/version.rb',
       'download_mounter/lib/vpsadmin/download_mounter/version.rb',
-      'api/lib/vpsadmin/api/version.rb',
-      'notification_templates/lib/vpsadmin/notification_templates/version.rb'
+      'api/lib/vpsadmin/api/version.rb'
     ].each do |file|
       File.write(file, File.read(file).sub(/ VERSION = '[^']+'/, " VERSION = '#{v}'"))
     end

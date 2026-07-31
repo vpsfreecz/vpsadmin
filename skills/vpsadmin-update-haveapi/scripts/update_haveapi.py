@@ -31,13 +31,6 @@ DEPENDENCY_UPDATES = [
         + r"(['\"])",
         "haveapi-client",
     ),
-    (
-        Path("notification_templates/vpsadmin-notification-templates.gemspec"),
-        r"(s\.add_dependency ['\"]haveapi-client['\"], ['\"]~> )"
-        + VERSION_RE
-        + r"(['\"])",
-        "haveapi-client",
-    ),
 ]
 
 
