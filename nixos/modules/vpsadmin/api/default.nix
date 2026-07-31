@@ -19,6 +19,10 @@ let
     || telegramCfg.enable
     || smsCfg.enable
     || rateLimitsCfg.defaults != { };
+  managedTemplatesEnabled = cfg.managedNotificationTemplates.paths != [ ];
+  managedTemplatePathsEnv = concatStringsSep ":" (
+    map toString cfg.managedNotificationTemplates.paths
+  );
 
   smtpPasswordCredential = "smtp-password";
   smsCallbackTokenCredential = "sms-callback-token";
@@ -240,6 +244,28 @@ in
         '';
       };
 
+      managedNotificationTemplates = {
+        paths = mkOption {
+          type = types.listOf (types.either types.path types.package);
+          default = [ ];
+          description = ''
+            Managed notification template packages or source paths. Each path
+            may either contain template directories directly or a `templates/`
+            subdirectory.
+          '';
+        };
+
+        sourceId = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          description = ''
+            Identifier of the managed template source revision. The API stores
+            the last installed value and skips installation when it is
+            unchanged.
+          '';
+        };
+      };
+
       notifications.rabbitmq = {
         enable = mkEnableOption "Enable RabbitMQ wakeups for event delivery dispatchers";
 
@@ -311,6 +337,13 @@ in
   };
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = managedTemplatesEnabled -> cfg.managedNotificationTemplates.sourceId != null;
+        message = "vpsadmin.api.managedNotificationTemplates.sourceId is required when paths are configured";
+      }
+    ];
+
     vpsadmin = {
       enableOverlay = true;
       enableStateDirectory = true;
@@ -376,6 +409,13 @@ in
       };
       preStart = ''
         ${apiApp.setup}
+
+        ${optionalString managedTemplatesEnabled ''
+          echo "Installing managed notification templates"
+          TEMPLATE_PATHS=${escapeShellArg managedTemplatePathsEnv} \
+            SOURCE_ID=${escapeShellArg cfg.managedNotificationTemplates.sourceId} \
+            ${apiApp.bundle} exec rake vpsadmin:notification_templates:install_managed
+        ''}
 
         ${optionalString notificationsConfigEnabled ''
           ${optionalString cfg.notifications.rabbitmq.enable ''

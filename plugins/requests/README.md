@@ -11,10 +11,10 @@ setup the database:
 
     $ rake vpsadmin:plugins:migrate PLUGIN=requests
 
-This plugin requires some notification templates to be installed in order to work.
-Examples of such templates are in subdirectory `notification_templates/`. Use
-[vpsadmin-notification-templates](https://github.com/vpsfreecz/vpsadmin)
-to install them.
+This plugin requires notification templates to be installed in order to work.
+Examples of such templates are in subdirectory `notification_templates/`.
+Install packaged templates with
+`rake vpsadmin:notification_templates:install_managed`.
 
 ## Changes
 This plugin defines two new API resources: `UserRequest.Registration` and

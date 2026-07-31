@@ -8,6 +8,8 @@ module VpsAdmin::API
       'cs' => 'Česky'
     }.freeze
     PROTOCOLS = %w[email telegram sms].freeze
+    MANAGED_SOURCE_CATEGORY = 'notifications'
+    MANAGED_SOURCE_NAME = 'managed_templates_source_id'
     DEFAULT_TELEGRAM_HTML = '<%= telegram_notification_html if respond_to?(:telegram_notification_html) %>'
 
     CONCRETE_DEFAULTS = {
@@ -316,6 +318,38 @@ module VpsAdmin::API
       result
     end
 
+    def self.install_managed!(paths:, source_id:)
+      source_id = source_id.to_s.strip
+      raise ArgumentError, 'source_id is required' if source_id.empty?
+
+      paths = Array(paths).map(&:to_s).reject(&:blank?).map { |path| managed_template_path(path) }.uniq
+      raise ArgumentError, 'at least one template path is required' if paths.empty?
+
+      result = {
+        source_id:,
+        unchanged_source: false,
+        templates_created: 0,
+        templates_updated: 0,
+        variants_created: 0,
+        variants_updated: 0
+      }
+
+      with_managed_install_lock do |marker|
+        if marker.value.to_s == source_id
+          result[:unchanged_source] = true
+          next
+        end
+
+        unique_templates(find_templates(paths)).each do |template|
+          install_managed_template!(template, result)
+        end
+
+        marker.update!(value: source_id)
+      end
+
+      result
+    end
+
     def self.default_from
       configured_support_mail || DEFAULT_FROM
     end
@@ -354,6 +388,63 @@ module VpsAdmin::API
       end
     end
 
+    def self.managed_template_path(path)
+      path = path.to_s
+      nested = File.join(path, 'templates')
+
+      Dir.exist?(nested) ? nested : path
+    end
+
+    def self.with_managed_install_lock
+      ActiveRecord::Base.transaction do
+        marker = managed_source_marker!
+        marker.lock!
+        yield marker
+      end
+    end
+
+    def self.managed_source_marker!
+      ::SysConfig.find_or_create_by!(
+        category: MANAGED_SOURCE_CATEGORY,
+        name: MANAGED_SOURCE_NAME
+      )
+    rescue ActiveRecord::RecordNotUnique
+      ::SysConfig.find_by!(
+        category: MANAGED_SOURCE_CATEGORY,
+        name: MANAGED_SOURCE_NAME
+      )
+    end
+
+    def self.install_managed_template!(template, result)
+      record = ::NotificationTemplate.find_or_initialize_by(name: template.name)
+      record.assign_attributes(template.params)
+
+      if record.new_record?
+        record.save!
+        result[:templates_created] += 1
+      elsif record.changed?
+        record.save!
+        result[:templates_updated] += 1
+      end
+
+      template.variants.each do |variant|
+        language = ensure_language!(variant.lang)
+        existing = record.notification_template_variants.find_or_initialize_by(
+          language:,
+          protocol: variant.protocol
+        )
+        existing.assign_attributes(variant.params.merge(language:))
+
+        if existing.new_record?
+          existing.save!
+          result[:variants_created] += 1
+        elsif existing.changed?
+          existing.save!
+          result[:variants_updated] += 1
+        end
+      end
+    end
+
     def self.required_default_templates
       registered = ::NotificationTemplate.templates
 
@@ -377,10 +468,13 @@ module VpsAdmin::API
     end
 
     def self.backfill_telegram_html?(variant, params)
-      variant.protocol == 'telegram' &&
-        variant.html.blank? &&
-        params[:html].present? &&
-        variant.text == params[:text]
+      return false unless variant.protocol == 'telegram' && params[:html].present?
+
+      variant.html.blank? && variant.text == params[:text]
+    end
+
+    def self.normalize_template_body(value)
+      value.to_s.gsub(/\r\n?/, "\n").strip
     end
 
     def self.ensure_language!(code)
@@ -409,9 +503,14 @@ module VpsAdmin::API
     end
 
     private_class_method :backfill_telegram_html?,
+                         :normalize_template_body,
                          :configured_support_mail,
                          :ensure_language!,
                          :unique_templates,
-                         :registered_templates
+                         :registered_templates,
+                         :managed_template_path,
+                         :with_managed_install_lock,
+                         :managed_source_marker!,
+                         :install_managed_template!
   end
 end
