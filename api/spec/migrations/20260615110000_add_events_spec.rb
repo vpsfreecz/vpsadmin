@@ -85,6 +85,10 @@ RSpec.describe AddEvents do
     expect(table_exists?(:event_routes)).to be(true)
     expect(table_exists?(:event_route_matchers)).to be(true)
     expect(table_exists?(:events)).to be(true)
+    routing_state = ActiveRecord::Base.connection
+                                      .columns(:events)
+                                      .detect { |column| column.name == 'routing_state' }
+    expect(routing_state.default.to_i).to eq(1)
     expect(table_exists?(:event_deliveries)).to be(true)
     expect(table_exists?(:event_delivery_attempts)).to be(true)
 

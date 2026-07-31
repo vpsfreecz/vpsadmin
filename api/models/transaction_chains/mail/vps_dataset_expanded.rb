@@ -1,6 +1,7 @@
 module TransactionChains
   class Mail::VpsDatasetExpanded < ::TransactionChain
     label 'Dataset expanded'
+    allow_empty
 
     def link_chain(dataset_expansion, new_refquota:, added_space: dataset_expansion.added_space)
       vps = dataset_expansion.vps

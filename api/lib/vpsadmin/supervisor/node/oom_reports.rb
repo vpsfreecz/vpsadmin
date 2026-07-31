@@ -254,7 +254,8 @@ module VpsAdmin::Supervisor
           report_count: 1,
           selected_report_count: 1,
           selected_oom_count: count
-        }
+        },
+        record_route_hits: true
       )
     end
   end
