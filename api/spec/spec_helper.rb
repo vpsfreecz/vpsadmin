@@ -18,9 +18,13 @@ RSpec.configure do |config|
   config.filter_run_excluding :generator unless ENV['RUN_GENERATOR_SPECS'] == '1'
 
   config.around do |example|
-    ActiveRecord::Base.transaction do
+    if example.metadata[:real_transactions]
       example.run
-      raise ActiveRecord::Rollback
+    else
+      ActiveRecord::Base.transaction do
+        example.run
+        raise ActiveRecord::Rollback
+      end
     end
   end
 
