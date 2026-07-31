@@ -284,6 +284,7 @@ final class NotificationRouteUiTest extends TestCase
         self::assertStringContainsString('notifications_test_subject_scope_options', $testForm);
         self::assertStringContainsString("'subject_scope'", $testForm);
         self::assertStringContainsString("_('Send test notification')", $testForm);
+        self::assertStringContainsString("'notifications.test-notification'", $testForm);
         self::assertStringContainsString("_('Send notification')", $testForm);
         self::assertStringContainsString("\$params['subject_scope'] = api_post('subject_scope')", $testCase);
         self::assertStringContainsString("'payload_json' => api_post('payload_json')", $testCase);
@@ -648,6 +649,34 @@ final class NotificationRouteUiTest extends TestCase
         self::assertStringContainsString("\$category_label = \$group['label'];", $eventTypesSidebar);
         self::assertStringContainsString("'<h4>' . h(\$category_label) . '</h4><ul>'", $eventTypesSidebar);
         self::assertStringContainsString('$xtpl->sbar_add_fragment($html);', $eventTypesSidebar);
+    }
+
+    public function testNotificationReferenceScreensHaveDocumentationLandmarks(): void
+    {
+        $source = $this->notificationsFormsSource();
+        $matcher = $this->sourceBetween(
+            $source,
+            'function notifications_matcher_new(',
+            'function notifications_receiver_targets_summary_html('
+        );
+        $eventTypes = $this->sourceBetween(
+            $source,
+            'function notifications_event_types(',
+            'function notifications_event_types_hash_script('
+        );
+
+        foreach ([
+            'notifications.event-types',
+            'notifications.test-notification',
+            'notifications.targets',
+        ] as $docId) {
+            self::assertStringContainsString("'{$docId}'", $source);
+        }
+
+        self::assertStringContainsString('notifications.matcher-form', $matcher);
+        self::assertStringContainsString('notifications.event-types', $eventTypes);
+        self::assertStringContainsString("'notifications.target-form'", $source);
+        self::assertStringContainsString("'notifications.receiver-form'", $source);
     }
 
     public function testReceiverTargetStatusUsesReceiverTargetEnabledField(): void

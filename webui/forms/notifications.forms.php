@@ -66,8 +66,16 @@ function notifications_sidebar($current, $user_id = null)
         'notifications.time-intervals'
     );
     $xtpl->sbar_add(_('Limits'), '?page=notifications&action=limits' . $user_qs);
-    $xtpl->sbar_add(_('Event types'), '?page=notifications&action=event_types' . $user_qs);
-    $xtpl->sbar_add(_('Test notification'), '?page=notifications&action=test' . $user_qs);
+    $xtpl->sbar_add(
+        _('Event types'),
+        '?page=notifications&action=event_types' . $user_qs,
+        'notifications.event-types'
+    );
+    $xtpl->sbar_add(
+        _('Test notification'),
+        '?page=notifications&action=test' . $user_qs,
+        'notifications.test-notification'
+    );
 }
 
 function notifications_param_choices($desc, $empty = false)
@@ -2820,7 +2828,7 @@ function notifications_matcher_new($route_id, $event_type = null)
     if (!$selected_event_type) {
         $event_types = notifications_event_type_labels(true, true);
 
-        $xtpl->table_title(_('Select event type'));
+        $xtpl->table_title(_('Select event type'), 'notifications.matcher-form');
         $xtpl->form_create('?page=notifications', 'get', 'notification-matcher-event-type', false);
         $hidden = [
             'page' => 'notifications',
@@ -2857,7 +2865,7 @@ function notifications_matcher_new($route_id, $event_type = null)
         . ($route_event_type ? '' : '&event_type=' . urlencode($selected_event_type))
         . notifications_user_qs($route->user_id);
 
-    $xtpl->table_title(_('Add matcher'));
+    $xtpl->table_title(_('Add matcher'), 'notifications.matcher-form');
     $xtpl->form_create($url, 'post');
 
     $xtpl->table_td(_('Route') . ':');
@@ -4003,7 +4011,7 @@ function notifications_target_new($user_id = null, $action_type = null, $receive
     }
 
     $xtpl->title(_('Add notification target'));
-    $xtpl->table_title(_('Add target'));
+    $xtpl->table_title(_('Add target'), 'notifications.target-form');
     $xtpl->form_create(
         '?page=notifications&action=target_new&type=' . urlencode($action_type)
         . ($receiver ? '&receiver=' . rawurlencode((string) $receiver->id) : '')
@@ -4050,7 +4058,7 @@ function notifications_target_edit($target_id, $receiver_id = null)
     $receiver = notifications_target_context_receiver($target, $receiver_id);
 
     $xtpl->title(_('Notification target') . ' #' . $target->id);
-    $xtpl->table_title(_('Update target'));
+    $xtpl->table_title(_('Update target'), 'notifications.target-form');
     $xtpl->form_create(
         notifications_target_url($target->id, $user_id, $receiver ? $receiver->id : null),
         'post'
@@ -5608,7 +5616,8 @@ function notifications_event_types($user_id = null)
     uasort($groups, function ($a, $b) {
         return strcasecmp($a['label'], $b['label']);
     });
-    $html = '<div class="notification-event-types">';
+    $html = '<div class="notification-event-types" '
+        . 'data-vpsadmin-doc-id="notifications.event-types">';
 
     foreach ($groups as $group) {
         $category_label = $group['label'];
@@ -5788,7 +5797,7 @@ function notifications_test_event($user_id = null)
     $input = $api->event->test->getParameters('input');
 
     $xtpl->title(_('Test notification routing'));
-    $xtpl->table_title(_('Send test notification'));
+    $xtpl->table_title(_('Send test notification'), 'notifications.test-notification');
     $xtpl->form_create('?page=notifications&action=test' . notifications_user_qs($user_id), 'post');
 
     if (isAdmin()) {
