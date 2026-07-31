@@ -495,6 +495,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.bigint "event_delivery_id", null: false
     t.datetime "finished_at"
     t.string "provider_message_id"
+    t.bigint "recipient_user_id"
     t.text "response_body"
     t.text "response_headers"
     t.integer "response_status"
@@ -505,6 +506,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["created_at"], name: "index_event_delivery_attempts_on_created_at"
     t.index ["event_delivery_id", "attempt_number"], name: "idx_delivery_attempts_on_delivery_number", unique: true
     t.index ["event_delivery_id"], name: "index_event_delivery_attempts_on_event_delivery_id"
+    t.index ["recipient_user_id", "action", "started_at"], name: "idx_delivery_attempts_on_recipient_action_started"
+    t.index ["recipient_user_id"], name: "idx_event_delivery_attempts_on_recipient_user"
   end
 
   create_table "event_routing_contexts", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -1425,6 +1428,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.index ["user_id"], name: "index_notification_receivers_on_user_id"
   end
 
+  create_table "notification_rate_limit_states", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "delivery_method", limit: 32, null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["user_id", "delivery_method"], name: "idx_notification_rate_limit_states_unique", unique: true
+  end
+
   create_table "notification_targets", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "action", limit: 50, null: false
     t.text "config"
@@ -2015,6 +2026,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.integer "user_id", null: false
     t.index ["delivery_method", "enabled"], name: "idx_user_notification_delivery_methods_state"
     t.index ["user_id", "delivery_method"], name: "idx_user_notification_delivery_methods_unique", unique: true
+  end
+
+  create_table "user_notification_rate_limits", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "delivery_method", limit: 32, null: false
+    t.integer "limit_count", null: false
+    t.string "period", limit: 16, null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["delivery_method", "period"], name: "idx_user_notification_rate_limits_method_period"
+    t.index ["user_id", "delivery_method", "period"], name: "idx_user_notification_rate_limits_unique", unique: true
   end
 
   create_table "user_namespace_blocks", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
