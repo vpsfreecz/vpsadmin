@@ -66,7 +66,7 @@ function notificationDeliveryTable(page) {
   return page
     .locator('table.table-style01')
     .filter({ has: page.locator('th', { hasText: 'Delivery' }) })
-    .filter({ has: page.locator('th', { hasText: 'Receiver action' }) })
+    .filter({ has: page.locator('th', { hasText: 'Next retry' }) })
     .last();
 }
 
@@ -242,6 +242,9 @@ test.describe('support and status browser coverage', () => {
       'Event log',
       'Routes',
       'Receivers',
+      'Targets',
+      'Time intervals',
+      'Limits',
       'Event types',
       'Test event',
     ]);
@@ -263,7 +266,7 @@ test.describe('support and status browser coverage', () => {
       waitUntil: 'domcontentloaded',
     });
     await expect(heading(page)).toContainText('Notification receivers');
-    await expect(content(page)).toContainText(/Default e-mail|Do not notify/);
+    await expect(content(page)).toContainText(/Default|Do not notify/);
 
     const receiverLabel = 'Webui notification receiver';
     const receiverForm = formByAction(page, 'action=receiver_new');
@@ -278,56 +281,104 @@ test.describe('support and status browser coverage', () => {
 
     await receiverEditLink.click();
     await expect(heading(page)).toContainText(`Notification receiver #${receiverId}`);
-    await expect(content(page)).toContainText('Actions');
+    await expect(content(page)).toContainText('Targets');
 
-    await page.goto(`/?page=notifications&action=receiver_action_new&receiver=${receiverId}&type=email`, {
+    await page.goto(`/?page=notifications&action=target_new&receiver=${receiverId}&type=email`, {
       waitUntil: 'domcontentloaded',
     });
-    const emailActionForm = formByAction(page, 'action=receiver_action_new');
-    await expect(emailActionForm).toBeVisible();
-    await expect(emailActionForm.locator('input[name="template_name"]')).toHaveCount(0);
+    const emailTargetForm = formByAction(page, 'action=target_new');
+    await expect(emailTargetForm).toBeVisible();
+    await expect(emailTargetForm.locator('input[name="template_name"]')).toHaveCount(0);
 
     await page.goto(`/?page=notifications&action=receiver_edit&id=${receiverId}`, {
       waitUntil: 'domcontentloaded',
     });
     await linkWithParams(content(page), {
-      action: 'receiver_action_new',
+      action: 'target_new',
       receiver: receiverId,
     }).click();
-    await expect(heading(page)).toContainText('Add receiver action');
-    const actionTypeForm = formByName(page, 'notification-action-type');
-    await actionTypeForm.locator('select[name="type"]').selectOption('webhook');
-    await submitForm(actionTypeForm, 'Continue');
+    await expect(heading(page)).toContainText('Add notification target');
+    const targetTypeForm = formByName(page, 'notification-target-type');
+    await targetTypeForm.locator('select[name="type"]').selectOption('webhook');
+    await submitForm(targetTypeForm, 'Continue');
 
-    const actionForm = formByAction(page, 'action=receiver_action_new');
-    await expect(actionForm).toBeVisible();
+    const targetForm = formByAction(page, 'action=target_new');
+    await expect(targetForm).toBeVisible();
     await expect(content(page)).toContainText('Webhook URL');
     await expect(content(page)).toContainText('X-VpsAdmin-Signature-256');
-    await expect(actionForm.locator('input[name="target_value"]')).toHaveAttribute('size', '50');
-    await expect(actionForm.locator('input[name="secret"]')).toHaveAttribute('type', 'text');
-    await actionForm.locator('input[name="label"]').fill('Webui webhook action');
-    await actionForm.locator('input[name="target_value"]').fill('https://example.test/webui');
-    await actionForm.locator('input[name="secret"]').fill('webui-secret');
-    await submitForm(actionForm, 'Add');
-    await expectNotification(page, 'Action added');
-    const actionRow = rowWithText(page, 'Webui webhook action');
-    await expect(actionRow).toBeVisible();
-    await expect(actionRow).toContainText('Webhook');
-    await expect(actionRow).toContainText('https://example.test/webui');
+    await expect(targetForm.locator('input[name="target_value"]')).toHaveAttribute('size', '50');
+    await expect(targetForm.locator('input[name="secret"]')).toHaveAttribute('type', 'text');
+    await targetForm.locator('input[name="label"]').fill('Webui webhook target');
+    await targetForm.locator('input[name="target_value"]').fill('https://example.test/webui');
+    await targetForm.locator('input[name="secret"]').fill('webui-secret');
+    await submitForm(targetForm, 'Add');
+    await expectNotification(page, 'Target added');
+    await expect(heading(page)).toContainText(`Notification receiver #${receiverId}`);
+    const newTargetRow = rowWithText(page, 'Webui webhook target');
+    await expect(newTargetRow).toBeVisible();
+    const newTargetEditLink = linkWithParams(newTargetRow, { action: 'target_edit' });
+    const notificationTargetId = await hrefParam(newTargetEditLink, 'id', page.url());
+    await newTargetEditLink.click();
+    await expect(heading(page)).toContainText(`Notification target #${notificationTargetId}`);
 
-    const actionEditLink = linkWithParams(actionRow, {
-      action: 'receiver_action_edit',
-      receiver: receiverId,
+    const targetEditForm = formByAction(page, 'action=target_edit');
+    await expect(targetEditForm.locator('select[name="action"]')).toHaveCount(0);
+    await targetEditForm.locator('input[name="label"]').fill('Webui webhook target edited');
+    await submitForm(targetEditForm, 'Save');
+    await expectNotification(page, 'Target updated');
+
+    const intervalName = 'Webui always-active interval';
+    await page.goto('/?page=notifications&action=time_intervals', {
+      waitUntil: 'domcontentloaded',
     });
-    const receiverActionId = await hrefParam(actionEditLink, 'id', page.url());
-    await actionEditLink.click();
-    await expect(heading(page)).toContainText('Receiver action #');
-    const actionEditForm = formByAction(page, 'action=receiver_action_edit');
-    await expect(actionEditForm.locator('select[name="action"]')).toHaveCount(0);
-    await actionEditForm.locator('input[name="label"]').fill('Webui webhook action edited');
-    await submitForm(actionEditForm, 'Save');
-    await expectNotification(page, 'Action updated');
-    await expect(rowWithText(page, 'Webui webhook action edited')).toBeVisible();
+    await expect(heading(page)).toContainText('Notification time intervals');
+    await expect(content(page).locator('[data-vpsadmin-doc-id="notifications.time-intervals"]'))
+      .toBeVisible();
+    await content(page).getByRole('link', { name: 'Add time interval' }).click();
+    const intervalForm = formByAction(page, 'action=time_interval_new');
+    await expect(page.locator('[data-vpsadmin-doc-id="notifications.time-interval-form"]'))
+      .toBeVisible();
+    await intervalForm.locator('input[name="name"]').fill(intervalName);
+    const timeZoneSelect = intervalForm.locator('select[name="time_zone"]');
+    await expect(timeZoneSelect).toHaveValue('UTC');
+    await expect(timeZoneSelect.locator('option[value="Europe/Prague"]')).toHaveCount(1);
+    await expect(intervalForm.locator('input[name="time_zone"]')).toHaveCount(0);
+    await timeZoneSelect.selectOption('UTC');
+    await intervalForm.locator('#notification-time-interval-add-spec').click();
+    const intervalSpecs = intervalForm.locator('.notification-time-interval-spec');
+    await expect(intervalSpecs).toHaveCount(2);
+    await expect(intervalSpecs.nth(0).locator('.notification-time-interval-spec-separator'))
+      .toBeHidden();
+    await expect(intervalSpecs.nth(1).locator('.notification-time-interval-spec-separator'))
+      .toBeVisible();
+    await intervalSpecs.nth(0).locator('.notification-time-interval-remove').click();
+    await expect(intervalSpecs).toHaveCount(1);
+    await expect(intervalSpecs.nth(0).locator('.notification-time-interval-spec-separator'))
+      .toBeHidden();
+    await intervalSpecs.nth(0).locator('input[name$="[times]"]').fill('00:00-24:00');
+    await intervalSpecs.nth(0).locator('input[name$="[weekdays]"]').fill('');
+    await submitForm(intervalForm, 'Add');
+    await expectNotification(page, 'Time interval added');
+    const intervalId = new URL(page.url()).searchParams.get('id');
+    expect(intervalId).toMatch(/^\d+$/);
+
+    await page.goto(`/?page=notifications&action=receiver_edit&id=${receiverId}`, {
+      waitUntil: 'domcontentloaded',
+    });
+    const targetRow = rowWithText(page, 'Webui webhook target edited');
+    await expect(targetRow).toBeVisible();
+    await expect(targetRow).toContainText('Webhook');
+    await expect(targetRow).toContainText('https://example.test/webui');
+    const targetEditLink = linkWithParams(targetRow, {
+      action: 'target_edit',
+      id: notificationTargetId,
+    });
+    await expect(targetEditLink).toBeVisible();
+    const targetEventLink = linkWithParams(targetRow, {
+      action: 'events',
+      notification_target_id: notificationTargetId,
+    });
+    const receiverTargetId = await hrefParam(targetEventLink, 'notification_receiver_target_id', page.url());
 
     await page.goto('/?page=notifications&action=routes', {
       waitUntil: 'domcontentloaded',
@@ -385,6 +436,14 @@ test.describe('support and status browser coverage', () => {
     await expect(heading(page)).toContainText(`Notification route #${routeId}`);
     await expect(content(page)).toContainText('Matchers');
     await expect(content(page)).toContainText('Receiver');
+    const assignmentForm = formByAction(page, 'action=route_time_intervals_save');
+    await expect(page.locator('[data-vpsadmin-doc-id="notifications.route-time-intervals"]'))
+      .toBeVisible();
+    await assignmentForm.locator('select[name="event_time_interval"]').selectOption(intervalId);
+    await assignmentForm.locator('select[name="mode"]').selectOption('active');
+    await submitForm(assignmentForm, 'Assign interval');
+    await expectNotification(page, 'Time interval assigned');
+    await expect(rowWithText(page, intervalName)).toContainText('Active interval');
 
     await linkWithParams(content(page), {
       action: 'matcher_new',
@@ -419,16 +478,26 @@ test.describe('support and status browser coverage', () => {
     await expect(content(page)).toContainText(subject);
     await expect(content(page)).toContainText('Deliveries');
     await expect(content(page)).toContainText('webhook');
+    const matchedRoutesHeading = page.locator(
+      '[data-vpsadmin-doc-id="notifications.event-route-matches"]',
+    );
+    await expect(matchedRoutesHeading).toBeVisible();
+    const matchedRoutes = matchedRoutesHeading.locator(
+      'xpath=following-sibling::table[contains(@class, "table-style01")][1]',
+    );
+    await expect(matchedRoutes).toBeVisible();
+    const matchedRouteRow = matchedRoutes.locator('tr', { hasText: routeLabel }).first();
+    await expect(matchedRouteRow).toContainText('active');
+    await expect(matchedRouteRow).toContainText(intervalName);
     const payloadRow = rowWithText(page, 'Payload');
     await expect(payloadRow.locator('pre')).toContainText('"note"');
     await expect(payloadRow.locator('pre')).toContainText('testing notification routing');
     const eventDeliveryRow = rowWithText(page, 'webhook');
     await expect(eventDeliveryRow).toContainText(receiverLabel);
-    await expect(eventDeliveryRow).toContainText('Webui webhook action edited');
+    await expect(eventDeliveryRow).toContainText('Webui webhook target edited');
     await expect(linkWithParams(eventDeliveryRow, {
-      action: 'receiver_action_edit',
-      receiver: receiverId,
-      id: receiverActionId,
+      action: 'target_edit',
+      id: notificationTargetId,
     })).toBeVisible();
 
     const deliveryDetailLink = linkWithParams(content(page), {
@@ -440,15 +509,14 @@ test.describe('support and status browser coverage', () => {
     await expect(content(page)).toContainText('Request payload');
     await expect(content(page)).toContainText('user.test_notification');
     await expect(content(page)).toContainText(receiverLabel);
-    await expect(content(page)).toContainText('Webui webhook action edited');
+    await expect(content(page)).toContainText('Webui webhook target edited');
     await expect(linkWithParams(content(page), {
       action: 'receiver_edit',
       id: receiverId,
     })).toBeVisible();
     await expect(linkWithParams(content(page), {
-      action: 'receiver_action_edit',
-      receiver: receiverId,
-      id: receiverActionId,
+      action: 'target_edit',
+      id: notificationTargetId,
     })).toBeVisible();
     await expect(content(page)).toContainText('Delivery attempts');
 
@@ -467,13 +535,13 @@ test.describe('support and status browser coverage', () => {
     await page.goto(`/?page=notifications&action=receiver_edit&id=${receiverId}`, {
       waitUntil: 'domcontentloaded',
     });
-    const actionEventLink = linkWithParams(rowWithText(page, 'Webui webhook action edited'), {
+    const receiverTargetEventLink = linkWithParams(rowWithText(page, 'Webui webhook target edited'), {
       action: 'events',
-      notification_receiver_action_id: receiverActionId,
+      notification_receiver_target_id: receiverTargetId,
     });
-    await actionEventLink.click();
+    await receiverTargetEventLink.click();
     await expect(heading(page)).toContainText('Event log');
-    await expect(formByName(page, 'notification-events').locator('input[name="notification_receiver_action_id"]')).toHaveValue(receiverActionId);
+    await expect(formByName(page, 'notification-events').locator('input[name="notification_receiver_target_id"]')).toHaveValue(receiverTargetId);
     await expect(content(page)).toContainText(subject);
 
     const childRouteLabel = 'Webui notification child route';
@@ -549,6 +617,18 @@ test.describe('support and status browser coverage', () => {
     }).click();
     await expectNotification(page, 'Route deleted');
 
+    await page.goto('/?page=notifications&action=time_intervals', {
+      waitUntil: 'domcontentloaded',
+    });
+    const intervalRow = rowWithText(page, intervalName);
+    await expect(intervalRow).toBeVisible();
+    await acceptNextDialog(page);
+    await linkWithParams(intervalRow, {
+      action: 'time_interval_delete',
+      id: intervalId,
+    }).click();
+    await expectNotification(page, 'Time interval deleted');
+
     await page.goto('/?page=notifications&action=receivers', {
       waitUntil: 'domcontentloaded',
     });
@@ -577,6 +657,9 @@ test.describe('support and status browser coverage', () => {
       'Delivery log',
       'Routes',
       'Receivers',
+      'Targets',
+      'Time intervals',
+      'Limits',
       'Event types',
       'Test event',
     ]);
@@ -592,7 +675,7 @@ test.describe('support and status browser coverage', () => {
       'User',
       'VPS',
       'Receiver',
-      'Receiver action',
+      'Target',
       'State',
       'Attempts',
       'Released',
@@ -612,7 +695,7 @@ test.describe('support and status browser coverage', () => {
       'User',
       'VPS',
       'Receiver',
-      'Receiver action',
+      'Target',
       'State',
       'Attempts',
       'Released',

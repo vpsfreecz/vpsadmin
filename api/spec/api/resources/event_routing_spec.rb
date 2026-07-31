@@ -15,12 +15,17 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     EventRouteMatch.delete_all
     EventRoutingContext.where(user_id: user.id).delete_all
     EventRouteMatcher.joins(:event_route).where(event_routes: { user_id: user.id }).delete_all
+    EventRouteTimeInterval
+      .joins(:event_route)
+      .where(event_routes: { user_id: user.id })
+      .delete_all
     NotificationReceiverTarget
       .joins(:notification_receiver)
       .where(notification_receivers: { user_id: user.id })
       .delete_all
     NotificationTarget.where(user:).delete_all
     EventRoute.where(user:).delete_all
+    EventTimeInterval.where(user:).delete_all
     NotificationReceiver.where(user:).delete_all
     user.user_notification_delivery_methods.delete_all
   end
@@ -67,6 +72,22 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
   def route_path(id)
     vpath("/event_routes/#{id}")
+  end
+
+  def time_interval_index_path
+    vpath('/event_time_intervals')
+  end
+
+  def time_interval_path(id)
+    vpath("/event_time_intervals/#{id}")
+  end
+
+  def route_time_interval_index_path(route_id)
+    vpath("/event_routes/#{route_id}/time_intervals")
+  end
+
+  def route_time_interval_path(route_id, id)
+    vpath("/event_routes/#{route_id}/time_intervals/#{id}")
   end
 
   def matcher_index_path(route_id)
@@ -174,6 +195,16 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
   def route_obj
     json.dig('response', 'event_route') || json['response']
+  end
+
+  def time_interval_obj
+    json.dig('response', 'event_time_interval') || json['response']
+  end
+
+  def route_time_interval_obj
+    json.dig('response', 'time_interval') ||
+      json.dig('response', 'event_route_time_interval') ||
+      json['response']
   end
 
   def action_obj
@@ -542,6 +573,76 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(attempts.map { |row| row['id'] }).to eq([attempt.id])
     expect(attempts.first['response_status']).to eq(500)
     expect(attempts.first['error_summary']).to eq('spec transport failure')
+  end
+
+  it 'lets users manage reusable intervals and assign their own intervals to routes' do
+    as(SpecSeed.user) do
+      json_post time_interval_index_path, event_time_interval: {
+        name: 'Weekday office hours',
+        time_zone: 'Europe/Prague',
+        specs: [
+          {
+            times: [{ start_time: '09:00', end_time: '17:00' }],
+            weekdays: [{ start: 'monday', end: 'friday' }]
+          }
+        ]
+      }
+    end
+
+    expect_status(200)
+    interval = EventTimeInterval.find(time_interval_obj['id'])
+    expect(interval.user).to eq(SpecSeed.user)
+    expect(interval.specs.first.fetch('weekdays')).to eq([{ 'start' => 1, 'end' => 5 }])
+
+    route = EventRoute.create!(
+      user: SpecSeed.user,
+      event_type: 'user.test_notification',
+      position: 1
+    )
+    as(SpecSeed.user) do
+      json_post route_time_interval_index_path(route.id), time_interval: {
+        event_time_interval: interval.id,
+        mode: 'active'
+      }
+    end
+
+    expect_status(200)
+    assignment = EventRouteTimeInterval.find(route_time_interval_obj['id'])
+    expect(assignment.event_time_interval).to eq(interval)
+    expect(assignment).to be_active_mode
+
+    as(SpecSeed.user) { json_get route_time_interval_index_path(route.id) }
+    expect_status(200)
+    rows = json.dig('response', 'time_intervals') ||
+           json.dig('response', 'event_route_time_intervals') || []
+    expect(rows.map { |row| row['id'] }).to eq([assignment.id])
+
+    as(SpecSeed.user) { json_delete time_interval_path(interval.id) }
+    expect(json['status']).to be(false)
+    expect(interval.reload).to be_persisted
+
+    foreign_interval = EventTimeInterval.create!(
+      user: SpecSeed.other_user,
+      name: 'Foreign interval',
+      time_zone: 'UTC',
+      specs: [{ years: [{ start: 2026 }] }]
+    )
+    as(SpecSeed.user) do
+      json_post route_time_interval_index_path(route.id), time_interval: {
+        event_time_interval: foreign_interval.id,
+        mode: 'mute'
+      }
+    end
+    expect(json['status']).to be(false)
+
+    as(SpecSeed.other_user) { json_get time_interval_path(interval.id) }
+    expect_status(404)
+
+    as(SpecSeed.user) { json_delete route_time_interval_path(route.id, assignment.id) }
+    expect_status(200)
+    as(SpecSeed.user) { json_delete time_interval_path(interval.id) }
+    expect_status(200)
+    expect(EventTimeInterval.where(id: interval.id)).to be_empty
   end
 
   it 'lets admins inspect visible events while users see only their delivery context' do
