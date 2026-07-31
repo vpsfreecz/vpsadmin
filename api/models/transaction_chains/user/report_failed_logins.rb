@@ -1,6 +1,7 @@
 module TransactionChains
   class User::ReportFailedLogins < ::TransactionChain
     label 'Failed logins'
+    allow_empty
     MAX_EVENT_ATTEMPT_GROUPS = 20
     MAX_EVENT_ATTEMPTS_PER_GROUP = 20
 
@@ -45,6 +46,8 @@ module TransactionChains
     protected
 
     def ensure_delivery_handled!(event)
+      return if event.nil?
+
       deliveries = event.event_deliveries.reload.to_a
       return if deliveries.any? { |delivery| delivery_handled?(delivery) }
 

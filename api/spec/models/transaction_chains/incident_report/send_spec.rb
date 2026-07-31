@@ -78,4 +78,19 @@ RSpec.describe TransactionChains::IncidentReport::Send do
     expect(chain).to be_nil
     expect(NotificationTemplate).not_to have_received(:send_email!)
   end
+
+  it 'treats muted incident notifications as handled without persisting events' do
+    incident = create_send_incident!(subject: 'Muted')
+    mute_default_notifications_for!(incident.user)
+
+    chain, = described_class.fire2(
+      args: [VpsAdmin::API::IncidentReports::Result.new(incidents: [incident])]
+    )
+    event = expect_suppressed_event!('vps.incident_report', user: incident.user)
+
+    expect(chain).to be_nil
+    expect(NotificationTemplate).not_to have_received(:send_email!)
+    expect(event.source).to eq(incident)
+    expect(event.event_deliveries.sole.error_summary).to include('does not notify')
+  end
 end

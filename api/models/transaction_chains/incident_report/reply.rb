@@ -1,6 +1,7 @@
 module TransactionChains
   class IncidentReport::Reply < ::TransactionChain
     label 'Re: incident'
+    allow_empty
 
     # @param message [Mail::Message]
     # @param result [VpsAdmin::API::IncidentReports::Result]
@@ -33,6 +34,8 @@ module TransactionChains
     protected
 
     def ensure_email_deliveries_queued!(event)
+      return if event.nil?
+
       failed = event
                .event_deliveries
                .where(action: 'email', state: 'failed')

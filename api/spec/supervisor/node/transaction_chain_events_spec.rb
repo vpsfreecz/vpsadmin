@@ -31,7 +31,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
     )
   end
 
-  it 'emits a transaction chain state-change event from node messages' do
+  it 'does not persist an unrouted transaction chain state-change event from node messages' do
     chain = create_chain!(state: :failed)
     TransactionChainConcern.create!(
       transaction_chain: chain,
@@ -51,26 +51,6 @@ RSpec.describe VpsAdmin::Supervisor::Node::TransactionChainEvents do
           'time_f' => Time.utc(2026, 6, 19, 12, 0, 0, 123_456).to_f
         }
       )
-    end.to change(Event.where(event_type: 'transaction_chain.state_changed'), :count).by(1)
-
-    event = Event.where(event_type: 'transaction_chain.state_changed').last
-    expect(event).to have_attributes(
-      user: SpecSeed.user,
-      source_class: 'TransactionChain',
-      source_id: chain.id,
-      severity: 'error'
-    )
-    expect(event.parameters).to include(
-      'chain_id' => chain.id,
-      'previous_state' => 'rollbacking',
-      'state' => 'failed',
-      'terminal' => true,
-      'successful' => false,
-      'failed' => true,
-      'node_id' => SpecSeed.node.id,
-      'changed_at_timestamp' => Time.utc(2026, 6, 19, 12, 0, 0, 123_456).to_f
-    )
-    expect(event.parameters.dig('concerns', 'objects')).to include(['Vps', 123])
-    expect(event).to be_suppressed_routing_state
+    end.not_to change(Event.where(event_type: 'transaction_chain.state_changed'), :count)
   end
 end

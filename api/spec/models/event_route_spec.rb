@@ -141,10 +141,22 @@ RSpec.describe EventRoute do
     )
     delivery = event.event_deliveries.sole
 
-    expect(event.reload).to be_suppressed_routing_state
-    expect(event.matched_event_route).to be_nil
-    expect(delivery).to be_skipped_state
-    expect(delivery.error_summary).to eq('no route matched the event')
+  it 'does not route opt-in events through the generated default route' do
+    event = nil
+
+    expect do
+      event = VpsAdmin::API::Events.emit!(
+        'transaction_chain.state_changed',
+        user: SpecSeed.user,
+        subject: 'Spec transaction state',
+        parameters: {
+          'state' => 'queued',
+          'terminal' => false
+        }
+      )
+    end.not_to change(Event, :count)
+
+    expect(event).to be_nil
     expect(described_class.default_route_for(SpecSeed.user).hit_count).to eq(0)
   end
 
@@ -235,12 +247,14 @@ RSpec.describe EventRoute do
     emit_incident!
 
     muted_receiver = mute_default_notifications_for!(SpecSeed.user)
-    muted_event = emit_incident!
-    muted_delivery = muted_event.event_deliveries.sole
+    muted_event = nil
 
-    expect(muted_event.reload).to be_suppressed_routing_state
-    expect(muted_delivery).to be_skipped_state
-    expect(muted_delivery.notification_receiver).to eq(muted_receiver)
+    expect do
+      muted_event = emit_incident!
+    end.not_to change(Event, :count)
+
+    expect(muted_event).to be_nil
+    expect(muted_receiver.reload).to be_mute
 
     route_default_notifications_to_email_for!(SpecSeed.user)
     routed_event = emit_incident!
@@ -341,7 +355,7 @@ RSpec.describe EventRoute do
     )
   end
 
-  it 'skips unverified custom e-mail targets' do
+  it 'does not persist events routed only to an unverified e-mail target' do
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Pending e-mail receiver')
     receiver.notification_receiver_actions.create!(
       action: :email,
@@ -350,11 +364,13 @@ RSpec.describe EventRoute do
     )
     create_route!(receiver:)
 
-    event = emit_incident!
-    delivery = event.event_deliveries.sole
+    event = nil
 
-    expect(delivery).to be_skipped_state
-    expect(delivery.error_summary).to eq('e-mail target is not verified')
+    expect do
+      event = emit_incident!
+    end.not_to change(Event, :count)
+
+    expect(event).to be_nil
   end
 
   it 'deduplicates equivalent actions from continuing routes' do
@@ -444,17 +460,17 @@ RSpec.describe EventRoute do
     expect(deliveries.first.target_value).to eq('default')
   end
 
-  it 'suppresses events through a mute receiver' do
+  it 'does not persist events routed only through a mute receiver' do
     receiver = create_receiver!(label: 'Mute', mute: true)
     route = create_route!(receiver:)
+    event = nil
 
-    event = emit_incident!
-    delivery = event.event_deliveries.sole
+    expect do
+      event = emit_incident!
+    end.not_to change(Event, :count)
 
-    expect(event.reload).to be_suppressed_routing_state
-    expect(event.matched_event_route).to eq(route)
-    expect(delivery).to be_skipped_state
-    expect(delivery.error_summary).to eq('receiver does not notify')
+    expect(event).to be_nil
+    expect(route.reload.hit_count).to eq(0)
   end
 
   it 'creates a default mute receiver for every user' do

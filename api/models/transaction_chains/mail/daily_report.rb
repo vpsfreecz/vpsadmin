@@ -48,6 +48,8 @@ module TransactionChains
     end
 
     def ensure_email_deliveries_queued!(event)
+      return if event.nil?
+
       failed = event
                .event_deliveries
                .where(action: 'email', state: 'failed')
