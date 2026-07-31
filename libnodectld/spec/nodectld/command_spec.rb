@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
+require 'digest'
 require 'spec_helper'
 require 'stringio'
+require 'timeout'
 require 'nodectld/transaction_verifier'
 require 'nodectld/confirmations'
 require 'nodectld/command'
@@ -52,7 +54,15 @@ RSpec.describe NodeCtld::Command do
     })
   end
 
-  def insert_event_delivery(event_id:, transaction_id:, state:, attempt_count: 0, mail_log_id: nil)
+  def insert_event_delivery(
+    event_id:,
+    transaction_id:,
+    state:,
+    attempt_count: 0,
+    mail_log_id: nil,
+    event_delivery_group_id: nil,
+    released_at: nil
+  )
     sql_insert('event_deliveries', {
       event_id: event_id,
       action: 'email',
@@ -62,7 +72,22 @@ RSpec.describe NodeCtld::Command do
       state: state,
       attempt_count: attempt_count,
       mail_log_id: mail_log_id,
+      event_delivery_group_id: event_delivery_group_id,
+      released_at: released_at,
       transaction_id: transaction_id,
+      created_at: Time.now.utc,
+      updated_at: Time.now.utc
+    })
+  end
+
+  def insert_event_delivery_group(next_flush_at:)
+    sql_insert('event_delivery_groups', {
+      action: 'email',
+      group_key: Digest::SHA256.hexdigest("libnodectld-group-#{next_flush_at.to_f}"),
+      labels: '{}',
+      group_wait_seconds: 30,
+      group_interval_seconds: 300,
+      next_flush_at: next_flush_at,
       created_at: Time.now.utc,
       updated_at: Time.now.utc
     })
@@ -537,6 +562,25 @@ RSpec.describe NodeCtld::Command do
       state: described_class::EVENT_DELIVERY_STATE_PREPARED,
       mail_log_id: insert_mail_log
     )
+    first_member_at = Time.now.utc
+    survivor_member_at = first_member_at + 120
+    group_id = insert_event_delivery_group(next_flush_at: first_member_at + 30)
+    grouping_event_id = insert_event
+    grouping_delivery_id = insert_event_delivery(
+      event_id: grouping_event_id,
+      transaction_id: tx_id,
+      state: described_class::EVENT_DELIVERY_STATE_GROUPING,
+      event_delivery_group_id: group_id,
+      released_at: first_member_at
+    )
+    survivor_event_id = insert_event
+    survivor_delivery_id = insert_event_delivery(
+      event_id: survivor_event_id,
+      transaction_id: nil,
+      state: described_class::EVENT_DELIVERY_STATE_GROUPING,
+      event_delivery_group_id: group_id,
+      released_at: survivor_member_at
+    )
     attempted_event_id = insert_event
     attempted_delivery_id = insert_event_delivery(
       event_id: attempted_event_id,
@@ -561,6 +605,18 @@ RSpec.describe NodeCtld::Command do
     expect(sql_value('SELECT routing_state FROM events WHERE id = ?', unsent_mail_event_id)).to eq(
       described_class::EVENT_ROUTING_STATE_ABORTED
     )
+    expect(sql_value('SELECT state FROM event_deliveries WHERE id = ?', grouping_delivery_id)).to eq(
+      described_class::EVENT_DELIVERY_STATE_ABORTED
+    )
+    expect(sql_value('SELECT routing_state FROM events WHERE id = ?', grouping_event_id)).to eq(
+      described_class::EVENT_ROUTING_STATE_ABORTED
+    )
+    expect(sql_value('SELECT state FROM event_deliveries WHERE id = ?', survivor_delivery_id)).to eq(
+      described_class::EVENT_DELIVERY_STATE_GROUPING
+    )
+    expect(
+      sql_value('SELECT next_flush_at FROM event_delivery_groups WHERE id = ?', group_id)
+    ).to be_within(1.second).of(survivor_member_at + 30)
     expect(sql_value('SELECT error_summary FROM event_deliveries WHERE id = ?', unsent_delivery_id)).to include(
       "transaction chain ##{chain_id} failed"
     )
@@ -568,6 +624,99 @@ RSpec.describe NodeCtld::Command do
       described_class::EVENT_DELIVERY_STATE_RELEASED
     )
     expect(sql_value('SELECT routing_state FROM events WHERE id = ?', attempted_event_id)).to eq(1)
+  end
+
+  it 'serializes group activation with node-side chain abort', :real_transactions do
+    chain_id = insert_chain(size: 1, progress: 0)
+    tx_id = insert_transaction(
+      transaction_chain_id: chain_id,
+      handle: NodeCtldSpec::TestHandles::FAIL_EXEC,
+      reversible: NodeCtldSpec::TxState::TX_REVERSIBLE
+    )
+    event_id = insert_event
+    delivery_id = insert_event_delivery(
+      event_id: event_id,
+      transaction_id: tx_id,
+      state: described_class::EVENT_DELIVERY_STATE_RELEASED,
+      released_at: Time.now.utc
+    )
+    cmd = build_command(tx_id)
+    cmd.execute
+
+    abort_entered = Queue.new
+    continue_abort = Queue.new
+    activation_lock_attempted = Queue.new
+    save_thread = nil
+    activation_thread = nil
+
+    allow(cmd)
+      .to receive(:abort_unsent_event_deliveries)
+      .and_wrap_original do |method, db|
+        abort_entered << true
+        continue_abort.pop
+        method.call(db)
+      end
+
+    save_thread = Thread.new do
+      ActiveRecord::Base.connection_pool.with_connection do |connection|
+        raw_db = connection.raw_connection
+        raw_db.query_options.merge!(as: :hash)
+        cmd.save(NodeCtld::DbTransaction.new(raw_db))
+      end
+    end
+    Timeout.timeout(5) { abort_entered.pop }
+
+    activation_thread = Thread.new do
+      ActiveRecord::Base.connection_pool.with_connection do |connection|
+        connection.transaction do
+          activation_lock_attempted << true
+          connection.select_one(
+            "SELECT id FROM transaction_chains WHERE id = #{Integer(chain_id)} FOR UPDATE"
+          )
+          row = connection.select_one(
+            "SELECT state FROM event_deliveries WHERE id = #{Integer(delivery_id)} FOR UPDATE"
+          )
+          row.fetch('state').to_i == described_class::EVENT_DELIVERY_STATE_RELEASED
+        end
+      end
+    end
+    Timeout.timeout(5) { activation_lock_attempted.pop }
+    continue_abort << true
+
+    expect(Timeout.timeout(5) { save_thread.value }).to be_nil
+    expect(Timeout.timeout(5) { activation_thread.value }).to be(false)
+    expect(sql_value('SELECT state FROM event_deliveries WHERE id = ?', delivery_id)).to eq(
+      described_class::EVENT_DELIVERY_STATE_ABORTED
+    )
+    expect(
+      sql_value(
+        'SELECT event_delivery_group_id FROM event_deliveries WHERE id = ?',
+        delivery_id
+      )
+    ).to be_nil
+  ensure
+    continue_abort << true if continue_abort
+    [save_thread, activation_thread].compact.each do |thread|
+      thread.join(5)
+      thread.kill if thread.alive?
+    end
+
+    if delivery_id
+      sql_update(
+        'event_deliveries',
+        { event_delivery_group_id: nil },
+        'id = ?',
+        delivery_id
+      )
+    end
+    raw_connection.query("DELETE FROM event_deliveries WHERE id = #{Integer(delivery_id)}") if delivery_id
+    raw_connection.query("DELETE FROM events WHERE id = #{Integer(event_id)}") if event_id
+    raw_connection.query("DELETE FROM transactions WHERE id = #{Integer(tx_id)}") if tx_id
+    if chain_id
+      raw_connection.query(
+        "DELETE FROM transaction_chains WHERE id = #{Integer(chain_id)}"
+      )
+    end
   end
 
   it 'persists command not implemented failures' do
