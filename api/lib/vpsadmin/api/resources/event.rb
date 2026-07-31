@@ -205,6 +205,11 @@ module VpsAdmin::API::Resources
       TEST_EVENT_LIMIT = 20
       TEST_EVENT_SOURCE_CLASS = 'VpsAdmin::API::Resources::Event::Test'.freeze
       TEST_EVENT_WINDOW = 3600
+      SUBJECT_SCOPE_LABELS = {
+        'self' => 'Own routes',
+        'visible' => 'Admin visible routes',
+        'system' => 'Admin system routes'
+      }.freeze
 
       desc 'Create a test event and route it'
       route 'test'
@@ -219,6 +224,10 @@ module VpsAdmin::API::Resources
         string :subject, nullable: true
         text :summary, nullable: true
         text :parameters_json, label: 'Parameters', nullable: true
+        string :subject_scope,
+               choices: { values: SUBJECT_SCOPE_LABELS },
+               load_validators: false,
+               nullable: true
       end
 
       output do
@@ -231,21 +240,30 @@ module VpsAdmin::API::Resources
 
       def exec
         owner = input[:user] || current_user
+        subject_scope = input[:subject_scope].presence || 'self'
 
         if current_user.role != :admin && owner != current_user
           error!('access denied')
         end
 
-        check_test_event_limit!(owner)
+        route_context_mode, route_owner = test_route_context(subject_scope, owner)
+        event_user = subject_scope == 'system' ? nil : owner
 
-        VpsAdmin::API::Events.emit!(
+        check_test_event_limit!(event_user)
+
+        event = VpsAdmin::API::Events.emit!(
           input[:event_type] || 'user.test_notification',
-          user: owner,
+          user: event_user,
           source_class: TEST_EVENT_SOURCE_CLASS,
           subject: input[:subject] || 'Test notification',
           summary: input[:summary],
-          parameters: parse_parameters
+          parameters: parse_parameters,
+          route_context_mode:,
+          route_owner:
         )
+        error!('no enabled route produced a delivery') unless event
+
+        event
       rescue JSON::ParserError
         error!('parameters are not valid JSON')
       rescue ActiveRecord::RecordInvalid => e
@@ -263,6 +281,24 @@ module VpsAdmin::API::Resources
         error!('parameters must be a JSON object') unless ret.is_a?(Hash)
 
         ret
+      end
+
+      def test_route_context(subject_scope, owner)
+        case subject_scope
+        when 'self'
+          [:self, nil]
+        when 'visible'
+          error!('visible test events are available only to admins') unless current_user.role == :admin
+          error!('visible test events need a different subject user') if owner == current_user
+
+          [:route_owner, current_user]
+        when 'system'
+          error!('system test events are available only to admins') unless current_user.role == :admin
+
+          [:route_owner, current_user]
+        else
+          error!('invalid subject scope')
+        end
       end
 
       def check_test_event_limit!(owner)

@@ -284,6 +284,23 @@ function notifications_subject_scope_label($value)
     return notifications_subject_scope_options()[$value] ?? $value;
 }
 
+function notifications_test_subject_scope_options($desc = null)
+{
+    $labels = [
+        'self' => _('Own routes'),
+        'visible' => _('Admin visible routes'),
+        'system' => _('Admin system routes'),
+    ];
+    $choices = $desc ? notifications_param_choices($desc) : array_combine(array_keys($labels), array_keys($labels));
+    $ret = [];
+
+    foreach ($choices as $value => $label) {
+        $ret[$value] = $labels[$value] ?? $label;
+    }
+
+    return $ret;
+}
+
 function notifications_short_value($value, $len = 48)
 {
     $value = (string) $value;
@@ -3656,6 +3673,12 @@ function notifications_test_event($user_id = null)
 
     if (isAdmin()) {
         $xtpl->form_add_input(_('User ID') . ':', 'text', '20', 'user', $user_id);
+        $xtpl->form_add_select(
+            _('Subject scope') . ':',
+            'subject_scope',
+            notifications_test_subject_scope_options($input->subject_scope),
+            post_val('subject_scope', 'self')
+        );
     }
 
     $xtpl->form_add_select(
