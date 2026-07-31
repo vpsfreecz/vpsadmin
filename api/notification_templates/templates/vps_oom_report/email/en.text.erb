@@ -11,6 +11,10 @@ Selected events: <%= @selected_oom_count %> of <%= @all_oom_count %>
 
 There are <%= @all_oom_count - @selected_oom_count %> additional events not shown here.
 <% end -%>
+<% if defined?(@mute_url) && @mute_url.present? -%>
+
+Mute similar OOM reports: <%= @mute_url %>
+<% end -%>
 <% if @base_url && !@base_url.empty? -%>
 
 vpsAdmin: <%= @base_url %>

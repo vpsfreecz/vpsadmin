@@ -170,7 +170,7 @@ module VpsAdmin::API::Resources
             include: %i[label position
                         enabled event_type event_type_pattern subject_scope
                         grouping_enabled group_by group_wait_seconds
-                        group_interval_seconds continue]
+                        group_interval_seconds continue expires_at]
       end
 
       output do
@@ -231,7 +231,8 @@ module VpsAdmin::API::Resources
             group_by: input[:group_by] || [],
             group_wait_seconds: input[:group_wait_seconds],
             group_interval_seconds: input[:group_interval_seconds],
-            continue: input.has_key?(:continue) ? input[:continue] : false
+            continue: input.has_key?(:continue) ? input[:continue] : false,
+            expires_at: input[:expires_at]
           )
         end
       rescue ActiveRecord::RecordInvalid => e
@@ -252,7 +253,7 @@ module VpsAdmin::API::Resources
             include: %i[label position
                         enabled event_type event_type_pattern subject_scope
                         grouping_enabled group_by group_wait_seconds
-                        group_interval_seconds continue]
+                        group_interval_seconds continue expires_at]
       end
 
       output do
@@ -271,7 +272,7 @@ module VpsAdmin::API::Resources
         %i[
           label position enabled event_type event_type_pattern subject_scope
           grouping_enabled group_by group_wait_seconds group_interval_seconds
-          continue
+          continue expires_at
         ].each do |v|
           attrs[v] = input[v] if input.has_key?(v)
         end

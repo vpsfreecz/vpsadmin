@@ -177,7 +177,8 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
       expect(event.created_at).to be_within(1.second).of(report.created_at)
       expect(event.parameters).to include(
         'oom_report_id' => report.id,
-        'cgroup' => '/user.slice/a.scope'
+        'cgroup' => '/user.slice/a.scope',
+        'invoked_by_name' => 'ruby'
       )
       expect(event.vps_id).to eq(vps.id)
       expect(event.event_deliveries.sole.group_labels).to eq(

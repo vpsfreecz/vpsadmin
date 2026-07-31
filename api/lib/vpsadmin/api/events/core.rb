@@ -1,3 +1,5 @@
+require 'uri'
+
 module VpsAdmin::API::Events::Core
   OPERATION_REFERENCE_FIELDS = {
     operation_id: {
@@ -233,7 +235,21 @@ module VpsAdmin::API::Events::Core
     ret
   end
 
-  def incident_email_vars(event)
+  def mute_similar_url(action:, source_params:, route_owner: nil)
+    root = VpsAdmin::API::Events.webui_url
+    return '' if root.blank?
+
+    params = [
+      %w[page notifications],
+      ['action', action]
+    ]
+    source_params.each { |name, value| params << [name.to_s, value.to_s] }
+    params << ['route_owner_id', route_owner.id.to_s] if route_owner
+
+    "#{root}/?#{URI.encode_www_form(params)}"
+  end
+
+  def incident_email_vars(event, delivery = nil)
     incident = event.source if event.source.is_a?(::IncidentReport)
     raise ArgumentError, 'incident report source is missing' unless incident
 
@@ -241,7 +257,12 @@ module VpsAdmin::API::Events::Core
       base_url:,
       user: incident.user,
       vps: incident.vps,
-      incident:
+      incident:,
+      mute_url: mute_similar_url(
+        action: 'mute_incident_report',
+        source_params: { incident_report_id: incident.id },
+        route_owner: delivery&.recipient_user
+      )
     }
   end
 
@@ -271,7 +292,12 @@ module VpsAdmin::API::Events::Core
       all_oom_reports: reports,
       all_oom_count: reports.sum(&:count),
       selected_oom_reports: selected_reports,
-      selected_oom_count: selected_reports.sum(&:count)
+      selected_oom_count: selected_reports.sum(&:count),
+      mute_url: mute_similar_url(
+        action: 'mute_oom_reports',
+        source_params: { oom_report_ids: selected_reports.map(&:id).join(',') },
+        route_owner: delivery&.recipient_user
+      )
     }
   end
 
@@ -972,7 +998,7 @@ VpsAdmin::API::Events.define do
 
     deliver :email do
       template :vps_incident_report
-      vars { VpsAdmin::API::Events::Core.incident_email_vars(event) }
+      vars { VpsAdmin::API::Events::Core.incident_email_vars(event, current_delivery) }
     end
   end
 
@@ -1029,6 +1055,7 @@ VpsAdmin::API::Events.define do
       cgroup: { description: 'Affected cgroup path', type: :string },
       count: { description: 'Number of OOM kills represented by this report', type: :integer },
       oom_count: { description: 'Number of OOM kills represented by this report', type: :integer },
+      invoked_by_name: { description: 'Name of the process which invoked the OOM killer', type: :string },
       killed_name: { description: 'Name of the process killed by the kernel', type: :string }
     )
 

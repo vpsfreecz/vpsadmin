@@ -1,3 +1,5 @@
+require_relative '../events/report_mute_route'
+
 module VpsAdmin::API::Resources
   class OomReport < HaveAPI::Resource
     desc 'Out-of-memory kill reports'
@@ -100,6 +102,94 @@ module VpsAdmin::API::Resources
 
       def exec
         @oom
+      end
+    end
+
+    class MuteSimilar < HaveAPI::Action
+      desc 'Create a mute route matching values from this OOM report'
+      route '{%{resource}_id}/mute_similar'
+      http_method :post
+
+      input do
+        resource VpsAdmin::API::Resources::User,
+                 name: :route_owner,
+                 value_label: :login,
+                 nullable: true
+        bool :match_vps, default: false, fill: true
+        bool :match_cgroup, default: false, fill: true
+        bool :match_invoked_by_name, default: false, fill: true
+        bool :match_killed_name, default: false, fill: true
+        datetime :expires_at,
+                 label: 'Expires at',
+                 desc: 'Optional date and time after which this route stops matching events',
+                 desc_key: 'vpsadmin.resources.event_route.attributes.expires_at.description',
+                 nullable: true
+      end
+
+      output namespace: :event_route do
+        id :id
+        integer :user_id
+        integer :notification_receiver_id, nullable: true
+        string :label, nullable: true
+        integer :position
+        bool :enabled
+        string :event_type, nullable: true
+        string :subject_scope
+        bool :grouping_enabled
+        bool :continue
+        bool :single_use
+        datetime :spent_at, nullable: true
+        datetime :expires_at,
+                 label: 'Expires at',
+                 desc: 'Optional date and time after which this route stops matching events',
+                 desc_key: 'vpsadmin.resources.event_route.attributes.expires_at.description',
+                 nullable: true
+        string :matcher_summary
+        integer :matcher_count
+        string :display_label
+        datetime :created_at
+        datetime :updated_at
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+        restrict vpses: { user_id: u.id }
+        allow
+      end
+
+      def prepare
+        @oom = ::OomReport.joins(:vps).find_by!(with_restricted(
+                                                  id: path_params['oom_report_id']
+                                                ))
+      end
+
+      def exec
+        VpsAdmin::API::Events::ReportMuteRoute.new(
+          current_user:,
+          source_user: @oom.vps.user,
+          owner: input[:route_owner],
+          event_type: 'vps.oom_report',
+          label: "Mute OOM reports like ##{@oom.id}",
+          matchers: selected_matchers,
+          expires_at: input[:expires_at]
+        ).create!
+      rescue VpsAdmin::API::Events::ReportMuteRoute::Error => e
+        error!(e.message)
+      rescue ActiveRecord::RecordInvalid => e
+        error!('create failed', e.record.errors.to_hash)
+      end
+
+      protected
+
+      def selected_matchers
+        {
+          match_vps: [:vps_id, @oom.vps_id],
+          match_cgroup: [:cgroup, @oom.cgroup],
+          match_invoked_by_name: [:invoked_by_name, @oom.invoked_by_name],
+          match_killed_name: [:killed_name, @oom.killed_name]
+        }.filter_map do |input_name, (field, value)|
+          { field:, value: } if input[input_name]
+        end
       end
     end
 

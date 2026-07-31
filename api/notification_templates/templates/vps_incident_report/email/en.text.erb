@@ -10,6 +10,10 @@ IP address: <%= @incident.ip_address %>
 Action: <%= @incident.vps_action %>
 
 <%= @incident.text %>
+<% if defined?(@mute_url) && @mute_url.present? -%>
+
+Mute similar incident reports: <%= @mute_url %>
+<% end -%>
 <% if @base_url && !@base_url.empty? -%>
 
 vpsAdmin: <%= @base_url %>

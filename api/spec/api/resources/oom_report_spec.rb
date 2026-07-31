@@ -27,6 +27,10 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
     vpath("/oom_reports/#{id}")
   end
 
+  def mute_similar_path(id)
+    vpath("/oom_reports/#{id}/mute_similar")
+  end
+
   def usages_index_path(oom_id)
     vpath("/oom_reports/#{oom_id}/usages")
   end
@@ -58,12 +62,22 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
     }
   end
 
+  def json_post(path, payload)
+    post path, JSON.dump(payload), {
+      'CONTENT_TYPE' => 'application/json'
+    }
+  end
+
   def oom_reports
     json.dig('response', 'oom_reports') || []
   end
 
   def oom_report
     json.dig('response', 'oom_report')
+  end
+
+  def event_route
+    json.dig('response', 'event_route') || json['response']
   end
 
   def usages
@@ -577,6 +591,120 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
 
       expect(last_response.status).to be_in([200, 404])
       expect(json['status']).to be(false)
+    end
+  end
+
+  describe 'MuteSimilar' do
+    it 'atomically prepends an expiring mute route with selected report values' do
+      expires_at = 2.hours.from_now.change(usec: 0)
+
+      as(SpecSeed.user) do
+        json_post mute_similar_path(report_user_a.id), oom_report: {
+          match_vps: true,
+          match_cgroup: true,
+          match_invoked_by_name: true,
+          match_killed_name: true,
+          expires_at: expires_at.iso8601
+        }
+      end
+
+      expect_status(200)
+      route = EventRoute.find(event_route.fetch('id'))
+      expect(route).to have_attributes(
+        user: SpecSeed.user,
+        label: "Mute OOM reports like ##{report_user_a.id}",
+        event_type: 'vps.oom_report',
+        subject_scope: 'self',
+        grouping_enabled: false,
+        continue: false,
+        expires_at: be_within(1.second).of(expires_at)
+      )
+      expect(route.position).to eq(SpecSeed.user.event_routes.minimum(:position))
+      expect(route.notification_receiver).to be_mute
+      expect(route.event_route_matchers.pluck(:field, :operator, :value)).to contain_exactly(
+        ['vps_id', '==', report_user_a.vps_id.to_s],
+        ['cgroup', '==', report_user_a.cgroup],
+        ['invoked_by_name', '==', report_user_a.invoked_by_name],
+        ['killed_name', '==', report_user_a.killed_name]
+      )
+    end
+
+    it 'rejects empty selections and unavailable selected values without creating a route' do
+      expect do
+        as(SpecSeed.user) do
+          json_post mute_similar_path(report_user_a.id), oom_report: {}
+        end
+      end.not_to change(EventRoute, :count)
+      expect(json['status']).to be(false)
+
+      report_user_a.update!(killed_name: nil)
+      expect do
+        as(SpecSeed.user) do
+          json_post mute_similar_path(report_user_a.id), oom_report: {
+            match_killed_name: true
+          }
+        end
+      end.not_to change(EventRoute, :count)
+      expect(json['status']).to be(false)
+    end
+
+    it 'rejects past expirations' do
+      expect do
+        as(SpecSeed.user) do
+          json_post mute_similar_path(report_user_a.id), oom_report: {
+            match_vps: true,
+            expires_at: 1.minute.ago.iso8601
+          }
+        end
+      end.not_to change(EventRoute, :count)
+      expect(json['status']).to be(false)
+    end
+
+    it 'enforces source and route-owner authorization' do
+      expect do
+        as(SpecSeed.user) do
+          json_post mute_similar_path(report_other.id), oom_report: {
+            match_vps: true
+          }
+        end
+      end.not_to change(EventRoute, :count)
+      expect(json['status']).to be(false)
+
+      expect do
+        as(SpecSeed.user) do
+          json_post mute_similar_path(report_user_a.id), oom_report: {
+            route_owner: SpecSeed.admin.id,
+            match_vps: true
+          }
+        end
+      end.not_to change(EventRoute, :count)
+      expect(json['status']).to be(false)
+    end
+
+    it 'lets admins create self-scoped report-account and visible admin routes' do
+      as(SpecSeed.admin) do
+        json_post mute_similar_path(report_other.id), oom_report: {
+          route_owner: SpecSeed.other_user.id,
+          match_vps: true
+        }
+      end
+      expect_status(200)
+      expect(EventRoute.find(event_route.fetch('id'))).to have_attributes(
+        user: SpecSeed.other_user,
+        subject_scope: 'self'
+      )
+
+      as(SpecSeed.admin) do
+        json_post mute_similar_path(report_user_a.id), oom_report: {
+          route_owner: SpecSeed.admin.id,
+          match_cgroup: true
+        }
+      end
+      expect_status(200)
+      expect(EventRoute.find(event_route.fetch('id'))).to have_attributes(
+        user: SpecSeed.admin,
+        subject_scope: 'visible'
+      )
     end
   end
 

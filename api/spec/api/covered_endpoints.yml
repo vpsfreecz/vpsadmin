@@ -187,6 +187,7 @@ covered:
 - ip_address_assignment#show
 - incident_report#create
 - incident_report#index
+- incident_report#mute_similar
 - incident_report#show
 - incoming_payment#index
 - incoming_payment#show
@@ -381,6 +382,7 @@ covered:
 - object_history#index
 - object_history#show
 - oom_report#index
+- oom_report#mute_similar
 - oom_report#show
 - oom_report.stat#index
 - oom_report.stat#show

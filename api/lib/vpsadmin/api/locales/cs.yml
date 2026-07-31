@@ -1104,6 +1104,8 @@ cs:
             label: Identifikátor bankovní transakce příchozí platby
           indirect_vps_count:
             label: Počet VPS nepřímo dotčených odstávkou nebo výpadkem
+          invoked_by_name:
+            label: Název procesu, který vyvolal OOM killer
           ip_addr:
             label: IP adresa uvedená v incidentu
           ip_addrs:
@@ -1493,7 +1495,6 @@ cs:
       grouping_enabled:
         description: Shromáždit odpovídající události a po nastavené prodlevě je odeslat
           společně
-        label: Seskupovat notifikace
       grouping_summary:
         description: Srozumitelný souhrn nastavení seskupování
         label: Seskupování
@@ -1860,10 +1861,22 @@ cs:
         label: Režim mapování
       master_enabled:
         label: Master povolen
+      match_cgroup:
+        label: Filtrovat podle cgroup cesty
+      match_codename:
+        label: Filtrovat podle kódového označení incidentu
+      match_invoked_by_name:
+        label: Filtrovat podle názvu vyvolávajícího procesu
+      match_ip_addr:
+        label: Filtrovat podle IP adresy
+      match_killed_name:
+        label: Filtrovat podle názvu ukončeného procesu
       match_order:
         label: Pořadí vyhodnocení
-      matcher_count:
-        label: Počet matcherů
+      match_subject:
+        label: Filtrovat podle předmětu
+      match_vps:
+        label: Filtrovat podle VPS
       matcher_summary:
         label: Souhrn matcheru
       matches_now:
@@ -3046,6 +3059,8 @@ cs:
           secondary_type:
             label: sekundární
         label: Typ DNS zóny uživatele
+      user_id:
+        label: Vlastník routy
       user_ident:
         label: Uživatel ident
       user_ip_ownership:
@@ -4481,6 +4496,8 @@ cs:
             description: Dotčená cesta cgroup
           count:
             description: Počet OOM killů zastoupených tímto reportem
+          invoked_by_name:
+            description: Název procesu, který vyvolal OOM killer
           killed_name:
             description: Název procesu ukončeného kernelem
           oom_count:
@@ -5293,10 +5310,14 @@ cs:
             description: Volitelné datum a čas, po kterém tato routa přestane odpovídat
               událostem
             label: Expiruje
+          grouping_enabled:
+            label: Seskupovat notifikace
           id:
             label: ID
           label:
             description: Volitelný název pro identifikaci routy
+          matcher_count:
+            label: Počet matcherů
           notification_receiver_id:
             label: Receiver
           parent_id:
@@ -5417,13 +5438,42 @@ cs:
           addr:
             label: Adresa
       incident_report:
+        actions:
+          create:
+            output:
+              id:
+                label: ID
+          index:
+            output:
+              id:
+                label: ID
+          mute_similar:
+            output:
+              id:
+                label: ID
+          show:
+            output:
+              id:
+                label: ID
         attributes:
           created_at:
             label: Přidáno
-          id:
-            label: ID
+          event_type:
+            label: Typ události
+          expires_at:
+            label: Expiruje
+          grouping_enabled:
+            label: Seskupovat notifikace
           ip_addr:
             label: IP adresa
+          matcher_count:
+            label: Počet matcherů
+          notification_receiver_id:
+            label: ID příjemce notifikací
+          subject_scope:
+            label: Rozsah subjektu
+          updated_at:
+            label: Poslední změna
           vps:
             label: VPS
       incoming_payment:
@@ -5945,8 +5995,22 @@ cs:
         attributes:
           created_at:
             label: Vytvořeno
+          event_type:
+            label: Typ události
+          expires_at:
+            label: Expiruje
+          grouping_enabled:
+            label: Seskupovat notifikace
           id:
             label: ID
+          matcher_count:
+            label: Počet matcherů
+          notification_receiver_id:
+            label: ID příjemce notifikací
+          subject_scope:
+            label: Rozsah subjektu
+          updated_at:
+            label: Poslední změna
           vps:
             label: VPS
         stat:

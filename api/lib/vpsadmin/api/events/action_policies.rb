@@ -1170,6 +1170,11 @@ action_policies.register(
 {
   'VpsAdmin::API::Resources::DatasetExpansion::RegisterExpanded' => %w[DatasetExpansion],
   'VpsAdmin::API::Resources::Event::Delivery::Retry' => %w[EventDelivery],
+  'VpsAdmin::API::Resources::IncidentReport::MuteSimilar' => %w[
+    EventRoute
+    EventRouteMatcher
+    NotificationReceiver
+  ],
   'VpsAdmin::API::Resources::MigrationPlan::Start' => %w[MigrationPlan VpsMigration],
   'VpsAdmin::API::Resources::MigrationPlan::Cancel' =>
     %w[MigrationPlan VpsMigration],
@@ -1177,6 +1182,11 @@ action_policies.register(
   'VpsAdmin::API::Resources::MonitoredEvent::Ignore' => %w[MonitoredEvent],
   'VpsAdmin::API::Resources::Network::AddAddresses' => %w[IpAddress],
   'VpsAdmin::API::Resources::Node::Evacuate' => %w[MigrationPlan VpsMigration],
+  'VpsAdmin::API::Resources::OomReport::MuteSimilar' => %w[
+    EventRoute
+    EventRouteMatcher
+    NotificationReceiver
+  ],
   'VpsAdmin::API::Resources::Outage::RebuildAffectedVps' =>
     %w[OutageVps OutageExport OutageUser],
   'VpsAdmin::API::Resources::SecurityAdvisory::RebuildAffectedVps' =>

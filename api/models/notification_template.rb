@@ -375,7 +375,8 @@ class NotificationTemplate < ApplicationRecord
     all_oom_reports: 'Array<::OomReport>',
     all_oom_count: Integer,
     selected_oom_reports: 'Array<::OomReport>',
-    selected_oom_count: Integer
+    selected_oom_count: Integer,
+    mute_url: String
   }, roles: %i[admin], public: true
 
   register :vps_oom_prevention, vars: {
@@ -427,7 +428,8 @@ class NotificationTemplate < ApplicationRecord
     base_url: [String, 'URL to the web UI'],
     user: ::User,
     vps: ::Vps,
-    incident: ::IncidentReport
+    incident: ::IncidentReport,
+    mute_url: String
   }, roles: %i[admin], public: true
 
   register :security_advisory_user_announce, vars: {
