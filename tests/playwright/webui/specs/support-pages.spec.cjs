@@ -217,6 +217,8 @@ test.describe('support and status browser coverage', () => {
       waitUntil: 'domcontentloaded',
     });
     await expect(heading(page)).toContainText('Event types');
+    await expect(page.locator('[data-vpsadmin-doc-id="notifications.event-types"]'))
+      .toBeVisible();
     await expect(content(page).locator('details summary').first()).toBeVisible();
     const testEventType = content(page).locator('#event-type-user-test_notification');
     await expect(testEventType).toHaveCount(1);
