@@ -20,13 +20,13 @@ RSpec.describe TransactionChains::User::SoftDelete do
     confirmations = confirmations_for(chain)
 
     expect(classes).to include(
-      Transactions::EventDelivery::Release,
+      Transactions::EventDelivery::Notify,
       Transactions::Vps::Stop,
       Transactions::Export::Disable,
       Transactions::DnsServerZone::Update,
       Transactions::DnsServerZone::DeleteRecords
     )
-    release_idx = classes.index(Transactions::EventDelivery::Release)
+    release_idx = classes.index(Transactions::EventDelivery::Notify)
     expect(classes.rindex(Transactions::Vps::Stop)).to be < release_idx
     expect(classes.rindex(Transactions::Export::Disable)).to be < release_idx
     expect(classes.rindex(Transactions::DnsServerZone::Update)).to be < release_idx

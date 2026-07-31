@@ -29,11 +29,11 @@ RSpec.describe TransactionChains::Vps::ShrinkDataset do
 
     expect(tx_classes(chain)).to include(
       Transactions::Storage::SetDataset,
-      Transactions::EventDelivery::Release,
+      Transactions::EventDelivery::Notify,
       Transactions::Utils::NoOp
     )
     classes = tx_classes(chain)
-    release_idx = classes.index(Transactions::EventDelivery::Release)
+    release_idx = classes.index(Transactions::EventDelivery::Notify)
     expect(classes.rindex(Transactions::Storage::SetDataset)).to be < release_idx
     expect(classes.rindex(Transactions::Utils::NoOp)).to be < release_idx
     expect(tx_payload(chain, Transactions::Storage::SetDataset)).to include(
@@ -73,7 +73,7 @@ RSpec.describe TransactionChains::Vps::ShrinkDataset do
     chain, = described_class.fire(fixture.fetch(:dataset_in_pool), fixture.fetch(:expansion))
 
     expect(tx_classes(chain)).to include(Transactions::Storage::SetDataset, Transactions::Utils::NoOp)
-    expect(tx_classes(chain)).not_to include(Transactions::EventDelivery::Release)
+    expect(tx_classes(chain)).not_to include(Transactions::EventDelivery::Notify)
     expect(Event.where(event_type: 'vps.dataset_shrunk')).to be_empty
   end
 end

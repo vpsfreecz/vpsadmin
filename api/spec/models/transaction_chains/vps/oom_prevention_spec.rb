@@ -48,19 +48,21 @@ RSpec.describe TransactionChains::Vps::OomPrevention do
     classes = tx_classes(chain)
 
     expect(prevention).to be_persisted
-    expect(classes).to include(Transactions::Vps::Restart, Transactions::EventDelivery::Release)
-    expect(classes.index(Transactions::Vps::Restart)).to be < classes.index(Transactions::EventDelivery::Release)
+    expect(classes).to include(Transactions::Vps::Restart, Transactions::EventDelivery::Notify)
+    expect(classes.index(Transactions::Vps::Restart)).to be < classes.index(Transactions::EventDelivery::Notify)
   end
 
   it 'does not let stale long custom e-mail labels block restart actions' do
     vps = create_vps!
     reset_routing!(vps.user)
+    vps.user.set_notification_delivery_method!(:email, true)
     receiver = NotificationReceiver.create!(user: vps.user, label: 'Spec receiver')
     action = receiver.notification_receiver_actions.create!(
       action: :email,
       target_kind: :custom,
       target_value: 'custom@example.test'
     )
+    action.notification_target.update!(verified_at: Time.now)
     long_target = "#{'a' * 287}@example.test"
     action.notification_target.update_columns(target_value: long_target)
     EventRoute.create!(
@@ -85,8 +87,8 @@ RSpec.describe TransactionChains::Vps::OomPrevention do
     classes = tx_classes(chain)
 
     expect(prevention).to be_persisted
-    expect(classes).to include(Transactions::Vps::Stop, Transactions::EventDelivery::Release)
-    expect(classes.index(Transactions::Vps::Stop)).to be < classes.index(Transactions::EventDelivery::Release)
+    expect(classes).to include(Transactions::Vps::Stop, Transactions::EventDelivery::Notify)
+    expect(classes.index(Transactions::Vps::Stop)).to be < classes.index(Transactions::EventDelivery::Notify)
   end
 
   it 'raises for invalid actions' do
