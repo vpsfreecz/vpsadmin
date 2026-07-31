@@ -693,6 +693,143 @@ final class NotificationRouteUiTest extends TestCase
         self::assertStringNotContainsString('notifications_target_status_html($action)', $source);
     }
 
+    public function testReportDetailsExposeMuteComposerLinks(): void
+    {
+        $oom = file_get_contents(dirname(__DIR__, 2) . '/forms/oom_reports.forms.php');
+        $incidents = file_get_contents(dirname(__DIR__, 2) . '/forms/incidents.forms.php');
+
+        self::assertStringContainsString("_('Mute similar OOM reports')", $oom);
+        self::assertStringContainsString('action=mute_oom_reports&oom_report_ids=', $oom);
+        self::assertStringContainsString("'oom-reports.mute-similar'", $oom);
+        self::assertStringContainsString("_('Mute similar incident reports')", $incidents);
+        self::assertStringContainsString('action=mute_incident_report&incident_report_id=', $incidents);
+        self::assertStringContainsString("'incidents.mute-similar'", $incidents);
+    }
+
+    public function testMuteComposersCreateRoutesOnlyOnCsrfProtectedPost(): void
+    {
+        $source = $this->notificationsFormsSource();
+        $page = file_get_contents(dirname(__DIR__, 2) . '/pages/page_notifications.php');
+
+        foreach (['mute_oom_reports', 'mute_incident_report'] as $action) {
+            $case = $this->sourceBetween($page, "case '{$action}':", 'break;');
+            self::assertStringContainsString("\$_SERVER['REQUEST_METHOD'] === 'POST'", $case);
+            self::assertStringContainsString('csrf_check();', $case);
+            self::assertStringContainsString('notify_user', $case);
+            self::assertStringContainsString('action=route_edit', $case);
+        }
+
+        self::assertStringContainsString('notifications.mute-similar-form', $source);
+        self::assertStringContainsString("'match_vps' => isset(\$_POST['match_vps'])", $source);
+        self::assertStringContainsString("'match_cgroup' => isset(\$_POST['match_cgroup'])", $source);
+        self::assertStringContainsString("'match_invoked_by_name'", $source);
+        self::assertStringContainsString("'match_killed_name'", $source);
+        self::assertStringContainsString("'match_ip_addr'", $source);
+        self::assertStringContainsString("'match_codename'", $source);
+        self::assertStringContainsString("'match_subject'", $source);
+        self::assertStringContainsString('at most 30 oom reports', strtolower($source));
+        self::assertStringContainsString('Do not disclose whether an omitted report exists.', $source);
+    }
+
+    public function testMuteComposerOffersAllExpiryPresetsAndContextualOwners(): void
+    {
+        $source = $this->notificationsFormsSource();
+        $expiry = $this->sourceBetween(
+            $source,
+            'function notifications_mute_expiration_param(',
+            'function notifications_mute_oom_report_ids('
+        );
+
+        foreach (['+1 hour', '+1 day', 'notifications_calendar_month_after', "case 'forever':", "case 'custom':"] as $value) {
+            self::assertStringContainsString($value, $expiry);
+        }
+        self::assertStringContainsString("api_post('expires_in', '1d')", $expiry);
+        self::assertStringContainsString("\$source_user->id => sprintf(_('%s (report account)')", $source);
+        self::assertStringContainsString("\$api->user->list(['admin' => true])", $source);
+        self::assertStringContainsString("_('%s (administrator)')", $source);
+        self::assertStringContainsString('route_owner_id', $source);
+        self::assertStringContainsString("'includes' => 'user,vps,ip_address_assignment'", $source);
+        self::assertStringContainsString('notifications_mute_owner_form($source_user, $owner_id)', $source);
+        self::assertStringContainsString('? $incident->user', $source);
+    }
+
+    public function testCalendarMonthExpiryClampsMonthEndAndPreservesLocalTimeAcrossDst(): void
+    {
+        require_once dirname(__DIR__, 2) . '/forms/notifications.forms.php';
+
+        $zone = new DateTimeZone('Europe/Amsterdam');
+
+        self::assertSame(
+            '2027-02-28T12:34:56+01:00',
+            notifications_calendar_month_after(
+                new DateTimeImmutable('2027-01-31T12:34:56', $zone)
+            )->format(DateTimeInterface::ATOM)
+        );
+        self::assertSame(
+            '2028-02-29T12:34:56+01:00',
+            notifications_calendar_month_after(
+                new DateTimeImmutable('2028-01-31T12:34:56', $zone)
+            )->format(DateTimeInterface::ATOM)
+        );
+        self::assertSame(
+            '2027-03-28T12:34:56+02:00',
+            notifications_calendar_month_after(
+                new DateTimeImmutable('2027-02-28T12:34:56', $zone)
+            )->format(DateTimeInterface::ATOM)
+        );
+    }
+
+    public function testMalformedCustomMuteExpiryUsesSafeRerenderValue(): void
+    {
+        require_once dirname(__DIR__, 2) . '/lib/functions.lib.php';
+        require_once dirname(__DIR__, 2) . '/forms/notifications.forms.php';
+
+        $_POST['custom_expires_at'] = 'not-a-date';
+
+        try {
+            $value = notifications_mute_custom_expiration_form_value();
+        } finally {
+            unset($_POST['custom_expires_at']);
+        }
+
+        self::assertInstanceOf(DateTimeImmutable::class, new DateTimeImmutable($value));
+        self::assertNotSame('not-a-date', $value);
+    }
+
+    public function testRouteFormsCanSetAndClearExpiryAndExpiredRoutesAreMarked(): void
+    {
+        $source = $this->notificationsFormsSource();
+        $routeParams = $this->sourceBetween(
+            $source,
+            'function notifications_route_params(',
+            'function notifications_route_grouping_params('
+        );
+        $routeNew = $this->sourceBetween(
+            $source,
+            'function notifications_route_new(',
+            'function notifications_route_subroutes('
+        );
+        $routeEdit = $this->sourceBetween(
+            $source,
+            'function notifications_route_edit(',
+            'function notifications_matcher_new('
+        );
+
+        self::assertStringContainsString("'expires_at' => notifications_optional_datetime_param('expires_at')", $routeParams);
+        foreach ([$routeNew, $routeEdit] as $form) {
+            self::assertStringContainsString("\$input->expires_at", $form);
+            self::assertStringContainsString("'expires_at'", $form);
+        }
+        self::assertStringContainsString('function notifications_route_expired(', $source);
+        self::assertStringContainsString("return h(_('Expired'))", $source);
+
+        $template = file_get_contents(dirname(__DIR__, 2) . '/lib/xtemplate.lib.php');
+        self::assertStringContainsString(
+            '$this->form_add_datetime_pure($name, $value, $local, $min, $max, $step);',
+            $template
+        );
+    }
+
     private function notificationsFormsSource(): string
     {
         return file_get_contents(dirname(__DIR__, 2) . '/forms/notifications.forms.php');

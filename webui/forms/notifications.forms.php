@@ -78,6 +78,476 @@ function notifications_sidebar($current, $user_id = null)
     );
 }
 
+function notifications_optional_datetime_param($name)
+{
+    $value = api_post($name);
+    if ($value === null) {
+        return null;
+    }
+
+    try {
+        $time = new DateTimeImmutable($value);
+    } catch (Exception $e) {
+        throw new InvalidArgumentException(_('Invalid date and time'));
+    }
+
+    return $time->setTimezone(new DateTimeZone('UTC'))->format(DateTimeInterface::ATOM);
+}
+
+function notifications_calendar_month_after(DateTimeImmutable $time)
+{
+    $day = (int) $time->format('j');
+    $next_month = $time->modify('first day of next month');
+
+    return $next_month->setDate(
+        (int) $next_month->format('Y'),
+        (int) $next_month->format('n'),
+        min($day, (int) $next_month->format('t'))
+    );
+}
+
+function notifications_mute_expiration_param()
+{
+    $now = new DateTimeImmutable('now');
+
+    switch (api_post('expires_in', '1d')) {
+        case '1h':
+            $expires_at = $now->modify('+1 hour');
+            break;
+        case '1d':
+            $expires_at = $now->modify('+1 day');
+            break;
+        case '1w':
+            $expires_at = $now->modify('+1 week');
+            break;
+        case '1m':
+            $expires_at = notifications_calendar_month_after($now);
+            break;
+        case 'forever':
+            return null;
+        case 'custom':
+            $value = api_post('custom_expires_at');
+            if ($value === null) {
+                throw new InvalidArgumentException(_('Enter a custom expiration time'));
+            }
+
+            try {
+                $expires_at = new DateTimeImmutable($value);
+            } catch (Exception $e) {
+                throw new InvalidArgumentException(_('Invalid custom expiration time'));
+            }
+            break;
+        default:
+            throw new InvalidArgumentException(_('Invalid mute duration'));
+    }
+
+    if ($expires_at <= $now) {
+        throw new InvalidArgumentException(_('Expiration time has to be in the future'));
+    }
+
+    return $expires_at->setTimezone(new DateTimeZone('UTC'))->format(DateTimeInterface::ATOM);
+}
+
+function notifications_mute_custom_expiration_form_value()
+{
+    $default = (new DateTimeImmutable('+1 day'))->format(DateTimeInterface::ATOM);
+    $value = api_post('custom_expires_at');
+    if (!is_string($value)) {
+        return $default;
+    }
+
+    try {
+        return (new DateTimeImmutable($value))->format(DateTimeInterface::ATOM);
+    } catch (Exception $e) {
+        return $default;
+    }
+}
+
+function notifications_mute_oom_report_ids()
+{
+    $raw = $_SERVER['REQUEST_METHOD'] === 'POST'
+        ? api_post('oom_report_ids', '')
+        : api_get('oom_report_ids', '');
+    $ids = [];
+
+    foreach (explode(',', (string) $raw) as $value) {
+        $value = trim($value);
+        if ($value !== '' && ctype_digit($value) && (int) $value > 0) {
+            $ids[(int) $value] = (int) $value;
+        }
+    }
+
+    if (!$ids) {
+        throw new InvalidArgumentException(_('No OOM reports were selected'));
+    }
+    if (count($ids) > 30) {
+        throw new InvalidArgumentException(_('At most 30 OOM reports can be reviewed at once'));
+    }
+
+    return array_values($ids);
+}
+
+function notifications_mute_selected_oom_report_id()
+{
+    $report_id = api_post_uint('source_report_id');
+    if (!$report_id || !in_array($report_id, notifications_mute_oom_report_ids(), true)) {
+        throw new InvalidArgumentException(_('Select an OOM report'));
+    }
+
+    return $report_id;
+}
+
+function notifications_mute_incident_report_id()
+{
+    $id = $_SERVER['REQUEST_METHOD'] === 'POST'
+        ? api_post_uint('incident_report_id')
+        : api_get_uint('incident_report_id');
+
+    if (!$id) {
+        throw new InvalidArgumentException(_('No incident report was selected'));
+    }
+
+    return $id;
+}
+
+function notifications_mute_route_owner_id()
+{
+    if (!isAdmin()) {
+        return $_SESSION['user']['id'] ?? null;
+    }
+
+    return $_SERVER['REQUEST_METHOD'] === 'POST'
+        ? api_post_uint('route_owner_id')
+        : api_get_uint('route_owner_id');
+}
+
+function notifications_mute_oom_params()
+{
+    return api_compact_params([
+        'route_owner' => notifications_mute_route_owner_id(),
+        'match_vps' => isset($_POST['match_vps']),
+        'match_cgroup' => isset($_POST['match_cgroup']),
+        'match_invoked_by_name' => isset($_POST['match_invoked_by_name']),
+        'match_killed_name' => isset($_POST['match_killed_name']),
+        'expires_at' => notifications_mute_expiration_param(),
+    ]);
+}
+
+function notifications_mute_incident_params()
+{
+    return api_compact_params([
+        'route_owner' => notifications_mute_route_owner_id(),
+        'match_vps' => isset($_POST['match_vps']),
+        'match_ip_addr' => isset($_POST['match_ip_addr']),
+        'match_codename' => isset($_POST['match_codename']),
+        'match_subject' => isset($_POST['match_subject']),
+        'expires_at' => notifications_mute_expiration_param(),
+    ]);
+}
+
+function notifications_mute_owner_options($source_user)
+{
+    global $api;
+
+    $options = [
+        $source_user->id => sprintf(_('%s (report account)'), $source_user->login),
+    ];
+    if (!isAdmin()) {
+        return $options;
+    }
+
+    foreach ($api->user->list(['admin' => true]) as $user) {
+        if (!isset($options[$user->id])) {
+            $options[$user->id] = sprintf(_('%s (administrator)'), $user->login);
+        }
+    }
+
+    return $options;
+}
+
+function notifications_mute_matcher_row($name, $label, $value, $default, $value_element_id = null)
+{
+    global $xtpl;
+
+    $checked = $_SERVER['REQUEST_METHOD'] === 'POST' ? isset($_POST[$name]) : $default;
+    $available = $value !== null && $value !== '';
+    $input = '<input type="checkbox" name="' . h($name) . '" value="1" id="mute-' . h($name) . '"'
+        . ($checked && $available ? ' checked="checked"' : '')
+        . (!$available ? ' disabled="disabled"' : '')
+        . ' data-mute-matcher="' . h($name) . '">';
+    $value_id = $value_element_id ? ' id="' . h($value_element_id) . '"' : '';
+    $value_html = '<code' . $value_id . '>' . h($available ? $value : '-') . '</code>';
+
+    $xtpl->table_td(h($label) . ':');
+    $xtpl->table_td('<label>' . $input . ' ' . $value_html . '</label>', false, true);
+    $xtpl->table_tr();
+}
+
+function notifications_mute_expiration_form()
+{
+    global $xtpl;
+
+    $xtpl->form_add_select(
+        _('Mute for') . ':',
+        'expires_in',
+        [
+            '1h' => _('1 hour'),
+            '1d' => _('1 day'),
+            '1w' => _('1 week'),
+            '1m' => _('1 month'),
+            'forever' => _('Forever'),
+            'custom' => _('Custom expiration'),
+        ],
+        post_val('expires_in', '1d'),
+        _('The route stops matching automatically when it expires.')
+    );
+    $xtpl->form_add_datetime(
+        _('Custom expiration') . ':',
+        'custom_expires_at',
+        notifications_mute_custom_expiration_form_value(),
+        true,
+        _('Used only when Custom expiration is selected.'),
+        date('Y-m-d\TH:i')
+    );
+}
+
+function notifications_mute_owner_form($source_user, $owner_id)
+{
+    global $xtpl;
+
+    if (isAdmin()) {
+        $options = notifications_mute_owner_options($source_user);
+        $selected = isset($options[$owner_id]) ? $owner_id : $source_user->id;
+        $xtpl->form_add_select(
+            _('Route owner') . ':',
+            'route_owner_id',
+            $options,
+            post_val('route_owner_id', $selected),
+            _('The route is evaluated for events visible to this account.')
+        );
+    } else {
+        $xtpl->table_td(_('Route owner') . ':');
+        $xtpl->table_td(h($source_user->login));
+        $xtpl->table_tr();
+    }
+}
+
+function notifications_mute_oom_reports()
+{
+    global $api;
+
+    $reports = [];
+    foreach (notifications_mute_oom_report_ids() as $id) {
+        try {
+            $reports[] = $api->oom_report->show($id, [
+                'meta' => ['includes' => 'vps__user'],
+            ]);
+        } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+            // Do not disclose whether an omitted report exists.
+        }
+    }
+
+    return $reports;
+}
+
+function notifications_mute_oom_form()
+{
+    global $xtpl;
+
+    $xtpl->title(_('Mute similar OOM reports'));
+    try {
+        $reports = notifications_mute_oom_reports();
+    } catch (InvalidArgumentException $e) {
+        $xtpl->perex(_('OOM reports unavailable'), h($e->getMessage()));
+        notifications_sidebar('routes');
+        return;
+    }
+    if (!$reports) {
+        $xtpl->perex(
+            _('OOM reports unavailable'),
+            _('None of the selected OOM reports are available to your account. Create a route manually if needed.')
+        );
+        notifications_sidebar('routes');
+        return;
+    }
+
+    $report_ids = array_map(fn($report) => (int) $report->id, $reports);
+    $selected_id = api_post_uint('source_report_id', $report_ids[0]);
+    if (!in_array($selected_id, $report_ids, true)) {
+        $selected_id = $report_ids[0];
+    }
+    $selected_report = null;
+    $report_values = [];
+    $report_options = '';
+    foreach ($reports as $report) {
+        if ((int) $report->id === $selected_id) {
+            $selected_report = $report;
+        }
+        $report_values[$report->id] = [
+            'match_vps' => '#' . $report->vps_id . ' ' . $report->vps->hostname,
+            'match_cgroup' => $report->cgroup,
+            'match_invoked_by_name' => $report->invoked_by_name,
+            'match_killed_name' => $report->killed_name,
+        ];
+        $report_options .= '<label style="display:block;margin-bottom:0.5em;">'
+            . '<input type="radio" name="source_report_id" value="' . (int) $report->id . '"'
+            . ((int) $report->id === $selected_id ? ' checked="checked"' : '') . '> '
+            . '<strong>#' . (int) $report->id . '</strong> '
+            . h(tolocaltz($report->created_at)) . ' — '
+            . h($report->vps->hostname) . ' — <code>' . h($report->cgroup) . '</code> — '
+            . h(sprintf(
+                _('invoked by %s, killed %s'),
+                $report->invoked_by_name ?: '-',
+                $report->killed_name ?: '-'
+            )) . '</label>';
+    }
+
+    $owner_id = notifications_mute_route_owner_id() ?: $selected_report->vps->user_id;
+    $xtpl->table_title(_('Review mute route'), 'notifications.mute-similar-form');
+    $xtpl->form_create('?page=notifications&action=mute_oom_reports', 'post', 'mute-similar-form');
+    $hidden = ['oom_report_ids' => implode(',', $report_ids)];
+    if (!isAdmin()) {
+        $hidden['route_owner_id'] = $owner_id;
+    }
+    $xtpl->form_set_hidden_fields($hidden);
+
+    $xtpl->table_td(_('Reference report') . ':');
+    $xtpl->table_td('<div id="mute-oom-source">' . $report_options . '</div>', false, true);
+    $xtpl->table_tr();
+    notifications_mute_owner_form($selected_report->vps->user, $owner_id);
+    $xtpl->table_td(_('Matching') . ':');
+    $xtpl->table_td(
+        _('Every selected condition has to match. You can tune the matchers after creating the route.')
+    );
+    $xtpl->table_tr();
+    $values = $report_values[$selected_id];
+    notifications_mute_matcher_row('match_vps', _('VPS'), $values['match_vps'], true, 'mute-value-match_vps');
+    notifications_mute_matcher_row(
+        'match_cgroup',
+        _('Cgroup'),
+        $values['match_cgroup'],
+        true,
+        'mute-value-match_cgroup'
+    );
+    notifications_mute_matcher_row(
+        'match_invoked_by_name',
+        _('Invoking process'),
+        $values['match_invoked_by_name'],
+        false,
+        'mute-value-match_invoked_by_name'
+    );
+    notifications_mute_matcher_row(
+        'match_killed_name',
+        _('Killed process'),
+        $values['match_killed_name'],
+        false,
+        'mute-value-match_killed_name'
+    );
+    notifications_mute_expiration_form();
+    $xtpl->form_out(_('Create mute route'));
+
+    notifications_mute_oom_script($report_values);
+    notifications_sidebar('routes', $owner_id);
+}
+
+function notifications_mute_oom_script($report_values)
+{
+    global $xtpl;
+
+    $xtpl->assign(
+        'AJAX_SCRIPT',
+        ($xtpl->vars['AJAX_SCRIPT'] ?? '')
+        . '<script type="text/javascript">
+$(function () {
+    var reports = ' . json_encode(
+            $report_values,
+            JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+        ) . ';
+    function selectReport() {
+        var selected = $("#mute-oom-source input:checked").val();
+        var values = reports[selected] || {};
+        $("[data-mute-matcher]").each(function () {
+            var input = $(this);
+            var name = input.data("mute-matcher");
+            var value = values[name] || "";
+            $("#mute-value-" + name).text(value || "-");
+            input.prop("disabled", value === "");
+            if (value === "") {
+                input.prop("checked", false);
+            }
+        });
+    }
+    $("#mute-oom-source input").on("change", selectReport);
+    selectReport();
+});
+</script>'
+    );
+}
+
+function notifications_mute_incident_form()
+{
+    global $xtpl, $api;
+
+    $xtpl->title(_('Mute similar incident reports'));
+    try {
+        $incident = $api->incident_report->show(notifications_mute_incident_report_id(), [
+            'meta' => ['includes' => 'user,vps,ip_address_assignment'],
+        ]);
+    } catch (InvalidArgumentException $e) {
+        $xtpl->perex(_('Incident report unavailable'), h($e->getMessage()));
+        notifications_sidebar('routes');
+        return;
+    } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+        $xtpl->perex(
+            _('Incident report unavailable'),
+            _('The selected incident report is not available to your account. Create a route manually if needed.')
+        );
+        notifications_sidebar('routes');
+        return;
+    }
+
+    $ip_addr = $incident->ip_address_assignment_id
+        ? $incident->ip_address_assignment->ip_addr
+        : null;
+    $source_user = isAdmin()
+        ? $incident->user
+        : (object) [
+            'id' => $incident->user_id,
+            'login' => $_SESSION['user']['login'],
+        ];
+    $owner_id = notifications_mute_route_owner_id() ?: $incident->user_id;
+    $xtpl->table_title(_('Review mute route'), 'notifications.mute-similar-form');
+    $xtpl->form_create('?page=notifications&action=mute_incident_report', 'post', 'mute-similar-form');
+    $hidden = ['incident_report_id' => $incident->id];
+    if (!isAdmin()) {
+        $hidden['route_owner_id'] = $owner_id;
+    }
+    $xtpl->form_set_hidden_fields($hidden);
+
+    $xtpl->table_td(_('Incident report') . ':');
+    $xtpl->table_td('#' . (int) $incident->id . ' — ' . h($incident->subject));
+    $xtpl->table_tr();
+    notifications_mute_owner_form($source_user, $owner_id);
+    $xtpl->table_td(_('Matching') . ':');
+    $xtpl->table_td(
+        _('Every selected condition has to match. You can tune the matchers after creating the route.')
+    );
+    $xtpl->table_tr();
+    notifications_mute_matcher_row(
+        'match_vps',
+        _('VPS'),
+        '#' . $incident->vps_id . ' ' . $incident->vps->hostname,
+        true
+    );
+    notifications_mute_matcher_row('match_ip_addr', _('IP address'), $ip_addr, !$incident->codename && $ip_addr);
+    notifications_mute_matcher_row('match_codename', _('Codename'), $incident->codename, (bool) $incident->codename);
+    notifications_mute_matcher_row('match_subject', _('Subject'), $incident->subject, false);
+    notifications_mute_expiration_form();
+    $xtpl->form_out(_('Create mute route'));
+
+    notifications_sidebar('routes', $owner_id);
+}
+
 function notifications_param_choices($desc, $empty = false)
 {
     $ret = [];
@@ -1340,6 +1810,7 @@ function notifications_route_params($create = false)
         'event_type' => api_post('event_type'),
         'event_type_pattern' => api_post('event_type_pattern'),
         'continue' => isset($_POST['continue']),
+        'expires_at' => notifications_optional_datetime_param('expires_at'),
     ];
     $subject_scope = api_post('subject_scope');
     if ($subject_scope !== null && $subject_scope !== '') {
@@ -1626,6 +2097,11 @@ function notifications_route_conditions_html($route)
 
 function notifications_route_behavior_html($route, $enabled_link = null)
 {
+    if (notifications_route_expired($route)) {
+        return h(_('Expired')) . '<br><span title="' . h(_('Expiration time')) . '">'
+            . h(tolocaltz($route->expires_at)) . '</span>';
+    }
+
     $enabled = $route->enabled ? _('Enabled') : _('Disabled');
     if ($enabled_link !== null) {
         $enabled = '<a href="' . $enabled_link . '" title="'
@@ -1645,6 +2121,12 @@ function notifications_route_behavior_html($route, $enabled_link = null)
     }
 
     return implode('<br>', $lines);
+}
+
+function notifications_route_expired($route)
+{
+    return notifications_prop($route, 'expires_at')
+        && strtotime($route->expires_at) <= time();
 }
 
 function notifications_route_add_action_html($route, $user_id)
@@ -2439,7 +2921,9 @@ function notifications_routes_list($user_id = null)
 
     foreach (notifications_ordered_routes($routes) as $row) {
         [$route, $depth] = $row;
-        $row_color = $route->enabled ? false : '#A6A6A6';
+        $row_color = $route->enabled && !notifications_route_expired($route)
+            ? false
+            : '#A6A6A6';
         [$is_first, $is_last] = $sibling_positions[$route->id] ?? [true, true];
         $enabled_link = '?page=notifications&action=route_toggle&id=' . $route->id
             . notifications_user_qs($user_id) . '&t=' . csrf_token();
@@ -2568,6 +3052,13 @@ function notifications_route_new($user_id = null, $parent_id = null)
         post_val('continue', false),
         notifications_param_description_html($input->continue)
     );
+    $xtpl->form_add_datetime(
+        notifications_param_label($input->expires_at, _('Expires at')) . ':',
+        'expires_at',
+        post_val('expires_at'),
+        true,
+        notifications_param_description_html($input->expires_at)
+    );
     $xtpl->form_out(_('Add'));
 
     $xtpl->sbar_add(_('Back to routes'), '?page=notifications&action=routes' . notifications_user_qs($user_id));
@@ -2621,7 +3112,9 @@ function notifications_route_subroutes($route)
         $xtpl->table_td(notifications_route_edit_action_html($child, $route->user_id), false, true);
         $xtpl->table_td(notifications_route_add_action_html($child, $route->user_id), false, true);
         $xtpl->table_td(notifications_route_delete_action_html($child, $route->user_id), false, true);
-        $xtpl->table_tr($child->enabled ? false : '#A6A6A6');
+        $xtpl->table_tr(
+            $child->enabled && !notifications_route_expired($child) ? false : '#A6A6A6'
+        );
     }
 
     if (!$children) {
@@ -2705,6 +3198,13 @@ function notifications_route_edit($route_id)
     );
     api_param_to_form('enabled', $input->enabled, post_val('enabled', $route->enabled));
     api_param_to_form('continue', $input->continue, post_val('continue', $route->continue));
+    $xtpl->form_add_datetime(
+        notifications_param_label($input->expires_at, _('Expires at')) . ':',
+        'expires_at',
+        post_val('expires_at', $route->expires_at),
+        true,
+        notifications_param_description_html($input->expires_at)
+    );
     $xtpl->form_out(_('Save'));
     notifications_clear_table_form();
 

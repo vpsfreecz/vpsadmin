@@ -149,6 +149,12 @@ function oom_reports_show($id)
         _('Configure OOM notifications'),
         '?page=notifications&action=routes' . notifications_user_qs($r->vps->user_id)
     );
+    $xtpl->sbar_add(
+        _('Mute similar OOM reports'),
+        '?page=notifications&action=mute_oom_reports&oom_report_ids=' . $r->id
+        . '&route_owner_id=' . $r->vps->user_id,
+        'oom-reports.mute-similar'
+    );
 
     $tasks = $r->task->list();
     $invokedByVpsPid = null;

@@ -1231,7 +1231,7 @@ msgid "Interface"
 msgstr "Rozhraní"
 
 #: forms/dns.forms.php forms/incidents.forms.php forms/networking.forms.php
-#: forms/users.forms.php
+#: forms/notifications.forms.php forms/users.forms.php
 msgid "IP address"
 msgstr "IP adresa"
 
@@ -1701,7 +1701,7 @@ msgstr "Detekováno"
 msgid "Subject"
 msgstr "Předmět"
 
-#: forms/incidents.forms.php
+#: forms/incidents.forms.php forms/notifications.forms.php
 msgid "Codename"
 msgstr "Kódový název"
 
@@ -1709,7 +1709,11 @@ msgstr "Kódový název"
 msgid "Admin"
 msgstr "Admin"
 
-#: forms/incidents.forms.php
+#: forms/incidents.forms.php forms/notifications.forms.php
+msgid "Mute similar incident reports"
+msgstr "Ztlumit podobná hlášení incidentů"
+
+#: forms/incidents.forms.php forms/notifications.forms.php
 msgid "Incident report"
 msgstr "Zpráva o incidentu"
 
@@ -2484,6 +2488,165 @@ msgid "Test notification"
 msgstr "Testovací notifikace"
 
 #: forms/notifications.forms.php
+msgid "Invalid date and time"
+msgstr "Neplatné datum a čas"
+
+#: forms/notifications.forms.php
+msgid "Enter a custom expiration time"
+msgstr "Zadejte vlastní čas vypršení"
+
+#: forms/notifications.forms.php
+msgid "Invalid custom expiration time"
+msgstr "Neplatný vlastní čas vypršení"
+
+#: forms/notifications.forms.php
+msgid "Invalid mute duration"
+msgstr "Neplatná doba ztišení"
+
+#: forms/notifications.forms.php
+msgid "Expiration time has to be in the future"
+msgstr "Čas vypršení musí být v budoucnosti"
+
+#: forms/notifications.forms.php
+msgid "No OOM reports were selected"
+msgstr "Nebyly vybrány žádné OOM reporty"
+
+#: forms/notifications.forms.php
+msgid "At most 30 OOM reports can be reviewed at once"
+msgstr "Najednou lze zkontrolovat nejvýše 30 OOM reportů"
+
+#: forms/notifications.forms.php
+msgid "Select an OOM report"
+msgstr "Vyberte OOM report"
+
+#: forms/notifications.forms.php
+msgid "No incident report was selected"
+msgstr "Nebylo vybráno žádné hlášení incidentu"
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "%s (report account)"
+msgstr "%s (účet reportu)"
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "%s (administrator)"
+msgstr "%s (správce)"
+
+#: forms/notifications.forms.php
+msgid "Mute for"
+msgstr "Ztlumit na"
+
+#: forms/notifications.forms.php
+msgid "1 hour"
+msgstr "1 hodina"
+
+#: forms/notifications.forms.php
+msgid "1 day"
+msgstr "1 den"
+
+#: forms/notifications.forms.php
+msgid "1 week"
+msgstr "1 týden"
+
+#: forms/notifications.forms.php
+msgid "1 month"
+msgstr "1 měsíc"
+
+#: forms/notifications.forms.php
+msgid "Forever"
+msgstr "Natrvalo"
+
+#: forms/notifications.forms.php
+msgid "Custom expiration"
+msgstr "Vlastní vypršení"
+
+#: forms/notifications.forms.php
+msgid "The route stops matching automatically when it expires."
+msgstr "Routa po vypršení automaticky přestane odpovídat."
+
+#: forms/notifications.forms.php
+msgid "Used only when Custom expiration is selected."
+msgstr "Použije se jen při výběru vlastního vypršení."
+
+#: forms/notifications.forms.php
+msgid "Route owner"
+msgstr "Vlastník routy"
+
+#: forms/notifications.forms.php
+msgid "The route is evaluated for events visible to this account."
+msgstr "Routa se vyhodnocuje pro události viditelné tomuto účtu."
+
+#: forms/notifications.forms.php forms/oom_reports.forms.php
+msgid "Mute similar OOM reports"
+msgstr "Ztlumit podobná hlášení OOM"
+
+#: forms/notifications.forms.php
+msgid "OOM reports unavailable"
+msgstr "OOM reporty nejsou dostupné"
+
+#: forms/notifications.forms.php
+msgid ""
+"None of the selected OOM reports are available to your account. Create a "
+"route manually if needed."
+msgstr ""
+"Žádný z vybraných OOM reportů není pro váš účet dostupný. V případě potřeby "
+"vytvořte routu ručně."
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "invoked by %s, killed %s"
+msgstr "vyvolal %s, ukončen %s"
+
+#: forms/notifications.forms.php
+msgid "Review mute route"
+msgstr "Kontrola ztišovací routy"
+
+#: forms/notifications.forms.php
+msgid "Reference report"
+msgstr "Referenční report"
+
+#: forms/notifications.forms.php
+msgid "Matching"
+msgstr "Podmínky"
+
+#: forms/notifications.forms.php
+msgid ""
+"Every selected condition has to match. You can tune the matchers after "
+"creating the route."
+msgstr ""
+"Musí platit všechny vybrané podmínky. Matchery můžete upravit po vytvoření "
+"routy."
+
+#: forms/notifications.forms.php forms/oom_reports.forms.php
+msgid "Cgroup"
+msgstr "Cgroup"
+
+#: forms/notifications.forms.php
+msgid "Invoking process"
+msgstr "Vyvolávající proces"
+
+#: forms/notifications.forms.php forms/oom_reports.forms.php
+msgid "Killed process"
+msgstr "Zabitý proces"
+
+#: forms/notifications.forms.php
+msgid "Create mute route"
+msgstr "Vytvořit ztišovací routu"
+
+#: forms/notifications.forms.php
+msgid "Incident report unavailable"
+msgstr "Hlášení incidentu není dostupné"
+
+#: forms/notifications.forms.php
+msgid ""
+"The selected incident report is not available to your account. Create a "
+"route manually if needed."
+msgstr ""
+"Vybrané hlášení incidentu není pro váš účet dostupné. V případě potřeby "
+"vytvořte routu ručně."
+
+#: forms/notifications.forms.php
 msgid "Composite ID attributes"
 msgstr "Atributy složeného ID"
 
@@ -2701,6 +2864,14 @@ msgstr "Všechny události"
 #, php-format
 msgid "%d matchers"
 msgstr "%d matcherů"
+
+#: forms/notifications.forms.php
+msgid "Expiration time"
+msgstr "Čas vypršení"
+
+#: forms/notifications.forms.php
+msgid "Expired"
+msgstr "Vypršelo"
 
 #: forms/notifications.forms.php
 msgid "Disabled"
@@ -2961,6 +3132,10 @@ msgid "Scope"
 msgstr "Rozsah"
 
 #: forms/notifications.forms.php
+msgid "Expires at"
+msgstr "Vyprší v"
+
+#: forms/notifications.forms.php
 msgid "Back to routes"
 msgstr "Zpět na routy"
 
@@ -3013,10 +3188,6 @@ msgstr "Jednorázová routa"
 #: forms/notifications.forms.php
 msgid "Spent at"
 msgstr "Použito v"
-
-#: forms/notifications.forms.php
-msgid "Expires at"
-msgstr "Vyprší v"
 
 #: forms/notifications.forms.php
 msgid "Hits"
@@ -3997,10 +4168,6 @@ msgstr "Data"
 msgid "Out-of-memory Reports"
 msgstr "Reporty o nedostatku paměti"
 
-#: forms/oom_reports.forms.php
-msgid "Killed process"
-msgstr "Zabitý proces"
-
 #: forms/oom_reports.forms.php forms/users.forms.php pages/page_adminm.php
 msgid "Count"
 msgstr "Počet"
@@ -4016,10 +4183,6 @@ msgstr "Nastavit OOM notifikace"
 #: forms/oom_reports.forms.php
 msgid "Out-of-memory Report for VPS"
 msgstr "Report o nedostatku paměti pro VPS"
-
-#: forms/oom_reports.forms.php
-msgid "Cgroup"
-msgstr "Cgroup"
 
 #: forms/oom_reports.forms.php
 msgid "Invoked by"
@@ -9357,6 +9520,14 @@ msgid "Failed to add route"
 msgstr "Přidání routy se nezdařilo"
 
 #: pages/page_notifications.php
+msgid "Mute route added"
+msgstr "Ztišovací routa přidána"
+
+#: pages/page_notifications.php
+msgid "Unable to create mute route"
+msgstr "Ztišovací routu nelze vytvořit"
+
+#: pages/page_notifications.php
 msgid "Route updated"
 msgstr "Routa aktualizována"
 
@@ -9943,9 +10114,6 @@ msgstr "Pomoc"
 #~ msgid "Test event"
 #~ msgstr "Testovací událost"
 
-#~ msgid "Create test event"
-#~ msgstr "Vytvořit testovací událost"
-
 #~ msgid "Create event"
 #~ msgstr "Vytvořit událost"
 
@@ -10006,9 +10174,6 @@ msgstr "Pomoc"
 #~ msgstr ""
 #~ "Shody se provádějí proti úplné cestě cgroup bez <code>/sys/fs/cgroup</"
 #~ "code>, viz"
-
-#~ msgid "existing OOM reports"
-#~ msgstr "existující OOM reporty"
 
 #~ msgid "The first matching rule determines the action"
 #~ msgstr "První pravidlo shody určuje akci"
@@ -10086,9 +10251,6 @@ msgstr "Pomoc"
 
 #~ msgid "Account management"
 #~ msgstr "Vedení účtu"
-
-#~ msgid "System administrator"
-#~ msgstr "Správce systému"
 
 #~ msgid "E-mail roles"
 #~ msgstr "E-mailové role"

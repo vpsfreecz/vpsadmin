@@ -24,12 +24,69 @@ if (isLoggedIn()) {
 
                     notify_user(_('Route added'), '');
                     redirect('?page=notifications&action=route_edit&id=' . $route->id . notifications_user_qs($user_id));
+                } catch (\InvalidArgumentException $e) {
+                    $xtpl->perex(_('Failed to add route'), h($e->getMessage()));
+                    notifications_route_new($user_id, notifications_nullable_id('parent_id'));
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Failed to add route'), $e->getResponse());
                     notifications_route_new($user_id, notifications_nullable_id('parent_id'));
                 }
             } else {
                 notifications_route_new(api_get_uint('user'), api_get_uint('parent'));
+            }
+            break;
+
+        case 'mute_oom_reports':
+            try {
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    csrf_check();
+                    $report_id = notifications_mute_selected_oom_report_id();
+                    $route = $api->oom_report->mute_similar(
+                        $report_id,
+                        notifications_mute_oom_params()
+                    );
+
+                    notify_user(_('Mute route added'), '');
+                    redirect(
+                        '?page=notifications&action=route_edit&id=' . $route->id
+                        . notifications_user_qs($route->user_id)
+                    );
+                } else {
+                    notifications_mute_oom_form();
+                }
+            } catch (\InvalidArgumentException $e) {
+                $xtpl->perex(_('Unable to create mute route'), h($e->getMessage()));
+                notifications_mute_oom_form();
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Unable to create mute route'), $e->getResponse());
+                notifications_mute_oom_form();
+            }
+            break;
+
+        case 'mute_incident_report':
+            try {
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    csrf_check();
+                    $incident_id = notifications_mute_incident_report_id();
+                    $route = $api->incident_report->mute_similar(
+                        $incident_id,
+                        notifications_mute_incident_params()
+                    );
+
+                    notify_user(_('Mute route added'), '');
+                    redirect(
+                        '?page=notifications&action=route_edit&id=' . $route->id
+                        . notifications_user_qs($route->user_id)
+                    );
+                } else {
+                    notifications_mute_incident_form();
+                }
+            } catch (\InvalidArgumentException $e) {
+                $xtpl->perex(_('Unable to create mute route'), h($e->getMessage()));
+                notifications_mute_incident_form();
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Unable to create mute route'), $e->getResponse());
+                notifications_mute_incident_form();
             }
             break;
 
@@ -42,6 +99,9 @@ if (isLoggedIn()) {
 
                     notify_user(_('Route updated'), '');
                     redirect('?page=notifications&action=route_edit&id=' . $_GET['id'] . notifications_user_qs());
+                } catch (\InvalidArgumentException $e) {
+                    $xtpl->perex(_('Failed to update route'), h($e->getMessage()));
+                    notifications_route_edit($_GET['id']);
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $xtpl->perex_format_errors(_('Failed to update route'), $e->getResponse());
                     notifications_route_edit($_GET['id']);
