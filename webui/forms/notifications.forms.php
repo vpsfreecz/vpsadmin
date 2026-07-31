@@ -44,6 +44,7 @@ function notifications_sidebar($current, $user_id = null)
     $xtpl->sbar_add(_('Routes'), '?page=notifications&action=routes' . $user_qs);
     $xtpl->sbar_add(_('Receivers'), '?page=notifications&action=receivers' . $user_qs);
     $xtpl->sbar_add(_('Targets'), '?page=notifications&action=targets' . $user_qs);
+    $xtpl->sbar_add(_('Limits'), '?page=notifications&action=limits' . $user_qs);
     $xtpl->sbar_add(_('Event types'), '?page=notifications&action=event_types' . $user_qs);
     $xtpl->sbar_add(_('Test event'), '?page=notifications&action=test' . $user_qs);
 }
@@ -133,8 +134,11 @@ function notifications_api_list_to_array($list)
         'events',
         'event_deliveries',
         'event_delivery_attempts',
+        'event_route_matches',
+        'notification_rate_limits',
         'receivers',
         'targets',
+        'limits',
         'actions',
         'matchers',
         'deliveries',
@@ -2203,7 +2207,11 @@ function notifications_receiver_action_secret_html($action)
         return boolean_icon(false) . ' ' . _('target disabled');
     }
 
-    return notifications_target_status_html($action);
+    if (notifications_prop($action, 'delivery_method_enabled') === false) {
+        return boolean_icon(false) . ' ' . _('delivery method disabled');
+    }
+
+    return notifications_target_action_status_html($action);
 }
 
 function notifications_target_status_html($target)
@@ -2780,6 +2788,94 @@ function notifications_receiver_edit($receiver_id)
 function notifications_time_or_dash($value)
 {
     return $value ? tolocaltz($value) : '-';
+}
+
+function notifications_rate_limit_post_name($limit)
+{
+    return 'notification_rate_limit_' . preg_replace('/[^a-zA-Z0-9_]/', '_', $limit->id);
+}
+
+function notifications_rate_limits_for_user($user)
+{
+    global $api;
+
+    return notifications_api_list_to_array($api->user($user->id)->notification_rate_limit->list());
+}
+
+function notifications_rate_limit_source_label($limit)
+{
+    if (($limit->source ?? '') === 'override') {
+        return _('custom');
+    }
+
+    return _('default');
+}
+
+function notifications_rate_limits($user_id = null)
+{
+    global $xtpl, $api;
+
+    $user_id = notifications_target_user_id($user_id);
+    $user = $api->user->show($user_id);
+    $limits = notifications_rate_limits_for_user($user);
+
+    $xtpl->title(_('Notification delivery limits'));
+
+    if (isAdmin()) {
+        $xtpl->table_title(_('User'));
+        $xtpl->form_create('?page=notifications&action=limits', 'get', 'notification-user', false);
+        $xtpl->form_set_hidden_fields([
+            'page' => 'notifications',
+            'action' => 'limits',
+        ]);
+        $xtpl->form_add_input(_('User ID') . ':', 'text', '20', 'user', $user_id);
+        $xtpl->form_out(_('Show'));
+    }
+
+    $xtpl->table_title(_('Limits') . ': ' . h($user->login));
+    $xtpl->table_add_category(_('Method'));
+    $xtpl->table_add_category(_('Window'));
+    $xtpl->table_add_category(_('Limit'));
+    $xtpl->table_add_category(_('Used'));
+    $xtpl->table_add_category(_('Remaining'));
+    $xtpl->table_add_category(_('Resets at'));
+    $xtpl->table_add_category(_('Source'));
+
+    if (isAdmin()) {
+        $xtpl->form_create('?page=notifications&action=limits&user=' . $user->id, 'post');
+    }
+
+    foreach ($limits as $limit) {
+        $xtpl->table_td(h($limit->label ?? $limit->delivery_method));
+        $xtpl->table_td(h($limit->period_label ?? $limit->period));
+        if (isAdmin()) {
+            $xtpl->table_td(
+                '<input type="number" min="1" step="1" size="8" name="'
+                . h(notifications_rate_limit_post_name($limit))
+                . '" value="' . h((string) $limit->limit_count) . '">'
+            );
+        } else {
+            $xtpl->table_td(h((string) $limit->limit_count));
+        }
+        $xtpl->table_td(h((string) ($limit->used_count ?? 0)));
+        $xtpl->table_td(h((string) ($limit->remaining_count ?? 0)));
+        $xtpl->table_td(notifications_time_or_dash($limit->resets_at ?? null));
+        $xtpl->table_td(h(notifications_rate_limit_source_label($limit)));
+        $xtpl->table_tr();
+    }
+
+    if (!$limits) {
+        $xtpl->table_td(_('No delivery limits are configured.'), false, false, '7');
+        $xtpl->table_tr();
+    }
+
+    if (isAdmin()) {
+        $xtpl->form_out(_('Save'));
+    } else {
+        $xtpl->table_out();
+    }
+
+    notifications_sidebar('limits', $user_id);
 }
 
 function notifications_response_status_label($action, $status)

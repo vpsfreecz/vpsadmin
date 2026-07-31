@@ -35,6 +35,14 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
     vpath("/users/#{user_id}/notification_delivery_methods/#{delivery_method}")
   end
 
+  def notification_rate_limit_index_path(user_id)
+    vpath("/users/#{user_id}/notification_rate_limits")
+  end
+
+  def notification_rate_limit_path(user_id, limit_id)
+    vpath("/users/#{user_id}/notification_rate_limits/#{limit_id}")
+  end
+
   def json_get(path, params = nil)
     get path, params, {
       'CONTENT_TYPE' => 'application/json',
@@ -67,6 +75,18 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
 
   def errors
     json.dig('response', 'errors') || json['errors'] || {}
+  end
+
+  def notification_rate_limits
+    json.dig('response', 'user_notification_rate_limits') ||
+      json.dig('response', 'notification_rate_limits') ||
+      json['response']
+  end
+
+  def notification_rate_limit
+    json.dig('response', 'user_notification_rate_limit') ||
+      json.dig('response', 'notification_rate_limit') ||
+      json['response']
   end
 
   def response_message
@@ -486,6 +506,94 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
         'delivery_method' => 'webhook',
         'enabled' => false
       )
+    end
+
+    it 'lists notification rate limits with rolling usage counts' do
+      event = Event.create!(
+        user: SpecSeed.user,
+        event_type: 'user.test_notification',
+        category: 'test',
+        severity: 'info',
+        subject: 'Spec rate limit usage',
+        parameters: {}
+      )
+      delivery = EventDelivery.create!(
+        event:,
+        action: :webhook,
+        target_kind: :custom,
+        target_value: 'https://example.test/events',
+        target_label: 'Spec webhook',
+        state: :sent
+      )
+      delivery.event_delivery_attempts.create!(
+        recipient_user: SpecSeed.user,
+        action: :webhook,
+        state: :succeeded,
+        attempt_number: 1,
+        started_at: Time.now - 5,
+        finished_at: Time.now - 4
+      )
+
+      as(SpecSeed.user) do
+        json_get notification_rate_limit_index_path(SpecSeed.user.id)
+      end
+
+      expect_status(200)
+      limits_by_id = notification_rate_limits.to_h { |row| [row.fetch('id'), row] }
+      expect(limits_by_id.keys).to include('webhook.minute', 'webhook.week')
+      expect(limits_by_id.fetch('webhook.minute')).to include(
+        'limit_count' => 60,
+        'default_limit_count' => 60,
+        'override_limit_count' => nil,
+        'used_count' => 1,
+        'remaining_count' => 59,
+        'source' => 'default'
+      )
+      expect(limits_by_id.fetch('webhook.week')).to include(
+        'limit_count' => 25_000,
+        'used_count' => 1
+      )
+    end
+
+    it 'allows admins to override notification rate limits' do
+      as(SpecSeed.admin) do
+        json_put notification_rate_limit_path(SpecSeed.other_user.id, 'webhook.week'), {
+          notification_rate_limit: { limit_count: 1234 }
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true), last_response.body
+      expect(notification_rate_limit).to include(
+        'id' => 'webhook.week',
+        'limit_count' => 1234,
+        'default_limit_count' => 25_000,
+        'override_limit_count' => 1234,
+        'source' => 'override'
+      )
+
+      as(SpecSeed.admin) do
+        json_get notification_rate_limit_path(SpecSeed.other_user.id, 'webhook.week')
+      end
+
+      expect_status(200)
+      expect(notification_rate_limit).to include(
+        'id' => 'webhook.week',
+        'limit_count' => 1234,
+        'source' => 'override'
+      )
+    end
+
+    it 'rejects user updates to notification rate limits' do
+      as(SpecSeed.user) do
+        json_put notification_rate_limit_path(SpecSeed.user.id, 'sms.minute'), {
+          notification_rate_limit: { limit_count: 1 }
+        }
+      end
+
+      expect_status(403)
+      expect(json['status']).to be(false)
+      expect(SpecSeed.user.user_notification_rate_limits).to be_empty
     end
 
     it 'rejects user updates to notification delivery methods' do

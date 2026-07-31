@@ -6,6 +6,7 @@ class EventDeliveryAttempt < ApplicationRecord
   }.freeze
 
   belongs_to :event_delivery
+  belongs_to :recipient_user, class_name: 'User', optional: true
 
   enum :state, %i[running succeeded failed], suffix: true
 
@@ -23,5 +24,9 @@ class EventDeliveryAttempt < ApplicationRecord
 
   def response_headers_json
     JSON.dump(response_headers || {})
+  end
+
+  def recipient_user_login
+    recipient_user&.login
   end
 end

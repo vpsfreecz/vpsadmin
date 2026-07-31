@@ -461,6 +461,9 @@ covered:
 - user.notification_delivery_method#index
 - user.notification_delivery_method#show
 - user.notification_delivery_method#update
+- user.notification_rate_limit#index
+- user.notification_rate_limit#show
+- user.notification_rate_limit#update
 - user_account#index
 - user_account#show
 - user_account#update
