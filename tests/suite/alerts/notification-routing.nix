@@ -151,7 +151,12 @@ import ../../make-test.nix (
             .joins(:notification_receiver)
             .where(notification_receivers: { user_id: user.id })
             .delete_all
+          EventRouteTimeInterval
+            .joins(:event_route)
+            .where(event_routes: { user_id: user.id })
+            .delete_all
           EventRoute.where(user: user).delete_all
+          EventTimeInterval.where(user: user).delete_all
           NotificationReceiver.where(user: user).delete_all
 
           receiver = NotificationReceiver.create!(
@@ -201,6 +206,79 @@ import ../../make-test.nix (
             email_delivery_id: deliveries.find(&:email_action?)&.id,
             webhook_delivery_id: deliveries.find(&:webhook_action?)&.id,
             delivery_count: deliveries.length
+          )
+        RUBY
+      end
+
+      def create_scheduled_out_event(services)
+        services.api_ruby_json(code: <<~RUBY)
+          user = User.find(#{admin_user_id})
+
+          EventRouteMatcher
+            .joins(:event_route)
+            .where(event_routes: { user_id: user.id })
+            .delete_all
+          NotificationReceiverAction
+            .joins(:notification_receiver)
+            .where(notification_receivers: { user_id: user.id })
+            .delete_all
+          EventRouteTimeInterval
+            .joins(:event_route)
+            .where(event_routes: { user_id: user.id })
+            .delete_all
+          EventRoute.where(user: user).delete_all
+          EventTimeInterval.where(user: user).delete_all
+          NotificationReceiver.where(user: user).delete_all
+
+          receiver = NotificationReceiver.create!(
+            user: user,
+            label: 'Scheduled integration receiver'
+          )
+          receiver.notification_receiver_actions.create!(
+            action: :email,
+            label: 'Scheduled integration e-mail',
+            target_kind: :default_recipient
+          )
+          route = EventRoute.create!(
+            user: user,
+            notification_receiver: receiver,
+            label: 'Scheduled integration route',
+            event_type: 'user.test_notification',
+            position: 1
+          )
+          interval = EventTimeInterval.create!(
+            user: user,
+            name: 'Inactive integration interval',
+            time_zone: 'UTC',
+            specs: [{ years: [{ start: 1, end: 1 }] }]
+          )
+          route.event_route_time_intervals.create!(
+            event_time_interval: interval,
+            mode: :active
+          )
+
+          event = VpsAdmin::API::Events.emit!(
+            'user.test_notification',
+            user: user,
+            subject: 'Scheduled-out integration event',
+            payload: { note: 'schedule integration payload' }
+          )
+          deliveries = event.event_deliveries.to_a
+          matches = event.event_route_matches.to_a
+          raise 'Expected one delivery, got ' + deliveries.length.to_s unless deliveries.length == 1
+          raise 'Expected one route match, got ' + matches.length.to_s unless matches.length == 1
+
+          delivery = deliveries.first
+          match = matches.first
+
+          puts JSON.dump(
+            event_id: event.id,
+            routing_state: event.routing_state,
+            delivery_state: delivery.state,
+            delivery_error: delivery.error_summary,
+            delivery_attempt_count: delivery.attempt_count,
+            match_state: match.time_interval_state,
+            match_snapshot: match.time_interval_snapshot
           )
         RUBY
       end
@@ -332,6 +410,28 @@ import ../../make-test.nix (
           )
           wait_for_webhook_request(services, event)
           wait_for_notification_deliveries(services, event.fetch('event_id'))
+        end
+
+        it 'persists a scheduled-out match without dispatching it' do
+          services.clear_mailpit
+          event = create_scheduled_out_event(services)
+
+          expect(event.fetch('routing_state')).to eq('suppressed')
+          expect(event.fetch('delivery_state')).to eq('skipped')
+          expect(event.fetch('delivery_error')).to eq(
+            'route is outside its active time intervals'
+          )
+          expect(event.fetch('delivery_attempt_count')).to eq(0)
+          expect(event.fetch('match_state')).to eq('inactive')
+          expect(event.fetch('match_snapshot').fetch('state')).to eq('inactive')
+          expect(event.fetch('match_snapshot').fetch('assignments')).to contain_exactly(
+            include(
+              'name' => 'Inactive integration interval',
+              'mode' => 'active',
+              'matched' => false
+            )
+          )
+          expect(services.mailpit_messages.fetch('messages')).to be_empty
         end
       end
     '';

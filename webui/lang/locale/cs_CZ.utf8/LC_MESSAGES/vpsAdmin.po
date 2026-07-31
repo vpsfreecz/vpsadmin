@@ -295,7 +295,7 @@ msgid "Node list"
 msgstr "Seznam nodů"
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
-#: forms/node.forms.php forms/outage.forms.php
+#: forms/node.forms.php forms/notifications.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/users.forms.php forms/vps.forms.php
 #: pages/page_cluster.php pages/page_transactions.php
 msgid "Name"
@@ -2466,6 +2466,10 @@ msgid "Targets"
 msgstr "Cíle"
 
 #: forms/notifications.forms.php
+msgid "Time intervals"
+msgstr "Časové intervaly"
+
+#: forms/notifications.forms.php
 msgid "Limits"
 msgstr "Limity"
 
@@ -2661,6 +2665,195 @@ msgstr "Posunout dolů"
 #: forms/notifications.forms.php
 msgid "muted"
 msgstr "ztlumeno"
+
+#: forms/notifications.forms.php
+msgid "Active interval"
+msgstr "Aktivní interval"
+
+#: forms/notifications.forms.php
+msgid "Mute interval"
+msgstr "Interval ztišení"
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Invalid time range \"%s\". Use HH:MM-HH:MM."
+msgstr "Neplatný časový rozsah „%s“. Použijte HH:MM-HH:MM."
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Time range \"%s\" must end after it starts."
+msgstr "Časový rozsah „%s“ musí končit později, než začíná."
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Invalid weekday range \"%s\"."
+msgstr "Neplatný rozsah dnů týdne „%s“."
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Weekday range \"%s\" cannot wrap."
+msgstr "Rozsah dnů týdne „%s“ nesmí přecházet přes konec týdne."
+
+#: forms/notifications.forms.php
+#, php-format
+msgid "Invalid %s range \"%s\". Use start:end."
+msgstr "Neplatný rozsah pro %s „%s“. Použijte začátek:konec."
+
+#: forms/notifications.forms.php
+msgid "Add at least one time specification."
+msgstr "Přidejte alespoň jednu časovou specifikaci."
+
+#: forms/notifications.forms.php
+msgid "day-of-month"
+msgstr "den v měsíci"
+
+#: forms/notifications.forms.php
+msgid "month"
+msgstr "měsíc"
+
+#: forms/notifications.forms.php
+msgid "year"
+msgstr "rok"
+
+#: forms/notifications.forms.php
+msgid "Each specification must constrain at least one field."
+msgstr "Každá specifikace musí omezovat alespoň jedno pole."
+
+#: forms/notifications.forms.php
+msgid "Comma-separated HH:MM-HH:MM ranges; ranges cannot cross midnight."
+msgstr "Čárkami oddělené rozsahy HH:MM-HH:MM; nesmí přecházet přes půlnoc."
+
+#: forms/notifications.forms.php
+msgid "Times"
+msgstr "Časy"
+
+#: forms/notifications.forms.php
+msgid "For example monday-friday, sunday."
+msgstr "Například monday-friday, sunday."
+
+#: forms/notifications.forms.php
+msgid "Weekdays"
+msgstr "Dny týdne"
+
+#: forms/notifications.forms.php
+msgid "Days of month"
+msgstr "Dny v měsíci"
+
+#: forms/notifications.forms.php
+msgid "Use start:end; negative days count from the end of the month."
+msgstr "Použijte začátek:konec; záporné dny se počítají od konce měsíce."
+
+#: forms/notifications.forms.php
+msgid "Months"
+msgstr "Měsíce"
+
+#: forms/notifications.forms.php
+msgid "Use month numbers and start:end ranges."
+msgstr "Použijte čísla měsíců a rozsahy začátek:konec."
+
+#: forms/notifications.forms.php
+msgid "Use full years and start:end ranges."
+msgstr "Použijte celé roky a rozsahy začátek:konec."
+
+#: forms/notifications.forms.php
+msgid "Years"
+msgstr "Roky"
+
+#: forms/notifications.forms.php
+msgid "Remove specification"
+msgstr "Odebrat specifikaci"
+
+#: forms/notifications.forms.php
+msgid "Add time interval"
+msgstr "Přidat časový interval"
+
+#: forms/notifications.forms.php
+msgid "Time interval"
+msgstr "Časový interval"
+
+#: forms/notifications.forms.php
+msgid "Update time interval"
+msgstr "Upravit časový interval"
+
+#: forms/notifications.forms.php lib/tips.lib.php pages/page_adminm.php
+msgid "Time zone"
+msgstr "Časové pásmo"
+
+#: forms/notifications.forms.php
+msgid "Used to evaluate this interval, including daylight saving time changes."
+msgstr "Používá se pro vyhodnocení tohoto intervalu včetně změn letního času."
+
+#: forms/notifications.forms.php
+msgid "Specifications"
+msgstr "Specifikace"
+
+#: forms/notifications.forms.php
+msgid ""
+"A specification matches when all of its filled fields match. Multiple "
+"specifications are alternatives."
+msgstr ""
+"Specifikace platí, když odpovídají všechna její vyplněná pole. Více "
+"specifikací představuje alternativy."
+
+#: forms/notifications.forms.php
+msgid "Add specification"
+msgstr "Přidat specifikaci"
+
+#: forms/notifications.forms.php
+msgid "Assigned routes"
+msgstr "Přiřazené routy"
+
+#: forms/notifications.forms.php
+msgid "Back to time intervals"
+msgstr "Zpět na časové intervaly"
+
+#: forms/notifications.forms.php
+msgid "Notification time intervals"
+msgstr "Časové intervaly notifikací"
+
+#: forms/notifications.forms.php
+msgid "Matches now"
+msgstr "Platí nyní"
+
+#: forms/notifications.forms.php
+msgid "Do you really wish to delete this time interval?"
+msgstr "Opravdu si přejete smazat tento časový interval?"
+
+#: forms/notifications.forms.php
+msgid "No time intervals configured."
+msgstr "Nejsou nakonfigurovány žádné časové intervaly."
+
+#: forms/notifications.forms.php
+msgid "Route time intervals"
+msgstr "Časové intervaly routy"
+
+#: forms/notifications.forms.php
+msgid "Behavior"
+msgstr "Chování"
+
+#: forms/notifications.forms.php
+msgid ""
+"Intervals gate only this route receiver. Child routes are still evaluated. "
+"Mute intervals override active intervals."
+msgstr ""
+"Intervaly řídí pouze příjemce této routy. Vnořené routy se nadále "
+"vyhodnocují. Intervaly ztišení mají přednost před aktivními intervaly."
+
+#: forms/notifications.forms.php
+msgid "Mode"
+msgstr "Režim"
+
+#: forms/notifications.forms.php
+msgid "Do you really wish to unassign this time interval?"
+msgstr "Opravdu si přejete zrušit přiřazení tohoto časového intervalu?"
+
+#: forms/notifications.forms.php
+msgid "Assign interval"
+msgstr "Přiřadit interval"
+
+#: forms/notifications.forms.php
+msgid "Create a time interval first"
+msgstr "Nejprve vytvořit časový interval"
 
 #: forms/notifications.forms.php
 msgid "Notification routes"
@@ -3311,6 +3504,10 @@ msgstr "Závažnost"
 #: forms/notifications.forms.php
 msgid "Deliveries"
 msgstr "Doručení"
+
+#: forms/notifications.forms.php
+msgid "Evaluated at"
+msgstr "Vyhodnoceno v"
 
 #: forms/notifications.forms.php
 msgid "Matched routes"
@@ -5974,10 +6171,6 @@ msgstr "Vypůjčený token se nepodařilo zneplatnit"
 #: lib/tips.lib.php
 msgid "Dismiss"
 msgstr "Propustit"
-
-#: lib/tips.lib.php pages/page_adminm.php
-msgid "Time zone"
-msgstr "Časové pásmo"
 
 #: lib/tips.lib.php
 msgid "vpsAdmin can show dates and times in your local time zone."
@@ -9006,6 +9199,50 @@ msgid "Invalid route order"
 msgstr "Neplatné pořadí rout"
 
 #: pages/page_notifications.php
+msgid "Time interval added"
+msgstr "Časový interval přidán"
+
+#: pages/page_notifications.php
+msgid "Failed to add time interval"
+msgstr "Přidání časového intervalu se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Time interval updated"
+msgstr "Časový interval upraven"
+
+#: pages/page_notifications.php
+msgid "Failed to update time interval"
+msgstr "Úprava časového intervalu se nezdařila"
+
+#: pages/page_notifications.php
+msgid "Time interval deleted"
+msgstr "Časový interval smazán"
+
+#: pages/page_notifications.php
+msgid "Failed to delete time interval"
+msgstr "Smazání časového intervalu se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Time interval assigned"
+msgstr "Časový interval přiřazen"
+
+#: pages/page_notifications.php
+msgid "Time interval assignments updated"
+msgstr "Přiřazení časových intervalů upravena"
+
+#: pages/page_notifications.php
+msgid "Failed to save time interval assignments"
+msgstr "Uložení přiřazení časových intervalů se nezdařilo"
+
+#: pages/page_notifications.php
+msgid "Time interval unassigned"
+msgstr "Přiřazení časového intervalu zrušeno"
+
+#: pages/page_notifications.php
+msgid "Failed to unassign time interval"
+msgstr "Zrušení přiřazení časového intervalu se nezdařilo"
+
+#: pages/page_notifications.php
 msgid "Matcher added"
 msgstr "Matcher přidán"
 
@@ -9513,6 +9750,9 @@ msgstr "Upravit pole nápovědy"
 msgid "Help"
 msgstr "Pomoc"
 
+#~ msgid "Use a stable IANA time zone, for example Europe/Prague."
+#~ msgstr "Použijte stabilní časové pásmo IANA, například Europe/Prague."
+
 #~ msgid "Out-of-memory Reports for VPS"
 #~ msgstr "Zprávy o nedostatku paměti pro VPS"
 
@@ -9592,9 +9832,6 @@ msgstr "Pomoc"
 
 #~ msgid "A kernel bug could affect containers on selected nodes."
 #~ msgstr "Bug v jádře může ovlivnit kontejnery na vybraných nodech."
-
-#~ msgid "Kernel updated"
-#~ msgstr "Jádro aktualizováno"
 
 #~ msgid "reported by Node"
 #~ msgstr "hlášeno Nodem"

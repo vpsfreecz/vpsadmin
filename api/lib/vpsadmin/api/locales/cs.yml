@@ -77,6 +77,8 @@ cs:
           'true':
             label: ano
         label: Aktivní
+      active_route_reference_count:
+        label: Aktivní reference rout
       add_ip_addresses:
         description: Přidat nyní všechny IP adresy z této sítě do databáze
         label: Přidat IP adresy
@@ -539,6 +541,8 @@ cs:
         label: Souhrn akce
       display_label:
         label: Zobrazený popisek
+      display_summary:
+        label: Souhrn
       display_target:
         label: Zobrazený cíl
       distribution:
@@ -699,6 +703,8 @@ cs:
         label: Zdroj události
       event_subject:
         label: Subjekt události
+      event_time_interval:
+        label: Časový interval událostí
       event_type:
         choices:
           boot:
@@ -1698,6 +1704,8 @@ cs:
         label: Pořadí vyhodnocení
       matcher_summary:
         label: Souhrn matcheru
+      matches_now:
+        label: Platí nyní
       max:
         description: Když objekt alokuje zdroj, nesmí použít více než maximum
         label: Maximální hodnota
@@ -1738,6 +1746,10 @@ cs:
         label: Ošetřeno od
       mode:
         choices:
+          active:
+            label: Aktivní
+          mute:
+            label: Ztišit
           ro:
             label: jen čtení
           rw:
@@ -1755,6 +1767,8 @@ cs:
         label: Přípojný bod
       mute:
         label: Ztišit
+      mute_route_reference_count:
+        label: Ztišující reference rout
       namespace:
         choices:
           forms:
@@ -2262,6 +2276,8 @@ cs:
         label: ID vlastníka routy
       route_owner_login:
         label: Login vlastníka routy
+      route_reference_count:
+        label: Reference rout
       route_via:
         label: Routovat přes
       routed:
@@ -2420,6 +2436,8 @@ cs:
         label: Revize zdroje
       source_status_id:
         label: ID zdrojového stavu
+      specs:
+        label: Specifikace
       spent_at:
         label: Spotřebováno v
       split_access:
@@ -2659,6 +2677,17 @@ cs:
         label: Vlákna
       through_status_id:
         label: ID posledního stavu
+      time_interval_snapshot:
+        label: Snapshot časových intervalů
+      time_interval_state:
+        choices:
+          active:
+            label: aktivní
+          inactive:
+            label: neaktivní
+          muted:
+            label: ztišeno
+        label: Stav časových intervalů
       time_zone:
         description: Identifikátor časové zóny IANA, např. Europe/Prague
         label: Časová zóna
@@ -4432,6 +4461,24 @@ cs:
               label: ID
             updated_at:
               label: Aktualizováno
+        time_interval:
+          attributes:
+            created_at:
+              label: Vytvořeno
+            id:
+              label: ID
+            updated_at:
+              label: Aktualizováno
+      event_time_interval:
+        attributes:
+          created_at:
+            label: Vytvořeno
+          id:
+            label: ID
+          name:
+            label: Název
+          updated_at:
+            label: Aktualizováno
       event_type:
         attributes:
           name:
