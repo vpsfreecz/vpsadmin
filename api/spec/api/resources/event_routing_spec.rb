@@ -1898,17 +1898,21 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     user_types = event_types
     user_count = json.dig('response', '_meta', 'total_count')
     expect(user_count).to eq(user_types.count)
-    expect(user_types).to all(
-      satisfy { |type| type.fetch('roles').include?('account') }
-    )
     expect(user_types.map { |type| type.fetch('name') }).to include(
       'vps.updated',
-      'user.updated'
+      'user.updated',
+      'vps.incident_report',
+      'vps.oom_report',
+      'user.new_token'
     )
     expect(user_types.map { |type| type.fetch('name') }).not_to include(
       'os_family.updated',
+      'dns.zone_transfer.failed',
       'transaction_chain.state_changed'
     )
+    expect(
+      user_types.detect { |type| type.fetch('name') == 'vps.oom_report' }
+    ).to include('roles' => %w[admin])
 
     as(SpecSeed.support) { json_get event_types_path }
     expect_status(200)
@@ -1925,6 +1929,29 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(admin_types.map { |type| type.fetch('name') }).to include(
       'os_family.updated',
       'transaction_chain.state_changed'
+    )
+  end
+
+  it 'defaults unclassified extension event types to the admin audience' do
+    options = {
+      label: 'Spec event',
+      category: 'spec',
+      default_routed: false,
+      roles: %i[admin]
+    }
+
+    definition = VpsAdmin::API::Events::EventDefinition.new('spec.event', **options)
+    expect(definition.audience).to eq(:admin)
+
+    expect do
+      VpsAdmin::API::Events::EventDefinition.new(
+        'spec.public_event',
+        **options,
+        audience: :public
+      )
+    end.to raise_error(
+      ArgumentError,
+      'event spec.public_event declares unsupported audience :public'
     )
   end
 
@@ -2169,6 +2196,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
       'Spec monitoring alert',
       'monitoring',
       'warning',
+      :admin,
       %w[admin],
       [],
       nil,

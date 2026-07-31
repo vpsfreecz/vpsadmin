@@ -307,6 +307,7 @@ VpsAdmin::API::Events.define owner: :outage_reports do
           label:,
           category: 'outages',
           severity: :warning,
+          audience: :account,
           roles: %i[account admin],
           default_routed: true do
       fields(

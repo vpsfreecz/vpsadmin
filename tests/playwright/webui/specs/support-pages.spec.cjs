@@ -229,6 +229,12 @@ test.describe('support and status browser coverage', () => {
     await expect(testEventFields).toContainText('Example');
     await expect(testEventFields).toContainText('Meaning');
     await expect(testEventFields).toContainText('note');
+    await expect(content(page).locator('#event-type-vps-oom_report')).toHaveCount(1);
+    await expect(content(page).locator('#event-type-vps-incident_report')).toHaveCount(1);
+    await expect(content(page).locator('#event-type-transaction_chain-state_changed'))
+      .toHaveCount(0);
+    await expect(content(page).locator('#event-type-dns-zone_transfer-failed'))
+      .toHaveCount(0);
 
     await page.goto('/?page=notifications&action=events', {
       waitUntil: 'domcontentloaded',

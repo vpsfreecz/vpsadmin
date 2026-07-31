@@ -424,6 +424,7 @@ VpsAdmin::API::Events.define do
           label:,
           category: 'system',
           severity:,
+          audience: :account,
           roles: %i[account admin],
           default_routed: false,
           severity_description:,

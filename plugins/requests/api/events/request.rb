@@ -170,6 +170,7 @@ VpsAdmin::API::Events.define owner: :requests do
           label:,
           category: 'requests',
           severity: :info,
+          audience: :account,
           roles: %i[account],
           default_routed: true do
       fields(

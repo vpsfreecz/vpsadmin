@@ -478,7 +478,7 @@ module VpsAdmin::API::Events::ResourceOperations
   end
 
   def account_visible_event_type?(type)
-    Array(type.roles).map(&:to_s).include?('account')
+    type.audience.to_sym == :account
   end
 
   def category_label(category)
@@ -779,6 +779,7 @@ module VpsAdmin::API::Events::ResourceOperations
               label: "#{resource_name.humanize} #{action}",
               category: entry.topic,
               severity: :info,
+              audience: entry.audience,
               roles:,
               default_routed: false,
               examples: examples do

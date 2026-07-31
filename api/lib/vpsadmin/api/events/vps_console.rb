@@ -20,6 +20,7 @@ VpsAdmin::API::Events.define do
           label:,
           category: 'vps',
           severity: :info,
+          audience: :account,
           roles: %i[account admin],
           default_routed: false,
           examples: {

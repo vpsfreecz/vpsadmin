@@ -33,6 +33,7 @@ module VpsAdmin::API
       :label,
       :category,
       :severity,
+      :audience,
       :roles,
       :fields,
       :template,
@@ -238,18 +239,19 @@ module VpsAdmin::API
 
     class EventDefinition
       attr_reader :name, :owner, :label, :category_name, :default_severity,
-                  :default_routed, :roles, :severity_description,
+                  :default_routed, :audience, :roles, :severity_description,
                   :examples, :arguments
 
       def initialize(name, label:, category:, default_routed:, roles:,
                      owner: nil, severity: :info, template: nil,
-                     severity_description: nil, examples: {})
+                     audience: :admin, severity_description: nil, examples: {})
         @name = name.to_s
         @owner = owner
         @label = label
         @category_name = category.to_s
         @default_severity = severity.to_s
         @default_routed = default_routed ? true : false
+        @audience = normalize_audience(audience)
         @roles = normalize_roles(roles)
         @severity_description = severity_description
         @examples = normalize_examples(examples)
@@ -449,6 +451,13 @@ module VpsAdmin::API
         end
 
         ret
+      end
+
+      def normalize_audience(value)
+        ret = value.to_sym
+        return ret if %i[account admin].include?(ret)
+
+        raise ArgumentError, "event #{name} declares unsupported audience #{value.inspect}"
       end
 
       def normalize_examples(value)
@@ -746,6 +755,7 @@ module VpsAdmin::API
         label: definition.label,
         category: definition.category_name,
         severity: definition.default_severity,
+        audience: definition.audience,
         roles: definition.roles,
         fields: definition.field_metadata,
         template: definition.template_name,
