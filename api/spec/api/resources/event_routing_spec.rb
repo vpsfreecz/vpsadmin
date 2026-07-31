@@ -460,7 +460,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect_status(200)
     expect(events.map { |row| row['id'] }).to eq([event.id])
 
-    default_route = EventRoute.default_route_for(SpecSeed.user)
+    default_route = EventRoute.default_admin_route_for(SpecSeed.user)
     as(SpecSeed.user) { json_get event_index_path, event: { event_route_id: default_route.id } }
 
     expect_status(200)
