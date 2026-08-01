@@ -55,7 +55,7 @@ async function login(page, account) {
 
 async function logout(page, username) {
   await expect(logoutButton(page)).toHaveValue(new RegExp(`Logout \\(${username}\\)`));
-  await logoutButton(page).click();
+  await logoutButton(page).click({ noWaitAfter: true });
   await expect(loginButton(page)).toHaveValue('Log in');
 }
 
