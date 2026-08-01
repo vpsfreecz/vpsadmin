@@ -44,6 +44,15 @@ import ../../make-test.nix (
         end
       end
 
+      def transaction_types(services)
+        services.api_ruby_json(code: <<~RUBY)
+          puts JSON.dump(
+            vps_start: Transactions::Vps::Start.t_type,
+            utils_no_op: Transactions::Utils::NoOp.t_type
+          )
+        RUBY
+      end
+
       configure_examples do |config|
         config.default_order = :defined
       end
@@ -52,6 +61,7 @@ import ../../make-test.nix (
         [services, node].each(&:start)
         services.wait_for_vpsadmin_api
         wait_for_running_nodectld(node)
+        @transaction_types = transaction_types(services)
       end
 
       describe 'transaction chain lifecycle', order: :defined do
@@ -115,22 +125,33 @@ import ../../make-test.nix (
           services.wait_for_chain_state(@chain_id, state: :queued)
           services.wait_for_chain_progress(@chain_id, progress: 0)
 
-          @transaction_id = services.mariadb_scalar(
-            sql: "SELECT id FROM transactions WHERE transaction_chain_id = #{@chain_id}"
-          ).to_i
+          transactions = services.mariadb_json_rows(sql: <<~SQL)
+            SELECT JSON_OBJECT(
+              'id', id,
+              'handle', handle,
+              'queue', queue,
+              'done', done,
+              'signature_is_null', signature IS NULL
+            )
+            FROM transactions
+            WHERE transaction_chain_id = #{@chain_id}
+            ORDER BY id
+          SQL
+          @transaction_id = transactions.first.fetch('id')
 
           expect(@transaction_id).to be > 0
           expect(
             services.mariadb_scalar(sql: "SELECT size FROM transaction_chains WHERE id = #{@chain_id}")
-          ).to eq('1')
-          expect(
-            services.mariadb_scalar(sql: "SELECT done FROM transactions WHERE id = #{@transaction_id}")
-          ).to eq('0')
-          expect(
-            services.mariadb_scalar(
-              sql: "SELECT signature IS NULL FROM transactions WHERE id = #{@transaction_id}"
-            )
-          ).to eq('1')
+          ).to eq('2')
+          expect(transactions.map { |row| row.fetch('handle') }).to eq(
+            [
+              @transaction_types.fetch('vps_start'),
+              @transaction_types.fetch('utils_no_op')
+            ]
+          )
+          expect(transactions.map { |row| row.fetch('queue') }).to eq(%w[vps general])
+          expect(transactions.map { |row| row.fetch('done') }).to all(eq(0))
+          expect(transactions.map { |row| row.fetch('signature_is_null') }).to all(be(true))
 
           _, queue_output = node.succeeds('nodectl get queue')
           expect(queue_output).to include(@chain_id.to_s)
@@ -140,7 +161,7 @@ import ../../make-test.nix (
           node.succeeds('nodectl queue resume vps')
 
           services.wait_for_chain_state(@chain_id, state: :done)
-          services.wait_for_chain_progress(@chain_id, progress: 1)
+          services.wait_for_chain_progress(@chain_id, progress: 2)
           services.wait_for_no_confirmations(@chain_id)
 
           expect(
@@ -152,6 +173,14 @@ import ../../make-test.nix (
           expect(
             services.mariadb_scalar(sql: "SELECT status FROM transactions WHERE id = #{@transaction_id}")
           ).to eq('1')
+          completed_transactions = services.mariadb_json_rows(sql: <<~SQL)
+            SELECT JSON_OBJECT('done', done, 'status', status)
+            FROM transactions
+            WHERE transaction_chain_id = #{@chain_id}
+            ORDER BY id
+          SQL
+          expect(completed_transactions.map { |row| row.fetch('done') }).to all(eq(1))
+          expect(completed_transactions.map { |row| row.fetch('status') }).to all(eq(1))
           expect(
             services.mariadb_scalar(
               sql: <<~SQL
