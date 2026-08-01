@@ -294,10 +294,10 @@ let
     "sebastian/cli-parser" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "sebastian-cli-parser-48a4654fa5e48c1c81214e9930048a572d4b23ca";
+        name = "sebastian-cli-parser-eeb759ad3146b7096fb59c3195d39e071cd409e3";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/cli-parser/zipball/48a4654fa5e48c1c81214e9930048a572d4b23ca";
-          sha256 = "0rb7l29drxlgl2060nw1ng5x8lwlm16ipxgyggrkv6sn44fpy8kb";
+          url = "https://api.github.com/repos/sebastianbergmann/cli-parser/zipball/eeb759ad3146b7096fb59c3195d39e071cd409e3";
+          sha256 = "0znwsz89g43f2pi3qs3fcbgbazcm0rbqcww0p3xrnzg5aig2xji8";
         };
       };
     };
