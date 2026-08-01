@@ -157,7 +157,7 @@ import ../../make-test.nix (
         RUBY
       end
 
-      def create_scheduled_out_event(services)
+      def emit_scheduled_out_event(services)
         services.api_ruby_json(code: <<~RUBY)
           user = User.find(#{admin_user_id})
 
@@ -204,28 +204,29 @@ import ../../make-test.nix (
             mode: :active
           )
 
+          counts_before = {
+            events: Event.count,
+            deliveries: EventDelivery.count,
+            route_matches: EventRouteMatch.count
+          }
           event = VpsAdmin::API::Events.emit!(
             'user.test_notification',
             user: user,
             subject: 'Scheduled-out integration event',
             payload: { note: 'schedule integration payload' }
           )
-          deliveries = event.event_deliveries.to_a
-          matches = event.event_route_matches.to_a
-          raise 'Expected one delivery, got ' + deliveries.length.to_s unless deliveries.length == 1
-          raise 'Expected one route match, got ' + matches.length.to_s unless matches.length == 1
-
-          delivery = deliveries.first
-          match = matches.first
+          counts_after = {
+            events: Event.count,
+            deliveries: EventDelivery.count,
+            route_matches: EventRouteMatch.count
+          }
 
           puts JSON.dump(
-            event_id: event.id,
-            routing_state: event.routing_state,
-            delivery_state: delivery.state,
-            delivery_error: delivery.error_summary,
-            delivery_attempt_count: delivery.attempt_count,
-            match_state: match.time_interval_state,
-            match_snapshot: match.time_interval_snapshot
+            event_returned: !event.nil?,
+            count_deltas: counts_after.to_h do |key, value|
+              [key, value - counts_before.fetch(key)]
+            end,
+            route_hit_count: route.reload.hit_count
           )
         RUBY
       end
@@ -353,25 +354,17 @@ import ../../make-test.nix (
           wait_for_notification_deliveries(services, event.fetch('event_id'))
         end
 
-        it 'persists a scheduled-out match without dispatching it' do
+        it 'drops a scheduled-out match without dispatching it' do
           services.clear_mailpit
-          event = create_scheduled_out_event(services)
+          result = emit_scheduled_out_event(services)
 
-          expect(event.fetch('routing_state')).to eq('suppressed')
-          expect(event.fetch('delivery_state')).to eq('skipped')
-          expect(event.fetch('delivery_error')).to eq(
-            'route is outside its active time intervals'
+          expect(result.fetch('event_returned')).to be(false)
+          expect(result.fetch('count_deltas')).to eq(
+            'events' => 0,
+            'deliveries' => 0,
+            'route_matches' => 0
           )
-          expect(event.fetch('delivery_attempt_count')).to eq(0)
-          expect(event.fetch('match_state')).to eq('inactive')
-          expect(event.fetch('match_snapshot').fetch('state')).to eq('inactive')
-          expect(event.fetch('match_snapshot').fetch('assignments')).to contain_exactly(
-            include(
-              'name' => 'Inactive integration interval',
-              'mode' => 'active',
-              'matched' => false
-            )
-          )
+          expect(result.fetch('route_hit_count')).to eq(0)
           expect(services.mailpit_messages.fetch('messages')).to be_empty
         end
       end
