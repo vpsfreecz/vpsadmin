@@ -150,7 +150,8 @@
         vps_start: Transactions::Vps::Start.t_type,
         vps_umount: Transactions::Vps::Umount.t_type,
         maintenance_window_wait: Transactions::MaintenanceWindow::Wait.t_type,
-        maintenance_window_in_or_fail: Transactions::MaintenanceWindow::InOrFail.t_type
+        maintenance_window_in_or_fail: Transactions::MaintenanceWindow::InOrFail.t_type,
+        utils_no_op: Transactions::Utils::NoOp.t_type
       )
     RUBY
   end

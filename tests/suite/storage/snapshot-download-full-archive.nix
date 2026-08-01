@@ -105,7 +105,10 @@ import ../../make-test.nix (
             row.fetch('file_name')
           )
           expect(transactions.map { |row| row.fetch('handle') }).to eq(
-            [tx_types(services).fetch('download_snapshot')]
+            [
+              tx_types(services).fetch('download_snapshot'),
+              tx_types(services).fetch('utils_no_op')
+            ]
           )
           expect(transactions.first.fetch('queue')).to eq('general')
           expect(listing.join("\n")).to include(
