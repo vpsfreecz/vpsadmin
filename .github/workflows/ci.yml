@@ -28,6 +28,11 @@ on:
         options:
           - full
           - auto
+      stop_on_failure:
+        description: Stop scheduling after the first unexpected result
+        required: true
+        default: false
+        type: boolean
   schedule:
     - cron: "30 2 * * 0"
 
@@ -146,6 +151,7 @@ jobs:
             echo "- Filter: \`$filter\`"
             echo "- Selected scripts: $count"
             echo "- Reason: $reason"
+            echo "- Stop after first unexpected result: \`${{ github.event.inputs.stop_on_failure || 'false' }}\`"
             echo ""
             echo "<details><summary>Selected test scripts</summary>"
             echo ""
@@ -160,13 +166,29 @@ jobs:
         if: steps.select-tests.outputs.mode != 'skip'
         id: run-tests
         timeout-minutes: 720
+        env:
+          STOP_ON_FAILURE: ${{ github.event.inputs.stop_on_failure || 'false' }}
         run: |
           set -o pipefail
-          ./test-runner.sh test \
-            -f \
-            --jobs auto \
-            --filter "${{ steps.preview-tests.outputs.filter }}" \
-            | tee test.log
+
+          args=(
+            test
+            -f
+            --jobs auto
+            --filter "${{ steps.preview-tests.outputs.filter }}"
+          )
+
+          if [[ "$STOP_ON_FAILURE" == "true" ]]; then
+            args+=(--stop-on-failure)
+          fi
+
+          ./test-runner.sh "${args[@]}" | tee test.log
+
+      - name: Upload full test logs
+        if: (failure() || cancelled()) && steps.run-tests.outcome != 'skipped'
+        uses: vpsfreecz/vpsadminos/.github/actions/upload-test-logs@staging
+        with:
+          name: vpsadmin-test-logs-${{ github.run_id }}
 
       - name: Evaluate test results
         if: always() && steps.run-tests.outcome != 'skipped'
@@ -177,9 +199,3 @@ jobs:
       - name: Summarise test logs
         if: always() && steps.run-tests.outcome != 'skipped'
         uses: vpsfreecz/vpsadminos/.github/actions/summarise-test-logs@staging
-
-      - name: Upload full test logs
-        if: failure() && steps.run-tests.outcome != 'skipped'
-        uses: vpsfreecz/vpsadminos/.github/actions/upload-test-logs@staging
-        with:
-          name: vpsadmin-test-logs-${{ github.run_id }}
