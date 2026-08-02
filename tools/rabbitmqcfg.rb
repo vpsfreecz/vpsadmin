@@ -116,6 +116,15 @@ class Cli
   def user_perms(type, user)
     # permissions in order: configure, write, read
     case type
+    when 'api'
+      notification_exchange = 'vpsadmin\.notifications'
+      notification_queue = 'vpsadmin\.notifications\.(email|telegram|sms|webhook|grouping)'
+
+      [
+        "^(#{notification_exchange}|#{notification_queue})$",
+        "^(#{notification_exchange}|#{notification_queue})$",
+        "^#{notification_exchange}$"
+      ]
     when 'console'
       [
         '^(amq\\.gen.*|console:rpc|console:output:.+|console:[^:]+:(input|output|control))$',

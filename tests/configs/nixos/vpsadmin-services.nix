@@ -428,8 +428,8 @@ in
         address = "0.0.0.0";
         notifications.rabbitmq = {
           enable = true;
-          username = rabbitNotificationUser.user;
-          passwordFile = rabbitNotificationUser.passwordFile;
+          username = rabbitApiUser.user;
+          passwordFile = rabbitApiUser.passwordFile;
         };
         notifications.smtp = {
           enable = cfg.mailpit.enable;

@@ -281,12 +281,12 @@ in
       };
 
       notifications.rabbitmq = {
-        enable = mkEnableOption "Enable RabbitMQ wakeups for event delivery dispatchers";
+        enable = mkEnableOption "Enable RabbitMQ wakeups for event deliveries";
 
         username = mkOption {
           type = types.str;
-          default = "notification";
-          description = "RabbitMQ username for event delivery wakeups.";
+          default = "api";
+          description = "RabbitMQ username used by the API to publish event delivery wakeups.";
         };
 
         passwordFile = mkOption {
