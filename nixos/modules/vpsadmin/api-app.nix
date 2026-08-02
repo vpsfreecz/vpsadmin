@@ -141,8 +141,11 @@ in
     DBPASS=${
       optionalString (databaseConfig.passwordFile != null) "$(head -n1 ${databaseConfig.passwordFile})"
     }
-    cp -f ${databaseYml} "${stateDirectory}/config/database.yml"
-    sed -e "s,#dbpass#,$DBPASS,g" -i "${stateDirectory}/config/database.yml"
-    chmod 440 "${stateDirectory}/config/database.yml"
+    databaseYmlTmp="$(${pkgs.coreutils}/bin/mktemp "${stateDirectory}/config/.database.yml.XXXXXX")"
+    trap '${pkgs.coreutils}/bin/rm -f "$databaseYmlTmp"' EXIT
+    sed -e "s,#dbpass#,$DBPASS,g" ${databaseYml} >"$databaseYmlTmp"
+    chmod 440 "$databaseYmlTmp"
+    mv -f "$databaseYmlTmp" "${stateDirectory}/config/database.yml"
+    trap - EXIT
   '';
 }
