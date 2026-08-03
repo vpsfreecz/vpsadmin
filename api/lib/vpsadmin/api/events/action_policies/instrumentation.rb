@@ -59,14 +59,16 @@ module VpsAdmin::API::Events::ActionPolicies
   module ExternalPolicyExecution
     module_function
 
-    def build(owner)
-      mappings = owner.external_event_policy_methods
-      validate!(owner, mappings)
+    def build(owner, method_owner: owner, mappings: owner.external_event_policy_methods)
+      validate!(owner, method_owner, mappings)
+      normalized_mappings = mappings.to_h do |method_name, policy_name|
+        [method_name.to_sym, policy_name.to_s.dup.freeze]
+      end.freeze
 
       Module.new do
-        define_singleton_method(:external_event_policy_methods) { mappings }
+        define_singleton_method(:external_event_policy_methods) { normalized_mappings }
 
-        mappings.each do |method_name, policy_name|
+        normalized_mappings.each do |method_name, policy_name|
           define_method(method_name) do |*args, **kwargs, &block|
             policies = VpsAdmin::API::Events::ActionPolicies
 
@@ -78,7 +80,7 @@ module VpsAdmin::API::Events::ActionPolicies
       end
     end
 
-    def validate!(owner, mappings)
+    def validate!(owner, method_owner, mappings)
       unless mappings.is_a?(Hash) && mappings.any?
         raise ArgumentError, "#{owner} must declare external event policy methods"
       end
@@ -93,7 +95,7 @@ module VpsAdmin::API::Events::ActionPolicies
         raise ArgumentError, "#{owner} declares duplicate external event policies"
       end
 
-      missing_methods = method_names.reject { |name| owner.method_defined?(name) }
+      missing_methods = method_names.reject { |name| method_owner.method_defined?(name) }
       if missing_methods.any?
         raise ArgumentError,
               "#{owner} does not implement external event methods #{missing_methods.join(', ')}"
@@ -107,16 +109,6 @@ module VpsAdmin::API::Events::ActionPolicies
 
       raise ArgumentError,
             "#{owner} has undeclared external event policies #{missing_policies.join(', ')}"
-    end
-  end
-
-  module NotificationCallbackExecution
-    def apply_sms_gateway_callback!(*args, **kwargs)
-      policies = VpsAdmin::API::Events::ActionPolicies
-
-      policies.capture(
-        policies.external_policy('notifications.sms_callback')
-      ) { super(*args, **kwargs) }
     end
   end
 end
