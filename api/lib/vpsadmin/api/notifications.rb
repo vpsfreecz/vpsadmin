@@ -76,7 +76,9 @@ module VpsAdmin::API
         def load(path = default_path)
           return {} unless File.exist?(path)
 
-          YAML.safe_load_file(path, aliases: true) || {}
+          config = YAML.safe_load_file(path, aliases: true) || {}
+          DeliveryActions.validate_deployment_contract!(config['delivery_contract'])
+          config
         end
 
         def default_path

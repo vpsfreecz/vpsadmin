@@ -11,6 +11,7 @@ let
   telegramCfg = config.vpsadmin.notifications.telegram;
   smsCfg = config.vpsadmin.notifications.sms;
   rateLimitsCfg = config.vpsadmin.notifications.rateLimits;
+  deliveryActionDefaults = import ../notification-action-defaults.nix;
   smtpCfg = cfg.notifications.smtp;
   vpsadminRoot = toString (./../../../../.);
   notificationsConfigEnabled =
@@ -112,6 +113,7 @@ let
         rate_limits = {
           defaults = rateLimitsCfg.defaults;
         };
+        delivery_contract.action_defaults = deliveryActionDefaults;
       }
       // optionalAttrs smtpCfg.enable {
         smtp = smtpConfig;

@@ -11,6 +11,7 @@ let
   telegramCfg = config.vpsadmin.notifications.telegram;
   smsCfg = config.vpsadmin.notifications.sms;
   rateLimitsCfg = config.vpsadmin.notifications.rateLimits;
+  deliveryActionDefaults = import ./notification-action-defaults.nix;
   vpsadminRoot = toString (./../../..);
 
   apiAppFor =
@@ -39,6 +40,7 @@ let
 
   positiveInt = types.addCheck types.int (value: value >= 1);
   nonNegativeInt = types.addCheck types.int (value: value >= 0);
+  actionName = types.addCheck types.str (value: builtins.match "[a-z][a-z0-9_-]*" value != null);
   telegramBotTokenCredential = "telegram-bot-token";
   smsCallbackTokenCredential = "sms-callback-token";
   smsGatewayTokenCredential = gateway: "sms-gateway-${gateway.name}-token";
@@ -108,6 +110,10 @@ let
       };
       rate_limits = {
         defaults = rateLimitsCfg.defaults;
+      };
+      delivery_contract = {
+        actions = cfg.actions;
+        action_defaults = deliveryActionDefaults;
       };
       telegram = {
         enabled = telegramCfg.enable;
@@ -316,19 +322,15 @@ in
       };
 
       actions = mkOption {
-        type = types.listOf (
-          types.enum [
-            "email"
-            "telegram"
-            "webhook"
-            "sms"
-          ]
-        );
+        type = types.listOf actionName;
         default = [
           "email"
           "webhook"
         ];
-        description = "Notification actions to dispatch.";
+        description = ''
+          Notification actions to dispatch. Names must be registered by the
+          selected package and are validated when its configuration is loaded.
+        '';
       };
 
       pollInterval = mkOption {
@@ -368,7 +370,7 @@ in
       email = {
         concurrency = mkOption {
           type = positiveInt;
-          default = 2;
+          default = deliveryActionDefaults.email.concurrency;
           description = ''
             Number of concurrent e-mail delivery workers. Per-domain and
             per-worker throttles are shared by workers in one dispatcher
@@ -399,7 +401,7 @@ in
       telegram = {
         concurrency = mkOption {
           type = positiveInt;
-          default = 2;
+          default = deliveryActionDefaults.telegram.concurrency;
           description = ''
             Number of concurrent Telegram delivery workers.
           '';
@@ -410,7 +412,7 @@ in
       sms = {
         concurrency = mkOption {
           type = positiveInt;
-          default = 1;
+          default = deliveryActionDefaults.sms.concurrency;
           description = ''
             Number of concurrent SMS delivery workers.
           '';
@@ -470,7 +472,7 @@ in
       webhook = {
         concurrency = mkOption {
           type = positiveInt;
-          default = 4;
+          default = deliveryActionDefaults.webhook.concurrency;
           description = ''
             Number of concurrent webhook delivery workers.
           '';
@@ -500,6 +502,10 @@ in
 
   config = mkIf cfg.enable {
     assertions = [
+      {
+        assertion = length (unique cfg.actions) == length cfg.actions;
+        message = "vpsadmin.notificationDispatcher.actions must not contain duplicates";
+      }
       {
         assertion = !(elem "telegram" cfg.actions) || telegramCfg.enable;
         message = "telegram notification dispatching requires vpsadmin.notifications.telegram.enable";

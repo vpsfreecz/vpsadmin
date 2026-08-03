@@ -569,6 +569,46 @@ module VpsAdmin::API::Notifications
       @classes.transform_values(&:default_rate_limits)
     end
 
+    def deployment_defaults
+      @classes.transform_values do |action_class|
+        {
+          'concurrency' => action_class.default_concurrency,
+          'rate_limits' => action_class.default_rate_limits
+        }.freeze
+      end.freeze
+    end
+
+    def validate_deployment_contract!(contract)
+      return if contract.nil?
+      raise ArgumentError, 'notification delivery contract must be a mapping' unless contract.is_a?(Hash)
+
+      actions = Array(contract.fetch('actions', [])).map(&:to_s)
+      unknown_actions = actions.reject { |name| known?(name) }
+      if unknown_actions.any?
+        raise ArgumentError,
+              "unknown notification delivery actions #{unknown_actions.uniq.join(', ')}"
+      end
+
+      declared_defaults = contract.fetch('action_defaults', {})
+      unless declared_defaults.is_a?(Hash)
+        raise ArgumentError, 'notification delivery action defaults must be a mapping'
+      end
+
+      unknown_defaults = declared_defaults.keys.map(&:to_s) - names
+      if unknown_defaults.any?
+        raise ArgumentError,
+              "defaults declared for unknown notification actions #{unknown_defaults.join(', ')}"
+      end
+
+      normalized_defaults = declared_defaults.to_h do |name, values|
+        [name.to_s, normalize_deployment_defaults(name, values)]
+      end
+      expected_defaults = deployment_defaults.slice(*normalized_defaults.keys)
+      return if normalized_defaults == expected_defaults
+
+      raise ArgumentError, 'Nix notification delivery defaults differ from the Ruby registry'
+    end
+
     def template_capable?(name)
       @classes.fetch(name.to_s).template_capable
     rescue KeyError
@@ -576,7 +616,8 @@ module VpsAdmin::API::Notifications
     end
 
     def validate_class!(action_class)
-      unless action_class < Base && action_class.action_name.present? && action_class.action_label.present? &&
+      unless action_class < Base && action_class.action_name&.match?(/\A[a-z][a-z0-9_-]*\z/) &&
+             action_class.action_label.present? &&
              action_class.queue.present? && action_class.routing_key.present? &&
              action_class.config_section.present? && action_class.default_concurrency.to_i > 0 &&
              action_class.default_rate_limits&.keys&.sort == RateLimits.periods.sort &&
@@ -586,6 +627,26 @@ module VpsAdmin::API::Notifications
              action_class.instance_method(:deliver).owner != Base
         raise ArgumentError, "incomplete notification delivery action #{action_class}"
       end
+    end
+
+    def normalize_deployment_defaults(name, values)
+      unless values.is_a?(Hash) && values.keys.map(&:to_s).sort == %w[concurrency rate_limits]
+        raise ArgumentError, "invalid deployment defaults for notification action #{name}"
+      end
+
+      rate_limits = values.fetch('rate_limits') { values.fetch(:rate_limits) }
+      unless rate_limits.is_a?(Hash)
+        raise ArgumentError, "invalid rate limit defaults for notification action #{name}"
+      end
+
+      {
+        'concurrency' => Integer(values.fetch('concurrency') { values.fetch(:concurrency) }),
+        'rate_limits' => rate_limits.to_h do |period, count|
+          [period.to_s, Integer(count)]
+        end.freeze
+      }.freeze
+    rescue ArgumentError, KeyError, TypeError
+      raise ArgumentError, "invalid deployment defaults for notification action #{name}"
     end
 
     def valid_local_template_metadata?(action_class)
@@ -610,7 +671,8 @@ module VpsAdmin::API::Notifications
         end
       end
     end
-    private_class_method :validate_class!, :valid_local_template_metadata?,
+    private_class_method :normalize_deployment_defaults, :validate_class!,
+                         :valid_local_template_metadata?,
                          :validate_template_context_fallbacks!
   end
 end

@@ -7,6 +7,7 @@ with lib;
 let
   telegramCfg = config.vpsadmin.notifications.telegram;
   smsCfg = config.vpsadmin.notifications.sms;
+  deliveryActionDefaults = import ./notification-action-defaults.nix;
   positiveInt = types.addCheck types.int (value: value >= 1);
   nonNegativeInt = types.addCheck types.int (value: value >= 0);
   rateLimitDefaultsType = types.submodule {
@@ -38,32 +39,7 @@ in
     rateLimits = {
       defaults = mkOption {
         type = types.attrsOf rateLimitDefaultsType;
-        default = {
-          email = {
-            minute = 30;
-            hour = 300;
-            day = 2000;
-            week = 5000;
-          };
-          webhook = {
-            minute = 60;
-            hour = 1000;
-            day = 10000;
-            week = 25000;
-          };
-          telegram = {
-            minute = 20;
-            hour = 200;
-            day = 1000;
-            week = 2500;
-          };
-          sms = {
-            minute = 3;
-            hour = 30;
-            day = 150;
-            week = 300;
-          };
-        };
+        default = mapAttrs (_name: metadata: metadata.rate_limits) deliveryActionDefaults;
         description = ''
           Default per-user event delivery rate limits. Limits count delivery
           attempts when the external provider request starts, including
