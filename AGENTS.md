@@ -126,6 +126,9 @@ not prove that external documentation remains current.
   Declare all models changed by custom code beside that action or operation;
   policies for read-only, bookkeeping, transport, or semantic event paths must
   include a concrete reason.
+- Keep policy kinds and their valid option combinations closed and validated.
+  External boundaries must derive their wrappers and policy names from one
+  owner declaration instead of repeating method-to-policy mappings.
 - Resource events are typed `<logical_resource>.created`, `.updated`, and
   `.deleted` events. Do not add generic `resource.*` event types, and do not
   reuse these reserved names for a notification/workflow payload with a
@@ -164,7 +167,9 @@ not prove that external documentation remains current.
   internal redaction beside the owning model with `event_delete_cascades` and
   `event_redact`. An internal transaction concern with no public resource must
   declare its account path with `operation_event_owner`; do not add it to a
-  central class-name resolver. Never expose secrets, tokens, private/key
+  central class-name resolver. Validate redacted fields against the owning
+  model's auditable attributes during catalog finalization. Never expose
+  secrets, tokens, private/key
   material, opaque configuration, notification-template bodies, delivery
   payloads, or VPS user-data content in event changes.
 - Use explicit recorder helpers for bulk SQL writes that skip Active Record

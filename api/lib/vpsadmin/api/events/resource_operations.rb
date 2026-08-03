@@ -841,6 +841,7 @@ module VpsAdmin::API::Events::ResourceOperations
   private_class_method :declaration_metadata
 
   def finalize_catalog!
+    validate_model_redactions!
     catalog = {}
 
     @declarations.group_by do |declaration|
@@ -864,12 +865,19 @@ module VpsAdmin::API::Events::ResourceOperations
       end
 
       resource_classes = declarations.map(&:resource_class)
+      model = reference.resource_class.model.base_class
+      redacted_fields = declarations.flat_map(&:redact).uniq.sort.freeze
+      validate_redaction_fields!(
+        model,
+        redacted_fields,
+        "resource_events for #{resource_classes.map(&:name).join(', ')}"
+      )
       actions = (
         default_actions_for(resource_classes) +
         declarations.flat_map(&:additional_actions)
       ).uniq.sort
       catalog[model_name] = CatalogEntry.new(
-        model: reference.resource_class.model.base_class,
+        model:,
         model_name:,
         api_resources: resource_classes.uniq.freeze,
         actions: actions.freeze,
@@ -878,7 +886,7 @@ module VpsAdmin::API::Events::ResourceOperations
         logical_name:,
         owner: resolver_for(reference.owner),
         vps: resolver_for(reference.vps),
-        redact: declarations.flat_map(&:redact).uniq.sort.freeze
+        redact: redacted_fields
       )
     end
 
@@ -896,6 +904,26 @@ module VpsAdmin::API::Events::ResourceOperations
     @resource_catalog = catalog.freeze
   end
   private_class_method :finalize_catalog!
+
+  def validate_model_redactions!
+    ::ApplicationRecord.descendants.each do |model|
+      fields = model.event_redacted_fields
+      next if fields.empty?
+
+      validate_redaction_fields!(model, fields, "#{model.name}.event_redact")
+    end
+  end
+  private_class_method :validate_model_redactions!
+
+  def validate_redaction_fields!(model, fields, declaration)
+    unknown_fields = fields - auditable_attribute_names(model)
+    return if unknown_fields.empty?
+
+    raise ArgumentError,
+          "#{declaration} contains non-auditable model attributes: " \
+          "#{unknown_fields.join(', ')}"
+  end
+  private_class_method :validate_redaction_fields!
 
   def declarations_compatible?(left, right, logical_name:)
     right_logical_name = right.logical_name ||

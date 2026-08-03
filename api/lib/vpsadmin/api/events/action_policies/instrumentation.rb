@@ -56,43 +56,57 @@ module VpsAdmin::API::Events::ActionPolicies
     end
   end
 
-  module OAuth2Execution
-    def handle_get_authorize(**kwargs)
-      capture_oauth2('oauth2.authorize_get') { super(**kwargs) }
-    end
+  module ExternalPolicyExecution
+    module_function
 
-    def handle_post_authorize(**kwargs)
-      capture_oauth2('oauth2.authorize_post') { super(**kwargs) }
-    end
+    def build(owner)
+      mappings = owner.external_event_policy_methods
+      validate!(owner, mappings)
 
-    def get_tokens(authorization, sinatra_request)
-      capture_oauth2('oauth2.issue_tokens') do
-        super(authorization, sinatra_request)
+      Module.new do
+        define_singleton_method(:external_event_policy_methods) { mappings }
+
+        mappings.each do |method_name, policy_name|
+          define_method(method_name) do |*args, **kwargs, &block|
+            policies = VpsAdmin::API::Events::ActionPolicies
+
+            policies.capture(policies.external_policy(policy_name)) do
+              super(*args, **kwargs, &block)
+            end
+          end
+        end
       end
     end
 
-    def refresh_tokens(authorization, sinatra_request)
-      capture_oauth2('oauth2.refresh_tokens') do
-        super(authorization, sinatra_request)
+    def validate!(owner, mappings)
+      unless mappings.is_a?(Hash) && mappings.any?
+        raise ArgumentError, "#{owner} must declare external event policy methods"
       end
-    end
 
-    def handle_post_revoke(sinatra_request, token, token_type_hint: nil, client: nil)
-      capture_oauth2('oauth2.revoke') do
-        super(
-          sinatra_request,
-          token,
-          token_type_hint:,
-          client:
-        )
+      method_names = mappings.keys.map(&:to_sym)
+      if method_names.uniq.length != mappings.length
+        raise ArgumentError, "#{owner} declares duplicate external event policy methods"
       end
-    end
 
-    protected
+      policy_names = mappings.values.map(&:to_s)
+      if policy_names.uniq.length != mappings.length
+        raise ArgumentError, "#{owner} declares duplicate external event policies"
+      end
 
-    def capture_oauth2(name, &)
+      missing_methods = method_names.reject { |name| owner.method_defined?(name) }
+      if missing_methods.any?
+        raise ArgumentError,
+              "#{owner} does not implement external event methods #{missing_methods.join(', ')}"
+      end
+
       policies = VpsAdmin::API::Events::ActionPolicies
-      policies.capture(policies.external_policy(name), &)
+      missing_policies = policy_names.reject do |name|
+        policies.external_policies.has_key?(name)
+      end
+      return if missing_policies.empty?
+
+      raise ArgumentError,
+            "#{owner} has undeclared external event policies #{missing_policies.join(', ')}"
     end
   end
 

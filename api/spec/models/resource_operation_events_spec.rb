@@ -757,6 +757,82 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
       .to raise_error(ArgumentError, /already declared/)
   end
 
+  it 'rejects unsupported action policy kinds and ignored policy options' do
+    action = Class.new(HaveAPI::Action)
+    operation = Class.new(VpsAdmin::API::Operations::Base)
+    policies = VpsAdmin::API::Events::ActionPolicies
+
+    expect do
+      action.event_policy(:resorce, models: [::OsFamily])
+    end.to raise_error(ArgumentError, /unsupported event policy kind :resorce/)
+
+    expect do
+      operation.event_policy(
+        :read,
+        models: [::OsFamily],
+        reason: 'invalid operation policy spec',
+        atomic: false
+      )
+    end.to raise_error(ArgumentError, /read event policy does not capture models/)
+
+    expect do
+      policies.register_external(
+        'spec.invalid_atomic_policy',
+        kind: :transaction_chain,
+        reason: 'invalid external policy spec',
+        atomic: true
+      )
+    end.to raise_error(ArgumentError, /transaction_chain event policy must be non-atomic/)
+
+    expect do
+      policies.register_external(
+        'spec.invalid_resource_policy',
+        kind: :resource,
+        atomic: false
+      )
+    end.to raise_error(ArgumentError, /resource event policy requires at least one model/)
+  end
+
+  it 'validates model event redactions during catalog finalization' do
+    original_fields = Event.event_redacted_fields
+    Event.instance_variable_set(
+      :@event_redacted_fields,
+      (original_fields + ['missing_from_events']).freeze
+    )
+
+    expect do
+      described_class.send(:finalize_catalog!)
+    end.to raise_error(
+      ArgumentError,
+      /Event\.event_redact contains non-auditable model attributes: missing_from_events/
+    )
+  ensure
+    Event.instance_variable_set(:@event_redacted_fields, original_fields)
+    described_class.send(:finalize_catalog!) if original_fields
+  end
+
+  it 'validates resource event redactions during catalog finalization' do
+    declarations = described_class.instance_variable_get(:@declarations)
+    index = declarations.index do |declaration|
+      declaration.resource_class == VpsAdmin::API::Resources::User
+    end
+    original = declarations.fetch(index)
+    declarations[index] = described_class::Declaration.new(
+      **original.to_h,
+      redact: (original.redact + ['missing_from_users']).freeze
+    )
+
+    expect do
+      described_class.send(:finalize_catalog!)
+    end.to raise_error(
+      ArgumentError,
+      /resource_events for .*User.*non-auditable model attributes: missing_from_users/
+    )
+  ensure
+    declarations[index] = original if declarations && index && original
+    described_class.send(:finalize_catalog!) if original
+  end
+
   it 'accepts repeated external policies only when they are identical' do
     policies = VpsAdmin::API::Events::ActionPolicies
     name = 'spec.external_policy'
@@ -921,10 +997,46 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
       reason: include('feedback event')
     )
 
+    oauth2_config = VpsAdmin::API::Authentication::OAuth2Config
+    oauth2_mappings = oauth2_config.external_event_policy_methods
+    oauth2_execution = policies.external_policy_execution(oauth2_config)
+
+    expect(oauth2_mappings.values).to contain_exactly(
+      'oauth2.authorize_get',
+      'oauth2.authorize_post',
+      'oauth2.issue_tokens',
+      'oauth2.refresh_tokens',
+      'oauth2.revoke'
+    )
+    expect(policies.external_policies.keys.grep(/\Aoauth2\./))
+      .to match_array(oauth2_mappings.values)
+    expect(oauth2_execution.external_event_policy_methods).to equal(oauth2_mappings)
+    expect(oauth2_execution.instance_methods(false)).to match_array(oauth2_mappings.keys)
     expect(VpsAdmin::API::Authentication::OAuth2Config.ancestors)
-      .to include(policies::OAuth2Execution)
+      .to include(oauth2_execution)
     expect(VpsAdmin::API::Notifications.singleton_class.ancestors)
       .to include(policies::NotificationCallbackExecution)
+  end
+
+  it 'rejects incomplete external policy instrumentation mappings' do
+    policies = VpsAdmin::API::Events::ActionPolicies
+    missing_method = Class.new do
+      def self.external_event_policy_methods
+        { missing_callback: 'oauth2.authorize_get' }
+      end
+    end
+    missing_policy = Class.new do
+      def self.external_event_policy_methods
+        { callback: 'spec.missing_external_policy' }
+      end
+
+      def callback; end
+    end
+
+    expect { policies::ExternalPolicyExecution.build(missing_method) }
+      .to raise_error(ArgumentError, /does not implement.*missing_callback/)
+    expect { policies::ExternalPolicyExecution.build(missing_policy) }
+      .to raise_error(ArgumentError, /undeclared external event policies.*spec\.missing/)
   end
 
   it 'registers only real callback-bypassing delete cascades' do
@@ -1259,8 +1371,12 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
         [record, marker]
       end
     end
+    boundary_base.define_singleton_method(:external_event_policy_methods) do
+      { handle_post_authorize: 'oauth2.authorize_post' }
+    end
+    execution = VpsAdmin::API::Events::ActionPolicies::ExternalPolicyExecution.build(boundary_base)
     boundary = Class.new(boundary_base) do
-      prepend VpsAdmin::API::Events::ActionPolicies::OAuth2Execution
+      prepend execution
     end
     label = "OAuth operation capture #{Process.pid}"
     marker = Object.new
