@@ -4,6 +4,7 @@ module VpsAdmin::API::Resources
   class OutageUpdate < HaveAPI::Resource
     desc 'Browse outage updates'
     model ::OutageUpdate
+    resource_events topic: :outages, audience: :admin
 
     params(:texts) do
       ::Language.all.each do |lang|
@@ -121,6 +122,15 @@ module VpsAdmin::API::Resources
     end
 
     class Create < HaveAPI::Actions::Default::Create
+      event_policy :resource,
+                   models: [
+                     ::Outage,
+                     ::OutageExport,
+                     ::OutageTranslation,
+                     ::OutageUpdate,
+                     ::OutageUser,
+                     ::OutageVps
+                   ]
       include VpsAdmin::API::Resources::Outage::Helpers
 
       desc 'Create outage update'

@@ -2,6 +2,7 @@ module VpsAdmin::API::Resources
   class SecurityAdvisoryCve < HaveAPI::Resource
     desc 'Browse and manage security advisory CVEs'
     model ::SecurityAdvisoryCve
+    resource_events topic: :security, audience: :admin
 
     params(:editable) do
       resource VpsAdmin::API::Resources::SecurityAdvisory,

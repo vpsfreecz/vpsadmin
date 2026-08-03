@@ -110,6 +110,9 @@ module VpsAdmin::API::Plugins::Requests
       end
 
       res.define_action(:Resolve) do
+        event_policy :transaction_chain,
+                     reason: 'resolution is executed by a transaction chain',
+                     atomic: false
         http_method :post
         route '{%{resource}_id}/resolve'
         desc 'Resolve user request'

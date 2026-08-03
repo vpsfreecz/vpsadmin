@@ -1,4 +1,5 @@
 class NodeEbpfProgram < ApplicationRecord
+  event_delete_cascades :program_objects, :program_links
   belongs_to :node_kernel_evidence, inverse_of: :ebpf_programs
   has_one :node, through: :node_kernel_evidence
   delegate :snapshot_type, :snapshot_revision, :observed_at, to: :node_kernel_evidence

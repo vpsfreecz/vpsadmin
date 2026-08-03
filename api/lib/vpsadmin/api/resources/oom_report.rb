@@ -106,6 +106,8 @@ module VpsAdmin::API::Resources
     end
 
     class MuteSimilar < HaveAPI::Action
+      event_policy :resource,
+                   models: [::EventRoute, ::EventRouteMatcher, ::NotificationReceiver]
       desc 'Create a mute route matching values from this OOM report'
       route '{%{resource}_id}/mute_similar'
       http_method :post

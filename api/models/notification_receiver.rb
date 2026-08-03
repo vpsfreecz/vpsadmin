@@ -1,4 +1,6 @@
 class NotificationReceiver < ApplicationRecord
+  event_delete_cascades :notification_receiver_targets,
+                        :notification_receiver_actions
   DEFAULT_EMAIL_LABEL = 'Default'.freeze
   LEGACY_DEFAULT_EMAIL_LABEL = 'Default e-mail'.freeze
   DEFAULT_MUTE_LABEL = 'Mute'.freeze

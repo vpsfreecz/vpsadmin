@@ -3,6 +3,7 @@
 module VpsAdmin::API::Resources
   class NodeTransferConnection < HaveAPI::Resource
     model ::NodeTransferConnection
+    resource_events topic: :infrastructure, audience: :admin
     desc 'Manage pairwise transfer-only node interconnects'
 
     params(:common) do

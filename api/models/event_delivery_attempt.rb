@@ -1,4 +1,5 @@
 class EventDeliveryAttempt < ApplicationRecord
+  event_redact :response_body, :response_headers
   STATE_LABELS = {
     'running' => 'running',
     'succeeded' => 'succeeded',

@@ -2,6 +2,10 @@ module VpsAdmin::API::Resources
   class NetworkInterface < HaveAPI::Resource
     desc 'Manage VPS network interfaces'
     model ::NetworkInterface
+    resource_events topic: :network,
+                    audience: :account,
+                    owner: %i[vps user],
+                    vps: :vps
 
     params(:all) do
       id :id, label: 'ID', desc: 'Interface ID'

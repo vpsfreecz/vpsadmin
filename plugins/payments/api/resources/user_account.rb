@@ -2,6 +2,7 @@ module VpsAdmin::API::Resources
   class UserAccount < HaveAPI::Resource
     desc "Manage user's payment settings"
     model ::UserAccount
+    resource_events topic: :payments, audience: :account, owner: :user
 
     params(:editable) do
       integer :monthly_payment

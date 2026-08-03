@@ -1,4 +1,5 @@
 class ObjectHistory < ApplicationRecord
+  event_redact :event_data
   belongs_to :tracked_object, polymorphic: true
   belongs_to :user
   belongs_to :user_session

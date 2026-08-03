@@ -700,6 +700,87 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
                        "Uncatalogued public CRUD actions:\n#{missing.sort.join("\n")}"
   end
 
+  it 'derives the catalog from owning resource classes' do
+    catalog = described_class.resource_catalog
+
+    expect(catalog.fetch('User').api_resources).to contain_exactly(
+      VpsAdmin::API::Resources::User
+    )
+    expect(catalog.fetch('MigrationPlan').actions)
+      .to contain_exactly('created', 'updated', 'deleted')
+    expect(catalog.fetch('UserDevice').actions)
+      .to contain_exactly('created', 'deleted')
+    expect(catalog.fetch('SysConfig').actions).to contain_exactly('updated')
+  end
+
+  it 'resolves operation owners from resource and internal model declarations' do
+    dataset = instance_double(Dataset, user: SpecSeed.user)
+    dataset_in_pool = instance_double(DatasetInPool, dataset:)
+    dataset_tree = instance_double(DatasetTree, dataset_in_pool:)
+    branch = instance_double(Branch, dataset_tree:)
+
+    expect(DatasetInPool.operation_event_owner_for(dataset_in_pool))
+      .to eq(SpecSeed.user)
+    expect(Branch.operation_event_owner_for(branch)).to eq(SpecSeed.user)
+
+    host_address = instance_double(HostIpAddress, current_owner: SpecSeed.user)
+    expect(HostIpAddress.operation_event_owner_for(host_address))
+      .to eq(SpecSeed.user)
+    expect(described_class.catalog_entry_for(HostIpAddress).owner).to be_nil
+
+    if SpecPlugins.enabled?(:outage_reports)
+      handler = instance_double(OutageHandler, user: SpecSeed.user)
+      expect(described_class.catalog_entry_for(OutageHandler).owner.call(handler))
+        .to eq(SpecSeed.user)
+    end
+  end
+
+  it 'rejects duplicate resource and action policy declarations' do
+    expect do
+      VpsAdmin::API::Resources::User.resource_events(
+        topic: :account,
+        audience: :account,
+        owner: :self
+      )
+    end.to raise_error(ArgumentError, /already declared/)
+
+    expect do
+      VpsAdmin::API::Resources::User::Update.event_policy(
+        :resource,
+        models: [::User]
+      )
+    end.to raise_error(ArgumentError, /already declared/)
+
+    expect { Event.event_redact(:parameters) }
+      .to raise_error(ArgumentError, /already declared/)
+    expect { User.event_delete_cascades(:user_notification_rate_limits) }
+      .to raise_error(ArgumentError, /already declared/)
+  end
+
+  it 'accepts repeated external policies only when they are identical' do
+    policies = VpsAdmin::API::Events::ActionPolicies
+    name = 'spec.external_policy'
+    attributes = {
+      kind: :read,
+      reason: 'architecture spec',
+      atomic: false
+    }
+
+    first = policies.register_external(name, **attributes)
+
+    expect(policies.register_external(name, **attributes)).to equal(first)
+    expect do
+      policies.register_external(
+        name,
+        kind: :internal_state,
+        reason: 'conflicting architecture spec',
+        atomic: false
+      )
+    end.to raise_error(ArgumentError, /conflicts with its existing declaration/)
+  ensure
+    policies.instance_variable_get(:@external)&.delete(name) if policies && name
+  end
+
   it 'maps every generic blocking action to its target model and CRUD intent' do
     ApiAppHelper.app_instance
 
@@ -1168,11 +1249,7 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
       end
     end
     stub_const('VpsAdmin::API::Operations::AuditSpecOAuthMutation', operation)
-    VpsAdmin::API::Events::ActionPolicies.register_operation(
-      operation.name,
-      kind: :resource,
-      models: %w[OsFamily]
-    )
+    operation.event_policy :resource, models: [::OsFamily]
 
     boundary_base = Class.new do
       def handle_post_authorize(operation:, label:, marker:, fail_after: false)
@@ -1262,11 +1339,7 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
       end
     end
     stub_const('VpsAdmin::API::Operations::AuditSpecFailure', operation)
-    VpsAdmin::API::Events::ActionPolicies.register_operation(
-      operation.name,
-      kind: :resource,
-      models: %w[OsFamily]
-    )
+    operation.event_policy :resource, models: [::OsFamily]
     label = "Audit operation rollback #{Process.pid}"
     event_count = Event.where(
       event_type: 'os_family.created',

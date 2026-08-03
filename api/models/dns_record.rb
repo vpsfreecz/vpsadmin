@@ -3,6 +3,8 @@ require_relative 'confirmable'
 require_relative 'dns_zone_record_set_validator'
 
 class DnsRecord < ApplicationRecord
+  event_delete_cascades :update_token
+
   RECORD_TYPES = %w[A AAAA CAA CNAME DS MX NS PTR SRV SSHFP TLSA TXT].freeze
 
   CAA_PROPERTY_TAGS = %w[

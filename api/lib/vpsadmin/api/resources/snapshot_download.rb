@@ -1,6 +1,7 @@
 module VpsAdmin::API::Resources
   class SnapshotDownload < HaveAPI::Resource
     model ::SnapshotDownload
+    resource_events topic: :storage, audience: :account, owner: :user
     desc 'Manage download links of dataset snapshots'
 
     params(:input) do

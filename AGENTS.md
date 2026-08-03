@@ -122,9 +122,10 @@ not prove that external documentation remains current.
 - Read `doc/events.mdwn` before adding or changing an API mutation, operation,
   authentication flow, callback, bulk write, or transaction chain.
 - Every mutating HaveAPI action and non-action mutation entry point must have
-  an `ActionPolicies` classification. Register all models changed by custom
-  code; classifications for read-only, bookkeeping, transport, or semantic
-  event paths must include a concrete reason.
+  an `event_policy` declaration or a validated standard-action inference.
+  Declare all models changed by custom code beside that action or operation;
+  policies for read-only, bookkeeping, transport, or semantic event paths must
+  include a concrete reason.
 - Resource events are typed `<logical_resource>.created`, `.updated`, and
   `.deleted` events. Do not add generic `resource.*` event types, and do not
   reuse these reserved names for a notification/workflow payload with a
@@ -135,17 +136,20 @@ not prove that external documentation remains current.
 - Consumers that require a complete external audit stream must configure an
   explicit catch-all route to a durable receiver and retain delivered events
   themselves. Do not use unconditional Event persistence to bypass routing.
-- Add generated CRUD types only through the explicit public resource catalog.
-  Each entry must reference a mounted model-backed HaveAPI resource and declare
-  its supported actions, logical name, stable topic, and `account` or `admin`
-  audience. Plugin resources register entries in their owning plugin.
-- Do not catalog internal storage-placement/clone rows, authentication
+- Add generated CRUD types only with `resource_events` beside a mounted
+  model-backed HaveAPI resource. Declare its logical name when needed, stable
+  topic, `account` or `admin` audience, and ownership/context policy. Mounted
+  default CRUD actions are inferred; reserve `additional_actions` for emitted
+  outcomes outside those defaults. Plugin resources keep declarations in their
+  owning plugin.
+- Do not declare internal storage-placement/clone rows, authentication
   implementation rows, translations, joins, delivery internals, accounting,
-  telemetry, or read-only projections. Uncataloged callbacks are intentionally
-  ignored; direct uncataloged resource emission is an error.
-- Account catalog entries require an explicit owner resolver and publish roles
-  `account, admin`; admin entries publish role `admin`. Event Type API tests
-  must cover ordinary/support/admin visibility and matching filtered counts.
+  telemetry, or read-only projections. Callbacks for undeclared resources are
+  intentionally ignored; direct undeclared resource emission is an error.
+- Account resource declarations require an explicit owner resolver and publish
+  roles `account, admin`; admin declarations publish role `admin`. Event Type
+  API tests must cover ordinary/support/admin visibility and matching filtered
+  counts.
 - Describe and match logical emitted values, not database storage values:
   enums use their symbolic strings and serialized YAML/JSON attributes use
   `json`. Decimals are emitted as lossless strings. Composite primary keys are
@@ -155,15 +159,33 @@ not prove that external documentation remains current.
   chain emits `operation.failed` and no false completion facts.
 - Correlate chain lifecycle and completion facts with `operation_id`. Do not
   expose execution-attempt counters as part of the public event contract.
-- Extend logical-name, owner/VPS, callback-bypassing cascade, and sensitive
-  field registries when a new resource requires them. Never expose secrets,
-  tokens, private/key material, opaque configuration, notification-template
-  bodies, delivery payloads, or VPS user-data content in event changes.
+- Keep logical-name, owner/VPS, and public redaction policy in the resource's
+  `resource_events` declaration. Declare callback-bypassing cascades and
+  internal redaction beside the owning model with `event_delete_cascades` and
+  `event_redact`. An internal transaction concern with no public resource must
+  declare its account path with `operation_event_owner`; do not add it to a
+  central class-name resolver. Never expose secrets, tokens, private/key
+  material, opaque configuration, notification-template bodies, delivery
+  payloads, or VPS user-data content in event changes.
 - Use explicit recorder helpers for bulk SQL writes that skip Active Record
   callbacks. Represent internal translation/join rows through the logical
   public parent where practical.
 - Update resource event specs and Event Type metadata expectations. Keep the
   action/operation/external-boundary coverage checks strict.
+
+## Notification Delivery Architecture
+
+- Implement each notification delivery method as a registered subclass of
+  `Notifications::DeliveryActions::Base` in its own file. Keep its action and
+  target metadata, configuration defaults, planning, validation, preparation,
+  transport, and response handling on that implementation.
+- Keep routing and dispatch protocol-neutral. Pass explicit context objects to
+  delivery actions; do not depend on `instance_exec`, `send`, or callback
+  rebinding to make one component execute in another component's scope.
+- Reject duplicate action names, queues, routing keys, and conflicting target
+  labels during registration. Cover a new action by extending registry and
+  interface contract specs, not by adding mirrored action-name branches to
+  routers, models, and workers.
 
 ## Commit & Pull Request Guidelines
 - Use short imperative subjects, often scoped (`api: add StoragePool resource`, `webui: fix payset form`); keep one logical change per commit.

@@ -1,6 +1,7 @@
 require 'digest'
 
 class NodeKernelConfiguration < ApplicationRecord
+  event_delete_cascades :kernel_configuration_options
   has_many :kernel_configuration_options,
            class_name: 'NodeKernelConfigurationOption',
            dependent: :delete_all,

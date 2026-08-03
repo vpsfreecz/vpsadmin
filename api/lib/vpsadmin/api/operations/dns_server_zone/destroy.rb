@@ -2,6 +2,9 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::DnsServerZone::Destroy < Operations::Base
+    event_policy :transaction_chain,
+                 reason: 'covered by transaction-chain operation lifecycle events',
+                 atomic: false
     # @param dns_server_zone [::DnsServerZone]
     # @return [::TransactionChain]
     def run(dns_server_zone)

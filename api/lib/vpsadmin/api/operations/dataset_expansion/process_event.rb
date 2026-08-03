@@ -7,6 +7,15 @@ module VpsAdmin::API
   # locked, exception {::ResourceLocked} is raised. Otherwise, new
   # {::DatasetExpansion} is created and returned.
   class Operations::DatasetExpansion::ProcessEvent < Operations::Base
+    event_policy :resource,
+                 models: [
+                   ::Dataset,
+                   ::DatasetExpansion,
+                   ::DatasetExpansionEvent,
+                   ::DatasetExpansionHistory,
+                   ::DatasetInPool,
+                   ::DatasetProperty
+                 ]
     # @param event [::DatasetExpansionEvent]
     # @param max_over_refquota_seconds [Integer]
     # @raise [::ResourceLocked]

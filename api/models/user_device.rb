@@ -1,4 +1,5 @@
 class UserDevice < ApplicationRecord
+  event_delete_cascades :token
   LIFETIME = 3 * 30 * 24 * 60 * 60
 
   NEXT_MULTI_FACTOR_AUTH = %w[require day week month].freeze

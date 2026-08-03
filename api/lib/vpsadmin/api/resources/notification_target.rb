@@ -2,6 +2,16 @@ module VpsAdmin::API::Resources
   class NotificationTarget < HaveAPI::Resource
     desc 'Manage reusable notification targets'
     model ::NotificationTarget
+    resource_events topic: :notifications,
+                    audience: :account,
+                    owner: :user,
+                    redact: %i[
+                      config
+                      identity_key
+                      secret
+                      target_value
+                      verification_token
+                    ]
 
     module DeliveryMethodControls
       protected
@@ -251,6 +261,7 @@ module VpsAdmin::API::Resources
     end
 
     class SendEmailVerification < HaveAPI::Action
+      event_policy :resource, models: [::NotificationTarget], atomic: false
       desc 'Send e-mail verification link'
       route '{notification_target_id}/send_email_verification'
       http_method :post
@@ -291,6 +302,7 @@ module VpsAdmin::API::Resources
     end
 
     class ConfirmEmailVerification < HaveAPI::Action
+      event_policy :resource, models: [::NotificationTarget]
       desc 'Confirm e-mail verification token'
       route '{notification_target_id}/confirm_email_verification'
       http_method :post
@@ -331,6 +343,7 @@ module VpsAdmin::API::Resources
     end
 
     class CreatePairingToken < HaveAPI::Action
+      event_policy :resource, models: [::NotificationTarget]
       desc 'Create Telegram pairing token'
       route '{notification_target_id}/create_pairing_token'
       http_method :post
@@ -365,6 +378,7 @@ module VpsAdmin::API::Resources
     end
 
     class SendSmsVerificationCode < HaveAPI::Action
+      event_policy :resource, models: [::NotificationTarget], atomic: false
       desc 'Send SMS verification code'
       route '{notification_target_id}/send_sms_verification_code'
       http_method :post
@@ -406,6 +420,7 @@ module VpsAdmin::API::Resources
     end
 
     class ConfirmSmsVerificationCode < HaveAPI::Action
+      event_policy :resource, models: [::NotificationTarget]
       desc 'Confirm SMS verification code'
       route '{notification_target_id}/confirm_sms_verification_code'
       http_method :post

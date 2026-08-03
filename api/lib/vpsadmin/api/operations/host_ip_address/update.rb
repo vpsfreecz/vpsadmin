@@ -2,6 +2,9 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::HostIpAddress::Update < Operations::Base
+    event_policy :transaction_chain,
+                 reason: 'covered by transaction-chain operation lifecycle events',
+                 atomic: false
     # @param host_ip_address [HostIpAddress]
     # @param attrs [Hash]
     # @option attrs [String] :reverse_record_value

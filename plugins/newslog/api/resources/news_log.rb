@@ -2,6 +2,7 @@ module VpsAdmin::API::Resources
   class NewsLog < HaveAPI::Resource
     desc 'Browse and manage news'
     model ::NewsLog
+    resource_events topic: :notifications, audience: :admin
 
     params(:messages) do
       ::Language.order(:id).each do |lang|
@@ -112,6 +113,7 @@ module VpsAdmin::API::Resources
     end
 
     class Create < HaveAPI::Actions::Default::Create
+      event_policy :resource, models: [::NewsLog, ::NewsLogTranslation]
       desc 'Publish news'
       include Helpers
 
@@ -145,6 +147,7 @@ module VpsAdmin::API::Resources
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      event_policy :resource, models: [::NewsLog, ::NewsLogTranslation]
       desc 'Update news'
       include Helpers
 
@@ -173,6 +176,7 @@ module VpsAdmin::API::Resources
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
+      event_policy :resource, models: [::NewsLog, ::NewsLogTranslation]
       desc 'Delete news'
 
       authorize do |u|

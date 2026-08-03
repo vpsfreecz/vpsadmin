@@ -3,6 +3,7 @@ require 'vpsadmin/api/operations/user_session/utils'
 
 module VpsAdmin::API
   class Operations::UserSession::NewTokenLogin < Operations::Base
+    event_policy :resource, models: [::User, ::UserSession, ::Token]
     include Operations::UserSession::Utils
 
     # @param user [User]

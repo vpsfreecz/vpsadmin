@@ -1,5 +1,6 @@
 class VpsAdmin::API::Resources::Location < HaveAPI::Resource
   model ::Location
+  resource_events topic: :infrastructure, audience: :admin
   desc 'Manage locations'
 
   params(:id) do

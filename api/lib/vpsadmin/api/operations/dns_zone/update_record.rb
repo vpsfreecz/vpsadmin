@@ -3,6 +3,9 @@ require_relative 'record_utils'
 
 module VpsAdmin::API
   class Operations::DnsZone::UpdateRecord < Operations::Base
+    event_policy :transaction_chain,
+                 reason: 'covered by transaction-chain operation lifecycle events',
+                 atomic: false
     include Operations::DnsZone::RecordUtils
 
     # @param dns_record [::DnsRecord]

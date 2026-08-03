@@ -1,6 +1,9 @@
 module VpsAdmin::API::Resources
   class DnsServerZone < HaveAPI::Resource
     model ::DnsServerZone
+    resource_events topic: :dns,
+                    audience: :account,
+                    owner: %i[dns_zone user]
     desc 'Manage authoritative DNS zones on servers'
 
     params(:common) do

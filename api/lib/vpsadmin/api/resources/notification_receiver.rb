@@ -2,6 +2,7 @@ module VpsAdmin::API::Resources
   class NotificationReceiver < HaveAPI::Resource
     desc 'Manage notification receivers'
     model ::NotificationReceiver
+    resource_events topic: :notifications, audience: :account, owner: :user
 
     params(:common) do
       resource User, value_label: :login
@@ -173,6 +174,9 @@ module VpsAdmin::API::Resources
 
     class Target < HaveAPI::Resource
       model ::NotificationReceiverTarget
+      resource_events topic: :notifications,
+                      audience: :account,
+                      owner: %i[notification_receiver user]
       route '{notification_receiver_id}/target'
       desc 'Manage notification receiver target links'
 

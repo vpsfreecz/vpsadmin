@@ -2,6 +2,7 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::DnsZone::CreateSystem < Operations::Base
+    event_policy :resource, models: [::DnsZone, ::IpAddress]
     # @param attrs [Hash]
     # @return [Array(nil, ::DnsZone)]
     def run(attrs)

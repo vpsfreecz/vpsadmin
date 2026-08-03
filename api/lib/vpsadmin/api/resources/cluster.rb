@@ -150,6 +150,9 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
   end
 
   class Search < HaveAPI::Action
+    event_policy :read,
+                 reason: 'POST is used for a read-only cluster search',
+                 atomic: false
     http_method :post
     desc 'Search users, VPSes and DNS zones by IDs, names and owned objects'
 

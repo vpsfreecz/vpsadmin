@@ -2,6 +2,7 @@ module VpsAdmin::API::Resources
   class Dataset < HaveAPI::Resource
     desc 'Manage datasets'
     model ::Dataset
+    resource_events topic: :storage, audience: :account, owner: :user
 
     params(:id) do
       id :id
@@ -475,6 +476,9 @@ module VpsAdmin::API::Resources
     class Snapshot < HaveAPI::Resource
       route '{dataset_id}/snapshots'
       model ::Snapshot
+      resource_events topic: :storage,
+                      audience: :account,
+                      owner: %i[dataset user]
       desc 'Manage dataset snapshots'
 
       params(:all) do
@@ -706,6 +710,9 @@ module VpsAdmin::API::Resources
     class Plan < HaveAPI::Resource
       route '{dataset_id}/plans'
       model ::DatasetInPoolPlan
+      resource_events topic: :storage,
+                      audience: :account,
+                      owner: %i[dataset_in_pool dataset user]
       desc 'Manage dataset plans'
 
       params(:common) do

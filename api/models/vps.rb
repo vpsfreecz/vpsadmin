@@ -12,6 +12,7 @@ require_relative 'transaction_chains/vps/destroy'
 require_relative 'transaction_chains/lifetimes/not_implemented'
 
 class Vps < ApplicationRecord
+  event_delete_cascades :vps_mounts, :oom_report_counters, :export_mounts
   belongs_to :node
   belongs_to :user
   belongs_to :os_template

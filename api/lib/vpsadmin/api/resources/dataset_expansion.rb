@@ -1,6 +1,10 @@
 module VpsAdmin::API::Resources
   class DatasetExpansion < HaveAPI::Resource
     model ::DatasetExpansion
+    resource_events topic: :storage,
+                    audience: :account,
+                    owner: %i[vps user],
+                    vps: :vps
     desc 'Browse dataset expansions'
 
     params(:id) do
@@ -155,6 +159,7 @@ module VpsAdmin::API::Resources
     end
 
     class RegisterExpanded < HaveAPI::Action
+      event_policy :resource, models: [::DatasetExpansion]
       desc 'Create dataset expansion for an already expanded dataset'
       route 'register_expanded'
       http_method :post
@@ -206,6 +211,9 @@ module VpsAdmin::API::Resources
     class History < HaveAPI::Resource
       route '{dataset_expansion_id}/history'
       model ::DatasetExpansionHistory
+      resource_events topic: :storage,
+                      audience: :account,
+                      owner: %i[dataset_expansion dataset user]
       desc 'Browse dataset expansion history'
 
       params(:all) do

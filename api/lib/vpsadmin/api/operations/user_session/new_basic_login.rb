@@ -3,6 +3,9 @@ require 'vpsadmin/api/operations/user_session/utils'
 
 module VpsAdmin::API
   class Operations::UserSession::NewBasicLogin < Operations::Base
+    event_policy :internal_state,
+                 reason: 'per-request authentication counters and session state are bookkeeping',
+                 atomic: false
     include Operations::UserSession::Utils
 
     # @param user [User]

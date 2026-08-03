@@ -2,6 +2,7 @@ module VpsAdmin::API::Resources
   class HelpBox < HaveAPI::Resource
     desc 'Browse and manage help boxes'
     model ::HelpBox
+    resource_events topic: :system, audience: :admin
 
     PUBLIC_HELP_PAGES = {
       '' => [nil, ''],

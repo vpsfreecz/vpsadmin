@@ -1,4 +1,5 @@
 class NewsLog < ApplicationRecord
+  event_delete_cascades :news_log_translations
   DEFAULT_LANGUAGE_CODE = 'en'.freeze
 
   has_many :news_log_translations, dependent: :delete_all

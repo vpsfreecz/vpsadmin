@@ -1,4 +1,5 @@
 class SecurityAdvisoryNodeStatus < ApplicationRecord
+  event_delete_cascades :security_advisory_node_status_translations
   belongs_to :security_advisory
   belongs_to :node
   has_many :security_advisory_node_status_translations, dependent: :delete_all

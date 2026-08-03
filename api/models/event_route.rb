@@ -1,4 +1,7 @@
 class EventRoute < ApplicationRecord
+  event_delete_cascades :event_route_matchers,
+                        :event_route_time_intervals,
+                        :event_route_matches
   MAX_ROUTES = 100
   MAX_MATCHERS = 30
   MAX_TIME_INTERVALS = 20

@@ -1,4 +1,5 @@
 class SecurityAdvisoryUpdate < ApplicationRecord
+  event_delete_cascades :security_advisory_translations
   belongs_to :security_advisory
   belongs_to :reported_by, class_name: 'User', optional: true
   has_many :security_advisory_translations, dependent: :delete_all

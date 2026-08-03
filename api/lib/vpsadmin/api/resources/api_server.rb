@@ -3,6 +3,9 @@ module VpsAdmin::API::Resources
     desc 'Manage the API server itself'
 
     class UnlockTransactionSigningKey < HaveAPI::Action
+      event_policy :runtime_state,
+                   reason: 'changes in-memory key state and persists no resource',
+                   atomic: false
       desc 'Unlock private key used for signing transactions'
       http_method :post
 

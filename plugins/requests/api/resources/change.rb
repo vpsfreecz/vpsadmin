@@ -3,6 +3,10 @@ module VpsAdmin::API::Resources
     class Change < HaveAPI::Resource
       desc 'Request change of personal information'
       model ::ChangeRequest
+      resource_events topic: :requests,
+                      audience: :account,
+                      name: :request,
+                      owner: :user
 
       params(:request) do
         string :change_reason, label: 'Change reason', required: true,

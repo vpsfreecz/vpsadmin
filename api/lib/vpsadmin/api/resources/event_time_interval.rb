@@ -4,6 +4,7 @@ module VpsAdmin::API::Resources
   class EventTimeInterval < HaveAPI::Resource
     desc 'Manage reusable event route time intervals'
     model ::EventTimeInterval
+    resource_events topic: :notifications, audience: :account, owner: :user
 
     params(:common) do
       resource User, value_label: :login

@@ -2,6 +2,7 @@ module VpsAdmin::API::Resources
   class ClusterResourcePackage < HaveAPI::Resource
     desc 'Manage cluster resource packages'
     model ::ClusterResourcePackage
+    resource_events topic: :infrastructure, audience: :admin, owner: :user
 
     params(:common) do
       string :label, label: 'Label'
@@ -141,6 +142,7 @@ module VpsAdmin::API::Resources
     class Item < HaveAPI::Resource
       desc 'Manage cluster resource package contents'
       model ::ClusterResourcePackageItem
+      resource_events topic: :infrastructure, audience: :admin
       route '{cluster_resource_package_id}/items'
 
       params(:common) do

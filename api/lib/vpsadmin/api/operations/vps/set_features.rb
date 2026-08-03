@@ -2,6 +2,9 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::Vps::SetFeatures < Operations::Base
+    event_policy :transaction_chain,
+                 reason: 'covered by transaction-chain operation lifecycle events',
+                 atomic: false
     # @param vps [::Vps]
     # @param features [Hash<Symbol, Boolean>]
     # @return [::TransactionChain]

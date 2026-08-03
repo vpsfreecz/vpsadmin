@@ -253,6 +253,9 @@ module VpsAdmin::API::Resources
     end
 
     class Test < HaveAPI::Action
+      event_policy :domain_event,
+                   reason: 'the action itself creates the requested test event',
+                   atomic: false
       TEST_EVENT_LIMIT = 20
       TEST_EVENT_SOURCE_CLASS = 'VpsAdmin::API::Resources::Event::Test'.freeze
       TEST_EVENT_WINDOW = 3600
@@ -598,6 +601,7 @@ module VpsAdmin::API::Resources
       end
 
       class Retry < HaveAPI::Action
+        event_policy :resource, models: [::EventDelivery]
         desc 'Retry event delivery'
         route '{delivery_id}/retry'
         http_method :post

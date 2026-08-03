@@ -2,6 +2,7 @@ require_relative 'confirmable'
 require_relative 'dns_zone_record_set_validator'
 
 class DnsServerZone < ApplicationRecord
+  event_delete_cascades :dns_server_zone_transfer_logs
   belongs_to :dns_server
   belongs_to :dns_zone
   belongs_to :last_transfer_log,

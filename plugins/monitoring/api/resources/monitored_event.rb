@@ -2,6 +2,10 @@ module VpsAdmin::API::Resources
   class MonitoredEvent < HaveAPI::Resource
     desc 'Browser monitored events'
     model ::MonitoredEvent
+    resource_events topic: :monitoring,
+                    audience: :account,
+                    owner: :user,
+                    additional_actions: :updated
 
     USER_VISIBLE_STATES = %i[
       confirmed
@@ -111,6 +115,7 @@ module VpsAdmin::API::Resources
     end
 
     class Acknowledge < HaveAPI::Action
+      event_policy :resource, models: [::MonitoredEvent]
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
       http_method :post
@@ -145,6 +150,7 @@ module VpsAdmin::API::Resources
     end
 
     class Ignore < HaveAPI::Action
+      event_policy :resource, models: [::MonitoredEvent]
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
       http_method :post

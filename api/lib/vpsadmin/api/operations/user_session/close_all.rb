@@ -2,6 +2,13 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::UserSession::CloseAll < Operations::Base
+    event_policy :resource,
+                 models: [
+                   ::UserSession,
+                   ::Oauth2Authorization,
+                   ::SingleSignOn,
+                   ::Token
+                 ]
     # @param user [::User]
     # @param except [Array<::UserSession>, nil]
     def run(user, except: nil)

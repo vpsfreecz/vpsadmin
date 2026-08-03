@@ -1,4 +1,9 @@
 class NodeKernelEvidence < ApplicationRecord
+  event_delete_cascades :kernel_parameters,
+                        :kernel_modules,
+                        :sysctls,
+                        :software_versions,
+                        :kernel_evidence_errors
   belongs_to :node
 
   has_many :kernel_parameters,

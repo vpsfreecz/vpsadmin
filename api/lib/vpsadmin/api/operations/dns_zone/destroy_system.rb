@@ -2,6 +2,7 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::DnsZone::DestroySystem < Operations::Base
+    event_policy :resource, models: [::DnsZone]
     # @param dns_zone [::DnsZone]
     def run(dns_zone)
       if dns_zone.dns_server_zones.any?

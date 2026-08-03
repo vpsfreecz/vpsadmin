@@ -2,6 +2,10 @@ module VpsAdmin::API::Resources
   class MigrationPlan < HaveAPI::Resource
     desc 'View migration plans'
     model ::MigrationPlan
+    resource_events topic: :infrastructure,
+                    audience: :admin,
+                    owner: :user,
+                    additional_actions: :updated
 
     params(:editable) do
       bool :stop_on_error, default: true, fill: true
@@ -99,6 +103,7 @@ module VpsAdmin::API::Resources
     end
 
     class Start < HaveAPI::Action
+      event_policy :resource, models: [::MigrationPlan, ::VpsMigration]
       desc 'Begin execution of a migration plan'
       http_method :post
       route '{%{resource}_id}/start'
@@ -122,6 +127,7 @@ module VpsAdmin::API::Resources
     end
 
     class Cancel < HaveAPI::Action
+      event_policy :resource, models: [::MigrationPlan, ::VpsMigration]
       desc 'Cancel execution of a migration plan'
       http_method :post
       route '{%{resource}_id}/cancel'
@@ -165,6 +171,10 @@ module VpsAdmin::API::Resources
       desc 'VPS migrations'
       route '{migration_plan_id}/vps_migrations'
       model ::VpsMigration
+      resource_events topic: :infrastructure,
+                      audience: :admin,
+                      owner: :user,
+                      additional_actions: :updated
 
       params(:editable) do
         resource VpsAdmin::API::Resources::VPS, value_label: :hostname

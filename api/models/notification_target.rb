@@ -6,6 +6,7 @@ require 'time'
 require 'uri'
 
 class NotificationTarget < ApplicationRecord
+  event_delete_cascades :notification_receiver_targets
   MAX_TARGETS_PER_USER = 100
   MAIL_TARGET_VALUE_LIMIT = 500
   VERIFICATION_TOKEN_TTL = 24 * 60 * 60

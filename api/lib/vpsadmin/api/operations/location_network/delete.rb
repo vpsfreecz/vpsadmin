@@ -2,6 +2,7 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::LocationNetwork::Delete < Operations::Base
+    event_policy :resource, models: [::LocationNetwork, ::Network]
     # @param ln [::LocationNetwork]
     def run(ln)
       ActiveRecord::Base.transaction do

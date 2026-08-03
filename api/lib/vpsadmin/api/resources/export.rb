@@ -1,5 +1,6 @@
 class VpsAdmin::API::Resources::Export < HaveAPI::Resource
   model ::Export
+  resource_events topic: :storage, audience: :account, owner: :user
   desc 'Manage NFS exports'
 
   params(:all) do
@@ -228,6 +229,9 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
     desc 'Manage allowed hosts'
     route '{export_id}/hosts'
     model ::ExportHost
+    resource_events topic: :storage,
+                    audience: :account,
+                    owner: %i[export user]
 
     params(:all) do
       id :id

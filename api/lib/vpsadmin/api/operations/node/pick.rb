@@ -3,6 +3,7 @@ require 'vpsadmin/api/operations/base'
 module VpsAdmin::API
   # Pick node based on configurable criteria
   class Operations::Node::Pick < Operations::Base
+    event_policy :read, reason: 'operation does not persist state', atomic: false
     # @param environment [::Environment, nil]
     # @param location [::Location, nil]
     # @param except [::Node]

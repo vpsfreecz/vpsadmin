@@ -3,6 +3,8 @@ require 'vpsadmin/api/operations/node/history_backfill'
 
 module VpsAdmin::API
   class Operations::Node::ReconstructSystemStates < Operations::Base
+    event_policy :resource,
+                 models: [::NodeSystemHistoryState, ::NodeSystemState]
     include Operations::Node::HistoryBackfill
 
     Candidate = Data.define(

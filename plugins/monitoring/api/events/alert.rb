@@ -400,3 +400,7 @@ module VpsAdmin::API::Plugins::Monitoring::Events
     end
   end
 end
+
+VpsAdmin::API::Events.register_i18n_defaults(:monitoring) do
+  VpsAdmin::API::Plugins::Monitoring::Events.i18n_defaults
+end

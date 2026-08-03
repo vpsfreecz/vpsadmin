@@ -3,6 +3,9 @@ require 'vpsadmin/api/operations/utils/dns'
 
 module VpsAdmin::API
   class Operations::User::FailedLogin < Operations::Base
+    event_policy :domain_event,
+                 reason: 'emits user.login_failed with authentication context',
+                 atomic: false
     include Operations::Utils::Dns
 
     # @param user [::User]

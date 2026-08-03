@@ -30,6 +30,7 @@ module VpsAdmin::API
 
     Type = Struct.new(
       :name,
+      :owner,
       :label,
       :category,
       :severity,
@@ -742,6 +743,7 @@ module VpsAdmin::API
     end
 
     @types = {}
+    @i18n_default_extensions = {}
 
     module_function
 
@@ -750,8 +752,16 @@ module VpsAdmin::API
     end
 
     def add_definition(definition)
+      existing = @types[definition.name]
+      if existing
+        raise ArgumentError,
+              "event type #{definition.name.inspect} is already defined by " \
+              "#{existing.owner || :core}"
+      end
+
       @types[definition.name] = Type.new(
         name: definition.name,
+        owner: definition.owner,
         label: definition.label,
         category: definition.category_name,
         severity: definition.default_severity,
@@ -766,6 +776,16 @@ module VpsAdmin::API
         resource_generated: false,
         definition:
       )
+    end
+
+    def register_i18n_defaults(owner, &provider)
+      owner = owner.to_sym
+      raise ArgumentError, 'event i18n defaults require a provider' unless provider
+      if @i18n_default_extensions.has_key?(owner)
+        raise ArgumentError, "event i18n defaults are already registered for #{owner.inspect}"
+      end
+
+      @i18n_default_extensions[owner] = provider
     end
 
     def attach_resource_descriptor(event_type, descriptor, generated: false)
@@ -891,9 +911,15 @@ module VpsAdmin::API
         end
       end
 
-      if defined?(VpsAdmin::API::Plugins::Monitoring::Events) &&
-         VpsAdmin::API::Plugins::Monitoring::Events.respond_to?(:i18n_defaults)
-        ret.merge!(VpsAdmin::API::Plugins::Monitoring::Events.i18n_defaults)
+      @i18n_default_extensions.each do |owner, provider|
+        provider.call.each do |key, value|
+          if ret.has_key?(key) && ret.fetch(key) != value
+            raise ArgumentError,
+                  "event i18n default #{key.inspect} from #{owner.inspect} conflicts with an existing value"
+          end
+
+          ret[key] = value
+        end
       end
 
       ret

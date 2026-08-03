@@ -99,6 +99,14 @@ class VpsAdmin::API::Resources::TransactionChain < HaveAPI::Resource
   end
 
   class NotifyWhenDone < HaveAPI::Action
+    event_policy :resource,
+                 models: [
+                   ::EventRoute,
+                   ::EventRouteMatcher,
+                   ::NotificationReceiver,
+                   ::NotificationReceiverTarget,
+                   ::NotificationTarget
+                 ]
     desc 'Create a single-use route notifying when this transaction chain finishes'
     route '{%{resource}_id}/notify_when_done'
     http_method :post

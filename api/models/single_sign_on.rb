@@ -1,4 +1,5 @@
 class SingleSignOn < ApplicationRecord
+  event_delete_cascades :token
   belongs_to :user
   belongs_to :token, dependent: :delete
   has_many :oauth2_authorizations, dependent: :nullify

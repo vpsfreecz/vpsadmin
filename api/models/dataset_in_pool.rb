@@ -18,6 +18,7 @@ class DatasetInPool < ApplicationRecord
   has_many :group_snapshots
   has_many :exports
   has_many :vpses
+  operation_event_owner via: %i[dataset user]
 
   include Lockable
   include Confirmable

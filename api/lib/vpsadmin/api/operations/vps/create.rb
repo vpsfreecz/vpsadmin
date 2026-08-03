@@ -3,6 +3,9 @@ require_relative 'user_data_utils'
 
 module VpsAdmin::API
   class Operations::Vps::Create < Operations::Base
+    event_policy :transaction_chain,
+                 reason: 'covered by transaction-chain operation lifecycle events',
+                 atomic: false
     include Operations::Vps::UserDataUtils
 
     # @param attrs [Hash]

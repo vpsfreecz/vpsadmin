@@ -1,6 +1,7 @@
 module VpsAdmin::API::Resources
   class UserSession < HaveAPI::Resource
     model ::UserSession
+    resource_events topic: :security, audience: :account, owner: :user
     desc 'Browse user sessions'
 
     params(:all) do
@@ -179,6 +180,7 @@ module VpsAdmin::API::Resources
     end
 
     class Close < HaveAPI::Action
+      event_policy :resource, models: [::UserSession]
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
       desc 'Close user session, revoke access token'

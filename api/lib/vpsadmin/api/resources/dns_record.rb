@@ -1,6 +1,7 @@
 module VpsAdmin::API::Resources
   class DnsRecord < HaveAPI::Resource
     model ::DnsRecord
+    resource_events topic: :dns, audience: :account, owner: :user
     desc 'Manage DNS records'
 
     params(:common) do

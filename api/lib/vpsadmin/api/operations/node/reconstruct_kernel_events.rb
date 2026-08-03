@@ -3,6 +3,12 @@ require 'vpsadmin/api/operations/node/history_backfill'
 
 module VpsAdmin::API
   class Operations::Node::ReconstructKernelEvents < Operations::Base
+    event_policy :resource,
+                 models: [
+                   ::NodeKernelEvent,
+                   ::NodeKernelHistoryGap,
+                   ::NodeKernelHistoryState
+                 ]
     include Operations::Node::HistoryBackfill
 
     BOOT_TIME_TOLERANCE = 5.minutes

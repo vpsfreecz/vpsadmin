@@ -1,4 +1,5 @@
 class MetricsAccessToken < ApplicationRecord
+  event_delete_cascades :token
   belongs_to :token, dependent: :delete
   belongs_to :user
 

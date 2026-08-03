@@ -1,6 +1,7 @@
 module VpsAdmin::API::Resources
   class MetricsAccessToken < HaveAPI::Resource
     model ::MetricsAccessToken
+    resource_events topic: :security, audience: :account, owner: :user
     desc 'Manage /metrics endpoint access tokens'
 
     params(:all) do

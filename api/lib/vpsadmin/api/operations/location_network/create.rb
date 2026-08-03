@@ -2,6 +2,7 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::LocationNetwork::Create < Operations::Base
+    event_policy :resource, models: [::LocationNetwork, ::Network]
     # @param opts [Hash]
     # @option opts [::Location] :location
     # @option opts [::Network] :network

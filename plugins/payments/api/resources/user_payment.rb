@@ -2,6 +2,7 @@ module VpsAdmin::API::Resources
   class UserPayment < HaveAPI::Resource
     desc "Manage user's payment settings"
     model ::UserPayment
+    resource_events topic: :payments, audience: :account, owner: :user
 
     params(:writable) do
       resource VpsAdmin::API::Resources::IncomingPayment, value_label: :transaction_id

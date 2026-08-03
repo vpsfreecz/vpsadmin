@@ -1,6 +1,7 @@
 module VpsAdmin::API::Resources
   class OsFamily < HaveAPI::Resource
     model ::OsFamily
+    resource_events topic: :operating_systems, audience: :admin
     desc 'Manage OS families'
 
     params(:common) do

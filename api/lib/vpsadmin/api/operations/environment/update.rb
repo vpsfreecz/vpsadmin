@@ -2,6 +2,7 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::Environment::Update < Operations::Base
+    event_policy :resource, models: [::Environment, ::EnvironmentUserConfig]
     # @param export [::Environment]
     # @param attrs [Hash]
     # @return [::Environment]

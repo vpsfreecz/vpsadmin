@@ -2,6 +2,9 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::User::Login < Operations::Base
+    event_policy :internal_state,
+                 reason: 'per-request authentication counters and session state are bookkeeping',
+                 atomic: false
     # @param user [::User]
     # @param request [Sinatra::Request]
     def run(user, request)

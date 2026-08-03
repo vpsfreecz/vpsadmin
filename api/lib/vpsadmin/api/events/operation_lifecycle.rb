@@ -14,32 +14,6 @@ module VpsAdmin::API::Events::OperationLifecycle
     FAILED_EVENT_TYPE,
     RESOLVED_EVENT_TYPE
   ].freeze
-  CONCERN_OWNER_RESOLVERS = {
-    'User' => ->(object) { object },
-    'Vps' => lambda(&:user),
-    'Dataset' => lambda(&:user),
-    'DatasetExpansion' => ->(object) { object.vps.user },
-    'DatasetInPool' => ->(object) { object.dataset.user },
-    'DatasetTree' => ->(object) { object.dataset_in_pool.dataset.user },
-    'Branch' => ->(object) { object.dataset_tree.dataset_in_pool.dataset.user },
-    'Snapshot' => ->(object) { object.dataset.user },
-    'SnapshotInPool' => ->(object) { object.snapshot.dataset.user },
-    'SnapshotDownload' => lambda(&:user),
-    'Export' => lambda(&:user),
-    'NetworkInterface' => ->(object) { object.vps.user },
-    'Mount' => ->(object) { object.vps.user },
-    'DnsZone' => lambda(&:user),
-    'DnsServerZone' => ->(object) { object.dns_zone.user },
-    'DnsZoneTransfer' => ->(object) { object.dns_zone.user },
-    'HostIpAddress' => lambda(&:current_owner),
-    'IncidentReport' => lambda(&:user),
-    'MigrationPlan' => lambda(&:user),
-    'ChangeRequest' => lambda(&:user),
-    'RegistrationRequest' => lambda(&:user),
-    'UserClusterResource' => lambda(&:user),
-    'UserNamespace' => lambda(&:user),
-    'UserPayment' => lambda(&:user)
-  }.freeze
 
   module_function
 
@@ -374,16 +348,16 @@ module VpsAdmin::API::Events::OperationLifecycle
 
   def owner_from_live_concerns(chain)
     chain.transaction_chain_concerns.order(:id).reverse_each do |concern|
-      resolver = CONCERN_OWNER_RESOLVERS[concern.class_name]
-      next unless resolver
-
       klass = concern.class_name.safe_constantize
       next unless klass && klass <= ::ApplicationRecord
 
       object = klass.find_by(id: concern.row_id)
       next unless object
 
-      owner = resolver.call(object)
+      operations = VpsAdmin::API::Events::ResourceOperations
+      vps = operations.related_vps(object)
+      owner = operations.resource_owner(object, vps:)
+      owner ||= object.class.base_class.operation_event_owner_for(object)
       return owner if owner.is_a?(::User)
     rescue ActiveRecord::ActiveRecordError, NoMethodError
       next
