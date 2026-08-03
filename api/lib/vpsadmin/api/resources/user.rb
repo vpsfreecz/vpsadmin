@@ -451,7 +451,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     params(:all) do
       string :id, db_name: :delivery_method
       string :delivery_method,
-             choices: { values: ::VpsAdmin::API::Notifications::Actions.labels },
+             choices: { values: ::VpsAdmin::API::Notifications::DeliveryActions.labels },
              load_validators: false
       string :label
       bool :enabled
@@ -557,7 +557,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     params(:all) do
       string :id, db_name: :limit_key
       string :delivery_method,
-             choices: { values: ::VpsAdmin::API::Notifications::Actions.labels },
+             choices: { values: ::VpsAdmin::API::Notifications::DeliveryActions.labels },
              load_validators: false
       string :label
       string :period,

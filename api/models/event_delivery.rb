@@ -56,7 +56,7 @@ class EventDelivery < ApplicationRecord
   serialize :group_labels, coder: JSON
 
   validates :action, :target_kind, :state, presence: true
-  validates :action, inclusion: { in: ->(_) { VpsAdmin::API::Notifications::Actions.names } }
+  validates :action, inclusion: { in: ->(_) { VpsAdmin::API::Notifications::DeliveryActions.names } }
   validates :target_label, :provider_message_id, length: { maximum: 255 }, allow_nil: true
   validates :template_name, length: { maximum: 100 }, allow_nil: true
   validates :response_status, numericality: { only_integer: true }, allow_nil: true
@@ -69,11 +69,11 @@ class EventDelivery < ApplicationRecord
   scope :sms_action, -> { where(action: 'sms') }
 
   def self.action_labels
-    VpsAdmin::API::Notifications::Actions.labels
+    VpsAdmin::API::Notifications::DeliveryActions.labels
   end
 
   def self.target_kind_labels
-    VpsAdmin::API::Notifications::Actions.target_kind_labels
+    VpsAdmin::API::Notifications::DeliveryActions.target_kind_labels
   end
 
   def self.state_labels
@@ -457,6 +457,6 @@ class EventDelivery < ApplicationRecord
   protected
 
   def action_definition
-    VpsAdmin::API::Notifications::Actions.fetch(action)
+    VpsAdmin::API::Notifications::DeliveryActions.fetch(action)
   end
 end

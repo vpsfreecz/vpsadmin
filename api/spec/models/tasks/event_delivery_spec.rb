@@ -68,7 +68,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
                                 payload: { note: 'from Telegram task spec' },
                                 source_class: nil,
                                 vps: nil)
-    allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
+    allow(VpsAdmin::API::Notifications::DeliveryActions.fetch('telegram'))
+      .to receive(:available?).and_return(true)
 
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec Telegram receiver')
     action = receiver.notification_receiver_actions.create!(
@@ -157,7 +158,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
                            payload: { note: 'from SMS task spec' },
                            template_name: nil,
                            source_class: nil)
-    allow(VpsAdmin::API::Notifications).to receive(:sms_configured?).and_return(true)
+    allow(VpsAdmin::API::Notifications::DeliveryActions.fetch('sms'))
+      .to receive(:available?).and_return(true)
 
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec SMS receiver')
     action = receiver.notification_receiver_actions.create!(
@@ -278,13 +280,13 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
   def signed_sms_callback(delivery, payload, secret: delivery_sms_callback_secret(delivery),
                           timestamp: Time.now.utc.iso8601,
                           request_method: 'POST',
-                          request_path: VpsAdmin::API::Notifications::SMS_CALLBACK_PATH,
+                          request_path: VpsAdmin::API::Notifications::DeliveryActions::Sms::CALLBACK_PATH,
                           raw_body: JSON.dump(payload),
                           signature_body: raw_body,
                           now: Time.now)
     body_hash = Digest::SHA256.hexdigest(signature_body)
     signature_input = [
-      VpsAdmin::API::Notifications::SMS_CALLBACK_SIGNATURE_VERSION,
+      VpsAdmin::API::Notifications::DeliveryActions::Sms::CALLBACK_SIGNATURE_VERSION,
       request_method,
       request_path,
       timestamp,
@@ -296,7 +298,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       JSON.parse(raw_body),
       raw_body:,
       headers: {
-        'X-VpsAdmin-SMS-Signature-Version' => VpsAdmin::API::Notifications::SMS_CALLBACK_SIGNATURE_VERSION,
+        'X-VpsAdmin-SMS-Signature-Version' =>
+          VpsAdmin::API::Notifications::DeliveryActions::Sms::CALLBACK_SIGNATURE_VERSION,
         'X-VpsAdmin-SMS-Timestamp' => timestamp,
         'X-VpsAdmin-SMS-Signature' => signature
       },
@@ -584,8 +587,9 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     sms = VpsAdmin::API::Notifications::Dispatcher.new('sms')
 
     expect(email.send(:concurrency)).to eq(2)
-    expect(email.send(:email_worker_delay)).to eq(1.0)
-    expect(email.send(:email_domain_min_delivery_interval)).to eq(1.0)
+    email_action = email.instance_variable_get(:@delivery_action)
+    expect(email_action.worker_delay).to eq(1.0)
+    expect(email_action.domain_min_delivery_interval).to eq(1.0)
     expect(telegram.send(:concurrency)).to eq(2)
     expect(webhook.send(:concurrency)).to eq(4)
     expect(sms.send(:concurrency)).to eq(1)
@@ -786,7 +790,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     throttled = create_due_email_delivery!('first@gmail.com')
     sendable = create_due_email_delivery!('other@fastmail.com')
 
-    expect(dispatcher.send(:email_domain_limiter).reserve_or_delay(['gmail.com'])).to eq(0)
+    email_action = dispatcher.instance_variable_get(:@delivery_action)
+    expect(email_action.domain_limiter.reserve_or_delay(['gmail.com'])).to eq(0)
 
     selected_ids = dispatcher.send(:due_deliveries, 1, scan_limit: 2).map(&:id)
 
@@ -873,8 +878,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     delivery, = create_email_delivery!
     worker_state = {}
 
-    dispatcher.send(:wait_for_email_throttles!, delivery, worker_state)
-    dispatcher.send(:wait_for_email_throttles!, delivery, worker_state)
+    dispatcher.send(:wait_for_delivery_throttles!, delivery, worker_state)
+    dispatcher.send(:wait_for_delivery_throttles!, delivery, worker_state)
 
     expect(sleeps).to eq([1.0])
   end
@@ -907,7 +912,8 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     )
     dispatcher = VpsAdmin::API::Notifications::Dispatcher.new('email')
 
-    expect(dispatcher.send(:email_recipient_domains, delivery))
+    email_action = dispatcher.instance_variable_get(:@delivery_action)
+    expect(email_action.recipient_domains(delivery))
       .to contain_exactly('gmail.com', 'example.net')
   end
 
@@ -981,7 +987,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     create_missing_variable_template!('spec_broken_test_template')
     delivery, = create_email_delivery!(
       template_name: 'spec_broken_test_template',
-      source_class: VpsAdmin::API::Notifications::TEST_EVENT_SOURCE_CLASS
+      source_class: VpsAdmin::API::Resources::Event::Test::TEST_EVENT_SOURCE_CLASS
     )
     stub_mail_delivery!
 
@@ -1316,7 +1322,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     create_missing_variable_template!('spec_broken_test_template')
     delivery, = create_telegram_delivery!(
       template_name: 'spec_broken_test_template',
-      source_class: VpsAdmin::API::Notifications::TEST_EVENT_SOURCE_CLASS
+      source_class: VpsAdmin::API::Resources::Event::Test::TEST_EVENT_SOURCE_CLASS
     )
     request = stub_telegram_response
 
@@ -1421,7 +1427,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     create_telegram_template!(
       name: 'spec_telegram_long_html_template',
       text: 'Plain fallback <%= @event.subject %>',
-      html: "<b><%= 'x' * #{VpsAdmin::API::Notifications::TELEGRAM_TEXT_LIMIT + 1} %></b>"
+      html: "<b><%= 'x' * #{VpsAdmin::API::Notifications::DeliveryActions::Telegram::TEXT_LIMIT + 1} %></b>"
     )
     delivery, = create_telegram_delivery!(
       target_value: '323456789',
@@ -1580,7 +1586,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(sms_notifications_config)
     delivery, = create_sms_delivery!(
       template_name: 'spec_broken_test_template',
-      source_class: VpsAdmin::API::Notifications::TEST_EVENT_SOURCE_CLASS
+      source_class: VpsAdmin::API::Resources::Event::Test::TEST_EVENT_SOURCE_CLASS
     )
     requests = stub_sms_gateway_response
 
@@ -1685,7 +1691,9 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       signed_sms_callback(
         delivery,
         sms_callback_payload(delivery),
-        timestamp: (now - VpsAdmin::API::Notifications::SMS_CALLBACK_SIGNATURE_TOLERANCE - 1).iso8601,
+        timestamp: (
+          now - VpsAdmin::API::Notifications::DeliveryActions::Sms::CALLBACK_SIGNATURE_TOLERANCE - 1
+        ).iso8601,
         now:
       )
     end.to raise_error(VpsAdmin::API::Notifications::SmsCallbackAuthenticationError)
@@ -1702,7 +1710,9 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
       signed_sms_callback(
         delivery,
         sms_callback_payload(delivery),
-        timestamp: (now + VpsAdmin::API::Notifications::SMS_CALLBACK_SIGNATURE_TOLERANCE + 1).iso8601,
+        timestamp: (
+          now + VpsAdmin::API::Notifications::DeliveryActions::Sms::CALLBACK_SIGNATURE_TOLERANCE + 1
+        ).iso8601,
         now:
       )
     end.to raise_error(VpsAdmin::API::Notifications::SmsCallbackAuthenticationError)

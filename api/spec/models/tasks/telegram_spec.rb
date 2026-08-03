@@ -21,7 +21,8 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
   end
 
   def create_telegram_action!(token: 'pair-token')
-    allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
+    allow(VpsAdmin::API::Notifications::DeliveryActions.fetch('telegram'))
+      .to receive(:available?).and_return(true)
 
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec Telegram receiver')
     receiver.notification_receiver_actions.create!(
@@ -117,7 +118,8 @@ RSpec.describe VpsAdmin::API::Tasks::Telegram do
   end
 
   it 'verifies an existing duplicate Telegram target when pairing succeeds' do
-    allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
+    allow(VpsAdmin::API::Notifications::DeliveryActions.fetch('telegram'))
+      .to receive(:available?).and_return(true)
 
     existing = NotificationTarget.create!(
       user: SpecSeed.user,

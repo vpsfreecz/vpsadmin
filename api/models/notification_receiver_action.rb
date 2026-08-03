@@ -78,6 +78,8 @@ class NotificationReceiverTarget < ApplicationRecord
            :telegram_pairing_command,
            :telegram_pairing_url,
            :verification_token,
+           :verification_credential,
+           :verification_credential_created_at,
            :verified,
            :verified?,
            :verified_at,
@@ -169,13 +171,13 @@ class NotificationReceiverTarget < ApplicationRecord
   end
 
   def raw_verification_token
-    notification_target.send(:raw_verification_token)
+    notification_target.verification_credential
   end
 
   def verification_token_expired?(now = Time.now)
     return false if raw_verification_token.blank? || verified?
 
-    created_at = notification_target.send(:verification_token_created_at)
+    created_at = notification_target.verification_credential_created_at
     created_at ||= [notification_target.updated_at, updated_at].compact.min
     return false if created_at.nil?
 
@@ -271,14 +273,16 @@ class NotificationReceiverTarget < ApplicationRecord
 
   def inline_target_kind_for(action)
     kind = inline_target_attributes[:target_kind].to_s.presence
+    default_kind = VpsAdmin::API::Notifications::DeliveryActions
+                   .fetch(action)
+                   .default_target_kind
 
-    if action == 'email'
-      kind || 'default_recipient'
-    elsif kind.blank? || kind == 'default_recipient'
-      'custom'
-    else
-      kind
-    end
+    return default_kind if kind.blank?
+    return default_kind if kind == 'default_recipient' && default_kind != kind
+
+    kind
+  rescue KeyError
+    kind || 'custom'
   end
 end
 

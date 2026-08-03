@@ -20,7 +20,9 @@ module VpsAdmin::API::Resources
         return unless target.email_verification_required?
         return if target.verified?
 
-        VpsAdmin::API::Notifications.send_email_verification!(target)
+        VpsAdmin::API::Notifications::DeliveryActions
+          .fetch('email')
+          .send_verification!(target)
       rescue VpsAdmin::API::Notifications::EmailVerificationDeliveryError
         nil
       ensure
@@ -170,7 +172,9 @@ module VpsAdmin::API::Resources
       end
 
       def default_target_kind
-        input[:action] == 'email' ? 'default_recipient' : 'custom'
+        VpsAdmin::API::Notifications::DeliveryActions
+          .fetch(input[:action])
+          .default_target_kind
       end
     end
 
@@ -269,7 +273,9 @@ module VpsAdmin::API::Resources
         error!('e-mail verification link was sent recently') unless target.email_verification_send_available?
 
         target.ensure_email_verification_token!
-        VpsAdmin::API::Notifications.send_email_verification!(target)
+        VpsAdmin::API::Notifications::DeliveryActions
+          .fetch('email')
+          .send_verification!(target)
         target.reload
         VpsAdmin::API::Events::ResourceOperations.updated!(
           target,
@@ -381,7 +387,9 @@ module VpsAdmin::API::Resources
         error!('SMS verification code was sent recently') unless target.sms_verification_send_available?
 
         target.ensure_sms_verification_code!
-        VpsAdmin::API::Notifications.send_sms_verification_code!(target)
+        VpsAdmin::API::Notifications::DeliveryActions
+          .fetch('sms')
+          .send_verification!(target)
         target.reload
         VpsAdmin::API::Events::ResourceOperations.updated!(
           target,

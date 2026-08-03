@@ -64,8 +64,9 @@ module VpsAdmin
         end
 
         sinatra.post '/internal/notifications/sms/callback' do
-          raw_body = request.body.read(VpsAdmin::API::Notifications::SMS_CALLBACK_MAX_BODY_SIZE + 1)
-          if raw_body.bytesize > VpsAdmin::API::Notifications::SMS_CALLBACK_MAX_BODY_SIZE
+          max_body_size = VpsAdmin::API::Notifications::DeliveryActions::Sms::CALLBACK_MAX_BODY_SIZE
+          raw_body = request.body.read(max_body_size + 1)
+          if raw_body.bytesize > max_body_size
             halt 413, 'Request body too large'
           end
 

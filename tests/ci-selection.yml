@@ -392,6 +392,7 @@ select:
       - "api/lib/vpsadmin/api/events.rb"
       - "api/lib/vpsadmin/api/events/**"
       - "api/lib/vpsadmin/api/notifications.rb"
+      - "api/lib/vpsadmin/api/notifications/**"
       - "api/lib/vpsadmin/api/telegram_bot.rb"
       - "api/lib/vpsadmin/api/tasks/incident_report.rb"
       - "api/lib/vpsadmin/api/tasks/lifetimes.rb"

@@ -920,8 +920,22 @@ module VpsAdmin::API
     end
 
     def notification_delivery_context_for(event, action, route_context: nil, delivery: nil)
-      delivery_context_for_context(event, action, route_context:, delivery:) ||
-        email_delivery_context_for(event, route_context:, delivery:)
+      actions = if VpsAdmin::API::Notifications::DeliveryActions.known?(action)
+                  VpsAdmin::API::Notifications::DeliveryActions
+                    .fetch(action)
+                    .template_context_actions
+                else
+                  [action]
+                end
+
+      actions.lazy.filter_map do |context_action|
+        delivery_context_for_context(
+          event,
+          context_action,
+          route_context:,
+          delivery:
+        )
+      end.first
     end
 
     def delivery_context_for(event, action)
@@ -939,16 +953,7 @@ module VpsAdmin::API
     end
 
     def template_context_for(event, action, route_context: nil, delivery: nil)
-      case action.to_s
-      when 'sms'
-        delivery_context_for_context(event, :sms, route_context:, delivery:) ||
-          delivery_context_for_context(event, :email, route_context:, delivery:)
-      when 'telegram'
-        delivery_context_for_context(event, :telegram, route_context:, delivery:) ||
-          delivery_context_for_context(event, :email, route_context:, delivery:)
-      else
-        delivery_context_for_context(event, action, route_context:, delivery:)
-      end
+      notification_delivery_context_for(event, action, route_context:, delivery:)
     end
 
     def template_name_for(event, action = :email, route_context: nil, delivery: nil)
@@ -1521,7 +1526,7 @@ module VpsAdmin::API
         end
 
         deliveries = apply_grouping(
-          deduplicate(context_results.flat_map(&:deliveries) + direct_email_deliveries)
+          deduplicate(context_results.flat_map(&:deliveries) + direct_delivery_plans)
         )
 
         RouteResult.new(
@@ -1551,32 +1556,13 @@ module VpsAdmin::API
         ret
       end
 
-      def direct_email_deliveries
-        return [] unless event.user_id.blank?
-        return [] unless VpsAdmin::API::Notifications::Actions.known?('email')
-
-        custom_target = VpsAdmin::API::Events.custom_email_target_for(event).presence
-        if custom_target
-          return [
-            direct_email_delivery(
-              target_kind: 'custom',
-              target_value: custom_target,
-              target_label: custom_target
-            )
-          ]
-        end
-
-        default_target = VpsAdmin::API::Events.default_email_target_for(event).presence
-        return [] unless default_target
-
-        [
-          direct_email_delivery(
-            target_kind: 'default_recipient',
-            target_value: default_target,
-            target_label: default_target,
-            template_name: VpsAdmin::API::Events.template_name_for(event, :email)
+      def direct_delivery_plans
+        VpsAdmin::API::Notifications::DeliveryActions.direct_delivery_plans(
+          context: VpsAdmin::API::Notifications::DeliveryPlanningContext.new(
+            event:,
+            route_context: nil
           )
-        ]
+        )
       end
 
       def admin_route_owner_ids
@@ -1613,7 +1599,9 @@ module VpsAdmin::API
           break unless route.continue?
         end
 
-        deliveries = [skipped_delivery(nil, nil, nil, 'no route matched the event')] if deliveries.empty? && emit_skipped
+        if deliveries.empty? && emit_skipped
+          deliveries = [planning_context.skip(nil, nil, nil, 'no route matched the event')]
+        end
 
         RouteResult.new(
           routing_state: routing_state_for(deliveries),
@@ -1649,7 +1637,7 @@ module VpsAdmin::API
         end
 
         if deliveries.empty? && !matched_child && route.notification_receiver.nil?
-          return [skipped_delivery(route, nil, nil, 'route has no receiver')]
+          return [planning_context.skip(route, nil, nil, 'route has no receiver')]
         end
 
         deliveries
@@ -1683,20 +1671,20 @@ module VpsAdmin::API
       def deliveries_for_route(route)
         receiver = route.notification_receiver
 
-        return [skipped_delivery(route, nil, nil, 'route has no receiver')] unless receiver
+        return [planning_context.skip(route, nil, nil, 'route has no receiver')] unless receiver
 
         unless receiver.enabled?
-          return [skipped_delivery(route, receiver, nil, 'receiver is disabled')]
+          return [planning_context.skip(route, receiver, nil, 'receiver is disabled')]
         end
 
         if receiver.mute?
-          return [skipped_delivery(route, receiver, nil, 'receiver does not notify')]
+          return [planning_context.skip(route, receiver, nil, 'receiver does not notify')]
         end
 
         actions = receiver.notification_receiver_actions.to_a
 
         if actions.empty?
-          return [skipped_delivery(route, receiver, nil, 'receiver has no linked targets')]
+          return [planning_context.skip(route, receiver, nil, 'receiver has no linked targets')]
         end
 
         actions.map { |receiver_action| delivery_from_receiver_action(route, receiver, receiver_action) }
@@ -1712,10 +1700,18 @@ module VpsAdmin::API
           end
         actions = receiver.notification_receiver_actions.to_a
 
-        return [skipped_delivery(route, receiver, nil, reason, route_time_interval_state: state)] if actions.empty?
+        if actions.empty?
+          return [planning_context.skip(
+            route,
+            receiver,
+            nil,
+            reason,
+            route_time_interval_state: state
+          )]
+        end
 
         actions.map do |receiver_action|
-          skipped_delivery(
+          planning_context.skip(
             route,
             receiver,
             receiver_action,
@@ -1726,122 +1722,45 @@ module VpsAdmin::API
       end
 
       def delivery_from_receiver_action(route, receiver, receiver_action)
-        unless VpsAdmin::API::Notifications::Actions.known?(receiver_action.action)
-          return skipped_delivery(route, receiver, receiver_action, 'unknown receiver target')
+        unless VpsAdmin::API::Notifications::DeliveryActions.known?(receiver_action.action)
+          return planning_context.skip(route, receiver, receiver_action, 'unknown receiver target')
         end
 
         unless receiver_action.action_available?
-          return skipped_delivery(route, receiver, receiver_action, 'receiver target is not available')
-        end
-
-        unless receiver_action.delivery_method_enabled?
-          return skipped_delivery(route, receiver, receiver_action, 'delivery method is disabled')
-        end
-
-        unless receiver_action.deliverable?
-          return skipped_delivery(route, receiver, receiver_action, 'receiver target is disabled')
-        end
-
-        VpsAdmin::API::Notifications::Actions
-          .fetch(receiver_action.action)
-          .plan_delivery_for(self, route, receiver, receiver_action)
-      end
-
-      def email_delivery(route, receiver, receiver_action)
-        if receiver_action.email_verification_required? && !receiver_action.verified?
-          return skipped_delivery(route, receiver, receiver_action, 'e-mail target is not verified')
-        end
-
-        if receiver_action.default_recipient_target_kind?
-          if @route_context&.route_owner.nil?
-            return skipped_delivery(route, receiver, receiver_action, 'route has no recipient user')
-          end
-
-          if @route_context&.self_subject?
-            target = VpsAdmin::API::Events.default_email_target_for(
-              event,
-              route_context: @route_context
-            )
-          end
-          return build_delivery(
+          return planning_context.skip(
             route,
             receiver,
             receiver_action,
-            target_value: target.presence || 'default',
-            target_label: target.present? ? target : 'Default recipient'
+            'receiver target is not available'
           )
         end
 
-        build_delivery(
-          route,
-          receiver,
-          receiver_action,
-          target_value: receiver_action.target_value,
-          target_label: delivery_label(receiver_action.target_value)
-        )
-      end
+        unless receiver_action.delivery_method_enabled?
+          return planning_context.skip(
+            route,
+            receiver,
+            receiver_action,
+            'delivery method is disabled'
+          )
+        end
 
-      def webhook_delivery(route, receiver, receiver_action)
-        return skipped_delivery(route, receiver, receiver_action, 'webhook URL is not configured') if receiver_action.target_value.blank?
+        unless receiver_action.deliverable?
+          return planning_context.skip(
+            route,
+            receiver,
+            receiver_action,
+            'receiver target is disabled'
+          )
+        end
 
-        build_delivery(
-          route,
-          receiver,
-          receiver_action,
-          target_value: receiver_action.target_value,
-          target_label: receiver_action.label
-        )
-      end
-
-      def telegram_delivery(route, receiver, receiver_action)
-        return skipped_delivery(route, receiver, receiver_action, 'Telegram chat is not linked') if receiver_action.target_value.blank?
-        return skipped_delivery(route, receiver, receiver_action, 'Telegram chat is not verified') unless receiver_action.verified?
-
-        build_delivery(
-          route,
-          receiver,
-          receiver_action,
-          target_value: receiver_action.target_value,
-          target_label: receiver_action.display_target
-        )
-      end
-
-      def sms_delivery(route, receiver, receiver_action)
-        return skipped_delivery(route, receiver, receiver_action, 'SMS number is not configured') if receiver_action.target_value.blank?
-        return skipped_delivery(route, receiver, receiver_action, 'SMS number is not verified') unless receiver_action.verified?
-
-        build_delivery(
-          route,
-          receiver,
-          receiver_action,
-          target_value: receiver_action.target_value,
-          target_label: receiver_action.display_target
-        )
-      end
-
-      def build_delivery(route, receiver, receiver_action, target_value:, target_label:, template_name: nil,
-                         target_kind: nil, state: 'prepared', next_attempt_at: nil, payload: nil)
-        action = receiver_action&.action || 'email'
-        resolved_target_kind = target_kind || receiver_action&.target_kind || 'default_recipient'
-        resolved_template_name = template_name || delivery_template_name(route, receiver_action)
-
-        DeliveryPlan.new(
-          action:,
-          target_kind: resolved_target_kind,
-          target_value:,
-          target_label: delivery_label(target_label),
-          target_secret: receiver_action&.secret,
-          template_name: resolved_template_name,
-          event_route: route,
-          notification_receiver: receiver,
-          notification_target: receiver_action&.notification_target,
-          notification_receiver_action: receiver_action,
-          state:,
-          next_attempt_at:,
-          payload:,
-          route_context: @route_context,
-          route_time_interval_state: 'active'
-        )
+        VpsAdmin::API::Notifications::DeliveryActions
+          .fetch(receiver_action.action)
+          .plan_delivery(
+            context: planning_context,
+            route:,
+            receiver:,
+            receiver_action:
+          )
       end
 
       def apply_grouping(deliveries)
@@ -1922,62 +1841,9 @@ module VpsAdmin::API
         end
       end
 
-      def direct_email_delivery(target_kind:, target_value:, target_label:, template_name: nil)
-        DeliveryPlan.new(
-          action: 'email',
-          target_kind:,
-          target_value:,
-          target_label: delivery_label(target_label),
-          template_name:,
-          event_route: nil,
-          notification_receiver: nil,
-          notification_target: nil,
-          notification_receiver_action: nil,
-          state: 'prepared',
-          route_context: nil,
-          route_time_interval_state: 'active'
-        )
-      end
-
-      def skipped_delivery(route, receiver, receiver_action, reason, route_time_interval_state: 'active')
-        DeliveryPlan.new(
-          action: receiver_action&.action || 'email',
-          target_kind: receiver_action&.target_kind || 'default_recipient',
-          target_value: receiver_action&.target_value,
-          target_label: delivery_label(receiver_action&.display_target || receiver&.label),
-          template_name: delivery_template_name(route, receiver_action),
-          event_route: route,
-          notification_receiver: receiver,
-          notification_target: receiver_action&.notification_target,
-          notification_receiver_action: receiver_action,
-          state: 'skipped',
-          error_summary: reason,
-          route_context: @route_context,
-          route_time_interval_state:
-        )
-      end
-
-      def delivery_label(label)
-        return if label.nil?
-
-        label.to_s[0, DELIVERY_LABEL_LIMIT]
-      end
-
-      def delivery_template_name(route, receiver_action)
-        return unless receiver_action.nil? ||
-                      receiver_action.email_action? ||
-                      receiver_action.telegram_action? ||
-                      receiver_action.sms_action?
-
-        route_template_name = route&.template_name.presence
-        return route_template_name if route_template_name
-        return unless receiver_action&.email_action? ||
-                      receiver_action&.telegram_action? ||
-                      receiver_action&.sms_action?
-
-        VpsAdmin::API::Events.template_name_for(
-          event,
-          receiver_action.action,
+      def planning_context
+        VpsAdmin::API::Notifications::DeliveryPlanningContext.new(
+          event:,
           route_context: @route_context
         )
       end
@@ -2072,9 +1938,9 @@ module VpsAdmin::API
         record.association(:event).target = event if event.runtime_email_context?
 
         if record.prepared_state? && !record.grouping_enabled?
-          VpsAdmin::API::Notifications::Actions
+          VpsAdmin::API::Notifications::DeliveryActions
             .fetch(record.action)
-            .prepare_delivery_for(self, record)
+            .prepare_delivery(record)
         end
 
         record
