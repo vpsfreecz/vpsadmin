@@ -59,6 +59,19 @@ RSpec.describe VpsAdmin::API::Notifications::DeliveryActions do
       .to eq([VpsAdmin::API::Notifications::RateLimits.periods])
   end
 
+  it 'derives both persisted target kind enums from one ordered mapping' do
+    persisted_target_kinds = VpsAdmin::API::Notifications::TargetKinds::PERSISTED
+
+    expect(persisted_target_kinds.to_a).to eq(
+      [
+        ['default_recipient', 0],
+        ['custom', 1]
+      ]
+    )
+    expect(NotificationTarget.target_kinds.to_a).to eq(persisted_target_kinds.to_a)
+    expect(EventDelivery.target_kinds.to_a).to eq(persisted_target_kinds.to_a)
+  end
+
   it 'validates duplicated deployment defaults against registered actions' do
     contract = {
       'actions' => registry.names,
@@ -234,6 +247,52 @@ RSpec.describe VpsAdmin::API::Notifications::DeliveryActions do
       .to raise_error(ArgumentError, /conflicting label.*"custom"/)
     expect(registry.names).to eq(original_names)
     expect(registry.target_kind_labels).to eq(original_target_kind_labels)
+  end
+
+  it 'rejects unsupported target kinds before registering the action' do
+    unsupported_target_kind = Class.new(
+      VpsAdmin::API::Notifications::DeliveryActions::Base
+    ) do
+      action :spec_unsupported_target_kind,
+             label: 'Spec unsupported target kind',
+             queue: 'vpsadmin.notifications.spec-unsupported-target-kind',
+             routing_key: 'delivery.spec-unsupported-target-kind',
+             default_concurrency: 1,
+             default_rate_limits: { minute: 1, hour: 1, day: 1, week: 1 }
+      target_kind :external_address, label: 'external address'
+
+      def deliver(_delivery)
+        VpsAdmin::API::Notifications::DeliveryResult.new
+      end
+    end
+    original_names = registry.names
+
+    expect { registry.register(unsupported_target_kind) }
+      .to raise_error(ArgumentError, /unsupported target kinds "external_address"/)
+    expect(registry.names).to eq(original_names)
+  end
+
+  it 'rejects an undeclared default target kind before registering the action' do
+    undeclared_default = Class.new(
+      VpsAdmin::API::Notifications::DeliveryActions::Base
+    ) do
+      action :spec_undeclared_default_target_kind,
+             label: 'Spec undeclared default target kind',
+             queue: 'vpsadmin.notifications.spec-undeclared-default-target-kind',
+             routing_key: 'delivery.spec-undeclared-default-target-kind',
+             default_concurrency: 1,
+             default_rate_limits: { minute: 1, hour: 1, day: 1, week: 1 }
+      target_kind :default_recipient, label: 'default recipient'
+
+      def deliver(_delivery)
+        VpsAdmin::API::Notifications::DeliveryResult.new
+      end
+    end
+    original_names = registry.names
+
+    expect { registry.register(undeclared_default) }
+      .to raise_error(ArgumentError, /default target kind "custom" is not declared/)
+    expect(registry.names).to eq(original_names)
   end
 
   it 'rejects template fallbacks on actions which cannot render templates' do

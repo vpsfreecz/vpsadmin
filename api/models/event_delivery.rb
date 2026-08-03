@@ -1,10 +1,8 @@
+require 'vpsadmin/api/notifications/target_kinds'
+
 class EventDelivery < ApplicationRecord
   event_redact :payload, :response_headers, :target_secret, :target_value
   event_delete_cascades :event_delivery_attempts
-  TARGET_KIND_LABELS = {
-    'default_recipient' => 'default recipient',
-    'custom' => 'custom target'
-  }.freeze
 
   STATE_LABELS = {
     'prepared' => 'prepared',
@@ -49,7 +47,9 @@ class EventDelivery < ApplicationRecord
            foreign_key: :effective_event_delivery_id,
            dependent: :nullify
 
-  enum :target_kind, %i[default_recipient custom], suffix: true
+  enum :target_kind,
+       VpsAdmin::API::Notifications::TargetKinds::PERSISTED,
+       suffix: true
   enum :state,
        %i[prepared released sending sent skipped failed canceled accepted aborted grouping grouped],
        suffix: true

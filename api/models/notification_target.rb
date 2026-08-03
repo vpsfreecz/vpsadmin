@@ -4,6 +4,7 @@ require 'mail'
 require 'securerandom'
 require 'time'
 require 'uri'
+require 'vpsadmin/api/notifications/target_kinds'
 
 class NotificationTarget < ApplicationRecord
   event_delete_cascades :notification_receiver_targets
@@ -24,17 +25,14 @@ class NotificationTarget < ApplicationRecord
   SMS_VERIFICATION_LOCKOUT = 10 * 60
   SMS_PHONE_FORMAT = /\A\+[1-9][0-9]{6,14}\z/
 
-  TARGET_KIND_LABELS = {
-    'default_recipient' => 'default recipient',
-    'custom' => 'custom target'
-  }.freeze
-
   belongs_to :user
   has_many :notification_receiver_targets, dependent: :delete_all
   has_many :notification_receivers, through: :notification_receiver_targets
   has_many :event_deliveries, dependent: :nullify
 
-  enum :target_kind, %i[default_recipient custom], suffix: true
+  enum :target_kind,
+       VpsAdmin::API::Notifications::TargetKinds::PERSISTED,
+       suffix: true
 
   serialize :config, coder: JSON
 
