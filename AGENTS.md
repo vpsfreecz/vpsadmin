@@ -195,6 +195,10 @@ not prove that external documentation remains current.
   labels during registration. Cover a new action by extending registry and
   interface contract specs, not by adding mirrored action-name branches to
   routers, models, and workers.
+- Keep deployable action names open to registered implementations. When Nix
+  must duplicate evaluation-time defaults, emit a deployment contract and
+  validate it against the Ruby registry at process startup; cover both default
+  drift and a new syntactically valid action in tests.
 
 ## Commit & Pull Request Guidelines
 - Use short imperative subjects, often scoped (`api: add StoragePool resource`, `webui: fix payset form`); keep one logical change per commit.

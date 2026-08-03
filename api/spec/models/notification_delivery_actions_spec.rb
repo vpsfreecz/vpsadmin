@@ -59,6 +59,38 @@ RSpec.describe VpsAdmin::API::Notifications::DeliveryActions do
       .to eq([VpsAdmin::API::Notifications::RateLimits.periods])
   end
 
+  it 'validates duplicated deployment defaults against registered actions' do
+    contract = {
+      'actions' => registry.names,
+      'action_defaults' => registry.deployment_defaults
+    }
+
+    expect { registry.validate_deployment_contract!(contract) }.not_to raise_error
+    expect do
+      registry.validate_deployment_contract!(
+        contract.merge('actions' => [*registry.names, 'missing'])
+      )
+    end.to raise_error(ArgumentError, /unknown notification delivery actions missing/)
+    expect do
+      registry.validate_deployment_contract!(
+        contract.merge(
+          'action_defaults' => contract['action_defaults'].merge(
+            'email' => contract['action_defaults']['email'].merge('concurrency' => 99)
+          )
+        )
+      )
+    end.to raise_error(ArgumentError, /defaults differ from the Ruby registry/)
+  end
+
+  it 'allows registered actions without Nix-specific default overrides' do
+    contract = {
+      'actions' => registry.names,
+      'action_defaults' => registry.deployment_defaults.slice('email')
+    }
+
+    expect { registry.validate_deployment_contract!(contract) }.not_to raise_error
+  end
+
   it 'exposes one explicit contract for model, routing, preparation, and transport behavior' do
     expected_methods = %i[
       available?
@@ -143,6 +175,25 @@ RSpec.describe VpsAdmin::API::Notifications::DeliveryActions do
       .to raise_error(ArgumentError, /config section "email" is already registered/)
     expect(registry.names).to eq(original_names)
     expect(registry.labels).to eq(original_labels)
+  end
+
+  it 'rejects action names that cannot be used safely by deployment tooling' do
+    invalid_name = Class.new(VpsAdmin::API::Notifications::DeliveryActions::Base) do
+      action :'invalid/action',
+             label: 'Invalid action',
+             queue: 'vpsadmin.notifications.invalid-action',
+             routing_key: 'delivery.invalid-action',
+             default_concurrency: 1,
+             default_rate_limits: { minute: 1, hour: 1, day: 1, week: 1 }
+      target_kind :custom, label: 'custom target'
+
+      def deliver(_delivery)
+        VpsAdmin::API::Notifications::DeliveryResult.new
+      end
+    end
+
+    expect { registry.register(invalid_name) }
+      .to raise_error(ArgumentError, /incomplete notification delivery action/)
   end
 
   it 'rejects duplicate target kinds within one action declaration' do

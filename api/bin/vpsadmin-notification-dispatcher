@@ -5,7 +5,13 @@ $stdout.sync = true
 $stderr.sync = true
 
 action = ARGV.fetch(0) do
-  warn "Usage: #{$0} email|telegram|webhook|sms"
+  warn "Usage: #{$0} ACTION"
+  exit(false)
+end
+
+unless VpsAdmin::API::Notifications::DeliveryActions.known?(action)
+  known_actions = VpsAdmin::API::Notifications::DeliveryActions.names.join(', ')
+  warn "Unknown notification action #{action.inspect}; registered actions: #{known_actions}"
   exit(false)
 end
 
