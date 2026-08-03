@@ -3859,6 +3859,14 @@ msgid "Delivery"
 msgstr ""
 
 #: forms/notifications.forms.php
+msgid "Context"
+msgstr ""
+
+#: forms/notifications.forms.php
+msgid "Destination"
+msgstr ""
+
+#: forms/notifications.forms.php
 msgid "Attempts"
 msgstr ""
 

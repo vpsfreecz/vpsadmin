@@ -3902,6 +3902,14 @@ msgid "Delivery"
 msgstr "Doručení"
 
 #: forms/notifications.forms.php
+msgid "Context"
+msgstr "Kontext"
+
+#: forms/notifications.forms.php
+msgid "Destination"
+msgstr "Cíl doručení"
+
+#: forms/notifications.forms.php
 msgid "Attempts"
 msgstr "Pokusy"
 

@@ -3713,6 +3713,16 @@ function notifications_delivery_vps_link($delivery)
     return '<a href="?page=adminvps&action=info&veid=' . rawurlencode((string) $vps_id) . '">' . h($label) . '</a>';
 }
 
+function notifications_delivery_fields_html($fields)
+{
+    $ret = '<dl class="notification-delivery-fields">';
+    foreach ($fields as $label => $value) {
+        $ret .= '<dt>' . h($label) . '</dt><dd>' . $value . '</dd>';
+    }
+
+    return $ret . '</dl>';
+}
+
 function notifications_delivery_state_group_states($state_group)
 {
     if ($state_group === 'queue') {
@@ -5310,17 +5320,10 @@ function notifications_deliveries_admin($state_group)
 
     $xtpl->table_add_category(_('Delivery'));
     $xtpl->table_add_category(_('Event'));
-    $xtpl->table_add_category(_('Group'));
-    $xtpl->table_add_category(_('User'));
-    $xtpl->table_add_category(_('VPS'));
-    $xtpl->table_add_category(_('Receiver'));
-    $xtpl->table_add_category(_('Target'));
+    $xtpl->table_add_category(_('Context'));
+    $xtpl->table_add_category(_('Destination'));
     $xtpl->table_add_category(_('State'));
-    $xtpl->table_add_category(_('Attempts'));
-    $xtpl->table_add_category(_('Released'));
-    $xtpl->table_add_category(_('Last attempt'));
-    $xtpl->table_add_category(_('Next retry'));
-    $xtpl->table_add_category('');
+    $xtpl->table_add_category(_('Times'));
 
     foreach ($deliveries as $delivery) {
         $event_label = '#' . $delivery->event_id;
@@ -5337,31 +5340,49 @@ function notifications_deliveries_admin($state_group)
         ));
         $xtpl->table_td(
             notifications_event_link($delivery->event_id, $event_label)
-            . ($event_subject ? '<br>' . h(notifications_short_value($event_subject, 120)) : ''),
-            false,
-            true
+            . ($event_subject
+                ? '<div class="notification-delivery-subject">'
+                    . h(notifications_short_value($event_subject, 120)) . '</div>'
+                : '')
         );
-        $xtpl->table_td(notifications_delivery_group_html($delivery), false, true);
-        $xtpl->table_td(notifications_delivery_user_link($delivery), false, true);
-        $xtpl->table_td(notifications_delivery_vps_link($delivery), false, true);
-        $xtpl->table_td(notifications_delivery_receiver_link($delivery, notifications_prop($delivery, 'event_user_id')));
-        $xtpl->table_td(notifications_delivery_receiver_action_link($delivery, notifications_prop($delivery, 'event_user_id')));
-        $xtpl->table_td(h(notifications_delivery_state_label($delivery)));
-        $xtpl->table_td(notifications_prop($delivery, 'attempt_count', 0), false, true);
-        $xtpl->table_td(notifications_time_or_dash(notifications_prop($delivery, 'released_at')));
-        $xtpl->table_td(notifications_time_or_dash(notifications_prop($delivery, 'last_attempt_at')));
-        $xtpl->table_td(notifications_time_or_dash(notifications_prop($delivery, 'next_attempt_at')));
-        $xtpl->table_td('<a href="' . notifications_delivery_url($delivery->event_id, $delivery->id) . '"><img src="template/icons/vps_edit.png" title="' . _('Details') . '"></a>');
+        $xtpl->table_td(notifications_delivery_fields_html([
+            _('Group') => notifications_delivery_group_html($delivery),
+            _('User') => notifications_delivery_user_link($delivery),
+            _('VPS') => notifications_delivery_vps_link($delivery),
+        ]));
+        $xtpl->table_td(notifications_delivery_fields_html([
+            _('Receiver') => notifications_delivery_receiver_link(
+                $delivery,
+                notifications_prop($delivery, 'event_user_id')
+            ),
+            _('Target') => notifications_delivery_receiver_action_link(
+                $delivery,
+                notifications_prop($delivery, 'event_user_id')
+            ),
+        ]));
+        $xtpl->table_td(notifications_delivery_fields_html([
+            _('State') => h(notifications_delivery_state_label($delivery)),
+            _('Attempts') => h((string) notifications_prop($delivery, 'attempt_count', 0)),
+        ]));
+        $xtpl->table_td(notifications_delivery_fields_html([
+            _('Released') => notifications_time_or_dash(notifications_prop($delivery, 'released_at')),
+            _('Last attempt') => notifications_time_or_dash(
+                notifications_prop($delivery, 'last_attempt_at')
+            ),
+            _('Next retry') => notifications_time_or_dash(
+                notifications_prop($delivery, 'next_attempt_at')
+            ),
+        ]));
         $xtpl->table_tr();
     }
 
     if ($deliveries->count() == 0) {
-        $xtpl->table_td(_('No deliveries found.'), false, false, 13);
+        $xtpl->table_td(_('No deliveries found.'), false, false, 6);
         $xtpl->table_tr();
     }
 
     $xtpl->table_pagination($pagination);
-    $xtpl->table_out();
+    $xtpl->table_out('notification-deliveries-table');
 
     notifications_sidebar($action);
 }

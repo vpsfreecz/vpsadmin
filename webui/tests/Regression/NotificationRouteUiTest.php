@@ -51,6 +51,44 @@ final class NotificationRouteUiTest extends TestCase
         );
     }
 
+    public function testDeliveryAdminListUsesSixGroupedColumns(): void
+    {
+        $allSource = $this->notificationsFormsSource();
+        $deliveries = $this->sourceBetween(
+            $allSource,
+            'function notifications_deliveries_admin(',
+            'function notifications_events('
+        );
+
+        foreach (['Delivery', 'Event', 'Context', 'Destination', 'State', 'Times'] as $label) {
+            self::assertStringContainsString("_('{$label}')", $deliveries);
+        }
+        self::assertSame(6, substr_count($deliveries, '$xtpl->table_add_category('));
+        self::assertStringContainsString('notifications_delivery_fields_html([', $deliveries);
+        foreach (['Group', 'User', 'VPS', 'Receiver', 'Target', 'Attempts', 'Released',
+            'Last attempt', 'Next retry'] as $label) {
+            self::assertStringContainsString("_('{$label}') =>", $deliveries);
+        }
+        self::assertStringContainsString("false, false, 6", $deliveries);
+        self::assertStringContainsString(
+            "table_out('notification-deliveries-table')",
+            $deliveries
+        );
+        self::assertStringNotContainsString('template/icons/vps_edit.png', $deliveries);
+
+        $css = file_get_contents(dirname(__DIR__, 2) . '/public/template/css/main.css');
+        $deliveryCss = $this->sourceBetween(
+            $css,
+            '#notification-deliveries-table {',
+            '.notification-delivery-html-preview,'
+        );
+        self::assertStringContainsString('table-layout: fixed;', $deliveryCss);
+        self::assertStringContainsString('overflow-wrap: anywhere;', $deliveryCss);
+        self::assertSame(6, substr_count($deliveryCss, 'th:nth-child('));
+        self::assertStringContainsString('.notification-delivery-fields dt {', $deliveryCss);
+        self::assertStringContainsString('.notification-delivery-fields dd {', $deliveryCss);
+    }
+
     public function testGroupingUsesAStandaloneRouteDetailsForm(): void
     {
         $source = $this->notificationsFormsSource();
