@@ -27,6 +27,10 @@ RSpec.describe TransactionChains::SnapshotInPool::UseClone do
     expect(clone).to be_persisted
     expect(clone.name).to eq("#{sip.snapshot_id}-#{clone.id}.snapshot")
     expect(tx_classes(chain)).to eq([Transactions::Storage::CloneSnapshot])
+    expect(ResourceLock.where(locked_by: chain).pluck(:resource, :row_id)).to include(
+      ['DatasetInPool', sip.dataset_in_pool_id],
+      ['SnapshotInPool', sip.id]
+    )
 
     increment = confirmations_for(chain).find { |row| row.confirm_type == 'increment_type' }
     expect(increment.row_pks).to eq('id' => sip.id)

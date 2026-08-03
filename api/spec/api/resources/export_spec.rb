@@ -666,6 +666,34 @@ RSpec.describe 'VpsAdmin::API::Resources::Export' do
       end
     end
 
+    it 'returns 423 when the snapshot export source is pending destruction' do
+      primary_pool = create_primary_pool!(node: SpecSeed.node)
+      dataset, primary_dip = create_dataset_with_pool!(
+        user: SpecSeed.user,
+        pool: primary_pool,
+        name: "spec-export-locked-#{SecureRandom.hex(4)}"
+      )
+      snapshot, sip = create_snapshot!(dataset: dataset, dip: primary_dip)
+      create_private_export_network_with_ips!(
+        location: primary_pool.node.location,
+        count: 1
+      )
+      ensure_signer_unlocked!
+
+      destroy_chain = with_current_context(user: SpecSeed.user) do
+        TransactionChains::SnapshotInPool::Destroy.fire(sip).first
+      end
+
+      expect do
+        as(SpecSeed.user) { json_post index_path, export: { snapshot: snapshot.id } }
+      end.not_to change(Export, :count)
+
+      expect_status(423)
+      expect(json['status']).to be(false)
+      expect(msg).to include(destroy_chain.id.to_s, destroy_chain.label)
+      expect(SnapshotInPoolClone.where(snapshot_in_pool: sip)).to be_empty
+    end
+
     it 'ignores threads for non-admin users' do
       pool = create_primary_pool!(node: SpecSeed.node)
       dip = create_dataset_in_pool!(user: SpecSeed.user, pool: pool)

@@ -4,6 +4,9 @@ module TransactionChains
     # @param userns_map [UserNamespaceMap]
     # @return [SnapshotInPoolClone]
     def link_chain(sip, userns_map)
+      lock(sip.dataset_in_pool)
+      lock(sip)
+
       cl = ::SnapshotInPoolClone.where(
         snapshot_in_pool: sip,
         user_namespace_map: userns_map
