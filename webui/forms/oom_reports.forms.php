@@ -341,7 +341,7 @@ function oom_reports_rules_list($vps_id)
     $rules = $api->oom_report_rule->list(['vps' => $vps->id]);
     $input = $api->oom_report_rule->create->getParameters('input');
 
-    $xtpl->table_title(_('OOM report rules for VPS ') . $vps->id . ' ' . h($vps->hostname));
+    $xtpl->table_title(_('OOM report rules for VPS') . ' ' . $vps->id . ' ' . h($vps->hostname));
     $xtpl->table_add_category(_('Action'));
     $xtpl->table_add_category(_('Cgroup path pattern'));
     $xtpl->table_add_category(_('Hit count'));

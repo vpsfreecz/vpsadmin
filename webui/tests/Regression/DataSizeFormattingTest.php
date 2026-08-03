@@ -60,14 +60,18 @@ final class DataSizeFormattingTest extends TestCase
     {
         $dataset = (object) [
             'used' => 1536,
-            'referenced' => 1536,
+            'referenced' => 2048,
             'compressratio' => 1.5,
-            'refcompressratio' => 1.5,
+            'refcompressratio' => 1.25,
         ];
 
         self::assertSame(
             '1.5 GiB (2.25 GiB uncompressed, ratio 1.5&times;)',
             usedSpaceWithCompression($dataset, 'used')
+        );
+        self::assertSame(
+            '2 GiB (2.5 GiB uncompressed, ratio 1.25&times;)',
+            usedSpaceWithCompression($dataset, 'referenced')
         );
         self::assertSame(
             '1.5&times; (2.25 GiB uncompressed)',
@@ -104,6 +108,7 @@ final class DataSizeFormattingTest extends TestCase
     public function testCzechLocaleUsesDecimalComma(): void
     {
         $this->useLocale('cs_CZ.utf8');
+        $this->useTranslations('cs_CZ.utf8');
 
         self::assertSame('1,23', format_decimal_number(1.234));
         self::assertSame('1,5 KiB', data_size_to_humanreadable_b(1536));
@@ -116,16 +121,20 @@ final class DataSizeFormattingTest extends TestCase
 
         $dataset = (object) [
             'used' => 1536,
-            'referenced' => 1536,
+            'referenced' => 2048,
             'compressratio' => 1.5,
-            'refcompressratio' => 1.5,
+            'refcompressratio' => 1.25,
         ];
         self::assertSame(
-            '1,5 GiB (2,25 GiB uncompressed, ratio 1,5&times;)',
+            '1,5 GiB (2,25 GiB nekomprimovaně, poměr 1,5&times;)',
             usedSpaceWithCompression($dataset, 'used')
         );
         self::assertSame(
-            '1,5&times; (2,25 GiB uncompressed)',
+            '2 GiB (2,5 GiB nekomprimovaně, poměr 1,25&times;)',
+            usedSpaceWithCompression($dataset, 'referenced')
+        );
+        self::assertSame(
+            '1,5&times; (2,25 GiB bez komprese)',
             compressRatioWithUsedSpace($dataset, 'compressratio')
         );
     }
@@ -133,5 +142,14 @@ final class DataSizeFormattingTest extends TestCase
     private function useLocale(string $locale): void
     {
         $GLOBALS['CURRENTLOCALE'] = $locale;
+    }
+
+    private function useTranslations(string $locale): void
+    {
+        putenv('LANGUAGE=' . $locale);
+        self::assertNotFalse(setlocale(LC_ALL, 'en_US.utf8'));
+        bindtextdomain('vpsAdmin', dirname(__DIR__, 2) . '/lang/locale');
+        bind_textdomain_codeset('vpsAdmin', 'UTF-8');
+        textdomain('vpsAdmin');
     }
 }

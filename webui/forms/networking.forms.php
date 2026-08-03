@@ -625,7 +625,7 @@ function route_assign_form($id)
             );
 
             $via_addrs = [
-                '' => _('host address from this network will be on ' . $netif->name),
+                '' => _('host address from this network will be on') . ' ' . $netif->name,
             ] + $via_addrs;
 
             $xtpl->table_td(

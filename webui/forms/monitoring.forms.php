@@ -208,7 +208,7 @@ function monitoring_ack_form($id)
         $e = $id;
     }
 
-    $xtpl->table_title(_('Acknowledge event ') . $e->id . ': ' . $e->label);
+    $xtpl->table_title(_('Acknowledge event') . ' ' . $e->id . ': ' . $e->label);
     $xtpl->form_create('?page=monitoring&action=ack&id=' . $e->id);
 
     if ($id != $e) {
@@ -248,7 +248,7 @@ function monitoring_ignore_form($id)
         $e = $id;
     }
 
-    $xtpl->table_title(_('Ignore event ') . $e->id . ': ' . $e->label);
+    $xtpl->table_title(_('Ignore event') . ' ' . $e->id . ': ' . $e->label);
     $xtpl->form_create('?page=monitoring&action=ignore&id=' . $e->id);
 
     if ($id != $e) {

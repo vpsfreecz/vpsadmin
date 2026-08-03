@@ -180,13 +180,13 @@ if (isLoggedIn()) {
 
                 if (($params['start'] ?? false) || !isAdmin()) {
                     notify_user(
-                        _("VPS create ") . ' ' . $vps->id,
+                        _("VPS create") . ' ' . $vps->id,
                         _("VPS will be created and booted afterwards.")
                     );
 
                 } else {
                     notify_user(
-                        _("VPS create ") . ' ' . $vps->id,
+                        _("VPS create") . ' ' . $vps->id,
                         _("VPS will be created. You can start it manually.")
                     );
                 }
@@ -247,7 +247,7 @@ if (isLoggedIn()) {
 
                 notify_user(
                     _("Change of root password planned"),
-                    _("New password is: ") . "<b>" . $ret['password'] . "</b>"
+                    _("New password is:") . " <b>" . $ret['password'] . "</b>"
                 );
                 redirect('?page=adminvps&action=info&veid=' . $_GET["veid"]);
 
@@ -1814,8 +1814,8 @@ if (isLoggedIn()) {
                 post_val('cgroup_version', $vps->cgroup_version) == 'cgroup_any',
             );
             $xtpl->table_td(
-                _('Use cgroups supported by the distribution, i.e. ')
-                . cgroupEnumToLabel($vps->os_template->cgroup_version) . ' ' . _('for') . ' '
+                _('Use cgroups supported by the distribution, i.e.')
+                . ' ' . cgroupEnumToLabel($vps->os_template->cgroup_version) . ' ' . _('for') . ' '
                 . $vps->os_template->label . ' ' . _('(recommended)')
             );
             $xtpl->table_tr();

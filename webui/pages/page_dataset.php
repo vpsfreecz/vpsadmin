@@ -300,7 +300,7 @@ if (isLoggedIn()) {
                     $vps = $api->vps->find($_GET['vps']);
                     $m = $vps->mount->find($_GET['id']);
 
-                    $xtpl->table_title(_('Confirm the removal of mount from VPS') . ' #' . $vps->id . _(' at ') . $m->mountpoint);
+                    $xtpl->table_title(_('Confirm the removal of mount from VPS') . ' #' . $vps->id . ' ' . _('at') . ' ' . $m->mountpoint);
                     $xtpl->form_create('?page=dataset&action=mount_destroy&vps=' . $vps->id . '&id=' . $m->id, 'post');
 
                     $xtpl->table_td(

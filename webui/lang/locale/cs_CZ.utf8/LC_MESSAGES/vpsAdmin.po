@@ -1372,8 +1372,8 @@ msgid "Set reverse record"
 msgstr "Nastavit reverzní záznam"
 
 #: forms/dns.forms.php
-msgid "Example BIND configuration for server on "
-msgstr "Příklad konfigurace BIND pro server na adrese "
+msgid "Example BIND configuration for server on"
+msgstr "Příklad konfigurace BIND pro server na adrese"
 
 #: forms/dns.forms.php
 msgid "Records"
@@ -1438,10 +1438,6 @@ msgstr "Nový záznam"
 #: forms/dns.forms.php
 msgid "Add record"
 msgstr "Přidat záznam"
-
-#: forms/dns.forms.php
-msgid "Zone "
-msgstr "Zóna"
 
 #: forms/dns.forms.php
 msgid "update record"
@@ -1841,7 +1837,7 @@ msgid "Log"
 msgstr "Log"
 
 #: forms/monitoring.forms.php
-msgid "Acknowledge event "
+msgid "Acknowledge event"
 msgstr "Potvrzení události"
 
 #: forms/monitoring.forms.php
@@ -1861,7 +1857,7 @@ msgid "Acknowledge"
 msgstr "Potvrdit"
 
 #: forms/monitoring.forms.php
-msgid "Ignore event "
+msgid "Ignore event"
 msgstr "Ignorovat událost"
 
 #: forms/monitoring.forms.php
@@ -1965,8 +1961,8 @@ msgid "Route IP address to a VPS"
 msgstr "Směrovat IP adresu na VPS"
 
 #: forms/networking.forms.php forms/vps.forms.php
-msgid "host address from this network will be on "
-msgstr "adresa hostitele z této sítě bude na "
+msgid "host address from this network will be on"
+msgstr "adresa hostitele z této sítě bude na"
 
 #: forms/networking.forms.php
 msgid "Add only route"
@@ -2530,8 +2526,8 @@ msgid "Processes"
 msgstr "Procesy"
 
 #: forms/oom_reports.forms.php
-msgid "OOM report rules for VPS "
-msgstr "Pravidla OOM reportů pro VPS "
+msgid "OOM report rules for VPS"
+msgstr "Pravidla OOM reportů pro VPS"
 
 #: forms/oom_reports.forms.php
 msgid "Cgroup path pattern"
@@ -3020,7 +3016,9 @@ msgstr "Lokální eskalace oprávnění"
 
 #: forms/security_advisory.forms.php
 msgid "Short vulnerability-class title shown in advisory lists and emails."
-msgstr "Krátký název typu zranitelnosti zobrazovaný v seznamech upozornění a e-mailech."
+msgstr ""
+"Krátký název typu zranitelnosti zobrazovaný v seznamech upozornění a e-"
+"mailech."
 
 #: forms/security_advisory.forms.php
 msgid ""
@@ -4679,7 +4677,7 @@ msgid "Routed addresses"
 msgstr "Routované adresy"
 
 #: forms/vps.forms.php
-msgid " via "
+msgid "via"
 msgstr "přes"
 
 #: forms/vps.forms.php
@@ -4881,8 +4879,8 @@ msgid "Error message"
 msgstr "Chybová zpráva"
 
 #: lib/functions.lib.php
-msgid "uncompressed, ratio "
-msgstr "nekomprimovaný, poměr"
+msgid "uncompressed, ratio"
+msgstr "nekomprimovaně, poměr"
 
 #: lib/functions.lib.php
 msgid "uncompressed"
@@ -4932,7 +4930,7 @@ msgid "was successful"
 msgstr "byl úspěšný"
 
 #: lib/login.lib.php
-msgid "Your privilege level: "
+msgid "Your privilege level:"
 msgstr "Vaše úroveň oprávnění:"
 
 #: lib/login.lib.php
@@ -5801,7 +5799,7 @@ msgstr "Balíček přidán"
 msgid "Failed to add package"
 msgstr "Balíček se nepodařilo přidat"
 
-#: pages/page_adminm.php
+#: pages/page_adminm.php pages/page_cluster.php
 msgid "Package updated"
 msgstr "Balíček aktualizován"
 
@@ -5885,8 +5883,8 @@ msgid "Restart of"
 msgstr "Restart"
 
 #: pages/page_adminvps.php
-msgid "VPS create "
-msgstr "Vytvoření VPS "
+msgid "VPS create"
+msgstr "Vytvoření VPS"
 
 #: pages/page_adminvps.php
 msgid "VPS will be created and booted afterwards."
@@ -5913,7 +5911,7 @@ msgid "Change of root password planned"
 msgstr "Plánovaná změna hesla uživatele root"
 
 #: pages/page_adminvps.php
-msgid "New password is: "
+msgid "New password is:"
 msgstr "Nové heslo je:"
 
 #: pages/page_adminvps.php
@@ -6625,8 +6623,8 @@ msgid "In use:"
 msgstr "Používá se:"
 
 #: pages/page_adminvps.php
-msgid "Use cgroups supported by the distribution, i.e. "
-msgstr "Použít cgroups podporované distribucí, tzn. "
+msgid "Use cgroups supported by the distribution, i.e."
+msgstr "Použít cgroups podporované distribucí, tzn."
 
 #: pages/page_adminvps.php
 msgid "for"
@@ -7045,10 +7043,6 @@ msgid "Create failed"
 msgstr "Vytvoření se nezdařilo"
 
 #: pages/page_cluster.php
-msgid "Package updated "
-msgstr "Balíček aktualizován"
-
-#: pages/page_cluster.php
 msgid "The cluster resource package was updated."
 msgstr "Balíček prostředků clusteru byl aktualizován."
 
@@ -7393,12 +7387,12 @@ msgid "Failed to remove mount"
 msgstr "Odstranění mountu se nezdařilo"
 
 #: pages/page_dataset.php
-msgid " at "
-msgstr "na"
-
-#: pages/page_dataset.php
 msgid "Confirm the removal of mount from VPS"
 msgstr "Potvrdit odebrání mountu z VPS"
+
+#: pages/page_dataset.php
+msgid "at"
+msgstr "na"
 
 #: pages/page_dataset.php
 msgid "The dataset will be unmounted. The data itself is not touched."
@@ -7709,11 +7703,11 @@ msgid "never"
 msgstr "nikdy"
 
 #: pages/page_index.php
-msgid "scrub, "
-msgstr "scrub, "
+msgid "scrub,"
+msgstr "scrub,"
 
 #: pages/page_index.php
-msgid "resilver, "
+msgid "resilver,"
 msgstr "resilver,"
 
 #: pages/page_index.php
@@ -7765,7 +7759,7 @@ msgstr ""
 "přetrvává, kontaktujte podporu."
 
 #: pages/page_login.php
-msgid "Authorization server reports: "
+msgid "Authorization server reports:"
 msgstr "Autorizační server hlásí:"
 
 #: pages/page_login.php
@@ -8298,6 +8292,15 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "Zone "
+#~ msgstr "Zóna"
+
+#~ msgid "Package updated "
+#~ msgstr "Balíček aktualizován"
+
+#~ msgid " at "
+#~ msgstr "na"
 
 #~ msgid "A kernel bug could affect containers on selected nodes."
 #~ msgstr "Bug v jádře může ovlivnit kontejnery na vybraných nodech."

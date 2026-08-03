@@ -1772,7 +1772,7 @@ function usedSpaceWithCompression($dataset, $property)
     $ret .= data_size_to_humanreadable($used);
     $ret .= ' (';
     $ret .= data_size_to_humanreadable($used * $ratio);
-    $ret .= ' ' . _('uncompressed, ratio ') . format_decimal_number($ratio) . '&times;)';
+    $ret .= ' ' . _('uncompressed, ratio') . ' ' . format_decimal_number($ratio) . '&times;)';
 
     return $ret;
 }

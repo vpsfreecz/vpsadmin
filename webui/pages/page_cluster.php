@@ -430,7 +430,7 @@ if (isAdmin()) {
                         'label' => $_POST['label'],
                     ]);
 
-                    notify_user(_("Package updated "), _("The cluster resource package was updated."));
+                    notify_user(_("Package updated"), _("The cluster resource package was updated."));
                     redirect('?page=cluster&action=resource_packages_edit&id=' . $_GET['id']);
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {

@@ -240,8 +240,8 @@ function switchUserContext($target_user_id)
 
         notify_user(
             _("Change to") . ' ' . $user->login . ' ' . _('was successful'),
-            _("Your privilege level: ")
-                . $cfg_privlevel[$user->level]
+            _("Your privilege level:")
+                . ' ' . $cfg_privlevel[$user->level]
         );
 
         redirect($_POST["next"] ?? $_GET["next"] ?? '?page=');

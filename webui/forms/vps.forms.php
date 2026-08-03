@@ -2106,7 +2106,7 @@ function vps_netif_iproutes_form($vps, $netif)
         $xtpl->table_td(ip_label($ip));
         $xtpl->table_td(
             $ip->addr . '/' . $ip->prefix
-            . ($ip->route_via_id ? _(' via ') . $ip->route_via->addr : '')
+            . ($ip->route_via_id ? ' ' . _('via') . ' ' . $ip->route_via->addr : '')
         );
 
         $xtpl->table_td('<a href="?page=incidents&action=list&list=1&ip_addr=' . $ip->addr . '&return=' . $return_url . '"><img src="template/icons/bug.png" alt="' . _('List incident reports') . '" title="' . _('List incident reports') . '"></a>');
@@ -2179,7 +2179,7 @@ function vps_netif_iproute_add_form()
     );
 
     $via_addrs = [
-        '' => _('host address from this network will be on ' . $netif->name),
+        '' => _('host address from this network will be on') . ' ' . $netif->name,
     ] + $via_addrs;
 
     $xtpl->table_td(_('VPS') . ':');

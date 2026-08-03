@@ -1366,7 +1366,7 @@ msgid "Set reverse record"
 msgstr ""
 
 #: forms/dns.forms.php
-msgid "Example BIND configuration for server on "
+msgid "Example BIND configuration for server on"
 msgstr ""
 
 #: forms/dns.forms.php
@@ -1431,10 +1431,6 @@ msgstr ""
 
 #: forms/dns.forms.php
 msgid "Add record"
-msgstr ""
-
-#: forms/dns.forms.php
-msgid "Zone "
 msgstr ""
 
 #: forms/dns.forms.php
@@ -1831,7 +1827,7 @@ msgid "Log"
 msgstr ""
 
 #: forms/monitoring.forms.php
-msgid "Acknowledge event "
+msgid "Acknowledge event"
 msgstr ""
 
 #: forms/monitoring.forms.php
@@ -1849,7 +1845,7 @@ msgid "Acknowledge"
 msgstr ""
 
 #: forms/monitoring.forms.php
-msgid "Ignore event "
+msgid "Ignore event"
 msgstr ""
 
 #: forms/monitoring.forms.php
@@ -1951,7 +1947,7 @@ msgid "Route IP address to a VPS"
 msgstr ""
 
 #: forms/networking.forms.php forms/vps.forms.php
-msgid "host address from this network will be on "
+msgid "host address from this network will be on"
 msgstr ""
 
 #: forms/networking.forms.php
@@ -2514,7 +2510,7 @@ msgid "Processes"
 msgstr ""
 
 #: forms/oom_reports.forms.php
-msgid "OOM report rules for VPS "
+msgid "OOM report rules for VPS"
 msgstr ""
 
 #: forms/oom_reports.forms.php
@@ -4636,7 +4632,7 @@ msgid "Routed addresses"
 msgstr ""
 
 #: forms/vps.forms.php
-msgid " via "
+msgid "via"
 msgstr ""
 
 #: forms/vps.forms.php
@@ -4832,7 +4828,7 @@ msgid "Error message"
 msgstr ""
 
 #: lib/functions.lib.php
-msgid "uncompressed, ratio "
+msgid "uncompressed, ratio"
 msgstr ""
 
 #: lib/functions.lib.php
@@ -4881,7 +4877,7 @@ msgid "was successful"
 msgstr ""
 
 #: lib/login.lib.php
-msgid "Your privilege level: "
+msgid "Your privilege level:"
 msgstr ""
 
 #: lib/login.lib.php
@@ -5734,7 +5730,7 @@ msgstr ""
 msgid "Failed to add package"
 msgstr ""
 
-#: pages/page_adminm.php
+#: pages/page_adminm.php pages/page_cluster.php
 msgid "Package updated"
 msgstr ""
 
@@ -5818,7 +5814,7 @@ msgid "Restart of"
 msgstr ""
 
 #: pages/page_adminvps.php
-msgid "VPS create "
+msgid "VPS create"
 msgstr ""
 
 #: pages/page_adminvps.php
@@ -5846,7 +5842,7 @@ msgid "Change of root password planned"
 msgstr ""
 
 #: pages/page_adminvps.php
-msgid "New password is: "
+msgid "New password is:"
 msgstr ""
 
 #: pages/page_adminvps.php
@@ -6513,7 +6509,7 @@ msgid "In use:"
 msgstr ""
 
 #: pages/page_adminvps.php
-msgid "Use cgroups supported by the distribution, i.e. "
+msgid "Use cgroups supported by the distribution, i.e."
 msgstr ""
 
 #: pages/page_adminvps.php
@@ -6923,10 +6919,6 @@ msgid "Create failed"
 msgstr ""
 
 #: pages/page_cluster.php
-msgid "Package updated "
-msgstr ""
-
-#: pages/page_cluster.php
 msgid "The cluster resource package was updated."
 msgstr ""
 
@@ -7269,11 +7261,11 @@ msgid "Failed to remove mount"
 msgstr ""
 
 #: pages/page_dataset.php
-msgid " at "
+msgid "Confirm the removal of mount from VPS"
 msgstr ""
 
 #: pages/page_dataset.php
-msgid "Confirm the removal of mount from VPS"
+msgid "at"
 msgstr ""
 
 #: pages/page_dataset.php
@@ -7585,11 +7577,11 @@ msgid "never"
 msgstr ""
 
 #: pages/page_index.php
-msgid "scrub, "
+msgid "scrub,"
 msgstr ""
 
 #: pages/page_index.php
-msgid "resilver, "
+msgid "resilver,"
 msgstr ""
 
 #: pages/page_index.php
@@ -7639,7 +7631,7 @@ msgid ""
 msgstr ""
 
 #: pages/page_login.php
-msgid "Authorization server reports: "
+msgid "Authorization server reports:"
 msgstr ""
 
 #: pages/page_login.php

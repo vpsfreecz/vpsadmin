@@ -1116,7 +1116,7 @@ function dns_bind_primary_example($zone, $serverZones, $zoneTransfer)
 {
     global $xtpl;
 
-    $xtpl->table_title(_('Example BIND configuration for server on ') . ' ' . $zoneTransfer->host_ip_address->addr);
+    $xtpl->table_title(_('Example BIND configuration for server on') . ' ' . $zoneTransfer->host_ip_address->addr);
 
     $zoneFile = '/etc/bind/zones/db.' . $zone->name;
 
@@ -1236,7 +1236,7 @@ function dns_bind_secondary_example($zone, $serverZones, $zoneTransfer)
 {
     global $xtpl;
 
-    $xtpl->table_title(_('Example BIND configuration for server on ') . ' ' . $zoneTransfer->host_ip_address->addr);
+    $xtpl->table_title(_('Example BIND configuration for server on') . ' ' . $zoneTransfer->host_ip_address->addr);
 
     $primaryIps = implode(
         ' ',
@@ -1430,7 +1430,7 @@ function dns_record_edit($id)
 
     $record = $api->dns_record->show($id);
 
-    $xtpl->title(_('Zone ') . h($record->dns_zone->name) . ': ' . _('update record'));
+    $xtpl->title(_('Zone') . ' ' . h($record->dns_zone->name) . ': ' . _('update record'));
 
     $xtpl->form_create('?page=dns&action=record_edit2&id=' . $record->id, 'post');
 
