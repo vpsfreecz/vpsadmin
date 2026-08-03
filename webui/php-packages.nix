@@ -414,10 +414,10 @@ let
     "sebastian/recursion-context" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "sebastian-recursion-context-74c5af21f6a5833e91767ca068c4d3dfec15317e";
+        name = "sebastian-recursion-context-32dba72f2b4642d6a93db22d6c0a9280ff2e3ca0";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/recursion-context/zipball/74c5af21f6a5833e91767ca068c4d3dfec15317e";
-          sha256 = "1znzsh41xixsslgyvhg0sjwr1470d4blv01mdf350h1wzpmxclcv";
+          url = "https://api.github.com/repos/sebastianbergmann/recursion-context/zipball/32dba72f2b4642d6a93db22d6c0a9280ff2e3ca0";
+          sha256 = "0g9w49w0fajn0ccld99sq3nhxc6mssmiiymrznlbxpf6mx3a2k73";
         };
       };
     };
