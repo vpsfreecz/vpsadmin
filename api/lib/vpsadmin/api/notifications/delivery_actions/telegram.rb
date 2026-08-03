@@ -2,13 +2,9 @@ require 'erb'
 
 module VpsAdmin::API::Notifications::DeliveryActions
   class Telegram < Base
-    class ResponseError < StandardError
-      attr_reader :response_status, :response_body
-
+    class ResponseError < VpsAdmin::API::Notifications::DeliveryFailure
       def initialize(response_status, response_body, message)
-        @response_status = response_status
-        @response_body = response_body
-        super(message)
+        super(message, response_status:, response_body:)
       end
     end
 

@@ -1,4 +1,15 @@
 module VpsAdmin::API::Notifications
+  class DeliveryFailure < StandardError
+    attr_reader :response_status, :response_body, :response_headers
+
+    def initialize(message, response_status: nil, response_body: nil, response_headers: nil)
+      @response_status = response_status
+      @response_body = response_body
+      @response_headers = response_headers
+      super(message)
+    end
+  end
+
   DeliveryResult = Data.define(
     :outcome,
     :provider_message_id,
@@ -13,6 +24,10 @@ module VpsAdmin::API::Notifications
       response_body: nil,
       response_headers: nil
     )
+      unless %i[sent accepted].include?(outcome)
+        raise ArgumentError, "invalid notification delivery outcome #{outcome.inspect}"
+      end
+
       super
     end
 
