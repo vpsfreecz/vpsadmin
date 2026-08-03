@@ -57,6 +57,18 @@ module AfterTestScriptRunLogs
     CMD
   end
 
+  def self.collect_webui_container_journal(machine)
+    machine.execute(<<~CMD)
+      echo "[after_test_script_run] webui container failed services"
+      nixos-container run webui -- systemctl --failed --no-legend --no-pager --type=service || true
+
+      echo "[after_test_script_run] webui container nginx and PHP-FPM journal"
+      nixos-container run webui -- journalctl --no-pager -n #{LOG_LINES} \
+        -u nginx.service \
+        -u phpfpm-vpsadmin-webui.service || true
+    CMD
+  end
+
   def self.collect_transaction_debug(machine)
     machine.execute(<<~CMD)
       mariadb_query() {
@@ -120,6 +132,7 @@ TestRunner::Hook.subscribe(:after_test_script_run) do |script_result:, machines:
       end
 
       if AfterTestScriptRunLogs.services_machine?(machine)
+        AfterTestScriptRunLogs.collect_webui_container_journal(machine)
         AfterTestScriptRunLogs.collect_service_journal(machine)
         AfterTestScriptRunLogs.collect_transaction_debug(machine)
       elsif AfterTestScriptRunLogs.node_machine?(machine)
