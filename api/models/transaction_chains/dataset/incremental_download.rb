@@ -73,7 +73,13 @@ module TransactionChains
         snapshot_in_pools: { confirmed: ::SnapshotInPool.confirmed(:confirm_destroy) }
       ).take
 
-      raise 'no common snapshot history found for incremental download' unless to_sip
+      unless to_sip
+        snapshot_download_unavailable!(
+          dl.from_snapshot,
+          dl.snapshot,
+          reason: :no_common_source
+        )
+      end
 
       lock(to_sip)
       lock(to_sip.dataset_in_pool)
@@ -82,7 +88,15 @@ module TransactionChains
         dataset_in_pools: { pool_id: to_sip.dataset_in_pool.pool_id }
       ).where.not(
         snapshot_in_pools: { confirmed: ::SnapshotInPool.confirmed(:confirm_destroy) }
-      ).take!
+      ).take
+
+      unless from_sip
+        snapshot_download_unavailable!(
+          dl.from_snapshot,
+          dl.snapshot,
+          reason: :no_common_source
+        )
+      end
 
       lock(from_sip)
 

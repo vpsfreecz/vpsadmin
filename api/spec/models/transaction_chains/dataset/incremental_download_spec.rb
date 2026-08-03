@@ -112,7 +112,7 @@ RSpec.describe TransactionChains::Dataset::IncrementalDownload do
     expect(tx_classes(chain)).to eq([Transactions::Storage::DownloadSnapshot])
   end
 
-  it 'raises when neither a common pool nor a backup base snapshot exists' do
+  it 'raises SnapshotDownloadUnavailable when no common source exists' do
     dataset, primary_dip, backup_dip = create_dataset_pair!(
       user: user,
       pool: primary_pool,
@@ -129,7 +129,62 @@ RSpec.describe TransactionChains::Dataset::IncrementalDownload do
         from_snapshot: from_snapshot,
         send_mail: false
       )
-    end.to raise_error(RuntimeError, 'no common snapshot history found for incremental download')
+    end.to raise_error(VpsAdmin::API::Exceptions::SnapshotDownloadUnavailable) { |error|
+      expect(error.reason).to eq(:no_common_source)
+      expect(error.snapshot_ids).to contain_exactly(from_snapshot.id, target_snapshot.id)
+    }
+  end
+
+  it 'reports the transaction lock when an endpoint is pending destruction' do
+    dataset, primary_dip = create_dataset_pair!(
+      user: user,
+      pool: primary_pool,
+      name: "inc-locked-#{SecureRandom.hex(4)}"
+    )
+    from_snapshot, = create_snapshot!(dataset: dataset, dip: primary_dip, name: 'snap-1')
+    target_snapshot, target_sip = create_snapshot!(dataset: dataset, dip: primary_dip, name: 'snap-2')
+    destroy_chain, = TransactionChains::SnapshotInPool::Destroy.fire(target_sip)
+
+    expect do
+      described_class.fire(
+        target_snapshot,
+        format: :incremental_stream,
+        from_snapshot: from_snapshot,
+        send_mail: false
+      )
+    end.to raise_error(ResourceLocked) { |error|
+      expect(error.model).to eq(target_sip)
+      expect(error.get_lock.locked_by).to eq(destroy_chain)
+    }
+  end
+
+  it 'does not report its own source lock when the base source disappears' do
+    dataset, primary_dip = create_dataset_pair!(
+      user: user,
+      pool: primary_pool,
+      name: "inc-race-#{SecureRandom.hex(4)}"
+    )
+    from_snapshot, = create_snapshot!(dataset: dataset, dip: primary_dip, name: 'snap-1')
+    target_snapshot, = create_snapshot!(dataset: dataset, dip: primary_dip, name: 'snap-2')
+    association_calls = 0
+
+    allow(from_snapshot).to receive(:snapshot_in_pools).and_wrap_original do |original, *args|
+      association_calls += 1
+      relation = original.call(*args)
+      association_calls == 1 ? relation : relation.where(id: -1)
+    end
+
+    expect do
+      described_class.fire(
+        target_snapshot,
+        format: :incremental_stream,
+        from_snapshot: from_snapshot,
+        send_mail: false
+      )
+    end.to raise_error(VpsAdmin::API::Exceptions::SnapshotDownloadUnavailable) { |error|
+      expect(error.reason).to eq(:no_common_source)
+    }
+    expect(association_calls).to eq(2)
   end
 
   it 'includes both endpoints in the incremental filename' do

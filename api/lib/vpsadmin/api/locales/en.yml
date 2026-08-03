@@ -2172,6 +2172,9 @@ en:
       resource_locked_by_transaction_chain: Resource is locked by transaction chain
         %{id} (%{label}). Try again later.
       resource_under_maintenance: 'Resource is under maintenance: %{reason}'
+      snapshot_download_no_common_source: snapshots do not have a common available
+        source for incremental download
+      snapshot_download_unavailable: snapshot is not available for download
     resources:
       action_state:
         attributes:

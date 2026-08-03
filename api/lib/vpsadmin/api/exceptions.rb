@@ -68,6 +68,26 @@ module VpsAdmin::API::Exceptions
     end
   end
 
+  class SnapshotDownloadUnavailable < ::StandardError
+    attr_reader :reason, :snapshot_ids
+
+    def initialize(snapshots, snapshot_in_pools, reason:)
+      @reason = reason
+      @snapshot_ids = snapshots.map(&:id)
+
+      snapshot_states = snapshots.map { |snapshot| "#{snapshot.id}:#{snapshot.confirmed}" }
+      copy_states = snapshot_in_pools.map do |sip|
+        pool_role = sip.dataset_in_pool&.pool&.role || 'missing'
+        "#{sip.id}:#{sip.confirmed}:dip=#{sip.dataset_in_pool_id}:pool=#{pool_role}"
+      end
+
+      super(
+        "reason=#{reason} snapshots=[#{snapshot_states.join(',')}] " \
+        "snapshot_in_pools=[#{copy_states.join(',')}]"
+      )
+    end
+  end
+
   class DatasetPlanNotInEnvironment < ::StandardError
     attr_reader :dataset_plan, :environment
 

@@ -64,6 +64,48 @@ module TransactionChains
       raise NotImplementedError
     end
 
+    def snapshot_download_unavailable!(*snapshots, reason:)
+      snapshots = snapshots.compact.uniq
+      snapshot_in_pools = ::SnapshotInPool.includes(dataset_in_pool: [:pool])
+                                          .where(snapshot: snapshots)
+                                          .order(:id)
+                                          .to_a
+      dataset_in_pools = snapshot_in_pools.filter_map(&:dataset_in_pool).uniq
+
+      resource_lock = external_resource_lock(
+        'SnapshotInPool',
+        snapshot_in_pools.map(&:id)
+      )
+      locked_resource = snapshot_in_pools.find { |sip| sip.id == resource_lock&.row_id }
+
+      unless resource_lock
+        resource_lock = external_resource_lock(
+          'DatasetInPool',
+          dataset_in_pools.map(&:id)
+        )
+        locked_resource = dataset_in_pools.find { |dip| dip.id == resource_lock&.row_id }
+      end
+
+      if resource_lock
+        raise ::ResourceLocked.new(locked_resource, 'snapshot download source is locked')
+      end
+
+      raise VpsAdmin::API::Exceptions::SnapshotDownloadUnavailable.new(
+        snapshots,
+        snapshot_in_pools,
+        reason:
+      )
+    end
+
+    def external_resource_lock(resource, row_ids)
+      return if row_ids.empty?
+
+      ::ResourceLock.where(resource:, row_id: row_ids).order(:row_id).detect do |lock|
+        lock.locked_by_id != dst_chain.id ||
+          lock.locked_by_type != dst_chain.class.polymorphic_name
+      end
+    end
+
     def filename(snapshot, format, from_snapshot)
       ds = snapshot.dataset.full_name.gsub(%r{/}, '_')
       base = "#{ds}__#{snapshot.name.gsub(':', '-')}"

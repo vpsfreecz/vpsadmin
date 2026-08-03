@@ -229,6 +229,21 @@ module VpsAdmin
         HaveAPI::Hooks.stop(ret)
       end
 
+      e.rescue(VpsAdmin::API::Exceptions::SnapshotDownloadUnavailable) do |ret, exception|
+        ret[:status] = false
+        ret[:http_status] = 409
+        ret[:message] =
+          if exception.reason == :no_common_source
+            VpsAdmin::API::I18n.message('errors.snapshot_download_no_common_source')
+          else
+            VpsAdmin::API::I18n.message('errors.snapshot_download_unavailable')
+          end
+
+        puts "[#{Time.now}] Exception SnapshotDownloadUnavailable: #{exception.message}"
+
+        HaveAPI::Hooks.stop(ret)
+      end
+
       e.rescue(::ResourceLocked) do |ret, exception|
         ret[:http_status] = 423 # locked
         ret[:status] = false

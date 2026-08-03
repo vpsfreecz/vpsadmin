@@ -26,7 +26,7 @@ RSpec.describe TransactionChains::Dataset::Backup do
     src.update!(min_snapshots: 1, max_snapshots: 1, snapshot_max_age: 0)
     dst.update!(min_snapshots: 1, max_snapshots: 1, snapshot_max_age: 0)
 
-    create_snapshot!(dataset: dataset, dip: src, name: 'snap-1')
+    oldest_snapshot, = create_snapshot!(dataset: dataset, dip: src, name: 'snap-1')
     create_snapshot!(dataset: dataset, dip: src, name: 'snap-2')
     create_snapshot!(dataset: dataset, dip: src, name: 'snap-3')
 
@@ -45,6 +45,17 @@ RSpec.describe TransactionChains::Dataset::Backup do
     expect(destroy_indexes).not_to be_empty
     expect(tx_classes(chain).index(Transactions::Storage::Send)).to be < destroy_indexes.first
     expect(tx_classes(chain).index(Transactions::Storage::RecvCheck)).to be < destroy_indexes.first
+    expect(oldest_snapshot.reload.confirmed).to eq(:confirm_destroy)
+
+    expect do
+      TransactionChains::Dataset::FullDownload.fire(
+        oldest_snapshot,
+        format: :archive,
+        send_mail: false
+      )
+    end.to raise_error(ResourceLocked) { |error|
+      expect(error.get_lock.locked_by).to eq(chain)
+    }
   end
 
   it 'locks both source and destination dataset in pool records' do

@@ -103,21 +103,31 @@ import ../../make-test.nix (
                 send_mail: false
               )
               ok = true
-              error = nil
+              error_class = nil
+              error_reason = nil
+            rescue VpsAdmin::API::Exceptions::SnapshotDownloadUnavailable => e
+              ok = false
+              error_class = e.class.name
+              error_reason = e.reason.to_s
             rescue => e
               ok = false
-              error = e.message
+              error_class = e.class.name
+              error_reason = nil
             end
 
             puts JSON.dump(
               ok: ok,
-              error: error,
+              error_class: error_class,
+              error_reason: error_reason,
               downloads: SnapshotDownload.where(snapshot_id: #{Integer(target.fetch('id'))}).count
             )
           RUBY
 
           expect(result.fetch('ok')).to eq(false)
-          expect(result.fetch('error')).to include('no common snapshot history')
+          expect(result.fetch('error_class')).to eq(
+            'VpsAdmin::API::Exceptions::SnapshotDownloadUnavailable'
+          )
+          expect(result.fetch('error_reason')).to eq('no_common_source')
           expect(result.fetch('downloads')).to eq(0)
         end
       end

@@ -9,7 +9,7 @@ module TransactionChains
         snapshot: dl.snapshot
       )&.snapshot_in_pool
       sip = backup || primary
-      raise 'snapshot is nowhere to be found!' unless sip
+      snapshot_download_unavailable!(dl.snapshot, reason: :snapshot_unavailable) unless sip
 
       lock(sip)
       lock(sip.dataset_in_pool)

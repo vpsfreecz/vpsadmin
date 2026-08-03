@@ -93,7 +93,7 @@ RSpec.describe TransactionChains::Dataset::FullDownload do
     expect(chain.transactions.first.queue).to eq('general')
   end
 
-  it 'raises when the snapshot exists nowhere' do
+  it 'raises SnapshotDownloadUnavailable when the snapshot exists nowhere' do
     dataset, = create_dataset_with_pool!(
       user: user,
       pool: primary_pool,
@@ -108,7 +108,44 @@ RSpec.describe TransactionChains::Dataset::FullDownload do
 
     expect do
       described_class.fire(snapshot, format: :stream, send_mail: false)
-    end.to raise_error(RuntimeError, 'snapshot is nowhere to be found!')
+    end.to raise_error(VpsAdmin::API::Exceptions::SnapshotDownloadUnavailable) { |error|
+      expect(error.reason).to eq(:snapshot_unavailable)
+      expect(error.snapshot_ids).to eq([snapshot.id])
+    }
+  end
+
+  it 'reports the transaction lock when the only copy is pending destruction' do
+    dataset, primary_dip = create_dataset_pair!(
+      user: user,
+      pool: primary_pool,
+      name: "locked-#{SecureRandom.hex(4)}"
+    )
+    snapshot, sip = create_snapshot!(dataset: dataset, dip: primary_dip, name: 'snap-1')
+    destroy_chain, = TransactionChains::SnapshotInPool::Destroy.fire(sip)
+
+    expect do
+      described_class.fire(snapshot, format: :stream, send_mail: false)
+    end.to raise_error(ResourceLocked) { |error|
+      expect(error.model).to eq(sip)
+      expect(error.get_lock.locked_by).to eq(destroy_chain)
+    }
+  end
+
+  it 'reports unavailable when a physical copy has orphaned pool metadata' do
+    dataset, primary_dip = create_dataset_pair!(
+      user: user,
+      pool: primary_pool,
+      name: "orphaned-#{SecureRandom.hex(4)}"
+    )
+    snapshot, sip = create_snapshot!(dataset: dataset, dip: primary_dip, name: 'snap-1')
+    missing_dip_id = DatasetInPool.maximum(:id) + 1
+    sip.update_column(:dataset_in_pool_id, missing_dip_id)
+
+    expect do
+      described_class.fire(snapshot, format: :stream, send_mail: false)
+    end.to raise_error(VpsAdmin::API::Exceptions::SnapshotDownloadUnavailable) { |error|
+      expect(error.message).to include("dip=#{missing_dip_id}:pool=missing")
+    }
   end
 
   it 'builds stable archive and stream file names' do

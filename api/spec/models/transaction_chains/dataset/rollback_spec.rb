@@ -36,6 +36,17 @@ RSpec.describe TransactionChains::Dataset::Rollback do
     expect(tx_classes(chain)).to eq([Transactions::Storage::Rollback])
     expect(newer_sip.reload.confirmed).to eq(:confirm_destroy)
     expect(newer_snap.reload.confirmed).to eq(:confirm_destroy)
+
+    expect do
+      TransactionChains::Dataset::FullDownload.fire(
+        newer_snap,
+        format: :archive,
+        send_mail: false
+      )
+    end.to raise_error(ResourceLocked) { |error|
+      expect(error.model).to eq(dip)
+      expect(error.get_lock.locked_by).to eq(chain)
+    }
   end
 
   it 'raises SnapshotInUse when a newer local snapshot is still referenced' do

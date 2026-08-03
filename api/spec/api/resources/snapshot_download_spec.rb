@@ -365,6 +365,89 @@ RSpec.describe 'VpsAdmin::API::Resources::SnapshotDownload' do
       expect(created.from_snapshot_id).to eq(snap_old.id)
     end
 
+    it 'returns 423 when the snapshot copy is pending destruction' do
+      snapshot = create_snapshot!(
+        dataset: user_ds,
+        name: 'snap-destroying',
+        history_id: 123,
+        created_at: Time.now - 6.hours
+      )
+      sip = attach_snapshot_to_pool!(snapshot: snapshot, dip: user_dip)
+      ensure_signer_unlocked!
+
+      destroy_chain = with_current_context(user: user) do
+        TransactionChains::SnapshotInPool::Destroy.fire(sip).first
+      end
+
+      expect do
+        as(user) do
+          json_post index_path, snapshot_download: { snapshot: snapshot.id, send_mail: false }
+        end
+      end.not_to change(SnapshotDownload, :count)
+
+      expect_status(423)
+      expect(json['status']).to be(false)
+      expect(msg).to include(destroy_chain.id.to_s, destroy_chain.label)
+    end
+
+    it 'returns 409 when the logical snapshot has no physical copy' do
+      snapshot = create_snapshot!(
+        dataset: user_ds,
+        name: 'snap-unavailable',
+        history_id: 123,
+        created_at: Time.now - 7.hours
+      )
+      snapshot.update!(confirmed: Snapshot.confirmed(:confirmed))
+      ensure_signer_unlocked!
+
+      expect do
+        as(user) do
+          json_post index_path, snapshot_download: { snapshot: snapshot.id, send_mail: false }
+        end
+      end.not_to change(SnapshotDownload, :count)
+
+      expect_status(409)
+      expect(json['status']).to be(false)
+      expect(msg).to eq('snapshot is not available for download')
+    end
+
+    it 'returns 409 when incremental snapshots have no common source' do
+      other_user_dip = create_dip!(dataset: user_ds, pool: SpecSeed.other_pool)
+      from_snapshot = create_snapshot!(
+        dataset: user_ds,
+        name: 'incremental-from-unavailable',
+        history_id: 456,
+        created_at: Time.now - 9.hours
+      )
+      to_snapshot = create_snapshot!(
+        dataset: user_ds,
+        name: 'incremental-to-unavailable',
+        history_id: 456,
+        created_at: Time.now - 8.hours
+      )
+      from_sip = attach_snapshot_to_pool!(snapshot: from_snapshot, dip: user_dip)
+      to_sip = attach_snapshot_to_pool!(snapshot: to_snapshot, dip: other_user_dip)
+      ensure_signer_unlocked!
+
+      expect do
+        as(user) do
+          json_post index_path, snapshot_download: {
+            snapshot: to_snapshot.id,
+            from_snapshot: from_snapshot.id,
+            format: 'incremental_stream',
+            send_mail: false
+          }
+        end
+      end.not_to change(SnapshotDownload, :count)
+
+      expect_status(409)
+      expect(json['status']).to be(false)
+      expect(msg).to eq(
+        'snapshots do not have a common available source for incremental download'
+      )
+      expect(ResourceLock.where(resource: 'SnapshotInPool', row_id: [from_sip.id, to_sip.id])).to be_empty
+    end
+
     it 'prevents users from using another users snapshot as incremental base' do
       foreign_base = create_snapshot!(
         dataset: other_ds,

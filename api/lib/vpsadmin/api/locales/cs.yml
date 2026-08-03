@@ -2166,6 +2166,9 @@ cs:
       resource_locked_by_transaction_chain: Zdroj je uzamčen transakčním řetězcem
         %{id} (%{label}). Zkuste to prosím později.
       resource_under_maintenance: 'Zdroj je v údržbě: %{reason}'
+      snapshot_download_no_common_source: snapshoty nemají společný dostupný zdroj
+        pro inkrementální stažení
+      snapshot_download_unavailable: snapshot není dostupný ke stažení
     resources:
       action_state:
         attributes:
