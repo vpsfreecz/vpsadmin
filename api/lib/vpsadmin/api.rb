@@ -352,6 +352,7 @@ module VpsAdmin
       VpsAdmin::API::Plugin::Loader.load('api')
 
       api.mount('/')
+      VpsAdmin::API::Events::ActionPolicies.finalize!
       VpsAdmin::API::Events::ResourceOperations.refresh_event_types!
 
       api

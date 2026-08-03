@@ -157,6 +157,17 @@ module VpsAdmin::API::Events::ActionPolicies
     MUTATING_HTTP_METHODS.include?(action.http_method.to_sym)
   end
 
+  def finalize!
+    missing = mounted_actions.select do |action|
+      mutating?(action) && self.for(action).nil?
+    end
+    return if missing.empty?
+
+    names = missing.map(&:name).sort.join("\n")
+    raise ArgumentError,
+          "mounted mutating actions are missing event policies:\n#{names}"
+  end
+
   def for_operation(operation)
     operation.event_policy
   end
@@ -312,4 +323,19 @@ module VpsAdmin::API::Events::ActionPolicies
     end
   end
   private_class_method :default_resource_action
+
+  def mounted_actions
+    walk = lambda do |resource|
+      actions = []
+      resource.actions { |action| actions << action }
+      resource.resources { |child| actions.concat(walk.call(child)) }
+      actions
+    end
+
+    HaveAPI.get_version_resources(
+      VpsAdmin::API::Resources,
+      HaveAPI.implicit_version
+    ).flat_map { |resource| walk.call(resource) }
+  end
+  private_class_method :mounted_actions
 end
