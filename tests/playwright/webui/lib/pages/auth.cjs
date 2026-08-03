@@ -19,7 +19,7 @@ async function openWebuiLogin(page, user) {
   } else {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await expect(loginButton(page)).toHaveValue('Log in');
-    await loginButton(page).click();
+    await loginButton(page).click({ noWaitAfter: true });
   }
 
   await expect(page).toHaveURL(/api\.vpsadmin\.test/);
