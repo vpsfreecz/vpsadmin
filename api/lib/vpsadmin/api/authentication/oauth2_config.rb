@@ -4,7 +4,15 @@ require 'vpsadmin/api/operations/utils/dns'
 
 module VpsAdmin::API
   class Authentication::OAuth2Config < HaveAPI::Authentication::OAuth2::Config
-    event_models = %w[
+    EXTERNAL_EVENT_POLICY_METHODS = {
+      handle_get_authorize: 'oauth2.authorize_get',
+      handle_post_authorize: 'oauth2.authorize_post',
+      get_tokens: 'oauth2.issue_tokens',
+      refresh_tokens: 'oauth2.refresh_tokens',
+      handle_post_revoke: 'oauth2.revoke'
+    }.freeze
+
+    external_event_models = %w[
       AuthToken
       Oauth2Authorization
       SingleSignOn
@@ -14,19 +22,17 @@ module VpsAdmin::API
       UserSession
       UserTotpDevice
     ].freeze
-    %w[
-      oauth2.authorize_get
-      oauth2.authorize_post
-      oauth2.issue_tokens
-      oauth2.refresh_tokens
-      oauth2.revoke
-    ].each do |surface|
+    EXTERNAL_EVENT_POLICY_METHODS.each_value do |surface|
       VpsAdmin::API::Events::ActionPolicies.register_external(
         surface,
         kind: :resource,
-        models: event_models,
+        models: external_event_models,
         atomic: true
       )
+    end
+
+    def self.external_event_policy_methods
+      EXTERNAL_EVENT_POLICY_METHODS
     end
 
     SSO_COOKIE = :vpsadmin_sso

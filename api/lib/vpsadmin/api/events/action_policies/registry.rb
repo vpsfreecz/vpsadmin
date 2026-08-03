@@ -1,6 +1,7 @@
 module VpsAdmin::API::Events::ActionPolicies
   @external = {}
   @declared_policy_classes = []
+  @external_policy_execution = {}
 
   module_function
 
@@ -16,30 +17,14 @@ module VpsAdmin::API::Events::ActionPolicies
       raise ArgumentError, "event policy is already declared for #{owner.name}"
     end
 
-    if !%i[resource transaction_chain].include?(kind.to_sym) && reason.blank?
-      raise ArgumentError,
-            "#{owner.name} event policy #{kind.inspect} requires a reason"
-    end
-
-    normalized_models =
-      if models == :all
-        :all
-      else
-        Array(models).map do |model|
-          klass = model.is_a?(Class) ? model : model.to_s.constantize
-          unless klass < ::ApplicationRecord
-            raise ArgumentError, "#{klass} is not an application model"
-          end
-
-          klass.base_class.name
-        end.uniq.freeze
-      end
-    policy = Policy.new(
-      kind: kind.to_sym,
-      models: normalized_models,
+    policy = build_policy(
+      owner.name,
+      kind:,
+      models:,
       reason:,
       atomic:,
-      emit_on_failure:
+      emit_on_failure:,
+      resolve_models: true
     )
     owner.instance_variable_set(:@event_policy, policy)
     @declared_policy_classes << owner
@@ -55,12 +40,14 @@ module VpsAdmin::API::Events::ActionPolicies
     emit_on_failure: false
   )
     name = name.to_s
-    policy = Policy.new(
-      kind: kind.to_sym,
-      models: models == :all ? :all : Array(models).map(&:to_s).freeze,
+    policy = build_policy(
+      "external event policy #{name.inspect}",
+      kind:,
+      models:,
       reason:,
       atomic:,
-      emit_on_failure:
+      emit_on_failure:,
+      resolve_models: false
     )
     existing = @external[name]
     return existing if existing == policy
@@ -72,6 +59,64 @@ module VpsAdmin::API::Events::ActionPolicies
 
     @external[name] = policy
   end
+
+  def build_policy(
+    owner_name,
+    kind:,
+    models:,
+    reason:,
+    atomic:,
+    emit_on_failure:,
+    resolve_models:
+  )
+    normalized_models =
+      if models == :all
+        :all
+      else
+        Array(models).map do |model|
+          unless resolve_models
+            next model.is_a?(Class) ? model.base_class.name : model.to_s
+          end
+
+          klass = model.is_a?(Class) ? model : model.to_s.constantize
+          validate_application_model!(klass)
+          klass.base_class.name
+        end.uniq.freeze
+      end
+    policy = Policy.new(
+      kind:,
+      models: normalized_models,
+      reason:,
+      atomic:,
+      emit_on_failure:
+    )
+    if policy.kind != :resource && reason.blank?
+      raise ArgumentError,
+            "#{owner_name} event policy #{policy.kind.inspect} requires a reason"
+    end
+
+    policy
+  end
+  private_class_method :build_policy
+
+  def validate_application_model!(model)
+    return if model < ::ApplicationRecord
+
+    raise ArgumentError, "#{model} is not an application model"
+  end
+  private_class_method :validate_application_model!
+
+  def validate_external_models!
+    @external.each_value do |policy|
+      next unless RESOURCE_POLICY_KINDS.include?(policy.kind)
+      next if policy.models == :all
+
+      policy.models.each do |model_name|
+        validate_application_model!(model_name.constantize)
+      end
+    end
+  end
+  private_class_method :validate_external_models!
 
   def delete_cascades
     ::ApplicationRecord.descendants.to_h do |model|
@@ -130,6 +175,10 @@ module VpsAdmin::API::Events::ActionPolicies
 
   def external_policies
     @external.dup.freeze
+  end
+
+  def external_policy_execution(owner)
+    @external_policy_execution.fetch(owner)
   end
 
   def current_recorder
@@ -226,6 +275,7 @@ module VpsAdmin::API::Events::ActionPolicies
   def install!
     return if @installed
 
+    validate_external_models!
     ::ApplicationRecord.after_create do
       VpsAdmin::API::Events::ActionPolicies.record(:created, self)
     end
@@ -242,7 +292,10 @@ module VpsAdmin::API::Events::ActionPolicies
 
     HaveAPI::Action.prepend(ActionExecution)
     VpsAdmin::API::Operations::Base.singleton_class.prepend(OperationExecution)
-    VpsAdmin::API::Authentication::OAuth2Config.prepend(OAuth2Execution)
+    oauth2_config = VpsAdmin::API::Authentication::OAuth2Config
+    oauth2_execution = ExternalPolicyExecution.build(oauth2_config)
+    oauth2_config.prepend(oauth2_execution)
+    @external_policy_execution[oauth2_config] = oauth2_execution
     VpsAdmin::API::Notifications.singleton_class.prepend(
       NotificationCallbackExecution
     )
