@@ -2,6 +2,11 @@ module VpsAdmin::API::Resources
   class SystemConfig < HaveAPI::Resource
     desc 'Query and set system configuration'
     model ::SysConfig
+    resource_events topic: :system,
+                    audience: :admin,
+                    name: :system_config,
+                    redact: :value,
+                    additional_actions: :updated
 
     params(:all) do
       string :category
@@ -81,6 +86,7 @@ module VpsAdmin::API::Resources
     end
 
     class Update < HaveAPI::Action
+      event_policy :resource, models: [::SysConfig]
       desc 'Update configuration variable'
       route '{category}/{name}'
       http_method :put

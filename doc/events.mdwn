@@ -88,20 +88,22 @@ of the text column used to store them. Decimal values are lossless JSON
 strings, not binary floating-point numbers. Composite identifiers are JSON
 objects and list their component names and types in `id_attributes`.
 
-Generated resource types come from the explicit public resource catalog in
-`ResourceOperations`, not from the set of loaded Active Record models. A
-catalog entry references the mounted model-backed HaveAPI resource and declares
-its supported CRUD actions, stable product topic, logical name, and audience.
-The catalog includes only externally meaningful mutable resources. Storage
-placement rows, authentication implementation rows, translations, joins,
-delivery internals, accounting, telemetry, and read-only projections are not
-made public merely because their models are loaded.
+Generated resource types come from declarations beside mounted model-backed
+HaveAPI resources, not from the set of loaded Active Record models. A resource
+opts in with `resource_events`, declaring its stable product topic, audience,
+and any ownership, VPS-context, logical-name, or redaction policy. Supported
+default CRUD actions are inferred from the mounted action graph; explicitly
+emitted non-default CRUD outcomes are listed with `additional_actions`. Only
+externally meaningful mutable resources opt in. Storage placement rows,
+authentication implementation rows, translations, joins, delivery internals,
+accounting, telemetry, and read-only projections are not made public merely
+because their models are loaded.
 
-Account catalog entries publish roles `account, admin` and require an explicit
-owner resolver. Administrative entries publish only role `admin`. Event Type
-listing is caller-specific: ordinary and support users receive only types with
-the `account` role, while administrators receive the complete public and
-administrative catalog. `category` is a stable machine topic and
+Account resource declarations publish roles `account, admin` and require an
+explicit owner resolver. Administrative declarations publish only role
+`admin`. Event Type listing is caller-specific: ordinary and support users
+receive only types with the `account` role, while administrators receive the
+complete public and administrative set. `category` is a stable machine topic and
 `category_label` is its localized display name. The WebUI groups Event Types by
 these product topics.
 
@@ -124,20 +126,46 @@ fact. Resource facts use the same routing and delivery retention contract as
 other public events. Configure an explicit catch-all route to a durable
 external receiver when complete off-system auditing is required.
 
+### Notification delivery actions
+
+Delivery methods are registered implementations of
+`Notifications::DeliveryActions::Base`. Each implementation owns its stable
+action name, label, target kinds, queue and routing key, configuration section,
+default concurrency, target validation and identity, route and optional direct
+delivery planning, snapshot preparation, transport, and response
+interpretation. E-mail, webhook, Telegram, and SMS implementations live in
+separate files under
+`api/lib/vpsadmin/api/notifications/delivery_actions/`.
+
+The router passes an explicit `DeliveryPlanningContext` to `plan_delivery` and
+the dispatcher calls the selected action directly. Delivery actions must not
+depend on being evaluated as the router, dispatcher, or target model. Adding a
+delivery method therefore requires one registered implementation and its
+tests, not action-name branches in those three components. Duplicate action
+names, queues, routing keys, or conflicting target-kind labels fail during
+registration.
+
+The shared publisher, grouping, retry, rate-limit, and dispatcher services are
+separate load units under `api/lib/vpsadmin/api/notifications/`; the main
+`notifications.rb` file contains shared configuration and a small compatibility
+façade.
+
 ## Emitting events
 
-Normal HaveAPI CRUD actions are captured by
-`VpsAdmin::API::Events::ActionPolicies`. Synchronous facts are written only
-after the mutation succeeds, in the same database transaction when the action
-is atomic. Recorder state is resolved against the final persisted rows, so a
-rolled-back or reverted change does not produce a false fact.
+Normal HaveAPI CRUD actions are captured according to the `event_policy`
+declared on their action classes or inferred for standard mounted CRUD actions.
+Operation entry points and non-standard actions declare their policies beside
+their implementations. Synchronous facts are written only after the mutation
+succeeds, in the same database transaction when the action is atomic. Recorder
+state is resolved against the final persisted rows, so a rolled-back or
+reverted change does not produce a false fact.
 
-The recorder silently ignores uncataloged model callbacks. This keeps an
+The recorder silently ignores callbacks for undeclared resources. This keeps an
 operation's internal persistence details out of the consumer contract while
 preserving `operation.*` lifecycle events for the accepted transaction chain.
-Direct code that attempts to define or emit a CRUD event for an uncataloged
-model raises, so a new public contract has to be reviewed and registered
-explicitly.
+Direct code that attempts to define or emit a CRUD event for an undeclared
+model raises, so a new public contract has to be reviewed and declared
+explicitly at its resource.
 
 Emission does not unconditionally create an Event row. Public resource,
 domain, and operation events are retained only when routing produces delivery
@@ -161,9 +189,13 @@ as `outage.update_reported`, `request.submitted`, or
 `user.account_created`, even when it is triggered by the same operation.
 
 Bulk SQL writes and callback-bypassing deletes must call the explicit recorder
-helpers in `ActionPolicies`; Active Record callbacks cannot observe them.
-Logical ownership and related VPS resolution are declared in
-`ResourceOperations`, never guessed from arbitrary associations.
+helpers; Active Record callbacks cannot observe them. Models declare genuine
+callback-bypassing delete cascades with `event_delete_cascades`. Logical
+ownership and related VPS resolution are part of the resource's
+`resource_events` declaration, never guessed from arbitrary associations. An
+internal transaction concern that has no public resource declares its account
+path on the model with `operation_event_owner` so lifecycle ownership remains
+local to the concerned type.
 
 ## Adding or changing an API resource
 
@@ -173,24 +205,25 @@ For every POST, PUT, PATCH, or DELETE action:
    Do not catalog an internal row, read-only projection, accounting/telemetry
    model, translation, join, authentication implementation detail, or delivery
    implementation detail.
-2. For a public resource, add an explicit catalog entry referencing its
-   mounted HaveAPI resource. Declare only supported CRUD actions and select a
-   stable topic and `account` or `admin` audience. Plugin resources register
-   their entries from the owning plugin.
-3. For an account entry, register and test its owner resolver. Add a related
-   VPS resolver when the event should carry VPS context. An admin entry may be
-   system-owned.
-4. Confirm that the default CRUD classification describes every row it
-   changes. Register a custom action policy when it does not.
-5. Register every model mutated by a custom operation, authentication flow,
-   callback, or background entry point. Give intentionally read-only,
-   bookkeeping, transport, or domain-event policies a specific kind and
-   reason.
+2. For a public resource, add `resource_events` beside its HaveAPI `model`
+   declaration. Select a stable topic and `account` or `admin` audience. The
+   mounted default CRUD actions are inferred; use `additional_actions` only
+   for CRUD outcomes emitted outside those mounted defaults. Plugin resources
+   keep the declaration in the owning plugin.
+3. For an account declaration, declare and test its `owner` resolver. Add a
+   `vps` resolver when the event should carry VPS context. An admin declaration
+   may be system-owned.
+4. Confirm that inferred default CRUD classification describes every row it
+   changes. Declare `event_policy` beside a custom action when it does not.
+5. Declare `event_policy` beside every custom operation, authentication flow,
+   callback, or background entry point. List every model it mutates. Give
+   intentionally read-only, bookkeeping, transport, or domain-event policies
+   a specific kind and reason.
 6. Use `defer_resource_event!` for chain-backed CRUD results. Use a typed
    semantic event only when CRUD does not express the fact.
 7. Call `record_many` for `update_all`, `delete_all`, counters, or other writes
-   that bypass callbacks, and register real callback-bypassing delete
-   cascades.
+   that bypass callbacks, and declare real callback-bypassing delete cascades
+   with `event_delete_cascades` on the owning model.
 8. Add a stable logical name when the Active Record class name is an
    implementation detail. Internal translation/join rows should normally be
    represented by their public parent resource rather than introduced as a
@@ -201,9 +234,10 @@ For every POST, PUT, PATCH, or DELETE action:
 10. Treat decimal values and composite primary keys as JSON-contract cases:
    decimals are emitted as lossless strings, while composite IDs are keyed
    objects and do not expose a scalar `resource_id` route matcher.
-11. Extend the model-specific sensitive-field policy before recording any
-   configuration, content, credential, delivery payload, or opaque provider
-   value.
+11. Declare model-internal sensitive attributes with `event_redact`, and public
+   resource-specific attributes with the `resource_events` `redact` option,
+   before recording any configuration, content, credential, delivery payload,
+   or opaque provider value.
 12. Add specs for successful create/update/delete, rollback or chain failure,
    old/new/null values, redaction, ownership, event correlation, and Event Type
    metadata. Assert that ordinary callers cannot see admin-only types and that

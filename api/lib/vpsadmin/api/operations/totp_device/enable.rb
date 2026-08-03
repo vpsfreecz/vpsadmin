@@ -2,6 +2,7 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::TotpDevice::Enable < Operations::Base
+    event_policy :resource, models: [::User, ::UserTotpDevice]
     # @param device [::UserTotpDevice]
     # @return [::UserTotpDevice]
     def run(device)

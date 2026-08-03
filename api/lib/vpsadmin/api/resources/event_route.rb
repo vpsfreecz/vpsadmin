@@ -5,6 +5,7 @@ module VpsAdmin::API::Resources
   class EventRoute < HaveAPI::Resource
     desc 'Manage event routes'
     model ::EventRoute
+    resource_events topic: :notifications, audience: :account, owner: :user
 
     params(:common) do
       resource User,
@@ -315,6 +316,9 @@ module VpsAdmin::API::Resources
 
     class Matcher < HaveAPI::Resource
       model ::EventRouteMatcher
+      resource_events topic: :notifications,
+                      audience: :account,
+                      owner: %i[event_route user]
       route '{event_route_id}/matcher'
       desc 'Manage event route matchers'
 
@@ -517,6 +521,9 @@ module VpsAdmin::API::Resources
 
     class TimeInterval < HaveAPI::Resource
       model ::EventRouteTimeInterval
+      resource_events topic: :notifications,
+                      audience: :account,
+                      owner: %i[event_route user]
       route '{event_route_id}/time_intervals'
       desc 'Manage time intervals assigned to an event route'
 

@@ -1,4 +1,5 @@
 class OomReport < ApplicationRecord
+  event_delete_cascades :oom_report_usages, :oom_report_stats, :oom_report_tasks
   belongs_to :vps
   has_many :oom_report_usages, dependent: :delete_all
   has_many :oom_report_stats, dependent: :delete_all

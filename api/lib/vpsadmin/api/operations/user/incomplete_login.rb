@@ -2,6 +2,9 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::User::IncompleteLogin < Operations::Base
+    event_policy :domain_event,
+                 reason: 'emits user.login_failed with authentication context',
+                 atomic: false
     # @param auth_token_or_challenge [AuthToken, WebauthnChallenge]
     # @param mechanism [:totp]
     # @param reason [String]

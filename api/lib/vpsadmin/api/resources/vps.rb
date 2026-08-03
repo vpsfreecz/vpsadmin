@@ -1,5 +1,10 @@
 class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   model ::Vps
+  resource_events topic: :vps,
+                  audience: :account,
+                  name: :vps,
+                  owner: :user,
+                  vps: :self
   desc 'Manage VPS'
 
   params(:id) do
@@ -1155,6 +1160,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     include VpsAdmin::API::Maintainable::Check
 
     model ::VpsFeature
+    resource_events topic: :vps,
+                    audience: :account,
+                    owner: %i[vps user],
+                    vps: :vps
     route '{vps_id}/features'
     desc 'Toggle VPS features'
 
@@ -1305,6 +1314,11 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   class Mount < HaveAPI::Resource
     route '{vps_id}/mounts'
     model ::Mount
+    resource_events topic: :storage,
+                    audience: :account,
+                    name: :vps_mount,
+                    owner: %i[vps user],
+                    vps: :vps
     desc 'Manage mounts'
 
     params(:all) do
@@ -1513,6 +1527,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   class MaintenanceWindow < HaveAPI::Resource
     route '{vps_id}/maintenance_windows'
     model ::VpsMaintenanceWindow
+    resource_events topic: :vps,
+                    audience: :account,
+                    owner: %i[vps user],
+                    vps: :vps
     desc 'Manage VPS maintenance windows'
 
     params(:editable) do
@@ -1635,6 +1653,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     class UpdateAll < HaveAPI::Action
+      event_policy :domain_event,
+                   reason: 'emits vps.maintenance_windows_updated atomically',
+                   atomic: false
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
       desc 'Update maintenance windows for all week days at once'
@@ -1699,6 +1720,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     route '{vps_id}/console_token'
     singular true
     model ::VpsConsole
+    resource_events topic: :vps,
+                    audience: :account,
+                    name: :vps_console_token,
+                    owner: :user
     desc 'Remote console tokens'
 
     params(:all) do

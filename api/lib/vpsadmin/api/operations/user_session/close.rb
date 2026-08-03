@@ -2,6 +2,13 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::UserSession::Close < Operations::Base
+    event_policy :resource,
+                 models: [
+                   ::UserSession,
+                   ::Oauth2Authorization,
+                   ::SingleSignOn,
+                   ::Token
+                 ]
     # @param user_session [::UserSession]
     def run(user_session)
       # Close session and revoke access token

@@ -3,6 +3,7 @@ require 'vpsadmin/api/operations/utils/dns'
 
 module VpsAdmin::API
   class Operations::Authentication::Password < Operations::Base
+    event_policy :resource, models: [::User, ::AuthToken, ::Token]
     Result = Struct.new(:user, :authenticated, :complete, :reset_password, :token) do
       alias_method :authenticated?, :authenticated
       alias_method :complete?, :complete

@@ -1,5 +1,8 @@
 class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
   model ::UserNamespaceMap
+  resource_events topic: :account,
+                  audience: :account,
+                  owner: %i[user_namespace user]
   desc 'Browse user namespace maps'
 
   params(:common) do
@@ -169,6 +172,9 @@ class VpsAdmin::API::Resources::UserNamespaceMap < HaveAPI::Resource
     desc 'Browse user namespace map entries'
     route '{user_namespace_map_id}/entries'
     model ::UserNamespaceMapEntry
+    resource_events topic: :account,
+                    audience: :account,
+                    owner: %i[user_namespace_map user_namespace user]
 
     params(:all) do
       id :id, label: 'Entry ID'

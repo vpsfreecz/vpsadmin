@@ -1,6 +1,10 @@
 require_relative 'transaction_chains/security_advisories/mail'
 
 class SecurityAdvisory < ApplicationRecord
+  event_delete_cascades :security_advisory_cves,
+                        :security_advisory_translations,
+                        :security_advisory_vpses,
+                        :security_advisory_users
   class DraftRequired < StandardError; end
   class RevisionMismatch < StandardError; end
 

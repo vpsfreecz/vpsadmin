@@ -1,4 +1,5 @@
 class NodeKernelEvent < ApplicationRecord
+  event_delete_cascades :sysctl_changes, :software_changes
   PUBLIC_EVENT_TYPES = %w[boot reported_release_change livepatch_change].freeze
 
   belongs_to :node

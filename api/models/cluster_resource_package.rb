@@ -1,4 +1,6 @@
 class ClusterResourcePackage < ApplicationRecord
+  event_delete_cascades :cluster_resource_package_items,
+                        :default_user_cluster_resource_packages
   has_many :cluster_resource_package_items, dependent: :delete_all
   has_many :default_user_cluster_resource_packages, dependent: :delete_all
   has_many :user_cluster_resource_packages, dependent: :destroy

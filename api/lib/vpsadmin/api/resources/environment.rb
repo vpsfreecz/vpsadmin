@@ -1,5 +1,6 @@
 class VpsAdmin::API::Resources::Environment < HaveAPI::Resource
   model ::Environment
+  resource_events topic: :infrastructure, audience: :admin
   desc 'Manage environments'
 
   params(:id) do

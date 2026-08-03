@@ -2,6 +2,7 @@ module VpsAdmin::API::Resources
   class Network < HaveAPI::Resource
     desc 'Manage networks'
     model ::Network
+    resource_events topic: :network, audience: :admin, owner: :user
 
     params(:ro) do
       integer :size, desc: 'Number of possible host IP addresses'
@@ -165,6 +166,7 @@ module VpsAdmin::API::Resources
     end
 
     class AddAddresses < HaveAPI::Action
+      event_policy :resource, models: [::IpAddress]
       desc 'Add IP addresses to a managed network'
       route '{%{resource}_id}/add_addresses'
       http_method :post

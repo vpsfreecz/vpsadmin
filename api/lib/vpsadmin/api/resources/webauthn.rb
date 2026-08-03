@@ -51,6 +51,7 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
     route 'registration'
 
     class Begin < HaveAPI::Action
+      event_policy :resource, models: [::User, ::WebauthnChallenge]
       http_method :post
 
       output(:hash) do
@@ -82,6 +83,8 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
     end
 
     class Finish < HaveAPI::Action
+      event_policy :resource,
+                   models: [::WebauthnCredential, ::WebauthnChallenge]
       http_method :post
 
       input(:hash) do
@@ -136,6 +139,7 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
     route 'authentication'
 
     class Begin < HaveAPI::Action
+      event_policy :resource, models: [::WebauthnChallenge]
       http_method :post
       auth false
 
@@ -172,6 +176,8 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
     end
 
     class Finish < HaveAPI::Action
+      event_policy :resource,
+                   models: [::WebauthnCredential, ::WebauthnChallenge, ::AuthToken]
       http_method :post
       auth false
 

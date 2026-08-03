@@ -2,6 +2,10 @@ module VpsAdmin::API::Resources
   class VpsUserData < HaveAPI::Resource
     desc 'Manage VPS user data'
     model ::VpsUserData
+    resource_events topic: :vps,
+                    audience: :account,
+                    owner: :user,
+                    redact: :content
 
     params(:common) do
       resource User, value_label: :login

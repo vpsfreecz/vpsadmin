@@ -3,6 +3,7 @@ require_relative '../events/report_mute_route'
 module VpsAdmin::API::Resources
   class IncidentReport < HaveAPI::Resource
     model ::IncidentReport
+    resource_events topic: :incidents, audience: :account, owner: :user
     desc 'Manage incident reports'
 
     params(:id) do
@@ -109,6 +110,8 @@ module VpsAdmin::API::Resources
     end
 
     class MuteSimilar < HaveAPI::Action
+      event_policy :resource,
+                   models: [::EventRoute, ::EventRouteMatcher, ::NotificationReceiver]
       desc 'Create a mute route matching values from this incident report'
       route '{%{resource}_id}/mute_similar'
       http_method :post
@@ -201,6 +204,10 @@ module VpsAdmin::API::Resources
     end
 
     class Create < HaveAPI::Actions::Default::Create
+      event_policy :resource,
+                   models: [::IncidentReport],
+                   atomic: false,
+                   emit_on_failure: true
       desc 'Create incident report'
       blocking true
 

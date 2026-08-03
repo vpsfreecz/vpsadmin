@@ -1,4 +1,6 @@
 class HostIpAddress < ApplicationRecord
+  operation_event_owner(&:current_owner)
+
   belongs_to :ip_address
   has_many :routed_via_addresses,
            class_name: 'IpAddress', foreign_key: :route_via_id

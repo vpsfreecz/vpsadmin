@@ -3,6 +3,10 @@ module VpsAdmin::API::Resources
     class Registration < HaveAPI::Resource
       desc 'Request account registration'
       model ::RegistrationRequest
+      resource_events topic: :requests,
+                      audience: :account,
+                      name: :request,
+                      owner: :user
 
       params(:request) do
         string :login, label: 'Login', required: true

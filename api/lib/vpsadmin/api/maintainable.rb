@@ -26,6 +26,15 @@ module VpsAdmin::API
         resource.const_defined?(:Show) && resource::Show.output(&params)
 
         resource.define_action(:SetMaintenance) do
+          event_policy :resource,
+                       models: [
+                         ::MaintenanceLock,
+                         ::Environment,
+                         ::Location,
+                         ::Node,
+                         ::Pool,
+                         ::Vps
+                       ]
           desc 'Set maintenance lock'
           route ->(r) { r.singular ? 'set_maintenance' : '{%{resource}_id}/set_maintenance' }
           http_method :post

@@ -2,6 +2,7 @@ module VpsAdmin::API::Resources
   class IncomingPayment < HaveAPI::Resource
     desc 'Browse incoming payments'
     model ::IncomingPayment
+    resource_events topic: :payments, audience: :admin
 
     params(:filters) do
       string :state, choices: ::IncomingPayment.states.keys.map(&:to_s)

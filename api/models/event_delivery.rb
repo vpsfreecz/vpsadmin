@@ -1,4 +1,6 @@
 class EventDelivery < ApplicationRecord
+  event_redact :payload, :response_headers, :target_secret, :target_value
+  event_delete_cascades :event_delivery_attempts
   TARGET_KIND_LABELS = {
     'default_recipient' => 'default recipient',
     'custom' => 'custom target'

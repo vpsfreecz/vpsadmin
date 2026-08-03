@@ -1,6 +1,7 @@
 module VpsAdmin::API::Resources
   class HostIpAddress < HaveAPI::Resource
     model ::HostIpAddress
+    resource_events topic: :network, audience: :admin
     desc 'Manage interface IP addresses'
 
     params(:id) do

@@ -1,4 +1,6 @@
 class WebauthnChallenge < ApplicationRecord
+  event_redact :challenge
+  event_delete_cascades :token
   belongs_to :user
   belongs_to :token, dependent: :delete
   belongs_to :user_agent

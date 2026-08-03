@@ -1,4 +1,5 @@
 class NodeKernelHistoryState < ApplicationRecord
+  event_delete_cascades :kernel_history_gaps
   belongs_to :node
   has_many :kernel_history_gaps,
            class_name: 'NodeKernelHistoryGap',

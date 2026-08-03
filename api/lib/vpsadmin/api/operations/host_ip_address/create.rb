@@ -2,6 +2,7 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::HostIpAddress::Create < Operations::Base
+    event_policy :resource, models: [::HostIpAddress]
     # @param ip_address [IpAddress]
     # @param host_addr [String]
     # @return [::HostIpAddress]

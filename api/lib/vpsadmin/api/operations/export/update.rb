@@ -2,6 +2,9 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::Export::Update < Operations::Base
+    event_policy :transaction_chain,
+                 reason: 'covered by transaction-chain operation lifecycle events',
+                 atomic: false
     # @param export [::Export]
     # @param opts [Hash]
     # @option opts [::Snapshot] :snapshot

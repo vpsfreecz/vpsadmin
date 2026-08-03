@@ -1,5 +1,8 @@
 class VpsAdmin::API::Resources::OsTemplate < HaveAPI::Resource
   model ::OsTemplate
+  resource_events topic: :operating_systems,
+                  audience: :admin,
+                  redact: :config
   desc 'Manage OS templates'
 
   params(:id) do

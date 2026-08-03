@@ -2,6 +2,7 @@ module VpsAdmin::API::Resources
   class OutageSecurityAdvisory < HaveAPI::Resource
     desc 'Browse and manage outage security advisory links'
     model ::OutageSecurityAdvisory
+    resource_events topic: :outages, audience: :admin
 
     params(:editable) do
       resource VpsAdmin::API::Resources::Outage,

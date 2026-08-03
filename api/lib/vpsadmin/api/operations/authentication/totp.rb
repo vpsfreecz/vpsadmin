@@ -2,6 +2,7 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::Authentication::Totp < Operations::Base
+    event_policy :resource, models: [::UserTotpDevice, ::AuthToken, ::Token]
     MAX_FAILED_ATTEMPTS = 5
 
     class Result

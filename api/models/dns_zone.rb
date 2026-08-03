@@ -4,6 +4,7 @@ require_relative 'confirmable'
 require_relative 'lockable'
 
 class DnsZone < ApplicationRecord
+  event_delete_cascades :dns_zone_transfers, :dns_records, :dnssec_records
   belongs_to :user
   has_many :dns_server_zones
   has_many :dns_servers, through: :dns_server_zones

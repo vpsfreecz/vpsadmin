@@ -2,6 +2,7 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::User::CheckLogin < Operations::Base
+    event_policy :read, reason: 'operation does not persist state', atomic: false
     include HaveAPI::Hookable
 
     has_hook :check_login,

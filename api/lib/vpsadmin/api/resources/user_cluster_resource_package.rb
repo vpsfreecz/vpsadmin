@@ -1,6 +1,7 @@
 class VpsAdmin::API::Resources::UserClusterResourcePackage < HaveAPI::Resource
   desc 'Manage user cluster resource packages'
   model ::UserClusterResourcePackage
+  resource_events topic: :account, audience: :account, owner: :user
 
   params(:common) do
     resource VpsAdmin::API::Resources::Environment

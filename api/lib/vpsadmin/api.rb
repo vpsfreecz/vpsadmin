@@ -97,6 +97,13 @@ module VpsAdmin
           [400, { 'content-type' => 'text/plain' }, e.message]
         end
 
+        VpsAdmin::API::Events::ActionPolicies.register_external(
+          'webauthn.registration_new',
+          kind: :read,
+          reason: 'renders the registration page and does not persist state',
+          atomic: false
+        )
+
         webauthn_registration_new = proc do
           if request.get? && (params.has_key?('access_token') || params.has_key?(:access_token))
             halt 400, VpsAdmin::API::I18n.t('errors.access_token_in_url')
@@ -343,9 +350,9 @@ module VpsAdmin
       @configure && @configure.call(api)
 
       VpsAdmin::API::Plugin::Loader.load('api')
-      VpsAdmin::API::Events::ResourceOperations.refresh_event_types!
 
       api.mount('/')
+      VpsAdmin::API::Events::ResourceOperations.refresh_event_types!
 
       api
     end

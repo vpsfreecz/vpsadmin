@@ -2,6 +2,10 @@ module VpsAdmin::API::Resources
   class WebuiUserSetting < HaveAPI::Resource
     desc 'Store web UI settings for the current user'
     model ::WebuiUserSetting
+    resource_events topic: :account,
+                    audience: :account,
+                    owner: :user,
+                    additional_actions: %i[created updated deleted]
 
     params(:identity) do
       string :namespace
@@ -79,6 +83,7 @@ module VpsAdmin::API::Resources
     end
 
     class Set < HaveAPI::Action
+      event_policy :resource, models: [::WebuiUserSetting]
       desc 'Create or update a web UI setting'
       route '{namespace}/{key}'
       http_method :put
@@ -108,6 +113,7 @@ module VpsAdmin::API::Resources
     end
 
     class Delete < HaveAPI::Action
+      event_policy :resource, models: [::WebuiUserSetting]
       desc 'Delete a web UI setting'
       route '{namespace}/{key}'
       http_method :delete

@@ -2,6 +2,7 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::Authentication::ResetPassword < Operations::Base
+    event_policy :resource, models: [::User, ::AuthToken, ::Token]
     # @param auth_token [AuthToken]
     # @param new_password [String]
     # @return [User]

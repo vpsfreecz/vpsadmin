@@ -1,5 +1,6 @@
 class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
   model ::IpAddress
+  resource_events topic: :network, audience: :account, owner: :user
   desc 'Manage IP addresses'
 
   params(:id) do

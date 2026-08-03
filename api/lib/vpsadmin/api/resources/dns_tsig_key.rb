@@ -1,6 +1,7 @@
 module VpsAdmin::API::Resources
   class DnsTsigKey < HaveAPI::Resource
     model ::DnsTsigKey
+    resource_events topic: :dns, audience: :account, owner: :user
     desc 'Manage DNS TSIG key transfers'
 
     params(:common) do

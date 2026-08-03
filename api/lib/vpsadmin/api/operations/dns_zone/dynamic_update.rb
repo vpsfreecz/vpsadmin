@@ -4,6 +4,9 @@ require 'ipaddress'
 
 module VpsAdmin::API
   class Operations::DnsZone::DynamicUpdate < Operations::Base
+    event_policy :transaction_chain,
+                 reason: 'covered by transaction-chain operation lifecycle events',
+                 atomic: false
     # @param request [Sinatra::Request]
     # @param update_token [String]
     # @yieldparam dns_record [::DnsRecord]

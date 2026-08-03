@@ -1,6 +1,9 @@
 module VpsAdmin::API::Resources
   class DnsZoneTransfer < HaveAPI::Resource
     model ::DnsZoneTransfer
+    resource_events topic: :dns,
+                    audience: :account,
+                    owner: %i[dns_zone user]
     desc 'Manage DNS zone transfers'
 
     params(:common) do

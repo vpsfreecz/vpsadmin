@@ -3,6 +3,7 @@ require 'vpsadmin/api/operations/user_session/utils'
 
 module VpsAdmin::API
   class Operations::UserSession::NewOAuth2Login < Operations::Base
+    event_policy :resource, models: [::User, ::UserSession, ::UserDevice, ::Token]
     include Operations::UserSession::Utils
 
     # @param authorization [Oauth2Authorization]

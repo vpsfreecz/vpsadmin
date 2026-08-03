@@ -2,6 +2,7 @@ module VpsAdmin::API::Resources
   class LocationNetwork < HaveAPI::Resource
     desc 'Manage location networks'
     model ::LocationNetwork
+    resource_events topic: :network, audience: :admin
 
     params(:ro) do
       resource Location

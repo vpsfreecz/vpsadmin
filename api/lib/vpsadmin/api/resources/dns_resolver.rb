@@ -1,5 +1,6 @@
 class VpsAdmin::API::Resources::DnsResolver < HaveAPI::Resource
   model ::DnsResolver
+  resource_events topic: :dns, audience: :admin
   desc 'Manage DNS resolvers'
 
   params(:id) do

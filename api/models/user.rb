@@ -9,6 +9,9 @@ require_relative 'transaction_chains/user/hard_delete'
 require_relative 'transaction_chains/lifetimes/not_implemented'
 
 class User < ApplicationRecord
+  event_delete_cascades :user_notification_delivery_methods,
+                        :user_notification_rate_limits,
+                        :notification_rate_limit_states
   has_many :user_namespaces
   has_many :vpses
   has_many :vps_user_data

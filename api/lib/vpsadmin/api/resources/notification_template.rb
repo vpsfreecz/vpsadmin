@@ -1,6 +1,7 @@
 module VpsAdmin::API::Resources
   class NotificationTemplate < HaveAPI::Resource
     model ::NotificationTemplate
+    resource_events topic: :notifications, audience: :admin
     desc 'Manage notification templates'
 
     params(:common) do
@@ -130,6 +131,9 @@ module VpsAdmin::API::Resources
 
     class Variant < HaveAPI::Resource
       model ::NotificationTemplateVariant
+      resource_events topic: :notifications,
+                      audience: :admin,
+                      redact: %i[html options text]
       route '{notification_template_id}/variants'
       desc 'Manage notification template variants'
 

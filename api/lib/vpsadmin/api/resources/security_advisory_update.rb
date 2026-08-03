@@ -2,6 +2,7 @@ module VpsAdmin::API::Resources
   class SecurityAdvisoryUpdate < HaveAPI::Resource
     desc 'Browse security advisory updates'
     model ::SecurityAdvisoryUpdate
+    resource_events topic: :security, audience: :admin
 
     PUBLISHED_AT_DESCRIPTION =
       'Date and time shown as the advisory publication time.'.freeze
@@ -131,6 +132,14 @@ module VpsAdmin::API::Resources
     end
 
     class Create < HaveAPI::Actions::Default::Create
+      event_policy :resource,
+                   models: [
+                     ::SecurityAdvisory,
+                     ::SecurityAdvisoryTranslation,
+                     ::SecurityAdvisoryUpdate
+                   ],
+                   atomic: false,
+                   emit_on_failure: true
       include Helpers
 
       desc 'Create security advisory update'
@@ -188,6 +197,8 @@ module VpsAdmin::API::Resources
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      event_policy :resource,
+                   models: [::SecurityAdvisoryUpdate, ::SecurityAdvisoryTranslation]
       include Helpers
 
       desc 'Update security advisory update text'
@@ -217,6 +228,8 @@ module VpsAdmin::API::Resources
     end
 
     class Delete < HaveAPI::Actions::Default::Delete
+      event_policy :resource,
+                   models: [::SecurityAdvisoryUpdate, ::SecurityAdvisoryTranslation]
       desc 'Delete security advisory update'
 
       authorize do |u|

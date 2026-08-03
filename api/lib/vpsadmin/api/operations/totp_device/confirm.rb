@@ -3,6 +3,7 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::TotpDevice::Confirm < Operations::Base
+    event_policy :resource, models: [::User, ::UserTotpDevice]
     # @param device [::UserTotpDevice]
     # @param code [String]
     # @return [String] recovery code

@@ -2,6 +2,7 @@ module VpsAdmin::API::Resources
   class Outage < HaveAPI::Resource
     desc 'Report and browse outages'
     model ::Outage
+    resource_events topic: :outages, audience: :admin
 
     NON_ADMIN_OUTPUT_BLACKLIST = %i[
       affected_user_count
@@ -244,6 +245,8 @@ module VpsAdmin::API::Resources
     end
 
     class Create < HaveAPI::Actions::Default::Create
+      event_policy :resource,
+                   models: [::Outage, ::OutageTranslation, ::OutageUpdate]
       include Helpers
 
       desc 'Stage a new outage'
@@ -275,6 +278,7 @@ module VpsAdmin::API::Resources
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      event_policy :resource, models: [::Outage, ::OutageTranslation]
       include Helpers
 
       desc 'Update an outage'
@@ -302,6 +306,7 @@ module VpsAdmin::API::Resources
     end
 
     class RebuildAffectedVps < HaveAPI::Action
+      event_policy :resource, models: [::OutageVps, ::OutageExport, ::OutageUser]
       desc 'Rebuilt the list of affected vpses, use after changing affected entities'
       http_method :post
       route '{%{resource}_id}/rebuild_affected_vps'
@@ -322,6 +327,7 @@ module VpsAdmin::API::Resources
     class Entity < HaveAPI::Resource
       desc 'Outage entities'
       model ::OutageEntity
+      resource_events topic: :outages, audience: :admin
       route '{outage_id}/entities'
 
       params(:editable) do
@@ -439,6 +445,7 @@ module VpsAdmin::API::Resources
     class Handler < HaveAPI::Resource
       desc 'Outage handlers'
       model ::OutageHandler
+      resource_events topic: :outages, audience: :admin, owner: :user
       route '{outage_id}/handlers'
 
       params(:editable) do

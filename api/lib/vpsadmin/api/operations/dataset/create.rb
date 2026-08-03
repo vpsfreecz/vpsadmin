@@ -3,6 +3,9 @@ require 'vpsadmin/api/operations/dataset/utils'
 
 module VpsAdmin::API
   class Operations::Dataset::Create < Operations::Base
+    event_policy :transaction_chain,
+                 reason: 'covered by transaction-chain operation lifecycle events',
+                 atomic: false
     include VpsAdmin::API::Maintainable::Check
     include Operations::Dataset::Utils
 

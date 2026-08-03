@@ -1,6 +1,7 @@
 module VpsAdmin::API::Resources
   class DnsZone < HaveAPI::Resource
     model ::DnsZone
+    resource_events topic: :dns, audience: :account, owner: :user
     desc 'Manage DNS zones'
 
     params(:common) do

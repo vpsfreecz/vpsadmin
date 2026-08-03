@@ -3,6 +3,7 @@ require 'vpsadmin/api/operations/user_session/utils'
 
 module VpsAdmin::API
   class Operations::UserSession::NewTokenDetached < Operations::Base
+    event_policy :resource, models: [::UserSession, ::Token]
     include Operations::UserSession::Utils
 
     # @param opts [Hash]

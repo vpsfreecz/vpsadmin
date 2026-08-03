@@ -2,6 +2,7 @@ module VpsAdmin::API::Resources
   class ClusterResource < HaveAPI::Resource
     desc 'Manage environment resources'
     model ::ClusterResource
+    resource_events topic: :infrastructure, audience: :admin
 
     params(:common) do
       string :name, label: 'Resource name for internal purposes'

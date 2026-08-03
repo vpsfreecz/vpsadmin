@@ -1,6 +1,7 @@
 module VpsAdmin::API::Resources
   class DnsServer < HaveAPI::Resource
     model ::DnsServer
+    resource_events topic: :dns, audience: :admin
     desc 'Manage authoritative DNS servers'
 
     params(:common) do

@@ -3,6 +3,7 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::TotpDevice::Create < Operations::Base
+    event_policy :resource, models: [::UserTotpDevice]
     # @param user [::User]
     # @param label [String]
     # @return [::UserTotpDevice]

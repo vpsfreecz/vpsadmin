@@ -1,5 +1,6 @@
 class VpsAdmin::API::Resources::User < HaveAPI::Resource
   model ::User
+  resource_events topic: :account, audience: :account, owner: :self
   desc VpsAdmin::API::I18n.message('resources.user.description')
 
   params(:id) do
@@ -333,6 +334,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
   end
 
   class Update < HaveAPI::Actions::Default::Update
+    event_policy :resource,
+                 models: [::User],
+                 atomic: false,
+                 emit_on_failure: true
     blocking true
 
     input do
@@ -447,6 +452,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     desc 'Manage user event delivery methods'
     route '{user_id}/notification_delivery_methods'
     model ::UserNotificationDeliveryMethod
+    resource_events topic: :notifications, audience: :account, owner: :user
 
     params(:all) do
       string :id, db_name: :delivery_method
@@ -553,6 +559,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     desc 'Manage user event delivery rate limits'
     route '{user_id}/notification_rate_limits'
     model ::UserNotificationRateLimit
+    resource_events topic: :notifications, audience: :account, owner: :user
 
     params(:all) do
       string :id, db_name: :limit_key
@@ -662,6 +669,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
   class EnvironmentConfig < HaveAPI::Resource
     desc 'User settings per environment'
     model ::EnvironmentUserConfig
+    resource_events topic: :account,
+                    audience: :account,
+                    name: :user_environment_config,
+                    owner: :user
     route '{user_id}/environment_configs'
 
     params(:all) do
@@ -778,6 +789,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
   class ClusterResource < HaveAPI::Resource
     desc "Manage user's cluster resources"
     model ::UserClusterResource
+    resource_events topic: :account, audience: :account, owner: :user
     route '{user_id}/cluster_resources'
 
     params(:filters) do
@@ -894,6 +906,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     desc 'Manage known login devices'
     route '{user_id}/known_devices'
     model ::UserDevice
+    resource_events topic: :security,
+                    audience: :account,
+                    name: :user_known_device,
+                    owner: :user,
+                    additional_actions: :created
 
     params(:all) do
       id :id
@@ -990,6 +1007,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     desc 'Manage TOTP devices'
     route '{user_id}/totp_devices'
     model ::UserTotpDevice
+    resource_events topic: :security,
+                    audience: :account,
+                    name: :user_totp_device,
+                    owner: :user
 
     params(:all) do
       id :id
@@ -1096,6 +1117,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     end
 
     class Confirm < HaveAPI::Action
+      event_policy :resource, models: [::UserTotpDevice]
       include VpsAdmin::API::Lifetimes::ActionHelpers
 
       desc 'Confirm device'
@@ -1219,6 +1241,11 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     desc 'Manage WebAuthn credentials'
     route '{user_id}/webauthn_credentials'
     model ::WebauthnCredential
+    resource_events topic: :security,
+                    audience: :account,
+                    name: :user_webauthn_credential,
+                    owner: :user,
+                    additional_actions: :created
 
     params(:all) do
       id :id
@@ -1358,6 +1385,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     desc 'Manage public keys'
     route '{user_id}/public_keys'
     model ::UserPublicKey
+    resource_events topic: :security,
+                    audience: :account,
+                    name: :user_public_key,
+                    owner: :user
 
     params(:common) do
       string :label, label: 'Label'

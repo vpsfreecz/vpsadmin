@@ -4,6 +4,31 @@ require 'vpsadmin/api/operations/utils/dns'
 
 module VpsAdmin::API
   class Authentication::OAuth2Config < HaveAPI::Authentication::OAuth2::Config
+    event_models = %w[
+      AuthToken
+      Oauth2Authorization
+      SingleSignOn
+      Token
+      User
+      UserDevice
+      UserSession
+      UserTotpDevice
+    ].freeze
+    %w[
+      oauth2.authorize_get
+      oauth2.authorize_post
+      oauth2.issue_tokens
+      oauth2.refresh_tokens
+      oauth2.revoke
+    ].each do |surface|
+      VpsAdmin::API::Events::ActionPolicies.register_external(
+        surface,
+        kind: :resource,
+        models: event_models,
+        atomic: true
+      )
+    end
+
     SSO_COOKIE = :vpsadmin_sso
 
     DEVICES_COOKIE = :vpsadmin_devices

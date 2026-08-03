@@ -9,24 +9,6 @@ module VpsAdmin::API::Events::ResourceOperations
     lock_version
     updated_at
   ].freeze
-  RESOURCE_NAME_OVERRIDES = {
-    'ChangeRequest' => 'request',
-    'EnvironmentUserConfig' => 'user_environment_config',
-    'Mount' => 'vps_mount',
-    'Oauth2Client' => 'oauth2_client',
-    'OutageExport' => 'export_outage',
-    'OutageUser' => 'user_outage',
-    'OutageVps' => 'vps_outage',
-    'RegistrationRequest' => 'request',
-    'SysConfig' => 'system_config',
-    'UserDevice' => 'user_known_device',
-    'UserPublicKey' => 'user_public_key',
-    'UserRequest' => 'request',
-    'UserTotpDevice' => 'user_totp_device',
-    'Vps' => 'vps',
-    'VpsConsole' => 'vps_console_token',
-    'WebauthnCredential' => 'user_webauthn_credential'
-  }.freeze
   TOPICS = %w[
     account
     dns
@@ -64,237 +46,28 @@ module VpsAdmin::API::Events::ResourceOperations
     'vps' => 'VPS'
   }.freeze
   AUDIENCES = %i[account admin].freeze
+  Declaration = Data.define(
+    :resource_class,
+    :topic,
+    :audience,
+    :logical_name,
+    :owner,
+    :vps,
+    :redact,
+    :additional_actions
+  )
   CatalogEntry = Data.define(
+    :model,
     :model_name,
     :api_resources,
     :actions,
     :topic,
     :audience,
-    :logical_name
+    :logical_name,
+    :owner,
+    :vps,
+    :redact
   )
-  RESOURCE_CATALOG = [
-    # Account and user configuration
-    ['User', 'VpsAdmin::API::Resources::User', %w[created updated deleted],
-     'account', :account],
-    ['UserClusterResource', 'VpsAdmin::API::Resources::User::ClusterResource',
-     %w[created], 'account', :account],
-    ['EnvironmentUserConfig',
-     'VpsAdmin::API::Resources::User::EnvironmentConfig', %w[updated],
-     'account', :account],
-    ['UserClusterResourcePackage',
-     'VpsAdmin::API::Resources::UserClusterResourcePackage',
-     %w[created updated deleted], 'account', :account],
-    ['UserNamespaceMap', 'VpsAdmin::API::Resources::UserNamespaceMap',
-     %w[created updated deleted], 'account', :account],
-    ['UserNamespaceMapEntry',
-     'VpsAdmin::API::Resources::UserNamespaceMap::Entry',
-     %w[created updated deleted], 'account', :account],
-    # DNS
-    ['DnsRecord', 'VpsAdmin::API::Resources::DnsRecord',
-     %w[created updated deleted], 'dns', :account],
-    ['DnsTsigKey', 'VpsAdmin::API::Resources::DnsTsigKey',
-     %w[created deleted], 'dns', :account],
-    ['DnsZone', 'VpsAdmin::API::Resources::DnsZone',
-     %w[created updated deleted], 'dns', :account],
-    ['DnsZoneTransfer', 'VpsAdmin::API::Resources::DnsZoneTransfer',
-     %w[created deleted], 'dns', :account],
-    ['DnsServerZone', 'VpsAdmin::API::Resources::DnsServerZone',
-     %w[created deleted], 'dns', :account],
-    ['DnsResolver', 'VpsAdmin::API::Resources::DnsResolver',
-     %w[created updated deleted], 'dns', :admin],
-    ['DnsServer', 'VpsAdmin::API::Resources::DnsServer',
-     %w[created updated deleted], 'dns', :admin],
-
-    # Infrastructure
-    ['ClusterResource', 'VpsAdmin::API::Resources::ClusterResource',
-     %w[created updated], 'infrastructure', :admin],
-    ['ClusterResourcePackage',
-     'VpsAdmin::API::Resources::ClusterResourcePackage',
-     %w[created updated deleted], 'infrastructure', :admin],
-    ['ClusterResourcePackageItem',
-     'VpsAdmin::API::Resources::ClusterResourcePackage::Item',
-     %w[created updated deleted], 'infrastructure', :admin],
-    ['DefaultObjectClusterResource',
-     'VpsAdmin::API::Resources::DefaultObjectClusterResource',
-     %w[created updated deleted], 'infrastructure', :admin],
-    ['Environment', 'VpsAdmin::API::Resources::Environment',
-     %w[created updated], 'infrastructure', :admin],
-    ['Location', 'VpsAdmin::API::Resources::Location',
-     %w[created updated], 'infrastructure', :admin],
-    ['MigrationPlan', 'VpsAdmin::API::Resources::MigrationPlan',
-     %w[created updated deleted], 'infrastructure', :admin],
-    ['VpsMigration',
-     'VpsAdmin::API::Resources::MigrationPlan::VpsMigration',
-     %w[created updated], 'infrastructure', :admin],
-    ['Node', 'VpsAdmin::API::Resources::Node',
-     %w[created updated], 'infrastructure', :admin],
-    ['NodeTransferConnection',
-     'VpsAdmin::API::Resources::NodeTransferConnection',
-     %w[created updated deleted], 'infrastructure', :admin],
-    ['Pool', 'VpsAdmin::API::Resources::Pool', %w[created],
-     'infrastructure', :admin],
-
-    # Networking
-    ['HostIpAddress', 'VpsAdmin::API::Resources::HostIpAddress',
-     %w[created updated deleted], 'network', :admin],
-    ['IpAddress', 'VpsAdmin::API::Resources::IpAddress',
-     %w[created updated], 'network', :account],
-    ['LocationNetwork', 'VpsAdmin::API::Resources::LocationNetwork',
-     %w[created updated deleted], 'network', :admin],
-    ['Network', 'VpsAdmin::API::Resources::Network',
-     %w[created updated], 'network', :admin],
-    ['NetworkInterface', 'VpsAdmin::API::Resources::NetworkInterface',
-     %w[updated], 'network', :account],
-
-    # Storage
-    ['Dataset', 'VpsAdmin::API::Resources::Dataset',
-     %w[created updated deleted], 'storage', :account],
-    ['DatasetInPoolPlan', 'VpsAdmin::API::Resources::Dataset::Plan',
-     %w[created deleted], 'storage', :account],
-    ['Snapshot', 'VpsAdmin::API::Resources::Dataset::Snapshot',
-     %w[created deleted], 'storage', :account],
-    ['DatasetExpansion', 'VpsAdmin::API::Resources::DatasetExpansion',
-     %w[created updated], 'storage', :account],
-    ['DatasetExpansionHistory',
-     'VpsAdmin::API::Resources::DatasetExpansion::History', %w[created],
-     'storage', :account],
-    ['Export', 'VpsAdmin::API::Resources::Export',
-     %w[created updated deleted], 'storage', :account],
-    ['ExportHost', 'VpsAdmin::API::Resources::Export::Host',
-     %w[created updated deleted], 'storage', :account],
-    ['SnapshotDownload', 'VpsAdmin::API::Resources::SnapshotDownload',
-     %w[created deleted], 'storage', :account],
-    ['Mount', 'VpsAdmin::API::Resources::VPS::Mount',
-     %w[created updated deleted], 'storage', :account],
-
-    # VPS
-    ['Vps', 'VpsAdmin::API::Resources::VPS',
-     %w[created updated deleted], 'vps', :account],
-    ['VpsConsole', 'VpsAdmin::API::Resources::VPS::ConsoleToken',
-     %w[created deleted], 'vps', :account],
-    ['VpsFeature', 'VpsAdmin::API::Resources::VPS::Feature',
-     %w[updated], 'vps', :account],
-    ['VpsMaintenanceWindow',
-     'VpsAdmin::API::Resources::VPS::MaintenanceWindow', %w[updated],
-     'vps', :account],
-    ['VpsUserData', 'VpsAdmin::API::Resources::VpsUserData',
-     %w[created updated deleted], 'vps', :account],
-
-    # Notification routing and preferences
-    ['EventRoute', 'VpsAdmin::API::Resources::EventRoute',
-     %w[created updated deleted], 'notifications', :account],
-    ['EventRouteMatcher', 'VpsAdmin::API::Resources::EventRoute::Matcher',
-     %w[created updated deleted], 'notifications', :account],
-    ['EventRouteTimeInterval',
-     'VpsAdmin::API::Resources::EventRoute::TimeInterval',
-     %w[created updated deleted], 'notifications', :account],
-    ['EventTimeInterval', 'VpsAdmin::API::Resources::EventTimeInterval',
-     %w[created updated deleted], 'notifications', :account],
-    ['NotificationReceiver',
-     'VpsAdmin::API::Resources::NotificationReceiver',
-     %w[created updated deleted], 'notifications', :account],
-    ['NotificationReceiverTarget',
-     'VpsAdmin::API::Resources::NotificationReceiver::Target',
-     %w[created updated deleted], 'notifications', :account],
-    ['NotificationTarget', 'VpsAdmin::API::Resources::NotificationTarget',
-     %w[created updated deleted], 'notifications', :account],
-    ['UserNotificationDeliveryMethod',
-     'VpsAdmin::API::Resources::User::NotificationDeliveryMethod',
-     %w[updated], 'notifications', :account],
-    ['UserNotificationRateLimit',
-     'VpsAdmin::API::Resources::User::NotificationRateLimit',
-     %w[updated], 'notifications', :account],
-    ['NotificationTemplate',
-     'VpsAdmin::API::Resources::NotificationTemplate',
-     %w[created updated deleted], 'notifications', :admin],
-    ['NotificationTemplateVariant',
-     'VpsAdmin::API::Resources::NotificationTemplate::Variant',
-     %w[created updated deleted], 'notifications', :admin],
-    # Authentication resources exposed to users or administrators
-    ['MetricsAccessToken', 'VpsAdmin::API::Resources::MetricsAccessToken',
-     %w[created deleted], 'security', :account],
-    ['UserDevice', 'VpsAdmin::API::Resources::User::KnownDevice',
-     %w[created deleted], 'security', :account],
-    ['UserPublicKey', 'VpsAdmin::API::Resources::User::PublicKey',
-     %w[created updated deleted], 'security', :account],
-    ['UserSession', 'VpsAdmin::API::Resources::UserSession',
-     %w[created updated], 'security', :account],
-    ['UserTotpDevice', 'VpsAdmin::API::Resources::User::TotpDevice',
-     %w[created updated deleted], 'security', :account],
-    ['WebauthnCredential',
-     'VpsAdmin::API::Resources::User::WebauthnCredential',
-     %w[created updated deleted], 'security', :account],
-    ['Oauth2Client', 'VpsAdmin::API::Resources::Oauth2Client',
-     %w[created updated deleted], 'security', :admin],
-
-    # Operating systems and global configuration
-    ['OsFamily', 'VpsAdmin::API::Resources::OsFamily',
-     %w[created updated deleted], 'operating_systems', :admin],
-    ['OsTemplate', 'VpsAdmin::API::Resources::OsTemplate',
-     %w[created updated deleted], 'operating_systems', :admin],
-    ['SysConfig', 'VpsAdmin::API::Resources::SystemConfig',
-     %w[updated], 'system', :admin],
-    # Mail, incidents and monitoring
-    ['Mailbox', 'VpsAdmin::API::Resources::Mailbox',
-     %w[created updated deleted], 'mail', :admin],
-    ['MailboxHandler', 'VpsAdmin::API::Resources::Mailbox::Handler',
-     %w[created updated deleted], 'mail', :admin],
-    ['IncidentReport', 'VpsAdmin::API::Resources::IncidentReport',
-     %w[created], 'incidents', :account],
-    ['SecurityAdvisory', 'VpsAdmin::API::Resources::SecurityAdvisory',
-     %w[created updated], 'security', :admin],
-    ['SecurityAdvisoryNodeStatus',
-     'VpsAdmin::API::Resources::SecurityAdvisory::NodeStatus',
-     %w[created updated deleted], 'security', :admin],
-    ['SecurityAdvisoryCve',
-     'VpsAdmin::API::Resources::SecurityAdvisoryCve',
-     %w[created updated deleted], 'security', :admin],
-    ['SecurityAdvisoryUpdate',
-     'VpsAdmin::API::Resources::SecurityAdvisoryUpdate',
-     %w[created updated deleted], 'security', :admin]
-  ].to_h do |model_name, api_resources, actions, topic, audience|
-    logical_name = RESOURCE_NAME_OVERRIDES.fetch(
-      model_name,
-      ActiveSupport::Inflector.underscore(model_name).tr('/', '_')
-    )
-    [
-      model_name,
-      CatalogEntry.new(
-        model_name:,
-        api_resources: Array(api_resources).freeze,
-        actions: actions.freeze,
-        topic:,
-        audience:,
-        logical_name:
-      )
-    ]
-  end.freeze
-  SENSITIVE_FIELDS_BY_MODEL = {
-    'AuthToken' => %w[opts],
-    'Event' => %w[parameters],
-    'EventDelivery' => %w[
-      payload
-      response_headers
-      target_secret
-      target_value
-    ],
-    'EventDeliveryAttempt' => %w[response_body response_headers],
-    'NotificationTarget' => %w[
-      config
-      identity_key
-      secret
-      target_value
-      verification_token
-    ],
-    'NotificationTemplateVariant' => %w[html options text],
-    'ObjectHistory' => %w[event_data],
-    'OsTemplate' => %w[config],
-    'SysConfig' => %w[value],
-    'Transaction' => %w[input output],
-    'TransactionConfirmation' => %w[attr_changes],
-    'VpsUserData' => %w[content],
-    'WebauthnChallenge' => %w[challenge]
-  }.freeze
   SENSITIVE_FIELD_PATTERN = /
     (?:\A|_)
     (?:
@@ -331,10 +104,9 @@ module VpsAdmin::API::Events::ResourceOperations
   /x
   INFER_RELATION = Object.new.freeze
 
-  @owner_resolvers = {}
-  @vps_resolvers = {}
+  @declarations = []
   @registered_event_types = {}
-  @resource_catalog = RESOURCE_CATALOG.dup
+  @resource_catalog = {}
 
   module_function
 
@@ -400,58 +172,61 @@ module VpsAdmin::API::Events::ResourceOperations
   def resource_owner(object, vps:)
     return vps.user if vps
 
-    resolver = @owner_resolvers[object.class.base_class.name]
-    resolver&.call(object)
+    catalog_entry_for(object)&.owner&.call(object)
   end
 
   def related_vps(object)
-    resolver = @vps_resolvers[object.class.base_class.name]
-    resolver&.call(object)
+    catalog_entry_for(object)&.vps&.call(object)
   end
 
-  def register_owner(*class_names, via: nil, &block)
-    resolver = block || association_resolver(via)
-    class_names.each { |class_name| @owner_resolvers[class_name.to_s] = resolver }
-  end
-
-  def register_vps(*class_names, via: nil, &block)
-    resolver = block || association_resolver(via)
-    class_names.each { |class_name| @vps_resolvers[class_name.to_s] = resolver }
-  end
-
-  def register_resource(
-    model_name,
-    api_resources:,
-    actions:,
+  def declare_resource(
+    resource_class,
     topic:,
     audience:,
-    logical_name: nil
+    name: nil,
+    owner: nil,
+    vps: nil,
+    redact: [],
+    additional_actions: []
   )
-    model_name = model_name.to_s
-    if @resource_catalog.has_key?(model_name)
-      raise ArgumentError,
-            "resource event model #{model_name} is already registered"
+    unless resource_class < HaveAPI::Resource
+      raise ArgumentError, "#{resource_class} is not a HaveAPI resource"
     end
 
-    actions = Array(actions).map(&:to_s)
-    invalid_actions = actions - ACTIONS
+    additional_actions = Array(additional_actions).map(&:to_s)
+    invalid_actions = additional_actions - ACTIONS
     unless invalid_actions.empty?
       raise ArgumentError,
-            "#{model_name} has unsupported resource event actions: " \
+            "#{resource_class.name} has unsupported resource event actions: " \
             "#{invalid_actions.join(', ')}"
     end
 
-    @resource_catalog[model_name] = CatalogEntry.new(
-      model_name:,
-      api_resources: Array(api_resources).map(&:to_s).freeze,
-      actions: actions.freeze,
+    previous = @declarations.find do |declaration|
+      declaration.resource_class.name == resource_class.name
+    end
+    declaration = Declaration.new(
+      resource_class:,
       topic: topic.to_s,
       audience: audience.to_sym,
-      logical_name: logical_name || RESOURCE_NAME_OVERRIDES.fetch(
-        model_name,
-        ActiveSupport::Inflector.underscore(model_name).tr('/', '_')
-      )
+      logical_name: name&.to_s,
+      owner:,
+      vps:,
+      redact: Array(redact).map(&:to_s).uniq.sort.freeze,
+      additional_actions: additional_actions.uniq.freeze
     )
+    if previous
+      if previous.resource_class.equal?(resource_class)
+        raise ArgumentError,
+              "resource events are already declared for #{resource_class.name}"
+      end
+      unless declaration_metadata(declaration) == declaration_metadata(previous)
+        raise ArgumentError,
+              "conflicting resource event reload for #{resource_class.name}"
+      end
+
+      @declarations.delete(previous)
+    end
+    @declarations << declaration
   end
 
   def resource_catalog
@@ -507,10 +282,7 @@ module VpsAdmin::API::Events::ResourceOperations
     entry = @resource_catalog[model_name]
     return entry.logical_name if entry
 
-    RESOURCE_NAME_OVERRIDES.fetch(
-      model_name,
-      ActiveSupport::Inflector.underscore(model_name).tr('/', '_')
-    )
+    ActiveSupport::Inflector.underscore(model_name).tr('/', '_')
   end
 
   def event_name(action, object_or_class)
@@ -718,10 +490,12 @@ module VpsAdmin::API::Events::ResourceOperations
   end
 
   def sensitive_field?(model, field)
-    model_name = model.is_a?(Class) ? model.base_class.name : model.to_s
+    model = model.is_a?(Class) ? model.base_class : model.to_s.constantize
+    declaration_fields = @resource_catalog[model.name]&.redact || []
 
     SENSITIVE_FIELD_PATTERN.match?(field.to_s) ||
-      SENSITIVE_FIELDS_BY_MODEL.fetch(model_name, []).include?(field.to_s)
+      model.event_redacted_fields.include?(field.to_s) ||
+      declaration_fields.include?(field.to_s)
   end
 
   def auditable_attribute_names(model)
@@ -729,9 +503,12 @@ module VpsAdmin::API::Events::ResourceOperations
   end
 
   def refresh_event_types!
+    finalize_catalog!
+    validate_mounted_resources!
+
     @resource_catalog.each_value do |entry|
-      resource_classes = entry.api_resources.map(&:constantize)
-      model = entry.model_name.constantize
+      resource_classes = entry.api_resources
+      model = entry.model
 
       validate_catalog_entry!(entry, model, resource_classes)
       next unless model.table_exists?
@@ -817,7 +594,7 @@ module VpsAdmin::API::Events::ResourceOperations
             "#{entry.model_name} has unsupported event audience " \
             "#{entry.audience.inspect}"
     end
-    if entry.audience == :account && !@owner_resolvers.has_key?(entry.model_name)
+    if entry.audience == :account && entry.owner.nil?
       raise ArgumentError,
             "#{entry.model_name} is account-visible but has no owner resolver"
     end
@@ -1044,6 +821,148 @@ module VpsAdmin::API::Events::ResourceOperations
     end
   end
 
+  def resolver_for(specification)
+    case specification
+    when nil
+      nil
+    when :self
+      ->(object) { object }
+    when Proc
+      specification
+    else
+      association_resolver(specification)
+    end
+  end
+  private_class_method :resolver_for
+
+  def declaration_metadata(declaration)
+    declaration.to_h.except(:resource_class)
+  end
+  private_class_method :declaration_metadata
+
+  def finalize_catalog!
+    catalog = {}
+
+    @declarations.group_by do |declaration|
+      declaration.resource_class.model&.base_class&.name
+    end.each do |model_name, declarations|
+      unless model_name
+        names = declarations.map { |item| item.resource_class.name }.join(', ')
+        raise ArgumentError, "resource event declarations have no model: #{names}"
+      end
+
+      reference = declarations.first
+      logical_name = reference.logical_name ||
+                     ActiveSupport::Inflector.underscore(model_name).tr('/', '_')
+      declarations.drop(1).each do |declaration|
+        next if declarations_compatible?(reference, declaration, logical_name:)
+
+        raise ArgumentError,
+              "conflicting resource event declarations for #{model_name}: " \
+              "#{reference.resource_class.name} and " \
+              "#{declaration.resource_class.name}"
+      end
+
+      resource_classes = declarations.map(&:resource_class)
+      actions = (
+        default_actions_for(resource_classes) +
+        declarations.flat_map(&:additional_actions)
+      ).uniq.sort
+      catalog[model_name] = CatalogEntry.new(
+        model: reference.resource_class.model.base_class,
+        model_name:,
+        api_resources: resource_classes.uniq.freeze,
+        actions: actions.freeze,
+        topic: reference.topic,
+        audience: reference.audience,
+        logical_name:,
+        owner: resolver_for(reference.owner),
+        vps: resolver_for(reference.vps),
+        redact: declarations.flat_map(&:redact).uniq.sort.freeze
+      )
+    end
+
+    duplicate_names = catalog.values.group_by(&:logical_name).select do |_name, entries|
+      entries.length > 1
+    end
+    unless duplicate_names.empty?
+      details = duplicate_names.map do |name, entries|
+        "#{name} (#{entries.map(&:model_name).join(', ')})"
+      end
+      raise ArgumentError,
+            "duplicate logical resource event names: #{details.join('; ')}"
+    end
+
+    @resource_catalog = catalog.freeze
+  end
+  private_class_method :finalize_catalog!
+
+  def declarations_compatible?(left, right, logical_name:)
+    right_logical_name = right.logical_name ||
+                         ActiveSupport::Inflector.underscore(
+                           right.resource_class.model.base_class.name
+                         ).tr('/', '_')
+    left.topic == right.topic &&
+      left.audience == right.audience &&
+      logical_name == right_logical_name &&
+      left.owner == right.owner &&
+      left.vps == right.vps
+  end
+  private_class_method :declarations_compatible?
+
+  def default_actions_for(resource_classes)
+    resource_classes.flat_map do |resource_class|
+      resource_class.actions.filter_map do |action_class|
+        if action_class <= HaveAPI::Actions::Default::Create
+          'created'
+        elsif action_class <= HaveAPI::Actions::Default::Update
+          'updated'
+        elsif action_class <= HaveAPI::Actions::Default::Delete
+          'deleted'
+        end
+      end
+    end
+  end
+  private_class_method :default_actions_for
+
+  def validate_mounted_resources!
+    missing = mounted_resource_classes.filter_map do |resource_class|
+      model = resource_class.model
+      next unless model
+
+      actions = default_actions_for([resource_class])
+      next if actions.empty?
+
+      entry = @resource_catalog[model.base_class.name]
+      missing_actions = entry ? actions - entry.actions : actions
+      next if missing_actions.empty?
+
+      "#{resource_class.name}: #{missing_actions.sort.join(', ')}"
+    end
+    return if missing.empty?
+
+    raise ArgumentError,
+          'mounted resources are missing resource event declarations: ' \
+          "#{missing.sort.join('; ')}"
+  end
+  private_class_method :validate_mounted_resources!
+
+  def mounted_resource_classes
+    walk = lambda do |resource_class|
+      resources = [resource_class]
+      resource_class.resources do |child|
+        resources.concat(walk.call(child))
+      end
+      resources
+    end
+
+    HaveAPI.get_version_resources(
+      VpsAdmin::API::Resources,
+      HaveAPI.implicit_version
+    ).flat_map { |resource_class| walk.call(resource_class) }
+  end
+  private_class_method :mounted_resource_classes
+
   def resource_summary(action, resource_name, resource_id, actor:)
     actor_label =
       if actor
@@ -1056,193 +975,12 @@ module VpsAdmin::API::Events::ResourceOperations
   end
 end
 
-# Resource ownership is intentionally declared instead of inferred from whatever
-# association methods a model happens to expose. Unknown resource classes are
-# system-owned and are therefore visible only to administrators.
-VpsAdmin::API::Events::ResourceOperations.register_owner('User') { |user| user }
-
-VpsAdmin::API::Events::ResourceOperations.register_owner(
-  'ClusterResourcePackage',
-  'AuthToken',
-  'Dataset',
-  'DnsRecord',
-  'DnsTsigKey',
-  'DnsZone',
-  'EnvironmentUserConfig',
-  'EventRoute',
-  'EventTimeInterval',
-  'Export',
-  'IncidentReport',
-  'IpAddress',
-  'IpAddressAssignment',
-  'MetricsAccessToken',
-  'MigrationPlan',
-  'MonitoredEvent',
-  'Network',
-  'NotificationReceiver',
-  'NotificationTarget',
-  'Oauth2Authorization',
-  'OutageExport',
-  'OutageHandler',
-  'OutageUser',
-  'OutageVps',
-  'SecurityAdvisoryUser',
-  'SecurityAdvisoryVps',
-  'SingleSignOn',
-  'SnapshotDownload',
-  'UserAccount',
-  'UserClusterResource',
-  'UserClusterResourcePackage',
-  'UserDevice',
-  'UserNamespace',
-  'UserNotificationDeliveryMethod',
-  'UserNotificationRateLimit',
-  'UserPayment',
-  'UserPublicKey',
-  'UserRequest',
-  'UserSession',
-  'UserTotpDevice',
-  'Vps',
-  'VpsConsole',
-  'VpsMigration',
-  'VpsUserData',
-  'WebauthnChallenge',
-  'WebauthnCredential',
-  'WebuiUserSetting',
-  via: :user
-)
-
-VpsAdmin::API::Events::ResourceOperations.register_owner('Token') do |token|
-  owner = token.owner
-  next if owner.nil?
-
-  operations = VpsAdmin::API::Events::ResourceOperations
-  operations.resource_owner(owner, vps: operations.related_vps(owner))
-end
-
-VpsAdmin::API::Events::ResourceOperations.register_owner('MaintenanceLock') do |lock|
-  klass = lock.class_name.safe_constantize
-  target =
-    if klass && klass < ::ApplicationRecord && lock.row_id
-      klass.find_by(id: lock.row_id)
-    end
-
-  if target
-    operations = VpsAdmin::API::Events::ResourceOperations
-    operations.resource_owner(target, vps: operations.related_vps(target))
+module VpsAdmin::API::Events::ResourceDeclaration
+  def resource_events(**)
+    VpsAdmin::API::Events::ResourceOperations.declare_resource(self, **)
   end
 end
 
-VpsAdmin::API::Events::ResourceOperations.register_owner(
-  'DatasetExpansion',
-  'Mount',
-  'NetworkInterface',
-  'OomPrevention',
-  'OomReport',
-  'OomReportCounter',
-  'VpsFeature',
-  'VpsMaintenanceWindow',
-  'VpsSshHostKey',
-  'VpsStatus',
-  via: %i[vps user]
-)
-
-VpsAdmin::API::Events::ResourceOperations.register_owner(
-  'DatasetInPool',
-  'Snapshot',
-  via: %i[dataset user]
-)
-
-VpsAdmin::API::Events::ResourceOperations.register_owner(
-  'DatasetInPoolPlan',
-  via: %i[dataset_in_pool dataset user]
-)
-
-VpsAdmin::API::Events::ResourceOperations.register_owner(
-  'DatasetExpansionHistory',
-  via: %i[dataset_expansion dataset user]
-)
-
-VpsAdmin::API::Events::ResourceOperations.register_owner(
-  'DnsServerZone',
-  'DnsZoneTransfer',
-  'DnssecRecord',
-  via: %i[dns_zone user]
-)
-
-VpsAdmin::API::Events::ResourceOperations.register_owner(
-  'EventRouteMatcher',
-  'EventRouteTimeInterval',
-  via: %i[event_route user]
-)
-
-VpsAdmin::API::Events::ResourceOperations.register_owner(
-  'EventDelivery',
-  via: %i[event user]
-)
-VpsAdmin::API::Events::ResourceOperations.register_owner(
-  'EventDeliveryAttempt',
-  via: %i[event_delivery event user]
-)
-
-VpsAdmin::API::Events::ResourceOperations.register_owner(
-  'ExportHost',
-  via: %i[export user]
-)
-
-VpsAdmin::API::Events::ResourceOperations.register_owner(
-  'NotificationReceiverAction',
-  'NotificationReceiverTarget',
-  via: %i[notification_receiver user]
-)
-
-VpsAdmin::API::Events::ResourceOperations.register_owner(
-  'UserNamespaceBlock',
-  'UserNamespaceMap',
-  via: %i[user_namespace user]
-)
-
-VpsAdmin::API::Events::ResourceOperations.register_owner(
-  'UserNamespaceMapEntry',
-  via: %i[user_namespace_map user_namespace user]
-)
-
-VpsAdmin::API::Events::ResourceOperations.register_vps('Vps') { |vps| vps }
-VpsAdmin::API::Events::ResourceOperations.register_vps('Token') do |token|
-  owner = token.owner
-  next if owner.nil?
-
-  VpsAdmin::API::Events::ResourceOperations.related_vps(owner)
-end
-VpsAdmin::API::Events::ResourceOperations.register_vps(
-  'EventDelivery',
-  via: %i[event vps]
-)
-VpsAdmin::API::Events::ResourceOperations.register_vps(
-  'EventDeliveryAttempt',
-  via: %i[event_delivery event vps]
-)
-VpsAdmin::API::Events::ResourceOperations.register_vps('MaintenanceLock') do |lock|
-  klass = lock.class_name.safe_constantize
-  target =
-    if klass && klass < ::ApplicationRecord && lock.row_id
-      klass.find_by(id: lock.row_id)
-    end
-
-  VpsAdmin::API::Events::ResourceOperations.related_vps(target) if target
-end
-VpsAdmin::API::Events::ResourceOperations.register_vps(
-  'DatasetExpansion',
-  'Mount',
-  'NetworkInterface',
-  'OomPrevention',
-  'OomReport',
-  'OomReportCounter',
-  'VpsFeature',
-  'VpsMaintenanceWindow',
-  'VpsSshHostKey',
-  'VpsStatus',
-  via: :vps
-)
+HaveAPI::Resource.extend(VpsAdmin::API::Events::ResourceDeclaration)
 
 require_relative 'action_policies'

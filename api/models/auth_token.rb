@@ -1,6 +1,8 @@
 require 'json'
 
 class AuthToken < ApplicationRecord
+  event_redact :opts
+  event_delete_cascades :token
   belongs_to :user
   belongs_to :user_agent
   belongs_to :token, dependent: :delete

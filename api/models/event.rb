@@ -1,4 +1,8 @@
 class Event < ApplicationRecord
+  event_redact :parameters
+  event_delete_cascades :event_deliveries,
+                        :event_routing_contexts,
+                        :event_route_matches
   MAX_SUMMARY_LENGTH = 16_384
   MAX_PARAMETERS_JSON_SIZE = 65_536
   MAX_PARAMETERS_DEPTH = 8

@@ -1,5 +1,6 @@
 class VpsAdmin::API::Resources::Node < HaveAPI::Resource
   model ::Node
+  resource_events topic: :infrastructure, audience: :admin
   desc 'Manage nodes'
 
   params(:id) do
@@ -389,6 +390,7 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
   # end
 
   class Evacuate < HaveAPI::Action
+    event_policy :resource, models: [::MigrationPlan, ::VpsMigration]
     desc 'Evacuate node'
     route '{%{resource}_id}/evacuate'
     http_method :post

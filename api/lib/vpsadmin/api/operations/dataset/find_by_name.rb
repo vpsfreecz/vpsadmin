@@ -2,6 +2,7 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::Dataset::FindByName < Operations::Base
+    event_policy :read, reason: 'operation does not persist state', atomic: false
     # @param user [::User]
     # @param name [String]
     # @return [::Dataset, nil]

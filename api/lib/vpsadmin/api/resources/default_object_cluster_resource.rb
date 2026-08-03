@@ -1,6 +1,7 @@
 module VpsAdmin::API::Resources
   class DefaultObjectClusterResource < HaveAPI::Resource
     model ::DefaultObjectClusterResource
+    resource_events topic: :infrastructure, audience: :admin
     desc 'Manage default cluster resources values for objects'
 
     params(:common) do

@@ -1,6 +1,7 @@
 module VpsAdmin::API::Resources
   class Pool < HaveAPI::Resource
     model ::Pool
+    resource_events topic: :infrastructure, audience: :admin
     desc 'Manage storage pools'
 
     params(:common) do

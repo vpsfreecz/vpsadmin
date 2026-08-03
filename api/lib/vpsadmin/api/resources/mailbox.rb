@@ -1,6 +1,7 @@
 module VpsAdmin::API::Resources
   class Mailbox < HaveAPI::Resource
     model ::Mailbox
+    resource_events topic: :mail, audience: :admin
     desc 'Manage mailboxes'
 
     params(:id) do
@@ -149,6 +150,7 @@ module VpsAdmin::API::Resources
     class Handler < HaveAPI::Resource
       route '{mailbox_id}/handler'
       model ::MailboxHandler
+      resource_events topic: :mail, audience: :admin
       desc 'Manage mailbox handlers'
 
       params(:common) do

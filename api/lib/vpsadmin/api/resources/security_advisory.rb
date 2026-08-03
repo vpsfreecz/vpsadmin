@@ -2,6 +2,7 @@ module VpsAdmin::API::Resources
   class SecurityAdvisory < HaveAPI::Resource
     desc 'Report and browse security advisories'
     model ::SecurityAdvisory
+    resource_events topic: :security, audience: :admin
 
     NAME_DESCRIPTION = 'Optional well-known vulnerability name, e.g. Dirty Pipe.'.freeze
     PUBLISHED_AT_DESCRIPTION =
@@ -234,6 +235,12 @@ module VpsAdmin::API::Resources
     end
 
     class Create < HaveAPI::Actions::Default::Create
+      event_policy :resource,
+                   models: [
+                     ::SecurityAdvisory,
+                     ::SecurityAdvisoryCve,
+                     ::SecurityAdvisoryTranslation
+                   ]
       include Helpers
 
       desc 'Create security advisory draft'
@@ -288,6 +295,8 @@ module VpsAdmin::API::Resources
     end
 
     class Update < HaveAPI::Actions::Default::Update
+      event_policy :resource,
+                   models: [::SecurityAdvisory, ::SecurityAdvisoryTranslation]
       include Helpers
 
       desc 'Update security advisory draft metadata'
@@ -319,6 +328,14 @@ module VpsAdmin::API::Resources
     end
 
     class Publish < HaveAPI::Action
+      event_policy :resource,
+                   models: [
+                     ::SecurityAdvisory,
+                     ::SecurityAdvisoryUser,
+                     ::SecurityAdvisoryVps
+                   ],
+                   atomic: false,
+                   emit_on_failure: true
       desc 'Publish security advisory'
       route '{%{resource}_id}/publish'
       http_method :post
@@ -367,6 +384,8 @@ module VpsAdmin::API::Resources
     end
 
     class RebuildAffectedVps < HaveAPI::Action
+      event_policy :resource,
+                   models: [::SecurityAdvisoryVps, ::SecurityAdvisoryUser]
       desc 'Rebuild affected VPS snapshot'
       route '{%{resource}_id}/rebuild_affected_vps'
       http_method :post
@@ -385,6 +404,7 @@ module VpsAdmin::API::Resources
       desc 'Security advisory node statuses'
       route '{security_advisory_id}/node_statuses'
       model ::SecurityAdvisoryNodeStatus
+      resource_events topic: :security, audience: :admin
 
       params(:revision_precondition) do
         integer :expected_content_revision,
@@ -492,6 +512,12 @@ module VpsAdmin::API::Resources
       end
 
       class Create < HaveAPI::Actions::Default::Create
+        event_policy :resource,
+                     models: [
+                       ::SecurityAdvisory,
+                       ::SecurityAdvisoryNodeStatus,
+                       ::SecurityAdvisoryNodeStatusTranslation
+                     ]
         include Helpers
         include NoteHelpers
 
@@ -528,6 +554,12 @@ module VpsAdmin::API::Resources
       end
 
       class Update < HaveAPI::Actions::Default::Update
+        event_policy :resource,
+                     models: [
+                       ::SecurityAdvisory,
+                       ::SecurityAdvisoryNodeStatus,
+                       ::SecurityAdvisoryNodeStatusTranslation
+                     ]
         include Helpers
         include NoteHelpers
 
@@ -563,6 +595,12 @@ module VpsAdmin::API::Resources
       end
 
       class Delete < HaveAPI::Actions::Default::Delete
+        event_policy :resource,
+                     models: [
+                       ::SecurityAdvisory,
+                       ::SecurityAdvisoryNodeStatus,
+                       ::SecurityAdvisoryNodeStatusTranslation
+                     ]
         include Helpers
 
         desc 'Delete advisory node status'

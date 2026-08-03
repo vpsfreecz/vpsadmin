@@ -1,6 +1,9 @@
 module VpsAdmin::API::Resources
   class Oauth2Client < HaveAPI::Resource
     model ::Oauth2Client
+    resource_events topic: :security,
+                    audience: :admin,
+                    name: :oauth2_client
     desc 'Manage OAuth2 clients'
 
     params(:common) do

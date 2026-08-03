@@ -7,6 +7,7 @@ class SnapshotInPool < ApplicationRecord
   belongs_to :mount
   has_many :snapshot_in_pool_in_branches
   has_many :mounts
+  operation_event_owner via: %i[snapshot dataset user]
 
   include Confirmable
   include Lockable

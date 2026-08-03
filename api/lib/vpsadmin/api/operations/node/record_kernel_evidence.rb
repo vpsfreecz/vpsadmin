@@ -4,6 +4,13 @@ require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
   class Operations::Node::RecordKernelEvidence < Operations::Base
+    event_policy :resource,
+                 models: [
+                   ::NodeKernelEvent,
+                   ::NodeKernelEvidence,
+                   ::NodeSoftwareChange,
+                   ::NodeSysctlChange
+                 ]
     BOOT_TIME_TOLERANCE = 5.minutes
 
     def run(

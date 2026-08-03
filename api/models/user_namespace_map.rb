@@ -1,6 +1,7 @@
 require_relative 'lockable'
 
 class UserNamespaceMap < ApplicationRecord
+  event_delete_cascades :user_namespace_map_entries
   belongs_to :user_namespace
   has_many :vpses
   has_many :user_namespace_map_entries, dependent: :delete_all

@@ -3,6 +3,7 @@ require 'securerandom'
 
 module VpsAdmin::API
   class Operations::DnsTsigKey::Create < Operations::Base
+    event_policy :resource, models: [::DnsTsigKey]
     # @param attrs [Hash]
     # @return [::DnsTsigKey]
     def run(attrs)
