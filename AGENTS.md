@@ -62,6 +62,11 @@ not prove that external documentation remains current.
   root. Parameter labels/descriptions are generated under
   `vpsadmin.resources`, `vpsadmin.attributes`, and `vpsadmin.meta`; do not add a
   separate `vpsadmin.parameters` tree.
+- Every new or changed API parameter must have a human-friendly label. It must
+  also have a description that explains its meaning or purpose unless the
+  meaning is already obvious and a description would add no useful
+  information. Identifier-derived labels such as `Expires_at` do not satisfy
+  this requirement.
 - The locale files include generated key structure from API source and HaveAPI
   parameter metadata. Edit translations in the locale files, then regenerate.
 - WebUI runtime translations use gettext domain `vpsAdmin`. Source strings are
