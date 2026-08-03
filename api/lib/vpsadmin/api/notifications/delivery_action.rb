@@ -1,3 +1,5 @@
+require_relative 'target_kinds'
+
 module VpsAdmin::API::Notifications
   class DeliveryFailure < StandardError
     attr_reader :response_status, :response_body, :response_headers
@@ -454,6 +456,7 @@ module VpsAdmin::API::Notifications
 
     def register(action_class)
       validate_class!(action_class)
+      validate_target_kinds!(action_class)
       name = action_class.action_name
       raise ArgumentError, "notification action #{name.inspect} is already registered" if @classes.has_key?(name)
 
@@ -629,6 +632,23 @@ module VpsAdmin::API::Notifications
       end
     end
 
+    def validate_target_kinds!(action_class)
+      declared_kinds = action_class.target_kinds.keys
+      unsupported_kinds = declared_kinds - TargetKinds::PERSISTED.keys
+      if unsupported_kinds.any?
+        raise ArgumentError,
+              "notification action #{action_class.action_name.inspect} declares " \
+              "unsupported target kinds #{unsupported_kinds.map(&:inspect).join(', ')}"
+      end
+
+      default_kind = action_class.new.default_target_kind.to_s
+      return if declared_kinds.include?(default_kind)
+
+      raise ArgumentError,
+            "notification action #{action_class.action_name.inspect} default " \
+            "target kind #{default_kind.inspect} is not declared"
+    end
+
     def normalize_deployment_defaults(name, values)
       unless values.is_a?(Hash) && values.keys.map(&:to_s).sort == %w[concurrency rate_limits]
         raise ArgumentError, "invalid deployment defaults for notification action #{name}"
@@ -673,6 +693,7 @@ module VpsAdmin::API::Notifications
     end
     private_class_method :normalize_deployment_defaults, :validate_class!,
                          :valid_local_template_metadata?,
+                         :validate_target_kinds!,
                          :validate_template_context_fallbacks!
   end
 end
