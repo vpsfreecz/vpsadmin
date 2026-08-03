@@ -63,7 +63,7 @@ final class NotificationDeliveryHtmlDetailsTest extends TestCase
 
         self::assertStringNotContainsString('$xtpl->table_add_category(_(\'Result\'))', $functionSource);
         self::assertStringContainsString('notifications_delivery_group_html($delivery)', $functionSource);
-        self::assertStringContainsString('false, false, 13', $functionSource);
+        self::assertStringContainsString('false, false, 6', $functionSource);
     }
 
     public function testDeliveryLogFilterIncludesAbortedState(): void

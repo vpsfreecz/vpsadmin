@@ -63,11 +63,25 @@ function notificationSidebarLinks(page) {
 }
 
 function notificationDeliveryTable(page) {
-  return page
-    .locator('table.table-style01')
-    .filter({ has: page.locator('th', { hasText: 'Delivery' }) })
-    .filter({ has: page.locator('th', { hasText: 'Next retry' }) })
-    .last();
+  return page.locator('#notification-deliveries-table');
+}
+
+async function expectNotificationDeliveryTableContained(page) {
+  const geometry = await notificationDeliveryTable(page).evaluate((table) => {
+    const content = document.querySelector('#content-in');
+    const tableRect = table.getBoundingClientRect();
+    const contentRect = content.getBoundingClientRect();
+
+    return {
+      tableRight: tableRect.right,
+      contentRight: contentRect.right,
+      scrollWidth: table.scrollWidth,
+      clientWidth: table.clientWidth,
+    };
+  });
+
+  expect(geometry.tableRight).toBeLessThanOrEqual(geometry.contentRight + 1);
+  expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth + 1);
 }
 
 async function routeDomIds(page) {
@@ -752,6 +766,7 @@ test.describe('support and status browser coverage', () => {
   });
 
   test('admin notification delivery queues are wired', async ({ page }) => {
+    await page.setViewportSize({ width: 1150, height: 900 });
     await login(page, fixtures.admin);
 
     await page.goto('/?page=notifications&action=events', {
@@ -780,18 +795,12 @@ test.describe('support and status browser coverage', () => {
     await expect(notificationDeliveryTable(page).locator('th')).toHaveText([
       'Delivery',
       'Event',
-      'Group',
-      'User',
-      'VPS',
-      'Receiver',
-      'Target',
+      'Context',
+      'Destination',
       'State',
-      'Attempts',
-      'Released',
-      'Last attempt',
-      'Next retry',
-      '',
+      'Times',
     ]);
+    await expectNotificationDeliveryTableContained(page);
 
     await page.goto('/?page=notifications&action=delivery_log', {
       waitUntil: 'domcontentloaded',
@@ -801,18 +810,28 @@ test.describe('support and status browser coverage', () => {
     await expect(notificationDeliveryTable(page).locator('th')).toHaveText([
       'Delivery',
       'Event',
-      'Group',
-      'User',
-      'VPS',
-      'Receiver',
-      'Target',
+      'Context',
+      'Destination',
       'State',
-      'Attempts',
-      'Released',
-      'Last attempt',
-      'Next retry',
-      '',
+      'Times',
     ]);
+    await expectNotificationDeliveryTableContained(page);
+
+    const deliveryRow = notificationDeliveryTable(page).locator('tr').filter({
+      has: page.locator('a[href*="action=delivery_show"]'),
+    }).first();
+    await expect(deliveryRow).toBeVisible();
+    await expect(deliveryRow.locator('td')).toHaveCount(6);
+    await expect(deliveryRow.locator('td').nth(2)).toContainText('Group');
+    await expect(deliveryRow.locator('td').nth(2)).toContainText('User');
+    await expect(deliveryRow.locator('td').nth(2)).toContainText('VPS');
+    await expect(deliveryRow.locator('td').nth(3)).toContainText('Receiver');
+    await expect(deliveryRow.locator('td').nth(3)).toContainText('Target');
+    await expect(deliveryRow.locator('td').nth(4)).toContainText('State');
+    await expect(deliveryRow.locator('td').nth(4)).toContainText('Attempts');
+    await expect(deliveryRow.locator('td').nth(5)).toContainText('Released');
+    await expect(deliveryRow.locator('td').nth(5)).toContainText('Last attempt');
+    await expect(deliveryRow.locator('td').nth(5)).toContainText('Next retry');
 
     await logout(page, fixtures.admin.username);
   });
