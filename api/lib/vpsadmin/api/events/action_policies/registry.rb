@@ -1,6 +1,7 @@
 module VpsAdmin::API::Events::ActionPolicies
   @external = {}
   @declared_policy_classes = []
+  @external_policy_owners = {}
   @external_policy_execution = {}
 
   module_function
@@ -58,6 +59,24 @@ module VpsAdmin::API::Events::ActionPolicies
     end
 
     @external[name] = policy
+  end
+
+  def register_external_owner(owner, mappings:, method_owner: owner)
+    execution = ExternalPolicyExecution.build(owner, method_owner:, mappings:)
+    registration = {
+      owner:,
+      method_owner:,
+      mappings: execution.external_event_policy_methods
+    }.freeze
+    existing = @external_policy_owners[owner]
+    return existing if existing == registration
+
+    if existing
+      raise ArgumentError,
+            "external event policy owner #{owner} conflicts with its existing declaration"
+    end
+
+    @external_policy_owners[owner] = registration
   end
 
   def build_policy(
@@ -158,14 +177,17 @@ module VpsAdmin::API::Events::ActionPolicies
   end
 
   def finalize!
+    validate_external_models!
     missing = mounted_actions.select do |action|
       mutating?(action) && self.for(action).nil?
     end
-    return if missing.empty?
+    if missing.any?
+      names = missing.map(&:name).sort.join("\n")
+      raise ArgumentError,
+            "mounted mutating actions are missing event policies:\n#{names}"
+    end
 
-    names = missing.map(&:name).sort.join("\n")
-    raise ArgumentError,
-          "mounted mutating actions are missing event policies:\n#{names}"
+    install_external_policy_executions!
   end
 
   def for_operation(operation)
@@ -186,6 +208,10 @@ module VpsAdmin::API::Events::ActionPolicies
 
   def external_policies
     @external.dup.freeze
+  end
+
+  def external_policy_owners
+    @external_policy_owners.dup.freeze
   end
 
   def external_policy_execution(owner)
@@ -287,6 +313,7 @@ module VpsAdmin::API::Events::ActionPolicies
     return if @installed
 
     validate_external_models!
+    external_executions = build_external_policy_executions
     ::ApplicationRecord.after_create do
       VpsAdmin::API::Events::ActionPolicies.record(:created, self)
     end
@@ -303,15 +330,31 @@ module VpsAdmin::API::Events::ActionPolicies
 
     HaveAPI::Action.prepend(ActionExecution)
     VpsAdmin::API::Operations::Base.singleton_class.prepend(OperationExecution)
-    oauth2_config = VpsAdmin::API::Authentication::OAuth2Config
-    oauth2_execution = ExternalPolicyExecution.build(oauth2_config)
-    oauth2_config.prepend(oauth2_execution)
-    @external_policy_execution[oauth2_config] = oauth2_execution
-    VpsAdmin::API::Notifications.singleton_class.prepend(
-      NotificationCallbackExecution
-    )
+    install_external_policy_executions!(external_executions)
     @installed = true
   end
+
+  def build_external_policy_executions
+    @external_policy_owners.each_value.filter_map do |registration|
+      next if @external_policy_execution.has_key?(registration[:owner])
+
+      execution = ExternalPolicyExecution.build(
+        registration[:owner],
+        method_owner: registration[:method_owner],
+        mappings: registration[:mappings]
+      )
+      [registration, execution]
+    end
+  end
+  private_class_method :build_external_policy_executions
+
+  def install_external_policy_executions!(executions = build_external_policy_executions)
+    executions.each do |registration, execution|
+      registration[:method_owner].prepend(execution)
+      @external_policy_execution[registration[:owner]] = execution
+    end
+  end
+  private_class_method :install_external_policy_executions!
 
   def default_resource_action(action)
     if action <= HaveAPI::Actions::Default::Create

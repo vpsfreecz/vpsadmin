@@ -972,6 +972,8 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
 
   it 'classifies and installs all non-action HTTP mutation boundaries' do
     policies = VpsAdmin::API::Events::ActionPolicies
+    oauth2_config = VpsAdmin::API::Authentication::OAuth2Config
+    notifications = VpsAdmin::API::Notifications
 
     expect(policies.external_policies.keys).to contain_exactly(
       'notifications.sms_callback',
@@ -1005,8 +1007,11 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
       kind: :internal_state,
       reason: include('feedback event')
     )
+    expect(policies.external_policy_owners.keys).to contain_exactly(
+      oauth2_config,
+      notifications
+    )
 
-    oauth2_config = VpsAdmin::API::Authentication::OAuth2Config
     oauth2_mappings = oauth2_config.external_event_policy_methods
     oauth2_execution = policies.external_policy_execution(oauth2_config)
 
@@ -1019,15 +1024,50 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
     )
     expect(policies.external_policies.keys.grep(/\Aoauth2\./))
       .to match_array(oauth2_mappings.values)
-    expect(oauth2_execution.external_event_policy_methods).to equal(oauth2_mappings)
+    expect(oauth2_execution.external_event_policy_methods).to eq(oauth2_mappings)
     expect(oauth2_execution.instance_methods(false)).to match_array(oauth2_mappings.keys)
     expect(VpsAdmin::API::Authentication::OAuth2Config.ancestors)
       .to include(oauth2_execution)
-    expect(VpsAdmin::API::Notifications.singleton_class.ancestors)
-      .to include(policies::NotificationCallbackExecution)
+
+    notification_mappings = notifications.external_event_policy_methods
+    notification_execution = policies.external_policy_execution(notifications)
+
+    expect(notification_mappings).to eq(
+      apply_sms_gateway_callback!: 'notifications.sms_callback'
+    )
+    expect(policies.external_policies.keys.grep(/\Anotifications\./))
+      .to match_array(notification_mappings.values)
+    expect(notification_execution.external_event_policy_methods)
+      .to eq(notification_mappings)
+    expect(notification_execution.instance_methods(false))
+      .to match_array(notification_mappings.keys)
+    expect(notifications.singleton_class.ancestors).to include(notification_execution)
   end
 
-  it 'rejects incomplete external policy instrumentation mappings' do
+  it 'installs registered external policy owners during finalization' do
+    policies = VpsAdmin::API::Events::ActionPolicies
+    owner = Class.new do
+      def callback; end
+    end
+    mappings = { callback: 'oauth2.authorize_get' }.freeze
+
+    policies.register_external_owner(owner, mappings:)
+
+    expect { policies.external_policy_execution(owner) }.to raise_error(KeyError)
+    expect { policies.finalize! }.not_to raise_error
+
+    execution = policies.external_policy_execution(owner)
+    expect(owner.ancestors).to include(execution)
+
+    expect { policies.finalize! }.not_to raise_error
+    expect(policies.external_policy_execution(owner)).to equal(execution)
+    expect(owner.ancestors.count { |ancestor| ancestor.equal?(execution) }).to eq(1)
+  ensure
+    policies.instance_variable_get(:@external_policy_owners)&.delete(owner) if policies && owner
+    policies.instance_variable_get(:@external_policy_execution)&.delete(owner) if policies && owner
+  end
+
+  it 'rejects invalid and conflicting external policy owner mappings atomically' do
     policies = VpsAdmin::API::Events::ActionPolicies
     missing_method = Class.new do
       def self.external_event_policy_methods
@@ -1041,11 +1081,40 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
 
       def callback; end
     end
+    owner = Class.new do
+      def callback; end
+    end
+    mappings = { callback: 'oauth2.authorize_get' }.freeze
 
-    expect { policies::ExternalPolicyExecution.build(missing_method) }
+    expect do
+      policies.register_external_owner(
+        missing_method,
+        mappings: missing_method.external_event_policy_methods
+      )
+    end
       .to raise_error(ArgumentError, /does not implement.*missing_callback/)
-    expect { policies::ExternalPolicyExecution.build(missing_policy) }
+    expect do
+      policies.register_external_owner(
+        missing_policy,
+        mappings: missing_policy.external_event_policy_methods
+      )
+    end
       .to raise_error(ArgumentError, /undeclared external event policies.*spec\.missing/)
+
+    registration = policies.register_external_owner(owner, mappings:)
+    expect(policies.register_external_owner(owner, mappings:)).to equal(registration)
+    expect do
+      policies.register_external_owner(
+        owner,
+        mappings: { callback: 'oauth2.authorize_post' }
+      )
+    end.to raise_error(ArgumentError, /conflicts with its existing declaration/)
+
+    expect(policies.external_policy_owners.fetch(owner)).to equal(registration)
+    expect(policies.external_policy_owners).not_to have_key(missing_method)
+    expect(policies.external_policy_owners).not_to have_key(missing_policy)
+  ensure
+    policies.instance_variable_get(:@external_policy_owners)&.delete(owner) if policies && owner
   end
 
   it 'registers only real callback-bypassing delete cascades' do

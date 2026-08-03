@@ -29,13 +29,22 @@ module VpsAdmin::API
       'x-vpsadmin-truncated' => ['response headers truncated']
     }.freeze
     DEFAULT_POLL_INTERVAL = 5
+    EXTERNAL_EVENT_POLICY_METHODS = {
+      apply_sms_gateway_callback!: 'notifications.sms_callback'
+    }.freeze
 
-    VpsAdmin::API::Events::ActionPolicies.register_external(
-      'notifications.sms_callback',
-      kind: :internal_state,
-      reason: 'delivery transport state must not create a routeable feedback event',
-      atomic: false
-    )
+    EXTERNAL_EVENT_POLICY_METHODS.each_value do |surface|
+      VpsAdmin::API::Events::ActionPolicies.register_external(
+        surface,
+        kind: :internal_state,
+        reason: 'delivery transport state must not create a routeable feedback event',
+        atomic: false
+      )
+    end
+
+    def self.external_event_policy_methods
+      EXTERNAL_EVENT_POLICY_METHODS
+    end
 
     module_function
 
@@ -89,6 +98,12 @@ module VpsAdmin::API
     end
   end
 end
+
+VpsAdmin::API::Events::ActionPolicies.register_external_owner(
+  VpsAdmin::API::Notifications,
+  method_owner: VpsAdmin::API::Notifications.singleton_class,
+  mappings: VpsAdmin::API::Notifications::EXTERNAL_EVENT_POLICY_METHODS
+)
 
 require_relative 'notifications/delivery_action'
 require_relative 'notifications/rate_limits'

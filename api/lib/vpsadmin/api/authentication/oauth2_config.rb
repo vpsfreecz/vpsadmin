@@ -984,3 +984,8 @@ module VpsAdmin::API
     end
   end
 end
+
+VpsAdmin::API::Events::ActionPolicies.register_external_owner(
+  VpsAdmin::API::Authentication::OAuth2Config,
+  mappings: VpsAdmin::API::Authentication::OAuth2Config::EXTERNAL_EVENT_POLICY_METHODS
+)
