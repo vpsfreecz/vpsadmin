@@ -54,6 +54,31 @@ RSpec.describe NodeCtld::Commands::Dataset::DestroySnapshot do
     expect(db).to have_received(:close)
   end
 
+  it 'looks up a snapshot marked for destruction in the database' do
+    allow(NodeCtld::Db).to receive(:new).and_return(db)
+    allow(db).to receive(:prepared).with(
+      'SELECT name FROM snapshots WHERE id = ?',
+      43
+    ).and_return(double(get!: { 'name' => 'snap-destroy-db' }))
+
+    cmd = described_class.new(
+      driver,
+      'pool_fs' => 'tank/backup',
+      'dataset_name' => '101',
+      'snapshot' => { 'id' => 43, 'name' => 'ignored', 'confirmed' => 'confirm_destroy' }
+    )
+    allow(cmd).to receive(:zfs)
+
+    cmd.exec
+
+    expect(cmd).to have_received(:zfs).with(
+      :destroy,
+      nil,
+      'tank/backup/101@snap-destroy-db'
+    )
+    expect(db).to have_received(:close)
+  end
+
   it 'destroys a confirmed snapshot on a branch dataset' do
     allow(NodeCtld::Db).to receive(:new)
 

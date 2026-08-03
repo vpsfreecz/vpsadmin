@@ -19,6 +19,7 @@ RSpec.describe TransactionChains::SnapshotInPool::Destroy do
     chain, = described_class.fire(sip)
 
     expect(sip.reload.confirmed).to eq(:confirm_destroy)
+    expect(snap.reload.confirmed).to eq(:confirm_destroy)
     expect(tx_classes(chain)).to eq(
       [
         Transactions::Utils::NoOp,
@@ -26,7 +27,7 @@ RSpec.describe TransactionChains::SnapshotInPool::Destroy do
       ]
     )
     expect(confirmations_for(chain).map(&:class_name)).to include('SnapshotInPool', 'Snapshot')
-    expect(snap.reload.name).to eq('snap-1')
+    expect(snap.name).to eq('snap-1')
   end
 
   it 'keeps the Snapshot row when another live SnapshotInPool still references it' do
@@ -40,6 +41,7 @@ RSpec.describe TransactionChains::SnapshotInPool::Destroy do
     chain, = described_class.fire(sip)
 
     expect(sip.reload.confirmed).to eq(:confirm_destroy)
+    expect(snap.reload.confirmed).to eq(:confirmed)
     expect(confirmations_for(chain).map(&:class_name)).to include('SnapshotInPool')
     expect(confirmations_for(chain).map(&:class_name)).not_to include('Snapshot')
   end
@@ -49,7 +51,7 @@ RSpec.describe TransactionChains::SnapshotInPool::Destroy do
     dataset, backup = create_dataset_with_pool!(user: user, pool: backup_pool, name: "snap-destroy-#{SecureRandom.hex(4)}")
     tree = create_tree!(dip: backup, index: 0, head: true)
     branch = create_branch!(tree: tree, name: 'head', head: true)
-    _, sip = create_snapshot!(dataset: dataset, dip: backup, name: 'snap-1')
+    snap, sip = create_snapshot!(dataset: dataset, dip: backup, name: 'snap-1')
     entry = attach_snapshot_to_branch!(sip: sip, branch: branch)
 
     chain, = described_class.fire(entry)
@@ -64,6 +66,7 @@ RSpec.describe TransactionChains::SnapshotInPool::Destroy do
     )
     expect(entry.reload.confirmed).to eq(:confirm_destroy)
     expect(sip.reload.confirmed).to eq(:confirm_destroy)
+    expect(snap.reload.confirmed).to eq(:confirm_destroy)
     expect(branch.reload.confirmed).to eq(:confirm_destroy)
     expect(tree.reload.confirmed).to eq(:confirm_destroy)
   end
@@ -75,7 +78,7 @@ RSpec.describe TransactionChains::SnapshotInPool::Destroy do
     old_branch = create_branch!(tree: old_tree, name: 'old', head: false)
     new_tree = create_tree!(dip: backup, index: 1, head: true)
     new_branch = create_branch!(tree: new_tree, name: 'new', head: true)
-    _, sip = create_snapshot!(dataset: dataset, dip: backup, name: 'snap-1')
+    snap, sip = create_snapshot!(dataset: dataset, dip: backup, name: 'snap-1')
     old_entry = attach_snapshot_to_branch!(sip: sip, branch: old_branch)
     new_entry = attach_snapshot_to_branch!(sip: sip, branch: new_branch)
 
@@ -89,6 +92,7 @@ RSpec.describe TransactionChains::SnapshotInPool::Destroy do
     expect(old_entry.reload.confirmed).to eq(:confirm_destroy)
     expect(new_entry.reload.confirmed).to eq(:confirmed)
     expect(sip.reload.confirmed).to eq(:confirmed)
+    expect(snap.reload.confirmed).to eq(:confirmed)
     expect(confirmations_for(chain).map(&:class_name)).to include('SnapshotInPoolInBranch')
     expect(confirmations_for(chain).map(&:class_name)).not_to include('SnapshotInPool')
   end

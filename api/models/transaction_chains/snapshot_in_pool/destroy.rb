@@ -92,6 +92,8 @@ module TransactionChains
     end
 
     def destroy_snapshot(sip)
+      sip.snapshot.update!(confirmed: ::Snapshot.confirmed(:confirm_destroy))
+
       # Make download link orphans
       append(Transactions::Utils::NoOp, args: sip.dataset_in_pool.pool.node_id) do
         ::SnapshotDownload.where(snapshot: sip.snapshot).each do |dl|
