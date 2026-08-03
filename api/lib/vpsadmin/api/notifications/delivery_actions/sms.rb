@@ -7,13 +7,9 @@ require 'uri'
 
 module VpsAdmin::API::Notifications::DeliveryActions
   class Sms < Base
-    class GatewayResponseError < StandardError
-      attr_reader :response_status, :response_body
-
+    class GatewayResponseError < VpsAdmin::API::Notifications::DeliveryFailure
       def initialize(response_status, response_body, message)
-        @response_status = response_status
-        @response_body = response_body
-        super(message)
+        super(message, response_status:, response_body:)
       end
     end
 

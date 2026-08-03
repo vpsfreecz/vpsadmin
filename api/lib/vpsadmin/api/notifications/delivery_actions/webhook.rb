@@ -6,14 +6,14 @@ require 'resolv'
 
 module VpsAdmin::API::Notifications::DeliveryActions
   class Webhook < Base
-    class ResponseError < StandardError
-      attr_reader :response_status, :response_body, :response_headers
-
+    class ResponseError < VpsAdmin::API::Notifications::DeliveryFailure
       def initialize(response_status, response_body, response_headers)
-        @response_status = response_status
-        @response_body = response_body
-        @response_headers = response_headers
-        super("webhook returned HTTP #{response_status}")
+        super(
+          "webhook returned HTTP #{response_status}",
+          response_status:,
+          response_body:,
+          response_headers:
+        )
       end
     end
 

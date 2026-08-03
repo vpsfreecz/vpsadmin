@@ -389,6 +389,35 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     [event.event_deliveries.sole, action, route]
   end
 
+  def expect_invalid_delivery_result_to_retry(invalid_result, result_type:)
+    delivery, = create_email_delivery!
+    dispatcher = VpsAdmin::API::Notifications::Dispatcher.new(
+      'email',
+      config: {
+        'email' => {
+          'concurrency' => 1,
+          'worker_delay' => 0
+        }
+      }
+    )
+    delivery_action = dispatcher.instance_variable_get(:@delivery_action)
+    allow(delivery_action).to receive(:deliver).and_return(invalid_result)
+
+    expect do
+      dispatcher.dispatch_due
+    end.to change(EventDeliveryAttempt, :count).by(1)
+
+    delivery.reload
+    attempt = delivery.event_delivery_attempts.sole
+
+    expect(delivery).to be_released_state
+    expect(delivery.next_attempt_at).to be_present
+    expect(delivery.error_summary)
+      .to include("returned #{result_type}; expected DeliveryResult")
+    expect(attempt).to be_failed_state
+    expect(attempt.error_summary).to eq(delivery.error_summary)
+  end
+
   def create_manual_webhook_delivery!(event:, url: 'https://webhook.example/events')
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Manual spec receiver')
     action = receiver.notification_receiver_actions.create!(
@@ -833,7 +862,7 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
         condition.wait(mutex) if delivery.id == 1 && !release_first
       end
 
-      {}
+      VpsAdmin::API::Notifications::DeliveryResult.new
     end
 
     [1, 2, 3, 4].each do |id|
@@ -1050,6 +1079,52 @@ RSpec.describe VpsAdmin::API::Tasks::EventDelivery do
     expect(delivery.error_summary).to include('StandardError: smtp rejected')
     expect(delivery.attempt_count).to eq(1)
     expect(delivery.event_delivery_attempts.sole).to be_failed_state
+  end
+
+  it 'retries deliveries when an action returns nil instead of DeliveryResult' do
+    expect_invalid_delivery_result_to_retry(nil, result_type: 'nil')
+  end
+
+  it 'retries deliveries when an action returns a Hash instead of DeliveryResult' do
+    expect_invalid_delivery_result_to_retry({}, result_type: 'Hash')
+  end
+
+  it 'retries deliveries when an action returns an arbitrary object instead of DeliveryResult' do
+    expect_invalid_delivery_result_to_retry(Object.new, result_type: 'Object')
+  end
+
+  it 'records generic delivery failure response metadata before retrying' do
+    delivery, = create_email_delivery!
+    dispatcher = VpsAdmin::API::Notifications::Dispatcher.new(
+      'email',
+      config: {
+        'email' => {
+          'concurrency' => 1,
+          'worker_delay' => 0
+        }
+      }
+    )
+    delivery_action = dispatcher.instance_variable_get(:@delivery_action)
+    failure = VpsAdmin::API::Notifications::DeliveryFailure.new(
+      'provider is unavailable',
+      response_status: 503,
+      response_body: 'unavailable',
+      response_headers: { 'retry-after' => ['10'] }
+    )
+    allow(delivery_action).to receive(:deliver).and_raise(failure)
+
+    dispatcher.dispatch_due
+
+    delivery.reload
+    attempt = delivery.event_delivery_attempts.sole
+
+    expect(delivery).to be_released_state
+    expect(delivery.response_status).to eq(503)
+    expect(delivery.response_body).to eq('unavailable')
+    expect(delivery.response_headers).to eq('retry-after' => ['10'])
+    expect(delivery.error_summary).to eq('provider is unavailable')
+    expect(attempt).to be_failed_state
+    expect(attempt.response_headers).to eq(delivery.response_headers)
   end
 
   it 'records SMTP error responses when e-mail delivery fails' do

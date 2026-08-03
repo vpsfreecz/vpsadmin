@@ -187,6 +187,10 @@ not prove that external documentation remains current.
 - Keep routing and dispatch protocol-neutral. Pass explicit context objects to
   delivery actions; do not depend on `instance_exec`, `send`, or callback
   rebinding to make one component execute in another component's scope.
+- Delivery implementations must return a validated `DeliveryResult` with a
+  supported outcome or raise `DeliveryFailure`. Keep provider-specific failure
+  classes behind that generic boundary so the dispatcher does not branch on
+  transport protocols or interpret arbitrary return values as success.
 - Reject duplicate action names, queues, routing keys, and conflicting target
   labels during registration. Cover a new action by extending registry and
   interface contract specs, not by adding mirrored action-name branches to

@@ -209,16 +209,8 @@ module VpsAdmin::API::Notifications
 
       delivery.reload
       prepare_grouped_delivery!(delivery)
-      result = deliver(delivery.reload)
-      accepted = if result.is_a?(DeliveryResult)
-                   result.accepted?
-                 elsif result.is_a?(Hash)
-                   result.fetch(:accepted, false)
-                 else
-                   false
-                 end
-      result = result.to_h if result.is_a?(DeliveryResult)
-      if accepted
+      result = validate_delivery_result!(deliver(delivery.reload))
+      if result.accepted?
         mark_accepted!(delivery, attempt, result)
       else
         mark_success!(delivery, attempt, result)
@@ -227,22 +219,13 @@ module VpsAdmin::API::Notifications
     rescue DeliveryPreparationTerminalError => e
       mark_preparation_terminal!(delivery, attempt, e)
       nil
-    rescue WebhookResponseError => e
+    rescue DeliveryFailure => e
       mark_failure!(
         delivery,
         attempt,
         response_status: e.response_status,
         response_body: e.response_body,
         response_headers: e.response_headers,
-        error_summary: e.message
-      )
-      nil
-    rescue TelegramResponseError, SmsGatewayResponseError => e
-      mark_failure!(
-        delivery,
-        attempt,
-        response_status: e.response_status,
-        response_body: e.response_body,
         error_summary: e.message
       )
       nil
@@ -497,6 +480,14 @@ module VpsAdmin::API::Notifications
       @delivery_action.deliver(delivery)
     end
 
+    def validate_delivery_result!(result)
+      return result if result.is_a?(DeliveryResult)
+
+      actual_type = result.nil? ? 'nil' : result.class.to_s
+      raise DeliveryFailure,
+            "notification action #{@action.inspect} returned #{actual_type}; expected DeliveryResult"
+    end
+
     def prepare_grouped_delivery!(delivery)
       return unless delivery.grouped_delivery?
       return if delivery_snapshot_prepared?(delivery)
@@ -509,42 +500,40 @@ module VpsAdmin::API::Notifications
     end
 
     def mark_success!(delivery, attempt, result)
-      result ||= {}
       now = Time.now
 
       attempt.update!(
         state: 'succeeded',
         finished_at: now,
-        provider_message_id: result[:provider_message_id],
-        response_status: result[:response_status],
-        response_body: result[:response_body],
-        response_headers: result[:response_headers],
+        provider_message_id: result.provider_message_id,
+        response_status: result.response_status,
+        response_body: result.response_body,
+        response_headers: result.response_headers,
         error_summary: nil
       )
 
       delivery.update!(
         state: 'sent',
         next_attempt_at: nil,
-        provider_message_id: result[:provider_message_id],
-        response_status: result[:response_status],
-        response_body: result[:response_body],
-        response_headers: result[:response_headers],
+        provider_message_id: result.provider_message_id,
+        response_status: result.response_status,
+        response_body: result.response_body,
+        response_headers: result.response_headers,
         error_summary: nil
       )
     end
 
     def mark_accepted!(delivery, attempt, result)
-      result ||= {}
       now = Time.now
 
       delivery.with_lock do
         attempt.update!(
           state: 'succeeded',
           finished_at: now,
-          provider_message_id: result[:provider_message_id],
-          response_status: result[:response_status],
-          response_body: result[:response_body],
-          response_headers: result[:response_headers],
+          provider_message_id: result.provider_message_id,
+          response_status: result.response_status,
+          response_body: result.response_body,
+          response_headers: result.response_headers,
           error_summary: nil
         )
 
@@ -553,10 +542,10 @@ module VpsAdmin::API::Notifications
         delivery.update!(
           state: 'accepted',
           next_attempt_at: nil,
-          provider_message_id: result[:provider_message_id],
-          response_status: result[:response_status],
-          response_body: result[:response_body],
-          response_headers: result[:response_headers],
+          provider_message_id: result.provider_message_id,
+          response_status: result.response_status,
+          response_body: result.response_body,
+          response_headers: result.response_headers,
           error_summary: nil
         )
       end

@@ -143,4 +143,36 @@ RSpec.describe VpsAdmin::API::Notifications::DeliveryActions do
     expect(result.provider_message_id).to eq('provider-1')
     expect { result.response_status = 200 }.to raise_error(NoMethodError)
   end
+
+  it 'rejects delivery results with an unknown outcome' do
+    expect do
+      VpsAdmin::API::Notifications::DeliveryResult.new(outcome: :unknown)
+    end.to raise_error(ArgumentError, /invalid notification delivery outcome/)
+  end
+
+  it 'keeps transport-specific failures compatible with the generic contract' do
+    webhook_error = VpsAdmin::API::Notifications::WebhookResponseError.new(
+      503,
+      'unavailable',
+      'retry-after' => ['10']
+    )
+    telegram_error = VpsAdmin::API::Notifications::TelegramResponseError.new(
+      429,
+      'limited',
+      'Telegram is rate limited'
+    )
+    sms_error = VpsAdmin::API::Notifications::SmsGatewayResponseError.new(
+      502,
+      'bad gateway',
+      'SMS gateway failed'
+    )
+
+    expect([webhook_error, telegram_error, sms_error])
+      .to all(be_a(VpsAdmin::API::Notifications::DeliveryFailure))
+    expect(webhook_error.response_status).to eq(503)
+    expect(webhook_error.response_body).to eq('unavailable')
+    expect(webhook_error.response_headers).to eq('retry-after' => ['10'])
+    expect(telegram_error.response_headers).to be_nil
+    expect(sms_error.response_status).to eq(502)
+  end
 end
