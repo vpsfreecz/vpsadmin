@@ -3,6 +3,8 @@
 require 'spec_helper'
 
 RSpec.describe VpsAdmin::API::Events::ResourceOperations do
+  include OutageReportsSpecHelpers
+
   before do
     create_spec_event_route!(user: SpecSeed.user)
     create_spec_event_route!(user: SpecSeed.admin)
@@ -1137,6 +1139,74 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
           message
         )
       end
+    end
+  end
+
+  it 'declares callback-bypassing cascades to public deleted resources' do
+    declarations = VpsAdmin::API::Events::ActionPolicies.delete_cascades
+    missing = ApplicationRecord.descendants.flat_map do |model|
+      model.reflect_on_all_associations.filter_map do |reflection|
+        next unless %i[delete delete_all].include?(reflection.options[:dependent])
+        next if reflection.polymorphic?
+
+        child_model = begin
+          reflection.klass.base_class
+        rescue NameError
+          next
+        end
+        next unless described_class.catalogued?(child_model, :deleted)
+        next if declarations.fetch(model.base_class.name, []).include?(reflection.name)
+
+        "#{model.base_class.name}.#{reflection.name}"
+      end
+    end.uniq.sort
+
+    expect(missing).to be_empty,
+                       "Undeclared public delete cascades:\n#{missing.join("\n")}"
+  end
+
+  it 'captures outage advisory links deleted through either parent',
+     requires_plugins: :outage_reports do
+    build_pair = lambda do |suffix|
+      outage = create_outage_with_translation!(
+        {
+          begins_at: Time.utc(2026, 8, 3, 12, suffix),
+          duration: 60,
+          outage_type: :unplanned_outage,
+          impact_type: :network,
+          state: :announced,
+          auto_resolve: true
+        }
+      )
+      advisory = SecurityAdvisory.create!(
+        state: :draft,
+        name: "Cascade advisory #{suffix}",
+        created_by: SpecSeed.admin
+      )
+      link = OutageSecurityAdvisory.create!(outage:, security_advisory: advisory)
+      [outage, advisory, link]
+    end
+    outage, _advisory, outage_link = build_pair.call(1)
+    _outage, advisory, advisory_link = build_pair.call(2)
+    policy = VpsAdmin::API::Events::ActionPolicies::Policy.new(
+      kind: :resource,
+      models: %w[OutageSecurityAdvisory],
+      reason: nil,
+      atomic: true
+    )
+
+    [[outage, outage_link], [advisory, advisory_link]].each do |parent, link|
+      with_current_context(user: SpecSeed.admin) do
+        VpsAdmin::API::Events::ActionPolicies.capture(policy) { parent.destroy! }
+      end
+
+      expect(
+        Event.where(
+          event_type: 'outage_security_advisory.deleted',
+          source_class: 'OutageSecurityAdvisory',
+          source_id: link.id
+        )
+      ).to exist
     end
   end
 
