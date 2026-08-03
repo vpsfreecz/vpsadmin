@@ -639,27 +639,36 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
   it 'classifies every mutating API action' do
     ApiAppHelper.app_instance
 
-    walk_resource = lambda do |resource|
-      actions = []
-      resource.actions { |action| actions << action }
-      resource.resources { |child| actions.concat(walk_resource.call(child)) }
-      actions
-    end
+    expect do
+      VpsAdmin::API::Events::ActionPolicies.finalize!
+    end.not_to raise_error
+  end
 
-    actions =
-      HaveAPI.get_version_resources(VpsAdmin::API::Resources, '7.0').flat_map do |resource|
-        walk_resource.call(resource)
-      end
-
-    mutating = actions.select do |action|
-      VpsAdmin::API::Events::ActionPolicies.mutating?(action)
+  it 'rejects an unclassified mutating action in a nested mounted resource' do
+    action = Class.new(HaveAPI::Action) do
+      http_method :post
     end
-    missing = mutating.reject do |action|
-      VpsAdmin::API::Events::ActionPolicies.for(action)
-    end
+    allow(action).to receive(:name).and_return('SpecResources::Nested::Mutate')
 
-    expect(missing).to be_empty,
-                       "Unclassified mutating actions:\n#{missing.map(&:name).sort.join("\n")}"
+    nested_resource = Class.new(HaveAPI::Resource)
+    allow(nested_resource).to receive(:actions).and_yield(action)
+    allow(nested_resource).to receive(:resources)
+
+    root_resource = Class.new(HaveAPI::Resource)
+    allow(root_resource).to receive(:actions)
+    allow(root_resource).to receive(:resources).and_yield(nested_resource)
+    allow(HaveAPI).to receive(:get_version_resources).and_return([root_resource])
+
+    expect do
+      VpsAdmin::API::Events::ActionPolicies.finalize!
+    end.to raise_error(
+      ArgumentError,
+      /mounted mutating actions.*SpecResources::Nested::Mutate/m
+    )
+    expect(HaveAPI).to have_received(:get_version_resources).with(
+      VpsAdmin::API::Resources,
+      HaveAPI.implicit_version
+    )
   end
 
   it 'catalogues every mounted model-backed CRUD resource' do
