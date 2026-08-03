@@ -6,7 +6,7 @@ class UserNotificationRateLimit < ApplicationRecord
 
   validates :delivery_method,
             presence: true,
-            inclusion: { in: ->(_) { VpsAdmin::API::Notifications::Actions.names } },
+            inclusion: { in: ->(_) { VpsAdmin::API::Notifications::DeliveryActions.names } },
             uniqueness: { scope: %i[user_id period] }
   validates :period,
             presence: true,
@@ -18,7 +18,7 @@ class UserNotificationRateLimit < ApplicationRecord
   end
 
   def label
-    VpsAdmin::API::Notifications::Actions.labels.fetch(delivery_method, delivery_method)
+    VpsAdmin::API::Notifications::DeliveryActions.labels.fetch(delivery_method, delivery_method)
   end
 
   def period_label
@@ -69,7 +69,9 @@ class UserNotificationRateLimit < ApplicationRecord
 
     def set_limit!(user, limit_key, limit_count)
       delivery_method, period = parse_limit_key(limit_key)
-      raise ActiveRecord::RecordNotFound unless VpsAdmin::API::Notifications::Actions.known?(delivery_method)
+      unless VpsAdmin::API::Notifications::DeliveryActions.known?(delivery_method)
+        raise ActiveRecord::RecordNotFound
+      end
       raise ActiveRecord::RecordNotFound unless VpsAdmin::API::Notifications::RateLimits.periods.include?(period)
 
       limit = user.user_notification_rate_limits.find_or_initialize_by(delivery_method:, period:)

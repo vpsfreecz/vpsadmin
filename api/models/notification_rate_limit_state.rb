@@ -3,6 +3,6 @@ class NotificationRateLimitState < ApplicationRecord
 
   validates :delivery_method,
             presence: true,
-            inclusion: { in: ->(_) { VpsAdmin::API::Notifications::Actions.names } },
+            inclusion: { in: ->(_) { VpsAdmin::API::Notifications::DeliveryActions.names } },
             uniqueness: { scope: :user_id }
 end

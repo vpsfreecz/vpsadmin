@@ -10,10 +10,10 @@ RSpec.describe EventDeliveryGroup do
   before do
     allow(NotificationTemplate).to receive(:send_custom_email)
       .and_return(build_mail_log_double)
-    allow(VpsAdmin::API::Notifications).to receive_messages(
-      telegram_configured?: true,
-      sms_configured?: true
-    )
+    allow(VpsAdmin::API::Notifications::DeliveryActions.fetch('telegram'))
+      .to receive(:available?).and_return(true)
+    allow(VpsAdmin::API::Notifications::DeliveryActions.fetch('sms'))
+      .to receive(:available?).and_return(true)
   end
 
   def create_grouped_route!(actions: [:webhook], group_by: ['severity'],
@@ -314,9 +314,9 @@ RSpec.describe EventDeliveryGroup do
     webhook = leaders.detect(&:webhook_action?)
     expect(JSON.parse(webhook.payload)).to include('version' => 1)
     expect(JSON.parse(webhook.payload).fetch('events').length).to eq(2)
-    webhook_headers = VpsAdmin::API::Notifications::Dispatcher
-                      .new('webhook')
-                      .send(:webhook_headers, webhook, webhook.payload)
+    webhook_headers = VpsAdmin::API::Notifications::DeliveryActions
+                      .fetch('webhook')
+                      .headers(webhook, webhook.payload)
     expect(webhook_headers).to include(
       'X-VpsAdmin-Group' => webhook.event_delivery_group.group_key
     )

@@ -13,7 +13,7 @@ class EventDeliveryAttempt < ApplicationRecord
   serialize :response_headers, coder: JSON
 
   validates :action, :state, :attempt_number, presence: true
-  validates :action, inclusion: { in: ->(_) { VpsAdmin::API::Notifications::Actions.names } }
+  validates :action, inclusion: { in: ->(_) { VpsAdmin::API::Notifications::DeliveryActions.names } }
   validates :attempt_number, numericality: { only_integer: true, greater_than: 0 }
   validates :provider_message_id, length: { maximum: 255 }, allow_nil: true
   validates :response_status, numericality: { only_integer: true }, allow_nil: true

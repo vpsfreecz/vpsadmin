@@ -9,12 +9,12 @@ class UserNotificationDeliveryMethod < ApplicationRecord
   validates :enabled, inclusion: { in: [true, false] }
 
   def label
-    VpsAdmin::API::Notifications::Actions.labels.fetch(delivery_method, delivery_method)
+    VpsAdmin::API::Notifications::DeliveryActions.labels.fetch(delivery_method, delivery_method)
   end
 
   class << self
     def delivery_methods
-      VpsAdmin::API::Notifications::Actions.names
+      VpsAdmin::API::Notifications::DeliveryActions.names
     end
 
     def all_methods_for(user)
@@ -31,7 +31,7 @@ class UserNotificationDeliveryMethod < ApplicationRecord
     end
 
     def known_delivery_method?(delivery_method)
-      VpsAdmin::API::Notifications::Actions.known?(normalize_delivery_method(delivery_method))
+      VpsAdmin::API::Notifications::DeliveryActions.known?(normalize_delivery_method(delivery_method))
     end
 
     def normalize_delivery_method(delivery_method)

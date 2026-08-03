@@ -8,11 +8,13 @@ RSpec.describe NotificationReceiverAction do
   end
 
   def enable_telegram!
-    allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
+    allow(VpsAdmin::API::Notifications::DeliveryActions.fetch('telegram'))
+      .to receive(:available?).and_return(true)
   end
 
   def enable_sms!
-    allow(VpsAdmin::API::Notifications).to receive(:sms_configured?).and_return(true)
+    allow(VpsAdmin::API::Notifications::DeliveryActions.fetch('sms'))
+      .to receive(:available?).and_return(true)
   end
 
   it 'uses string columns for notification action registry names' do
@@ -76,7 +78,8 @@ RSpec.describe NotificationReceiverAction do
   end
 
   it 'rejects SMS actions when SMS is not enabled for the user' do
-    allow(VpsAdmin::API::Notifications).to receive(:sms_configured?).and_return(true)
+    allow(VpsAdmin::API::Notifications::DeliveryActions.fetch('sms'))
+      .to receive(:available?).and_return(true)
     SpecSeed.user.set_notification_delivery_method!(:sms, false)
 
     action = create_receiver!.notification_receiver_actions.build(

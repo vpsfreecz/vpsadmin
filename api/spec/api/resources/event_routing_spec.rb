@@ -1325,7 +1325,8 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
   end
 
   it 'returns Telegram pairing metadata for pending targets' do
-    allow(VpsAdmin::API::Notifications).to receive(:telegram_configured?).and_return(true)
+    allow(VpsAdmin::API::Notifications::DeliveryActions.fetch('telegram'))
+      .to receive(:available?).and_return(true)
     allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(
       'telegram' => {
         'bot_username' => 'vpsadmin_aitherdev_bot'
@@ -1352,7 +1353,8 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
   end
 
   it 'hides SMS verification codes and accepts them through confirmation' do
-    allow(VpsAdmin::API::Notifications).to receive(:sms_configured?).and_return(true)
+    allow(VpsAdmin::API::Notifications::DeliveryActions.fetch('sms'))
+      .to receive(:available?).and_return(true)
 
     target = NotificationTarget.create!(
       user: SpecSeed.user,
@@ -1516,7 +1518,8 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
   end
 
   it 'auto-verifies custom e-mail and SMS targets saved by admins' do
-    allow(VpsAdmin::API::Notifications).to receive(:sms_configured?).and_return(true)
+    allow(VpsAdmin::API::Notifications::DeliveryActions.fetch('sms'))
+      .to receive(:available?).and_return(true)
 
     email_target = nil
     expect do
@@ -2466,10 +2469,10 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
   end
 
   it 'exposes action-specific delivery details' do
-    allow(VpsAdmin::API::Notifications).to receive_messages(
-      telegram_configured?: true,
-      sms_configured?: true
-    )
+    allow(VpsAdmin::API::Notifications::DeliveryActions.fetch('telegram'))
+      .to receive(:available?).and_return(true)
+    allow(VpsAdmin::API::Notifications::DeliveryActions.fetch('sms'))
+      .to receive(:available?).and_return(true)
     allow(VpsAdmin::API::Notifications::Config).to receive(:load).and_return(sms_notifications_config)
 
     receiver = NotificationReceiver.create!(user: SpecSeed.user, label: 'Spec detail receiver')

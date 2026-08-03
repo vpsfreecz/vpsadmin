@@ -41,13 +41,12 @@ class NotificationTarget < ApplicationRecord
 
   before_validation :set_default_target_kind
   before_validation :set_default_label
-  before_validation :clean_email_target
-  before_validation :clean_sms_target
+  before_validation :normalize_target_value
   before_validation :reset_verification_after_untrusted_change
   before_validation :set_identity_key
 
   validates :action, :target_kind, :label, presence: true
-  validates :action, inclusion: { in: ->(_) { VpsAdmin::API::Notifications::Actions.names } }
+  validates :action, inclusion: { in: ->(_) { VpsAdmin::API::Notifications::DeliveryActions.names } }
   validates :label, length: { maximum: 255 }, allow_nil: true
   validates :identity_key, length: { maximum: 255 }, allow_nil: true
   validates :identity_key,
@@ -60,34 +59,21 @@ class NotificationTarget < ApplicationRecord
   validate :check_target
 
   def self.action_labels
-    VpsAdmin::API::Notifications::Actions.available_labels
+    VpsAdmin::API::Notifications::DeliveryActions.available_labels
   end
 
   def self.target_kind_labels
-    VpsAdmin::API::Notifications::Actions.target_kind_labels
+    VpsAdmin::API::Notifications::DeliveryActions.target_kind_labels
   end
 
   def self.identity_key_for(action, target_kind, target_value, secret = nil)
-    action = action.to_s
-    target_kind = target_kind.to_s
-
-    case action
-    when 'email'
-      if target_kind == 'default_recipient'
-        'default'
-      elsif (target = normalize_email_target(target_value))
-        "custom:#{Digest::SHA256.hexdigest(target)}"
-      end
-    when 'webhook'
-      url = target_value.to_s.strip
-      return if url.blank?
-
-      "url:#{Digest::SHA256.hexdigest("#{url}\0#{secret}")}"
-    when 'sms'
-      normalize_sms_target(target_value)
-    when 'telegram'
-      target_value.to_s.strip.presence&.then { |v| "chat:#{v}" }
-    end
+    VpsAdmin::API::Notifications::DeliveryActions.fetch(action).identity_key(
+      target_kind:,
+      target_value:,
+      secret:
+    )
+  rescue KeyError
+    nil
   end
 
   def self.normalize_email_target(value)
@@ -141,24 +127,32 @@ class NotificationTarget < ApplicationRecord
     return false unless action_available?
     return false unless delivery_method_enabled?
 
-    VpsAdmin::API::Notifications::Actions.known?(action)
+    VpsAdmin::API::Notifications::DeliveryActions.known?(action)
+  end
+
+  def target_enabled
+    enabled?
   end
 
   def email_verification_required?
-    email_action? && custom_target_kind?
+    action_definition.verification_required?(self)
+  rescue KeyError
+    false
   end
 
   def admin_verification_skippable?
-    email_verification_required? || sms_action?
+    action_definition.admin_verification_skippable?(self)
+  rescue KeyError
+    false
   end
 
   def action_available?
-    VpsAdmin::API::Notifications::Actions.available?(action)
+    VpsAdmin::API::Notifications::DeliveryActions.available?(action)
   end
 
   def delivery_method_enabled?
     return false if action.blank?
-    return false unless VpsAdmin::API::Notifications::Actions.known?(action)
+    return false unless VpsAdmin::API::Notifications::DeliveryActions.known?(action)
 
     user&.notification_delivery_method_enabled?(action) == true
   end
@@ -329,7 +323,7 @@ class NotificationTarget < ApplicationRecord
   end
 
   def display_target
-    action_definition.display_target_for(self)
+    action_definition.display_target(self)
   rescue KeyError
     target_value.presence || target_kind.tr('_', ' ')
   end
@@ -366,6 +360,14 @@ class NotificationTarget < ApplicationRecord
     return if sms_action? || email_action?
 
     raw_verification_token
+  end
+
+  def verification_credential
+    raw_verification_token
+  end
+
+  def verification_credential_created_at
+    verification_token_created_at
   end
 
   def email_action?
@@ -446,11 +448,11 @@ class NotificationTarget < ApplicationRecord
   def set_default_target_kind
     return if action.blank?
 
-    if email_action?
-      self.target_kind ||= 'default_recipient'
-    elsif target_kind.blank? || default_recipient_target_kind?
-      self.target_kind = 'custom'
-    end
+    default_kind = action_definition.default_target_kind
+    self.target_kind = default_kind if target_kind.blank? ||
+                                       (default_recipient_target_kind? && default_kind != 'default_recipient')
+  rescue KeyError
+    nil
   end
 
   def check_target_limit
@@ -471,93 +473,24 @@ class NotificationTarget < ApplicationRecord
   def check_delivery_method_enabled
     return if skip_delivery_method_enabled_validation
     return if action.blank?
-    return unless VpsAdmin::API::Notifications::Actions.known?(action)
+    return unless VpsAdmin::API::Notifications::DeliveryActions.known?(action)
     return if delivery_method_enabled?
 
     errors.add(:action, 'is not enabled for this user')
   end
 
   def check_target
-    action_definition.validate_receiver_action!(self)
+    action_definition.validate_target(self)
   rescue KeyError
     nil
   end
 
-  def check_email_target
-    return if default_recipient_target_kind?
+  def normalize_target_value
+    return if action.blank? || target_kind.blank? || target_value.nil?
 
-    if target_value.blank?
-      errors.add(:target_value, "can't be blank")
-      return
-    end
-
-    if target_value.length > MAIL_TARGET_VALUE_LIMIT
-      errors.add(:target_value, "is too long (maximum is #{MAIL_TARGET_VALUE_LIMIT} characters)")
-      return
-    end
-
-    addresses = self.class.parsed_email_target_addresses(target_value)
-    if addresses.nil? || addresses.empty?
-      errors.add(:target_value, "'#{target_value}' is not a valid e-mail address")
-      return
-    end
-
-    unless addresses.one?
-      errors.add(:target_value, 'must contain one e-mail address')
-      return
-    end
-
-    return if self.class.valid_email_target_address?(addresses.first)
-
-    errors.add(:target_value, "'#{target_value}' is not a valid e-mail address")
-  end
-
-  def check_telegram_target
-    return if custom_target_kind?
-
-    errors.add(:target_kind, 'must be custom')
-  end
-
-  def check_sms_target
-    unless custom_target_kind?
-      errors.add(:target_kind, 'must be custom')
-      return
-    end
-
-    if target_value.blank?
-      errors.add(:target_value, "can't be blank")
-      return
-    end
-
-    return if target_value.match?(SMS_PHONE_FORMAT)
-
-    errors.add(:target_value, 'must be an E.164 phone number, e.g. +420123456789')
-  end
-
-  def check_webhook_target
-    if target_value.blank?
-      errors.add(:target_value, "can't be blank")
-      return
-    end
-
-    uri = URI.parse(target_value)
-    return if uri.is_a?(URI::HTTP) && uri.host.present?
-
-    errors.add(:target_value, 'must be an HTTP or HTTPS URL')
-  rescue URI::InvalidURIError
-    errors.add(:target_value, 'must be an HTTP or HTTPS URL')
-  end
-
-  def clean_email_target
-    return unless email_action? && custom_target_kind? && target_value
-
-    self.target_value = self.class.normalize_email_target(target_value)
-  end
-
-  def clean_sms_target
-    return unless sms_action? && target_value
-
-    self.target_value = self.class.normalize_sms_target(target_value)
+    self.target_value = action_definition.normalize_target_value(target_kind, target_value)
+  rescue KeyError
+    nil
   end
 
   def reset_verification_after_untrusted_change
@@ -586,7 +519,7 @@ class NotificationTarget < ApplicationRecord
   end
 
   def action_definition
-    VpsAdmin::API::Notifications::Actions.fetch(action)
+    VpsAdmin::API::Notifications::DeliveryActions.fetch(action)
   end
 
   def ensure_telegram_verification_token

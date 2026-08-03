@@ -9,7 +9,9 @@ module TransactionChains
       delivery.association(:event).target ||= delivery.event
 
       if delivery.prepared_state? && delivery.mail_log_id.blank?
-        VpsAdmin::API::Notifications.render_email_delivery!(delivery)
+        VpsAdmin::API::Notifications::DeliveryActions
+          .fetch('email')
+          .render_delivery!(delivery)
         delivery.reload
       end
 
