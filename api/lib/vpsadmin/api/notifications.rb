@@ -90,10 +90,10 @@ end
 
 require_relative 'notifications/delivery_action'
 require_relative 'notifications/rate_limits'
-require_relative 'notifications/delivery_actions/email'
-require_relative 'notifications/delivery_actions/webhook'
-require_relative 'notifications/delivery_actions/telegram'
-require_relative 'notifications/delivery_actions/sms'
+Dir[File.expand_path('notifications/delivery_actions/*.rb', __dir__)].each do |path|
+  require path
+end
+VpsAdmin::API::Notifications::DeliveryActions.finalize!
 
 module VpsAdmin::API::Notifications
   EmailVerificationDeliveryError = DeliveryActions::Email::VerificationDeliveryError

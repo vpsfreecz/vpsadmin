@@ -3,7 +3,48 @@ require_relative '../spec_helper'
 RSpec.describe VpsAdmin::API::Notifications::DeliveryActions do
   subject(:registry) { described_class }
 
+  def build_delivery_action(
+    name,
+    config_section: name,
+    template_context_fallbacks: [],
+    templates: false
+  )
+    Class.new(VpsAdmin::API::Notifications::DeliveryActions::Base) do
+      action name,
+             label: name.to_s,
+             queue: "vpsadmin.notifications.#{name}",
+             routing_key: "delivery.#{name}",
+             config_section: config_section,
+             default_concurrency: 1,
+             default_rate_limits: { minute: 1, hour: 1, day: 1, week: 1 },
+             template_context_fallbacks: template_context_fallbacks,
+             templates: templates
+      target_kind :custom, label: 'custom target'
+
+      def deliver(_delivery)
+        VpsAdmin::API::Notifications::DeliveryResult.new
+      end
+    end
+  end
+
+  def with_isolated_registry
+    variables = %i[@classes @instances @finalized]
+    state = variables.to_h do |variable|
+      [variable, registry.instance_variable_get(variable)]
+    end
+    registry.instance_variable_set(:@classes, {})
+    registry.instance_variable_set(:@instances, {})
+    registry.instance_variable_set(:@finalized, false)
+
+    yield
+  ensure
+    state&.each do |variable, value|
+      registry.instance_variable_set(variable, value)
+    end
+  end
+
   it 'derives public delivery metadata from registered action classes' do
+    expect(registry).to be_finalized
     expect(registry.names).to contain_exactly('email', 'webhook', 'telegram', 'sms')
     expect(registry.labels).to eq(
       'email' => 'E-mail',
@@ -90,7 +131,61 @@ RSpec.describe VpsAdmin::API::Notifications::DeliveryActions do
       .to raise_error(ArgumentError, /routing key .* already registered/)
   end
 
-  it 'rejects invalid template fallback metadata' do
+  it 'rejects duplicate config sections without mutating the registry' do
+    duplicate_config = build_delivery_action(
+      :spec_duplicate_config,
+      config_section: :email
+    )
+    original_names = registry.names
+    original_labels = registry.labels
+
+    expect { registry.register(duplicate_config) }
+      .to raise_error(ArgumentError, /config section "email" is already registered/)
+    expect(registry.names).to eq(original_names)
+    expect(registry.labels).to eq(original_labels)
+  end
+
+  it 'rejects duplicate target kinds within one action declaration' do
+    expect do
+      Class.new(VpsAdmin::API::Notifications::DeliveryActions::Base) do
+        action :spec_duplicate_target_kind,
+               label: 'Spec duplicate target kind',
+               queue: 'vpsadmin.notifications.spec-duplicate-target-kind',
+               routing_key: 'delivery.spec-duplicate-target-kind',
+               default_concurrency: 1,
+               default_rate_limits: { minute: 1, hour: 1, day: 1, week: 1 }
+        target_kind :custom, label: 'custom target'
+        target_kind :custom, label: 'another custom target'
+      end
+    end.to raise_error(ArgumentError, /target kind "custom" is already declared/)
+  end
+
+  it 'rejects conflicting target kind labels before registering the action' do
+    conflicting_target_label = Class.new(
+      VpsAdmin::API::Notifications::DeliveryActions::Base
+    ) do
+      action :spec_conflicting_target_label,
+             label: 'Spec conflicting target label',
+             queue: 'vpsadmin.notifications.spec-conflicting-target-label',
+             routing_key: 'delivery.spec-conflicting-target-label',
+             default_concurrency: 1,
+             default_rate_limits: { minute: 1, hour: 1, day: 1, week: 1 }
+      target_kind :custom, label: 'conflicting custom target'
+
+      def deliver(_delivery)
+        VpsAdmin::API::Notifications::DeliveryResult.new
+      end
+    end
+    original_names = registry.names
+    original_target_kind_labels = registry.target_kind_labels
+
+    expect { registry.register(conflicting_target_label) }
+      .to raise_error(ArgumentError, /conflicting label.*"custom"/)
+    expect(registry.names).to eq(original_names)
+    expect(registry.target_kind_labels).to eq(original_target_kind_labels)
+  end
+
+  it 'rejects template fallbacks on actions which cannot render templates' do
     non_template_action = Class.new(
       VpsAdmin::API::Notifications::DeliveryActions::Base
     ) do
@@ -108,28 +203,72 @@ RSpec.describe VpsAdmin::API::Notifications::DeliveryActions do
       end
     end
 
-    unknown_fallback = Class.new(
-      VpsAdmin::API::Notifications::DeliveryActions::Base
-    ) do
-      action :spec_unknown_fallback,
-             label: 'Spec unknown fallback',
-             queue: 'vpsadmin.notifications.spec-unknown-fallback',
-             routing_key: 'delivery.spec-unknown-fallback',
-             default_concurrency: 1,
-             default_rate_limits: { minute: 1, hour: 1, day: 1, week: 1 },
-             template_context_fallbacks: [:missing],
-             templates: true
-      target_kind :custom, label: 'custom target'
-
-      def deliver(_delivery)
-        VpsAdmin::API::Notifications::DeliveryResult.new
-      end
-    end
-
     expect { registry.register(non_template_action) }
       .to raise_error(ArgumentError, /incomplete notification delivery action/)
+  end
+
+  it 'resolves template fallbacks after all action files have been discovered' do
+    with_isolated_registry do
+      early_action = build_delivery_action(
+        :a_pre_email_action,
+        template_context_fallbacks: [:email],
+        templates: true
+      )
+
+      registry.register(early_action)
+      registry.register(VpsAdmin::API::Notifications::DeliveryActions::Email)
+
+      expect(registry.names).to eq(%w[a_pre_email_action email])
+      expect { registry.finalize! }.not_to raise_error
+      expect(registry).to be_finalized
+    end
+  end
+
+  it 'rejects unresolved and non-template fallbacks atomically at finalization' do
+    with_isolated_registry do
+      registry.register(
+        build_delivery_action(
+          :spec_missing_fallback,
+          template_context_fallbacks: [:missing],
+          templates: true
+        )
+      )
+
+      expect { registry.finalize! }
+        .to raise_error(ArgumentError, /unknown template context fallback :missing/)
+      expect(registry).not_to be_finalized
+    end
+
+    with_isolated_registry do
+      registry.register(build_delivery_action(:plain_context))
+      registry.register(
+        build_delivery_action(
+          :spec_non_template_context,
+          template_context_fallbacks: [:plain_context],
+          templates: true
+        )
+      )
+
+      expect { registry.finalize! }
+        .to raise_error(ArgumentError, /non-template context fallback :plain_context/)
+      expect(registry).not_to be_finalized
+    end
+
+    expect(registry).to be_finalized
+  end
+
+  it 'rejects a late unresolved fallback without mutating a finalized registry' do
+    unknown_fallback = build_delivery_action(
+      :spec_unknown_fallback,
+      template_context_fallbacks: [:missing],
+      templates: true
+    )
+    original_names = registry.names
+
     expect { registry.register(unknown_fallback) }
-      .to raise_error(ArgumentError, /incomplete notification delivery action/)
+      .to raise_error(ArgumentError, /unknown template context fallback :missing/)
+    expect(registry.names).to eq(original_names)
+    expect(registry).to be_finalized
   end
 
   it 'returns an immutable typed transport result' do

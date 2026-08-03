@@ -167,7 +167,12 @@ module VpsAdmin::API::Notifications
         end
 
         def target_kind(name, label:)
-          @target_kinds = target_kinds.merge(name.to_s => label.to_s).freeze
+          key = name.to_s
+          if target_kinds.has_key?(key)
+            raise ArgumentError, "notification target kind #{key.inspect} is already declared"
+          end
+
+          @target_kinds = target_kinds.merge(key => label.to_s).freeze
         end
       end
 
@@ -443,6 +448,7 @@ module VpsAdmin::API::Notifications
 
     @classes = {}
     @instances = {}
+    @finalized = false
 
     module_function
 
@@ -461,8 +467,40 @@ module VpsAdmin::API::Notifications
         raise ArgumentError, "notification routing key #{action_class.routing_key.inspect} is already registered"
       end
 
-      @classes[name] = action_class
+      duplicate_config_section = @classes.values.find do |klass|
+        klass.config_section == action_class.config_section
+      end
+      if duplicate_config_section
+        raise ArgumentError,
+              "notification config section #{action_class.config_section.inspect} is already registered"
+      end
+
+      action_class.target_kinds.each do |target_kind, label|
+        conflicting_class = @classes.values.find do |klass|
+          existing_label = klass.target_kinds[target_kind]
+          existing_label && existing_label != label
+        end
+        next unless conflicting_class
+
+        raise ArgumentError,
+              "conflicting label for notification target kind #{target_kind.inspect}"
+      end
+
+      candidate_classes = @classes.merge(name => action_class)
+      validate_template_context_fallbacks!(candidate_classes) if @finalized
+
+      @classes = candidate_classes
       action_class
+    end
+
+    def finalize!
+      validate_template_context_fallbacks!(@classes)
+      @finalized = true
+      nil
+    end
+
+    def finalized?
+      @finalized
     end
 
     def fetch(name)
@@ -543,22 +581,36 @@ module VpsAdmin::API::Notifications
              action_class.config_section.present? && action_class.default_concurrency.to_i > 0 &&
              action_class.default_rate_limits&.keys&.sort == RateLimits.periods.sort &&
              action_class.default_rate_limits.values.all?(&:positive?) &&
-             valid_template_metadata?(action_class) &&
+             valid_local_template_metadata?(action_class) &&
              action_class.target_kinds&.any? &&
              action_class.instance_method(:deliver).owner != Base
         raise ArgumentError, "incomplete notification delivery action #{action_class}"
       end
     end
 
-    def valid_template_metadata?(action_class)
+    def valid_local_template_metadata?(action_class)
       fallbacks = action_class.template_context_fallbacks
-      return false if fallbacks.any? && !action_class.template_capable
+      fallbacks.empty? || action_class.template_capable
+    end
 
-      fallbacks.all? do |fallback|
-        fallback_class = @classes[fallback.to_s]
-        fallback_class && fallback_class.template_capable
+    def validate_template_context_fallbacks!(classes)
+      classes.each_value do |action_class|
+        action_class.template_context_fallbacks.each do |fallback|
+          fallback_class = classes[fallback.to_s]
+          unless fallback_class
+            raise ArgumentError,
+                  "notification action #{action_class.action_name.inspect} has " \
+                  "unknown template context fallback #{fallback.inspect}"
+          end
+          next if fallback_class.template_capable
+
+          raise ArgumentError,
+                "notification action #{action_class.action_name.inspect} has " \
+                "non-template context fallback #{fallback.inspect}"
+        end
       end
     end
-    private_class_method :validate_class!, :valid_template_metadata?
+    private_class_method :validate_class!, :valid_local_template_metadata?,
+                         :validate_template_context_fallbacks!
   end
 end
