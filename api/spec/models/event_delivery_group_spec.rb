@@ -378,7 +378,9 @@ RSpec.describe EventDeliveryGroup do
       .and_raise('spec rendering failure')
     allow(NotificationTemplate).to receive(:send_custom_email)
       .and_raise('spec rendering failure')
-    allow(webhook_dispatcher).to receive(:deliver).and_return({})
+    allow(webhook_dispatcher).to receive(:deliver).and_return(
+      VpsAdmin::API::Notifications::DeliveryResult.new
+    )
 
     email_dispatcher.dispatch_delivery_id(email.id)
     webhook_dispatcher.dispatch_delivery_id(webhook.id)
