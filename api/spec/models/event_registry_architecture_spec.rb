@@ -47,6 +47,55 @@ RSpec.describe VpsAdmin::API::Events do
     described_class.instance_variable_get(:@types).delete(name)
   end
 
+  it 'keeps repeated monitoring profile objects idempotent and rejects conflicts atomically',
+     requires_plugins: :monitoring do
+    events = VpsAdmin::API::Plugins::Monitoring::Events
+    event_name = 'monitoring.architecture_spec'
+    conflicting_event_name = 'monitoring.architecture_conflict_spec'
+    monitor_name = 'architecture_spec'
+    attributes = {
+      label: 'Architecture monitoring spec',
+      template: :alert_monitoring_spec,
+      monitors: [monitor_name],
+      fields: [:vps]
+    }
+
+    first_type = events.register_event(event_name, **attributes)
+    first_profile = events.event_profiles.fetch(event_name)
+    first_monitor_mapping = events.monitor_event_types.fetch(monitor_name)
+
+    expect(events.register_event(event_name, **attributes)).to equal(first_type)
+    expect(events.event_profiles.fetch(event_name)).to equal(first_profile)
+
+    expect do
+      events.register_event(
+        event_name,
+        **attributes,
+        label: 'Conflicting architecture monitoring spec'
+      )
+    end.to raise_error(ArgumentError, /conflicts with its existing profile/)
+    expect(events.event_profiles.fetch(event_name)).to equal(first_profile)
+    expect(events.monitor_event_types.fetch(monitor_name)).to eq(first_monitor_mapping)
+    expect(described_class.type_for(event_name)).to equal(first_type)
+
+    expect do
+      events.register_event(
+        conflicting_event_name,
+        **attributes,
+        monitors: [monitor_name]
+      )
+    end.to raise_error(ArgumentError, /monitor .* is already assigned to/)
+    expect(events.event_profiles).not_to have_key(conflicting_event_name)
+    expect(events.monitor_event_types.fetch(monitor_name)).to eq(first_monitor_mapping)
+    expect(described_class.type_for(conflicting_event_name)).to be_nil
+  ensure
+    events&.event_profiles&.delete(event_name)
+    events&.event_profiles&.delete(conflicting_event_name)
+    events&.monitor_event_types&.delete(monitor_name)
+    described_class.instance_variable_get(:@types).delete(event_name)
+    described_class.instance_variable_get(:@types).delete(conflicting_event_name)
+  end
+
   it 'merges generic plugin i18n extensions and rejects duplicate owners' do
     owner = :architecture_i18n_spec
     extensions = described_class.instance_variable_get(:@i18n_default_extensions)

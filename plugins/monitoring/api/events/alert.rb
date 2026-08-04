@@ -65,10 +65,12 @@ module VpsAdmin::API::Plugins::Monitoring::Events
                      audience: :account, roles: %i[admin], mail_thread: true,
                      template_params: nil, vars: nil)
     event_type_s = event_type.to_s
+    monitor_names = Array(monitors).map(&:to_s).uniq.sort.freeze
     profile = {
       event_type: event_type_s,
       label:,
       template:,
+      monitors: monitor_names,
       fields: Array(fields).map(&:to_sym),
       default_routed:,
       severity:,
@@ -78,11 +80,33 @@ module VpsAdmin::API::Plugins::Monitoring::Events
       mail_thread:,
       template_params:,
       vars:
-    }
-    event_profiles[event_type_s] = profile
-    Array(monitors).each { |monitor_name| monitor_event_types[monitor_name.to_s] = event_type_s }
+    }.freeze
+    existing_profile = event_profiles[event_type_s]
+    if existing_profile && existing_profile != profile
+      raise ArgumentError,
+            "monitoring event #{event_type_s.inspect} conflicts with its existing profile"
+    end
 
-    define_event_profile(event_type_s, profile)
+    conflicting_monitor = monitor_names.find do |monitor_name|
+      registered_type = monitor_event_types[monitor_name]
+      registered_type && registered_type != event_type_s
+    end
+    if conflicting_monitor
+      raise ArgumentError,
+            "monitor #{conflicting_monitor.inspect} is already assigned to " \
+            "#{monitor_event_types.fetch(conflicting_monitor).inspect}"
+    end
+
+    existing_type = VpsAdmin::API::Events.type_for(event_type_s)
+    if existing_profile && existing_type&.owner == :monitoring
+      monitor_names.each { |monitor_name| monitor_event_types[monitor_name] = event_type_s }
+      return existing_type
+    end
+
+    type = define_event_profile(event_type_s, profile)
+    event_profiles[event_type_s] = profile
+    monitor_names.each { |monitor_name| monitor_event_types[monitor_name] = event_type_s }
+    type
   end
 
   def event_type_for_monitor(monitor_name)
