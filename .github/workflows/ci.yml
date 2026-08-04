@@ -99,13 +99,10 @@ jobs:
             exit 0
           fi
 
-          changed_files="$(mktemp "$RUNNER_TEMP/vpsadmin-changed-files.XXXXXX")"
-          trap 'rm -f -- "$changed_files"' EXIT
-
-          git diff --name-only "$base" "$HEAD_SHA" | sort -u > "$changed_files"
+          git diff --name-only "$base" "$HEAD_SHA" | sort -u > changed-files.txt
 
           nix shell --inputs-from . nixpkgs#ruby_3_4 -c ruby tools/select_ci_tests.rb \
-            --changed-files "$changed_files" \
+            --changed-files changed-files.txt \
             --github-output "$GITHUB_OUTPUT"
 
       - name: Summarise skipped integration tests
@@ -118,11 +115,6 @@ jobs:
             echo "- Reason: ${{ steps.select-tests.outputs.reason }}"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Prepare test state
-        if: steps.select-tests.outputs.mode != 'skip'
-        id: prepare-tests
-        uses: vpsfreecz/vpsadminos/.github/actions/prepare-test-state@0b102133b917eea19ddf6f44bbac2302fb4698d4
-
       - name: Preview selected tests
         if: steps.select-tests.outputs.mode != 'skip'
         id: preview-tests
@@ -132,18 +124,16 @@ jobs:
           filter="${{ steps.select-tests.outputs.filter }}"
           mode="${{ steps.select-tests.outputs.mode }}"
           reason="${{ steps.select-tests.outputs.reason }}"
-          selected_tests="$TEST_RUNNER_STATE_DIR/selected-tests.txt"
-
-          ./test-runner.sh ls --filter "$filter" | tee "$selected_tests"
-          count="$(grep -cve '^[[:space:]]*$' "$selected_tests" || true)"
+          ./test-runner.sh ls --filter "$filter" | tee selected-tests.txt
+          count="$(grep -cve '^[[:space:]]*$' selected-tests.txt || true)"
 
           if [[ "$count" -eq 0 && "$mode" == "selected" ]]; then
             filter="tag=ci"
             mode="full"
             reason="selector matched zero tests; falling back to full CI"
 
-            ./test-runner.sh ls --filter "$filter" | tee "$selected_tests"
-            count="$(grep -cve '^[[:space:]]*$' "$selected_tests" || true)"
+            ./test-runner.sh ls --filter "$filter" | tee selected-tests.txt
+            count="$(grep -cve '^[[:space:]]*$' selected-tests.txt || true)"
           fi
 
           {
@@ -165,11 +155,16 @@ jobs:
             echo "<details><summary>Selected test scripts</summary>"
             echo ""
             echo '```'
-            cat "$selected_tests"
+            cat selected-tests.txt
             echo '```'
             echo ""
             echo "</details>"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Prepare test state
+        if: steps.select-tests.outputs.mode != 'skip'
+        id: prepare-tests
+        uses: vpsfreecz/vpsadminos/.github/actions/prepare-test-state@0b102133b917eea19ddf6f44bbac2302fb4698d4
 
       - name: Run tests
         if: steps.select-tests.outputs.mode != 'skip'
