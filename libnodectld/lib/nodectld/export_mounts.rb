@@ -143,7 +143,7 @@ module NodeCtld
     end
 
     def read_vps_mounts(ct)
-      return if ct.init_pid.nil?
+      return [] if ct.init_pid.nil?
 
       mounts = []
 
