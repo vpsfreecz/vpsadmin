@@ -96,6 +96,32 @@ RSpec.describe VpsAdmin::API::Events do
     described_class.instance_variable_get(:@types).delete(conflicting_event_name)
   end
 
+  it 'infers fallback policies for actions without the policy declaration DSL' do
+    action = Class.new do
+      define_singleton_method(:http_method) { :post }
+      define_singleton_method(:blocking) { true }
+      define_singleton_method(:model) { OsFamily }
+    end
+
+    expect(VpsAdmin::API::Events::ActionPolicies.for(action)).to have_attributes(
+      kind: :transaction_chain,
+      models: ['OsFamily'],
+      atomic: false
+    )
+  end
+
+  it 'does not mask errors raised by an explicit action policy declaration' do
+    action = Class.new do
+      define_singleton_method(:event_policy) do
+        raise NoMethodError, 'malformed explicit event policy'
+      end
+    end
+
+    expect do
+      VpsAdmin::API::Events::ActionPolicies.for(action)
+    end.to raise_error(NoMethodError, /malformed explicit event policy/)
+  end
+
   it 'merges generic plugin i18n extensions and rejects duplicate owners' do
     owner = :architecture_i18n_spec
     extensions = described_class.instance_variable_get(:@i18n_default_extensions)
