@@ -144,7 +144,7 @@ module VpsAdmin::API::Events::ActionPolicies
   end
 
   def for(action)
-    explicit = action.event_policy
+    explicit = action.event_policy if action.respond_to?(:event_policy)
     return explicit if explicit
 
     method = action.http_method.to_sym
