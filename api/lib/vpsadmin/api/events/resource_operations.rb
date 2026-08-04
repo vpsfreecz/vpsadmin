@@ -107,6 +107,8 @@ module VpsAdmin::API::Events::ResourceOperations
   @declarations = []
   @registered_event_types = {}
   @resource_catalog = {}
+  @catalog_mutex = Mutex.new
+  @catalog_finalized = false
 
   module_function
 
@@ -201,9 +203,6 @@ module VpsAdmin::API::Events::ResourceOperations
             "#{invalid_actions.join(', ')}"
     end
 
-    previous = @declarations.find do |declaration|
-      declaration.resource_class.name == resource_class.name
-    end
     declaration = Declaration.new(
       resource_class:,
       topic: topic.to_s,
@@ -214,22 +213,29 @@ module VpsAdmin::API::Events::ResourceOperations
       redact: Array(redact).map(&:to_s).uniq.sort.freeze,
       additional_actions: additional_actions.uniq.freeze
     )
-    if previous
-      if previous.resource_class.equal?(resource_class)
-        raise ArgumentError,
-              "resource events are already declared for #{resource_class.name}"
+    @catalog_mutex.synchronize do
+      previous = @declarations.find do |item|
+        item.resource_class.name == resource_class.name
       end
-      unless declaration_metadata(declaration) == declaration_metadata(previous)
-        raise ArgumentError,
-              "conflicting resource event reload for #{resource_class.name}"
-      end
+      if previous
+        if previous.resource_class.equal?(resource_class)
+          raise ArgumentError,
+                "resource events are already declared for #{resource_class.name}"
+        end
+        unless declaration_metadata(declaration) == declaration_metadata(previous)
+          raise ArgumentError,
+                "conflicting resource event reload for #{resource_class.name}"
+        end
 
-      @declarations.delete(previous)
+        @declarations.delete(previous)
+      end
+      @declarations << declaration
+      @catalog_finalized = false
     end
-    @declarations << declaration
   end
 
   def resource_catalog
+    ensure_catalog_finalized!
     @resource_catalog.dup.freeze
   end
 
@@ -241,6 +247,7 @@ module VpsAdmin::API::Events::ResourceOperations
         object_or_class.class
       end
 
+    ensure_catalog_finalized!
     @resource_catalog[klass.base_class.name]
   end
 
@@ -279,6 +286,7 @@ module VpsAdmin::API::Events::ResourceOperations
       end
     model_name = klass.base_class.name
 
+    ensure_catalog_finalized!
     entry = @resource_catalog[model_name]
     return entry.logical_name if entry
 
@@ -491,6 +499,7 @@ module VpsAdmin::API::Events::ResourceOperations
 
   def sensitive_field?(model, field)
     model = model.is_a?(Class) ? model.base_class : model.to_s.constantize
+    ensure_catalog_finalized!
     declaration_fields = @resource_catalog[model.name]&.redact || []
 
     SENSITIVE_FIELD_PATTERN.match?(field.to_s) ||
@@ -507,10 +516,8 @@ module VpsAdmin::API::Events::ResourceOperations
     validate_mounted_resources!
 
     @resource_catalog.each_value do |entry|
-      resource_classes = entry.api_resources
       model = entry.model
 
-      validate_catalog_entry!(entry, model, resource_classes)
       next unless model.table_exists?
 
       entry.actions.each { |action| ensure_event_type!(model, action) }
@@ -522,6 +529,7 @@ module VpsAdmin::API::Events::ResourceOperations
   def ensure_event_type!(model, action)
     model = model.base_class
     action = action.to_s
+    ensure_catalog_finalized!
     entry = @resource_catalog[model.name]
     unless entry
       raise ArgumentError,
@@ -841,6 +849,22 @@ module VpsAdmin::API::Events::ResourceOperations
   private_class_method :declaration_metadata
 
   def finalize_catalog!
+    @catalog_mutex.synchronize do
+      finalize_catalog_without_lock!
+    end
+  end
+  private_class_method :finalize_catalog!
+
+  def ensure_catalog_finalized!
+    return if @catalog_finalized
+
+    @catalog_mutex.synchronize do
+      finalize_catalog_without_lock! unless @catalog_finalized
+    end
+  end
+  private_class_method :ensure_catalog_finalized!
+
+  def finalize_catalog_without_lock!
     validate_model_redactions!
     catalog = {}
 
@@ -876,7 +900,7 @@ module VpsAdmin::API::Events::ResourceOperations
         default_actions_for(resource_classes) +
         declarations.flat_map(&:additional_actions)
       ).uniq.sort
-      catalog[model_name] = CatalogEntry.new(
+      entry = CatalogEntry.new(
         model:,
         model_name:,
         api_resources: resource_classes.uniq.freeze,
@@ -888,6 +912,8 @@ module VpsAdmin::API::Events::ResourceOperations
         vps: resolver_for(reference.vps),
         redact: redacted_fields
       )
+      validate_catalog_entry!(entry, model, resource_classes)
+      catalog[model_name] = entry
     end
 
     duplicate_names = catalog.values.group_by(&:logical_name).select do |_name, entries|
@@ -902,8 +928,9 @@ module VpsAdmin::API::Events::ResourceOperations
     end
 
     @resource_catalog = catalog.freeze
+    @catalog_finalized = true
   end
-  private_class_method :finalize_catalog!
+  private_class_method :finalize_catalog_without_lock!
 
   def validate_model_redactions!
     ::ApplicationRecord.descendants.each do |model|
