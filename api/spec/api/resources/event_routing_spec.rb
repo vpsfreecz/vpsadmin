@@ -58,6 +58,16 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     vpath("/notification_targets/#{id}/confirm_email_verification")
   end
 
+  def email_delivery_action
+    VpsAdmin::API::Notifications::DeliveryActions.fetch('email')
+  end
+
+  def stub_email_transport!
+    allow(email_delivery_action)
+      .to receive(:deliver_mail_log!)
+      .and_return(VpsAdmin::API::Notifications::DeliveryResult.new)
+  end
+
   def receiver_target_index_path(receiver_id)
     vpath("/notification_receivers/#{receiver_id}/target")
   end
@@ -1383,7 +1393,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
   it 'automatically sends custom e-mail verification for user-created targets' do
     allow(VpsAdmin::API::Events).to receive(:webui_url).and_return('https://webui.example.test')
-    allow(VpsAdmin::API::Notifications).to receive(:deliver_mail_log!).and_return({})
+    stub_email_transport!
 
     target = nil
     expect do
@@ -1406,11 +1416,12 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     mail_log = MailLog.order(:id).last
     expect(mail_log.to).to eq('audit@example.test')
     expect(mail_log.text_plain).to include('https://webui.example.test/?')
+    expect(email_delivery_action).to have_received(:deliver_mail_log!).with(mail_log)
   end
 
   it 'keeps user-created custom e-mail targets pending when automatic verification send fails' do
     allow(VpsAdmin::API::Events).to receive(:webui_url).and_return('https://webui.example.test')
-    allow(VpsAdmin::API::Notifications).to receive(:deliver_mail_log!).and_raise('SMTP unavailable')
+    allow(email_delivery_action).to receive(:deliver_mail_log!).and_raise('SMTP unavailable')
 
     target = create_notification_target!(
       {
@@ -1426,11 +1437,12 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     expect(target[:verification_token]).to be_present
     expect(target.email_verification_sent_at).to be_nil
     expect(target.last_error).to eq('SMTP unavailable')
+    expect(email_delivery_action).to have_received(:deliver_mail_log!)
   end
 
   it 'automatically resends custom e-mail verification when a user changes the address' do
     allow(VpsAdmin::API::Events).to receive(:webui_url).and_return('https://webui.example.test')
-    allow(VpsAdmin::API::Notifications).to receive(:deliver_mail_log!).and_return({})
+    stub_email_transport!
 
     target = create_notification_target!(
       {
@@ -1459,11 +1471,12 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
 
     mail_log = MailLog.order(:id).last
     expect(mail_log.to).to eq('ops@example.test')
+    expect(email_delivery_action).to have_received(:deliver_mail_log!).twice
   end
 
   it 'hides custom e-mail verification tokens and accepts verification links' do
     allow(VpsAdmin::API::Events).to receive(:webui_url).and_return('https://webui.example.test')
-    allow(VpsAdmin::API::Notifications).to receive(:deliver_mail_log!).and_return({})
+    stub_email_transport!
 
     target = NotificationTarget.create!(
       user: SpecSeed.user,
@@ -1497,6 +1510,7 @@ RSpec.describe 'VpsAdmin::API::Resources::EventRouting' do
     end.not_to change(MailLog, :count)
     expect(json['status']).to be(false)
     expect(last_response.body).to include('e-mail verification link was sent recently')
+    expect(email_delivery_action).to have_received(:deliver_mail_log!).once
 
     as(SpecSeed.user) do
       json_post notification_target_email_confirm_path(target.id), notification_target: {
