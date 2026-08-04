@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'open3'
+require 'rbconfig'
 
 RSpec.describe VpsAdmin::API::Events::ResourceOperations do
   include OutageReportsSpecHelpers
@@ -722,6 +724,46 @@ RSpec.describe VpsAdmin::API::Events::ResourceOperations do
     expect(catalog.fetch('UserDevice').actions)
       .to contain_exactly('created', 'deleted')
     expect(catalog.fetch('SysConfig').actions).to contain_exactly('updated')
+  end
+
+  it 'initializes resource events without mounting the API' do
+    api_root = File.expand_path('../..', __dir__)
+    script = <<~RUBY
+      require 'json'
+      require 'vpsadmin'
+
+      operations = VpsAdmin::API::Events::ResourceOperations
+      VpsAdmin::API.singleton_class.define_method(:default) do
+        raise 'API mounting is not available in this process'
+      end
+
+      ActiveRecord::Base.establish_connection(ENV.fetch('DATABASE_URL'))
+      chain = TransactionChain.new
+      user = User.new(id: 42, login: 'catalog-probe')
+      chain.defer_resource_event!(:updated, user, changed_fields: ['login'])
+      event = chain.deferred_result_events.fetch(0)
+
+      puts JSON.generate(
+        catalogued: operations.catalogued?(User, :updated),
+        event_type: event.fetch('event_type'),
+        source_class: event.fetch('source_class')
+      )
+    RUBY
+    stdout, stderr, status = Open3.capture3(
+      { 'DATABASE_URL' => ENV.fetch('DATABASE_URL') },
+      RbConfig.ruby,
+      '-Ilib',
+      '-e',
+      script,
+      chdir: api_root
+    )
+
+    expect(status).to be_success, stderr
+    expect(JSON.parse(stdout)).to eq(
+      'catalogued' => true,
+      'event_type' => 'user.updated',
+      'source_class' => 'User'
+    )
   end
 
   it 'resolves operation owners from resource and internal model declarations' do
