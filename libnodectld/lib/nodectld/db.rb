@@ -137,6 +137,10 @@ module NodeCtld
               connect_timeout: db[:connect_timeout],
               read_timeout: db[:read_timeout],
               write_timeout: db[:write_timeout],
+              # Database TLS is not configured on nodes. Keep this policy at
+              # the connection site instead of changing Connector/C defaults;
+              # use :verify_identity here once nodectld has CA configuration.
+              ssl_mode: :disabled,
               database_timezone: :utc
             )
             query('SET NAMES UTF8')

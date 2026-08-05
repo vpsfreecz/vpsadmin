@@ -1,0 +1,21 @@
+diff --git a/ext/mysql2/client.c b/ext/mysql2/client.c
+index 4582f26..0d04a25 100644
+--- a/ext/mysql2/client.c
++++ b/ext/mysql2/client.c
+@@ -149,6 +149,16 @@ static VALUE rb_set_ssl_mode_option(VALUE self, VALUE setting) {
+     || (version >= 50703 && version < 50711)    // Workaround for MySQL 5.7.3 - 5.7.10
+     || (version >= 60103 && version < 60200)) { // Workaround for MySQL Connector/C 6.1.3 - 6.1.x
+ #ifdef HAVE_CONST_MYSQL_OPT_SSL_VERIFY_SERVER_CERT
++    /* Connector/C 3.4 enables certificate verification by default. Clear it
++     * for modes which explicitly do not request verification. In particular,
++     * leaving it enabled makes SSL_MODE_DISABLED require TLS. */
++    if (val == SSL_MODE_DISABLED || val == SSL_MODE_REQUIRED) {
++      my_bool b = 0;
++      int result = mysql_options(wrapper->client, MYSQL_OPT_SSL_VERIFY_SERVER_CERT, &b);
++      if (result) {
++        return INT2NUM(result);
++      }
++    }
+     if (val == SSL_MODE_VERIFY_IDENTITY) {
+       my_bool b = 1;
+       int result = mysql_options(wrapper->client, MYSQL_OPT_SSL_VERIFY_SERVER_CERT, &b);
