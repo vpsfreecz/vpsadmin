@@ -2148,10 +2148,6 @@ msgid "System boot"
 msgstr "Spuštění systému"
 
 #: forms/node.forms.php
-msgid "Live patch change"
-msgstr "Změna živé záplaty"
-
-#: forms/node.forms.php
 msgid "Reported kernel change"
 msgstr "Změna hlášeného jádra"
 
@@ -2403,6 +2399,18 @@ msgstr "aktuální closure"
 #: forms/node.forms.php
 msgid "No software deployment history is available yet."
 msgstr "Historie nasazení softwaru zatím není k dispozici."
+
+#: forms/node.forms.php
+msgid "Live patch applied"
+msgstr "Živá záplata aplikována"
+
+#: forms/node.forms.php
+msgid "Live patch removed"
+msgstr "Živá záplata odstraněna"
+
+#: forms/node.forms.php
+msgid "Live patch change"
+msgstr "Změna živé záplaty"
 
 #: forms/node.forms.php
 msgid "no earlier value"
@@ -8292,6 +8300,9 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "Live patch enabled"
+#~ msgstr "Živá záplata povolena"
 
 #~ msgid "Zone "
 #~ msgstr "Zóna"

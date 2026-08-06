@@ -171,7 +171,7 @@ function node_kernel_history_table($node_id)
                 $eventLabel = _('System boot');
                 break;
             case 'livepatch':
-                $eventLabel = _('Live patch change');
+                $eventLabel = node_livepatch_event_label($event->livepatch_action ?? null);
                 break;
             case 'reported_release_change':
                 $eventLabel = _('Reported kernel change');
@@ -637,6 +637,18 @@ function node_evidence_observed_interval($event)
     }
 
     return sprintf(_('before %s'), tolocaltz($event->observed_before));
+}
+
+function node_livepatch_event_label($action)
+{
+    switch ($action) {
+        case 'applied':
+            return _('Live patch applied');
+        case 'removed':
+            return _('Live patch removed');
+        default:
+            return _('Live patch change');
+    }
 }
 
 function node_sysctl_availability($value)

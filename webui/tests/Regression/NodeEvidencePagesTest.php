@@ -7,6 +7,7 @@ final class NodeEvidencePagesTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         require_once dirname(__DIR__, 2) . '/lib/functions.lib.php';
+        require_once dirname(__DIR__, 2) . '/forms/node.forms.php';
     }
 
     public function testAdminOnlyEvidencePagesAreGuarded(): void
@@ -45,6 +46,13 @@ final class NodeEvidencePagesTest extends TestCase
         self::assertSame('exact', node_kernel_event_confidence_label('exact'));
         self::assertSame('inferred', node_kernel_event_confidence_label('inferred'));
         self::assertSame('incomplete', node_kernel_event_confidence_label('incomplete'));
+    }
+
+    public function testKernelHistoryLabelsLivepatchLifecycle(): void
+    {
+        self::assertSame('Live patch applied', node_livepatch_event_label('applied'));
+        self::assertSame('Live patch removed', node_livepatch_event_label('removed'));
+        self::assertSame('Live patch change', node_livepatch_event_label(null));
     }
 
     public function testBootEvidenceDrilldownIsNodeScopedAndUsesEventParameters(): void

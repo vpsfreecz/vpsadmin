@@ -2134,10 +2134,6 @@ msgid "System boot"
 msgstr ""
 
 #: forms/node.forms.php
-msgid "Live patch change"
-msgstr ""
-
-#: forms/node.forms.php
 msgid "Reported kernel change"
 msgstr ""
 
@@ -2386,6 +2382,18 @@ msgstr ""
 
 #: forms/node.forms.php
 msgid "No software deployment history is available yet."
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Live patch applied"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Live patch removed"
+msgstr ""
+
+#: forms/node.forms.php
+msgid "Live patch change"
 msgstr ""
 
 #: forms/node.forms.php
