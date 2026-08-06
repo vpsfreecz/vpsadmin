@@ -532,6 +532,44 @@ test.describe.serial('admin cluster browser coverage', () => {
     await expect(history).toContainText('exact');
     await expect(history).toContainText('inferred');
 
+    const inferredInterval = history.locator('.node-observed-interval').first();
+    await expect(inferredInterval).toContainText(/^after /);
+    await expect(inferredInterval).not.toContainText('before');
+
+    const detailId = await inferredInterval.getAttribute('aria-describedby');
+    expect(detailId).toMatch(/^node-time-detail-[0-9]+$/);
+    const intervalDetail = page.locator(`#${detailId}`);
+    await expect(intervalDetail).toHaveAttribute('role', 'tooltip');
+    await expect(intervalDetail).toBeHidden();
+
+    await inferredInterval.hover();
+    await expect(intervalDetail).toBeVisible();
+    await expect(intervalDetail).toContainText('Change occurred after');
+    await expect(intervalDetail).toContainText(/\(.+, .+\]\.$/);
+    expect(await inferredInterval.evaluate((element) => {
+      const cellStyle = getComputedStyle(element.closest('td'));
+      return [cellStyle.overflowX, cellStyle.overflowY];
+    })).toEqual(['visible', 'visible']);
+    expect(await intervalDetail.evaluate((element) => new Promise((resolve) => {
+      const observer = new IntersectionObserver(([entry]) => {
+        observer.disconnect();
+        resolve(entry.intersectionRatio);
+      });
+      observer.observe(element);
+    }))).toBeGreaterThan(0.99);
+
+    await heading(page).hover();
+    await expect(intervalDetail).toBeHidden();
+    await inferredInterval.focus();
+    await expect(intervalDetail).toBeVisible();
+    expect(await intervalDetail.evaluate((element) => new Promise((resolve) => {
+      const observer = new IntersectionObserver(([entry]) => {
+        observer.disconnect();
+        resolve(entry.intersectionRatio);
+      });
+      observer.observe(element);
+    }))).toBeGreaterThan(0.99);
+
     const reportedLink = history.locator(
       `a[href*="action=kernel_boot_evidence"][href*="event_id=${evidence.reportedBootId}"]`,
     );

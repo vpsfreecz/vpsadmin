@@ -2029,7 +2029,8 @@ import ../make-test.nix (
         booted_at: reported_boot.booted_at - 86_400,
         booted_release: reported_boot.booted_release,
         reported_release: reported_boot.reported_release,
-        effective_at: reported_boot.booted_at - 86_400,
+        effective_at: nil,
+        observed_after: reported_boot.observed_before - 172_800,
         observed_before: reported_boot.observed_before - 86_400,
         current: false,
         kernel_evidence: nil
