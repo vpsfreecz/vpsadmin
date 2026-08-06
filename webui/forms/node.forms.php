@@ -181,18 +181,6 @@ function node_kernel_history_table($node_id)
                 break;
         }
 
-        if ($event->effective_at) {
-            $eventTime = tolocaltz($event->effective_at);
-        } elseif ($event->observed_after) {
-            $eventTime = sprintf(
-                _('after %s, before %s'),
-                tolocaltz($event->observed_after),
-                tolocaltz($event->observed_before)
-            );
-        } else {
-            $eventTime = sprintf(_('before %s'), tolocaltz($event->observed_before));
-        }
-
         $eventCell = h($eventLabel);
         if (isAdmin() && $event->event_type === 'boot') {
             $eventCell = '<a data-vpsadmin-doc-id="node.kernel-boot-evidence"'
@@ -201,7 +189,7 @@ function node_kernel_history_table($node_id)
         }
 
         $xtpl->table_td($eventCell);
-        $xtpl->table_td(h($eventTime));
+        $xtpl->table_td(node_evidence_observed_interval($event));
         $xtpl->table_td(h(kernel_version($event->booted_release)));
         $xtpl->table_td(h(kernel_version($event->reported_release)));
         $xtpl->table_td(h(node_kernel_event_origin_label($event->source)));
@@ -351,9 +339,7 @@ function node_system_history_table($node_id)
     $xtpl->table_add_category(_('Cgroup version'));
 
     foreach ($states as $state) {
-        $period = h(tolocaltz($state->first_observed_at))
-            . '<br>&ndash;<br>'
-            . h(tolocaltz($state->last_observed_at));
+        $period = node_system_observation_period($state);
         if ($state->current) {
             $period .= '<br><strong>' . h(_('current')) . '</strong>';
         }
@@ -506,7 +492,7 @@ function node_sysctl_history_table($node_id, $name)
     $xtpl->table_add_category(_('New state'));
 
     foreach ($changes as $change) {
-        $xtpl->table_td(h(node_evidence_observed_interval($change)));
+        $xtpl->table_td(node_evidence_observed_interval($change));
         $xtpl->table_td(node_sysctl_state($change, 'before'));
         $xtpl->table_td(node_sysctl_state($change, 'after'));
         $xtpl->table_tr($change->after_available === false ? '#F2DEDE' : false);
@@ -593,7 +579,7 @@ function node_software_versions_table($node_id)
         $deploymentChanges = $changesByEvent[$deployment->id] ?? [];
         foreach ($deploymentChanges as $index => $change) {
             $hasChanges = true;
-            $xtpl->table_td($index === 0 ? h(node_evidence_observed_interval($deployment)) : '');
+            $xtpl->table_td($index === 0 ? node_evidence_observed_interval($deployment) : '');
             $xtpl->table_td(h($change->generation === 'booted'
                 ? _('booted closure')
                 : _('current closure')));
@@ -626,17 +612,48 @@ function node_software_versions_table($node_id)
 function node_evidence_observed_interval($event)
 {
     if ($event->effective_at ?? null) {
-        return tolocaltz($event->effective_at);
+        return h(tolocaltz($event->effective_at));
     }
     if ($event->observed_after ?? null) {
-        return sprintf(
-            _('after %s, before %s'),
-            tolocaltz($event->observed_after),
-            tolocaltz($event->observed_before)
+        $after = tolocaltz($event->observed_after);
+        $before = tolocaltz($event->observed_before);
+
+        return node_accessible_time_detail(
+            sprintf(_('after %s'), $after),
+            sprintf(
+                _('Change occurred after the last previous observation at %1$s and no later than the first new observation at %2$s: (%1$s, %2$s].'),
+                $after,
+                $before
+            ),
+            'node-observed-interval'
         );
     }
 
-    return sprintf(_('before %s'), tolocaltz($event->observed_before));
+    return h(sprintf(_('by %s'), tolocaltz($event->observed_before)));
+}
+
+function node_system_observation_period($state)
+{
+    $first = tolocaltz($state->first_observed_at);
+    $last = tolocaltz($state->last_observed_at);
+
+    return node_accessible_time_detail(
+        sprintf(_('observed since %s'), $first),
+        sprintf(_('Observed from %s through %s.'), $first, $last),
+        'node-observation-period'
+    );
+}
+
+function node_accessible_time_detail($visible, $detail, $class)
+{
+    static $nextId = 0;
+
+    $detailId = 'node-time-detail-' . ++$nextId;
+
+    return '<span class="node-time-detail ' . h($class) . '" tabindex="0"'
+        . ' aria-describedby="' . h($detailId) . '">' . h($visible)
+        . '<span class="node-time-detail__tooltip" role="tooltip" id="'
+        . h($detailId) . '">' . h($detail) . '</span></span>';
 }
 
 function node_livepatch_event_label($action)

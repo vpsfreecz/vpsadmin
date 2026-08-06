@@ -55,6 +55,42 @@ final class NodeEvidencePagesTest extends TestCase
         self::assertSame('Live patch change', node_livepatch_event_label(null));
     }
 
+    public function testObservedIntervalsUseCompactAccessibleDetails(): void
+    {
+        $bounded = node_evidence_observed_interval((object) [
+            'effective_at' => null,
+            'observed_after' => '2026-08-06T04:26:31Z',
+            'observed_before' => '2026-08-06T04:27:52Z',
+        ]);
+
+        self::assertStringContainsString('>after ', $bounded);
+        self::assertStringContainsString('tabindex="0"', $bounded);
+        self::assertStringContainsString('aria-describedby="node-time-detail-', $bounded);
+        self::assertStringContainsString('role="tooltip"', $bounded);
+        self::assertStringContainsString('Change occurred after', $bounded);
+        self::assertStringContainsString('(', $bounded);
+        self::assertStringContainsString(']', $bounded);
+        self::assertStringNotContainsString('>after 2026-08-06 04:26:31, before', $bounded);
+
+        $upperBound = node_evidence_observed_interval((object) [
+            'effective_at' => null,
+            'observed_after' => null,
+            'observed_before' => '2026-08-06T04:27:52Z',
+        ]);
+        self::assertStringStartsWith('by ', $upperBound);
+
+        $period = node_system_observation_period((object) [
+            'first_observed_at' => '2026-08-06T04:26:31Z',
+            'last_observed_at' => '2026-08-06T04:27:52Z',
+        ]);
+        self::assertStringContainsString('>observed since ', $period);
+        self::assertStringContainsString('role="tooltip"', $period);
+
+        $css = file_get_contents(dirname(__DIR__, 2) . '/public/template/css/main.css');
+        self::assertStringContainsString('.node-time-detail:hover .node-time-detail__tooltip', $css);
+        self::assertStringContainsString('.node-time-detail:focus .node-time-detail__tooltip', $css);
+    }
+
     public function testBootEvidenceDrilldownIsNodeScopedAndUsesEventParameters(): void
     {
         $source = file_get_contents(dirname(__DIR__, 2) . '/forms/node.forms.php');

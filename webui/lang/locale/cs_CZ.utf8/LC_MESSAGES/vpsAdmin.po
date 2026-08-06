@@ -2152,16 +2152,6 @@ msgid "Reported kernel change"
 msgstr "Změna hlášeného jádra"
 
 #: forms/node.forms.php
-#, php-format
-msgid "after %s, before %s"
-msgstr "po %s, před %s"
-
-#: forms/node.forms.php
-#, php-format
-msgid "before %s"
-msgstr "před %s"
-
-#: forms/node.forms.php
 msgid "No kernel history is available yet."
 msgstr "Historie jádra zatím není k dispozici."
 
@@ -2399,6 +2389,35 @@ msgstr "aktuální closure"
 #: forms/node.forms.php
 msgid "No software deployment history is available yet."
 msgstr "Historie nasazení softwaru zatím není k dispozici."
+
+#: forms/node.forms.php
+#, php-format
+msgid "after %s"
+msgstr "po %s"
+
+#: forms/node.forms.php
+#, php-format
+msgid ""
+"Change occurred after the last previous observation at %1$s and no later "
+"than the first new observation at %2$s: (%1$s, %2$s]."
+msgstr ""
+"Ke změně došlo po posledním předchozím pozorování v čase %1$s a nejpozději "
+"při prvním novém pozorování v čase %2$s: (%1$s, %2$s]."
+
+#: forms/node.forms.php
+#, php-format
+msgid "by %s"
+msgstr "nejpozději %s"
+
+#: forms/node.forms.php
+#, php-format
+msgid "observed since %s"
+msgstr "pozorováno od %s"
+
+#: forms/node.forms.php
+#, php-format
+msgid "Observed from %s through %s."
+msgstr "Pozorováno od %s do %s."
 
 #: forms/node.forms.php
 msgid "Live patch applied"
@@ -8300,6 +8319,14 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#, php-format
+#~ msgid "after %s, before %s"
+#~ msgstr "po %s, před %s"
+
+#, php-format
+#~ msgid "before %s"
+#~ msgstr "před %s"
 
 #~ msgid "Live patch enabled"
 #~ msgstr "Živá záplata povolena"

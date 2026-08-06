@@ -439,3 +439,40 @@ a.user-unpaid {color: #fff;}
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 999;
 }
+/* Compact timestamps retain their full observation interval on hover and focus. */
+.node-time-detail {
+	position: relative;
+	display: inline-block;
+}
+
+td:has(.node-time-detail) {
+	overflow: visible;
+}
+
+.node-time-detail:focus {
+	outline: 2px solid #337ab7;
+	outline-offset: 2px;
+}
+
+.node-time-detail__tooltip {
+	position: absolute;
+	z-index: 1000;
+	left: 0;
+	top: calc(100% + 0.35em);
+	width: max-content;
+	max-width: 32em;
+	padding: 0.4em 0.6em;
+	visibility: hidden;
+	opacity: 0;
+	background: #222;
+	color: #fff;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+	white-space: normal;
+	pointer-events: none;
+}
+
+.node-time-detail:hover .node-time-detail__tooltip,
+.node-time-detail:focus .node-time-detail__tooltip {
+	visibility: visible;
+	opacity: 1;
+}
