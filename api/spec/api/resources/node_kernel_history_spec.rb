@@ -114,6 +114,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Node::KernelHistory' do
     same_time_last = NodeKernelEvent.create!(
       node:,
       event_type: :livepatch_change,
+      livepatch_action: :applied,
       source: :node_report,
       confidence: :exact,
       booted_release: '6.12.93',
@@ -125,6 +126,10 @@ RSpec.describe 'VpsAdmin::API::Resources::Node::KernelHistory' do
 
     expect(events.map { |event| event['id'] }).to eq(
       [same_time_last.id, same_time_first.id, older.id]
+    )
+    expect(events.first).to include(
+      'event_type' => 'livepatch',
+      'livepatch_action' => 'applied'
     )
   end
 

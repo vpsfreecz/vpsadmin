@@ -21,6 +21,7 @@ module VpsAdmin::API::KernelEvidence
       filtered = ::NodeKernelEvent.where(node_id: nodes.select(:id))
       filtered = filtered.where(observed_before: ..input[:to]) if input[:to]
       filtered = filtered.where(event_type: input[:event_type]) if input[:event_type]
+      filtered = filtered.where(livepatch_action: input[:livepatch_action]) if input[:livepatch_action]
       filtered = filtered.where(source: input[:event_source]) if input[:event_source]
       filtered = filtered.where(confidence: input[:confidence]) if input[:confidence]
       filtered = filtered.where(current: input[:current]) if input.has_key?(:current)

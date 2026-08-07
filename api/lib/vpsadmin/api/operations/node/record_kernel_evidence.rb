@@ -87,24 +87,53 @@ module VpsAdmin::API
       observed_at:,
       previous_observed_at:
     )
+      return unless livepatch_observation_complete?(report)
+
       livepatch_changed = report.livepatches != previous_report.livepatches
-      effective_at = newly_applied_at(
-        report.livepatches,
-        previous_report.livepatches,
-        identity: :id,
-        timestamp: :applied_at
-      )
-      release_changed = report.kernel.reported_release != previous_report.kernel.reported_release
-      return unless release_changed || livepatch_changed
+      stable_event = stable_kernel_event(node)
+      stable_report = VpsAdmin::API::KernelEvidence::SnapshotReader.call(
+        stable_event&.kernel_evidence
+      ) || previous_report
+      stable_observed_at = stable_event&.observed_before || previous_observed_at
+      release_changed = report.kernel.reported_release != stable_report.kernel.reported_release
+      lifecycle = livepatch_lifecycle(stable_report, report)
+
+      if lifecycle
+        lifecycle_observed_after = stable_observed_at
+        if lifecycle == :applied && livepatch_observation_complete?(previous_report)
+          lifecycle_observed_after = previous_observed_at
+        end
+        create_event!(
+          node:,
+          event_type: :livepatch_change,
+          livepatch_action: lifecycle,
+          observed_at:,
+          previous_observed_at: lifecycle_observed_after,
+          report:
+        )
+        return
+      end
+
+      if release_changed && !livepatch_transitioning?(report.livepatches)
+        create_event!(
+          node:,
+          event_type: :reported_release_change,
+          observed_at:,
+          previous_observed_at: stable_observed_at,
+          report:
+        )
+        return
+      end
+
+      return unless livepatch_changed || release_changed
 
       create_event!(
         node:,
-        event_type: livepatch_changed ? :livepatch_change : :reported_release_change,
+        event_type: :livepatch_inventory_change,
         observed_at:,
         previous_observed_at:,
         report:,
-        effective_at:,
-        confidence: effective_at ? :exact : :inferred
+        public_event: false
       )
     end
 
@@ -249,6 +278,68 @@ module VpsAdmin::API
       end.max
     end
 
+    def stable_kernel_event(node)
+      node.node_kernel_events.kernel_history
+          .where(current: true)
+          .where.not(node_kernel_evidence_id: nil)
+          .includes(kernel_evidence: { kernel_livepatches: :patches })
+          .order(observed_before: :desc, id: :desc)
+          .first
+    end
+
+    def livepatch_lifecycle(previous_report, current_report)
+      current = current_report.livepatches
+      return unless livepatch_observation_complete?(previous_report)
+      return unless livepatch_observation_complete?(current_report)
+      return if livepatch_transitioning?(current)
+
+      previous_effective = effective_livepatches(previous_report.livepatches)
+      current_effective = effective_livepatches(current)
+      added_ids = current_effective.keys - previous_effective.keys
+      removed_ids = previous_effective.keys - current_effective.keys
+
+      return :applied if added_ids.any?
+      return :removed if removal_observed?(
+        removed_ids,
+        current,
+        previous_report.kernel.reported_release,
+        current_report.kernel.reported_release
+      )
+
+      nil
+    end
+
+    def removal_observed?(removed_ids, current, previous_release, current_release)
+      return false if removed_ids.empty?
+      return true if current.empty? || current_release != previous_release
+
+      current_ids = current.map(&:id)
+      removed_ids.any? { |id| current_ids.include?(id) }
+    end
+
+    def effective_livepatches(livepatches)
+      livepatches.select do |livepatch|
+        livepatch.loaded &&
+          livepatch.enabled &&
+          livepatch.transition == false
+      end.to_h { |livepatch| [livepatch.id, livepatch] }
+    end
+
+    def livepatch_transitioning?(livepatches)
+      livepatches.any?(&:transition)
+    end
+
+    def livepatch_observation_complete?(report)
+      return false if report.livepatches.any? do |livepatch|
+        [livepatch.loaded, livepatch.enabled, livepatch.transition].any?(&:nil?)
+      end
+
+      report.errors.none? do |error|
+        error.component == 'livepatches' ||
+          error.component.match?(/\Alivepatch\..+\.(?:enabled|transition)\z/)
+      end
+    end
+
     def delete_reconstructed_boot_duplicate!(node, reported_event)
       return unless reported_event.observed_after.nil?
 
@@ -287,6 +378,7 @@ module VpsAdmin::API
       observed_at:,
       previous_observed_at:,
       report:,
+      livepatch_action: nil,
       effective_at: nil,
       confidence: :inferred,
       public_event: true
@@ -296,6 +388,7 @@ module VpsAdmin::API
       ::NodeKernelEvent.create!(
         node:,
         event_type:,
+        livepatch_action:,
         source: :node_report,
         confidence:,
         boot_id: kernel.boot_id,

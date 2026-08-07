@@ -442,6 +442,11 @@ class VpsAdmin::API::Resources::Node < HaveAPI::Resource
       id :id
       string :event_type, db_name: :public_event_type,
                           choices: %w[boot livepatch reported_release_change]
+      string :livepatch_action,
+             label: 'Live patch action',
+             desc: 'Effective live patch lifecycle action',
+             choices: ::NodeKernelEvent.livepatch_actions.keys,
+             nullable: true
       datetime :booted_at, nullable: true
       string :booted_release, nullable: true
       string :reported_release

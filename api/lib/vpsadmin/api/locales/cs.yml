@@ -647,6 +647,8 @@ cs:
             label: Změna živé záplaty
           livepatch_change:
             label: Změna živé záplaty
+          livepatch_inventory_change:
+            label: Změna inventáře živých záplat
           module_change:
             label: Změna modulů
           reported_release_change:
@@ -969,6 +971,13 @@ cs:
         label: Úroveň přístupu
       limit:
         label: Limit
+      livepatch_action:
+        choices:
+          applied:
+            label: Aplikována
+          removed:
+            label: Odstraněna
+        label: Akce živé záplaty
       livepatch_id:
         label: ID živé záplaty
       loadavg1:
@@ -2871,6 +2880,8 @@ cs:
           attributes:
             id:
               label: ID
+            livepatch_action:
+              description: Akce životního cyklu účinné živé záplaty
         status:
           attributes:
             cgroup_version:
@@ -2917,6 +2928,12 @@ cs:
         attributes:
           id:
             label: ID události kernelu Node
+        input:
+          livepatch_action:
+            description: Filtrovat podle akce životního cyklu účinné živé záplaty
+        output:
+          livepatch_action:
+            description: Akce životního cyklu účinné živé záplaty
       node_kernel_evidence:
         attributes:
           id:

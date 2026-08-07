@@ -647,6 +647,8 @@ en:
             label: livepatch
           livepatch_change:
             label: livepatch_change
+          livepatch_inventory_change:
+            label: livepatch_inventory_change
           module_change:
             label: module_change
           reported_release_change:
@@ -971,6 +973,13 @@ en:
         label: Access level
       limit:
         label: Limit
+      livepatch_action:
+        choices:
+          applied:
+            label: applied
+          removed:
+            label: removed
+        label: Live patch action
       livepatch_id:
         label: Livepatch_id
       loadavg1:
@@ -2877,6 +2886,8 @@ en:
           attributes:
             id:
               label: Id
+            livepatch_action:
+              description: Effective live patch lifecycle action
         status:
           attributes:
             cgroup_version:
@@ -2923,6 +2934,12 @@ en:
         attributes:
           id:
             label: Id
+        input:
+          livepatch_action:
+            description: Filter by effective live patch lifecycle action
+        output:
+          livepatch_action:
+            description: Effective live patch lifecycle action
       node_kernel_evidence:
         attributes:
           id:

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_06_120100) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -1036,6 +1036,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.boolean "current", default: false, null: false
     t.datetime "effective_at"
     t.integer "event_type", null: false
+    t.integer "livepatch_action"
     t.bigint "node_id", null: false
     t.bigint "node_kernel_evidence_id"
     t.datetime "observed_after"

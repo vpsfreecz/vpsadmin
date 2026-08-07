@@ -23,14 +23,17 @@ class NodeKernelEvent < ApplicationRecord
     module_change
     sysctl_change
     deployment_change
+    livepatch_inventory_change
   ]
   enum :source, %i[reconstructed_node_status node_report]
   enum :confidence, %i[incomplete inferred exact]
+  enum :livepatch_action, %i[applied removed], prefix: :livepatch
 
   validates :reported_release, :observed_before, presence: true
   validates :source_status_id,
             uniqueness: { scope: %i[node_id event_type] },
             allow_nil: true
+  validates :livepatch_action, absence: true, unless: :livepatch_change?
 
   scope :kernel_history, lambda {
     where(event_type: event_types.slice(*PUBLIC_EVENT_TYPES).values)

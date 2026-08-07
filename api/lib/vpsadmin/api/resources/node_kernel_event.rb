@@ -11,6 +11,11 @@ module VpsAdmin::API::Resources
                db_name: :kernel_evidence,
                nullable: true
       string :event_type, choices: ::NodeKernelEvent.event_types.keys
+      string :livepatch_action,
+             label: 'Live patch action',
+             desc: 'Effective live patch lifecycle action',
+             choices: ::NodeKernelEvent.livepatch_actions.keys,
+             nullable: true
       string :boot_id, nullable: true
       datetime :booted_at, nullable: true
       string :booted_release, nullable: true
@@ -43,6 +48,10 @@ module VpsAdmin::API::Resources
         datetime :from
         datetime :to
         string :event_type, choices: ::NodeKernelEvent.event_types.keys
+        string :livepatch_action,
+               label: 'Live patch action',
+               desc: 'Filter by effective live patch lifecycle action',
+               choices: ::NodeKernelEvent.livepatch_actions.keys
         string :event_source, choices: ::NodeKernelEvent.sources.keys
         string :confidence, choices: ::NodeKernelEvent.confidences.keys
         bool :current

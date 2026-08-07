@@ -263,6 +263,7 @@ RSpec.describe VpsAdmin::API::Resources::NodeKernelEvidence do
     newer = NodeKernelEvent.create!(
       node:,
       event_type: :livepatch_change,
+      livepatch_action: :applied,
       source: :node_report,
       confidence: :exact,
       boot_id: 'boot-a',
@@ -290,6 +291,7 @@ RSpec.describe VpsAdmin::API::Resources::NodeKernelEvidence do
       'kernel_source_revision' => 'a2384967',
       'node_kernel_evidence' => include('id' => a_kind_of(Integer))
     )
+    expect(returned.last['livepatch_action']).to eq('applied')
   end
 
   it 'selects a filtered pre-window baseline independently for every Node' do
@@ -344,6 +346,34 @@ RSpec.describe VpsAdmin::API::Resources::NodeKernelEvidence do
       primary_boot.id,
       other_boot.id
     )
+  end
+
+  it 'filters kernel events by livepatch lifecycle action' do
+    events = %i[applied removed].each_with_index.to_h do |action, index|
+      event_time = observed_at + index.minutes + 1.minute
+      event = NodeKernelEvent.create!(
+        node:,
+        event_type: :livepatch_change,
+        livepatch_action: action,
+        source: :node_report,
+        confidence: :inferred,
+        boot_id: 'boot-a',
+        booted_at: observed_at - 1.hour,
+        booted_release: '6.12.95',
+        reported_release: '6.12.95',
+        observed_after: event_time - 30.seconds,
+        observed_before: event_time,
+        current: action == :removed,
+        kernel_evidence: store_evidence(:event, evidence, event_time)
+      )
+      [action, event]
+    end
+
+    events.each do |action, event|
+      admin_get('node_kernel_events', node: node.id, livepatch_action: action)
+
+      expect(rows('node_kernel_events').pluck('id')).to eq([event.id])
+    end
   end
 
   it 'paginates large event histories in the database without omissions' do

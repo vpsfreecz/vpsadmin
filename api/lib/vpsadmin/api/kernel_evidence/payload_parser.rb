@@ -210,9 +210,11 @@ module VpsAdmin::API::KernelEvidence
 
     def validate_livepatch!(livepatch)
       nonempty_string!(livepatch, 'id', 'livepatch')
-      nonempty_string!(livepatch, 'kernel_version', 'livepatch')
-      scalar!(livepatch, 'patch_version', 'livepatch')
-      %w[loaded enabled transition].each { |key| boolean!(livepatch, key, 'livepatch') }
+      optional_string!(livepatch, 'kernel_version')
+      optional_scalar!(livepatch, 'patch_version', 'livepatch')
+      %w[loaded enabled transition].each do |key|
+        optional_boolean!(livepatch, key, 'livepatch')
+      end
       optional_time!(livepatch, 'applied_at')
       optional_time!(livepatch, 'verified_at')
 
@@ -321,6 +323,13 @@ module VpsAdmin::API::KernelEvidence
       return if [true, false].include?(value)
 
       raise TypeError, "#{prefix}.#{key} must be a boolean"
+    end
+
+    def optional_boolean!(object, key, prefix)
+      value = object.fetch(key)
+      return if value.nil? || [true, false].include?(value)
+
+      raise TypeError, "#{prefix}.#{key} must be a boolean or null"
     end
 
     def optional_time!(object, key)

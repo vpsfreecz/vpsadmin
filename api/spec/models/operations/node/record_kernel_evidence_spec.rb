@@ -91,6 +91,14 @@ RSpec.describe VpsAdmin::API::Operations::Node::RecordKernelEvidence do
     VpsAdmin::API::KernelEvidence::Report.from_hash(value)
   end
 
+  def parsed_report(value)
+    value = Marshal.load(Marshal.dump(value))
+    value['software_versions'] = software_versions if value['software_versions'].empty?
+    result = VpsAdmin::API::KernelEvidence::PayloadParser.call(value)
+    expect(result.record_events).to be(true)
+    result.report
+  end
+
   def stored_report(snapshot)
     VpsAdmin::API::KernelEvidence::SnapshotReader.call(snapshot)
   end
@@ -99,14 +107,15 @@ RSpec.describe VpsAdmin::API::Operations::Node::RecordKernelEvidence do
     node.node_kernel_events.delete_all
   end
 
-  it 'records a boot and a verified same-boot livepatch change' do
+  it 'records a boot and an observed same-boot livepatch application' do
     initial = evidence
     patched = evidence(
       release: '6.12.93.1',
       livepatches: [{
         'id' => 'livepatch_1',
         'enabled' => true,
-        'applied_at' => (t0 + 60).iso8601
+        'applied_at' => (t0 + 60).iso8601,
+        'verified_at' => (t0 + 70).iso8601
       }]
     )
 
@@ -124,10 +133,472 @@ RSpec.describe VpsAdmin::API::Operations::Node::RecordKernelEvidence do
     expect(events.first).not_to be_current
     expect(events.last).to be_current
     expect(events.last.observed_after).to eq(t0 + 10)
+    expect(events.last.observed_before).to eq(t0 + 120)
     expect(events.first.effective_at).to eq(t0)
     expect(events.first).to be_exact
-    expect(events.last).to be_exact
-    expect(events.last.effective_at).to eq(t0 + 60)
+    expect(events.last).to be_inferred
+    expect(events.last.effective_at).to be_nil
+    expect(events.last.livepatch_action).to eq('applied')
+  end
+
+  it 'does not treat a legacy activation marker as the application time' do
+    initial = evidence
+    enabled = evidence(livepatches: [{
+      'id' => 'livepatch_1',
+      'enabled' => true,
+      'applied_at' => (t0 + 60).iso8601
+    }])
+
+    described_class.run(node:, observed_at: t0 + 10, report: report(initial))
+    described_class.run(
+      node:,
+      observed_at: t0 + 120,
+      report: report(enabled),
+      previous_report: report(initial),
+      previous_observed_at: t0 + 10
+    )
+
+    expect(node.node_kernel_events.livepatch_change.sole).to have_attributes(
+      livepatch_action: 'applied',
+      effective_at: nil,
+      observed_after: t0 + 10,
+      observed_before: t0 + 120,
+      confidence: 'inferred'
+    )
+  end
+
+  it 'does not invent an application event for a patch already stable at boot' do
+    booted = evidence(
+      release: '6.12.93.1',
+      livepatches: [{
+        'id' => 'livepatch_1',
+        'enabled' => true,
+        'applied_at' => (t0 - 60).iso8601
+      }]
+    )
+
+    described_class.run(node:, observed_at: t0 + 10, report: report(booted))
+
+    expect(node.node_kernel_events.kernel_history).to contain_exactly(
+      node.node_kernel_events.boot.sole
+    )
+    expect(stored_report(node.node_kernel_events.boot.sole.kernel_evidence).livepatches.sole)
+      .to have_attributes(id: 'livepatch_1', enabled: true, transition: false)
+  end
+
+  it 'records replacement by another stable patch as an observed application' do
+    first = evidence(livepatches: [{
+      'id' => 'livepatch_1',
+      'enabled' => true,
+      'applied_at' => (t0 - 60).iso8601
+    }])
+    replacement = evidence(livepatches: [{
+      'id' => 'livepatch_2',
+      'enabled' => true,
+      'applied_at' => (t0 + 60).iso8601
+    }])
+
+    described_class.run(node:, observed_at: t0 + 10, report: report(first))
+    described_class.run(
+      node:,
+      observed_at: t0 + 120,
+      report: report(replacement),
+      previous_report: report(first),
+      previous_observed_at: t0 + 10
+    )
+
+    expect(node.node_kernel_events.livepatch_change.sole).to have_attributes(
+      livepatch_action: 'applied',
+      effective_at: nil,
+      observed_after: t0 + 10,
+      observed_before: t0 + 120,
+      confidence: 'inferred'
+    )
+  end
+
+  it 'does not remove an effective patch hidden by an old reporter' do
+    applied = evidence(
+      release: '6.12.93.2',
+      livepatches: [{
+        'id' => 'livepatch_2',
+        'patch_version' => 2,
+        'enabled' => true,
+        'applied_at' => (t0 - 60).iso8601
+      }]
+    )
+    old_reporter = evidence(
+      release: '6.12.93.2',
+      livepatches: [{
+        'id' => 'livepatch_3',
+        'patch_version' => 3,
+        'loaded' => false
+      }]
+    )
+    loaded_only_reporter = evidence(
+      release: '6.12.93.2',
+      livepatches: [{
+        'id' => 'livepatch_2',
+        'patch_version' => 2,
+        'enabled' => true,
+        'applied_at' => (t0 - 60).iso8601
+      }]
+    )
+
+    described_class.run(node:, observed_at: t0 + 10, report: report(applied))
+    described_class.run(
+      node:,
+      observed_at: t0 + 60,
+      report: report(old_reporter),
+      previous_report: report(applied),
+      previous_observed_at: t0 + 10
+    )
+    described_class.run(
+      node:,
+      observed_at: t0 + 120,
+      report: report(loaded_only_reporter),
+      previous_report: report(old_reporter),
+      previous_observed_at: t0 + 60
+    )
+
+    expect(node.node_kernel_events.livepatch_change).to be_empty
+    expect(node.node_kernel_events.livepatch_inventory_change.count).to eq(2)
+    expect(node.node_kernel_events.kernel_history.where(current: true)).to contain_exactly(
+      node.node_kernel_events.boot.sole
+    )
+  end
+
+  it 'records reporter evidence for a loaded module with unknown enrichment metadata' do
+    initial = evidence
+    unknown = evidence(
+      livepatches: [{
+        'id' => 'livepatch_external',
+        'kernel_version' => nil,
+        'patch_version' => nil,
+        'enabled' => true
+      }],
+      errors: [{
+        'component' => 'livepatch.livepatch_external.metadata',
+        'reason' => 'unavailable'
+      }]
+    )
+
+    described_class.run(node:, observed_at: t0 + 10, report: parsed_report(initial))
+    described_class.run(
+      node:,
+      observed_at: t0 + 120,
+      report: parsed_report(unknown),
+      previous_report: parsed_report(initial),
+      previous_observed_at: t0 + 10
+    )
+
+    event = node.node_kernel_events.livepatch_change.sole
+    expect(event.livepatch_action).to eq('applied')
+    stored = stored_report(event.kernel_evidence)
+    expect(stored.livepatches.sole).to have_attributes(
+      id: 'livepatch_external',
+      kernel_version: nil,
+      patch_version: nil,
+      loaded: true,
+      enabled: true,
+      transition: false
+    )
+    expect(stored.errors).to contain_exactly(
+      have_attributes(
+        component: 'livepatch.livepatch_external.metadata',
+        reason: 'unavailable'
+      )
+    )
+  end
+
+  it 'does not remove a patch when livepatch sysfs enumeration is unreadable' do
+    applied = evidence(livepatches: [{
+      'id' => 'livepatch_2',
+      'patch_version' => 2,
+      'enabled' => true
+    }])
+    unreadable = evidence(errors: [{
+      'component' => 'livepatches',
+      'reason' => 'unavailable'
+    }])
+
+    described_class.run(node:, observed_at: t0 + 10, report: parsed_report(applied))
+    described_class.run(
+      node:,
+      observed_at: t0 + 60,
+      report: parsed_report(unreadable),
+      previous_report: parsed_report(applied),
+      previous_observed_at: t0 + 10
+    )
+
+    expect(node.node_kernel_events.livepatch_change).to be_empty
+    expect(node.node_kernel_events.livepatch_inventory_change).to be_empty
+    expect(node.node_kernel_events.kernel_history.where(current: true)).to contain_exactly(
+      node.node_kernel_events.boot.sole
+    )
+  end
+
+  it 'does not apply a patch until unreadable livepatch state becomes observable' do
+    initial = evidence
+    unreadable = evidence(
+      livepatches: [{
+        'id' => 'livepatch_2',
+        'patch_version' => 2,
+        'enabled' => nil
+      }],
+      errors: [{
+        'component' => 'livepatch.livepatch_2.enabled',
+        'reason' => 'unavailable'
+      }]
+    )
+    applied = evidence(livepatches: [{
+      'id' => 'livepatch_2',
+      'patch_version' => 2,
+      'enabled' => true
+    }])
+
+    described_class.run(node:, observed_at: t0 + 10, report: parsed_report(initial))
+    described_class.run(
+      node:,
+      observed_at: t0 + 60,
+      report: parsed_report(unreadable),
+      previous_report: parsed_report(initial),
+      previous_observed_at: t0 + 10
+    )
+    expect(node.node_kernel_events.livepatch_change).to be_empty
+    expect(node.node_kernel_events.livepatch_inventory_change).to be_empty
+
+    described_class.run(
+      node:,
+      observed_at: t0 + 120,
+      report: parsed_report(applied),
+      previous_report: parsed_report(unreadable),
+      previous_observed_at: t0 + 60
+    )
+
+    expect(node.node_kernel_events.livepatch_change.sole).to have_attributes(
+      livepatch_action: 'applied',
+      observed_after: t0 + 10,
+      observed_before: t0 + 120
+    )
+  end
+
+  it 'treats the first complete livepatch state after an unreadable boot as boot state' do
+    unreadable_boot = evidence(errors: [{
+      'component' => 'livepatches',
+      'reason' => 'unavailable'
+    }])
+    observed = evidence(livepatches: [{
+      'id' => 'livepatch_2',
+      'patch_version' => 2,
+      'enabled' => true
+    }])
+
+    described_class.run(node:, observed_at: t0 + 10, report: parsed_report(unreadable_boot))
+    described_class.run(
+      node:,
+      observed_at: t0 + 120,
+      report: parsed_report(observed),
+      previous_report: parsed_report(unreadable_boot),
+      previous_observed_at: t0 + 10
+    )
+
+    expect(node.node_kernel_events.livepatch_change).to be_empty
+    expect(node.node_kernel_events.livepatch_inventory_change.count).to eq(1)
+    expect(node.node_kernel_events.kernel_history.where(current: true)).to contain_exactly(
+      node.node_kernel_events.boot.sole
+    )
+  end
+
+  it 'keeps availability and transition changes internal until application completes' do
+    initial = evidence
+    available = evidence(livepatches: [{
+      'id' => 'livepatch_1',
+      'loaded' => false
+    }])
+    transitioning = evidence(
+      release: '6.12.93.1',
+      livepatches: [{
+        'id' => 'livepatch_1',
+        'enabled' => true,
+        'transition' => true,
+        'applied_at' => (t0 + 60).iso8601
+      }]
+    )
+    applied = evidence(
+      release: '6.12.93.1',
+      livepatches: [{
+        'id' => 'livepatch_1',
+        'enabled' => true,
+        'applied_at' => (t0 + 60).iso8601,
+        'verified_at' => (t0 + 150).iso8601
+      }]
+    )
+
+    described_class.run(node:, observed_at: t0 + 10, report: report(initial))
+    described_class.run(
+      node:,
+      observed_at: t0 + 50,
+      report: report(available),
+      previous_report: report(initial),
+      previous_observed_at: t0 + 10
+    )
+    described_class.run(
+      node:,
+      observed_at: t0 + 120,
+      report: report(transitioning),
+      previous_report: report(available),
+      previous_observed_at: t0 + 50
+    )
+
+    expect(node.node_kernel_events.kernel_history).to contain_exactly(
+      node.node_kernel_events.boot.sole
+    )
+    expect(node.node_kernel_events.livepatch_inventory_change.count).to eq(2)
+    expect(node.node_kernel_events.where(current: true)).to contain_exactly(
+      node.node_kernel_events.boot.sole
+    )
+
+    described_class.run(
+      node:,
+      observed_at: t0 + 180,
+      report: report(applied),
+      previous_report: report(transitioning),
+      previous_observed_at: t0 + 120
+    )
+
+    event = node.node_kernel_events.livepatch_change.sole
+    expect(event).to have_attributes(
+      livepatch_action: 'applied',
+      reported_release: '6.12.93.1',
+      effective_at: nil,
+      observed_after: t0 + 120,
+      observed_before: t0 + 180,
+      confidence: 'inferred',
+      current: true
+    )
+    expect(node.node_kernel_events.reported_release_change).to be_empty
+  end
+
+  it 'records removal only after a reverse transition completes' do
+    applied = evidence(livepatches: [{
+      'id' => 'livepatch_1',
+      'enabled' => true,
+      'applied_at' => (t0 + 20).iso8601,
+      'verified_at' => (t0 + 30).iso8601
+    }])
+    transitioning = evidence(livepatches: [{
+      'id' => 'livepatch_1',
+      'enabled' => false,
+      'transition' => true,
+      'applied_at' => (t0 + 20).iso8601,
+      'verified_at' => (t0 + 30).iso8601
+    }])
+    removed = evidence(livepatches: [])
+
+    described_class.run(node:, observed_at: t0 + 40, report: report(applied))
+    described_class.run(
+      node:,
+      observed_at: t0 + 80,
+      report: report(transitioning),
+      previous_report: report(applied),
+      previous_observed_at: t0 + 40
+    )
+    expect(node.node_kernel_events.livepatch_change).to be_empty
+
+    described_class.run(
+      node:,
+      observed_at: t0 + 120,
+      report: report(removed),
+      previous_report: report(transitioning),
+      previous_observed_at: t0 + 80
+    )
+
+    event = node.node_kernel_events.livepatch_change.sole
+    expect(event).to have_attributes(
+      livepatch_action: 'removed',
+      effective_at: nil,
+      observed_after: t0 + 40,
+      observed_before: t0 + 120,
+      current: true
+    )
+    expect(event).to be_inferred
+  end
+
+  it 'bounds a release deferred by transition from the stable event' do
+    initial = evidence
+    transitioning = evidence(
+      release: '6.12.93.1',
+      livepatches: [{
+        'id' => 'livepatch_1',
+        'enabled' => false,
+        'transition' => true
+      }]
+    )
+    released = evidence(release: '6.12.93.1')
+
+    described_class.run(node:, observed_at: t0 + 40, report: report(initial))
+    described_class.run(
+      node:,
+      observed_at: t0 + 80,
+      report: report(transitioning),
+      previous_report: report(initial),
+      previous_observed_at: t0 + 40
+    )
+    described_class.run(
+      node:,
+      observed_at: t0 + 120,
+      report: report(released),
+      previous_report: report(transitioning),
+      previous_observed_at: t0 + 80
+    )
+
+    event = node.node_kernel_events.reported_release_change.sole
+    expect(event).to have_attributes(
+      reported_release: '6.12.93.1',
+      observed_after: t0 + 40,
+      observed_before: t0 + 120,
+      current: true
+    )
+    expect(event).to be_inferred
+  end
+
+  it 'keeps later verification metadata internal without changing application timing' do
+    initial = evidence
+    enabled = evidence(livepatches: [{
+      'id' => 'livepatch_1',
+      'enabled' => true,
+      'applied_at' => (t0 + 40).iso8601
+    }])
+    verified = evidence(livepatches: [{
+      'id' => 'livepatch_1',
+      'enabled' => true,
+      'applied_at' => (t0 + 40).iso8601,
+      'verified_at' => (t0 + 100).iso8601
+    }])
+
+    described_class.run(node:, observed_at: t0 + 10, report: report(initial))
+    described_class.run(
+      node:,
+      observed_at: t0 + 60,
+      report: report(enabled),
+      previous_report: report(initial),
+      previous_observed_at: t0 + 10
+    )
+    event_id = node.node_kernel_events.livepatch_change.sole.id
+    event_before = node.node_kernel_events.livepatch_change.sole.attributes
+
+    described_class.run(
+      node:,
+      observed_at: t0 + 120,
+      report: report(verified),
+      previous_report: report(enabled),
+      previous_observed_at: t0 + 60
+    )
+
+    event = node.node_kernel_events.livepatch_change.sole
+    expect(event.id).to eq(event_id)
+    expect(event.attributes).to eq(event_before)
+    expect(node.node_kernel_events.livepatch_inventory_change.count).to eq(1)
   end
 
   it 'marks a boot time estimated from uptime as inferred' do
