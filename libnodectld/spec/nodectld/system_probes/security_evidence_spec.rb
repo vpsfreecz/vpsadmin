@@ -44,6 +44,116 @@ RSpec.describe NodeCtld::SystemProbes::SecurityEvidence do
     ).to eq([nil, '1', '0', '42', 'already-text'])
   end
 
+  it 'reports loaded livepatch state and an error when closure metadata is missing' do
+    probe = described_class.new
+    probe.instance_variable_set(:@errors, [])
+    allow(File).to receive(:read).and_call_original
+    allow(File).to receive(:read)
+      .with(described_class::BOOTED_LIVEPATCH_MONITOR_PATH)
+      .and_raise(Errno::ENOENT)
+    allow(File).to receive(:read)
+      .with(described_class::CURRENT_LIVEPATCH_MONITOR_PATH)
+      .and_raise(Errno::ENOENT)
+    allow(File).to receive(:read)
+      .with('/sys/kernel/livepatch/livepatch_external/enabled')
+      .and_return("1\n")
+    allow(File).to receive(:read)
+      .with('/sys/kernel/livepatch/livepatch_external/transition')
+      .and_return("0\n")
+    allow(File).to receive(:read)
+      .with(File.join(described_class::LIVEPATCH_STATE_ROOT, 'livepatch_external.applied-at'))
+      .and_raise(Errno::ENOENT)
+    allow(Dir).to receive(:children)
+      .with(described_class::SYS_LIVEPATCH_ROOT)
+      .and_return(['livepatch_external'])
+    allow(Dir).to receive(:exist?)
+      .with('/sys/kernel/livepatch/livepatch_external')
+      .and_return(true)
+
+    expect(probe.send(:livepatches)).to contain_exactly(
+      include(
+        'id' => 'livepatch_external',
+        'kernel_version' => nil,
+        'patch_version' => nil,
+        'patches' => [],
+        'loaded' => true,
+        'enabled' => true,
+        'transition' => false
+      )
+    )
+    expect(probe.instance_variable_get(:@errors)).to contain_exactly(
+      'component' => 'livepatch.livepatch_external.metadata',
+      'reason' => 'unavailable'
+    )
+  end
+
+  it 'reports an evidence gap when livepatch sysfs cannot be enumerated' do
+    probe = described_class.new
+    probe.instance_variable_set(:@errors, [])
+    allow(File).to receive(:read).and_call_original
+    allow(File).to receive(:read)
+      .with(described_class::BOOTED_LIVEPATCH_MONITOR_PATH)
+      .and_raise(Errno::ENOENT)
+    allow(File).to receive(:read)
+      .with(described_class::CURRENT_LIVEPATCH_MONITOR_PATH)
+      .and_raise(Errno::ENOENT)
+    allow(Dir).to receive(:children)
+      .with(described_class::SYS_LIVEPATCH_ROOT)
+      .and_raise(Errno::EACCES)
+
+    expect(probe.send(:livepatches)).to be_empty
+    expect(probe.instance_variable_get(:@errors)).to contain_exactly(
+      'component' => 'livepatches',
+      'reason' => 'unavailable'
+    )
+  end
+
+  it 'keeps unreadable livepatch state unknown' do
+    probe = described_class.new
+    probe.instance_variable_set(:@errors, [])
+    monitor = {
+      module: 'livepatch_2',
+      kernelVersion: '6.12.95',
+      patchVersion: 2,
+      patches: []
+    }
+    allow(File).to receive(:read).and_call_original
+    allow(File).to receive(:read)
+      .with(described_class::BOOTED_LIVEPATCH_MONITOR_PATH)
+      .and_return(JSON.generate(monitor))
+    allow(File).to receive(:read)
+      .with(described_class::CURRENT_LIVEPATCH_MONITOR_PATH)
+      .and_raise(Errno::ENOENT)
+    allow(File).to receive(:read)
+      .with('/sys/kernel/livepatch/livepatch_2/enabled')
+      .and_raise(Errno::EIO)
+    allow(File).to receive(:read)
+      .with('/sys/kernel/livepatch/livepatch_2/transition')
+      .and_return("0\n")
+    allow(File).to receive(:read)
+      .with(File.join(described_class::LIVEPATCH_STATE_ROOT, 'livepatch_2.applied-at'))
+      .and_raise(Errno::ENOENT)
+    allow(Dir).to receive(:children)
+      .with(described_class::SYS_LIVEPATCH_ROOT)
+      .and_return(['livepatch_2'])
+    allow(Dir).to receive(:exist?)
+      .with('/sys/kernel/livepatch/livepatch_2')
+      .and_return(true)
+
+    expect(probe.send(:livepatches)).to contain_exactly(
+      include(
+        'id' => 'livepatch_2',
+        'loaded' => true,
+        'enabled' => nil,
+        'transition' => false
+      )
+    )
+    expect(probe.instance_variable_get(:@errors)).to contain_exactly(
+      'component' => 'livepatch.livepatch_2.enabled',
+      'reason' => 'unavailable'
+    )
+  end
+
   it 'falls back to the matching system closure confctl inputs' do
     revisions = {
       'vpsadminos' => 'a' * 40,
@@ -204,11 +314,17 @@ RSpec.describe NodeCtld::SystemProbes::SecurityEvidence do
       revision: vpsadmin_revision,
       revisionDirty: false
     }
-    livepatch = {
+    booted_livepatch = {
       kernelVersion: '6.12.93',
-      module: 'livepatch_1',
-      patchVersion: 1,
-      patches: [{ name: 'fix-one', version: 1 }]
+      module: 'livepatch_2',
+      patchVersion: 2,
+      patches: [{ name: 'fix-two', version: 1 }]
+    }
+    current_livepatch = {
+      kernelVersion: '6.12.93',
+      module: 'livepatch_3',
+      patchVersion: 3,
+      patches: [{ name: 'fix-three', version: 1 }]
     }
     ebpf = {
       programs: [{
@@ -258,7 +374,12 @@ RSpec.describe NodeCtld::SystemProbes::SecurityEvidence do
     allow(File).to receive(:read).with(described_class::COMMAND_LINE_PATH)
                                  .and_return("init=\"/nix/store/init path\" debug=old debug=new slab_nomerge\n")
     allow(File).to receive(:read).with(described_class::BOOT_TIME_PATH).and_return("cpu 1 2 3\nbtime 1782903600\n")
-    allow(File).to receive(:read).with(described_class::LIVEPATCH_MONITOR_PATH).and_return(JSON.generate(livepatch))
+    allow(File).to receive(:read)
+      .with(described_class::BOOTED_LIVEPATCH_MONITOR_PATH)
+      .and_return(JSON.generate(booted_livepatch))
+    allow(File).to receive(:read)
+      .with(described_class::CURRENT_LIVEPATCH_MONITOR_PATH)
+      .and_return(JSON.generate(current_livepatch))
     allow(File).to receive(:read).with(described_class::EBPF_MONITOR_PATH).and_return(JSON.generate(ebpf))
     allow(File).to receive(:read)
       .with(File.join(described_class::EBPF_STATE_ROOT, 'current-generation'))
@@ -266,10 +387,10 @@ RSpec.describe NodeCtld::SystemProbes::SecurityEvidence do
     allow(File).to receive(:read)
       .with(File.join(described_class::EBPF_STATE_ROOT, '123-456.attached-at'))
       .and_return("2026-07-01T11:45:00Z\n")
-    allow(File).to receive(:read).with('/sys/kernel/livepatch/livepatch_1/enabled').and_return("1\n")
-    allow(File).to receive(:read).with('/sys/kernel/livepatch/livepatch_1/transition').and_return("0\n")
+    allow(File).to receive(:read).with('/sys/kernel/livepatch/livepatch_2/enabled').and_return("1\n")
+    allow(File).to receive(:read).with('/sys/kernel/livepatch/livepatch_2/transition').and_return("0\n")
     allow(File).to receive(:read)
-      .with(File.join(described_class::LIVEPATCH_STATE_ROOT, 'livepatch_1.applied-at'))
+      .with(File.join(described_class::LIVEPATCH_STATE_ROOT, 'livepatch_2.applied-at'))
       .and_return("2026-07-01T11:30:00Z\n")
     allow(File).to receive(:read).with('/proc/sys/kernel/dmesg_restrict').and_return("1\n")
     allow(File).to receive(:read).with('/proc/sys/vm/unprivileged_userfaultfd').and_return("0\n")
@@ -281,8 +402,11 @@ RSpec.describe NodeCtld::SystemProbes::SecurityEvidence do
         'kvm 1 1 kvm_amd, Live 0x0'
       ]
     )
+    allow(Dir).to receive(:children).and_call_original
     allow(Dir).to receive(:children).with(described_class::BOOTED_MODULES_PATH).and_return(['6.12.95'])
-    allow(Dir).to receive(:exist?).with('/sys/module/livepatch_1').and_return(true)
+    allow(Dir).to receive(:children).with(described_class::SYS_LIVEPATCH_ROOT).and_return(['livepatch_2'])
+    allow(Dir).to receive(:exist?).and_call_original
+    allow(Dir).to receive(:exist?).with('/sys/kernel/livepatch/livepatch_2').and_return(true)
     allow(Dir).to receive(:glob).and_return(['/sys/fs/bpf/vpsadminos/ebpf-livepatch/generations/1/guard__guard_link'])
 
     probe = described_class.new
@@ -302,10 +426,13 @@ RSpec.describe NodeCtld::SystemProbes::SecurityEvidence do
       'init="/nix/store/init path" debug=old debug=new slab_nomerge'
     )
     expect(result.dig('livepatches', 0)).to include(
+      'id' => 'livepatch_2',
+      'patch_version' => 2,
       'loaded' => true,
       'enabled' => true,
       'applied_at' => '2026-07-01T11:30:00Z'
     )
+    expect(result.fetch('livepatches').map { |patch| patch.fetch('id') }).not_to include('livepatch_3')
     expect(result.dig('ebpf_programs', 0, 'active')).to be(true)
     expect(result.dig('ebpf_programs', 0)).to include(
       'revision' => 'vpsadminos-revision',

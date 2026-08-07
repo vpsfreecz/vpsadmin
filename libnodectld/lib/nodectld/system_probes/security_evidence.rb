@@ -15,7 +15,6 @@ module NodeCtld::SystemProbes
     BOOTED_SYSTEM = File.join(RUN_ROOT, 'booted-system').freeze
     CURRENT_SYSTEM = File.join(RUN_ROOT, 'current-system').freeze
     PROC_SYS_ROOT = File.join(PROC_ROOT, 'sys').freeze
-    SYS_MODULE_ROOT = File.join(SYS_ROOT, 'module').freeze
     SYS_LIVEPATCH_ROOT = File.join(SYS_ROOT, 'kernel', 'livepatch').freeze
 
     BOOTED_METADATA_PATH = File.join(
@@ -50,7 +49,14 @@ module NodeCtld::SystemProbes
       CURRENT_SYSTEM,
       'etc', 'confctl', 'configuration-info.json'
     ).freeze
-    LIVEPATCH_MONITOR_PATH = File.join(VPSADMINOS_CONFIG_ROOT, 'livepatch-monitor.json').freeze
+    BOOTED_LIVEPATCH_MONITOR_PATH = File.join(
+      BOOTED_SYSTEM,
+      'etc', 'vpsadminos', 'livepatch-monitor.json'
+    ).freeze
+    CURRENT_LIVEPATCH_MONITOR_PATH = File.join(
+      CURRENT_SYSTEM,
+      'etc', 'vpsadminos', 'livepatch-monitor.json'
+    ).freeze
     EBPF_MONITOR_PATH = File.join(VPSADMINOS_CONFIG_ROOT, 'ebpf-livepatch-monitor.json').freeze
     EBPF_PIN_ROOT = File.join(
       SYS_ROOT,
@@ -395,25 +401,66 @@ module NodeCtld::SystemProbes
     end
 
     def livepatches
-      monitor = read_json(LIVEPATCH_MONITOR_PATH, required: false)
-      return [] if monitor.empty?
+      metadata = livepatch_metadata
 
-      module_name = monitor['module']
-      sysfs_path = File.join(SYS_LIVEPATCH_ROOT, module_name)
+      livepatch_module_names.map do |module_name|
+        monitor = metadata[module_name]
+        unless monitor
+          record_error("livepatch.#{module_name}.metadata", 'unavailable')
+        end
+        sysfs_path = File.join(SYS_LIVEPATCH_ROOT, module_name)
 
-      [{
-        'id' => module_name,
-        'kernel_version' => monitor['kernelVersion'],
-        'patch_version' => monitor['patchVersion'],
-        'patches' => monitor.fetch('patches', []),
-        'loaded' => Dir.exist?(File.join(SYS_MODULE_ROOT, module_name)),
-        'enabled' => read_value(File.join(sysfs_path, 'enabled'), required: false) == '1',
-        'transition' => read_value(File.join(sysfs_path, 'transition'), required: false) == '1',
-        'applied_at' => read_value(
-          File.join(LIVEPATCH_STATE_ROOT, "#{module_name}.applied-at"),
-          required: false
-        )
-      }]
+        {
+          'id' => module_name,
+          'kernel_version' => monitor&.[]('kernelVersion'),
+          'patch_version' => monitor&.[]('patchVersion'),
+          'patches' => monitor&.fetch('patches', []) || [],
+          'loaded' => true,
+          'enabled' => livepatch_flag(module_name, sysfs_path, 'enabled'),
+          'transition' => livepatch_flag(module_name, sysfs_path, 'transition'),
+          'applied_at' => read_value(
+            File.join(LIVEPATCH_STATE_ROOT, "#{module_name}.applied-at"),
+            required: false
+          )
+        }
+      end
+    end
+
+    def livepatch_flag(module_name, sysfs_path, attribute)
+      value = read_value(
+        File.join(sysfs_path, attribute),
+        component: "livepatch.#{module_name}.#{attribute}"
+      )
+      return if value.nil?
+      return false if value == '0'
+      return true if value == '1'
+
+      record_error("livepatch.#{module_name}.#{attribute}", 'invalid')
+      nil
+    end
+
+    def livepatch_metadata
+      [
+        BOOTED_LIVEPATCH_MONITOR_PATH,
+        CURRENT_LIVEPATCH_MONITOR_PATH
+      ].each_with_object({}) do |path, ret|
+        monitor = read_json(path, required: false)
+        module_name = monitor['module']
+        next if module_name.nil?
+
+        ret[module_name] ||= monitor
+      end
+    end
+
+    def livepatch_module_names
+      Dir.children(SYS_LIVEPATCH_ROOT).select do |name|
+        Dir.exist?(File.join(SYS_LIVEPATCH_ROOT, name))
+      end.sort
+    rescue Errno::ENOENT
+      []
+    rescue SystemCallError
+      record_error('livepatches', 'unavailable')
+      []
     end
 
     def ebpf_programs(now:)
