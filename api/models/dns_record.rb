@@ -3,7 +3,22 @@ require_relative 'confirmable'
 require_relative 'dns_zone_record_set_validator'
 
 class DnsRecord < ApplicationRecord
-  RECORD_TYPES = %w[A AAAA CNAME DS MX NS PTR SRV SSHFP TLSA TXT].freeze
+  RECORD_TYPES = %w[A AAAA CAA CNAME DS MX NS PTR SRV SSHFP TLSA TXT].freeze
+
+  CAA_PROPERTY_TAGS = %w[
+    contactemail
+    contactphone
+    iodef
+    issue
+    issuemail
+    issuevmc
+    issuewild
+  ].freeze
+
+  CAA_CONTENT_PATTERN = /\A[ \t]*(\d+)[ \t]+([A-Za-z0-9]+)[ \t]+"(.*)"[ \t]*\z/
+  # Keep the rendered record safely below BIND's 64 KiB master-file line limit,
+  # including a maximum-length owner name and the remaining record fields.
+  CAA_MAX_CONTENT_BYTES = (64 * 1024) - 1024
 
   TLSA_MATCHING_TYPES = {
     0 => { length: nil, type: 'Exact match' },
@@ -68,6 +83,23 @@ class DnsRecord < ApplicationRecord
     "#{name} #{record_type}"
   end
 
+  def self.parse_caa_content(value)
+    return if value.blank? || value.match?(/[\r\n]/)
+
+    match = CAA_CONTENT_PATTERN.match(value)
+    return if match.nil?
+
+    [match[1].to_i, match[2].downcase, match[3]]
+  end
+
+  def self.normalize_caa_content(value)
+    parsed = parse_caa_content(value)
+    return if parsed.nil?
+
+    flags, tag, property_value = parsed
+    %(#{flags} #{tag} "#{property_value}")
+  end
+
   protected
 
   # rubocop:disable Style/GuardClause
@@ -115,6 +147,9 @@ class DnsRecord < ApplicationRecord
       unless ip.ipv6?
         errors.add(:content, 'must be an IPv6 address, not IPv4')
       end
+
+    when 'CAA'
+      check_caa_content
 
     when 'MX'
       check_mx_content
@@ -183,6 +218,39 @@ class DnsRecord < ApplicationRecord
         "invalid digest: must be a #{digest_opts[:length]}-character hexadecimal " \
         "string for digest type #{digest_type_str} (#{digest_opts[:type]})"
       )
+    end
+  end
+
+  def check_caa_content
+    return unless single_line_content?
+
+    parsed = self.class.parse_caa_content(content)
+
+    if parsed.nil?
+      errors.add(:content, 'must have flags, a property tag, and a quoted value')
+      return
+    end
+
+    flags, tag, property_value = parsed
+
+    unless [0, 128].include?(flags)
+      errors.add(:content, 'invalid flags: must be 0 or 128')
+    end
+
+    unless CAA_PROPERTY_TAGS.include?(tag)
+      errors.add(:content, "invalid property tag: must be one of #{CAA_PROPERTY_TAGS.join(', ')}")
+    end
+
+    if self.class.normalize_caa_content(content).bytesize > CAA_MAX_CONTENT_BYTES
+      errors.add(:content, "must be at most #{CAA_MAX_CONTENT_BYTES} bytes after normalization")
+    end
+
+    if property_value.empty?
+      errors.add(:content, 'property value must not be empty')
+    elsif !property_value.ascii_only? || property_value.each_byte.any? { |byte| !(32..126).cover?(byte) }
+      errors.add(:content, 'property value must contain printable ASCII characters only')
+    elsif property_value.match?(/["\\]/)
+      errors.add(:content, 'property value must not contain quotes or backslashes')
     end
   end
 

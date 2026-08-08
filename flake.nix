@@ -421,6 +421,7 @@
               ncurses
               mariadb
               mariadb-connector-c
+              bind
             ];
             rubyPackage = pkgs.ruby_vpsadminos;
             gemHome = "/tmp/dev-ruby-gems";

@@ -782,6 +782,12 @@ base
         answer: '2001:db8::10'
       },
       {
+        name: '@',
+        record_type: 'CAA',
+        content: '0 issue "letsencrypt.org"',
+        answer: '0 issue "letsencrypt.org"'
+      },
+      {
         name: 'alias',
         record_type: 'CNAME',
         content: "www.#{zone_name}",
@@ -844,6 +850,7 @@ base
     [
       { name: 'bad-a', record_type: 'A', content: 'not-an-ip' },
       { name: 'bad-aaaa', record_type: 'AAAA', content: '192.0.2.10' },
+      { name: 'bad-caa', record_type: 'CAA', content: "0 issue \"letsencrypt.org\"\n" },
       { name: 'bad-cname', record_type: 'CNAME', content: 'not a domain' },
       { name: 'bad-ds', record_type: 'DS', content: "60485 13 2 #{'A' * 63}" },
       { name: 'bad-mx', record_type: 'MX', content: 'not a domain', priority: 10 },

@@ -583,6 +583,8 @@ module VpsAdmin::API::Tasks
       case record.record_type
       when 'AAAA'
         rdata.to_s.downcase == record.content.downcase
+      when 'CAA'
+        caa_matches?(record.content, rdata)
       when 'CNAME', 'PTR'
         rdata.to_s.downcase == record.content.downcase.chop
       when 'DS'
@@ -622,6 +624,18 @@ module VpsAdmin::API::Tasks
         && normalize_hex(answer_fingerprint.unpack1('H*')) == normalize_hex(fingerprint)
     end
 
+    def caa_matches?(expected, rdata)
+      expected_values = ::DnsRecord.parse_caa_content(expected)
+      return false if expected_values.nil?
+
+      answer_flags, answer_tag, answer_value = caa_rdata_values(rdata)
+      expected_flags, expected_tag, expected_value = expected_values
+
+      answer_flags == expected_flags \
+        && answer_tag&.downcase == expected_tag \
+        && answer_value == expected_value
+    end
+
     def tlsa_matches?(expected, rdata)
       usage, selector, matching_type, association_data = expected.split(/\s+/, 4)
       return false if association_data.nil?
@@ -638,6 +652,12 @@ module VpsAdmin::API::Tasks
       return rdata if rdata.is_a?(Array)
 
       [rdata.alg.code, rdata.fptype.code, rdata.fp]
+    end
+
+    def caa_rdata_values(rdata)
+      return rdata if rdata.is_a?(Array)
+
+      ::DnsRecord.parse_caa_content(rdata.to_s) || []
     end
 
     def tlsa_rdata_values(rdata)

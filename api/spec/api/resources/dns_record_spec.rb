@@ -132,6 +132,7 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
     [
       { name: 'www', type: 'A', content: '192.0.2.10' },
       { name: 'v6', type: 'AAAA', content: '2001:db8::10' },
+      { name: '@', type: 'CAA', content: '0 issue "letsencrypt.org"' },
       { name: 'alias', type: 'CNAME', content: "www.#{zone_name}" },
       { name: 'child', type: 'NS', content: "ns2.#{zone_name}" },
       { name: 'child', type: 'DS', content: "60485 13 2 #{'A' * 64}" },
@@ -148,6 +149,7 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
     [
       { name: 'bad-a', type: 'A', content: 'not-an-ip' },
       { name: 'bad-aaaa', type: 'AAAA', content: '192.0.2.10' },
+      { name: 'bad-caa', type: 'CAA', content: '1 issue "letsencrypt.org"' },
       { name: 'bad-cname', type: 'CNAME', content: 'not a domain' },
       { name: 'bad-ds', type: 'DS', content: "60485 13 2 #{'A' * 63}" },
       { name: 'bad-mx', type: 'MX', content: 'not a domain', priority: 10 },
@@ -480,6 +482,121 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
       expect(json['status']).to be(true)
       expect(record_obj['type']).to eq('TLSA')
       expect(record_obj['content']).to eq(payload[:content])
+    end
+
+    it 'normalizes CAA content when creating records' do
+      ensure_signer_unlocked!
+
+      payload = {
+        dns_zone: seed[:user_zone].id,
+        name: '@',
+        type: 'CAA',
+        content: " \t128  ISSUEWILD\t\"letsencrypt.org; account=example\" ",
+        ttl: 3600
+      }
+
+      expect do
+        as(SpecSeed.user) { json_post index_path, dns_record: payload }
+      end.to change(DnsRecord, :count).by(1)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(record_obj['content']).to eq('128 issuewild "letsencrypt.org; account=example"')
+    end
+
+    it 'allows every supported CAA property tag and denial values' do
+      ensure_signer_unlocked!
+
+      DnsRecord::CAA_PROPERTY_TAGS.each_with_index do |tag, index|
+        value = tag == 'issue' ? ';' : "value-#{index}.example.test"
+
+        expect do
+          as(SpecSeed.user) do
+            json_post index_path, dns_record: {
+              dns_zone: seed[:user_zone].id,
+              name: "caa-#{index}",
+              type: 'CAA',
+              content: %(0 #{tag} "#{value}"),
+              ttl: 3600
+            }
+          end
+        end.to change(DnsRecord, :count).by(1)
+
+        expect_status(200)
+        expect(json['status']).to be(true)
+      end
+    end
+
+    it 'enforces the CAA content length accepted by the DNS renderer' do
+      ensure_signer_unlocked!
+
+      framing = '0 issue ""'
+      value = 'a' * (DnsRecord::CAA_MAX_CONTENT_BYTES - framing.bytesize)
+      content = %(0 issue "#{value}")
+
+      expect(content.bytesize).to eq(DnsRecord::CAA_MAX_CONTENT_BYTES)
+
+      expect do
+        as(SpecSeed.user) do
+          json_post index_path, dns_record: {
+            dns_zone: seed[:user_zone].id,
+            name: 'caa-max',
+            type: 'CAA',
+            content: content,
+            ttl: 3600
+          }
+        end
+      end.to change(DnsRecord, :count).by(1)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      expect do
+        as(SpecSeed.user) do
+          json_post index_path, dns_record: {
+            dns_zone: seed[:user_zone].id,
+            name: 'caa-too-long',
+            type: 'CAA',
+            content: %(0 issue "#{value}a"),
+            ttl: 3600
+          }
+        end
+      end.not_to change(DnsRecord, :count)
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('content')
+    end
+
+    it 'rejects malformed CAA content' do
+      invalid_contents = [
+        '1 issue "letsencrypt.org"',
+        '0 custom "letsencrypt.org"',
+        '0 issue ""',
+        '0 issue letsencrypt.org',
+        '0 issue "letsencrypt.org\\account"',
+        '0 issue "letsencrypt.org"extra"',
+        "0 issue \"letsencrypt.org\"\n0 issue \"example.test\"",
+        %(0 issue "non-ascii-\u00E1")
+      ]
+
+      invalid_contents.each_with_index do |content, index|
+        expect do
+          as(SpecSeed.user) do
+            json_post index_path, dns_record: {
+              dns_zone: seed[:user_zone].id,
+              name: "bad-caa-#{index}",
+              type: 'CAA',
+              content: content,
+              ttl: 3600
+            }
+          end
+        end.not_to change(DnsRecord, :count)
+
+        expect_status(200)
+        expect(json['status']).to be(false)
+        expect(errors.keys.map(&:to_s)).to include('content')
+      end
     end
 
     it 'allows users to create TLSA records with matching type 0' do
@@ -1273,6 +1390,28 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
       expect(record_obj['content']).to eq(new_content)
       expect(record.reload.content).to eq(new_content)
       expect(record.reload.ttl).to eq(7200)
+    end
+
+    it 'normalizes CAA content when updating records' do
+      ensure_signer_unlocked!
+
+      record = create_record!(
+        zone: seed[:user_zone],
+        name: '@',
+        record_type: 'CAA',
+        content: '0 issue "letsencrypt.org"'
+      )
+
+      as(SpecSeed.user) do
+        json_put show_path(record.id), dns_record: {
+          content: ' 128   IODEF "mailto:security@example.test" '
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(record_obj['content']).to eq('128 iodef "mailto:security@example.test"')
+      expect(record.reload.content).to eq('128 iodef "mailto:security@example.test"')
     end
 
     it 'allows users to update an SSHFP record' do

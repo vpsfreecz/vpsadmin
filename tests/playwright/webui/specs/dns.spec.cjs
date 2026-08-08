@@ -108,6 +108,7 @@ async function expectRecordCreateForm(page, zone) {
   await expect(form).toBeVisible();
   await expect(form.locator('input[name="name"]')).toBeVisible();
   await expect(form.locator('select[name="type"]')).toBeVisible();
+  await expect(form.locator('select[name="type"] option[value="CAA"]')).toHaveCount(1);
   await expect(form.locator('textarea[name="content"]')).toBeVisible();
 
   return form;

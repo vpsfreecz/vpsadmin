@@ -7,7 +7,12 @@ module VpsAdmin::API
       ret = attrs.clone
       ret[:content] = ret[:content].dup
 
-      ret[:content].strip!
+      if record_type == 'CAA'
+        normalized = ::DnsRecord.normalize_caa_content(ret[:content])
+        ret[:content] = normalized unless normalized.nil?
+      else
+        ret[:content].strip!
+      end
 
       # Extract priority from MX and SRV
       if ret[:priority].nil? && %w[MX SRV].include?(record_type) && /\A(\d+)\s+([^$]+)\z/ =~ ret[:content]

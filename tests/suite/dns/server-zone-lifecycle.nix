@@ -104,9 +104,9 @@ import ../../make-test.nix (
             admin_user_id: admin_user_id,
             dns_zone_id: zone.fetch('id'),
             attrs: {
-              name: 'www',
-              record_type: 'A',
-              content: '192.0.2.44',
+              name: '@',
+              record_type: 'CAA',
+              content: '0 issue "letsencrypt.org"',
               ttl: 600,
               enabled: true
             }
@@ -120,14 +120,28 @@ import ../../make-test.nix (
               tx_types(services).fetch('dns_server_reload')
             ]
           )
-          wait_for_dns_text(dns, path: zone_file, includes: ['www', '600', '192.0.2.44'])
+          wait_for_dns_text(dns, path: zone_file, includes: [
+            '@',
+            '600',
+            '0 issue "letsencrypt.org"'
+          ])
+          wait_for_dns_answer(
+            dns,
+            server: dns_server.fetch('ipv4_addr'),
+            zone_name: zone.fetch('name'),
+            record: {
+              name: '@',
+              record_type: 'CAA',
+              answer: '0 issue "letsencrypt.org"'
+            }
+          )
 
           updated_record = update_dns_record_runtime(
             services,
             admin_user_id: admin_user_id,
             dns_record_id: record.fetch('id'),
             attrs: {
-              content: '192.0.2.45',
+              content: '0 issuewild "letsencrypt.org; account=example"',
               ttl: 1200
             }
           )
@@ -142,11 +156,21 @@ import ../../make-test.nix (
           )
           wait_until_block_succeeds(name: 'zone file contains updated record') do
             _, text = dns.succeeds("cat #{Shellwords.escape(zone_file)}")
-            expect(text).to include('192.0.2.45')
+            expect(text).to include('0 issuewild "letsencrypt.org; account=example"')
             expect(text).to include('1200')
-            expect(text).not_to include('192.0.2.44')
+            expect(text).not_to include('0 issue "letsencrypt.org"')
             true
           end
+          wait_for_dns_answer(
+            dns,
+            server: dns_server.fetch('ipv4_addr'),
+            zone_name: zone.fetch('name'),
+            record: {
+              name: '@',
+              record_type: 'CAA',
+              answer: '0 issuewild "letsencrypt.org; account=example"'
+            }
+          )
 
           updated_zone = update_dns_zone_runtime(
             services,
@@ -187,7 +211,7 @@ import ../../make-test.nix (
           )
           wait_until_block_succeeds(name: 'zone file no longer contains record') do
             _, text = dns.succeeds("cat #{Shellwords.escape(zone_file)}")
-            expect(text).not_to include('192.0.2.45')
+            expect(text).not_to include('0 issuewild "letsencrypt.org; account=example"')
             true
           end
 
@@ -263,7 +287,7 @@ import ../../make-test.nix (
 
           records = dns_record_runtime_cases(zone.fetch('name'))
           expect(records.map { |record| record.fetch(:record_type) }).to match_array(
-            %w[A AAAA CNAME DS MX NS PTR SRV SSHFP TLSA TXT]
+            %w[A AAAA CAA CNAME DS MX NS PTR SRV SSHFP TLSA TXT]
           )
 
           records.each do |record|

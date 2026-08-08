@@ -99,6 +99,47 @@ RSpec.describe VpsAdmin::API::Tasks::Prometheus do
   end
 
   describe '#record_matches_answer?' do
+    it 'matches CAA string answers with case-insensitive tags and exact values' do
+      record = DnsRecord.new(
+        record_type: 'CAA',
+        content: '0 issuewild "letsencrypt.org; account=example"'
+      )
+
+      expect(
+        task.send(
+          :record_matches_answer?,
+          record,
+          '0 ISSUEWILD "letsencrypt.org; account=example"'
+        )
+      ).to be(true)
+    end
+
+    it 'matches decoded CAA array answers' do
+      record = DnsRecord.new(
+        record_type: 'CAA',
+        content: '128 iodef "mailto:security@example.test"'
+      )
+
+      expect(
+        task.send(
+          :record_matches_answer?,
+          record,
+          [128, 'iodef', 'mailto:security@example.test']
+        )
+      ).to be(true)
+    end
+
+    it 'rejects CAA answers with a different property value' do
+      record = DnsRecord.new(
+        record_type: 'CAA',
+        content: '0 issue "letsencrypt.org"'
+      )
+
+      expect(
+        task.send(:record_matches_answer?, record, '0 issue "example.test"')
+      ).to be(false)
+    end
+
     it 'matches TLSA answers even when Dnsruby inserts spaces into hex data' do
       association_data = 'A' * 64
       record = DnsRecord.new(

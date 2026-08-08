@@ -26,6 +26,25 @@ RSpec.describe VpsAdmin::API::Operations::DnsZone::RecordUtils do
     )
   end
 
+  it 'normalizes CAA flags, tag case and field whitespace' do
+    expect(
+      helper.process_record(
+        {
+          record_type: 'CAA',
+          content: " \t000  ISSUEWILD\t\"letsencrypt.org; account=example\" "
+        }
+      )
+    ).to include(
+      content: '0 issuewild "letsencrypt.org; account=example"'
+    )
+  end
+
+  it 'does not normalize multiline CAA content before validation' do
+    content = "0 issue \"letsencrypt.org\"\n"
+
+    expect(helper.process_record({ record_type: 'CAA', content: content })).to include(content: content)
+  end
+
   it 'ensures domain-valued content is fully qualified' do
     expect(helper.process_record({ record_type: 'CNAME', content: 'target.example.test' })).to include(
       content: 'target.example.test.'

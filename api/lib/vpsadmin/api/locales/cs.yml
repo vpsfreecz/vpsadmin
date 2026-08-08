@@ -1916,6 +1916,8 @@ cs:
             label: A
           aaaa:
             label: AAAA
+          caa:
+            label: CAA
           cname:
             label: CNAME
           dns_server:
