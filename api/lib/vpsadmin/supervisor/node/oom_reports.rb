@@ -2,6 +2,10 @@ require_relative 'base'
 
 module VpsAdmin::Supervisor
   class Node::OomReports < Node::Base
+    class TaskRangeError < StandardError; end
+
+    TASK_RANGE_DIAGNOSTIC_LIMIT = 10
+
     # Number of OOMs in one report that is considered too high, inclusive
     HIGHRATE = 1000
 
@@ -98,28 +102,72 @@ module VpsAdmin::Supervisor
         end
       )
 
-      new_report.oom_report_tasks.insert_all(
-        report.fetch('tasks').map do |task|
-          {
-            host_pid: task.fetch('pid'),
-            vps_pid: task.fetch('vps_pid'),
-            name: task.fetch('name')[0..49],
-            host_uid: task.fetch('uid'),
-            vps_uid: task.fetch('vps_uid'),
-            tgid: task.fetch('tgid'),
-            total_vm: task.fetch('total_vm'),
-            rss: task.fetch('rss'),
-            rss_anon: task.fetch('rss_anon', nil),
-            rss_file: task.fetch('rss_file', nil),
-            rss_shmem: task.fetch('rss_shmem', nil),
-            pgtables_bytes: task.fetch('pgtables_bytes'),
-            swapents: task.fetch('swapents'),
-            oom_score_adj: task.fetch('oom_score_adj')
-          }
+      task_rows = report.fetch('tasks').map { |task| task_row(task) }
+
+      begin
+        new_report.oom_report_tasks.insert_all(task_rows)
+      rescue ActiveModel::RangeError => e
+        message = begin
+          task_range_error_message(new_report, task_rows)
+        rescue StandardError => diagnostic_error
+          "OOM report ##{new_report.id} for VPS ##{new_report.vps_id} has " \
+          "#{task_rows.length} task(s) with values outside their column range; " \
+          "diagnostics failed: #{diagnostic_error.class}: #{diagnostic_error.message}"
         end
-      )
+
+        raise TaskRangeError, message, cause: e
+      end
 
       new_report
+    end
+
+    def task_row(task)
+      {
+        host_pid: task.fetch('pid'),
+        vps_pid: task.fetch('vps_pid'),
+        name: task.fetch('name')[0..49],
+        host_uid: task.fetch('uid'),
+        vps_uid: task.fetch('vps_uid'),
+        tgid: task.fetch('tgid'),
+        total_vm: task.fetch('total_vm'),
+        rss: task.fetch('rss'),
+        rss_anon: task.fetch('rss_anon', nil),
+        rss_file: task.fetch('rss_file', nil),
+        rss_shmem: task.fetch('rss_shmem', nil),
+        pgtables_bytes: task.fetch('pgtables_bytes'),
+        swapents: task.fetch('swapents'),
+        oom_score_adj: task.fetch('oom_score_adj')
+      }
+    end
+
+    def task_range_error_message(report, task_rows)
+      invalid = []
+      invalid_count = 0
+
+      task_rows.each_with_index do |task, task_index|
+        task.each do |attribute, value|
+          next if value.nil?
+
+          type = ::OomReportTask.type_for_attribute(attribute.to_s)
+          next unless type.type == :integer
+
+          begin
+            type.serialize(value)
+          rescue ActiveModel::RangeError
+            invalid_count += 1
+            if invalid.length < TASK_RANGE_DIAGNOSTIC_LIMIT
+              invalid << "task[#{task_index}].#{attribute}=#{value.inspect}"
+            end
+          end
+        end
+      end
+
+      details = invalid.empty? ? 'unable to identify the attribute' : invalid.join(', ')
+      omitted = invalid_count - invalid.length
+      details = "#{details}, #{omitted} more" if omitted > 0
+
+      "OOM report ##{report.id} for VPS ##{report.vps_id} has " \
+        "#{task_rows.length} task(s) with values outside their column range: #{details}"
     end
 
     def handle_abuser(vps)

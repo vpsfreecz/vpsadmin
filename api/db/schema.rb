@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_06_120100) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_09_120000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -1356,7 +1356,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_06_120100) do
 
   create_table "oom_report_tasks", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.integer "host_pid", null: false
-    t.integer "host_uid", null: false
+    t.integer "host_uid", null: false, unsigned: true
     t.string "name", limit: 50, null: false
     t.integer "oom_report_id", null: false
     t.integer "oom_score_adj", null: false
@@ -1369,7 +1369,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_06_120100) do
     t.integer "tgid", null: false
     t.integer "total_vm", null: false
     t.integer "vps_pid"
-    t.integer "vps_uid"
+    t.integer "vps_uid", unsigned: true
     t.index ["oom_report_id"], name: "index_oom_report_tasks_on_oom_report_id"
   end
 

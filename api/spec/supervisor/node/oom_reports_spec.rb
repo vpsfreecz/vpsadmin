@@ -39,9 +39,13 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
   end
 
   describe '#save_report' do
-    it 'creates report, usage, stat, task and counter rows' do
+    it 'creates report, usage, stat, task and counter rows with unsigned UIDs' do
       vps = create_vps!
       payload = build_oom_report_payload(vps:, count: 7)
+      payload.fetch('tasks').first.update(
+        'uid' => 2_147_756_930,
+        'vps_uid' => (2**32) - 2
+      )
 
       report = supervisor.send(:save_report, payload)
 
@@ -54,10 +58,49 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
         ['cache', 10.to_d],
         ['rss', 20.to_d]
       )
-      expect(report.oom_report_tasks.pluck(:host_pid, :vps_pid, :name)).to eq(
-        [[300, 30, 'worker']]
+      expect(report.oom_report_tasks.pluck(:host_pid, :vps_pid, :name, :host_uid, :vps_uid)).to eq(
+        [[300, 30, 'worker', 2_147_756_930, (2**32) - 2]]
       )
       expect(OomReportCounter.find_by!(vps:, cgroup: payload.fetch('cgroup')).counter).to eq(7)
+    end
+
+    it 'identifies out-of-range task fields and preserves the original exception' do
+      vps = create_vps!
+      payload = build_oom_report_payload(vps:)
+      task = payload.fetch('tasks').first
+      payload['tasks'] = Array.new(11) do |i|
+        task.merge('pid' => 2_147_483_648 + i)
+      end
+
+      expect do
+        supervisor.send(:save_report, payload)
+      end.to raise_error(described_class::TaskRangeError) do |error|
+        expect(error.message).to include(
+          "for VPS ##{vps.id}",
+          '11 task(s)',
+          'task[0].host_pid=2147483648',
+          'task[9].host_pid=2147483657',
+          '1 more'
+        )
+        expect(error.message).not_to include('task[10].host_pid')
+        expect(error.cause).to be_a(ActiveModel::RangeError)
+      end
+    end
+
+    it 'does not let diagnostic failures hide the original range error' do
+      vps = create_vps!
+      payload = build_oom_report_payload(vps:)
+      payload.fetch('tasks').first['pid'] = 2_147_483_648
+      allow(supervisor).to receive(:task_range_error_message).and_raise('diagnostics exploded')
+
+      expect do
+        supervisor.send(:save_report, payload)
+      end.to raise_error(described_class::TaskRangeError) do |error|
+        expect(error.message).to include(
+          'diagnostics failed: RuntimeError: diagnostics exploded'
+        )
+        expect(error.cause).to be_a(ActiveModel::RangeError)
+      end
     end
 
     it 'increments matching rule hit count and marks ignored reports' do
