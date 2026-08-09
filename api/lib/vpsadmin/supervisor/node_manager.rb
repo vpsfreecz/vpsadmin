@@ -30,7 +30,7 @@ module VpsAdmin::Supervisor
         Node::VpsSshHostKeys,
         Node::VpsStatus
       ].to_h do |klass|
-        chan = @connection.create_channel
+        chan = VpsAdmin::Supervisor.create_channel(@connection)
         chan.prefetch(1)
         klass.setup(chan) if klass.respond_to?(:setup)
         [klass, chan]

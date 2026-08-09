@@ -1,7 +1,7 @@
 module VpsAdmin::Supervisor
   class Console::Rpc
     def self.start(connection)
-      rpc = new(connection.create_channel)
+      rpc = new(VpsAdmin::Supervisor.create_channel(connection))
       rpc.start
     end
 
