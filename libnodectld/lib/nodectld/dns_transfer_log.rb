@@ -179,7 +179,7 @@ module NodeCtld
       primary_addr = Regexp.last_match(2)
       status = Regexp.last_match(3).strip
 
-      return if status.casecmp('success') == 0
+      return if status.casecmp('success') == 0 || status.casecmp('up to date') == 0
 
       failed_event(zone, primary_addr, status)
     end

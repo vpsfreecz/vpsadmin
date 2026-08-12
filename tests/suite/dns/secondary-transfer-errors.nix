@@ -152,17 +152,27 @@ import ../../make-test.nix (
           expect(state.fetch('last_transfer_primary_addr')).to eq('192.0.2.1')
           expect(state.fetch('last_transfer_serial')).to be_nil
 
+          log_count_before_up_to_date = state.fetch('log_count')
           emit_bind_log(
             dns,
-            "transfer of '#{zone_name}/IN' from 192.0.2.1#53: Transfer completed: " \
-            '1 messages, 5 records, 400 bytes, 0.001 secs (serial 2026050901)'
+            "0x7b91dee53000: transfer of '#{zone_name}/IN' from 192.0.2.1#53: " \
+            'Transfer status: up to date'
           )
-          wait_for_transfer_state(
+          emit_bind_log(
+            dns,
+            "0x7b91dee53000: transfer of '#{zone_name}/IN' from 192.0.2.1#53: " \
+            'Transfer completed: 0 messages, 1 records, 0 bytes, 0.005 secs ' \
+            '(0 bytes/sec) (serial 2026080601)'
+          )
+          state = wait_for_transfer_state(
             services,
             server_zone_id: server_zone_id,
             status: 'success',
-            serial: 2_026_050_901
+            serial: 2_026_080_601
           )
+          expect(state.fetch('log_count')).to eq(log_count_before_up_to_date + 1)
+          expect(state.fetch('last_transfer_reason_code')).to be_nil
+          expect(state.fetch('last_transfer_reason')).to be_nil
         end
 
         it 'prunes old transfer logs while keeping latest transfer fields' do
@@ -191,7 +201,7 @@ import ../../make-test.nix (
           state = server_zone_transfer_state(services, server_zone_id)
           expect(state.fetch('log_count')).to eq(0)
           expect(state.fetch('last_transfer_status')).to eq('success')
-          expect(state.fetch('last_transfer_serial')).to eq(2_026_050_901)
+          expect(state.fetch('last_transfer_serial')).to eq(2_026_080_601)
           expect(state.fetch('last_transfer_log_id')).to be_nil
         end
       end

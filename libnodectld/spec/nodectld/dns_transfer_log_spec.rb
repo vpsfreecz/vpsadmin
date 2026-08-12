@@ -91,14 +91,34 @@ RSpec.describe NodeCtld::DnsTransferLog do
     expect(event).to be_nil
   end
 
-  it 'ignores successful transfer status messages' do
+  it 'ignores successful and up-to-date transfer status messages' do
+    log = described_class.new
+
+    [
+      "transfer of 'ok.test/IN' from 192.0.2.1#53: Transfer status: success",
+      "0x7b91dee53000: transfer of 'current.test/IN' from 192.0.2.1#53: " \
+      'Transfer status: up to date',
+      "transfer of 'current.test/IN' from 192.0.2.1#53: Transfer status: UP TO DATE"
+    ].each do |message|
+      expect(log.send(:parse_message, message)).to be_nil
+    end
+  end
+
+  it 'records an up-to-date transfer completion as success' do
     log = described_class.new
     event = log.send(
       :parse_message,
-      "transfer of 'ok.test/IN' from 192.0.2.1#53: Transfer status: success"
+      "0x7b91dee53000: transfer of 'current.test/IN' from 192.0.2.1#53: " \
+      'Transfer completed: 0 messages, 1 records, 0 bytes, 0.005 secs ' \
+      '(0 bytes/sec) (serial 2026080601)'
     )
 
-    expect(event).to be_nil
+    expect(event).to include(
+      name: 'current.test.',
+      status: 'success',
+      primary_addr: '192.0.2.1',
+      serial: 2_026_080_601
+    )
   end
 
   it 'publishes recognized events and advances the cursor afterwards' do
