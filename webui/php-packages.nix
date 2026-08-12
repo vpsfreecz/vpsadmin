@@ -194,10 +194,10 @@ let
     "myclabs/deep-copy" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "myclabs-deep-copy-07d290f0c47959fd5eed98c95ee5602db07e0b6a";
+        name = "myclabs-deep-copy-8680aa248f8e07bc8fb43f56f0f5fc77a0c96aae";
         src = fetchurl {
-          url = "https://api.github.com/repos/myclabs/DeepCopy/zipball/07d290f0c47959fd5eed98c95ee5602db07e0b6a";
-          sha256 = "0ch1sz2lki1qnb49r2zww7ryk6i4ckyr04p1p9hmiszfi9fr631y";
+          url = "https://api.github.com/repos/myclabs/DeepCopy/zipball/8680aa248f8e07bc8fb43f56f0f5fc77a0c96aae";
+          sha256 = "1033kq4aip379m7vn8115lrfzzzy5mqjdk0z60c5ihca1pzmrgan";
         };
       };
     };
