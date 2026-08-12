@@ -51,13 +51,15 @@ module VpsAdmin::Supervisor
       }
       attrs[:event_key] = event['event_key'] || event_key(event)
 
-      log = ::DnsServerZoneTransferLog.find_or_initialize_by(event_key: attrs[:event_key])
-      return if log.persisted?
+      dns_server_zone.with_lock do
+        log = ::DnsServerZoneTransferLog.find_or_initialize_by(event_key: attrs[:event_key])
+        next if log.persisted?
 
-      log.assign_attributes(attrs)
-      log.save!
+        log.assign_attributes(attrs)
+        log.save!
 
-      update_latest_transfer(dns_server_zone, log)
+        update_latest_transfer(dns_server_zone, log)
+      end
     end
 
     def update_latest_transfer(dns_server_zone, log)

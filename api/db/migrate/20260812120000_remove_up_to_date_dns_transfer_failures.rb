@@ -31,9 +31,14 @@ class RemoveUpToDateDnsTransferFailures < ActiveRecord::Migration[8.1]
     DnsServerZone.reset_column_information
     DnsServerZoneTransferLog.reset_column_information
 
-    ActiveRecord::Base.transaction do
-      repair_latest_transfer_fields
-      DnsServerZoneTransferLog.up_to_date_transfer_failure.delete_all
+    affected_zone_ids =
+      DnsServerZoneTransferLog
+      .up_to_date_transfer_failure
+      .distinct
+      .pluck(:dns_server_zone_id)
+
+    DnsServerZone.where(id: affected_zone_ids).find_each do |server_zone|
+      clean_transfer_failures_for(server_zone)
     end
   end
 
@@ -43,19 +48,26 @@ class RemoveUpToDateDnsTransferFailures < ActiveRecord::Migration[8.1]
 
   private
 
-  def repair_latest_transfer_fields
-    DnsServerZone
-      .where(last_transfer_log_id: DnsServerZoneTransferLog.up_to_date_transfer_failure.select(:id))
-      .find_each do |server_zone|
-        repair_latest_transfer_fields_for(server_zone)
+  def clean_transfer_failures_for(server_zone)
+    server_zone.with_lock do
+      candidates =
+        DnsServerZoneTransferLog
+        .up_to_date_transfer_failure
+        .where(dns_server_zone_id: server_zone.id)
+
+      if candidates.exists?(id: server_zone.last_transfer_log_id)
+        repair_latest_transfer_fields_for(server_zone, candidates)
       end
+
+      candidates.delete_all
+    end
   end
 
-  def repair_latest_transfer_fields_for(server_zone)
+  def repair_latest_transfer_fields_for(server_zone, candidates)
     replacement =
       server_zone
       .dns_server_zone_transfer_logs
-      .where.not(id: DnsServerZoneTransferLog.up_to_date_transfer_failure.select(:id))
+      .where.not(id: candidates.select(:id))
       .order(event_at: :desc, id: :desc)
       .first
 

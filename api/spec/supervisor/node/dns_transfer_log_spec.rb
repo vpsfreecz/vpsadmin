@@ -63,10 +63,16 @@ RSpec.describe VpsAdmin::Supervisor::Node::DnsTransferLog do
     server_zone = create_server_zone!
     supervisor = described_class.new(nil, SpecSeed.node)
     event = transfer_event(server_zone)
+    server_zone_relation = DnsServerZone.joins(:dns_zone, :dns_server)
+
+    allow(DnsServerZone).to receive(:joins).with(:dns_zone, :dns_server).and_return(server_zone_relation)
+    allow(server_zone_relation).to receive(:find_by).and_return(server_zone)
+    allow(server_zone).to receive(:with_lock).and_call_original
 
     expect do
       supervisor.send(:save_event, event)
     end.to change(DnsServerZoneTransferLog, :count).by(1)
+    expect(server_zone).to have_received(:with_lock)
 
     log = DnsServerZoneTransferLog.last
     expect(log).to have_attributes(

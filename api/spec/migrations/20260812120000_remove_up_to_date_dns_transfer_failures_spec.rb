@@ -203,6 +203,36 @@ RSpec.describe RemoveUpToDateDnsTransferFailures do
     expect(zone.fetch('last_transfer_serial').to_i).to eq(2_026_080_601)
   end
 
+  it 'rechecks latest state after acquiring the zone lock' do
+    define_transfer_log_schema
+    server_zone_id = insert_server_zone
+    event_at = timestamp
+    success_id = insert_success(
+      server_zone_id,
+      event_key: 'success',
+      event_at: event_at + 1.minute
+    )
+    synthetic_id = insert_synthetic_failure(
+      server_zone_id,
+      event_key: 'synthetic',
+      event_at:
+    )
+    point_server_zone_at(server_zone_id, synthetic_id)
+
+    stale_zone = described_class::DnsServerZone.find(server_zone_id)
+    point_server_zone_at(server_zone_id, success_id)
+
+    allow(stale_zone).to receive(:update_columns).and_call_original
+    described_class.new.send(:clean_transfer_failures_for, stale_zone)
+    expect(stale_zone).not_to have_received(:update_columns)
+
+    zone = find_row(:dns_server_zones, id: server_zone_id)
+    expect(zone.fetch('last_transfer_log_id').to_i).to eq(success_id)
+    expect(zone.fetch('last_transfer_status').to_i).to eq(0)
+    expect(zone.fetch('last_transfer_serial').to_i).to eq(2_026_080_601)
+    expect(find_rows(:dns_server_zone_transfer_logs).map { |row| row.fetch('id').to_i }).to eq([success_id])
+  end
+
   it 'restores the newest genuine failure when removing synthetic latest state' do
     define_transfer_log_schema
     server_zone_id = insert_server_zone
