@@ -37,5 +37,34 @@ namespace :vpsadmin do
 
       puts "Deleted #{cnt} monitored events"
     end
+
+    desc 'Reset DNS secondary transfer monitor history for a monitor object class'
+    task :reset_dns_secondary_transfer_failure, [:class_name] do |_task, args|
+      unless ENV['CONFIRM'] == '1'
+        raise 'Set CONFIRM=1 after stopping monitoring-event writers'
+      end
+
+      class_name = args.fetch(:class_name).to_s
+      unless %w[DnsServerZone DnsZone].include?(class_name)
+        raise ArgumentError, 'class_name must be DnsServerZone or DnsZone'
+      end
+
+      cnt = 0
+      ::MonitoredEvent
+        .where(
+          monitor_name: 'dns_secondary_transfer_failure',
+          class_name:
+        )
+        .in_batches do |events|
+          ::MonitoredEvent.transaction do
+            ids = events.lock.pluck(:id)
+            ::MonitoredEventState.where(monitored_event_id: ids).delete_all
+            ::MonitoredEventLog.where(monitored_event_id: ids).delete_all
+            cnt += ::MonitoredEvent.where(id: ids).delete_all
+          end
+        end
+
+      puts "Deleted #{cnt} #{class_name} DNS secondary transfer monitored events"
+    end
   end
 end

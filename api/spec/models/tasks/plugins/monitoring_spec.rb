@@ -83,4 +83,46 @@ RSpec.describe 'monitoring plugin rake tasks', requires_plugins: :monitoring do 
     expect(MonitoredEvent.exists?(keep_confirmed.id)).to be(true)
     expect(MonitoredEvent.exists?(keep_recent.id)).to be(true)
   end
+
+  it 'resets DNS transfer monitor history for a selected monitor object class' do
+    zone_event = create_event!(state: :confirmed, monitor_name: 'dns_secondary_transfer_failure')
+    zone_event.update_column(:class_name, 'DnsZone')
+    server_zone_event = create_event!(
+      state: :confirmed,
+      monitor_name: 'dns_secondary_transfer_failure'
+    )
+    server_zone_event.update_column(:class_name, 'DnsServerZone')
+    unrelated = create_event!(state: :confirmed, monitor_name: 'other_monitor')
+    [zone_event, server_zone_event].each do |event|
+      event.monitored_event_states.create!(state: :confirmed)
+      event.monitored_event_logs.create!(passed: false, value: '1')
+    end
+
+    out, = capture_streams do
+      with_env('CONFIRM' => '1') do
+        Rake::Task['vpsadmin:monitoring:reset_dns_secondary_transfer_failure'].invoke('DnsZone')
+      end
+    end
+
+    expect(out).to include('Deleted 1 DnsZone DNS secondary transfer monitored events')
+    expect(MonitoredEvent.exists?(zone_event.id)).to be(false)
+    expect(MonitoredEventState.where(monitored_event_id: zone_event.id)).to be_empty
+    expect(MonitoredEventLog.where(monitored_event_id: zone_event.id)).to be_empty
+    expect(MonitoredEvent.exists?(server_zone_event.id)).to be(true)
+    expect(MonitoredEvent.exists?(unrelated.id)).to be(true)
+  end
+
+  it 'rejects an unsafe DNS transfer monitor reset scope' do
+    expect do
+      with_env('CONFIRM' => '1') do
+        Rake::Task['vpsadmin:monitoring:reset_dns_secondary_transfer_failure'].invoke('User')
+      end
+    end.to raise_error(ArgumentError, /DnsServerZone or DnsZone/)
+  end
+
+  it 'requires explicit confirmation before deleting DNS transfer monitor history' do
+    expect do
+      Rake::Task['vpsadmin:monitoring:reset_dns_secondary_transfer_failure'].invoke('DnsZone')
+    end.to raise_error(RuntimeError, /CONFIRM=1.*stopping monitoring-event writers/)
+  end
 end
