@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_12_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_13_120000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -295,22 +295,56 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_120000) do
   end
 
   create_table "dns_server_zone_transfer_logs", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.integer "attempt_kind"
     t.datetime "created_at", null: false
     t.bigint "dns_server_zone_id", null: false
+    t.bigint "dns_zone_transfer_id"
     t.datetime "event_at", null: false
     t.string "event_key", limit: 64, null: false
+    t.integer "failure_class"
     t.text "message", size: :medium
     t.string "primary_addr", limit: 46
+    t.integer "primary_serial", unsigned: true
     t.text "raw_message", size: :medium
     t.string "reason"
     t.string "reason_code", limit: 40
     t.integer "serial", unsigned: true
+    t.integer "secondary_serial", unsigned: true
     t.string "source_cursor", limit: 191
     t.integer "status", null: false
     t.datetime "updated_at", null: false
     t.index ["dns_server_zone_id", "event_at"], name: "idx_dns_server_zone_transfer_logs_on_zone_and_event_at"
     t.index ["dns_server_zone_id"], name: "index_dns_server_zone_transfer_logs_on_dns_server_zone_id"
+    t.index ["dns_zone_transfer_id"], name: "index_dns_server_zone_transfer_logs_on_dns_zone_transfer_id"
     t.index ["event_key"], name: "index_dns_server_zone_transfer_logs_on_event_key", unique: true
+  end
+
+  create_table "dns_server_zone_primary_transfer_states", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "alert_eligible_at"
+    t.string "configuration_generation", limit: 36, null: false
+    t.datetime "created_at", null: false
+    t.bigint "dns_server_zone_id", null: false
+    t.bigint "dns_zone_transfer_id", null: false
+    t.integer "failure_class"
+    t.datetime "failed_since"
+    t.datetime "last_attempt_at", null: false
+    t.integer "last_attempt_kind", null: false
+    t.string "last_event_key", limit: 64, null: false
+    t.datetime "last_failure_at"
+    t.datetime "last_success_at"
+    t.bigint "last_transfer_log_id"
+    t.integer "primary_serial", unsigned: true
+    t.string "reason", limit: 255
+    t.string "reason_code", limit: 40
+    t.datetime "reason_observed_at"
+    t.integer "secondary_serial", unsigned: true
+    t.integer "status", null: false
+    t.datetime "updated_at", null: false
+    t.index ["dns_server_zone_id", "dns_zone_transfer_id"], name: "idx_dns_primary_transfer_states_on_path", unique: true
+    t.index ["dns_server_zone_id"], name: "idx_dns_primary_transfer_states_on_server_zone"
+    t.index ["dns_zone_transfer_id"], name: "idx_dns_primary_transfer_states_on_zone_transfer"
+    t.index ["last_transfer_log_id"], name: "idx_dns_primary_transfer_states_on_last_log"
+    t.index ["status", "alert_eligible_at"], name: "idx_dns_primary_transfer_states_on_alert"
   end
 
   create_table "dns_server_zones", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -387,6 +421,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_120000) do
     t.string "label", limit: 500, default: "", null: false
     t.string "name", limit: 500, null: false
     t.boolean "original_enabled", default: true, null: false
+    t.string "primary_transfer_generation", limit: 36
+    t.datetime "primary_transfer_tracking_started_at"
     t.string "reverse_network_address", limit: 46
     t.integer "reverse_network_prefix"
     t.integer "serial", default: 1, unsigned: true
@@ -2209,6 +2245,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_120000) do
     t.index ["user_id"], name: "index_webauthn_credentials_on_user_id"
   end
 
+  add_foreign_key "dns_server_zone_primary_transfer_states", "dns_server_zone_transfer_logs", column: "last_transfer_log_id", on_delete: :nullify
+  add_foreign_key "dns_server_zone_primary_transfer_states", "dns_server_zones", on_delete: :cascade
+  add_foreign_key "dns_server_zone_primary_transfer_states", "dns_zone_transfers", on_delete: :cascade
+  add_foreign_key "dns_server_zone_transfer_logs", "dns_server_zones", on_delete: :cascade
+  add_foreign_key "dns_server_zone_transfer_logs", "dns_zone_transfers", on_delete: :nullify
   add_foreign_key "node_current_statuses", "node_kernel_evidences", on_delete: :nullify
   add_foreign_key "node_ebpf_program_links", "node_ebpf_programs", on_delete: :cascade
   add_foreign_key "node_ebpf_program_objects", "node_ebpf_programs", on_delete: :cascade

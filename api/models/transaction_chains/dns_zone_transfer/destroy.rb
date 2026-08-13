@@ -12,6 +12,7 @@ module TransactionChains
 
       dns_zone = zone_transfer.dns_zone
       lock(dns_zone)
+      dns_zone.rotate_primary_transfer_generation! if zone_transfer.primary_type?
 
       dns_zone.dns_server_zones.each do |dns_server_zone|
         if dns_zone.internal_source? && dns_server_zone.primary_type?
@@ -45,6 +46,14 @@ module TransactionChains
       end
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
+        dns_zone.dns_server_zones.order(:id).each do |dns_server_zone|
+          dns_server_zone.with_lock do
+            dns_server_zone.dns_server_zone_primary_transfer_states
+                           .where(dns_zone_transfer: zone_transfer)
+                           .each { |state| t.just_destroy(state) }
+          end
+        end
+
         zone_transfer.update!(confirmed: ::DnsZoneTransfer.confirmed(:confirm_destroy))
         t.destroy(zone_transfer)
       end

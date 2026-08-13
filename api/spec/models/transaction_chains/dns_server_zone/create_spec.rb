@@ -104,7 +104,7 @@ RSpec.describe TransactionChains::DnsServerZone::Create do
 
     secondary_payload = tx_payload(chain, Transactions::DnsServerZone::AddServers, nth: 0)
     primary_payload = tx_payload(chain, Transactions::DnsServerZone::AddServers, nth: 1)
-    server_opts = [{ 'ip_addr' => dns_server_zone.ip_addr, 'tsig_key' => nil }]
+    server_opts = [dns_server_zone.server_opts.deep_stringify_keys]
 
     expect(secondary_payload).to include(
       'nameservers' => [dns_server_zone.dns_server.name],
@@ -123,7 +123,7 @@ RSpec.describe TransactionChains::DnsServerZone::Create do
 
     chain, dns_server_zone = described_class.fire(fixture[:dns_server_zone])
 
-    server_opts = [{ 'ip_addr' => dns_server_zone.ip_addr, 'tsig_key' => nil }]
+    server_opts = [dns_server_zone.server_opts.deep_stringify_keys]
 
     expect(tx_classes(chain)).to eq(
       [

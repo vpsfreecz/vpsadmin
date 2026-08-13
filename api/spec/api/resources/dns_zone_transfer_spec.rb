@@ -99,6 +99,26 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsZoneTransfer' do
     )
   end
 
+  def create_primary_state!(server_zone:, transfer:, status:, event_at: Time.current,
+                            failure_class: nil, failed_since: nil)
+    DnsServerZonePrimaryTransferState.create!(
+      dns_server_zone: server_zone,
+      dns_zone_transfer: transfer,
+      configuration_generation: server_zone.primary_transfer_configuration_generation,
+      last_event_key: SecureRandom.hex(32),
+      status:,
+      failure_class:,
+      failed_since:,
+      last_failure_at: status.to_sym == :failed ? event_at : nil,
+      last_attempt_at: event_at,
+      last_attempt_kind: :ixfr_probe,
+      last_success_at: status.to_sym == :success ? event_at : nil,
+      reason_observed_at: status.to_sym == :failed ? event_at : nil,
+      reason_code: status.to_sym == :failed ? 'refused' : nil,
+      reason: status.to_sym == :failed ? 'The primary refused the transfer' : nil
+    )
+  end
+
   def create_dns_server_zone!(dns_zone:, dns_server:, zone_type:)
     DnsServerZone.create!(
       dns_zone: dns_zone,
@@ -233,6 +253,127 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsZoneTransfer' do
       ids = transfers.map { |row| row['id'] }
       expect(ids).to include(seed[:transfer_user_ext].id, seed[:transfer_user_int].id)
       expect(ids).not_to include(seed[:transfer_other_ext].id)
+    end
+
+    it 'reports aggregate direct transfer state across visible secondaries' do
+      zone = create_zone!(user: SpecSeed.user, source: :external_source)
+      primary = DnsZoneTransfer.create!(
+        dns_zone: zone,
+        host_ip_address: create_host_ip_for_user!(user: SpecSeed.user),
+        peer_type: :primary_type,
+        dns_tsig_key: nil,
+        confirmed: DnsZoneTransfer.confirmed(:confirmed)
+      )
+      server_a = create_dns_server!(name: "aggregate-a-#{SecureRandom.hex(3)}")
+      server_b = create_dns_server!(name: "aggregate-b-#{SecureRandom.hex(3)}")
+      server_a_zone = create_dns_server_zone!(
+        dns_zone: zone,
+        dns_server: server_a,
+        zone_type: :secondary_type
+      )
+      server_b_zone = create_dns_server_zone!(
+        dns_zone: zone,
+        dns_server: server_b,
+        zone_type: :secondary_type
+      )
+      success_at = Time.utc(2026, 8, 13, 10, 0, 0)
+      failed_at = success_at + 5.minutes
+      create_primary_state!(
+        server_zone: server_a_zone,
+        transfer: primary,
+        status: :success,
+        event_at: success_at
+      )
+      create_primary_state!(
+        server_zone: server_b_zone,
+        transfer: primary,
+        status: :failed,
+        failure_class: :primary,
+        failed_since: failed_at,
+        event_at: failed_at
+      )
+
+      as(SpecSeed.user) { json_get show_path(primary.id) }
+
+      expect_status(200)
+      expect(transfer_obj).to include(
+        'transfer_check_status' => 'failed',
+        'transfer_check_failed_count' => 1,
+        'transfer_check_success_count' => 1,
+        'transfer_check_pending_count' => 0,
+        'transfer_check_server_count' => 2
+      )
+      expect(Time.iso8601(transfer_obj.fetch('last_transfer_check_at'))).to eq(failed_at)
+    end
+
+    it 'reports unknown until every visible secondary confirms a transfer' do
+      zone = create_zone!(user: SpecSeed.user, source: :external_source)
+      primary = DnsZoneTransfer.create!(
+        dns_zone: zone,
+        host_ip_address: create_host_ip_for_user!(user: SpecSeed.user),
+        peer_type: :primary_type,
+        dns_tsig_key: nil,
+        confirmed: DnsZoneTransfer.confirmed(:confirmed)
+      )
+      server_a_zone = create_dns_server_zone!(
+        dns_zone: zone,
+        dns_server: create_dns_server!(name: "unknown-a-#{SecureRandom.hex(3)}"),
+        zone_type: :secondary_type
+      )
+      create_dns_server_zone!(
+        dns_zone: zone,
+        dns_server: create_dns_server!(name: "unknown-b-#{SecureRandom.hex(3)}"),
+        zone_type: :secondary_type
+      )
+      create_primary_state!(server_zone: server_a_zone, transfer: primary, status: :success)
+
+      as(SpecSeed.user) { json_get show_path(primary.id) }
+
+      expect_status(200)
+      expect(transfer_obj).to include(
+        'transfer_check_status' => 'pending',
+        'transfer_check_failed_count' => 0,
+        'transfer_check_success_count' => 1,
+        'transfer_check_pending_count' => 1,
+        'transfer_check_server_count' => 2
+      )
+    end
+
+    it 'keeps an unrecovered network failure in the aggregate state' do
+      zone = create_zone!(user: SpecSeed.user, source: :external_source)
+      primary = DnsZoneTransfer.create!(
+        dns_zone: zone,
+        host_ip_address: create_host_ip_for_user!(user: SpecSeed.user),
+        peer_type: :primary_type,
+        dns_tsig_key: nil,
+        confirmed: DnsZoneTransfer.confirmed(:confirmed)
+      )
+      server_zone = create_dns_server_zone!(
+        dns_zone: zone,
+        dns_server: create_dns_server!(name: "stale-network-#{SecureRandom.hex(3)}"),
+        zone_type: :secondary_type
+      )
+      state = create_primary_state!(
+        server_zone:,
+        transfer: primary,
+        status: :failed,
+        failure_class: :network,
+        failed_since: 4.hours.ago,
+        event_at: 3.hours.ago
+      )
+
+      as(SpecSeed.user) { json_get show_path(primary.id) }
+
+      expect_status(200)
+      expect(transfer_obj).to include(
+        'transfer_check_status' => 'failed',
+        'transfer_check_failed_count' => 1,
+        'transfer_check_success_count' => 0,
+        'transfer_check_pending_count' => 0,
+        'transfer_check_server_count' => 1
+      )
+      expect(state.reload).to be_failed
+      expect(state).to be_network
     end
 
     it 'allows admins to list all transfers' do

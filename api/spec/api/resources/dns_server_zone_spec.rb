@@ -30,6 +30,10 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
     vpath("/dns_server_zone_transfer_logs/#{log_id}")
   end
 
+  def primary_transfer_state_index_path
+    vpath('/dns_server_zone_primary_transfer_states')
+  end
+
   def transfer_log_filter(server_zone)
     {
       dns_server_zone_transfer_log: {
@@ -72,6 +76,10 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
     json.dig('response', 'transfer_log') ||
       json.dig('response', 'dns_server_zone_transfer_log') ||
       json['response']
+  end
+
+  def primary_transfer_states
+    json.dig('response', 'dns_server_zone_primary_transfer_states') || []
   end
 
   def transfer_field_keys
@@ -145,18 +153,72 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
     )
   end
 
-  def create_transfer_log!(server_zone:, status: :failed, reason_code: 'refused', event_at: Time.now)
+  def create_host_ip_for_user!(user:)
+    network = SpecSeed.network_v4
+    used = IpAddress.where(network:).pluck(:ip_addr).map { |addr| addr.split('.').last.to_i }
+    ip_addr = "192.0.2.#{([150] + used).max + 1}"
+    ip_address = IpAddress.create!(
+      network:,
+      ip_addr:,
+      prefix: network.split_prefix,
+      size: 1,
+      user:
+    )
+
+    HostIpAddress.create!(ip_address:, ip_addr:, user_created: true)
+  end
+
+  def create_transfer_log!(server_zone:, status: :failed, reason_code: 'refused', event_at: Time.now,
+                           dns_zone_transfer: nil, attempt_kind: :transfer, failure_class: nil)
+    failure_class ||= :primary if status.to_sym == :failed
+
     DnsServerZoneTransferLog.create!(
       dns_server_zone: server_zone,
+      dns_zone_transfer: dns_zone_transfer,
       event_key: SecureRandom.hex(32),
       event_at: event_at,
       status: status,
+      attempt_kind: attempt_kind,
+      failure_class: failure_class,
       reason_code: reason_code,
       reason: reason_code ? 'The primary DNS server refused the transfer' : nil,
       primary_addr: '192.0.2.1',
       message: 'Transfer status: REFUSED',
       raw_message: 'raw bind message',
       source_cursor: SecureRandom.hex(16)
+    )
+  end
+
+  def create_primary_transfer!(zone:, user:)
+    DnsZoneTransfer.create!(
+      dns_zone: zone,
+      host_ip_address: create_host_ip_for_user!(user:),
+      peer_type: :primary_type,
+      dns_tsig_key: nil,
+      confirmed: DnsZoneTransfer.confirmed(:confirmed)
+    )
+  end
+
+  def create_primary_transfer_state!(server_zone:, transfer:, status: :failed)
+    failed = status.to_sym == :failed
+    now = Time.current
+
+    DnsServerZonePrimaryTransferState.create!(
+      dns_server_zone: server_zone,
+      dns_zone_transfer: transfer,
+      configuration_generation: server_zone.primary_transfer_configuration_generation,
+      last_event_key: SecureRandom.hex(32),
+      status:,
+      failure_class: failed ? :primary : nil,
+      last_attempt_kind: :ixfr_probe,
+      failed_since: failed ? now - 35.minutes : nil,
+      last_failure_at: failed ? now : nil,
+      last_attempt_at: now,
+      last_success_at: failed ? nil : now,
+      alert_eligible_at: failed ? now - 5.minutes : nil,
+      reason_observed_at: failed ? now : nil,
+      reason_code: failed ? 'refused' : nil,
+      reason: failed ? 'The primary DNS server refused the transfer' : nil
     )
   end
 
@@ -308,9 +370,23 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
         'dns_server_zone#show',
         'dns_server_zone#create',
         'dns_server_zone#delete',
+        'dns_server_zone_primary_transfer_state#index',
         'dns_server_zone_transfer_log#index',
         'dns_server_zone_transfer_log#show'
       )
+    end
+
+    it 'documents transfer attempt kind as non-nullable' do
+      header 'Accept', 'application/json'
+      options vpath('/')
+      expect_status(200)
+
+      document = json['response'].is_a?(Hash) ? json['response'] : json
+      resource = document.fetch('resources').fetch('dns_server_zone_transfer_log')
+      %w[index show].each do |action|
+        attempt_kind = resource.dig('actions', action, 'output', 'parameters', 'attempt_kind')
+        expect(attempt_kind.fetch('nullable')).to be(false)
+      end
     end
   end
 
@@ -563,6 +639,7 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
     let!(:user_log) do
       create_transfer_log!(
         server_zone: sz_user_external_visible,
+        dns_zone_transfer: user_primary_transfer,
         event_at: 2.hours.ago
       )
     end
@@ -570,9 +647,21 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
     let!(:recent_user_log) do
       create_transfer_log!(
         server_zone: sz_user_external_visible,
+        dns_zone_transfer: user_primary_transfer,
         status: :success,
         reason_code: nil,
         event_at: 1.hour.ago
+      )
+    end
+
+    let!(:user_primary_transfer) do
+      host_ip = create_host_ip_for_user!(user: SpecSeed.user)
+      DnsZoneTransfer.create!(
+        dns_zone: zone_user_external,
+        host_ip_address: host_ip,
+        peer_type: :primary_type,
+        dns_tsig_key: nil,
+        confirmed: DnsZoneTransfer.confirmed(:confirmed)
       )
     end
 
@@ -636,6 +725,66 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
       expect(ids).to contain_exactly(user_log.id)
     end
 
+    it 'filters user logs by configured primary transfer' do
+      as(SpecSeed.user) do
+        json_get transfer_log_index_path, {
+          dns_server_zone_transfer_log: {
+            dns_zone_transfer: user_primary_transfer.id
+          }
+        }
+      end
+
+      expect_status(200)
+      expect(transfer_logs.map { |row| row['id'] }).to contain_exactly(
+        user_log.id,
+        recent_user_log.id
+      )
+      expect(transfer_logs).to all(
+        satisfy { |row| rid(row['dns_zone_transfer']) == user_primary_transfer.id }
+      )
+    end
+
+    it 'keeps unassociated stale failures and successes visible only to administrators' do
+      stale_failure = create_transfer_log!(
+        server_zone: sz_user_external_visible,
+        failure_class: :primary
+      )
+      stale_success = create_transfer_log!(
+        server_zone: sz_user_external_visible,
+        status: :success,
+        reason_code: nil
+      )
+
+      as(SpecSeed.user) do
+        json_get transfer_log_index_path, {
+          dns_server_zone_transfer_log: {
+            dns_zone_transfer: user_primary_transfer.id
+          }
+        }
+      end
+      expect_status(200)
+      expect(transfer_logs.map { |row| row['id'] }).not_to include(
+        stale_failure.id,
+        stale_success.id
+      )
+
+      as(SpecSeed.user) { json_get transfer_log_show_path(stale_failure.id) }
+      expect_status(404)
+      as(SpecSeed.user) { json_get transfer_log_show_path(stale_success.id) }
+      expect_status(404)
+
+      as(SpecSeed.admin) { json_get transfer_log_show_path(stale_failure.id) }
+      expect_status(200)
+      expect(transfer_log_obj).to include(
+        'id' => stale_failure.id,
+        'failure_class' => 'primary',
+        'primary_addr' => stale_failure.primary_addr
+      )
+      as(SpecSeed.admin) { json_get transfer_log_show_path(stale_success.id) }
+      expect_status(200)
+      expect(transfer_log_obj).to include('id' => stale_success.id, 'status' => 'success')
+    end
+
     it 'does not expose internal zone transfer logs to users' do
       as(SpecSeed.user) do
         json_get transfer_log_index_path, transfer_log_filter(sz_user_internal_secondary_visible)
@@ -650,6 +799,30 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
 
       expect_status(404)
       expect(json['status']).to be(false)
+    end
+
+    it 'does not expose failed peer or local events to users' do
+      peer_failure = create_transfer_log!(
+        server_zone: sz_user_external_visible,
+        failure_class: :network
+      )
+      local_failure = create_transfer_log!(
+        server_zone: sz_user_external_visible,
+        dns_zone_transfer: user_primary_transfer,
+        attempt_kind: :load,
+        failure_class: :local
+      )
+
+      as(SpecSeed.user) do
+        json_get transfer_log_index_path, transfer_log_filter(sz_user_external_visible)
+      end
+      expect(transfer_logs.map { |row| row['id'] }).not_to include(peer_failure.id, local_failure.id)
+
+      as(SpecSeed.user) { json_get transfer_log_show_path(peer_failure.id) }
+      expect_status(404)
+
+      as(SpecSeed.user) { json_get transfer_log_show_path(local_failure.id) }
+      expect_status(404)
     end
 
     it 'allows admins to see raw fields' do
@@ -705,6 +878,110 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServerZone' do
 
       expect_status(404)
       expect(json['status']).to be(false)
+    end
+  end
+
+  describe 'DnsServerZonePrimaryTransferState' do
+    let!(:user_primary) do
+      create_primary_transfer!(zone: zone_user_external, user: SpecSeed.user)
+    end
+    let!(:user_state) do
+      create_primary_transfer_state!(
+        server_zone: sz_user_external_visible,
+        transfer: user_primary
+      )
+    end
+    let!(:hidden_server_zone) do
+      create_server_zone!(
+        dns_server: server_hidden,
+        dns_zone: zone_user_external,
+        zone_type: :secondary_type
+      )
+    end
+    let!(:hidden_state) do
+      create_primary_transfer_state!(
+        server_zone: hidden_server_zone,
+        transfer: user_primary
+      )
+    end
+    let!(:other_zone) do
+      create_zone!(
+        name: "spec-other-ext-#{SecureRandom.hex(4)}.example.test.",
+        user: SpecSeed.other_user,
+        source: :external_source,
+        email: nil
+      )
+    end
+    let!(:other_server_zone) do
+      create_server_zone!(
+        dns_server: server_visible,
+        dns_zone: other_zone,
+        zone_type: :secondary_type
+      )
+    end
+    let!(:other_primary) do
+      create_primary_transfer!(zone: other_zone, user: SpecSeed.other_user)
+    end
+    let!(:other_state) do
+      create_primary_transfer_state!(
+        server_zone: other_server_zone,
+        transfer: other_primary,
+        status: :success
+      )
+    end
+
+    it 'rejects unauthenticated access' do
+      json_get primary_transfer_state_index_path
+
+      expect_status(401)
+    end
+
+    it 'shows only paths on the users visible external zones' do
+      as(SpecSeed.user) { json_get primary_transfer_state_index_path }
+
+      expect_status(200)
+      expect(primary_transfer_states.map { |row| row['id'] }).to contain_exactly(user_state.id)
+      row = primary_transfer_states.first
+      expect(row).to include(
+        'status' => 'failed',
+        'failure_class' => 'primary',
+        'reason_code' => 'refused'
+      )
+      expect(row.keys).not_to include('configuration_generation', 'last_event_key')
+    end
+
+    it 'filters paths by zone and configured primary' do
+      as(SpecSeed.user) do
+        json_get primary_transfer_state_index_path, {
+          dns_server_zone_primary_transfer_state: {
+            dns_zone: zone_user_external.id,
+            dns_zone_transfer: user_primary.id
+          }
+        }
+      end
+
+      expect_status(200)
+      expect(primary_transfer_states.map { |row| row['id'] }).to contain_exactly(user_state.id)
+    end
+
+    it 'hides paths whose configured primary is being destroyed' do
+      user_primary.update!(confirmed: DnsZoneTransfer.confirmed(:confirm_destroy))
+
+      as(SpecSeed.user) { json_get primary_transfer_state_index_path }
+
+      expect_status(200)
+      expect(primary_transfer_states.map { |row| row['id'] }).not_to include(user_state.id)
+    end
+
+    it 'allows administrators to inspect hidden and cross-user paths' do
+      as(SpecSeed.admin) { json_get primary_transfer_state_index_path }
+
+      expect_status(200)
+      expect(primary_transfer_states.map { |row| row['id'] }).to include(
+        user_state.id,
+        hidden_state.id,
+        other_state.id
+      )
     end
   end
 

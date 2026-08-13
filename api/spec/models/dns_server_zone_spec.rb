@@ -117,4 +117,34 @@ RSpec.describe DnsServerZone do
     expect(server_a_zone.primaries).not_to include(server_a_zone.server_opts)
     expect(server_a_zone.secondaries).not_to include(server_a_zone.server_opts)
   end
+
+  it 'derives serving status from current BIND load and expiry data' do
+    zone = create_zone!(user: SpecSeed.user)
+    server = create_dns_server!(
+      name_prefix: 'status',
+      node: SpecSeed.node,
+      ipv4_addr: '198.51.100.40'
+    )
+    server_zone = described_class.create!(
+      dns_zone: zone,
+      dns_server: server,
+      zone_type: :secondary_type,
+      confirmed: described_class.confirmed(:confirmed)
+    )
+    now = Time.current
+
+    expect(server_zone.zone_status(at: now)).to eq('unknown')
+
+    server_zone.update!(last_check_at: now)
+    expect(server_zone.zone_status(at: now)).to eq('not_loaded')
+
+    server_zone.update!(serial: 42, loaded_at: now, expires_at: now + 1.hour)
+    expect(server_zone.zone_status(at: now)).to eq('serving')
+
+    server_zone.update!(expires_at: now - 1.second)
+    expect(server_zone.zone_status(at: now)).to eq('expired')
+
+    server_zone.update!(last_check_at: now - 6.minutes)
+    expect(server_zone.zone_status(at: now)).to eq('unknown')
+  end
 end

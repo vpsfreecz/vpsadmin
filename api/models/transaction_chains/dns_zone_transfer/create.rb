@@ -15,6 +15,7 @@ module TransactionChains
       lock(dns_zone)
 
       zone_transfer.save!
+      dns_zone.rotate_primary_transfer_generation! if zone_transfer.primary_type?
 
       dns_zone.dns_server_zones.each do |dns_server_zone|
         if dns_zone.internal_source? && dns_server_zone.primary_type?

@@ -196,6 +196,23 @@ en:
         label: Attached
       attached_at:
         label: Attached_at
+      attempt_kind:
+        choices:
+          axfr_probe:
+            label: axfr_probe
+          ixfr_probe:
+            label: ixfr_probe
+          load:
+            label: load
+          notify:
+            label: notify
+          refresh:
+            label: refresh
+          transfer:
+            label: transfer
+        description: Real BIND transfer, readiness probe, validation probe, or supporting
+          operation
+        label: Attempt kind
       attr_changes:
         label: Attribute changes
       attribute:
@@ -676,6 +693,20 @@ en:
         label: External_id
       failcnt:
         label: Failcnt
+      failure_class:
+        choices:
+          lifecycle:
+            label: lifecycle
+          local:
+            label: local
+          network:
+            label: network
+          primary:
+            label: primary
+          unknown:
+            label: unknown
+        description: Responsibility category assigned to a failed operation
+        label: Failure class
       features:
         label: Features
       file_name:
@@ -933,6 +964,20 @@ en:
         label: Label
       last_activity_at:
         label: Last activity
+      last_attempt_kind:
+        choices:
+          axfr_probe:
+            label: axfr_probe
+          ixfr_probe:
+            label: ixfr_probe
+          load:
+            label: load
+          notify:
+            label: notify
+          refresh:
+            label: refresh
+          transfer:
+            label: transfer
       last_check_at:
         label: Last_check_at
       last_observed_at:
@@ -945,6 +990,9 @@ en:
         label: Last_seen_at
       last_transfer_at:
         label: Last_transfer_at
+      last_transfer_check_at:
+        description: Time of the latest transfer readiness observation for this primary
+        label: Last transfer check
       last_transfer_log_id:
         label: Last_transfer_log_id
       last_transfer_primary_addr:
@@ -1805,6 +1853,8 @@ en:
             label: failed
           success:
             label: success
+          unknown:
+            label: unknown
         label: Status
       stepsize:
         description: Steps in which the objects allocated resource value may be iterated
@@ -1904,6 +1954,30 @@ en:
         label: Transaction_id
       transaction_type:
         label: Transaction_type
+      transfer_check_failed_count:
+        description: Number of assigned secondary servers with failed transfer readiness
+        label: Failed checks
+      transfer_check_pending_count:
+        description: Number of assigned secondary servers without a conclusive current
+          check
+        label: Pending checks
+      transfer_check_server_count:
+        description: Number of visible secondary servers assigned to this zone
+        label: Assigned secondary count
+      transfer_check_status:
+        choices:
+          failed:
+            label: failed
+          pending:
+            label: pending
+          success:
+            label: success
+        description: Aggregate transfer readiness across assigned secondary servers
+        label: Transfer check status
+      transfer_check_success_count:
+        description: Number of assigned secondary servers with successful transfer
+          readiness
+        label: Successful checks
       transfer_ip_addresses:
         description: If possible, keep IP addresses and recharge them to a different
           environment or location
@@ -2124,6 +2198,19 @@ en:
         label: Year
       year_of_birth:
         label: Year of birth
+      zone_status:
+        choices:
+          expired:
+            label: expired
+          not_loaded:
+            label: not_loaded
+          serving:
+            label: serving
+          unknown:
+            label: unknown
+        description: Whether current BIND status shows that the zone is loaded and
+          serving
+        label: Serving status
     auth:
       oauth2:
         cancel: Cancel
@@ -2403,14 +2490,88 @@ en:
             label: Type
           updated_at:
             label: Updated_at
+      dns_server_zone_primary_transfer_state:
+        attributes:
+          alert_eligible_at:
+            description: Time the continuous failure reached its notification delay
+            label: Alert eligibility
+          created_at:
+            description: Time this path state was first recorded
+            label: Created at
+          dns_server_zone:
+            description: Managed secondary server whose direct transfer path was checked
+            label: Managed secondary
+          dns_zone:
+            description: Limit readiness paths to one DNS zone
+            label: DNS zone
+          dns_zone_transfer:
+            description: Configured user primary checked from the managed secondary
+            label: Configured primary
+          failed_since:
+            description: Start of the current continuous failure evidence
+            label: Failure started
+          failure_class:
+            description: Whether the current failure is attributed to the primary
+              or network path
+            label: Failure class
+          id:
+            description: Transfer-readiness path ID
+            label: ID
+          last_attempt_at:
+            description: Time of the latest accepted observation for this path
+            label: Latest check
+          last_attempt_kind:
+            description: BIND operation or readiness probe that produced the latest
+              path observation
+            label: Latest evidence source
+          last_success_at:
+            description: Time direct transfer readiness was last confirmed
+            label: Latest success
+          last_transfer_log:
+            description: Latest retained diagnostic associated with this path state
+            label: Latest diagnostic
+          primary_serial:
+            description: SOA serial observed on the configured primary
+            label: Primary serial
+          reason:
+            description: Human-readable explanation of the current failure
+            label: Reason
+          reason_code:
+            description: Machine-readable reason for the current failure
+            label: Reason code
+          reason_observed_at:
+            description: Time the displayed failure reason was observed
+            label: Reason observed
+          secondary_serial:
+            description: SOA serial loaded on the managed secondary
+            label: Secondary serial
+          secondary_source_addr:
+            description: Managed secondary address used to contact this primary
+            label: Transfer source address
+          status:
+            description: Current direct transfer readiness of this primary-secondary
+              path
+            label: Status
+          updated_at:
+            description: Time this path state was last updated
+            label: Updated at
       dns_server_zone_transfer_log:
         attributes:
           created_at:
             label: Created_at
           dns_zone:
             label: DNS zone
+          dns_zone_transfer:
+            description: Configured user primary associated with this diagnostic
+            label: Configured primary
           id:
             label: ID
+          primary_serial:
+            description: SOA serial observed on the configured primary
+            label: Primary serial
+          secondary_serial:
+            description: SOA serial loaded on the managed secondary
+            label: Secondary serial
           updated_at:
             label: Updated_at
       dns_tsig_key:
@@ -3942,6 +4103,7 @@ en:
         dns_server_zone:
           create: Server zone+
           destroy: Server zone-
+          refresh_configuration: Refresh DNS server zone configuration
         dns_zone:
           create_record: Record+
           create_user: Zone+

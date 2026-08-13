@@ -119,6 +119,29 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServer' do
     )
   end
 
+  def create_primary_transfer!(zone:)
+    network = SpecSeed.network_v4
+    used = IpAddress.where(network:).pluck(:ip_addr).map { |addr| addr.split('.').last.to_i }
+    octet = ((150..254).to_a - used).first
+    raise 'no free test address' if octet.nil?
+
+    ip_addr = "192.0.2.#{octet}"
+    ip_address = IpAddress.create!(
+      network:,
+      ip_addr:,
+      prefix: network.split_prefix,
+      size: 1,
+      user: zone.user
+    )
+    host_ip = HostIpAddress.create!(ip_address:, ip_addr:, user_created: true)
+    DnsZoneTransfer.create!(
+      dns_zone: zone,
+      host_ip_address: host_ip,
+      peer_type: :primary_type,
+      confirmed: DnsZoneTransfer.confirmed(:confirmed)
+    )
+  end
+
   def attach_zone!(server:, zone:)
     DnsServerZone.create!(
       dns_server: server,
@@ -534,6 +557,138 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsServer' do
       expect(user_dns_server.hidden).to be(true)
       expect(user_dns_server.enable_user_dns_zones).to be(false)
       expect(user_dns_server.user_dns_zone_type).to eq('secondary_type')
+    end
+
+    it 'refreshes every external-zone secondary after a transfer source change' do
+      zone = create_zone!(name_prefix: 'external-source-update', source: :external_source)
+      server_zone = DnsServerZone.create!(
+        dns_server: user_dns_server,
+        dns_zone: zone,
+        zone_type: :secondary_type,
+        confirmed: DnsServerZone.confirmed(:confirmed)
+      )
+      peer_zone = DnsServerZone.create!(
+        dns_server: internal_dns_server,
+        dns_zone: zone,
+        zone_type: :secondary_type,
+        confirmed: DnsServerZone.confirmed(:confirmed)
+      )
+      previous_generation = zone.primary_transfer_generation
+      new_ipv4 = random_ipv4
+      allow(TransactionChains::DnsServerZone::RefreshConfiguration).to receive(:fire)
+
+      as(SpecSeed.admin) do
+        json_put show_path(user_dns_server.id), dns_server: { ipv4_addr: new_ipv4 }
+      end
+
+      expect_status(200)
+      expect(zone.reload.primary_transfer_generation).not_to eq(previous_generation)
+      expect(TransactionChains::DnsServerZone::RefreshConfiguration)
+        .to have_received(:fire).with(server_zone)
+      expect(TransactionChains::DnsServerZone::RefreshConfiguration)
+        .to have_received(:fire).with(peer_zone)
+
+      payload = Transactions::DnsServerZone::Update.new.params(
+        server_zone.reload,
+        new: {},
+        original: {}
+      )
+      expect(payload[:probe_source_addrs]).to include(ipv4: new_ipv4)
+    end
+
+    it 'resets failed paths that used a changed transfer source family' do
+      zone = create_zone!(name_prefix: 'source-update-state', source: :external_source)
+      server_zone = DnsServerZone.create!(
+        dns_server: user_dns_server,
+        dns_zone: zone,
+        zone_type: :secondary_type,
+        confirmed: DnsServerZone.confirmed(:confirmed)
+      )
+      user_dns_server.update!(ipv6_addr: random_ipv6)
+      transfer = create_primary_transfer!(zone:)
+      now = Time.current
+      state = DnsServerZonePrimaryTransferState.create!(
+        dns_server_zone: server_zone,
+        dns_zone_transfer: transfer,
+        configuration_generation: zone.primary_transfer_generation,
+        last_event_key: SecureRandom.hex(32),
+        status: :failed,
+        failure_class: :primary,
+        last_attempt_kind: :ixfr_probe,
+        failed_since: now - 35.minutes,
+        last_failure_at: now,
+        last_attempt_at: now,
+        alert_eligible_at: now - 5.minutes,
+        reason_observed_at: now,
+        reason_code: 'refused',
+        reason: 'The primary refused the transfer'
+      )
+      allow(TransactionChains::DnsServerZone::RefreshConfiguration).to receive(:fire)
+
+      as(SpecSeed.admin) do
+        json_put show_path(user_dns_server.id), dns_server: { ipv4_addr: nil }
+      end
+
+      expect_status(200)
+      expect(user_dns_server.reload.ipv4_addr).to be_nil
+      expect(DnsServerZonePrimaryTransferState.exists?(state.id)).to be(false)
+      expect(zone.reload.failed_primary_transfer_state_count).to eq(0)
+      expect(zone.primary_transfer_failure_monitor_passed?(incident_active: true)).to be(true)
+      DnsZoneTransfer.preload_direct_transfer_stats([transfer])
+      expect(transfer.transfer_check_status).to eq('pending')
+    end
+
+    it 'rolls back a transfer source change when a refresh cannot be queued' do
+      zone = create_zone!(name_prefix: 'source-update-rollback', source: :external_source)
+      DnsServerZone.create!(
+        dns_server: user_dns_server,
+        dns_zone: zone,
+        zone_type: :secondary_type,
+        confirmed: DnsServerZone.confirmed(:confirmed)
+      )
+      DnsServerZone.create!(
+        dns_server: internal_dns_server,
+        dns_zone: zone,
+        zone_type: :secondary_type,
+        confirmed: DnsServerZone.confirmed(:confirmed)
+      )
+      previous_ipv4 = user_dns_server.ipv4_addr
+      previous_generation = zone.primary_transfer_generation
+      primary = create_primary_transfer!(zone:)
+      state = DnsServerZonePrimaryTransferState.create!(
+        dns_server_zone: zone.dns_server_zones.find_by!(dns_server: user_dns_server),
+        dns_zone_transfer: primary,
+        configuration_generation: previous_generation,
+        last_event_key: SecureRandom.hex(32),
+        status: :failed,
+        failure_class: :primary,
+        last_attempt_kind: :ixfr_probe,
+        failed_since: Time.current - 35.minutes,
+        last_failure_at: Time.current,
+        last_attempt_at: Time.current,
+        reason_observed_at: Time.current,
+        reason_code: 'refused',
+        reason: 'The primary refused the transfer'
+      )
+      fire_count = 0
+
+      allow(TransactionChains::DnsServerZone::RefreshConfiguration)
+        .to receive(:fire).and_wrap_original do |original, server_zone|
+          fire_count += 1
+          raise 'unable to queue refresh' if fire_count == 2
+
+          original.call(server_zone)
+        end
+
+      as(SpecSeed.admin) do
+        json_put show_path(user_dns_server.id), dns_server: { ipv4_addr: random_ipv4 }
+      end
+
+      expect_status(500)
+      expect(user_dns_server.reload.ipv4_addr).to eq(previous_ipv4)
+      expect(zone.reload.primary_transfer_generation).to eq(previous_generation)
+      expect(DnsServerZonePrimaryTransferState.exists?(state.id)).to be(true)
+      expect(TransactionChain.where(name: 'dns_server_zone_refresh_configuration')).to be_empty
     end
 
     it 'returns 404 for unknown servers' do

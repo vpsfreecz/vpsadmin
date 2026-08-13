@@ -6,8 +6,8 @@ module VpsAdmin::API::Resources
     params(:common) do
       resource Node, value_label: :domain_name
       string :name
-      string :ipv4_addr
-      string :ipv6_addr
+      string :ipv4_addr, nullable: true
+      string :ipv6_addr, nullable: true
       bool :hidden
       bool :enable_user_dns_zones
       string :user_dns_zone_type, choices: ::DnsServer.user_dns_zone_types.keys.map(&:to_s)
@@ -122,8 +122,45 @@ module VpsAdmin::API::Resources
 
       def exec
         server = self.class.model.find(path_params['dns_server_id'])
-        server.update!(input)
+        server.with_lock(requires_new: true) do
+          server.update!(input)
+          if server.saved_change_to_ipv4_addr? || server.saved_change_to_ipv6_addr?
+            changed_ip_versions = []
+            changed_ip_versions << 4 if server.saved_change_to_ipv4_addr?
+            changed_ip_versions << 6 if server.saved_change_to_ipv6_addr?
+            zones = server.dns_zones.existing.external_source.distinct.order(:id)
+            zones.each(&:rotate_primary_transfer_generation!)
+            reset_changed_source_states(server, zones, changed_ip_versions)
+
+            zones.each do |zone|
+              zone.dns_server_zones.existing.order(:id).each do |server_zone|
+                TransactionChains::DnsServerZone::RefreshConfiguration.fire(server_zone)
+              end
+            end
+          end
+        end
+
         server
+      end
+
+      protected
+
+      def reset_changed_source_states(server, zones, changed_ip_versions)
+        server.dns_server_zones.existing
+              .where(dns_zone_id: zones.select(:id))
+              .order(:id)
+              .each do |server_zone|
+          server_zone.with_lock do
+            states = server_zone.dns_server_zone_primary_transfer_states
+                                .includes(dns_zone_transfer: :host_ip_address)
+            state_ids = states.filter_map do |state|
+              addr = ::IPAddress.parse(state.dns_zone_transfer.ip_addr)
+              ip_version = addr.ipv4? ? 4 : 6
+              state.id if changed_ip_versions.include?(ip_version)
+            end
+            ::DnsServerZonePrimaryTransferState.where(id: state_ids).delete_all
+          end
+        end
       end
     end
 

@@ -2,12 +2,14 @@ require_relative 'confirmable'
 require_relative 'dns_zone_record_set_validator'
 
 class DnsServerZone < ApplicationRecord
+  STATUS_STALE_AFTER = 5.minutes
   belongs_to :dns_server
   belongs_to :dns_zone
   belongs_to :last_transfer_log,
              class_name: 'DnsServerZoneTransferLog',
              optional: true
   has_many :dns_server_zone_transfer_logs, dependent: :delete_all
+  has_many :dns_server_zone_primary_transfer_states, dependent: :delete_all
 
   enum :zone_type, %i[primary_type secondary_type]
   enum :last_transfer_status, %i[success failed], prefix: :last_transfer
@@ -36,9 +38,30 @@ class DnsServerZone < ApplicationRecord
 
   def server_opts
     {
+      id:,
+      kind: 'vpsadmin_peer',
       ip_addr:,
       tsig_key: nil
     }
+  end
+
+  def probe_source_addrs
+    {
+      ipv4: dns_server.ipv4_addr,
+      ipv6: dns_server.ipv6_addr
+    }
+  end
+
+  def primary_transfer_configuration_generation
+    dns_zone.primary_transfer_generation
+  end
+
+  def zone_status(at: Time.current)
+    return 'unknown' if last_check_at.nil? || last_check_at < at - STATUS_STALE_AFTER
+    return 'not_loaded' if serial.nil? || loaded_at.nil?
+    return 'expired' if expires_at && expires_at <= at
+
+    'serving'
   end
 
   # @return [Array<Hash>]

@@ -68,7 +68,7 @@ RSpec.describe TransactionChains::DnsZoneTransfer::Destroy do
 
   it 'removes external primary transfer servers from secondary server zones' do
     zone = create_dns_zone!(user: user, source: :external_source, email: nil)
-    create_dns_server_zone!(
+    server_zone = create_dns_server_zone!(
       dns_zone: zone,
       dns_server: create_dns_server!(node: SpecSeed.node),
       zone_type: :secondary_type
@@ -78,6 +78,17 @@ RSpec.describe TransactionChains::DnsZoneTransfer::Destroy do
       host_ip_address: create_transfer_host_ip,
       peer_type: :primary_type
     )
+    state = DnsServerZonePrimaryTransferState.create!(
+      dns_server_zone: server_zone,
+      dns_zone_transfer: transfer,
+      configuration_generation: server_zone.primary_transfer_configuration_generation,
+      last_event_key: SecureRandom.hex(32),
+      status: :success,
+      last_attempt_kind: :ixfr_probe,
+      last_attempt_at: Time.current,
+      last_success_at: Time.current
+    )
+    previous_generation = zone.primary_transfer_generation
 
     chain, = described_class.fire(transfer)
 
@@ -85,9 +96,16 @@ RSpec.describe TransactionChains::DnsZoneTransfer::Destroy do
       Transactions::DnsServerZone::RemoveServers,
       Transactions::DnsServer::Reload
     )
-    expect(tx_payload(chain, Transactions::DnsServerZone::RemoveServers).fetch('primaries')).to eq(
-      [{ 'ip_addr' => transfer.ip_addr, 'tsig_key' => nil }]
+    payload = tx_payload(chain, Transactions::DnsServerZone::RemoveServers)
+    expect(payload.fetch('primaries')).to eq([transfer.server_opts.deep_stringify_keys])
+    expect(payload.fetch('primary_transfer_generation')).to eq(
+      zone.reload.primary_transfer_generation
     )
+    expect(zone.primary_transfer_generation).not_to eq(previous_generation)
+    state_confirmation = confirmations_for(chain).find do |row|
+      row.class_name == 'DnsServerZonePrimaryTransferState' && row.row_pks == { 'id' => state.id }
+    end
+    expect(state_confirmation.confirm_type).to eq('just_destroy_type')
   end
 
   it 'destroys empty transfers immediately' do

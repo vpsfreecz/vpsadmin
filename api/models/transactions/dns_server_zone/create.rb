@@ -8,10 +8,15 @@ module Transactions::DnsServerZone
       self.node_id = dns_server_zone.dns_server.node_id
 
       ret = {
+        id: dns_server_zone.id,
         name: dns_server_zone.dns_zone.name,
         source: dns_server_zone.dns_zone.zone_source,
         type: dns_server_zone.zone_type,
-        enabled: dns_server_zone.dns_zone.enabled
+        enabled: dns_server_zone.dns_zone.enabled,
+        primary_transfer_generation: dns_server_zone.primary_transfer_configuration_generation,
+        primary_transfer_tracking_started_at:
+          dns_server_zone.dns_zone.primary_transfer_tracking_started_at&.to_i,
+        probe_source_addrs: dns_server_zone.probe_source_addrs
       }
 
       if dns_server_zone.dns_zone.internal_source?

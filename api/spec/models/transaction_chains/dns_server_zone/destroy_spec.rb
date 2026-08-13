@@ -9,6 +9,20 @@ RSpec.describe TransactionChains::DnsServerZone::Destroy do
 
   let(:user) { SpecSeed.user }
 
+  def create_transfer_host_ip
+    network = create_private_network!(
+      location: SpecSeed.location,
+      purpose: :vps
+    )
+    ip = create_ipv4_address_in_network!(
+      network: network,
+      location: SpecSeed.location,
+      user: user
+    )
+
+    ip.host_ip_addresses.take!
+  end
+
   def build_internal_fixture
     dns_zone = create_dns_zone!(
       user: user,
@@ -74,8 +88,23 @@ RSpec.describe TransactionChains::DnsServerZone::Destroy do
       ),
       zone_type: :secondary_type
     )
+    transfer = create_dns_zone_transfer!(
+      dns_zone: dns_zone,
+      host_ip_address: create_transfer_host_ip,
+      peer_type: :primary_type
+    )
+    state = DnsServerZonePrimaryTransferState.create!(
+      dns_server_zone: dns_server_zone,
+      dns_zone_transfer: transfer,
+      configuration_generation: dns_server_zone.primary_transfer_configuration_generation,
+      last_event_key: SecureRandom.hex(32),
+      status: :success,
+      last_attempt_kind: :ixfr_probe,
+      last_attempt_at: Time.current,
+      last_success_at: Time.current
+    )
 
-    { dns_server_zone: dns_server_zone }
+    { dns_server_zone: dns_server_zone, state: state }
   end
 
   it 'destroys internal zones and removes the server from siblings correctly' do
@@ -98,7 +127,7 @@ RSpec.describe TransactionChains::DnsServerZone::Destroy do
 
     secondary_payload = tx_payload(chain, Transactions::DnsServerZone::RemoveServers, nth: 0)
     primary_payload = tx_payload(chain, Transactions::DnsServerZone::RemoveServers, nth: 1)
-    server_opts = [{ 'ip_addr' => fixture[:dns_server_zone].ip_addr, 'tsig_key' => nil }]
+    server_opts = [fixture[:dns_server_zone].server_opts.deep_stringify_keys]
 
     expect(secondary_payload).to include(
       'nameservers' => [fixture[:dns_server_zone].dns_server.name],
@@ -116,7 +145,7 @@ RSpec.describe TransactionChains::DnsServerZone::Destroy do
     fixture = build_external_fixture
 
     chain, = described_class.fire(fixture[:dns_server_zone])
-    server_opts = [{ 'ip_addr' => fixture[:dns_server_zone].ip_addr, 'tsig_key' => nil }]
+    server_opts = [fixture[:dns_server_zone].server_opts.deep_stringify_keys]
 
     expect(tx_classes(chain)).to eq(
       [
@@ -134,5 +163,9 @@ RSpec.describe TransactionChains::DnsServerZone::Destroy do
         'secondaries' => server_opts
       )
     end
+    state_confirmation = confirmations_for(chain).find do |row|
+      row.class_name == 'DnsServerZonePrimaryTransferState' && row.row_pks == { 'id' => fixture[:state].id }
+    end
+    expect(state_confirmation.confirm_type).to eq('just_destroy_type')
   end
 end

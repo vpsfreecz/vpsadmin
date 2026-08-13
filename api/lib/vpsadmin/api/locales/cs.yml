@@ -194,6 +194,22 @@ cs:
         label: Připojeno
       attached_at:
         label: Připojeno v
+      attempt_kind:
+        choices:
+          axfr_probe:
+            label: ověření AXFR
+          ixfr_probe:
+            label: kontrola IXFR
+          load:
+            label: načtení
+          notify:
+            label: oznámení
+          refresh:
+            label: obnova
+          transfer:
+            label: přenos
+        description: Operace BIND, která tuto událost vytvořila
+        label: Druh pokusu
       attr_changes:
         label: Změny atributů
       attribute:
@@ -676,6 +692,20 @@ cs:
         label: Externí ID
       failcnt:
         label: Počet selhání
+      failure_class:
+        choices:
+          lifecycle:
+            label: životní cyklus
+          local:
+            label: místní
+          network:
+            label: síť
+          primary:
+            label: primární server
+          unknown:
+            label: neznámá
+        description: Kategorie odpovědnosti přiřazená neúspěšné operaci
+        label: Třída selhání
       features:
         label: Funkce
       file_name:
@@ -931,6 +961,20 @@ cs:
         label: Popisek
       last_activity_at:
         label: Poslední aktivita
+      last_attempt_kind:
+        choices:
+          axfr_probe:
+            label: ověření AXFR
+          ixfr_probe:
+            label: kontrola IXFR
+          load:
+            label: načtení
+          notify:
+            label: oznámení
+          refresh:
+            label: obnovení
+          transfer:
+            label: přenos
       last_check_at:
         label: Poslední kontrola
       last_observed_at:
@@ -943,6 +987,9 @@ cs:
         label: Naposledy viděno
       last_transfer_at:
         label: Poslední přenos
+      last_transfer_check_at:
+        description: Čas posledního ověření přenosu z tohoto primárního serveru
+        label: Poslední kontrola přenosu
       last_transfer_log_id:
         label: ID logu posledního přenosu
       last_transfer_primary_addr:
@@ -1800,7 +1847,9 @@ cs:
             label: selhalo
           success:
             label: úspěch
-        label: Status
+          unknown:
+            label: neznámý
+        label: Stav
       stepsize:
         description: Kroky, po kterých se může iterovat alokovaná hodnota zdroje objektu
         label: Velikost kroku
@@ -1899,6 +1948,30 @@ cs:
         label: ID transakce
       transaction_type:
         label: Typ transakce
+      transfer_check_failed_count:
+        description: Počet přiřazených sekundárních serverů, na kterých kontrola přenosu
+          selhala
+        label: Neúspěšné kontroly
+      transfer_check_pending_count:
+        description: Počet přiřazených sekundárních serverů bez průkazného výsledku
+          kontroly
+        label: Čekající kontroly
+      transfer_check_server_count:
+        description: Počet viditelných sekundárních serverů přiřazených k této zóně
+        label: Počet přiřazených sekundárních serverů
+      transfer_check_status:
+        choices:
+          failed:
+            label: selhání
+          pending:
+            label: čeká
+          success:
+            label: úspěch
+        description: Souhrn připravenosti přenosů na přiřazené sekundární servery
+        label: Stav kontroly přenosu
+      transfer_check_success_count:
+        description: Počet přiřazených sekundárních serverů s úspěšně ověřeným přenosem
+        label: Úspěšné kontroly
       transfer_ip_addresses:
         description: Je-li to možné, ponechat IP adresy a přeúčtovat je do jiného
           prostředí nebo lokace
@@ -2119,6 +2192,18 @@ cs:
         label: Rok
       year_of_birth:
         label: Rok narození
+      zone_status:
+        choices:
+          expired:
+            label: expirováno
+          not_loaded:
+            label: nenačteno
+          serving:
+            label: obsluhuje
+          unknown:
+            label: neznámý
+        description: Zda aktuální stav BINDu ukazuje, že je zóna načtená a obsluhovaná
+        label: Stav obsluhy
     auth:
       oauth2:
         cancel: Zrušit
@@ -2397,14 +2482,95 @@ cs:
             label: Typ
           updated_at:
             label: Aktualizováno
+      dns_server_zone_primary_transfer_state:
+        attributes:
+          alert_eligible_at:
+            description: Čas, kdy souvislé selhání dosáhlo prodlevy pro odeslání upozornění
+            label: Upozornění možné od
+          created_at:
+            description: Čas prvního zaznamenání stavu této cesty
+            label: Vytvořeno
+          dns_server_zone:
+            description: Spravovaný sekundární server, ze kterého byla zkontrolována
+              cesta přenosu
+            label: Spravovaný sekundární server
+          dns_zone:
+            description: Omezit cesty připravenosti na jednu DNS zónu
+            label: DNS zóna
+          dns_zone_transfer:
+            description: Nakonfigurovaný uživatelský primární server kontrolovaný
+              ze spravovaného sekundárního serveru
+            label: Nakonfigurovaný primární server
+          failed_since:
+            description: Začátek důkazů aktuálního souvislého selhání
+            label: Selhává od
+          failure_class:
+            description: Zda je aktuální selhání přiřazeno primárnímu serveru nebo
+              síťové cestě
+            label: Třída selhání
+          id:
+            description: ID cesty připravenosti přenosu
+            label: ID
+          last_attempt_at:
+            description: Čas posledního přijatého pozorování této cesty
+            label: Poslední kontrola
+          last_attempt_kind:
+            description: Operace BINDu nebo kontrola připravenosti, která vytvořila
+              poslední pozorování cesty
+            label: Zdroj posledního pozorování
+          last_success_at:
+            description: Čas posledního potvrzení připravenosti přímého přenosu
+            label: Poslední úspěch
+          last_transfer_log:
+            description: Poslední uchovaný diagnostický záznam spojený se stavem této
+              cesty
+            label: Poslední diagnostika
+          primary_serial:
+            description: Sériové číslo SOA zjištěné na nakonfigurovaném primárním
+              serveru
+            label: Sériové číslo na primárním serveru
+          reason:
+            description: Srozumitelné vysvětlení aktuálního selhání
+            label: Důvod
+          reason_code:
+            description: Strojově čitelný důvod aktuálního selhání
+            label: Kód důvodu
+          reason_observed_at:
+            description: Čas zjištění zobrazeného důvodu selhání
+            label: Důvod zjištěn
+          secondary_serial:
+            description: Sériové číslo SOA načtené na spravovaném sekundárním serveru
+            label: Sériové číslo na sekundárním serveru
+          secondary_source_addr:
+            description: Adresa spravovaného sekundárního serveru použitá pro spojení
+              s tímto primárním serverem
+            label: Zdrojová adresa přenosu
+          status:
+            description: Aktuální připravenost přímého přenosu na této cestě mezi
+              primárním a sekundárním serverem
+            label: Stav
+          updated_at:
+            description: Čas poslední aktualizace stavu této cesty
+            label: Aktualizováno
       dns_server_zone_transfer_log:
         attributes:
           created_at:
             label: Vytvořeno
           dns_zone:
             label: DNS zóna
+          dns_zone_transfer:
+            description: Nakonfigurovaný uživatelský primární server spojený s touto
+              diagnostikou
+            label: Nakonfigurovaný primární server
           id:
             label: ID
+          primary_serial:
+            description: Sériové číslo SOA zjištěné na nakonfigurovaném primárním
+              serveru
+            label: Sériové číslo na primárním serveru
+          secondary_serial:
+            description: Sériové číslo SOA načtené na spravovaném sekundárním serveru
+            label: Sériové číslo na sekundárním serveru
           updated_at:
             label: Aktualizováno
       dns_tsig_key:
@@ -3938,6 +4104,7 @@ cs:
         dns_server_zone:
           create: Server zóna+
           destroy: Server zóna-
+          refresh_configuration: Obnovení konfigurace
         dns_zone:
           create_record: Záznam+
           create_user: Zóna+

@@ -8,9 +8,15 @@ module TransactionChains
       lock(dns_zone)
       concerns(:affect, [dns_zone.class.name, dns_zone.id])
 
-      dns_zone.dns_server_zones.each do |dns_server_zone|
+      dns_zone.dns_server_zones.order(:id).each do |dns_server_zone|
         append_t(Transactions::DnsServerZone::Destroy, args: [dns_server_zone]) do |t|
-          dns_server_zone.update!(confirmed: ::DnsServerZone.confirmed(:confirm_destroy))
+          dns_server_zone.with_lock do
+            dns_server_zone.update!(confirmed: ::DnsServerZone.confirmed(:confirm_destroy))
+            dns_server_zone.dns_server_zone_primary_transfer_states.each do |state|
+              t.just_destroy(state)
+            end
+          end
+
           t.destroy(dns_server_zone)
         end
 

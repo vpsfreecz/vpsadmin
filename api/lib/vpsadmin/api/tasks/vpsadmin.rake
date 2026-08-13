@@ -192,6 +192,25 @@ namespace :vpsadmin do
       puts 'Pruning DNS transfer logs'
       VpsAdmin::API::Tasks.run(:dns, :prune_transfer_logs)
     end
+
+    desc 'Destructively reset direct-primary tracking epochs and path state'
+    task :reset_primary_transfer_tracking do
+      unless ENV['CONFIRM'] == '1'
+        raise 'Set CONFIRM=1 after stopping DNS-zone writers and transfer-log consumers'
+      end
+
+      VpsAdmin::API::Tasks.run(:dns, :reset_primary_transfer_tracking)
+    end
+
+    desc 'Verify that no new-format DNS configuration updates remain pending'
+    task :verify_primary_transfer_configuration_drained do
+      VpsAdmin::API::Tasks.run(:dns, :verify_primary_transfer_configuration_drained)
+    end
+
+    desc 'Verify that no DNS configuration transaction chain remains pending'
+    task :verify_configuration_drained do
+      VpsAdmin::API::Tasks.run(:dns, :verify_configuration_drained)
+    end
   end
 
   namespace :plugins do
