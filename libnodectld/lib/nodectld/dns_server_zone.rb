@@ -1,4 +1,5 @@
 require 'fileutils'
+require 'ipaddress'
 require 'libosctl'
 
 module NodeCtld
@@ -32,7 +33,23 @@ module NodeCtld
     # @return [Boolean]
     attr_reader :enabled
 
-    def initialize(name:, source:, type:, default_ttl: nil, nameservers: nil, serial: nil, email: nil, primaries: nil, secondaries: nil, dnssec_enabled: nil, enabled: nil, load_db: true)
+    # @return [Integer]
+    attr_reader :id
+
+    # @return [String]
+    attr_reader :primary_transfer_generation
+
+    # @return [Integer]
+    attr_reader :primary_transfer_tracking_started_at
+
+    # @return [Hash]
+    attr_reader :probe_source_addrs
+
+    # @return [Integer, nil]
+    attr_accessor :loaded_serial
+
+    def initialize(name:, source:, type:, id: nil, default_ttl: nil, nameservers: nil, serial: nil, email: nil, primaries: nil, secondaries: nil, dnssec_enabled: nil, enabled: nil, primary_transfer_generation: nil, primary_transfer_tracking_started_at: nil, probe_source_addrs: nil, load_db: true)
+      @id = id
       @name = name
       @source = source
       @type = type
@@ -44,6 +61,9 @@ module NodeCtld
       @secondaries = secondaries
       @dnssec_enabled = dnssec_enabled
       @enabled = enabled
+      @primary_transfer_generation = primary_transfer_generation
+      @primary_transfer_tracking_started_at = primary_transfer_tracking_started_at
+      @probe_source_addrs = probe_source_addrs
       @db_file = format($CFG.get(:dns_server, :db_template), name:, source:, type:)
       @zone_file = format($CFG.get(:dns_server, :zone_template), name:, source:, type:)
       self.load_db if load_db
@@ -66,7 +86,27 @@ module NodeCtld
       @secondaries ||= json['secondaries']
       @dnssec_enabled = json['dnssec_enabled'] if @dnssec_enabled.nil?
       @enabled = json['enabled'] if @enabled.nil?
+      @id ||= json['id']
+      @primary_transfer_generation ||= json['primary_transfer_generation']
+      @primary_transfer_tracking_started_at ||= json['primary_transfer_tracking_started_at']
+      @probe_source_addrs ||= json['probe_source_addrs']
       @records = json['records']
+    end
+
+    def user_primaries
+      Array(@primaries).select { |primary| primary['kind'] == 'user_primary' }
+    end
+
+    def user_primary_by_addr(addr)
+      normalized = normalize_ip_address(addr)
+      user_primaries.find do |primary|
+        normalize_ip_address(primary['ip_addr']) == normalized
+      end
+    end
+
+    def probe_source_addr(primary_addr)
+      family = primary_addr.to_s.include?(':') ? 'ipv6' : 'ipv4'
+      @probe_source_addrs && @probe_source_addrs[family]
     end
 
     def replace_all_records(records)
@@ -110,6 +150,12 @@ module NodeCtld
 
     protected
 
+    def normalize_ip_address(addr)
+      IPAddress.parse(addr).to_s
+    rescue ArgumentError, IPAddress::InvalidAddressError
+      nil
+    end
+
     def save_zone
       FileUtils.mkdir_p(File.dirname(@db_file))
 
@@ -120,6 +166,7 @@ module NodeCtld
 
     def dump
       {
+        id: @id,
         name: @name,
         source: @source,
         type: @type,
@@ -131,6 +178,9 @@ module NodeCtld
         secondaries: @secondaries,
         dnssec_enabled: @dnssec_enabled,
         enabled: @enabled,
+        primary_transfer_generation: @primary_transfer_generation,
+        primary_transfer_tracking_started_at: @primary_transfer_tracking_started_at,
+        probe_source_addrs: @probe_source_addrs,
         records: @records
       }
     end

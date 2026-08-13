@@ -65,6 +65,7 @@ module NodeCtld
       @console = Console::Server.new
       if $CFG.get(:vpsadmin, :type) == :dns_server
         @dns_status = DnsStatus.new
+        @dns_transfer_probe = DnsTransferProbe.new
         @dns_transfer_log = DnsTransferLog.new
       end
       NetAccounting.instance
@@ -98,6 +99,7 @@ module NodeCtld
       @console.start if $CFG.get(:console, :enable)
       if $CFG.get(:vpsadmin, :type) == :dns_server
         @dns_status.start
+        @dns_transfer_probe.start
         @dns_transfer_log.start
       end
 

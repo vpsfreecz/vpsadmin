@@ -43,10 +43,10 @@ RSpec.describe NodeCtld::Commands::DnsServerZone::AddServers do
   end
 
   before do
-    allow(NodeCtld::DnsServerZone).to receive(:new).with(
-      name: 'example.test',
-      source: 'internal_source',
-      type: 'primary_type'
+    allow(cmd).to receive(:get_dns_server_zone).with(
+      nameservers: nil,
+      primaries: nil,
+      secondaries: nil
     ).and_return(zone)
     allow(NodeCtld::DnsConfig).to receive(:instance).and_return(dns_config)
     allow(dns_config).to receive(:update_zone)

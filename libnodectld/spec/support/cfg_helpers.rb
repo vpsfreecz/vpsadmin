@@ -104,10 +104,19 @@ module NodeCtldSpec
             status_interval: 60,
             statistics_url: 'http://127.0.0.1:8053/',
             bind_workdir: Dir.tmpdir,
+            db_template: File.join(Dir.tmpdir, '%{name}-%{source}-%{type}.json'),
+            zone_template: File.join(Dir.tmpdir, '%{name}-%{source}-%{type}.zone'),
             transfer_log_cursor_file: File.join(Dir.tmpdir, 'dns-transfer-log.cursor'),
             transfer_log_command: 'journalctl',
             transfer_log_identifiers: ['named'],
-            transfer_log_unit: nil
+            transfer_log_unit: nil,
+            transfer_probe_state_file: File.join(Dir.tmpdir, 'dns-transfer-probe.json'),
+            transfer_probe_interval: 3600,
+            transfer_probe_failure_interval: 300,
+            transfer_probe_timeout: 30,
+            transfer_probe_axfr_timeout: 600,
+            transfer_probe_axfr_max_bytes: 256 * 1024 * 1024,
+            transfer_probe_concurrency: 5
           }
         )
       end

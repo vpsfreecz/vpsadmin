@@ -139,4 +139,47 @@ RSpec.describe NodeCtld::DnsServerZone do
 
     expect(zone_text.lines.any? { |line| line.match?(record_re) }).to be(true)
   end
+
+  it 'persists probe identity and distinguishes user primaries from peers' do
+    user_primary = {
+      'id' => 31,
+      'kind' => 'user_primary',
+      'ip_addr' => '2001:db8::31',
+      'tsig_key' => nil
+    }
+    peer = {
+      'id' => 32,
+      'kind' => 'vpsadmin_peer',
+      'ip_addr' => '2001:db8::32',
+      'tsig_key' => nil
+    }
+    managed = described_class.new(
+      id: 30,
+      name: 'probe.example.test.',
+      source: 'external_source',
+      type: 'secondary_type',
+      primaries: [user_primary, peer],
+      secondaries: [peer],
+      enabled: true,
+      primary_transfer_generation: 'generation-id',
+      primary_transfer_tracking_started_at: 1234,
+      probe_source_addrs: { 'ipv4' => '192.0.2.30', 'ipv6' => '2001:db8::30' },
+      load_db: false
+    )
+    managed.save
+
+    loaded = described_class.new(
+      name: managed.name,
+      source: managed.source,
+      type: managed.type
+    )
+
+    expect(loaded.id).to eq(30)
+    expect(loaded.primary_transfer_generation).to eq('generation-id')
+    expect(loaded.primary_transfer_tracking_started_at).to eq(1234)
+    expect(loaded.user_primaries).to eq([user_primary])
+    expect(loaded.user_primary_by_addr('2001:0db8:0:0:0:0:0:31')).to eq(user_primary)
+    expect(loaded.probe_source_addr('2001:db8::31')).to eq('2001:db8::30')
+    expect(loaded.probe_source_addr('192.0.2.31')).to eq('192.0.2.30')
+  end
 end

@@ -35,6 +35,7 @@ in
         rndcWrapper
         config.services.bind.package
         coreutils
+        dnsutils
         glibc
         iproute2
         ipset

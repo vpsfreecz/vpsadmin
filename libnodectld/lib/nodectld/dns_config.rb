@@ -55,6 +55,17 @@ module NodeCtld
       @mutex.synchronize { @zones.any? }
     end
 
+    def zones
+      @mutex.synchronize { @zones.values.dup }
+    end
+
+    def update_loaded_serial(name, serial)
+      @mutex.synchronize do
+        zone = @zones[name] || @zones[@zone_index[canonical_zone_name(name)]]
+        zone.loaded_serial = serial if zone
+      end
+    end
+
     def [](name)
       @mutex.synchronize do
         @zones[name] || begin
