@@ -968,6 +968,9 @@ import ../make-test.nix (
         return unless zone
 
         clear_fixture_locks(zone)
+        DnsServerZonePrimaryTransferState
+          .where(dns_server_zone_id: zone.dns_server_zones.select(:id))
+          .delete_all
         zone.dns_server_zones.delete_all
         zone.dns_zone_transfers.delete_all
         zone.dnssec_records.delete_all
@@ -3212,7 +3215,9 @@ import ../make-test.nix (
         confirmed: :confirmed,
         serial: 2026051901,
         loaded_at: now - 1200,
-        last_check_at: now - 600,
+        last_check_at: now - 60,
+        refresh_at: now + 3540,
+        expires_at: now + 86_340,
         last_transfer_at: now - 600,
         last_transfer_status: :success,
         last_transfer_primary_addr: networking_ips.fetch(:dns_transfer).fetch(:host_ip).ip_addr,
@@ -3231,6 +3236,17 @@ import ../make-test.nix (
       )
       dns_server_zone_delete.save! if dns_server_zone_delete.changed? || dns_server_zone_delete.new_record?
 
+      dns_transfer_primary = DnsZoneTransfer.find_or_initialize_by(
+        dns_zone: dns_zones.fetch(:user_transfer_log),
+        host_ip_address: networking_ips.fetch(:dns_transfer).fetch(:host_ip)
+      )
+      dns_transfer_primary.assign_attributes(
+        peer_type: :primary_type,
+        dns_tsig_key: dns_tsig_keys.fetch(:transfer),
+        confirmed: :confirmed
+      )
+      dns_transfer_primary.save! if dns_transfer_primary.changed? || dns_transfer_primary.new_record?
+
       dns_transfer_delete = DnsZoneTransfer.find_or_initialize_by(
         dns_zone: dns_zones.fetch(:admin_transfer_delete),
         host_ip_address: networking_ips.fetch(:dns_transfer).fetch(:host_ip)
@@ -3247,14 +3263,17 @@ import ../make-test.nix (
         .delete_all
       user_transfer_log = DnsServerZoneTransferLog.create!(
         dns_server_zone: dns_server_zone_log,
+        dns_zone_transfer: dns_transfer_primary,
         event_at: now - 500,
         event_key: 'webui-transfer-user',
-        status: :success,
+        status: :failed,
+        attempt_kind: :ixfr_probe,
+        failure_class: :primary,
         primary_addr: networking_ips.fetch(:dns_transfer).fetch(:host_ip).ip_addr,
         serial: 2026051901,
-        reason_code: 'webui-ok',
-        reason: 'Webui transfer fixture',
-        message: 'Webui transfer fixture succeeded',
+        reason_code: 'refused',
+        reason: 'The primary DNS server refused the transfer',
+        message: 'Webui transfer fixture failed',
         raw_message: 'webui transfer raw message',
         source_cursor: 'webui-transfer-cursor'
       )
@@ -3263,6 +3282,8 @@ import ../make-test.nix (
         event_at: now - 400,
         event_key: 'webui-transfer-admin',
         status: :failed,
+        attempt_kind: :load,
+        failure_class: :local,
         primary_addr: networking_ips.fetch(:dns_transfer).fetch(:host_ip).ip_addr,
         serial: 2026051900,
         reason_code: 'webui-failed',
@@ -3271,6 +3292,30 @@ import ../make-test.nix (
         raw_message: 'webui transfer admin raw message',
         source_cursor: 'webui-transfer-admin-cursor'
       )
+
+      DnsServerZonePrimaryTransferState.find_or_initialize_by(
+        dns_server_zone: dns_server_zone_log,
+        dns_zone_transfer: dns_transfer_primary
+      ).tap do |state|
+        state.assign_attributes(
+          last_transfer_log: user_transfer_log,
+          configuration_generation: dns_zones.fetch(:user_transfer_log).primary_transfer_generation,
+          last_event_key: user_transfer_log.event_key,
+          status: :failed,
+          failure_class: :primary,
+          failed_since: now - 500,
+          last_failure_at: now - 500,
+          last_attempt_at: now - 500,
+          last_attempt_kind: :ixfr_probe,
+          alert_eligible_at: now - 200,
+          reason_observed_at: now - 500,
+          reason_code: user_transfer_log.reason_code,
+          reason: user_transfer_log.reason,
+          primary_serial: 2026051900,
+          secondary_serial: 2026051901
+        )
+        state.save!
+      end
 
       DnsRecordLog
         .where(dns_zone_name: dns_zone_names.values)
@@ -4421,7 +4466,9 @@ import ../make-test.nix (
             'transferLog' => {
               'id' => dns_server_zone_log.id,
               'zoneId' => dns_server_zone_log.dns_zone_id,
-              'serverId' => dns_server_zone_log.dns_server_id
+              'serverId' => dns_server_zone_log.dns_server_id,
+              'serverName' => dns_server_zone_log.dns_server.name,
+              'serial' => dns_server_zone_log.serial
             },
             'delete' => {
               'id' => dns_server_zone_delete.id,
@@ -4430,6 +4477,13 @@ import ../make-test.nix (
             }
           },
           'transfers' => {
+            'primary' => {
+              'id' => dns_transfer_primary.id,
+              'zoneId' => dns_transfer_primary.dns_zone_id,
+              'hostIpAddressId' => dns_transfer_primary.host_ip_address_id,
+              'tsigKeyName' => dns_transfer_primary.dns_tsig_key.name,
+              'tsigAlgorithm' => dns_transfer_primary.dns_tsig_key.algorithm
+            },
             'delete' => {
               'id' => dns_transfer_delete.id,
               'zoneId' => dns_transfer_delete.dns_zone_id,
@@ -4455,6 +4509,7 @@ import ../make-test.nix (
               'id' => user_transfer_log.id,
               'zoneId' => dns_server_zone_log.dns_zone_id,
               'serverZoneId' => user_transfer_log.dns_server_zone_id,
+              'zoneTransferId' => user_transfer_log.dns_zone_transfer_id,
               'reasonCode' => user_transfer_log.reason_code
             },
             'transferAdmin' => {

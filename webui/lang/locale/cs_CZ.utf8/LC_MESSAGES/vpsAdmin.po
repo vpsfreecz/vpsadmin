@@ -1094,12 +1094,8 @@ msgid "Last check"
 msgstr "Poslední kontrola"
 
 #: forms/dns.forms.php
-msgid "Zone state"
-msgstr "Stav zóny"
-
-#: forms/dns.forms.php
-msgid "Last transfer"
-msgstr "Poslední přenos"
+msgid "Serving"
+msgstr "Obsluhuje"
 
 #: forms/dns.forms.php
 msgid "Do you really wish to this server?"
@@ -1122,20 +1118,12 @@ msgid "Secondary servers"
 msgstr "Sekundární servery"
 
 #: forms/dns.forms.php
-msgid "Host IP address"
-msgstr "IP adresa hostitele"
+msgid "Server details"
+msgstr "Údaje o serveru"
 
 #: forms/dns.forms.php
-msgid "TSIG key"
-msgstr "TSIG klíč"
-
-#: forms/dns.forms.php
-msgid "TSIG algorithm"
-msgstr "Algoritmus TSIG"
-
-#: forms/dns.forms.php
-msgid "TSIG secret"
-msgstr "Tajný klíč TSIG"
+msgid "Transfer checks"
+msgstr "Kontroly přenosů"
 
 #: forms/dns.forms.php
 msgid "Remove transfer"
@@ -1162,8 +1150,16 @@ msgid "DNS server zone ID"
 msgstr "DNS zóna serveru ID"
 
 #: forms/dns.forms.php
+msgid "Primary server ID"
+msgstr "Primární server ID"
+
+#: forms/dns.forms.php
 msgid "DNS server zone"
 msgstr "DNS zóna serveru"
+
+#: forms/dns.forms.php
+msgid "Primary server"
+msgstr "Primární server"
 
 #: forms/dns.forms.php
 msgid "Transfer log"
@@ -1234,6 +1230,10 @@ msgstr "Vyberte IP adresu, na které běží váš sekundární server DNS."
 #: forms/dns.forms.php
 msgid "Select IP address on which your primary DNS server is running."
 msgstr "Vyberte adresu IP, na které běží váš primární server DNS."
+
+#: forms/dns.forms.php
+msgid "TSIG key"
+msgstr "TSIG klíč"
 
 #: forms/dns.forms.php
 msgid "Optional signing key"
@@ -1508,8 +1508,45 @@ msgid "Expires"
 msgstr "Platnost vyprší"
 
 #: forms/dns.forms.php
-msgid "No transfers recorded"
-msgstr "Nebyly zaznamenány žádné přenosy"
+msgid "Activity"
+msgstr "Aktivita"
+
+#: forms/dns.forms.php
+msgid "View transfer log"
+msgstr "Zobrazit log přenosů"
+
+#: forms/dns.forms.php
+msgid "Host IP address"
+msgstr "IP adresa hostitele"
+
+#: forms/dns.forms.php
+msgid "TSIG algorithm"
+msgstr "Algoritmus TSIG"
+
+#: forms/dns.forms.php
+msgid "TSIG secret"
+msgstr "Tajný klíč TSIG"
+
+#: forms/dns.forms.php
+msgid "Checks"
+msgstr "Kontroly"
+
+#: forms/dns.forms.php
+#, php-format
+msgid "%1$d successful, %2$d failed, %3$d pending"
+msgstr "Úspěšné: %1$d, neúspěšné: %2$d, čekající: %3$d"
+
+#: forms/dns.forms.php
+msgid "Pending first check"
+msgstr "Čeká na první kontrolu"
+
+#: forms/dns.forms.php
+msgid "Expired"
+msgstr "Expirováno"
+
+#: forms/dns.forms.php
+msgid "Not loaded"
+msgstr "Nenačteno"
 
 #: forms/dns.forms.php
 msgid "Successful"
@@ -1518,6 +1555,34 @@ msgstr "Úspěšný"
 #: forms/dns.forms.php
 msgid "Failed"
 msgstr "Nepodařilo se"
+
+#: forms/dns.forms.php
+msgid "Pending"
+msgstr "Čeká"
+
+#: forms/dns.forms.php
+msgid "BIND transfer"
+msgstr "Přenos BINDu"
+
+#: forms/dns.forms.php
+msgid "IXFR readiness probe"
+msgstr "Kontrola připravenosti IXFR"
+
+#: forms/dns.forms.php
+msgid "AXFR validation"
+msgstr "Ověření AXFR"
+
+#: forms/dns.forms.php
+msgid "BIND refresh"
+msgstr "Obnovení BINDu"
+
+#: forms/dns.forms.php
+msgid "BIND notification"
+msgstr "Oznámení BINDu"
+
+#: forms/dns.forms.php
+msgid "BIND zone load"
+msgstr "Načtení zóny BINDem"
 
 #: forms/dns.forms.php
 msgid "create"
@@ -8319,6 +8384,21 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "Zone state"
+#~ msgstr "Stav zóny"
+
+#~ msgid "Direct transfers"
+#~ msgstr "Přímé přenosy"
+
+#~ msgid "No transfers recorded"
+#~ msgstr "Nebyly zaznamenány žádné přenosy"
+
+#~ msgid "Failed servers"
+#~ msgstr "Servery s chybou"
+
+#~ msgid "Last attempt"
+#~ msgstr "Poslední pokus"
 
 #, php-format
 #~ msgid "after %s, before %s"

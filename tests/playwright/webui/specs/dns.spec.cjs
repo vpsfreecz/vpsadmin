@@ -253,6 +253,33 @@ test.describe('DNS browser coverage', () => {
     await expectPrimaryZoneCreateForm(page);
     await expectSecondaryZoneCreateForm(page);
 
+    await page.goto(`/?page=dns&action=zone_show&id=${d.transfers.primary.zoneId}`, {
+      waitUntil: 'domcontentloaded',
+    });
+    const nameServers = page.locator('#dns-zone-name-servers');
+    await expect(nameServers).toContainText('Serving');
+    await expect(nameServers).toContainText(d.serverZones.transferLog.serverName);
+    await expect(nameServers).toContainText(String(d.serverZones.transferLog.serial));
+    await expect(nameServers.locator(
+      `a[href*="action=transfer_log"][href*="dns_server_zone=${d.serverZones.transferLog.id}"]`,
+    )).toBeVisible();
+
+    const primaryServers = page.locator('#dns-zone-transfer-servers');
+    await expect(primaryServers).toContainText('Server details');
+    await expect(primaryServers).toContainText('Transfer checks');
+    const primaryLogLink = page.locator(
+      `a[href*="action=transfer_log"][href*="dns_zone_transfer=${d.transfers.primary.id}"]`,
+    );
+    await expect(primaryLogLink).toBeVisible();
+    const primaryRow = primaryLogLink.locator('xpath=ancestor::tr[1]');
+    await expect(primaryRow).toContainText(d.transfers.hostIpAddress);
+    await expect(primaryRow).toContainText(d.transfers.primary.tsigKeyName);
+    await expect(primaryRow).toContainText(d.transfers.primary.tsigAlgorithm);
+    await expect(primaryRow).toContainText('Failed');
+    await expect(primaryRow).toContainText('0 successful, 1 failed, 0 pending');
+    await expect(primaryRow).toContainText(d.serverZones.transferLog.serverName);
+    await expect(primaryRow).toContainText('The primary DNS server refused the transfer');
+
     await page.goto(
       `/?page=dns&action=record_log&list=1&dns_zone=${d.logs.recordUser.zoneId}&name=${d.logs.recordUser.name}`,
       { waitUntil: 'domcontentloaded' },
@@ -261,11 +288,15 @@ test.describe('DNS browser coverage', () => {
     await expect(page.locator('#content-in')).toContainText(d.logs.recordUser.zoneName);
 
     await page.goto(
-      `/?page=dns&action=transfer_log&dns_zone=${d.logs.transferUser.zoneId}&reason_code=${d.logs.transferUser.reasonCode}`,
+      `/?page=dns&action=transfer_log&dns_zone=${d.logs.transferUser.zoneId}&dns_zone_transfer=${d.logs.transferUser.zoneTransferId}&reason_code=${d.logs.transferUser.reasonCode}`,
       { waitUntil: 'domcontentloaded' },
     );
     await expect(page.locator('#content-in')).toContainText('DNS transfer log');
     await expect(page.locator('#content-in')).toContainText(d.logs.transferUser.reasonCode);
+    await expect(page.locator('#dns-transfer-log')).toContainText('IXFR readiness probe');
+    await expect(
+      page.locator('form[name="dns-transfer-log-filter"] select[name="dns_zone_transfer"]'),
+    ).toHaveValue(String(d.logs.transferUser.zoneTransferId));
 
     await page.goto(
       `/?page=dns&action=ptr_list&list=1&vps=${fixtures.networking.vps.user_ptr.id}`,
@@ -382,6 +413,9 @@ test.describe('DNS browser coverage', () => {
       { waitUntil: 'domcontentloaded' },
     );
     await expect(page.locator('form[name="dns-transfer-log-filter"] input[name="dns_zone"]')).toBeVisible();
+    await expect(
+      page.locator('form[name="dns-transfer-log-filter"] input[name="dns_zone_transfer"]'),
+    ).toBeVisible();
     await expect(page.locator('#content-in')).toContainText(d.logs.transferAdmin.reasonCode);
 
     await page.goto(`/?page=dns&action=tsig_key_list&user=${fixtures.user.id}`, {

@@ -263,15 +263,9 @@ function dns_zone_show($id)
         $xtpl->table_out();
     } else {
         $nameServerColumns = 2;
-        $showTransferStatus = $zone->source == 'external_source' || isAdmin();
 
         $xtpl->table_add_category(_('Server'));
-        $xtpl->table_add_category(_('Zone state'));
-
-        if ($showTransferStatus) {
-            $xtpl->table_add_category(_('Last transfer'));
-            $nameServerColumns += 1;
-        }
+        $xtpl->table_add_category(_('Serving'));
 
         if (isAdmin()) {
             $xtpl->table_add_category('');
@@ -281,10 +275,6 @@ function dns_zone_show($id)
         foreach ($serverZones as $sz) {
             $xtpl->table_td(dnsServerZoneServerInfo($sz), false, false, 1, 1, 'top');
             $xtpl->table_td(dnsServerZoneState($sz), false, false, 1, 1, 'top');
-
-            if ($showTransferStatus) {
-                $xtpl->table_td(dnsTransferStatus($zone, $sz), false, false, 1, 1, 'top');
-            }
 
             if (isAdmin()) {
                 $xtpl->table_td('<div class="dns-zone-server-action"><a href="?page=dns&action=server_zone_delete&id=' . $zone->id . '&server_zone=' . $sz->id . '&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to this server?') . '\');"><img src="template/icons/vps_delete.png" alt="' . _('Remove from server') . '" title="' . _('Remove from server') . '"></a></div>', false, false, 1, 1, 'top');
@@ -308,23 +298,18 @@ function dns_zone_show($id)
 
     $xtpl->table_title($zone->source == 'internal_source' ? _('Secondary servers') : _('Primary servers'));
 
-    $xtpl->table_add_category(_('Host IP address'));
-    $xtpl->table_add_category(_('TSIG key'));
-    $xtpl->table_add_category(_('TSIG algorithm'));
-    $xtpl->table_add_category(_('TSIG secret'));
+    $xtpl->table_add_category(_('Server details'));
+    $showTransferChecks = $zone->source == 'external_source';
+    if ($showTransferChecks) {
+        $xtpl->table_add_category(_('Transfer checks'));
+    }
     $xtpl->table_add_category('');
 
     foreach ($zoneTransfers as $zt) {
-        $xtpl->table_td($zt->host_ip_address->addr);
+        $xtpl->table_td(dnsZoneTransferDetails($zt), false, false, 1, 1, 'top');
 
-        if ($zt->dns_tsig_key_id) {
-            $xtpl->table_td(h($zt->dns_tsig_key->name));
-            $xtpl->table_td(h($zt->dns_tsig_key->algorithm));
-            $xtpl->table_td('<textarea cols="40" rows="1" readonly>' . h($zt->dns_tsig_key->secret) . '</textarea>');
-        } else {
-            $xtpl->table_td('-');
-            $xtpl->table_td('-');
-            $xtpl->table_td('-');
+        if ($showTransferChecks) {
+            $xtpl->table_td(dnsZoneTransferStatus($zone, $zt, $serverZones), false, false, 1, 1, 'top');
         }
 
         $xtpl->table_td('<a href="?page=dns&action=zone_transfer_delete&id=' . $zone->id . '&transfer=' . $zt->id . '&t=' . csrf_token() . '" onclick="return confirm(\'' . _('Do you really wish to this server?') . '\');"><img src="template/icons/vps_delete.png" alt="' . _('Remove transfer') . '" title="' . _('Remove transfer') . '"></a>');
@@ -332,16 +317,19 @@ function dns_zone_show($id)
     }
 
     $addText = $zone->source == 'internal_source' ? _('Add secondary server') : _('Add primary server');
+    $addDocAttr = $zone->source == 'external_source'
+        ? ' data-vpsadmin-doc-id="dns.secondary-zones.add-primary"'
+        : '';
 
     $xtpl->table_td(
-        '<a href="?page=dns&action=zone_transfer_new&id=' . $zone->id . '">' . $addText . '</a>',
+        '<a' . $addDocAttr . ' href="?page=dns&action=zone_transfer_new&id=' . $zone->id . '">' . $addText . '</a>',
         false,
         true,
-        5
+        $showTransferChecks ? 3 : 2
     );
     $xtpl->table_tr();
 
-    $xtpl->table_out();
+    $xtpl->table_out('dns-zone-transfer-servers');
 
     foreach ($zoneTransfers as $zt) {
         switch ($zt->peer_type) {
@@ -390,6 +378,11 @@ function dns_transfer_log_list()
         $params['dns_server_zone'] = $serverZoneId;
     }
 
+    $zoneTransferId = api_get_uint('dns_zone_transfer');
+    if ($zoneTransferId !== null && $zoneTransferId > 0) {
+        $params['dns_zone_transfer'] = $zoneTransferId;
+    }
+
     $fromId = api_get_uint('from_id');
     if ($fromId !== null && $fromId > 0) {
         $params['from_id'] = $fromId;
@@ -435,6 +428,7 @@ function dns_transfer_log_list()
     if (isAdmin()) {
         $xtpl->form_add_input(_('DNS zone ID') . ':', 'text', '40', 'dns_zone', get_val('dns_zone', ''), '');
         $xtpl->form_add_input(_('DNS server zone ID') . ':', 'text', '40', 'dns_server_zone', get_val('dns_server_zone', ''), '');
+        $xtpl->form_add_input(_('Primary server ID') . ':', 'text', '40', 'dns_zone_transfer', get_val('dns_zone_transfer', ''), '');
     } else {
         $xtpl->form_add_select(
             _('DNS zone') . ':',
@@ -448,6 +442,12 @@ function dns_transfer_log_list()
             dnsTransferLogServerZoneOptions($serverZones),
             get_val('dns_server_zone', 0)
         );
+        $xtpl->form_add_select(
+            _('Primary server') . ':',
+            'dns_zone_transfer',
+            dnsTransferLogZoneTransferOptions(),
+            get_val('dns_zone_transfer', 0)
+        );
     }
 
     api_param_to_form('status', $input->status, get_val('status'), function ($status) {
@@ -460,6 +460,7 @@ function dns_transfer_log_list()
     $xtpl->table_add_category(_('Time'));
     $xtpl->table_add_category(_('Zone'));
     $xtpl->table_add_category(_('Server'));
+    $xtpl->table_add_category(_('Source'));
     $xtpl->table_add_category(_('Status'));
     $xtpl->table_add_category(_('Primary'));
     $xtpl->table_add_category(_('Serial'));
@@ -470,6 +471,7 @@ function dns_transfer_log_list()
         $xtpl->table_td(tolocaltz($log->event_at));
         $xtpl->table_td('<a href="?page=dns&action=zone_show&id=' . $serverZone->dns_zone_id . '">' . h($serverZone->dns_zone->name) . '</a>');
         $xtpl->table_td(h($serverZone->dns_server->name));
+        $xtpl->table_td(h(dnsTransferAttemptKindLabel($log->attempt_kind)));
         $xtpl->table_td(dnsTransferStatusLabel($log->status));
         $xtpl->table_td($log->primary_addr ? h($log->primary_addr) : '-');
         $xtpl->table_td(is_null($log->serial) ? '-' : $log->serial);
@@ -483,7 +485,7 @@ function dns_transfer_log_list()
             ]),
             false,
             false,
-            6
+            7
         );
         $xtpl->table_tr(false, 'dns-transfer-log-details', 'dns-transfer-log-details');
     }
@@ -512,6 +514,26 @@ function dnsTransferLogServerZoneOptions($serverZones = null)
         true,
         function ($serverZone) {
             return $serverZone->dns_zone->name . ' / ' . $serverZone->dns_server->name . ' (#' . $serverZone->id . ')';
+        }
+    );
+}
+
+function dnsTransferLogZoneTransferOptions()
+{
+    global $api;
+
+    $transfers = $api->dns_zone_transfer->list([
+        'peer_type' => 'primary_type',
+        'meta' => ['includes' => 'dns_zone,host_ip_address'],
+    ]);
+
+    return resource_list_to_options(
+        $transfers,
+        'id',
+        'id',
+        true,
+        function ($transfer) {
+            return $transfer->dns_zone->name . ' / ' . $transfer->host_ip_address->addr . ' (#' . $transfer->id . ')';
         }
     );
 }
@@ -643,15 +665,22 @@ function dns_zone_transfer_new($id)
     $xtpl->table_tr();
 
     $xtpl->table_td(_('TSIG key') . ':');
-    $xtpl->form_add_select_pure(
+    $tsigDocId = $zone->source == 'external_source'
+        ? 'dns.secondary-zones.primary-tsig'
+        : null;
+    $xtpl->table_td($xtpl->form_select_html(
         'dns_tsig_key',
         resource_list_to_options(
             $api->dns_tsig_key->list(['user' => $zone->user_id]),
             'id',
             'name',
             true
-        )
-    );
+        ),
+        '',
+        false,
+        '5',
+        $tsigDocId
+    ));
     $xtpl->table_td(
         _('Optional signing key') . ', '
         . '<a href="?page=dns&action=tsig_key_list">' . _('manage TSIG keys') . '</a>',
@@ -677,7 +706,9 @@ function secondary_dns_zone_list()
             global $xtpl;
 
             $xtpl->table_td(
-                '<a href="?page=dns&action=secondary_zone_new">' . _('Create new secondary zone') . '</a>',
+                '<a data-vpsadmin-doc-id="dns.secondary-zones.create"'
+                . ' href="?page=dns&action=secondary_zone_new">'
+                . _('Create new secondary zone') . '</a>',
                 false,
                 true,
                 $cols
@@ -887,7 +918,7 @@ function tsig_key_list()
     }
 
     $xtpl->table_td(
-        '<a href="?page=dns&action=tsig_key_new">' . _('Create TSIG key') . '</a>',
+        '<a data-vpsadmin-doc-id="dns.tsig-keys.create" href="?page=dns&action=tsig_key_new">' . _('Create TSIG key') . '</a>',
         false,
         true,
         isAdmin() ? 5 : 4
@@ -1706,12 +1737,17 @@ function dnsServerZoneServerInfo($serverZone)
 
 function dnsServerZoneState($serverZone)
 {
+    $logUrl = '?page=dns&action=transfer_log&dns_server_zone=' . $serverZone->id
+        . '&return_url=' . urlencode($_SERVER['REQUEST_URI']);
+
     return dnsServerZoneDefinitionList([
+        [_('Status'), '<strong>' . h(dnsServingStatusLabel($serverZone->zone_status)) . '</strong>'],
         [_('Serial'), is_null($serverZone->serial) ? '-' : h($serverZone->serial)],
         [_('Last loaded'), $serverZone->loaded_at ? tolocaltz($serverZone->loaded_at) : '-'],
         [_('Last check'), $serverZone->last_check_at ? tolocaltz($serverZone->last_check_at) : '-'],
         [_('Next refresh'), $serverZone->refresh_at ? tolocaltz($serverZone->refresh_at) : '-'],
         [_('Expires'), $serverZone->expires_at ? tolocaltz($serverZone->expires_at) : '-'],
+        [_('Activity'), '<a href="' . $logUrl . '">' . _('View transfer log') . '</a>'],
     ]);
 }
 
@@ -1727,37 +1763,95 @@ function dnsServerZoneDefinitionList($items)
     return $ret . '</dl>';
 }
 
-function dnsTransferStatus($zone, $serverZone)
+function dnsZoneTransferDetails($zoneTransfer)
 {
-    if (!dnsServerZoneShowsTransferStatus($zone, $serverZone)) {
-        return '-';
-    }
-
-    $url = '?page=dns&action=transfer_log&dns_server_zone=' . $serverZone->id . '&return_url=' . urlencode($_SERVER['REQUEST_URI']);
-
-    if (!$serverZone->last_transfer_status) {
-        return dnsServerZoneDefinitionList([
-            [_('Status'), '<a href="' . $url . '">' . _('No transfers recorded') . '</a>'],
-        ]);
+    $tsigSecret = '-';
+    if ($zoneTransfer->dns_tsig_key_id) {
+        $tsigSecret = '<textarea cols="40" rows="2" readonly>'
+            . h($zoneTransfer->dns_tsig_key->secret)
+            . '</textarea>';
     }
 
     return dnsServerZoneDefinitionList([
-        [_('Status'), '<a href="' . $url . '">' . h(dnsTransferStatusLabel($serverZone->last_transfer_status)) . '</a>'],
-        [_('Time'), $serverZone->last_transfer_at ? tolocaltz($serverZone->last_transfer_at) : '-'],
-        [_('Primary'), $serverZone->last_transfer_primary_addr ? h($serverZone->last_transfer_primary_addr) : '-'],
-        [_('Reason'), $serverZone->last_transfer_reason ? '<strong>' . h($serverZone->last_transfer_reason) . '</strong>' : '-'],
+        [_('Host IP address'), h($zoneTransfer->host_ip_address->addr)],
+        [_('TSIG key'), $zoneTransfer->dns_tsig_key_id ? h($zoneTransfer->dns_tsig_key->name) : '-'],
+        [_('TSIG algorithm'), $zoneTransfer->dns_tsig_key_id ? h($zoneTransfer->dns_tsig_key->algorithm) : '-'],
+        [_('TSIG secret'), $tsigSecret],
     ]);
 }
 
-function dnsServerZoneShowsTransferStatus($zone, $serverZone)
+function dnsZoneTransferStatus($zone, $zoneTransfer, $serverZones)
 {
-    if ($zone->source == 'external_source') {
-        return true;
+    global $api;
+
+    $status = $zoneTransfer->transfer_check_status ?: 'pending';
+    $url = '?page=dns&action=transfer_log&dns_zone=' . $zone->id
+        . '&dns_zone_transfer=' . $zoneTransfer->id
+        . '&return_url=' . urlencode($_SERVER['REQUEST_URI']);
+
+    $ret = dnsServerZoneDefinitionList([
+        [_('Status'), '<a href="' . $url . '">' . h(dnsTransferStatusLabel($status)) . '</a>'],
+        [
+            _('Checks'),
+            sprintf(
+                _('%1$d successful, %2$d failed, %3$d pending'),
+                $zoneTransfer->transfer_check_success_count,
+                $zoneTransfer->transfer_check_failed_count,
+                $zoneTransfer->transfer_check_pending_count
+            ),
+        ],
+        [
+            _('Last check'),
+            $zoneTransfer->last_transfer_check_at
+                ? tolocaltz($zoneTransfer->last_transfer_check_at)
+                : '-',
+        ],
+    ]);
+
+    if ($status == 'success') {
+        return $ret;
     }
 
-    return isAdmin()
-        && $zone->source == 'internal_source'
-        && ($serverZone->type ?? null) == 'secondary_type';
+    $states = $api->dns_server_zone_primary_transfer_state->list([
+        'dns_zone_transfer' => $zoneTransfer->id,
+        'meta' => ['includes' => 'dns_server_zone__dns_server'],
+    ]);
+    $statesByServerZone = [];
+    foreach ($states as $state) {
+        $statesByServerZone[$state->dns_server_zone_id] = $state;
+    }
+
+    $items = [];
+    foreach ($serverZones as $serverZone) {
+        $state = $statesByServerZone[$serverZone->id] ?? null;
+        if ($state && $state->status == 'success') {
+            continue;
+        }
+
+        $label = '<strong>' . h($serverZone->dns_server->name) . '</strong>';
+        if (!$state || $state->status == 'unknown') {
+            $items[] = '<li>' . $label . ': ' . _('Pending first check') . '</li>';
+        } else {
+            $reason = $state->reason ?: dnsTransferStatusLabel($state->status);
+            $items[] = '<li>' . $label . ': ' . h($reason) . '</li>';
+        }
+    }
+
+    return $ret . ($items ? '<ul class="dns-transfer-paths">' . implode('', $items) . '</ul>' : '');
+}
+
+function dnsServingStatusLabel($status)
+{
+    switch ($status) {
+        case 'serving':
+            return _('Serving');
+        case 'expired':
+            return _('Expired');
+        case 'not_loaded':
+            return _('Not loaded');
+        default:
+            return _('Unknown');
+    }
 }
 
 function dnsTransferStatusLabel($status)
@@ -1767,8 +1861,32 @@ function dnsTransferStatusLabel($status)
             return _('Successful');
         case 'failed':
             return _('Failed');
+        case 'pending':
+            return _('Pending');
+        case 'unknown':
+            return _('Unknown');
         default:
             return $status;
+    }
+}
+
+function dnsTransferAttemptKindLabel($kind)
+{
+    switch ($kind) {
+        case 'transfer':
+            return _('BIND transfer');
+        case 'ixfr_probe':
+            return _('IXFR readiness probe');
+        case 'axfr_probe':
+            return _('AXFR validation');
+        case 'refresh':
+            return _('BIND refresh');
+        case 'notify':
+            return _('BIND notification');
+        case 'load':
+            return _('BIND zone load');
+        default:
+            return $kind ?: '-';
     }
 }
 

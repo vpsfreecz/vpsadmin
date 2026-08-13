@@ -55,6 +55,18 @@ final class XssSharedHelpersTest extends TestCase
             'data-vpsadmin-doc-id="vps.features"',
             $xtpl->vars['T_DOC_ATTR']
         );
+
+        self::assertStringContainsString(
+            'data-vpsadmin-doc-id="dns.secondary-zones.primary-tsig"',
+            $xtpl->form_select_html(
+                'dns_tsig_key',
+                [1 => 'Example'],
+                '',
+                false,
+                '5',
+                'dns.secondary-zones.primary-tsig'
+            )
+        );
         $xtpl->sbar_add('Undocumented action', '?page=');
         self::assertSame('', $xtpl->vars['SBI_DOC_ATTR']);
 
@@ -81,6 +93,16 @@ final class XssSharedHelpersTest extends TestCase
             'SERVER_PORT' => '80',
         ];
         self::assertSame('https://proxy.example.test:8443', getSelfUri());
+    }
+
+    public function testSelectDocumentationIdsRejectInvalidAttributes(): void
+    {
+        require_once dirname(__DIR__, 2) . '/lib/functions.lib.php';
+        require_once dirname(__DIR__, 2) . '/lib/xtemplate.lib.php';
+
+        $xtpl = new XTemplate('', '', null, 'main', false);
+        $this->expectException(InvalidArgumentException::class);
+        $xtpl->form_select_html('dns_tsig_key', [], '', false, '5', 'invalid id');
     }
 
     public function testDocumentationIdsRejectInvalidAttributes(): void
