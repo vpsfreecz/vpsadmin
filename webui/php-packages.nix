@@ -394,20 +394,20 @@ let
     "sebastian/object-enumerator" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "sebastian-object-enumerator-b39ab125fd9a7434b0ecbc4202eebce11a98cfc5";
+        name = "sebastian-object-enumerator-511064ecde82bd747e2ba2fab3dda8d977b59576";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/object-enumerator/zipball/b39ab125fd9a7434b0ecbc4202eebce11a98cfc5";
-          sha256 = "0cfdsxg6qh2qafwfgm6pnihh6viybgi3jx7c8kjlpk57xqyi48sb";
+          url = "https://api.github.com/repos/sebastianbergmann/object-enumerator/zipball/511064ecde82bd747e2ba2fab3dda8d977b59576";
+          sha256 = "0fpvm8m1dwfzzgc9dl3fzrg50m7ix2am94v74snlrjjpfxplckc9";
         };
       };
     };
     "sebastian/object-reflector" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "sebastian-object-reflector-3ca042c2c60b0eab094f8a1b6a7093f4d4c72200";
+        name = "sebastian-object-reflector-f71bbcdc4f95456b4622810bec64eb06372e25b2";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/object-reflector/zipball/3ca042c2c60b0eab094f8a1b6a7093f4d4c72200";
-          sha256 = "0yf6iss844qdiqz679xv4dkq210y7a4a686fqkkq19gz9z8x3zr2";
+          url = "https://api.github.com/repos/sebastianbergmann/object-reflector/zipball/f71bbcdc4f95456b4622810bec64eb06372e25b2";
+          sha256 = "06lcxymp5lxlkalxzqvfxgab36zm5ig30s4wm9cxlyp3p16x7ld4";
         };
       };
     };
