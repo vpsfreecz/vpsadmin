@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+
+require 'json'
+require 'nodectld/dns_transfer_probe_worker'
+
+begin
+  raw_job = $stdin.read(NodeCtld::DnsTransferProbeWorker::MAX_JOB_BYTES + 1).to_s
+  if raw_job.bytesize > NodeCtld::DnsTransferProbeWorker::MAX_JOB_BYTES
+    raise ArgumentError, 'probe job exceeds the local size limit'
+  end
+
+  job = JSON.parse(raw_job)
+  commands = NodeCtld::DnsTransferProbeWorker.extract_commands!(job)
+  worker = NodeCtld::DnsTransferProbeWorker.new(
+    dig_command: commands.fetch('dig_command'),
+    checkconf_command: commands.fetch('checkconf_command')
+  )
+  output = JSON.generate(worker.run(job))
+  if output.bytesize > NodeCtld::DnsTransferProbeWorker::MAX_RESULT_BYTES
+    raise ArgumentError, 'probe result exceeds the local size limit'
+  end
+
+  $stdout.write(output)
+rescue StandardError => e
+  diagnostic = "#{e.class}: probe worker failed".encode(
+    'UTF-8',
+    invalid: :replace,
+    undef: :replace,
+    replace: '?'
+  )
+  warn(
+    diagnostic.byteslice(
+      0,
+      NodeCtld::DnsTransferProbeWorker::MAX_DIAGNOSTIC_BYTES
+    ).to_s.scrub('?')
+  )
+  exit(false)
+end

@@ -284,7 +284,12 @@ module NodeCtld
       transfer_probe_timeout: 30,
       transfer_probe_axfr_timeout: 10 * 60,
       transfer_probe_axfr_max_bytes: 256 * 1024 * 1024,
-      transfer_probe_concurrency: 5
+      transfer_probe_concurrency: 5,
+      transfer_probe_systemd_run_command: 'systemd-run',
+      transfer_probe_systemctl_command: 'systemctl',
+      transfer_probe_worker_command: 'vpsadmin-dns-transfer-probe',
+      transfer_probe_dig_command: 'dig',
+      transfer_probe_checkconf_command: 'named-checkconf'
     }
   }.freeze
 

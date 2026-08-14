@@ -44,6 +44,59 @@ import ../../make-test.nix (
       transfer_probe_axfr_max_bytes = 16 * 1024 * 1024;
       transfer_probe_concurrency = 5;
     };
+    probeAuditModule =
+      { pkgs, ... }:
+      let
+        # Every real probe in this scenario first proves that systemd assigned
+        # a non-root dynamic UID, hid nodectld state and blocked the other
+        # reachable primary at the cgroup network boundary. It then runs the
+        # packaged worker with the unchanged stdin/stdout contract.
+        probeAuditScript = pkgs.writeText "dns-transfer-probe-audit.rb" ''
+          require 'json'
+          require 'open3'
+          require 'socket'
+
+          payload = $stdin.read
+          job = JSON.parse(payload)
+          abort 'probe worker is running as root' if Process.uid.zero?
+
+          begin
+            Dir.entries('/var/lib/nodectld')
+            abort 'probe worker can read nodectld state'
+          rescue SystemCallError
+            # Expected from DynamicUser plus InaccessiblePaths.
+          end
+
+          blocked_addr =
+            job.fetch('primary_addr') == '${primary1Addr}' ? '${primary2Addr}' : '${primary1Addr}'
+          begin
+            socket = Socket.tcp(blocked_addr, 53, connect_timeout: 1)
+            socket.close
+            abort 'probe worker can contact a non-selected primary'
+          rescue SystemCallError, IO::TimeoutError
+            # Expected from IPAddressDeny=any plus the one selected allow rule.
+          end
+
+          # Keep one path observable long enough for the runtime-removal
+          # example to prove that nodectld stops the real transient unit.
+          sleep 15 if job.fetch('primary_addr') == '${primary2Addr}'
+
+          stdout, stderr, status = Open3.capture3(
+            '${pkgs.nodectld}/bin/vpsadmin-dns-transfer-probe',
+            stdin_data: payload
+          )
+          $stdout.write(stdout)
+          $stderr.write(stderr)
+          exit(status.exitstatus)
+        '';
+        probeAuditWorker = pkgs.writeShellScriptBin "vpsadmin-dns-transfer-probe-audit" ''
+          exec ${pkgs.ruby}/bin/ruby ${probeAuditScript}
+        '';
+      in
+      {
+        vpsadmin.nodectld.settings.dns_server.transfer_probe_worker_command =
+          pkgs.lib.mkForce "${probeAuditWorker}/bin/vpsadmin-dns-transfer-probe-audit";
+      };
     mkPrimary =
       {
         hostName,
@@ -141,7 +194,10 @@ import ../../make-test.nix (
 
       dns = baseMachines.dns // {
         config = {
-          imports = [ baseMachines.dns.config ];
+          imports = [
+            baseMachines.dns.config
+            probeAuditModule
+          ];
           vpsadmin = {
             nodectld.settings.dns_server = probeSettings;
             test.dnsServer.socketPeers.${dnsNode2.name} = dnsNode2.ipAddr;
@@ -156,7 +212,10 @@ import ../../make-test.nix (
           { type = "socket"; }
         ];
         config = {
-          imports = [ ../../configs/nixos/vpsadmin-dns-server.nix ];
+          imports = [
+            ../../configs/nixos/vpsadmin-dns-server.nix
+            probeAuditModule
+          ];
           vpsadmin = {
             nodectld.settings.dns_server = probeSettings;
             test.dnsServer = {
@@ -282,6 +341,16 @@ import ../../make-test.nix (
         RUBY
       end
 
+      def destroy_dns_zone_runtime(services, admin_user_id:, dns_zone_id:)
+        services.api_ruby_json(code: <<~RUBY)
+          #{api_session_prelude(admin_user_id)}
+
+          zone = DnsZone.find(#{Integer(dns_zone_id)})
+          chain = VpsAdmin::API::Operations::DnsZone::DestroyUser.run(zone)
+          puts JSON.dump(chain_id: chain&.id, id: zone.id)
+        RUBY
+      end
+
       def path_snapshot(services, server_zone_id:, transfer_id:)
         services.api_ruby_json(code: <<~RUBY)
           server_zone = DnsServerZone.find(#{Integer(server_zone_id)})
@@ -360,6 +429,24 @@ import ../../make-test.nix (
         messages.each do |message|
           printf_cmd = Shellwords.join(['printf', "%s\n", message])
           node.succeeds("#{printf_cmd} | ${pkgs.systemd}/bin/systemd-cat -t named")
+        end
+      end
+
+      def wait_for_probe_unit(machine, primary_addr)
+        wait_until_block_succeeds(name: "active isolated probe for #{primary_addr}") do
+          _, output = machine.succeeds(<<~SH)
+            for unit in $(systemctl list-units \
+              --type=service --state=running --no-legend \
+              'vpsadmin-dns-transfer-probe-*' | awk '{ print $1 }'); do
+              if systemctl show --property=IPAddressAllow --value "$unit" \
+                | grep -Fq #{Shellwords.escape(primary_addr)}; then
+                printf '%s\\n' "$unit"
+                exit 0
+              fi
+            done
+            exit 1
+          SH
+          output.strip
         end
       end
 
@@ -598,6 +685,109 @@ import ../../make-test.nix (
             attempt_kind: 'ixfr_probe'
           )
           expect(recovered.fetch('alert_eligible')).to be(false)
+        end
+
+        it 'reconciles primary and zone changes without restarting nodectld' do
+          ids = fixture_ids(services)
+          zone_id = ids.fetch('zone_id')
+          old_transfer_id = ids.fetch('transfers').fetch(PRIMARY2_ADDR)
+          nodectld_pids = [dns, dns2].to_h do |machine|
+            _, output = machine.succeeds(
+              'systemctl show --property=MainPID --value vpsadmin-nodectld.service'
+            )
+            [machine, output.strip]
+          end
+          running_units = [dns, dns2].to_h do |machine|
+            [machine, wait_for_probe_unit(machine, PRIMARY2_ADDR)]
+          end
+
+          destroyed = destroy_dns_zone_transfer_runtime(
+            services,
+            admin_user_id: admin_user_id,
+            dns_zone_transfer_id: old_transfer_id
+          )
+          expect_chain_done(services, destroyed, label: 'remove runtime primary')
+          running_units.each do |machine, unit|
+            wait_until_block_succeeds(name: "cancelled isolated unit #{unit}") do
+              machine.fails("systemctl is-active #{Shellwords.escape(unit)}")
+              true
+            end
+          end
+          wait_until_block_succeeds(name: 'removed primary paths disappear') do
+            snapshot = services.api_ruby_json(code: <<~RUBY)
+              puts JSON.dump(
+                transfer_exists: DnsZoneTransfer.exists?(#{Integer(old_transfer_id)}),
+                state_count: DnsServerZonePrimaryTransferState.where(
+                  dns_zone_transfer_id: #{Integer(old_transfer_id)}
+                ).count
+              )
+            RUBY
+            expect(snapshot.fetch('transfer_exists')).to be(false)
+            expect(snapshot.fetch('state_count')).to eq(0)
+            snapshot
+          end
+
+          host_ip = create_primary_host_ip(
+            services,
+            admin_user_id: admin_user_id,
+            node_id: node1_id,
+            addr: PRIMARY2_ADDR
+          )
+          created = create_dns_zone_transfer_runtime(
+            services,
+            admin_user_id: admin_user_id,
+            dns_zone_id: zone_id,
+            host_ip_id: host_ip.fetch('host_ip_id'),
+            peer_type: 'primary_type'
+          )
+          expect_chain_done(services, created, label: 'add runtime primary')
+          expect(created.fetch('id')).not_to eq(old_transfer_id)
+
+          current_ids = fixture_ids(services)
+          new_transfer_id = current_ids.fetch('transfers').fetch(PRIMARY2_ADDR)
+          wait_for_path(
+            services,
+            server_zone_id: current_ids.fetch('server_zones').fetch(node1_id.to_s),
+            transfer_id: new_transfer_id,
+            status: 'success'
+          )
+          wait_for_path(
+            services,
+            server_zone_id: current_ids.fetch('server_zones').fetch(DNS_NODE2_ID.to_s),
+            transfer_id: new_transfer_id,
+            status: 'failed',
+            failure_class: 'primary',
+            reason_code: 'refused'
+          )
+
+          removed_zone = destroy_dns_zone_runtime(
+            services,
+            admin_user_id: admin_user_id,
+            dns_zone_id: zone_id
+          )
+          expect_chain_done(services, removed_zone, label: 'remove runtime zone')
+          removed = services.api_ruby_json(code: <<~RUBY)
+            puts JSON.dump(
+              zone_exists: DnsZone.exists?(#{Integer(zone_id)}),
+              state_count: DnsServerZonePrimaryTransferState.where(
+                dns_server_zone_id: #{current_ids.fetch('server_zones').values.map { |id| Integer(id) }.inspect}
+              ).count
+            )
+          RUBY
+          expect(removed.fetch('zone_exists')).to be(false)
+          expect(removed.fetch('state_count')).to eq(0)
+
+          [['dns', dns], ['dns2', dns2]].each do |name, machine|
+            wait_until_block_succeeds(name: "zone removed from #{name}") do
+              _, config = machine.succeeds('cat /var/named/vpsadmin/named.conf')
+              expect(config).not_to include(%(zone "#{ZONE_NAME_BARE}"))
+              _, output = machine.succeeds(
+                'systemctl show --property=MainPID --value vpsadmin-nodectld.service'
+              )
+              expect(output.strip).to eq(nodectld_pids.fetch(machine))
+              true
+            end
+          end
         end
       end
     '';

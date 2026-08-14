@@ -22,6 +22,14 @@ in
 
     vpsadmin.nodectld.settings.mode = "minimal";
 
+    vpsadmin.nodectld.settings.dns_server = {
+      transfer_probe_systemd_run_command = "${pkgs.systemd}/bin/systemd-run";
+      transfer_probe_systemctl_command = "${pkgs.systemd}/bin/systemctl";
+      transfer_probe_worker_command = "${pkgs.nodectld}/bin/vpsadmin-dns-transfer-probe";
+      transfer_probe_dig_command = "${getOutput "dnsutils" config.services.bind.package}/bin/dig";
+      transfer_probe_checkconf_command = "${config.services.bind.package}/bin/named-checkconf";
+    };
+
     systemd.tmpfiles.rules = [
       "d '/run/nodectl' 0700 root root - -"
       "d '/var/lib/nodectld' 0700 root root - -"

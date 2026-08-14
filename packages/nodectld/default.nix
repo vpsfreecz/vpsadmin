@@ -9,7 +9,10 @@
 bundlerApp {
   pname = "nodectld";
   gemdir = ./.;
-  exes = [ "nodectld" ];
+  exes = [
+    "nodectld"
+    "vpsadmin-dns-transfer-probe"
+  ];
   inherit ruby;
   inherit gemConfig;
 
