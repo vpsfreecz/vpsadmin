@@ -13,6 +13,10 @@ h1, h2, h3, h4, h5, h6 {}
 
 a {color:#2998FF;}
 a:hover {color:#7C7C60;}
+tr.error a, tr.error a:visited,
+tr.failed a, tr.failed a:visited {color:#001F3F; text-decoration:underline;}
+tr.error a:hover, tr.error a:focus,
+tr.failed a:hover, tr.failed a:focus {color:#000;}
 
 fieldset {border:1px solid #D4E7F7;}
 legend {background:#FFF; color:#969678;}

@@ -297,6 +297,17 @@ test.describe('DNS browser coverage', () => {
     await expect(
       page.locator('form[name="dns-transfer-log-filter"] select[name="dns_zone_transfer"]'),
     ).toHaveValue(String(d.logs.transferUser.zoneTransferId));
+    const failedLogRow = page.locator('#dns-transfer-log tr.failed', {
+      hasText: 'IXFR readiness probe',
+    }).first();
+    const failedLogLink = failedLogRow.locator('a').first();
+    await expect(failedLogLink).toBeVisible();
+    expect(await failedLogLink.evaluate((link) => getComputedStyle(link).color)).toBe(
+      'rgb(0, 31, 63)',
+    );
+    expect(await failedLogLink.evaluate((link) => (
+      getComputedStyle(link).textDecorationLine
+    ))).toContain('underline');
 
     await page.goto(
       `/?page=dns&action=ptr_list&list=1&vps=${fixtures.networking.vps.user_ptr.id}`,
