@@ -464,7 +464,9 @@ module VpsAdmin
         end
 
         def runtime_i18n_keys
-          VpsAdmin::API::Authentication::OAuth2Config.i18n_keys + ::Transaction.transaction_label_keys
+          VpsAdmin::API::Authentication::OAuth2Config.i18n_keys +
+            VpsAdmin::API::Authentication::PasswordRecovery.i18n_keys +
+            ::Transaction.transaction_label_keys
         end
 
         def runtime_i18n_defaults

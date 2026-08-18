@@ -184,6 +184,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(client_obj['name']).to eq('Spec Client A')
       expect(client_obj['client_id']).to eq('spec-client-a')
       expect(client_obj['redirect_uri']).to eq('https://example.invalid/callback-a')
+      expect(client_obj).to include('authorization_start_uri')
       expect(client_obj).not_to include('client_secret', 'client_secret_hash')
     end
 
@@ -219,6 +220,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
           name: 'Spec Created',
           client_id: 'spec-created',
           redirect_uri: 'https://example.invalid/callback-created',
+          authorization_start_uri: 'https://example.invalid/sign-in?client=created',
           client_secret: 'spec-created-secret'
         }
       end
@@ -229,6 +231,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(client_obj['name']).to eq('Spec Created')
       expect(client_obj['client_id']).to eq('spec-created')
       expect(client_obj['redirect_uri']).to eq('https://example.invalid/callback-created')
+      expect(client_obj['authorization_start_uri']).to eq('https://example.invalid/sign-in?client=created')
       expect(client_obj).not_to include('client_secret', 'client_secret_hash')
 
       record = Oauth2Client.find_by!(client_id: 'spec-created')
@@ -266,6 +269,22 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(response_errors).to be_a(Hash)
       expect(response_errors.keys.map(&:to_s)).to include('client_id')
     end
+
+    it 'rejects unsafe authorization start URIs' do
+      as(admin) do
+        json_post index_path, oauth2_client: {
+          name: 'Spec Unsafe Start',
+          client_id: 'spec-unsafe-start',
+          redirect_uri: 'https://example.invalid/callback',
+          authorization_start_uri: 'https://user@example.invalid/sign-in#token',
+          client_secret: 'spec-secret'
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_errors.keys.map(&:to_s)).to include('authorization_start_uri')
+    end
   end
 
   describe 'Update' do
@@ -287,7 +306,8 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       as(admin) do
         json_put show_path(primary_client.id), oauth2_client: {
           name: 'Spec Client A Updated',
-          redirect_uri: 'https://example.invalid/callback-updated'
+          redirect_uri: 'https://example.invalid/callback-updated',
+          authorization_start_uri: 'https://example.invalid/sign-in?client=a'
         }
       end
 
@@ -296,10 +316,12 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(client_obj).to be_a(Hash)
       expect(client_obj['name']).to eq('Spec Client A Updated')
       expect(client_obj['redirect_uri']).to eq('https://example.invalid/callback-updated')
+      expect(client_obj['authorization_start_uri']).to eq('https://example.invalid/sign-in?client=a')
 
       primary_client.reload
       expect(primary_client.name).to eq('Spec Client A Updated')
       expect(primary_client.redirect_uri).to eq('https://example.invalid/callback-updated')
+      expect(primary_client.authorization_start_uri).to eq('https://example.invalid/sign-in?client=a')
     end
 
     it 'allows admin to update client secret' do

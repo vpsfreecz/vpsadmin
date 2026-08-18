@@ -1,5 +1,6 @@
 require 'erb'
 require 'json'
+require 'uri'
 require 'vpsadmin/api/operations/utils/dns'
 
 module VpsAdmin::API
@@ -20,8 +21,11 @@ module VpsAdmin::API
       passwords_do_not_match
     ].freeze
 
+    STATIC_I18N_KEYS = %i[forgot_password].freeze
+
     def self.i18n_keys
-      AUTH_ERROR_CODES.map { |code| "auth.oauth2.errors.#{code}" }
+      STATIC_I18N_KEYS.map { |key| "auth.oauth2.#{key}" } +
+        AUTH_ERROR_CODES.map { |code| "auth.oauth2.errors.#{code}" }
     end
 
     include Operations::Utils::Dns
@@ -435,6 +439,13 @@ module VpsAdmin::API
       end
 
       support_mail = ::SysConfig.get(:core, :support_mail)
+      password_recovery_enabled = ::SysConfig.get(:core, :password_recovery_enabled)
+      password_recovery_query = { client_id: client.client_id }
+      password_recovery_query[:ui_locales] = ui_locales if ui_locales.present?
+      password_recovery_path = '/oauth2/password-reset'
+      if password_recovery_query.any?
+        password_recovery_path += "?#{URI.encode_www_form(password_recovery_query)}"
+      end
       locale = authorize_locale(sinatra_params, sinatra_request)
       html_lang = locale.to_s
       t = ->(key, **values) { oauth2_text(key, **values) }

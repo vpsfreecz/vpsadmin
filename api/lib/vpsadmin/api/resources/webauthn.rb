@@ -188,7 +188,8 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
       def exec
         challenge = ::WebauthnChallenge.joins(:token).where(
           tokens: { token: input[:challenge_token] },
-          challenge_type: 'authentication'
+          challenge_type: 'authentication',
+          password_recovery_id: nil
         ).take!
 
         error!('challenge token expired') unless challenge.token_valid?
