@@ -288,7 +288,11 @@
                 <p class="text-muted text-center">
                   <small>
                     <% if step == :credentials -%>
-                      <%= html_t.call(:forgot_password_before) %> <a href="mailto:<%= Rack::Utils.escape_html(support_mail) %>"><%= html_t.call(:support) %></a><%= html_t.call(:forgot_password_after) %>
+                      <% if password_recovery_enabled -%>
+                        <a href="<%= Rack::Utils.escape_html(password_recovery_path) %>"><%= html_t.call(:forgot_password) %></a>
+                      <% else -%>
+                        <%= html_t.call(:forgot_password_before) %> <a href="mailto:<%= Rack::Utils.escape_html(support_mail) %>"><%= html_t.call(:support) %></a><%= html_t.call(:forgot_password_after) %>
+                      <% end -%>
                     <% elsif step == :mfa && mfa_methods.include?(:totp) -%>
                       <%= html_t.call(:lost_device_before) %> <a href="mailto:<%= Rack::Utils.escape_html(support_mail) %>"><%= html_t.call(:support) %></a><%= html_t.call(:lost_device_after) %>
                     <% end -%>

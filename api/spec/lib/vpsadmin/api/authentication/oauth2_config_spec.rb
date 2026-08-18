@@ -113,6 +113,41 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(response.body).to include('Log in')
   end
 
+  it 'links to password recovery with OAuth client and locale context when enabled' do
+    SysConfig.find_by!(category: 'core', name: 'password_recovery_enabled').update!(value: true)
+
+    config.handle_get_authorize(
+      sinatra_handler: handler,
+      sinatra_request: request,
+      sinatra_params: { ui_locales: 'cs-CZ' },
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(response.body).to include('Obnovit heslo')
+    expect(response.body).to include(
+      "/oauth2/password-reset?client_id=#{client.client_id}&amp;ui_locales=cs-CZ"
+    )
+    expect(response.body).not_to include('mailto:')
+  end
+
+  it 'keeps the support link while password recovery is disabled' do
+    SysConfig.find_by!(category: 'core', name: 'password_recovery_enabled').update!(value: false)
+
+    config.handle_get_authorize(
+      sinatra_handler: handler,
+      sinatra_request: request,
+      sinatra_params: {},
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(response.body).to include('mailto:')
+    expect(response.body).not_to include('/oauth2/password-reset?')
+  end
+
   it 'uses ui_locales for the authorize page language' do
     result = config.handle_get_authorize(
       sinatra_handler: handler,

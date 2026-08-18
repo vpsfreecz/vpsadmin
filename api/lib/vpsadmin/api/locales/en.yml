@@ -212,6 +212,10 @@ en:
           token:
             label: token
         label: Authentication type
+      authorization_start_uri:
+        description: Absolute HTTP(S) URI where authorization restarts after password
+          recovery
+        label: Authorization start URI
       auto_add:
         description: Add this key automatically into newly created VPS
         label: Auto add
@@ -2138,6 +2142,7 @@ en:
           password_too_short: password should have at least 8 characters
           passwords_do_not_match: passwords do not match
         failed_to_authenticate: 'Failed to authenticate: %{message}'
+        forgot_password: Forgot your password?
         forgot_password_after: "."
         forgot_password_before: Forgot password? Contact
         heading: Sign in using vpsAdmin
@@ -2165,6 +2170,47 @@ en:
         totp_code: TOTP code
         use_passkey_instead: Use a passkey instead
         user: User
+      password_recovery:
+        back_to_sign_in: Back to sign in
+        change_password: Change password
+        complete: Password changed
+        complete_explanation: Your password has been changed. You can return to the
+          service and sign in with your new password.
+        continue: Continue
+        email_sent: Check your email
+        email_sent_explanation: If we found a matching account, we sent instructions
+          to its primary email address. The message may take a few minutes to arrive.
+        identifier: Login or primary email address
+        invalid_link: This password recovery link is invalid, expired, or has already
+          been used. Start again to request a new link.
+        invalid_totp_code: The TOTP or recovery code is not valid.
+        mfa_explanation: Verify your identity with a configured TOTP authenticator,
+          recovery code, or passkey before choosing a new password.
+        mfa_heading: Verify your identity
+        new_password: New password
+        passkey: Verify with a passkey
+        passkey_failed: Passkey verification failed. You can try again.
+        passkey_start_failed: Passkey verification could not start.
+        password_heading: Choose a new password
+        password_too_short: The password must be at least 8 characters long.
+        passwords_do_not_match: The passwords do not match.
+        recovery_unavailable: Password recovery could not continue. Start again or
+          contact support.
+        repeat_new_password: Repeat new password
+        request_explanation: Password recovery is available only for accounts with
+          TOTP or a passkey configured. Enter your login or the primary email address
+          saved on your account. We will not disclose whether an account exists. If
+          an account has no two-factor authentication, the email will explain how
+          to contact support.
+        request_heading: Reset your password
+        send_email: Send password recovery email
+        sign_out_all: Sign out all existing sessions
+        signing_in_passkey: Verifying passkey…
+        title: vpsAdmin password recovery
+        too_many_totp_attempts: Too many invalid codes. This password recovery link
+          can no longer be used.
+        totp_code: TOTP or recovery code
+        verify_totp: Verify code
     errors:
       access_denied: Access denied
       access_denied_contact_support: Access denied, please contact support.

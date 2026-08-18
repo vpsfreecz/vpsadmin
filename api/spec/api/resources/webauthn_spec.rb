@@ -65,6 +65,21 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
     end
   end
 
+  def create_password_recovery(target_user)
+    recovery_request = PasswordRecoveryRequest.create!(
+      recipient_email: target_user.email,
+      recipient_digest: Digest::SHA256.hexdigest(target_user.email.downcase),
+      locale: 'en'
+    )
+    recovery_request.password_recoveries.create!(
+      user: target_user,
+      outcome: :recoverable,
+      email_snapshot: target_user.email,
+      email_token_digest: PasswordRecovery.digest_token(PasswordRecovery.generate_token),
+      email_expires_at: 1.hour.from_now
+    )
+  end
+
   def suspend_user!(target_user = user)
     target_user.update!(
       object_state: :suspended,
@@ -316,6 +331,25 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
                 authentication: {
                   challenge_token: response['challenge_token'],
                   auth_token: other_token.token.to_s,
+                  public_key_credential: { 'id' => 'invalid' }
+                }
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+    end
+
+    it 'does not accept password recovery challenges in regular authentication' do
+      auth_token = create_auth_token(user)
+
+      json_post authentication_begin_path, authentication: { auth_token: auth_token.token.to_s }
+      response = authentication_response
+      challenge = find_challenge(response.fetch('challenge_token'))
+      challenge.update!(password_recovery: create_password_recovery(user))
+
+      json_post authentication_finish_path,
+                authentication: {
+                  challenge_token: response.fetch('challenge_token'),
+                  auth_token: auth_token.token.to_s,
                   public_key_credential: { 'id' => 'invalid' }
                 }
 
