@@ -637,6 +637,16 @@ import ../make-test.nix (
         client_version: 'webui-playwright'
       )
 
+      SysConfig.find_or_initialize_by(
+        category: 'core',
+        name: 'password_recovery_enabled'
+      ).tap do |cfg|
+        cfg.value = true
+        cfg.data_type = 'Boolean'
+        cfg.min_user_level = 99
+        cfg.save! if cfg.changed? || cfg.new_record?
+      end
+
       def ensure_cluster_resource(row)
         resource = ClusterResource.find_or_initialize_by(name: row[0].to_s)
         resource.label = row[1] if resource.new_record?

@@ -399,7 +399,7 @@ test.describe.serial('user members self-service browser coverage', () => {
     const registerForm = page.locator('form[name="webauthn_register"]');
     await expect(registerForm).toBeVisible();
     await submitForm(registerForm, 'Register new passkey');
-    await expect(page).toHaveURL(/api\.vpsadmin\.test\/webauthn\/registration\/new/);
+    await expect(page).toHaveURL(/auth\.vpsadmin\.test\/webauthn\/registration\/new/);
     await expect(page.locator('h4')).toContainText('Register passkey into vpsAdmin');
     await page.locator('input[name="cancel"]').click();
     await expect(page).toHaveURL(/page=adminm.*action=webauthn_list/);

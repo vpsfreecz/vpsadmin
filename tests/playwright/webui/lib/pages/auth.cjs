@@ -22,7 +22,7 @@ async function openWebuiLogin(page, user) {
     await loginButton(page).click({ noWaitAfter: true });
   }
 
-  await expect(page).toHaveURL(/api\.vpsadmin\.test/);
+  await expect(page).toHaveURL(/auth\.vpsadmin\.test/);
   await expect(page.locator('input[name="user"]')).toBeVisible();
 }
 

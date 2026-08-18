@@ -295,6 +295,23 @@ in
           requires = [ "vpsadmin-notification-templates.service" ];
         };
 
+    systemd.services.vpsadmin-password-recovery = {
+      after = [ "vpsadmin-api.service" ];
+      requires = [ "vpsadmin-api.service" ];
+      wantedBy = [ "multi-user.target" ];
+      environment.RACK_ENV = "production";
+      environment.SCHEMA = "${cfg.stateDirectory}/cache/schema.rb";
+      serviceConfig = {
+        Type = "simple";
+        User = cfg.user;
+        Group = cfg.group;
+        WorkingDirectory = "${cfg.package}/api";
+        ExecStart = "${apiApp.bundle} exec bin/vpsadmin-password-recovery";
+        Restart = "on-failure";
+        RestartSec = 30;
+      };
+    };
+
     users.users = optionalAttrs (cfg.user == "vpsadmin-api") {
       ${cfg.user} = {
         group = cfg.group;
