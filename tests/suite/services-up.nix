@@ -144,6 +144,10 @@ import ../make-test.nix (
           services.wait_for_service('vpsadmin-scheduler.service')
         end
 
+        example 'password recovery worker is running' do
+          services.wait_for_service('vpsadmin-password-recovery.service')
+        end
+
         example 'supervisor is running' do
           services.wait_for_service('vpsadmin-supervisor.service')
         end

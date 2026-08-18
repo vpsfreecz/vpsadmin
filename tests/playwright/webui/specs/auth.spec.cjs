@@ -98,7 +98,19 @@ test('invalid OAuth password stays on auth form', async ({ page }) => {
 
   await expect(page.locator('.alert-danger')).toContainText('invalid user or password');
   await expect(page.locator('input[name="user"]')).toHaveValue(fixtures.admin.username);
-  await expect(page).toHaveURL(/api\.vpsadmin\.test/);
+  await expect(page).toHaveURL(/auth\.vpsadmin\.test/);
+});
+
+test('OAuth forgot-password link reaches the recovery form', async ({ page }) => {
+  await openWebuiLogin(page);
+  await expect(page).toHaveURL(/auth\.vpsadmin\.test/);
+  const forgotPassword = page.getByRole('link', { name: 'Forgot your password?' });
+
+  await expect(forgotPassword).toBeVisible();
+  await forgotPassword.click();
+
+  await expect(page).toHaveURL(/auth\.vpsadmin\.test\/oauth2\/password-reset/);
+  await expect(page.getByRole('heading', { name: 'Reset your password' })).toBeVisible();
 });
 
 test('admin login and logout work', async ({ page }) => {
@@ -167,7 +179,7 @@ test('switch user action logs out to OAuth form', async ({ page }) => {
   await login(page, fixtures.user);
   await clickAccountMenuLink(page, 'Switch user');
 
-  await expect(page).toHaveURL(/api\.vpsadmin\.test/);
+  await expect(page).toHaveURL(/auth\.vpsadmin\.test/);
   await expect(page.locator('input[name="user"]')).toBeVisible();
   await expect(page.locator('input[name="user"]')).toHaveValue('');
 });
@@ -181,7 +193,7 @@ test('remembered login quick switch pre-fills OAuth username', async ({ page }) 
   await expect(accountMenuLink(page, `Switch to ${fixtures.user.username}`)).toBeVisible();
   await accountMenuLink(page, `Switch to ${fixtures.user.username}`).click();
 
-  await expect(page).toHaveURL(/api\.vpsadmin\.test/);
+  await expect(page).toHaveURL(/auth\.vpsadmin\.test/);
   await expect(page.locator('input[name="user"]')).toHaveValue(fixtures.user.username);
 });
 
