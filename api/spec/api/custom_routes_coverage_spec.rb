@@ -7,8 +7,20 @@ RSpec.describe 'VpsAdmin::API' do
     it 'ensures all known custom routes are listed as covered' do
       known = [
         'GET /metrics',
+        'GET /oauth2/password-reset',
+        'GET /oauth2/password-reset/complete',
+        'GET /oauth2/password-reset/continue',
+        'GET /oauth2/password-reset/password',
+        'GET /oauth2/password-reset/sent',
+        'GET /oauth2/password-reset/verify',
         'GET /sd/download-pools',
-        'GET /webauthn/registration/new'
+        'GET /webauthn/registration/new',
+        'POST /oauth2/password-reset',
+        'POST /oauth2/password-reset/continue',
+        'POST /oauth2/password-reset/password',
+        'POST /oauth2/password-reset/verify/totp',
+        'POST /oauth2/password-reset/verify/webauthn/begin',
+        'POST /oauth2/password-reset/verify/webauthn/finish'
       ]
 
       covered_path = File.join(__dir__, 'covered_custom_routes.yml')

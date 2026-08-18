@@ -7,6 +7,9 @@ module VpsAdmin::API::Resources
       string :name
       string :client_id
       string :redirect_uri
+      string :authorization_start_uri,
+             label: 'Authorization start URI',
+             desc: 'Absolute HTTP(S) URI where authorization restarts after password recovery'
       string :access_token_lifetime, choices: ::Oauth2Client.access_token_lifetimes.keys.map(&:to_s)
       integer :access_token_seconds
       integer :refresh_token_seconds

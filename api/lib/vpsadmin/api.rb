@@ -46,6 +46,8 @@ module VpsAdmin
       authenticate(api)
 
       api.connect_hook(:pre_mount) do |ret, _, sinatra|
+        Authentication::PasswordRecovery.register_routes(sinatra)
+
         sinatra.get '/metrics' do
           m = Metrics.new
           next [403, VpsAdmin::API::I18n.t('errors.access_denied')] unless m.authenticate(params['access_token'])
