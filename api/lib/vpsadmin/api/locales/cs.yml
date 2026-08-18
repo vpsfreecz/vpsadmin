@@ -4018,6 +4018,7 @@ cs:
         node:
           register: Registrace nodu
           shaper_root_change: Shaper*
+        password_recovery_mail: E-mail pro obnovení hesla
         plugins:
           monitoring:
             alert: Alert

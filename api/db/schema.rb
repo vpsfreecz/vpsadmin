@@ -1283,6 +1283,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.integer "access_token_lifetime", default: 0, null: false
     t.integer "access_token_seconds", default: 900, null: false
     t.boolean "allow_single_sign_on", default: true, null: false
+    t.string "authorization_start_uri"
     t.string "client_id", null: false
     t.string "client_secret_hash", null: false
     t.datetime "created_at", null: false
@@ -1292,6 +1293,63 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.integer "refresh_token_seconds", default: 3600, null: false
     t.datetime "updated_at", null: false
     t.index ["client_id"], name: "index_oauth2_clients_on_client_id", unique: true
+  end
+
+  create_table "password_recoveries", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "email_consumed_at"
+    t.datetime "email_expires_at"
+    t.string "email_snapshot", limit: 127, null: false
+    t.string "email_token_digest", limit: 64
+    t.datetime "invalidated_at"
+    t.datetime "mfa_verified_at"
+    t.integer "outcome", null: false
+    t.bigint "password_recovery_request_id", null: false
+    t.datetime "session_expires_at"
+    t.string "session_token_digest", limit: 64
+    t.integer "totp_failed_attempts", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false, unsigned: true
+    t.index ["email_token_digest"], name: "index_password_recoveries_on_email_token_digest", unique: true
+    t.index ["password_recovery_request_id"], name: "password_recoveries_request"
+    t.index ["session_token_digest"], name: "index_password_recoveries_on_session_token_digest", unique: true
+    t.index ["user_id", "completed_at", "invalidated_at"], name: "password_recoveries_active_user"
+    t.index ["user_id"], name: "index_password_recoveries_on_user_id"
+  end
+
+  create_table "password_recovery_requests", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.string "client_ip_addr", limit: 46
+    t.datetime "created_at", null: false
+    t.string "locale", limit: 16, null: false
+    t.integer "mail_log_id", unsigned: true
+    t.bigint "oauth2_client_id"
+    t.bigint "password_recovery_submission_id"
+    t.string "recipient_digest", limit: 64, null: false
+    t.string "recipient_email", limit: 127, null: false
+    t.datetime "updated_at", null: false
+    t.text "user_agent"
+    t.index ["created_at"], name: "index_password_recovery_requests_on_created_at"
+    t.index ["mail_log_id"], name: "index_password_recovery_requests_on_mail_log_id", unique: true
+    t.index ["oauth2_client_id"], name: "index_password_recovery_requests_on_oauth2_client_id"
+    t.index ["password_recovery_submission_id"], name: "password_recovery_requests_submission", unique: true
+    t.index ["recipient_digest", "created_at"], name: "password_recovery_requests_throttle"
+  end
+
+  create_table "password_recovery_submissions", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.integer "attempts", default: 0, null: false
+    t.string "client_ip_addr", limit: 46
+    t.datetime "created_at", null: false
+    t.string "identifier", limit: 127, null: false
+    t.string "locale", limit: 16, null: false
+    t.bigint "oauth2_client_id"
+    t.datetime "processing_started_at"
+    t.datetime "updated_at", null: false
+    t.text "user_agent"
+    t.index ["created_at"], name: "index_password_recovery_submissions_on_created_at"
+    t.index ["client_ip_addr", "created_at"], name: "password_recovery_submissions_source"
+    t.index ["oauth2_client_id"], name: "index_password_recovery_submissions_on_oauth2_client_id"
+    t.index ["processing_started_at", "attempts", "created_at"], name: "password_recovery_submissions_pending"
   end
 
   create_table "object_histories", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -1966,6 +2024,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.datetime "updated_at", precision: nil
     t.string "webauthn_id"
     t.index ["login"], name: "index_users_on_login", unique: true
+    t.index ["email"], name: "index_users_on_email"
     t.index ["object_state"], name: "index_users_on_object_state"
   end
 
@@ -2187,11 +2246,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.string "client_ip_ptr", null: false
     t.string "client_version", null: false
     t.datetime "created_at", null: false
+    t.bigint "password_recovery_id"
     t.bigint "token_id", null: false
     t.datetime "updated_at", null: false
     t.integer "user_agent_id", null: false
     t.bigint "user_id", null: false
     t.index ["token_id"], name: "index_webauthn_challenges_on_token_id"
+    t.index ["password_recovery_id"], name: "index_webauthn_challenges_on_password_recovery_id"
     t.index ["user_id"], name: "index_webauthn_challenges_on_user_id"
   end
 

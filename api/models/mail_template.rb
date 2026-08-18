@@ -81,6 +81,7 @@ class MailTemplate < ApplicationRecord
   # @option opts [String] message_id
   # @option opts [String] in_reply_to
   # @option opts [String] references
+  # @option opts [Boolean] exclusive_recipients use only recipients in +opts+
   # @return [MailLog]
   def self.send_mail!(name, opts = {})
     tpl = MailTemplate.find_by(name: resolve_name(name, opts[:params]))
@@ -111,17 +112,19 @@ class MailTemplate < ApplicationRecord
       text_html: tr.text_html
     )
 
-    recipients = { to: opts[:to] || [], cc: opts[:cc] || [], bcc: opts[:bcc] || [] }
-    recipients[:to].concat(tpl.recipients(opts[:user]))
+    recipients = %i[to cc bcc].to_h { |kind| [kind, Array(opts[kind]).dup] }
 
-    tpl.mail_recipients.each do |recp|
-      recipients[:to].concat(recp.to.split(',')) if recp.to
-      recipients[:cc].concat(recp.cc.split(',')) if recp.cc
-      recipients[:bcc].concat(recp.bcc.split(',')) if recp.bcc
+    unless opts[:exclusive_recipients]
+      recipients[:to].concat(tpl.recipients(opts[:user]))
+
+      tpl.mail_recipients.each do |recp|
+        recipients[:to].concat(recp.to.split(',')) if recp.to
+        recipients[:cc].concat(recp.cc.split(',')) if recp.cc
+        recipients[:bcc].concat(recp.bcc.split(',')) if recp.bcc
+      end
     end
 
     %i[to cc bcc].each do |t|
-      recipients[t].concat(opts[t]) if opts[t]
       mail.send("#{t}=", recipients[t].uniq.join(','))
     end
 
@@ -300,6 +303,12 @@ class MailTemplate < ApplicationRecord
     request: Sinatra::Request,
     time: Time
   }, roles: %i[account]
+
+  register :password_recovery, vars: {
+    accounts: Array,
+    support_mail: String,
+    expires_at: Time
+  }
 
   register :user_failed_logins, vars: {
     user: ::User,

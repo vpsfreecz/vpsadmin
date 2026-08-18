@@ -110,6 +110,14 @@ RSpec.describe 'VpsAdmin::API::Resources::MailLog' do
     )
   end
 
+  let!(:log_without_user) do
+    create_mail_log!(
+      user: nil,
+      mail_template: template,
+      subject: 'Account-neutral security mail'
+    )
+  end
+
   describe 'Index' do
     it 'rejects unauthenticated access' do
       json_get index_path
@@ -164,6 +172,9 @@ RSpec.describe 'VpsAdmin::API::Resources::MailLog' do
       other_row = mail_logs.find { |item| item['id'] == log_b.id }
       expect(other_row).not_to be_nil
       expect(rid(other_row['user'])).to eq(SpecSeed.other_user.id)
+
+      neutral_row = mail_logs.find { |item| item['id'] == log_without_user.id }
+      expect(neutral_row['user']).to be_nil
     end
 
     it 'uses default limit of 25' do
@@ -238,6 +249,13 @@ RSpec.describe 'VpsAdmin::API::Resources::MailLog' do
       expect(mail_log['message_id']).to eq('<msg-a@example.test>')
       expect(mail_log['in_reply_to']).to eq('<parent@example.test>')
       expect(mail_log['references']).to include('<ref1@example.test>', '<ref2@example.test>')
+    end
+
+    it 'serializes a missing user as null' do
+      as(SpecSeed.admin) { json_get show_path(log_without_user.id) }
+
+      expect_status(200)
+      expect(mail_log['user']).to be_nil
     end
 
     it 'returns 404 for unknown id' do
