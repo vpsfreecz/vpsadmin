@@ -480,16 +480,21 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
     let(:new_password) { 'newsecret1' }
 
     it 'allows users to change their password with the current password' do
+      old_generation = SpecSeed.user.authentication_generation
+      mfa_token = create_auth_token!(user: SpecSeed.user, purpose: 'mfa')
+      password_token = create_auth_token!(user: SpecSeed.user, purpose: 'reset_password')
+
       as(SpecSeed.user) do
         json_put show_path(SpecSeed.user.id), user: {
           password: SpecSeed::PASSWORD,
-          new_password: new_password,
-          logout_sessions: false
+          new_password: new_password
         }
       end
 
       expect_status(200)
       expect(json['status']).to be(true)
+      expect(AuthToken.where(id: [mfa_token.id, password_token.id])).to be_empty
+      expect(SpecSeed.user.reload.authentication_generation).to eq(old_generation + 1)
 
       clear_login
       basic_authorize('user', new_password)
@@ -559,8 +564,7 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
     it 'allows admin to set another user password' do
       as(SpecSeed.admin) do
         json_put show_path(SpecSeed.other_user.id), user: {
-          new_password: new_password,
-          logout_sessions: false
+          new_password: new_password
         }
       end
 
@@ -574,6 +578,43 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect_status(200)
       expect(json['status']).to be(true)
       expect(login_from(user_obj)).to eq(SpecSeed.other_user.login)
+    ensure
+      clear_login
+    end
+
+    it 'rejects a password update authenticated before another password change' do
+      password_authentications = 0
+      allow(VpsAdmin::API::Operations::Authentication::Password)
+        .to receive(:run).and_wrap_original do |original, *args, **kwargs|
+          result = original.call(*args, **kwargs)
+          password_authentications += 1
+
+          if password_authentications == 3
+            concurrent_user = User.find(SpecSeed.user.id)
+            concurrent_user.set_password('recovered-secret')
+            concurrent_user.save!
+          end
+
+          result
+        end
+
+      as(SpecSeed.user) do
+        json_put show_path(SpecSeed.user.id), user: {
+          password: SpecSeed::PASSWORD,
+          new_password: new_password,
+          logout_sessions: false
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(errors.keys.map(&:to_s)).to include('password')
+
+      clear_login
+      basic_authorize(SpecSeed.user.login, 'recovered-secret')
+      json_get current_path
+      expect_status(200)
+      expect(json['status']).to be(true)
     ensure
       clear_login
     end

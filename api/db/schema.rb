@@ -1929,6 +1929,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
 
   create_table "users", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.text "address"
+    t.integer "authentication_generation", default: 0, null: false
     t.datetime "created_at", precision: nil
     t.datetime "current_login_at", precision: nil
     t.string "current_login_ip"

@@ -43,6 +43,7 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::Password do
     expect(result).to be_complete
     expect(result.user).to eq(user)
     expect(result.token).to be_nil
+    expect(result.authentication_generation).to eq(user.authentication_generation)
   end
 
   it 'authenticates suspended users' do
@@ -64,6 +65,7 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::Password do
     expect(result).to be_authenticated
     expect(result).not_to be_complete
     expect(result.token).to be_mfa
+    expect(result.token.authentication_generation).to eq(user.authentication_generation)
     expect(result.token.client_ip_addr).to eq('203.0.113.9')
   end
 

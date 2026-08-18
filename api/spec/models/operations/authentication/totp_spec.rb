@@ -70,6 +70,30 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::Totp do
     expect(device.reload.enabled).to be(false)
   end
 
+  it 'does not consume a factor invalidated after token lookup' do
+    auth_token = create_auth_token!(user:, purpose: 'mfa')
+    op = described_class.new
+    lookups = 0
+    allow(op).to receive(:find_auth_token).and_wrap_original do |original, token|
+      found = original.call(token)
+      lookups += 1
+
+      if lookups == 1
+        concurrent_user = User.find(user.id)
+        concurrent_user.set_password('concurrent-secret')
+        concurrent_user.save!
+      end
+
+      found
+    end
+
+    expect do
+      op.run(auth_token.token.to_s, 'recovery-code')
+    end.to raise_error(VpsAdmin::API::Exceptions::AuthenticationError, 'invalid token')
+
+    expect(device.reload.enabled).to be(true)
+  end
+
   it 'leaves the token intact for an invalid code' do
     auth_token = create_auth_token!(user:, purpose: 'mfa')
 

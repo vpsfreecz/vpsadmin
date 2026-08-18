@@ -155,6 +155,81 @@ RSpec.describe VpsAdmin::API::Authentication::TokenConfig do
     end
   end
 
+  it 'rejects password-only issuance after a concurrent password change' do
+    allow(VpsAdmin::API::Operations::Authentication::Password)
+      .to receive(:run).and_wrap_original do |original, *args, **kwargs|
+        result = original.call(*args, **kwargs)
+        concurrent_user = User.find(user.id)
+        concurrent_user.set_password('concurrent-secret')
+        concurrent_user.save!
+        result
+      end
+
+    expect do
+      request_token
+    end.to raise_error(
+      VpsAdmin::API::Exceptions::AuthenticationError,
+      'authentication expired'
+    )
+
+    expect(UserSession.where(user:, auth_type: 'token')).to be_empty
+  end
+
+  it 'rejects TOTP issuance after a concurrent password change' do
+    user.update!(enable_multi_factor_auth: true)
+    device = create_totp_device!(user:)
+    now = Time.now.change(usec: 0)
+    allow(Time).to receive(:now).and_return(now)
+    continuation = request_token
+
+    allow(VpsAdmin::API::Operations::Authentication::Totp)
+      .to receive(:run).and_wrap_original do |original, *args, **kwargs|
+        result = original.call(*args, **kwargs)
+        concurrent_user = User.find(user.id)
+        concurrent_user.set_password('concurrent-secret')
+        concurrent_user.save!
+        result
+      end
+
+    expect do
+      complete_totp(continuation.token, device.totp.at(now))
+    end.to raise_error(
+      VpsAdmin::API::Exceptions::AuthenticationError,
+      'authentication expired'
+    )
+
+    expect(UserSession.where(user:, auth_type: 'token')).to be_empty
+  end
+
+  it 'does not report a stale recovery code as used' do
+    user.update!(enable_multi_factor_auth: true)
+    device = create_totp_device!(user:, recovery_code: 'recovery-code')
+    continuation = request_token
+    op = VpsAdmin::API::Operations::Authentication::Totp.new
+    lookups = 0
+    allow(VpsAdmin::API::Operations::Authentication::Totp).to receive(:new).and_return(op)
+    allow(op).to receive(:find_auth_token).and_wrap_original do |original, token|
+      found = original.call(token)
+      lookups += 1
+
+      if lookups == 1
+        concurrent_user = User.find(user.id)
+        concurrent_user.set_password('concurrent-secret')
+        concurrent_user.save!
+      end
+
+      found
+    end
+    allow(TransactionChains::User::TotpRecoveryCodeUsed).to receive(:fire)
+
+    expect do
+      complete_totp(continuation.token, 'recovery-code')
+    end.to raise_error(VpsAdmin::API::Exceptions::AuthenticationError, 'invalid token')
+
+    expect(device.reload.enabled).to be(true)
+    expect(TransactionChains::User::TotpRecoveryCodeUsed).not_to have_received(:fire)
+  end
+
   it 'can complete the reset-password continuation and create a token session' do
     user.update!(password_reset: true, lockout: true)
     auth_token = create_auth_token!(
@@ -179,6 +254,37 @@ RSpec.describe VpsAdmin::API::Authentication::TokenConfig do
     expect(session.auth_type).to eq('token')
     expect(user.reload.password_reset).to be(false)
     expect(user.lockout).to be(false)
+  end
+
+  it 'rejects reset-token issuance after another password change' do
+    user.update!(password_reset: true, lockout: true)
+    auth_token = create_auth_token!(
+      user:,
+      purpose: 'reset_password',
+      opts: {
+        'lifetime' => 'fixed',
+        'interval' => 3600,
+        'scope' => ['all']
+      }
+    )
+
+    allow(VpsAdmin::API::Operations::Authentication::ResetPassword)
+      .to receive(:run).and_wrap_original do |original, *args, **kwargs|
+        result = original.call(*args, **kwargs)
+        concurrent_user = User.find(user.id)
+        concurrent_user.set_password('concurrent-secret')
+        concurrent_user.save!
+        result
+      end
+
+    expect do
+      reset_password(auth_token.to_s)
+    end.to raise_error(
+      VpsAdmin::API::Exceptions::AuthenticationError,
+      'authentication expired'
+    )
+
+    expect(UserSession.where(user:, auth_type: 'token')).to be_empty
   end
 
   it 'renews renewable tokens through the provider action handler' do

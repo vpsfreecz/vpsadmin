@@ -37,12 +37,16 @@ module AuthOperationHelpers
   end
 
   def create_auth_token!(user:, purpose: 'mfa', valid_to: 5.minutes.from_now, opts: nil)
+    token_opts = {
+      'authentication_generation' => user.authentication_generation
+    }.merge(opts || {})
+
     Token.for_new_record!(valid_to) do |token|
       AuthToken.create!(
         user:,
         token:,
         purpose:,
-        opts:,
+        opts: token_opts,
         api_ip_addr: '127.0.0.1',
         api_ip_ptr: 'localhost',
         client_ip_addr: '127.0.0.1',

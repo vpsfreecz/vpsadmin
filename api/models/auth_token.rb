@@ -17,6 +17,14 @@ class AuthToken < ApplicationRecord
     valid_to > Time.now
   end
 
+  def authentication_generation
+    (opts || {}).fetch('authentication_generation', 0).to_i
+  end
+
+  def authentication_current?
+    authentication_generation == user.authentication_generation
+  end
+
   def to_s
     token.to_s
   end
