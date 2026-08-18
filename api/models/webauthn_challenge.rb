@@ -2,6 +2,7 @@ class WebauthnChallenge < ApplicationRecord
   belongs_to :user
   belongs_to :token, dependent: :delete
   belongs_to :user_agent
+  belongs_to :password_recovery, optional: true
 
   enum :challenge_type, %i[registration authentication]
 

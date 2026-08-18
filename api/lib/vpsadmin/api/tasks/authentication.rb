@@ -41,7 +41,7 @@ module VpsAdmin::API::Tasks
         next if ENV['EXECUTE'] != 'yes'
 
         ActiveRecord::Base.transaction do
-          if challenge.challenge_type == 'authentication'
+          if challenge.challenge_type == 'authentication' && challenge.password_recovery_id.nil?
             VpsAdmin::API::Operations::User::IncompleteLogin.run(
               challenge,
               :webauthn,
@@ -51,6 +51,36 @@ module VpsAdmin::API::Tasks
 
           challenge.destroy!
         end
+      end
+
+      expired_recoveries = ::PasswordRecovery.active.where(
+        '(email_consumed_at IS NULL AND email_expires_at < :now) OR ' \
+        '(email_consumed_at IS NOT NULL AND session_expires_at < :now)',
+        now: Time.current
+      )
+      expired_recoveries.each do |recovery|
+        puts "Password recovery ##{recovery.id} expired"
+      end
+      if ENV['EXECUTE'] == 'yes'
+        expired_recoveries.update_all(invalidated_at: Time.current)
+      end
+
+      stale_requests = ::PasswordRecoveryRequest.where(
+        'created_at < ?',
+        ::PasswordRecovery::RECORD_RETENTION.ago
+      )
+      stale_requests.each do |recovery_request|
+        puts "Password recovery request ##{recovery_request.id} is stale"
+        recovery_request.destroy! if ENV['EXECUTE'] == 'yes'
+      end
+
+      stale_submissions = ::PasswordRecoverySubmission.where(
+        'created_at < ?',
+        ::PasswordRecoverySubmission::RECORD_RETENTION.ago
+      )
+      stale_submissions.each do |submission|
+        puts "Password recovery submission ##{submission.id} is stale"
+        submission.destroy! if ENV['EXECUTE'] == 'yes'
       end
     end
 

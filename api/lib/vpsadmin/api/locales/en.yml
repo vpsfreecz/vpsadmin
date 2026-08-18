@@ -4022,6 +4022,7 @@ en:
         node:
           register: Register
           shaper_root_change: Sshaper*
+        password_recovery_mail: Password recovery mail
         plugins:
           monitoring:
             alert: Alert

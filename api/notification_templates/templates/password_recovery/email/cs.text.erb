@@ -1,0 +1,28 @@
+Ahoj,
+
+dostali jsme žádost o obnovení hesla pro následující <%= @accounts.length == 1 ? 'účet' : 'účty' %> ve vpsAdminu:
+
+<% @accounts.each do |account| -%>
+Přihlašovací jméno: <%= account[:login] %>
+<% if account[:outcome] == 'recoverable' -%>
+Nastavit nové heslo: <%= account[:reset_url] %>
+
+Odkaz platí jednu hodinu a můžeš ho použít jen jednou. Po otevření ověříš
+svou totožnost pomocí TOTP, obnovovacího kódu nebo přístupového klíče.
+<% elsif account[:outcome] == 'no_mfa' -%>
+Tento účet nemá nastavené dvoufázové ověření, takže u něj nejde heslo obnovit
+automaticky. Kontaktuj prosím <%= @support_mail %>.
+<% else -%>
+Obnovení hesla není pro tento účet dostupné. Pokud potřebuješ pomoc, kontaktuj
+prosím <%= @support_mail %>.
+<% end -%>
+
+<% end -%>
+Pokud tato žádost nebyla tvoje, nemusíš nic dělat. Žádné heslo jsme
+nezměnili.
+
+S pozdravem
+
+tým vpsAdminu
+
+(Tento e-mail automaticky rozesílá vpsAdmin. Odpověď se zašle na naši podporu.)
