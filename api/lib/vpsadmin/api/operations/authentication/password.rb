@@ -3,7 +3,14 @@ require 'vpsadmin/api/operations/utils/dns'
 
 module VpsAdmin::API
   class Operations::Authentication::Password < Operations::Base
-    Result = Struct.new(:user, :authenticated, :complete, :reset_password, :token) do
+    Result = Struct.new(
+      :user,
+      :authenticated,
+      :complete,
+      :reset_password,
+      :token,
+      :authentication_generation
+    ) do
       alias_method :authenticated?, :authenticated
       alias_method :complete?, :complete
       alias_method :reset_password?, :reset_password
@@ -26,41 +33,59 @@ module VpsAdmin::API
       return unless user
 
       provider = CryptoProviders.provider(user.password_version)
-      authenticated = provider.matches?(user.password, user.login, password)
+      unless provider.matches?(user.password, user.login, password)
+        return Result.new(
+          user,
+          false,
+          false,
+          false,
+          nil,
+          user.authentication_generation
+        )
+      end
 
-      if authenticated
-        if CryptoProviders.update?(user.password_version)
-          CryptoProviders.current do |current_name, current_provider|
-            user.update!(
-              password_version: current_name,
-              password: current_provider.encrypt(user.login, password)
-            )
+      user.with_lock do
+        provider = CryptoProviders.provider(user.password_version)
+        authenticated = provider.matches?(user.password, user.login, password)
+
+        if authenticated
+          if CryptoProviders.update?(user.password_version)
+            CryptoProviders.current do |current_name, current_provider|
+              user.update!(
+                password_version: current_name,
+                password: current_provider.encrypt(user.login, password)
+              )
+            end
           end
+
+          require_mfa = require_mfa?(user)
+
+          ret = Result.new(
+            user,
+            authenticated,
+            !require_mfa,
+            !require_mfa && user.password_reset,
+            nil,
+            user.authentication_generation
+          )
+
+          if require_mfa && multi_factor
+            ret.token = create_auth_token('mfa', user, request)
+          elsif user.password_reset && multi_factor
+            ret.token = create_auth_token('reset_password', user, request)
+          end
+
+          ret
+        else
+          Result.new(
+            user,
+            false,
+            false,
+            false,
+            nil,
+            user.authentication_generation
+          )
         end
-
-        require_mfa = require_mfa?(user)
-
-        ret = Result.new(
-          user,
-          authenticated,
-          !require_mfa,
-          !require_mfa && user.password_reset
-        )
-
-        if require_mfa && multi_factor
-          ret.token = create_auth_token('mfa', user, request)
-        elsif user.password_reset && multi_factor
-          ret.token = create_auth_token('reset_password', user, request)
-        end
-
-        ret
-      else
-        Result.new(
-          user,
-          false,
-          false,
-          false
-        )
       end
     end
 
@@ -83,7 +108,10 @@ module VpsAdmin::API
         t = ::AuthToken.new(
           user:,
           token:,
-          purpose:
+          purpose:,
+          opts: {
+            'authentication_generation' => user.authentication_generation
+          }
         )
 
         if request

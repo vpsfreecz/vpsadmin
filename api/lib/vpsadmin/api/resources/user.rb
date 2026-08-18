@@ -373,7 +373,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       update_object_state!(u) if change_object_state?
       object_state_check!(u)
 
-      if input.has_key?(:new_password)
+      changing_password = input.has_key?(:new_password)
+      authentication_generation = nil
+
+      if changing_password
         if current_user.role != :admin && !input.has_key?(:password)
           error!(
             'update failed',
@@ -401,22 +404,39 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
               password: ['incorrect password']
             )
           end
-        end
 
-        u.set_password(input.delete(:new_password))
-
-        if input.fetch(:logout_sessions, true)
-          VpsAdmin::API::Operations::UserSession::CloseAll.run(
-            u,
-            except: current_user == u ? [::UserSession.current] : nil
-          )
+          authentication_generation = auth.authentication_generation
         end
       end
 
+      new_password = input.delete(:new_password)
       input.delete(:password)
-      input.delete(:logout_sessions)
+      logout_sessions = input.delete(:logout_sessions)
 
-      u.update!(to_db_names(input))
+      if changing_password
+        u.with_lock do
+          if authentication_generation &&
+             authentication_generation != u.authentication_generation
+            error!(
+              'update failed',
+              password: ['incorrect password']
+            )
+          end
+
+          u.set_password(new_password)
+          u.update!(to_db_names(input))
+
+          if logout_sessions != false
+            VpsAdmin::API::Operations::UserSession::CloseAll.run(
+              u,
+              except: current_user == u ? [::UserSession.current] : nil
+            )
+          end
+        end
+      else
+        u.update!(to_db_names(input))
+      end
+
       u
     rescue ActiveRecord::RecordInvalid => e
       error!('update failed', to_param_names(e.record.errors.to_hash, :input))

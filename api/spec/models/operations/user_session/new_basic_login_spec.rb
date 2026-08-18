@@ -15,7 +15,11 @@ RSpec.describe VpsAdmin::API::Operations::UserSession::NewBasicLogin do
   it 'performs User::Login, opens and immediately closes a basic session' do
     allow(VpsAdmin::API::Operations::User::Login).to receive(:run).and_call_original
 
-    session = op.run(user, request)
+    session = op.run(
+      user,
+      request,
+      authentication_generation: user.authentication_generation
+    )
 
     expect(VpsAdmin::API::Operations::User::Login).to have_received(:run).with(user, request)
     expect(session).to be_persisted
@@ -23,5 +27,17 @@ RSpec.describe VpsAdmin::API::Operations::UserSession::NewBasicLogin do
     expect(session.token).to be_nil
     expect(session.closed_at).not_to be_nil
     expect(UserSession.current).to eq(session)
+  end
+
+  it 'rejects a request from an older authentication generation' do
+    generation = user.authentication_generation
+    user.set_password('new-secret')
+    user.save!
+
+    expect do
+      op.run(user, request, authentication_generation: generation)
+    end.to raise_error(VpsAdmin::API::Exceptions::OperationError, 'authentication expired')
+
+    expect(UserSession.where(user:, auth_type: 'basic')).to be_empty
   end
 end

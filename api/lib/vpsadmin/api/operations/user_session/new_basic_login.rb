@@ -7,19 +7,27 @@ module VpsAdmin::API
 
     # @param user [User]
     # @param request [Sinatra::Request]
+    # @param authentication_generation [Integer]
     # @return [::UserSession]
-    def run(user, request)
-      Operations::User::Login.run(user, request)
+    def run(user, request, authentication_generation:)
+      ::UserSession.transaction do
+        user.lock!
+        if user.authentication_generation != authentication_generation
+          raise Exceptions::OperationError, 'authentication expired'
+        end
 
-      session = open_session(
-        user:,
-        request:,
-        auth_type: :basic,
-        generate_token: false,
-        scope: ['all']
-      )
-      session.close!
-      ::UserSession.current = session
+        Operations::User::Login.run(user, request)
+
+        session = open_session(
+          user:,
+          request:,
+          auth_type: :basic,
+          generate_token: false,
+          scope: ['all']
+        )
+        session.close!
+        ::UserSession.current = session
+      end
     end
   end
 end

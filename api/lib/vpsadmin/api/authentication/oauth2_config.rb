@@ -39,7 +39,8 @@ module VpsAdmin::API
           complete: auth.complete? && !auth.reset_password?,
           reset_password: auth.reset_password?,
           auth_token: auth.token,
-          user: auth.user
+          user: auth.user,
+          authentication_generation: auth.authentication_generation
         )
       end
 
@@ -51,7 +52,8 @@ module VpsAdmin::API
           complete: auth.authenticated? && !auth.reset_password?,
           reset_password: auth.reset_password?,
           auth_token: auth.auth_token,
-          user: auth.user
+          user: auth.user,
+          authentication_generation: auth.authentication_generation
         )
       end
 
@@ -81,7 +83,10 @@ module VpsAdmin::API
       # @return [Oauth2Authorization]
       attr_accessor :authorization
 
-      def initialize(authenticated: false, complete: false, auth_token: nil, user: nil, cancel: false, errors: [], reset_password: false)
+      # @return [Integer, nil]
+      attr_accessor :authentication_generation
+
+      def initialize(authenticated: false, complete: false, auth_token: nil, user: nil, cancel: false, errors: [], reset_password: false, authentication_generation: nil)
         @authenticated = authenticated
         @complete = complete
         @auth_token = auth_token
@@ -89,6 +94,7 @@ module VpsAdmin::API
         @cancel = cancel
         @errors = errors
         @reset_password = reset_password
+        @authentication_generation = authentication_generation
       end
 
       def add_error(error)
@@ -198,6 +204,13 @@ module VpsAdmin::API
     # @param authorization [Oauth2Authorization]
     def get_tokens(authorization, sinatra_request)
       ::ActiveRecord::Base.transaction do
+        authorization.user.lock!
+        authorization.reload
+        unless authorization.code&.valid_to&.future? &&
+               oauth2_login_error(authorization.user, sinatra_request).nil?
+          raise Exceptions::AuthenticationError, 'invalid authorization code'
+        end
+
         user_session = Operations::UserSession::NewOAuth2Login.run(
           authorization,
           sinatra_request,
@@ -231,8 +244,16 @@ module VpsAdmin::API
       end
     end
 
-    def refresh_tokens(authorization, _sinatra_request)
+    def refresh_tokens(authorization, sinatra_request)
       ::ActiveRecord::Base.transaction do
+        authorization.user.lock!
+        authorization.reload
+        unless authorization.refreshable? &&
+               authorization.user_session&.closed_at.nil? &&
+               oauth2_login_error(authorization.user, sinatra_request).nil?
+          raise Exceptions::AuthenticationError, 'invalid refresh token'
+        end
+
         if authorization.user_session.token
           authorization.user_session.token.destroy!
         end
@@ -639,7 +660,8 @@ module VpsAdmin::API
         complete: !reset_password,
         reset_password: reset_password,
         auth_token:,
-        user: auth_token.user
+        user: auth_token.user,
+        authentication_generation: auth_token.authentication_generation
       )
 
       unless reset_password
@@ -672,7 +694,8 @@ module VpsAdmin::API
       ret = AuthResult.new(
         authenticated: true,
         reset_password: true,
-        auth_token:
+        auth_token:,
+        authentication_generation: auth_token.authentication_generation
       )
 
       if sinatra_params[:new_password1] != sinatra_params[:new_password2]
@@ -691,6 +714,7 @@ module VpsAdmin::API
       ret.auth_token = nil
       ret.complete = true
       ret.reset_password = false
+      ret.authentication_generation = ret.user.authentication_generation
 
       create_authorization(
         auth_result: ret,
@@ -772,51 +796,56 @@ module VpsAdmin::API
     end
 
     def create_authorization(auth_result:, sinatra_request:, oauth2_request:, oauth2_response:, client:, devices:, sso: nil, skip_multi_factor_auth_until: nil, last_next_multi_factor_auth: 'require', set_multi_factor_auth_until: false)
-      if (error = oauth2_login_error(auth_result.user, sinatra_request))
-        auth_result.add_error(error)
-        auth_result.complete = false
-        auth_result.authorization = nil
-        return
-      end
-
       now = Time.now
       expires_at = now + (10 * 60)
 
-      # Refresh all devices and update user agent
-      devices.each do |d|
-        if sinatra_request.user_agent
-          d.update!(user_agent: ::UserAgent.find_or_create!(sinatra_request.user_agent))
-        end
-
-        d.refresh
-      end
-
-      # Find device for the current user
-      device = devices.detect { |d| d.user == auth_result.user }
-
-      if device
-        device.touch
-
-        if set_multi_factor_auth_until
-          device.update!(
-            skip_multi_factor_auth_until:,
-            last_next_multi_factor_auth:
-          )
-        end
-      else
-        device = create_device(
-          auth_result.user,
-          sinatra_request,
-          now + ::UserDevice::LIFETIME,
-          skip_multi_factor_auth_until,
-          last_next_multi_factor_auth
-        )
-        devices << device
-      end
-
-      client_ip_addr, client_ip_ptr = client_info(sinatra_request, device)
-
       ::ActiveRecord::Base.transaction do
+        auth_result.user.lock!
+
+        if stale_authentication?(auth_result, sso)
+          reject_authorization(auth_result, :invalid_user_or_password)
+          next
+        end
+
+        if (error = oauth2_login_error(auth_result.user, sinatra_request))
+          reject_authorization(auth_result, error)
+          next
+        end
+
+        # Refresh all devices and update user agent
+        devices.each do |d|
+          if sinatra_request.user_agent
+            d.update!(user_agent: ::UserAgent.find_or_create!(sinatra_request.user_agent))
+          end
+
+          d.refresh
+        end
+
+        # Find device for the current user
+        device = devices.detect { |d| d.user == auth_result.user }
+
+        if device
+          device.touch
+
+          if set_multi_factor_auth_until
+            device.update!(
+              skip_multi_factor_auth_until:,
+              last_next_multi_factor_auth:
+            )
+          end
+        else
+          device = create_device(
+            auth_result.user,
+            sinatra_request,
+            now + ::UserDevice::LIFETIME,
+            skip_multi_factor_auth_until,
+            last_next_multi_factor_auth
+          )
+          devices << device
+        end
+
+        client_ip_addr, client_ip_ptr = client_info(sinatra_request, device)
+
         # Create a new single sign on session if applicable
         #
         # We make the SSO valid for as long as the access token would be. Since
@@ -891,6 +920,22 @@ module VpsAdmin::API
 
         auth_result.authorization = authorization
       end
+    end
+
+    def stale_authentication?(auth_result, sso)
+      if sso
+        sso.reload
+        return sso.user_id != auth_result.user.id || !sso.usable?
+      end
+
+      auth_result.authentication_generation.nil? ||
+        auth_result.authentication_generation != auth_result.user.authentication_generation
+    end
+
+    def reject_authorization(auth_result, error)
+      auth_result.add_error(error)
+      auth_result.complete = false
+      auth_result.authorization = nil
     end
 
     def oauth2_login_error(user, sinatra_request, allow_password_reset: false)
