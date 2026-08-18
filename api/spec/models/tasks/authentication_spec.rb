@@ -26,9 +26,10 @@ RSpec.describe VpsAdmin::API::Tasks::Authentication do
     )
   end
 
-  def create_webauthn_challenge!(type:, valid_to: 1.hour.ago)
+  def create_webauthn_challenge!(type:, valid_to: 1.hour.ago, password_recovery: nil)
     WebauthnChallenge.create!(
       user: user,
+      password_recovery:,
       user_agent: user_agent,
       token: Token.get!(valid_to: valid_to),
       challenge_type: type,
@@ -60,6 +61,21 @@ RSpec.describe VpsAdmin::API::Tasks::Authentication do
       scope: ['*'],
       client_ip_addr: '127.0.0.1',
       user_agent: user_agent
+    )
+  end
+
+  def create_password_recovery!(email_expires_at: 1.hour.ago)
+    recovery_request = PasswordRecoveryRequest.create!(
+      recipient_email: user.email,
+      recipient_digest: Digest::SHA256.hexdigest(user.email.downcase),
+      locale: 'en'
+    )
+    recovery_request.password_recoveries.create!(
+      user:,
+      outcome: :recoverable,
+      email_snapshot: user.email,
+      email_token_digest: PasswordRecovery.digest_token(SecureRandom.hex(16)),
+      email_expires_at:
     )
   end
 
@@ -137,6 +153,56 @@ RSpec.describe VpsAdmin::API::Tasks::Authentication do
 
       expect(WebauthnChallenge.find_by(id: challenge.id)).to be_nil
       expect(VpsAdmin::API::Operations::User::IncompleteLogin).not_to have_received(:run)
+    end
+
+    it 'destroys password recovery challenges without recording failed login attempts' do
+      recovery = create_password_recovery!(email_expires_at: 1.hour.from_now)
+      challenge = create_webauthn_challenge!(
+        type: :authentication,
+        password_recovery: recovery
+      )
+      allow(VpsAdmin::API::Operations::User::IncompleteLogin).to receive(:run)
+
+      with_env('EXECUTE' => 'yes') { task.close_expired }
+
+      expect(WebauthnChallenge.find_by(id: challenge.id)).to be_nil
+      expect(VpsAdmin::API::Operations::User::IncompleteLogin).not_to have_received(:run)
+    end
+
+    it 'invalidates expired password recoveries only in execute mode' do
+      dry_run_recovery = create_password_recovery!
+
+      task.close_expired
+
+      expect(dry_run_recovery.reload.invalidated_at).to be_nil
+
+      with_env('EXECUTE' => 'yes') { task.close_expired }
+
+      expect(dry_run_recovery.reload.invalidated_at).to be_present
+    end
+
+    it 'deletes password recovery audit records after the retention period' do
+      recovery = create_password_recovery!
+      recovery.password_recovery_request.update_columns(
+        created_at: PasswordRecovery::RECORD_RETENTION.ago - 1.minute
+      )
+
+      with_env('EXECUTE' => 'yes') { task.close_expired }
+
+      expect(PasswordRecovery.find_by(id: recovery.id)).to be_nil
+      expect(PasswordRecoveryRequest.find_by(id: recovery.password_recovery_request_id)).to be_nil
+    end
+
+    it 'deletes abandoned password recovery submissions after the retention period' do
+      submission = PasswordRecoverySubmission.create!(
+        identifier: 'stale@example.test',
+        locale: 'en',
+        created_at: PasswordRecoverySubmission::RECORD_RETENTION.ago - 1.minute
+      )
+
+      with_env('EXECUTE' => 'yes') { task.close_expired }
+
+      expect(PasswordRecoverySubmission.exists?(submission.id)).to be(false)
     end
   end
 

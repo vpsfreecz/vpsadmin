@@ -1,0 +1,28 @@
+Hi,
+
+We received a password recovery request for the following vpsAdmin account<%= @accounts.length == 1 ? '' : 's' %>:
+
+<% @accounts.each do |account| -%>
+Login: <%= account[:login] %>
+<% if account[:outcome] == 'recoverable' -%>
+Set a new password: <%= account[:reset_url] %>
+
+This link is valid for one hour and can be used once. After opening it, you
+will need to verify your identity with TOTP, a recovery code, or a passkey.
+<% elsif account[:outcome] == 'no_mfa' -%>
+This account does not have two-factor authentication configured, so its
+password cannot be recovered automatically. Please contact <%= @support_mail %>.
+<% else -%>
+Password recovery is not available for this account. Please contact
+<%= @support_mail %> if you need help.
+<% end -%>
+
+<% end -%>
+If you did not request this email, you can ignore it. No password has been
+changed.
+
+Best regards,
+
+vpsAdmin team
+
+(This is an automated email from vpsAdmin. Replies are sent to our support.)

@@ -33,6 +33,7 @@ class User < ApplicationRecord
   has_many :single_sign_ons
   has_many :webauthn_credentials
   has_many :webauthn_challenges
+  has_many :password_recoveries
   has_many :user_failed_logins
   has_many :metrics_access_tokens
   has_many :dns_zones
@@ -165,6 +166,8 @@ class User < ApplicationRecord
       self.password_version = name
       self.password = provider.encrypt(login, plaintext)
     end
+
+    password_recoveries.active.update_all(invalidated_at: Time.current) if persisted?
 
     return if !password_reset || !resolve_password_reset
 

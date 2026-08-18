@@ -602,6 +602,41 @@ RSpec.describe VpsAdmin::API::MailTemplates do
     expect(mail.text_plain).to eq('English body')
   end
 
+  it 'uses only explicit recipients when exclusive delivery is requested' do
+    MailTemplate.register :spec_exclusive_recipients
+    template = MailTemplate.create!(
+      name: 'spec_exclusive_recipients',
+      label: 'Exclusive recipients',
+      template_id: 'spec_exclusive_recipients'
+    )
+    template.mail_template_translations.create!(
+      language: SpecSeed.language,
+      from: 'noreply@test.invalid',
+      subject: 'Security message',
+      text_plain: 'Security message'
+    )
+    recipient = MailRecipient.create!(
+      label: 'Global archive',
+      to: 'archive@example.test',
+      cc: 'audit@example.test',
+      bcc: 'hidden@example.test'
+    )
+    MailTemplateRecipient.create!(mail_template: template, mail_recipient: recipient)
+
+    mail = MailTemplate.send_mail!(
+      :spec_exclusive_recipients,
+      user: SpecSeed.user,
+      to: ['primary@example.test'],
+      exclusive_recipients: true
+    )
+
+    expect(mail.to).to eq('primary@example.test')
+    expect(mail.cc).to eq('')
+    expect(mail.bcc).to eq('')
+  ensure
+    MailTemplate.templates.delete(:spec_exclusive_recipients)
+  end
+
   it 'ships directory-backed English templates for all registered defaults' do
     templates = described_class.find_templates(described_class.default_template_paths).to_h do |template|
       [template.name, template]
