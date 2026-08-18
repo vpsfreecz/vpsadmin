@@ -27,11 +27,11 @@ module VpsAdmin::API
         end
 
         if auth.reset_password?
-          auth.token.update!(opts: {
-                               lifetime: req.input[:lifetime],
-                               interval: req.input[:interval],
-                               scope: req.input[:scope].split
-                             })
+          auth.token.update!(opts: (auth.token.opts || {}).merge(
+            lifetime: req.input[:lifetime],
+            interval: req.input[:interval],
+            scope: req.input[:scope].split
+          ))
 
           res.complete = false
           res.token = auth.token.to_s
@@ -46,7 +46,8 @@ module VpsAdmin::API
               req.request,
               req.input[:lifetime],
               req.input[:interval],
-              req.input[:scope].split
+              req.input[:scope].split,
+              authentication_generation: auth.authentication_generation
             )
           rescue Exceptions::OperationError => e
             raise Exceptions::AuthenticationError, e.message
@@ -63,11 +64,11 @@ module VpsAdmin::API
         res.token = auth.token.to_s
         res.valid_to = auth.token.valid_to
         res.next_action = :totp
-        auth.token.update!(opts: {
-                             lifetime: req.input[:lifetime],
-                             interval: req.input[:interval],
-                             scope: req.input[:scope].split
-                           })
+        auth.token.update!(opts: (auth.token.opts || {}).merge(
+          lifetime: req.input[:lifetime],
+          interval: req.input[:interval],
+          scope: req.input[:scope].split
+        ))
         res.ok
       end
     end
@@ -111,7 +112,8 @@ module VpsAdmin::API
               req.request,
               auth.auth_token.opts['lifetime'],
               auth.auth_token.opts['interval'],
-              auth.auth_token.opts['scope']
+              auth.auth_token.opts['scope'],
+              authentication_generation: auth.authentication_generation
             )
           rescue Exceptions::OperationError => e
             raise Exceptions::AuthenticationError, e.message
@@ -175,7 +177,8 @@ module VpsAdmin::API
             req.request,
             opts.fetch('lifetime', 'fixed'),
             opts.fetch('interval', 5 * 60),
-            opts.fetch('scope', ['all'])
+            opts.fetch('scope', ['all']),
+            authentication_generation: user.authentication_generation
           )
         rescue Exceptions::OperationError => e
           raise Exceptions::AuthenticationError, e.message

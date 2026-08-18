@@ -20,7 +20,14 @@ RSpec.describe VpsAdmin::API::Operations::UserSession::NewTokenLogin do
     allow(VpsAdmin::API::Operations::User::Login).to receive(:run).and_call_original
     allow(TransactionChains::User::NewToken).to receive(:fire2)
 
-    session = op.run(user, request, 'fixed', 3600, ['all'])
+    session = op.run(
+      user,
+      request,
+      'fixed',
+      3600,
+      ['all'],
+      authentication_generation: user.authentication_generation
+    )
 
     expect(VpsAdmin::API::Operations::User::Login).to have_received(:run).with(user, request)
     expect(TransactionChains::User::NewToken).not_to have_received(:fire2)
@@ -36,8 +43,34 @@ RSpec.describe VpsAdmin::API::Operations::UserSession::NewTokenLogin do
 
     allow(TransactionChains::User::NewToken).to receive(:fire2)
 
-    op.run(user, request, 'fixed', 3600, ['all'])
+    op.run(
+      user,
+      request,
+      'fixed',
+      3600,
+      ['all'],
+      authentication_generation: user.authentication_generation
+    )
 
     expect(TransactionChains::User::NewToken).to have_received(:fire2).with(args: [kind_of(UserSession)])
+  end
+
+  it 'rejects session creation from an older authentication generation' do
+    generation = user.authentication_generation
+    user.set_password('new-secret')
+    user.save!
+
+    expect do
+      op.run(
+        user,
+        request,
+        'fixed',
+        3600,
+        ['all'],
+        authentication_generation: generation
+      )
+    end.to raise_error(VpsAdmin::API::Exceptions::OperationError, 'authentication expired')
+
+    expect(UserSession.where(user:, auth_type: 'token')).to be_empty
   end
 end

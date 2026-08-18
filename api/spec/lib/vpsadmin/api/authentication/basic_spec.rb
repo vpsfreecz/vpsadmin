@@ -89,4 +89,24 @@ RSpec.describe VpsAdmin::API::Authentication::Basic do
       expect(session.user_agent.agent).to eq('')
     end
   end
+
+  it 'rejects the request when the password changes after verification' do
+    allow(VpsAdmin::API::Operations::Authentication::Password)
+      .to receive(:run).and_wrap_original do |original, *args, **kwargs|
+        result = original.call(*args, **kwargs)
+        concurrent_user = User.find(user.id)
+        concurrent_user.set_password('concurrent-secret')
+        concurrent_user.save!
+        result
+      end
+
+    expect do
+      provider.send(:find_user, request, user.login, 'secret')
+    end.to raise_error(
+      VpsAdmin::API::Exceptions::AuthenticationError,
+      'authentication expired'
+    )
+
+    expect(UserSession.where(user:, auth_type: 'basic')).to be_empty
+  end
 end

@@ -323,6 +323,21 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     end
   end
 
+  it 'rejects an authorization code revoked after lookup' do
+    authorization = create_oauth2_authorization!(user:, client:)
+    code = authorization.code
+    authorization.update!(code: nil)
+    code.destroy!
+
+    expect do
+      config.get_tokens(authorization, request)
+    end.to raise_error(
+      VpsAdmin::API::Exceptions::AuthenticationError,
+      'invalid authorization code'
+    )
+    expect(authorization.reload.user_session).to be_nil
+  end
+
   it 'does not find expired authorization codes' do
     authorization = create_oauth2_authorization!(
       user:,
@@ -378,6 +393,27 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
 
       expect(config.find_authorization_by_refresh_token(client, refresh_token)).to be_nil
     end
+  end
+
+  it 'rejects a refresh token revoked after lookup' do
+    session = create_open_session!(user:, auth_type: 'oauth2')
+    authorization = create_oauth2_authorization!(
+      user:,
+      client:,
+      user_session: session,
+      refresh_valid_to: 1.hour.from_now
+    )
+    refresh_token = authorization.refresh_token
+    authorization.update!(refresh_token: nil)
+    refresh_token.destroy!
+
+    expect do
+      config.refresh_tokens(authorization, request)
+    end.to raise_error(
+      VpsAdmin::API::Exceptions::AuthenticationError,
+      'invalid refresh token'
+    )
+    expect(session.reload.token).to be_present
   end
 
   it 'revokes access tokens only for the authenticated OAuth2 client' do
@@ -550,7 +586,8 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     auth_result = described_class::AuthResult.new(
       authenticated: true,
       complete: true,
-      user:
+      user:,
+      authentication_generation: user.authentication_generation
     )
 
     config.send(
@@ -597,7 +634,8 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     auth_result = described_class::AuthResult.new(
       authenticated: true,
       complete: true,
-      user:
+      user:,
+      authentication_generation: user.authentication_generation
     )
 
     config.send(
@@ -627,7 +665,8 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     auth_result = described_class::AuthResult.new(
       authenticated: true,
       complete: true,
-      user:
+      user:,
+      authentication_generation: user.authentication_generation
     )
 
     config.send(
@@ -644,6 +683,59 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(authorization.client_ip_addr).to eq('203.0.113.74')
     expect(authorization.client_ip_addr).not_to eq('198.51.100.74')
     expect(authorization.user_device).to eq(device)
+  end
+
+  it 'rejects authorization created after its password generation changes' do
+    auth_result = described_class::AuthResult.new(
+      authenticated: true,
+      complete: true,
+      user:,
+      authentication_generation: user.authentication_generation
+    )
+    user.set_password('replacement-password')
+    user.save!
+
+    expect do
+      config.send(
+        :create_authorization,
+        auth_result:,
+        sinatra_request: request,
+        oauth2_request:,
+        oauth2_response: response,
+        client:,
+        devices: []
+      )
+    end.not_to change(Oauth2Authorization, :count)
+
+    expect(auth_result.complete).to be(false)
+    expect(auth_result.authorization).to be_nil
+    expect(auth_result.errors).to include(:invalid_user_or_password)
+  end
+
+  it 'rejects authorization from an SSO closed after lookup' do
+    sso = create_single_sign_on!(user:)
+    auth_result = described_class::AuthResult.new(
+      authenticated: true,
+      complete: true,
+      user:
+    )
+    sso.close
+
+    expect do
+      config.send(
+        :create_authorization,
+        auth_result:,
+        sinatra_request: request,
+        oauth2_request:,
+        oauth2_response: response,
+        client:,
+        devices: [],
+        sso:
+      )
+    end.not_to change(Oauth2Authorization, :count)
+
+    expect(auth_result.complete).to be(false)
+    expect(auth_result.authorization).to be_nil
   end
 end
 # rubocop:enable RSpec/MultipleMemoizedHelpers

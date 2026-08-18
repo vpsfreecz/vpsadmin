@@ -35,7 +35,11 @@ module VpsAdmin::API
               'HTTP basic authentication is disabled on this account'
       end
 
-      Operations::UserSession::NewBasicLogin.run(auth.user, request).user
+      Operations::UserSession::NewBasicLogin.run(
+        auth.user,
+        request,
+        authentication_generation: auth.authentication_generation
+      ).user
     rescue Exceptions::OperationError => e
       raise Exceptions::AuthenticationError, e.message
     end

@@ -26,6 +26,7 @@ class User < ApplicationRecord
   has_many :user_mail_role_recipients
   has_many :user_mail_template_recipients
   has_many :user_totp_devices
+  has_many :auth_tokens
   has_many :user_sessions
   has_many :user_devices
   has_many :oauth2_authorizations
@@ -44,6 +45,8 @@ class User < ApplicationRecord
 
   before_validation :set_no_password
   before_validation :normalize_time_zone
+  before_update :advance_authentication_generation, if: :will_save_change_to_password?
+  after_update :invalidate_auth_tokens, if: :saved_change_to_password?
 
   alias_attribute :role, :level
 
@@ -171,6 +174,14 @@ class User < ApplicationRecord
 
   def normalize_time_zone
     self.time_zone = nil if time_zone == ''
+  end
+
+  def invalidate_auth_tokens
+    auth_tokens.destroy_all
+  end
+
+  def advance_authentication_generation
+    self.authentication_generation += 1
   end
 
   def check_time_zone
