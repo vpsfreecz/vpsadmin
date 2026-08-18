@@ -364,7 +364,7 @@ in
         {
           category = "core";
           name = "auth_url";
-          value = "http://api.vpsadmin.test";
+          value = "http://auth.vpsadmin.test";
           min_user_level = 0;
           data_type = "String";
         }

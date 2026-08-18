@@ -266,6 +266,12 @@ let
           return = mkIf (isUnderMaintenance app name instance) "503";
         };
 
+        "/oauth2/password-reset" = {
+          proxyPass = mkIf (!isUnderMaintenance app name instance) "http://${upstreamName app name}";
+
+          return = mkIf (isUnderMaintenance app name instance) "503";
+        };
+
         "@maintenance" = {
           root = pkgs.runCommand "${app}-maintenance-root" { } ''
             mkdir $out

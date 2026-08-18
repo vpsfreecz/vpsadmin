@@ -141,6 +141,7 @@ let
 
   loopbackHosts = [
     "api.vpsadmin.test"
+    "auth.vpsadmin.test"
     "console.vpsadmin.test"
     "download.vpsadmin.test"
     "webui.vpsadmin.test"
@@ -330,6 +331,7 @@ in
               domain = "webui.vpsadmin.test";
               api.externalUrl = "http://api.vpsadmin.test";
               api.internalUrl = "http://api.vpsadmin.test";
+              api.oauth2TrustedOrigins = [ "http://auth.vpsadmin.test" ];
               productionEnvironmentId = 1;
               usernsPublic = true;
               exportPublic = true;
@@ -614,6 +616,11 @@ in
           backend = {
             address = "unix:/run/varnish/vpsadmin-varnish.sock";
           };
+        };
+
+        auth.test = {
+          domain = lib.mkDefault "auth.vpsadmin.test";
+          backend.address = "unix:/run/haproxy/vpsadmin-api.sock";
         };
 
         console-router.test = {
