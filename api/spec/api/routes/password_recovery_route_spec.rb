@@ -5,6 +5,9 @@ require 'webauthn/fake_client'
 
 RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
   before do
+    unlock_transaction_signer!
+    VpsAdmin::API::MailTemplates.install_defaults!
+    ensure_available_node_status!(SpecSeed.node)
     SysConfig.find_or_create_by!(category: 'core', name: 'password_recovery_enabled').update!(value: true)
     SysConfig.find_or_create_by!(category: 'core', name: 'auth_url').update!(value: 'http://example.org')
     SysConfig.find_or_create_by!(category: 'core', name: 'logo_url').update!(
@@ -15,6 +18,12 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
 
   def csrf_from_body
     last_response.body.match(/name="csrf_token" value="([^"]+)"/)&.[](1)
+  end
+
+  def password_changed_mails
+    MailLog.joins(:mail_template).where(
+      mail_templates: { name: 'user_password_changed' }
+    )
   end
 
   def create_user_with_totp
@@ -240,6 +249,7 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
   end
 
   it 'keeps password errors in the password stage and completes the reset after TOTP' do
+    header 'User-Agent', 'Recovery route spec'
     user = create_user_with_totp
     client = create_oauth2_client!(
       authorization_start_uri: 'https://service.example.test/sign-in?from=recovery'
@@ -269,13 +279,16 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(last_response.status).to eq(422)
     expect(last_response.body).to include('The passwords do not match')
     expect(recovery.reload.mfa_verified_at).to be_present
+    expect(password_changed_mails).to be_empty
 
     csrf = csrf_from_body
-    post '/oauth2/password-reset/password',
-         csrf_token: csrf,
-         new_password: 'new-secret-password',
-         repeat_new_password: 'new-secret-password',
-         sign_out_all: '1'
+    expect do
+      post '/oauth2/password-reset/password',
+           csrf_token: csrf,
+           new_password: 'new-secret-password',
+           repeat_new_password: 'new-secret-password',
+           sign_out_all: '1'
+    end.to change(password_changed_mails, :count).by(1)
 
     expect(last_response.status).to eq(303)
     expect(last_response.headers['Location']).to eq(
@@ -298,6 +311,9 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
         multi_factor: false
       )
     ).not_to be_authenticated
+    notification = password_changed_mails.order(:id).last
+    expect(notification.user).to eq(user)
+    expect(notification.text_plain).to include('Recovery route spec')
   end
 
   it 'preserves existing sessions when the checkbox is not submitted' do

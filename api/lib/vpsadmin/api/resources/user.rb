@@ -425,6 +425,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
           u.set_password(new_password)
           u.update!(to_db_names(input))
+          if current_user == u
+            ::TransactionChains::User::PasswordChanged.fire(u, request)
+          end
 
           if logout_sessions != false
             VpsAdmin::API::Operations::UserSession::CloseAll.run(

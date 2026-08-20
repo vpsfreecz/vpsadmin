@@ -232,6 +232,7 @@ RSpec.describe VpsAdmin::API::Authentication::TokenConfig do
 
   it 'can complete the reset-password continuation and create a token session' do
     user.update!(password_reset: true, lockout: true)
+    allow(TransactionChains::User::PasswordChanged).to receive(:fire)
     auth_token = create_auth_token!(
       user:,
       purpose: 'reset_password',
@@ -254,10 +255,13 @@ RSpec.describe VpsAdmin::API::Authentication::TokenConfig do
     expect(session.auth_type).to eq('token')
     expect(user.reload.password_reset).to be(false)
     expect(user.lockout).to be(false)
+    expect(TransactionChains::User::PasswordChanged)
+      .to have_received(:fire).with(user, request)
   end
 
   it 'rejects reset-token issuance after another password change' do
     user.update!(password_reset: true, lockout: true)
+    allow(TransactionChains::User::PasswordChanged).to receive(:fire)
     auth_token = create_auth_token!(
       user:,
       purpose: 'reset_password',

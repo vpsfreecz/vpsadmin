@@ -668,6 +668,24 @@ RSpec.describe VpsAdmin::API::MailTemplates do
     )
   end
 
+  it 'ships bilingual plain password-change notifications' do
+    template = described_class.find_templates(described_class.default_template_paths).find do |item|
+      item.name == 'user_password_changed'
+    end
+    translations = template.variants.index_by(&:language).transform_values do |variant|
+      described_class.send(:translation_params, template, variant)
+    end
+
+    expect(translations.keys).to include('en', 'cs')
+    expect(translations.fetch('en').fetch(:text_plain)).to include(
+      'The password for your vpsAdmin account was changed.'
+    )
+    expect(translations.fetch('cs').fetch(:text_plain)).to include(
+      'heslo k Tvému účtu ve vpsAdminu bylo změněno.'
+    )
+    expect(translations.values.map { |translation| translation[:text_html] }).to all(be_nil)
+  end
+
   it 'ships usable built-in template content' do
     templates = described_class.find_templates(described_class.default_template_paths)
     expect(templates).not_to be_empty
