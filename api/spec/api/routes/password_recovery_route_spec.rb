@@ -147,6 +147,42 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
       .not_to have_received(:run)
   end
 
+  it 'returns an explicit rate-limit error for a repeated submitted value' do
+    get '/oauth2/password-reset'
+    post '/oauth2/password-reset',
+         csrf_token: csrf_from_body,
+         identifier: 'Member@Example.Test'
+    expect(last_response.status).to eq(303)
+
+    get '/oauth2/password-reset'
+    expect do
+      post '/oauth2/password-reset',
+           csrf_token: csrf_from_body,
+           identifier: 'member@example.test'
+    end.not_to change(PasswordRecoverySubmission, :count)
+
+    expect(last_response.status).to eq(429)
+    expect(last_response.headers['Retry-After'].to_i).to be_between(1, 600)
+    expect(last_response.body).to include(
+      'Too many password recovery requests. Wait a few minutes and try again.'
+    )
+    expect(last_response.body).to include('value="member@example.test"')
+  end
+
+  it 'returns an explicit temporary error when the unfinished queue is full' do
+    stub_const('PasswordRecoverySubmission::MAX_PENDING', 0)
+
+    get '/oauth2/password-reset'
+    post '/oauth2/password-reset',
+         csrf_token: csrf_from_body,
+         identifier: 'member@example.test'
+
+    expect(last_response.status).to eq(503)
+    expect(last_response.body).to include(
+      'Password recovery is temporarily unavailable. Try again later.'
+    )
+  end
+
   it 'rejects a reused or expired email token' do
     user = create_user_with_totp
     recovery, raw_token = create_recovery(user:)
