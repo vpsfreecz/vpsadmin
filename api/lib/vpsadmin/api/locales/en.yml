@@ -2161,6 +2161,7 @@ en:
         passkey_start_failed: Passkey authentication could not start.
         passkey_success: Authenticated using passkey.
         password: Password
+        password_changed: Password changed.
         repeat_new_password: Repeat new password
         set_new_password: Please set a new password.
         signing_in: Signing in...
@@ -2173,9 +2174,7 @@ en:
       password_recovery:
         back_to_sign_in: Back to sign in
         change_password: Change password
-        complete: Password changed
-        complete_explanation: Your password has been changed. You can return to the
-          service and sign in with your new password.
+        complete: Password changed.
         continue: Continue
         email_sent: Check your email
         email_sent_explanation: If a matching account was found, instructions were

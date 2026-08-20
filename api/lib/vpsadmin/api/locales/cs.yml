@@ -2156,6 +2156,7 @@ cs:
         passkey_start_failed: Přihlášení přístupovým klíčem nelze spustit.
         passkey_success: Přihlášení přístupovým klíčem bylo úspěšné.
         password: Heslo
+        password_changed: Heslo změněno.
         repeat_new_password: Zopakovat nové heslo
         set_new_password: Nastavte prosím nové heslo.
         signing_in: Přihlašování...
@@ -2168,9 +2169,7 @@ cs:
       password_recovery:
         back_to_sign_in: Zpět na přihlášení
         change_password: Změnit heslo
-        complete: Heslo bylo změněno
-        complete_explanation: Heslo jsme změnili. Vrať se ke službě a přihlas se novým
-          heslem.
+        complete: Heslo změněno.
         continue: Pokračovat
         email_sent: Zkontroluj si e-mail
         email_sent_explanation: Pokud jsme našli odpovídající účet, poslali jsme pokyny

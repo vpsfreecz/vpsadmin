@@ -112,11 +112,33 @@ test('OAuth forgot-password link reaches the recovery form', async ({ page }) =>
   await expect(page).toHaveURL(/auth\.vpsadmin\.test\/oauth2\/password-reset/);
   await expect(page.getByRole('img', { name: 'vpsFree.cz' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Reset your password' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back to sign in' })).toHaveCSS(
+    'text-align',
+    'center',
+  );
 
   await page.getByRole('link', { name: 'Back to sign in' }).click();
 
   await expect(page).toHaveURL(/auth\.vpsadmin\.test/);
   await expect(page.locator('input[name="user"]')).toBeVisible();
+});
+
+test('password recovery completion is shown on the OAuth login form', async ({ page }) => {
+  await page.context().addCookies([{
+    name: 'vpsadmin_password_recovery_completed',
+    value: fixtures.passwordRecovery.completionToken,
+    url: 'http://auth.vpsadmin.test',
+  }]);
+
+  await openWebuiLogin(page);
+  await expect(page).toHaveURL(/auth\.vpsadmin\.test/);
+  await expect(page.locator('.alert-success')).toHaveText('Password changed.');
+  await expect(page.locator('input[name="user"]')).toBeVisible();
+
+  const completionCookies = await page.context().cookies('http://auth.vpsadmin.test');
+  expect(completionCookies).not.toEqual(expect.arrayContaining([
+    expect.objectContaining({ name: 'vpsadmin_password_recovery_completed' }),
+  ]));
 });
 
 test('admin login and logout work', async ({ page }) => {

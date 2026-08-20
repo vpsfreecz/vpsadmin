@@ -9,12 +9,12 @@ module VpsAdmin::API
     BASE_PATH = '/oauth2/password-reset'.freeze
     CSRF_COOKIE = :vpsadmin_password_recovery_csrf
     FLOW_COOKIE = :vpsadmin_password_recovery
+    COMPLETION_COOKIE = :vpsadmin_password_recovery_completed
 
     I18N_KEYS = %i[
       back_to_sign_in
       change_password
       complete
-      complete_explanation
       continue
       email_sent
       email_sent_explanation
@@ -35,8 +35,8 @@ module VpsAdmin::API
       request_explanation
       request_heading
       send_email
-      signing_in_passkey
       sign_out_all
+      signing_in_passkey
       temporarily_unavailable
       title
       too_many_requests
@@ -354,14 +354,20 @@ module VpsAdmin::API
         return render(:invalid, status: 400)
       end
 
-      client = recovery.password_recovery_request.oauth2_client
+      recovery_request = recovery.password_recovery_request
+      client = recovery_request.oauth2_client
+      completion_token = @handler.cookies[FLOW_COOKIE]
       clear_flow_cookie
 
       if client&.authorization_start_uri.present?
-        @handler.redirect(client.authorization_start_uri, 303)
-      else
-        redirect_to("#{BASE_PATH}/complete")
+        set_completion_cookie(completion_token)
+        return @handler.redirect(client.authorization_start_uri, 303)
       end
+
+      redirect_to(
+        "#{BASE_PATH}/complete",
+        ui_locales: recovery_request.locale
+      )
     end
 
     def complete
@@ -501,6 +507,18 @@ module VpsAdmin::API
     def clear_flow_cookie
       @handler.response.delete_cookie(FLOW_COOKIE, cookie_options)
       nil
+    end
+
+    def set_completion_cookie(token)
+      @handler.response.set_cookie(
+        COMPLETION_COOKIE,
+        value: token,
+        path: '/',
+        max_age: ::PasswordRecovery::COMPLETION_LIFETIME.to_i,
+        httponly: true,
+        secure: secure_cookie?,
+        same_site: :lax
+      )
     end
 
     def set_cookie(name, value, max_age:)

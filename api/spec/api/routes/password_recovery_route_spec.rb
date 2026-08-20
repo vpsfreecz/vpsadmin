@@ -33,11 +33,11 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     end
   end
 
-  def create_recovery(user:, client: nil, email_lifetime: 1.hour)
+  def create_recovery(user:, client: nil, locale: 'en', email_lifetime: 1.hour)
     raw_token = PasswordRecovery.generate_token
     recovery_request = PasswordRecoveryRequest.create!(
       recipient_email: user.email,
-      locale: 'en',
+      locale:,
       oauth2_client: client
     )
     recovery = recovery_request.password_recoveries.create!(
@@ -111,6 +111,24 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(last_response.headers['Content-Security-Policy']).to include("frame-ancestors 'none'")
     expect(last_response.headers['Content-Security-Policy']).to include(
       "img-src 'self' https://assets.example.test"
+    )
+  end
+
+  it 'centers links that restart sign-in from the request and sent pages' do
+    client = create_oauth2_client!(
+      authorization_start_uri: 'https://service.example.test/sign-in'
+    )
+
+    get '/oauth2/password-reset', client_id: client.client_id
+
+    expect(last_response.body).to include(
+      '<p class="muted back-to-sign-in"><a href="https://service.example.test/sign-in">Back to sign in</a></p>'
+    )
+
+    get '/oauth2/password-reset/sent', client_id: client.client_id
+
+    expect(last_response.body).to include(
+      '<p class="muted back-to-sign-in"><a href="https://service.example.test/sign-in">Back to sign in</a></p>'
     )
   end
 
@@ -281,6 +299,9 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(recovery.reload.mfa_verified_at).to be_present
     expect(password_changed_mails).to be_empty
 
+    SysConfig.find_by!(category: 'core', name: 'auth_url').update!(
+      value: 'https://auth.example.test'
+    )
     csrf = csrf_from_body
     expect do
       post '/oauth2/password-reset/password',
@@ -294,6 +315,13 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(last_response.headers['Location']).to eq(
       'https://service.example.test/sign-in?from=recovery'
     )
+    cookies = last_response.headers['Set-Cookie'].join("\n").downcase
+    expect(cookies).to include('vpsadmin_password_recovery_completed=')
+    expect(cookies).to include('path=/')
+    expect(cookies).to include('max-age=900')
+    expect(cookies).to include('httponly')
+    expect(cookies).to include('secure')
+    expect(cookies).to include('samesite=lax')
     expect(recovery.reload.completed_at).to be_present
     expect(old_session.reload.closed_at).to be_present
     expect(user.user_sessions.count).to eq(initial_session_count)
@@ -314,6 +342,34 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     notification = password_changed_mails.order(:id).last
     expect(notification.user).to eq(user)
     expect(notification.text_plain).to include('Recovery route spec')
+
+    get '/oauth2/password-reset/password'
+    expect(last_response.status).to eq(400)
+  end
+
+  it 'renders the persisted recovery locale on the fallback completion page' do
+    user = create_user_with_totp
+    client = create_oauth2_client!
+    recovery, raw_token = create_recovery(user:, client:, locale: 'cs')
+    exchange_email_token(raw_token)
+    recovery.update!(mfa_verified_at: Time.current)
+
+    get '/oauth2/password-reset/password'
+    post '/oauth2/password-reset/password',
+         csrf_token: csrf_from_body,
+         new_password: 'new-secret-password',
+         repeat_new_password: 'new-secret-password',
+         client_id: 'ignored-client',
+         ui_locales: 'en'
+
+    expect(last_response.status).to eq(303)
+    expect(last_response.headers['Location']).to end_with(
+      '/oauth2/password-reset/complete?ui_locales=cs'
+    )
+    follow_redirect!
+    expect(last_response.status).to eq(200)
+    expect(last_response.body).to include('Heslo změněno.')
+    expect(last_response.body).not_to include('class="button"')
   end
 
   it 'preserves existing sessions when the checkbox is not submitted' do
@@ -348,10 +404,13 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(authorization).to be_active
     expect(sso.reload.token).to be_present
 
-    expect(last_response.headers['Location']).to end_with('/oauth2/password-reset/complete')
+    expect(last_response.headers['Location']).to end_with(
+      '/oauth2/password-reset/complete?ui_locales=en'
+    )
     follow_redirect!
     expect(last_response.status).to eq(200)
-    expect(last_response.body).to include('Your password has been changed')
+    expect(last_response.body).to include('Password changed.')
+    expect(last_response.body).not_to include('class="button"')
   end
 
   it 'locks the user before recovery state when changing the password' do
