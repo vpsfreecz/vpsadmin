@@ -75,6 +75,11 @@ not prove that external documentation remains current.
   logged-in user's `User.language` preference. The top-right language switcher
   updates that preference for normal sessions and remains session-only while an
   admin is impersonating another user.
+- Keep the standard automated-mail notice uniform in member-facing templates.
+  When the notice is present, use these exact visible lines in plain and HTML
+  variants; do not paraphrase either language in an individual template:
+  - English: `(This is an automated mail from vpsAdmin, your reply will be sent to our support)`
+  - Czech: `(Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)`
 
 ## Testing Guidelines
 - Integration tests live in `tests/` and reuse the vpsAdminOS test framework via the flake input, so no sibling `vpsadminos` checkout or `NIX_PATH` setup is required.
