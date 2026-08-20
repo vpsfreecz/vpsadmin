@@ -651,6 +651,23 @@ RSpec.describe VpsAdmin::API::MailTemplates do
     end
   end
 
+  it 'ships bilingual HTML password recovery messages' do
+    template = described_class.find_templates(described_class.default_template_paths).find do |item|
+      item.name == 'password_recovery'
+    end
+    translations = template.variants.index_by(&:language).transform_values do |variant|
+      described_class.send(:translation_params, template, variant)
+    end
+
+    expect(translations.keys).to include('en', 'cs')
+    expect(translations.fetch('en').fetch(:text_html)).to include(
+      '>Set a new password</a>'
+    )
+    expect(translations.fetch('cs').fetch(:text_html)).to include(
+      '>Nastavit nové heslo</a>'
+    )
+  end
+
   it 'ships usable built-in template content' do
     templates = described_class.find_templates(described_class.default_template_paths)
     expect(templates).not_to be_empty

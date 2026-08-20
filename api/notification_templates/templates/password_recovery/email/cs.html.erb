@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body { color: #20252b; font-family: Arial, sans-serif; line-height: 1.5; }
+      h2 { font-size: 18px; margin: 24px 0 8px; }
+      p { margin: 12px 0; }
+      .account { border-top: 1px solid #d9dde2; margin-top: 20px; padding-top: 4px; }
+      .action { margin: 18px 0 22px; }
+      .action a { background: #0875c1; border: 1px solid #075f9d;
+                  border-radius: 4px; color: #fff; display: inline-block;
+                  padding: 10px 16px; text-decoration: none; }
+      .footer { color: #59636e; font-size: 13px; margin-top: 24px; }
+    </style>
+  </head>
+  <body>
+    <p>Ahoj,</p>
+    <p>
+      dostali jsme žádost o obnovení hesla pro následující
+      <%= @accounts.length == 1 ? 'účet' : 'účty' %> ve vpsAdminu:
+    </p>
+
+    <% @accounts.each do |account| -%>
+      <div class="account">
+        <h2>Přezdívka: <%= ERB::Util.html_escape(account[:login]) %></h2>
+        <% if account[:outcome] == 'recoverable' -%>
+          <p class="action">
+            <a href="<%= ERB::Util.html_escape(account[:reset_url]) %>">Nastavit nové heslo</a>
+          </p>
+          <p>
+            Odkaz platí jednu hodinu. Po otevření ověříš svou totožnost pomocí
+            TOTP nebo přístupového klíče.
+          </p>
+        <% elsif account[:outcome] == 'no_mfa' -%>
+          <p>
+            Tento účet nemá nastavené dvoufázové ověření, takže u něj nejde
+            heslo obnovit automaticky. Kontaktuj prosím
+            <%= ERB::Util.html_escape(@support_mail) %>.
+          </p>
+        <% else -%>
+          <p>
+            Obnovení hesla není pro tento účet dostupné. Pokud potřebuješ
+            pomoc, kontaktuj prosím <%= ERB::Util.html_escape(@support_mail) %>.
+          </p>
+        <% end -%>
+      </div>
+    <% end -%>
+
+    <p>
+      Pokud tato žádost nebyla tvoje, nemusíš nic dělat. Žádné heslo jsme
+      nezměnili.
+    </p>
+    <p>S pozdravem<br>tým vpsAdminu</p>
+    <p class="footer">
+      (Tento e-mail automaticky rozesílá vpsAdmin. Odpověď se zašle na naši podporu.)
+    </p>
+  </body>
+</html>

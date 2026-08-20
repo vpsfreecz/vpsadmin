@@ -60,6 +60,12 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::RequestPasswordRecover
     expect(body.scan('/oauth2/password-reset/continue#token=').length).to eq(1)
     expect(body).not_to include('can be used once', 'recovery code')
 
+    html = recovery_request.mail_log.text_html
+    expect(html).to include('Login: shared-a', 'Login: shared-b', 'Login: shared-c')
+    expect(html).to include('class="action"', '>Set a new password</a>')
+    expect(html.scan('/oauth2/password-reset/continue#token=').length).to eq(1)
+    expect(html).not_to include('can be used once', 'recovery code')
+
     raw_token = body.match(/#token=([^\s]+)/)[1]
     recovery = recovery_request.password_recoveries.find_by!(user: first)
     expect(recovery.email_token_digest).to eq(PasswordRecovery.digest_token(raw_token))
