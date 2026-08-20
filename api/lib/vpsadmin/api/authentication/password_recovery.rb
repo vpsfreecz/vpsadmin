@@ -48,12 +48,28 @@ module VpsAdmin::API
         I18N_KEYS.map { |key| "auth.password_recovery.#{key}" }
       end
 
+      def configured_logo
+        value = ::SysConfig.get(:core, :logo_url).to_s.strip
+        return if value.empty?
+
+        uri = URI.parse(value)
+        return unless uri.is_a?(URI::HTTP) && %w[http https].include?(uri.scheme)
+        return if uri.host.blank? || uri.userinfo.present? || uri.fragment.present?
+
+        { url: value, origin: uri.origin }
+      rescue URI::InvalidURIError
+        nil
+      end
+
       def register_routes(sinatra)
+        controller = self
         sinatra.before "#{BASE_PATH}*" do
           unless ::SysConfig.get(:core, :password_recovery_enabled)
             halt 404, VpsAdmin::API::I18n.t('errors.object_not_found')
           end
 
+          logo = controller.configured_logo
+          image_sources = ["'self'", logo&.fetch(:origin)].compact.join(' ')
           headers(
             'Cache-Control' => 'no-store, max-age=0',
             'Pragma' => 'no-cache',
@@ -63,12 +79,12 @@ module VpsAdmin::API
             'Content-Security-Policy' => "default-src 'none'; " \
                                          "style-src 'unsafe-inline'; " \
                                          "script-src 'unsafe-inline'; " \
+                                         "img-src #{image_sources}; " \
                                          "connect-src 'self'; form-action 'self'; " \
                                          "base-uri 'none'; frame-ancestors 'none'"
           )
         end
 
-        controller = self
         sinatra.get(BASE_PATH) { controller.new(self).request_form }
         sinatra.post(BASE_PATH) { controller.new(self).request_submit }
         sinatra.get("#{BASE_PATH}/sent") { controller.new(self).sent }
@@ -541,6 +557,7 @@ module VpsAdmin::API
       mfa_methods = locals[:mfa_methods] || []
       error = locals[:error]
       support_mail = ::SysConfig.get(:core, :support_mail).to_s
+      logo_url = self.class.configured_logo&.fetch(:url)
       html_lang = locale.to_s
       t = ->(key, **values) { text(key, **values) }
       html_t = ->(key, **values) { Rack::Utils.escape_html(t.call(key, **values)) }
