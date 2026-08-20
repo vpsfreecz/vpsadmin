@@ -112,6 +112,11 @@ test('OAuth forgot-password link reaches the recovery form', async ({ page }) =>
   await expect(page).toHaveURL(/auth\.vpsadmin\.test\/oauth2\/password-reset/);
   await expect(page.getByRole('img', { name: 'vpsFree.cz' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Reset your password' })).toBeVisible();
+
+  await page.getByRole('link', { name: 'Back to sign in' }).click();
+
+  await expect(page).toHaveURL(/auth\.vpsadmin\.test/);
+  await expect(page.locator('input[name="user"]')).toBeVisible();
 });
 
 test('admin login and logout work', async ({ page }) => {
