@@ -719,7 +719,8 @@ module VpsAdmin::API
 
       ret.user = Operations::Authentication::ResetPassword.run(
         auth_token,
-        sinatra_params[:new_password1]
+        sinatra_params[:new_password1],
+        request: sinatra_request
       )
 
       ret.auth_token = nil

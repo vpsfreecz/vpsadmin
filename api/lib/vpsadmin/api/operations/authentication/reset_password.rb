@@ -4,8 +4,9 @@ module VpsAdmin::API
   class Operations::Authentication::ResetPassword < Operations::Base
     # @param auth_token [AuthToken]
     # @param new_password [String]
+    # @param request [Sinatra::Request]
     # @return [User]
-    def run(auth_token, new_password)
+    def run(auth_token, new_password, request:)
       user = auth_token.user
 
       user.with_lock do
@@ -16,6 +17,7 @@ module VpsAdmin::API
 
         user.set_password(new_password)
         user.save!
+        ::TransactionChains::User::PasswordChanged.fire(user, request)
         user
       end
     end

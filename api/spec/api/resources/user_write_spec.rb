@@ -11,6 +11,7 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       user_suspend
       user_resume
       user_revive
+      user_password_changed
     ].each { |name| ensure_mail_template(name) }
     ensure_user_infra
   end
@@ -484,17 +485,24 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       mfa_token = create_auth_token!(user: SpecSeed.user, purpose: 'mfa')
       password_token = create_auth_token!(user: SpecSeed.user, purpose: 'reset_password')
 
-      as(SpecSeed.user) do
-        json_put show_path(SpecSeed.user.id), user: {
-          password: SpecSeed::PASSWORD,
-          new_password: new_password
-        }
-      end
+      expect do
+        as(SpecSeed.user) do
+          json_put show_path(SpecSeed.user.id), user: {
+            password: SpecSeed::PASSWORD,
+            new_password: new_password
+          }
+        end
+      end.to change {
+        MailLog.joins(:mail_template)
+               .where(mail_templates: { name: 'user_password_changed' })
+               .count
+      }.by(1)
 
       expect_status(200)
       expect(json['status']).to be(true)
       expect(AuthToken.where(id: [mfa_token.id, password_token.id])).to be_empty
       expect(SpecSeed.user.reload.authentication_generation).to eq(old_generation + 1)
+      expect(MailLog.order(:id).last.user).to eq(SpecSeed.user)
 
       clear_login
       basic_authorize('user', new_password)
@@ -562,11 +570,17 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
     end
 
     it 'allows admin to set another user password' do
-      as(SpecSeed.admin) do
-        json_put show_path(SpecSeed.other_user.id), user: {
-          new_password: new_password
-        }
-      end
+      password_changed_mails = MailLog.joins(:mail_template).where(
+        mail_templates: { name: 'user_password_changed' }
+      )
+
+      expect do
+        as(SpecSeed.admin) do
+          json_put show_path(SpecSeed.other_user.id), user: {
+            new_password: new_password
+          }
+        end
+      end.not_to change(password_changed_mails, :count)
 
       expect_status(200)
       expect(json['status']).to be(true)

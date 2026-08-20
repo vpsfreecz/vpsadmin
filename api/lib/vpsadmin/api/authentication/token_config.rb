@@ -168,7 +168,8 @@ module VpsAdmin::API
         opts = auth_token.opts || {}
         user = Operations::Authentication::ResetPassword.run(
           auth_token,
-          req.input[:new_password1]
+          req.input[:new_password1],
+          request: req.request
         )
 
         begin

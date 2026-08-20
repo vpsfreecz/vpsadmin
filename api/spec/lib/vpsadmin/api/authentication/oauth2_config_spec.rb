@@ -593,6 +593,7 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
 
   it 'rechecks OAuth2 enablement before reset completion creates an authorization' do
     user.update!(password_reset: true, enable_oauth2_auth: false)
+    allow(TransactionChains::User::PasswordChanged).to receive(:fire)
     auth_token = create_auth_token!(user:, purpose: 'reset_password')
 
     expect do
@@ -615,6 +616,8 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
       expect(result.authorization).to be_nil
       expect(result.errors).to include(:oauth2_disabled)
     end.not_to change(Oauth2Authorization, :count)
+    expect(TransactionChains::User::PasswordChanged)
+      .to have_received(:fire).with(user, request)
   end
 
   it 'creates authorization cookies and SSO metadata' do
