@@ -17,17 +17,19 @@ RSpec.describe VpsAdmin::API::PasswordRecoveryWorker do
       locale: :en,
       oauth2_client: nil,
       request:
-    )
+    ).submission
   end
 
-  it 'processes and removes a queued submission outside the HTTP request' do
+  it 'processes and finishes a queued submission outside the HTTP request' do
     queued_submission = enqueue_submission
     allow(VpsAdmin::API::Operations::Authentication::RequestPasswordRecovery)
       .to receive(:run)
 
     expect(worker.process_next).to eq(:processed)
 
-    expect(PasswordRecoverySubmission.exists?(queued_submission.id)).to be(false)
+    expect(queued_submission.reload.finished_at).to be_present
+    expect(queued_submission.identifier).to be_nil
+    expect(queued_submission.user_agent).to be_nil
     expect(VpsAdmin::API::Operations::Authentication::RequestPasswordRecovery)
       .to have_received(:run) do |identifier, **kwargs|
         expect(identifier).to eq('member@example.test')
@@ -39,7 +41,7 @@ RSpec.describe VpsAdmin::API::PasswordRecoveryWorker do
       end
   end
 
-  it 'retries failures and discards a submission after the attempt limit' do
+  it 'retries failures and finishes a submission after the attempt limit' do
     submission = enqueue_submission
     allow(VpsAdmin::API::Operations::Authentication::RequestPasswordRecovery)
       .to receive(:run).and_raise('mail unavailable')
@@ -55,14 +57,15 @@ RSpec.describe VpsAdmin::API::PasswordRecoveryWorker do
       )
     end
 
-    expect(PasswordRecoverySubmission.exists?(submission.id)).to be(false)
+    expect(submission.reload.finished_at).to be_present
+    expect(submission.identifier).to be_nil
   end
 
   it 'reports an empty queue without doing work' do
     expect(worker.process_next).to eq(:idle)
   end
 
-  it 'discards queued work after the feature is disabled' do
+  it 'finishes queued work after the feature is disabled' do
     submission = enqueue_submission
     SysConfig.find_by!(category: 'core', name: 'password_recovery_enabled')
              .update!(value: false)
@@ -71,7 +74,8 @@ RSpec.describe VpsAdmin::API::PasswordRecoveryWorker do
 
     expect(worker.process_next).to eq(:processed)
 
-    expect(PasswordRecoverySubmission.exists?(submission.id)).to be(false)
+    expect(submission.reload.finished_at).to be_present
+    expect(submission.identifier).to be_nil
     expect(VpsAdmin::API::Operations::Authentication::RequestPasswordRecovery)
       .not_to have_received(:run)
   end

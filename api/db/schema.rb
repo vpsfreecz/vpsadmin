@@ -1325,7 +1325,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.integer "mail_log_id", unsigned: true
     t.bigint "oauth2_client_id"
     t.bigint "password_recovery_submission_id"
-    t.string "recipient_digest", limit: 64, null: false
     t.string "recipient_email", limit: 127, null: false
     t.datetime "updated_at", null: false
     t.text "user_agent"
@@ -1333,14 +1332,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.index ["mail_log_id"], name: "index_password_recovery_requests_on_mail_log_id", unique: true
     t.index ["oauth2_client_id"], name: "index_password_recovery_requests_on_oauth2_client_id"
     t.index ["password_recovery_submission_id"], name: "password_recovery_requests_submission", unique: true
-    t.index ["recipient_digest", "created_at"], name: "password_recovery_requests_throttle"
   end
 
   create_table "password_recovery_submissions", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.integer "attempts", default: 0, null: false
     t.string "client_ip_addr", limit: 46
     t.datetime "created_at", null: false
-    t.string "identifier", limit: 127, null: false
+    t.datetime "finished_at"
+    t.string "identifier", limit: 127
+    t.string "identifier_digest", limit: 64, null: false
     t.string "locale", limit: 16, null: false
     t.bigint "oauth2_client_id"
     t.datetime "processing_started_at"
@@ -1348,8 +1348,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.text "user_agent"
     t.index ["created_at"], name: "index_password_recovery_submissions_on_created_at"
     t.index ["client_ip_addr", "created_at"], name: "password_recovery_submissions_source"
+    t.index ["finished_at", "processing_started_at", "attempts", "created_at"], name: "password_recovery_submissions_pending"
+    t.index ["identifier_digest", "created_at"], name: "password_recovery_submissions_identifier"
     t.index ["oauth2_client_id"], name: "index_password_recovery_submissions_on_oauth2_client_id"
-    t.index ["processing_started_at", "attempts", "created_at"], name: "password_recovery_submissions_pending"
   end
 
   create_table "object_histories", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|

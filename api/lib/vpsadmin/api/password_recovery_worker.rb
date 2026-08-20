@@ -41,7 +41,7 @@ module VpsAdmin::API
       return :idle unless submission
 
       unless ::SysConfig.get(:core, :password_recovery_enabled)
-        submission.destroy!
+        submission.finish!
         return :processed
       end
 
@@ -52,11 +52,11 @@ module VpsAdmin::API
         request: build_request(submission),
         submission:
       )
-      submission.destroy!
+      submission.finish!
       :processed
     rescue StandardError => e
       warn "[vpsAdmin API] Password recovery worker failed: #{e.class}: #{e.message}"
-      submission&.retry_or_discard!
+      submission&.retry_or_finish!
       :error
     end
 

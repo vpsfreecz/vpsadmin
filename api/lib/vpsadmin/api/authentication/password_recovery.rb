@@ -37,7 +37,9 @@ module VpsAdmin::API
       send_email
       signing_in_passkey
       sign_out_all
+      temporarily_unavailable
       title
+      too_many_requests
       too_many_totp_attempts
       totp_code
       verify_totp
@@ -118,21 +120,42 @@ module VpsAdmin::API
       verify_csrf!
       client = requested_client
 
-      begin
-        ::PasswordRecoverySubmission.enqueue!(
-          identifier: @params['identifier'],
-          locale:,
+      result = ::PasswordRecoverySubmission.enqueue!(
+        identifier: @params['identifier'],
+        locale:,
+        oauth2_client: client,
+        request: @request
+      )
+
+      if result.rate_limited?
+        @handler.headers('Retry-After' => result.retry_after.to_s)
+        return render(
+          :request,
           oauth2_client: client,
-          request: @request
+          error: text(:too_many_requests),
+          status: 429
         )
-      rescue StandardError => e
-        warn "[vpsAdmin API] Password recovery request failed: #{e.class}: #{e.message}"
+      elsif !result.accepted?
+        return render(
+          :request,
+          oauth2_client: client,
+          error: text(:temporarily_unavailable),
+          status: 503
+        )
       end
 
       redirect_to(
         "#{BASE_PATH}/sent",
         client_id: client&.client_id,
         ui_locales: @params['ui_locales']
+      )
+    rescue StandardError => e
+      warn "[vpsAdmin API] Password recovery request failed: #{e.class}: #{e.message}"
+      render(
+        :request,
+        oauth2_client: client,
+        error: text(:temporarily_unavailable),
+        status: 503
       )
     end
 
