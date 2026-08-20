@@ -3,7 +3,7 @@ Hello <%= @user.login %>,
 The password for your vpsAdmin account was changed.
 
 Time: <%= local_time(@time, '%Y-%m-%d %H:%M %Z') %>
-IP address: <%= @request.env['HTTP_CLIENT_IP'] || @request.env['HTTP_X_REAL_IP'] || @request.ip %>
+IP address: <%= @ip_address %>
 User agent: <%= @request.user_agent || 'unknown' %>
 
 If this was you, you can ignore this message. Otherwise contact

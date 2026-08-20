@@ -17,10 +17,19 @@ RSpec.describe TransactionChains::User::PasswordChanged do
   end
 
   it 'concerns the user and sends a plain security notification' do
+    expect(MailTemplate.templates.dig(:user_password_changed, :vars)).to include(
+      ip_address: String
+    )
+
     user = create_lifecycle_user!
     request = build_request(
       ip: '192.0.2.40',
-      user_agent: 'Password changed spec'
+      user_agent: 'Password changed spec',
+      extra_env: {
+        'HTTP_CLIENT_IP' => '203.0.113.40',
+        'HTTP_X_FORWARDED_FOR' => '203.0.113.40',
+        'HTTP_X_REAL_IP' => '192.0.2.41'
+      }
     )
 
     chain, = described_class.fire(user, request)
@@ -37,11 +46,12 @@ RSpec.describe TransactionChains::User::PasswordChanged do
     expect(mail.to).to include(user.email)
     expect(mail.text_plain).to include(
       user.login,
-      '192.0.2.40',
+      '192.0.2.41',
       'Password changed spec',
       'support@example.test',
       '(This is an automated mail from vpsAdmin, your reply will be sent to our support)'
     )
+    expect(mail.text_plain).not_to include('203.0.113.40')
     expect(mail.text_html).to be_nil
   end
 end
