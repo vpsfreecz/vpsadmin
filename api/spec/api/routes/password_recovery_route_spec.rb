@@ -7,6 +7,9 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
   before do
     SysConfig.find_or_create_by!(category: 'core', name: 'password_recovery_enabled').update!(value: true)
     SysConfig.find_or_create_by!(category: 'core', name: 'auth_url').update!(value: 'http://example.org')
+    SysConfig.find_or_create_by!(category: 'core', name: 'logo_url').update!(
+      value: 'https://assets.example.test/vpsfree-logo.png'
+    )
     SysConfig.find_or_create_by!(category: 'core', name: 'support_mail').update!(value: 'support@example.test')
   end
 
@@ -91,10 +94,29 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(last_response.body).to include('available only for accounts with TOTP or a passkey configured')
     expect(last_response.body).not_to include('We will not disclose')
     expect(last_response.body).not_to include('email will explain how to contact support')
+    expect(last_response.body).to include(
+      '<img class="logo" src="https://assets.example.test/vpsfree-logo.png" alt="vpsFree.cz">'
+    )
     expect(last_response.headers['Cache-Control']).to include('no-store')
     expect(last_response.headers['Referrer-Policy']).to eq('no-referrer')
     expect(last_response.headers['X-Frame-Options']).to eq('DENY')
     expect(last_response.headers['Content-Security-Policy']).to include("frame-ancestors 'none'")
+    expect(last_response.headers['Content-Security-Policy']).to include(
+      "img-src 'self' https://assets.example.test"
+    )
+  end
+
+  it 'omits a logo that cannot be loaded safely' do
+    SysConfig.find_by!(category: 'core', name: 'logo_url').update!(
+      value: 'javascript:alert(1)'
+    )
+
+    get '/oauth2/password-reset'
+
+    expect(last_response.status).to eq(200)
+    expect(last_response.body).not_to include('class="logo"')
+    expect(last_response.headers['Content-Security-Policy']).to include("img-src 'self'")
+    expect(last_response.headers['Content-Security-Policy']).not_to include('javascript:')
   end
 
   it 'returns the same confirmation after every submitted identifier' do
