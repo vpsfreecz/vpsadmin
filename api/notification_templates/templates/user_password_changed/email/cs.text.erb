@@ -3,7 +3,7 @@ Ahoj <%= @user.login %>,
 heslo k Tvému účtu ve vpsAdminu bylo změněno.
 
 Datum a čas: <%= local_time(@time, '%Y-%m-%d %H:%M %Z') %>
-IP adresa: <%= @request.env['HTTP_CLIENT_IP'] || @request.env['HTTP_X_REAL_IP'] || @request.ip %>
+IP adresa: <%= @ip_address %>
 User agent: <%= @request.user_agent || 'neznámý' %>
 
 Pokud jsi heslo změnil Ty, můžeš tuto zprávu ignorovat. V opačném případě

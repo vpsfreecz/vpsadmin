@@ -527,6 +527,30 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(last_response.body).to include('Verify your identity')
   end
 
+  it 'records passkey challenges using the proxy-controlled address' do
+    user = create_user_with_totp
+    user.webauthn_credentials.create!(
+      label: 'Spec passkey',
+      external_id: Base64.strict_encode64('credential-id'),
+      public_key: 'not-a-real-public-key',
+      sign_count: 0
+    )
+    recovery, raw_token = create_recovery(user:)
+    csrf = exchange_email_token(raw_token)
+
+    header 'Client-IP', '203.0.113.60'
+    header 'X-Forwarded-For', '203.0.113.60'
+    header 'X-Real-IP', '192.0.2.60'
+    header 'X-CSRF-Token', csrf
+    header 'Content-Type', 'application/json'
+    post '/oauth2/password-reset/verify/webauthn/begin', '{}'
+
+    expect(last_response.status).to eq(200)
+    challenge = recovery.webauthn_challenges.order(:id).last
+    expect(challenge.client_ip_addr).to eq('192.0.2.60')
+    expect(challenge.client_ip_addr).not_to eq('203.0.113.60')
+  end
+
   it 'rejects non-object passkey responses without failing the request' do
     user = create_user_with_totp
     recovery, raw_token = create_recovery(user:)
