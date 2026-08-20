@@ -10,6 +10,7 @@ module TransactionChains
              vars: {
                user:,
                request:,
+               ip_address: request.env['HTTP_X_REAL_IP'].presence || request.ip,
                time: Time.current,
                support_mail: ::SysConfig.get(:core, :support_mail).to_s
              }

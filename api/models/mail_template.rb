@@ -307,6 +307,7 @@ class MailTemplate < ApplicationRecord
   register :user_password_changed, vars: {
     user: ::User,
     request: Sinatra::Request,
+    ip_address: String,
     time: Time,
     support_mail: String
   }, roles: %i[account]
