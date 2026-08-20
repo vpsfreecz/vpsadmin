@@ -7,8 +7,8 @@ Přezdívka: <%= account[:login] %>
 <% if account[:outcome] == 'recoverable' -%>
 Nastavit nové heslo: <%= account[:reset_url] %>
 
-Odkaz platí jednu hodinu a můžeš ho použít jen jednou. Po otevření ověříš
-svou totožnost pomocí TOTP, obnovovacího kódu nebo přístupového klíče.
+Odkaz platí jednu hodinu. Po otevření ověříš svou totožnost pomocí TOTP nebo
+přístupového klíče.
 <% elsif account[:outcome] == 'no_mfa' -%>
 Tento účet nemá nastavené dvoufázové ověření, takže u něj nejde heslo obnovit
 automaticky. Kontaktuj prosím <%= @support_mail %>.

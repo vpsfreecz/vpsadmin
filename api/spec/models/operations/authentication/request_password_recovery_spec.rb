@@ -58,6 +58,7 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::RequestPasswordRecover
     body = recovery_request.mail_log.text_plain
     expect(body).to include('Login: shared-a', 'Login: shared-b', 'Login: shared-c')
     expect(body.scan('/oauth2/password-reset/continue#token=').length).to eq(1)
+    expect(body).not_to include('can be used once', 'recovery code')
 
     raw_token = body.match(/#token=([^\s]+)/)[1]
     recovery = recovery_request.password_recoveries.find_by!(user: first)

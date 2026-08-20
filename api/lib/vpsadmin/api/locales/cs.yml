@@ -2178,9 +2178,9 @@ cs:
         identifier: Přezdívka nebo hlavní e-mailová adresa
         invalid_link: Tento odkaz pro obnovení hesla je neplatný, vypršel nebo už
           byl použit. Požádej o nový odkaz.
-        invalid_totp_code: TOTP nebo obnovovací kód není platný.
+        invalid_totp_code: TOTP kód není platný.
         mfa_explanation: Než si zvolíš nové heslo, ověř svou totožnost pomocí nastaveného
-          TOTP autentizátoru, obnovovacího kódu nebo přístupového klíče.
+          TOTP autentizátoru nebo přístupového klíče.
         mfa_heading: Ověř svou totožnost
         new_password: Nové heslo
         passkey: Ověřit přístupovým klíčem
@@ -2194,8 +2194,7 @@ cs:
         repeat_new_password: Zopakuj nové heslo
         request_explanation: Obnovení hesla je dostupné jen pro účty s nastaveným
           TOTP nebo přístupovým klíčem. Zadej přezdívku nebo hlavní e-mailovou adresu
-          uloženou u účtu. Neprozradíme, jestli účet existuje. Pokud účet nemá dvoufázové
-          ověření, v e-mailu najdeš pokyny ke kontaktování podpory.
+          uloženou u účtu.
         request_heading: Obnov si heslo
         send_email: Poslat e-mail pro obnovení hesla
         sign_out_all: Odhlásit všechna existující přihlášení
@@ -2203,7 +2202,7 @@ cs:
         title: Obnovení hesla ve vpsAdminu
         too_many_totp_attempts: Příliš mnoho neplatných kódů. Tento odkaz pro obnovení
           hesla už nejde použít.
-        totp_code: TOTP nebo obnovovací kód
+        totp_code: TOTP kód
         verify_totp: Ověřit kód
     errors:
       access_denied: Přístup odepřen

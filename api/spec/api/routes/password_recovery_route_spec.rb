@@ -89,6 +89,8 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
 
     expect(last_response.status).to eq(200)
     expect(last_response.body).to include('available only for accounts with TOTP or a passkey configured')
+    expect(last_response.body).not_to include('We will not disclose')
+    expect(last_response.body).not_to include('email will explain how to contact support')
     expect(last_response.headers['Cache-Control']).to include('no-store')
     expect(last_response.headers['Referrer-Policy']).to eq('no-referrer')
     expect(last_response.headers['X-Frame-Options']).to eq('DENY')
@@ -117,7 +119,9 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
 
     expect(last_response.status).to eq(200)
     expect(last_response.body).to eq(known_body)
-    expect(last_response.body).to include('If we found a matching account')
+    expect(last_response.body).to include(
+      'If a matching account was found, instructions were sent to its primary address'
+    )
     expect(VpsAdmin::API::Operations::Authentication::RequestPasswordRecovery)
       .not_to have_received(:run)
   end
@@ -342,6 +346,15 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     allow(TransactionChains::User::TotpRecoveryCodeUsed).to receive(:fire)
 
     get '/oauth2/password-reset/verify'
+    expect(last_response.body).to include('TOTP code')
+    expect(last_response.body).not_to include('recovery code')
+    post '/oauth2/password-reset/verify/totp',
+         csrf_token: csrf_from_body,
+         totp_code: 'incorrect-code'
+    expect(last_response.status).to eq(422)
+    expect(last_response.body).to include('The TOTP code is not valid.')
+    expect(last_response.body).not_to include('recovery code')
+
     post '/oauth2/password-reset/verify/totp',
          csrf_token: csrf_from_body,
          totp_code: 'recovery-code'
