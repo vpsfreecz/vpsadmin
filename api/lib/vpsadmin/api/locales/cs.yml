@@ -4082,6 +4082,7 @@ cs:
           hard_delete: Tvrdé smazání uživatele
           new_login: Nové přihlášení
           new_token: Nový token
+          password_changed: Změna hesla
           report_failed_logins: Neúspěšná přihlášení
           resume: Obnovení uživatele
           revive: Oživení uživatele

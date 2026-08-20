@@ -4087,6 +4087,7 @@ en:
           hard_delete: Hard delete user
           new_login: New login
           new_token: New token
+          password_changed: Password changed
           report_failed_logins: Failed logins
           resume: Resume
           revive: Revive

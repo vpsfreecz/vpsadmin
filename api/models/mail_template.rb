@@ -304,6 +304,13 @@ class MailTemplate < ApplicationRecord
     time: Time
   }, roles: %i[account]
 
+  register :user_password_changed, vars: {
+    user: ::User,
+    request: Sinatra::Request,
+    time: Time,
+    support_mail: String
+  }, roles: %i[account]
+
   register :password_recovery, vars: {
     accounts: Array,
     support_mail: String,

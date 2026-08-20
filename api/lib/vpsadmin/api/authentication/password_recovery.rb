@@ -342,6 +342,7 @@ module VpsAdmin::API
         user.set_password(password)
         user.save!
         recovery.update!(completed_at: Time.current)
+        ::TransactionChains::User::PasswordChanged.fire(user, @request)
 
         if @params['sign_out_all'] == '1'
           Operations::UserSession::CloseAll.run(user)
