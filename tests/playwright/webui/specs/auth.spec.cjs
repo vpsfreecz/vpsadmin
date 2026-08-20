@@ -110,6 +110,7 @@ test('OAuth forgot-password link reaches the recovery form', async ({ page }) =>
   await forgotPassword.click();
 
   await expect(page).toHaveURL(/auth\.vpsadmin\.test\/oauth2\/password-reset/);
+  await expect(page.getByRole('img', { name: 'vpsFree.cz' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Reset your password' })).toBeVisible();
 });
 
