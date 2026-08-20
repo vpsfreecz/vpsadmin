@@ -666,6 +666,12 @@ RSpec.describe VpsAdmin::API::MailTemplates do
     expect(translations.fetch('cs').fetch(:text_html)).to include(
       '>Nastavit nové heslo</a>'
     )
+    expect(translations.fetch('en').values_at(:text_plain, :text_html)).to all(
+      include('(This is an automated mail from vpsAdmin, your reply will be sent to our support)')
+    )
+    expect(translations.fetch('cs').values_at(:text_plain, :text_html)).to all(
+      include('(Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)')
+    )
   end
 
   it 'ships bilingual plain password-change notifications' do
