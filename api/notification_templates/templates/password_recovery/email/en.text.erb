@@ -7,8 +7,8 @@ Login: <%= account[:login] %>
 <% if account[:outcome] == 'recoverable' -%>
 Set a new password: <%= account[:reset_url] %>
 
-This link is valid for one hour and can be used once. After opening it, you
-will need to verify your identity with TOTP, a recovery code, or a passkey.
+This link is valid for one hour. After opening it, you will need to verify your
+identity with TOTP or a passkey.
 <% elsif account[:outcome] == 'no_mfa' -%>
 This account does not have two-factor authentication configured, so its
 password cannot be recovered automatically. Please contact <%= @support_mail %>.
