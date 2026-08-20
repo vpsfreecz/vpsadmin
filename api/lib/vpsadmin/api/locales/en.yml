@@ -2204,7 +2204,11 @@ en:
         send_email: Send password recovery email
         sign_out_all: Sign out all existing sessions
         signing_in_passkey: Verifying passkey…
+        temporarily_unavailable: Password recovery is temporarily unavailable. Try
+          again later.
         title: vpsAdmin password recovery
+        too_many_requests: Too many password recovery requests. Wait a few minutes
+          and try again.
         too_many_totp_attempts: Too many invalid codes. This password recovery link
           can no longer be used.
         totp_code: TOTP code

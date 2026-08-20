@@ -67,7 +67,6 @@ RSpec.describe VpsAdmin::API::Tasks::Authentication do
   def create_password_recovery!(email_expires_at: 1.hour.ago)
     recovery_request = PasswordRecoveryRequest.create!(
       recipient_email: user.email,
-      recipient_digest: Digest::SHA256.hexdigest(user.email.downcase),
       locale: 'en'
     )
     recovery_request.password_recoveries.create!(
@@ -196,6 +195,7 @@ RSpec.describe VpsAdmin::API::Tasks::Authentication do
     it 'deletes abandoned password recovery submissions after the retention period' do
       submission = PasswordRecoverySubmission.create!(
         identifier: 'stale@example.test',
+        identifier_digest: Digest::SHA256.hexdigest('stale@example.test'),
         locale: 'en',
         created_at: PasswordRecoverySubmission::RECORD_RETENTION.ago - 1.minute
       )

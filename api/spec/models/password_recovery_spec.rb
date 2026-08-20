@@ -6,7 +6,6 @@ RSpec.describe PasswordRecovery do
   def create_recovery
     recovery_request = PasswordRecoveryRequest.create!(
       recipient_email: user.email,
-      recipient_digest: Digest::SHA256.hexdigest(user.email.downcase),
       locale: 'en'
     )
     recovery_request.password_recoveries.create!(

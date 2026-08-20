@@ -14,7 +14,6 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::PasswordRecoveryTotp d
   let(:request_record) do
     PasswordRecoveryRequest.create!(
       recipient_email: user.email,
-      recipient_digest: Digest::SHA256.hexdigest(user.email.downcase),
       locale: 'en'
     )
   end

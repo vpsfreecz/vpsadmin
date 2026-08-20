@@ -31,20 +31,29 @@ RSpec.describe AddPasswordRecovery do
       null: true,
       unsigned?: true
     )
+    expect(column(:password_recovery_submissions, :identifier)).to have_attributes(
+      type: :string,
+      null: true
+    )
+    expect(column(:password_recovery_submissions, :identifier_digest)).to have_attributes(
+      type: :string,
+      null: false
+    )
+    expect(column_exists?(:password_recovery_submissions, :finished_at)).to be(true)
     expect(column(:password_recoveries, :user_id)).to have_attributes(
       type: :integer,
       null: false,
       unsigned?: true
     )
     expect(column_exists?(:webauthn_challenges, :password_recovery_id)).to be(true)
-    expect(index_exists?(:password_recovery_requests, 'password_recovery_requests_throttle'))
-      .to be(true)
     expect(index_exists?(:password_recovery_requests, [:created_at])).to be(true)
     expect(index_exists?(:password_recovery_submissions, 'password_recovery_submissions_pending'))
       .to be(true)
     expect(index_exists?(:password_recovery_submissions, [:created_at])).to be(true)
     expect(index_exists?(:password_recovery_submissions,
                          'password_recovery_submissions_source')).to be(true)
+    expect(index_exists?(:password_recovery_submissions,
+                         'password_recovery_submissions_identifier')).to be(true)
     expect(index_exists?(:password_recovery_requests,
                          'password_recovery_requests_submission')).to be(true)
     expect(index_exists?(:password_recoveries, [:email_token_digest])).to be(true)

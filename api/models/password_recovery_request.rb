@@ -4,6 +4,5 @@ class PasswordRecoveryRequest < ApplicationRecord
   belongs_to :mail_log, optional: true
   has_many :password_recoveries, dependent: :destroy
 
-  validates :recipient_email, :recipient_digest, :locale,
-            presence: true, allow_blank: false
+  validates :recipient_email, :locale, presence: true, allow_blank: false
 end

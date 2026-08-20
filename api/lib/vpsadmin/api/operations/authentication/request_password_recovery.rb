@@ -1,9 +1,5 @@
-require 'digest'
-
 module VpsAdmin::API
   class Operations::Authentication::RequestPasswordRecovery < Operations::Base
-    THROTTLE_INTERVAL = 10.minutes
-
     Account = Struct.new(:recovery, :token) do
       def to_mail_hash
         {
@@ -34,7 +30,6 @@ module VpsAdmin::API
       users, recipient_email = find_users_and_recipient(identifier)
       return if users.empty? || recipient_email.blank?
 
-      recipient_digest = digest_recipient(recipient_email)
       account_user_ids = users.map(&:id)
 
       ::PasswordRecoveryRequest.transaction do
@@ -45,14 +40,8 @@ module VpsAdmin::API
         users = locked_users.select { |user| account_user_ids.include?(user.id) }
         return unless users.length == account_user_ids.length
 
-        recent = ::PasswordRecoveryRequest.where(recipient_digest:)
-                                          .where('created_at > ?', THROTTLE_INTERVAL.ago)
-                                          .exists?
-        return if recent
-
         recovery_request = ::PasswordRecoveryRequest.create!(
           recipient_email:,
-          recipient_digest:,
           locale: locale.to_s,
           oauth2_client:,
           password_recovery_submission: submission,
@@ -113,10 +102,6 @@ module VpsAdmin::API
       return :no_mfa unless policy.effective_mfa?
 
       :recoverable
-    end
-
-    def digest_recipient(email)
-      Digest::SHA256.hexdigest(email.to_s.strip.downcase)
     end
 
     def client_ip(request)

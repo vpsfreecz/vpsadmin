@@ -2199,7 +2199,10 @@ cs:
         send_email: Poslat e-mail pro obnovení hesla
         sign_out_all: Odhlásit všechna existující přihlášení
         signing_in_passkey: Ověřování přístupovým klíčem…
+        temporarily_unavailable: Obnovení hesla je dočasně nedostupné. Zkus to později.
         title: Obnovení hesla ve vpsAdminu
+        too_many_requests: Příliš mnoho žádostí o obnovení hesla. Počkej několik minut
+          a zkus to znovu.
         too_many_totp_attempts: Příliš mnoho neplatných kódů. Tento odkaz pro obnovení
           hesla už nejde použít.
         totp_code: TOTP kód

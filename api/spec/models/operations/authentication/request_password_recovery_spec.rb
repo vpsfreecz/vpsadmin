@@ -99,26 +99,30 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::RequestPasswordRecover
     end.not_to change(PasswordRecoveryRequest, :count)
   end
 
-  it 'throttles a destination for ten minutes' do
-    user = create_user(login: 'throttled-user', email: 'throttled@example.test')
-
-    first = described_class.run(
-      user.email,
-      locale: :en,
-      oauth2_client: nil,
-      request:
-    )
+  it 'sends independent messages for logins sharing one primary email' do
+    email = 'shared-throttle@example.test'
+    first_user = create_user(login: 'shared-throttle-a', email:)
+    second_user = create_user(login: 'shared-throttle-b', email:)
 
     expect do
-      second = described_class.run(
-        user.email.upcase,
+      first = described_class.run(
+        first_user.login,
         locale: :en,
         oauth2_client: nil,
         request:
       )
-      expect(second).to be_nil
-    end.not_to change(PasswordRecoveryRequest, :count)
-    expect(first).to be_present
+      second = described_class.run(
+        second_user.login,
+        locale: :en,
+        oauth2_client: nil,
+        request:
+      )
+
+      expect(first.password_recoveries.pluck(:user_id)).to eq([first_user.id])
+      expect(second.password_recoveries.pluck(:user_id)).to eq([second_user.id])
+      expect(first.mail_log.to).to eq(email)
+      expect(second.mail_log.to).to eq(email)
+    end.to change(PasswordRecoveryRequest, :count).by(2)
   end
 
   it 'does not add configured template recipients to security mail' do
@@ -146,7 +150,7 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::RequestPasswordRecover
       locale: :en,
       oauth2_client: nil,
       request:
-    )
+    ).submission
 
     first = described_class.run(
       user.email,

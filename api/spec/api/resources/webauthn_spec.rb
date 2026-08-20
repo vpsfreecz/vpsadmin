@@ -68,7 +68,6 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
   def create_password_recovery(target_user)
     recovery_request = PasswordRecoveryRequest.create!(
       recipient_email: target_user.email,
-      recipient_digest: Digest::SHA256.hexdigest(target_user.email.downcase),
       locale: 'en'
     )
     recovery_request.password_recoveries.create!(

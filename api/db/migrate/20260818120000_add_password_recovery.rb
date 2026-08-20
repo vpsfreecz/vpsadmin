@@ -4,20 +4,25 @@ class AddPasswordRecovery < ActiveRecord::Migration[8.1]
     add_index :users, :email
 
     create_table :password_recovery_submissions do |t|
-      t.string :identifier, limit: 127, null: false
+      t.string :identifier, limit: 127
+      t.string :identifier_digest, limit: 64, null: false
       t.string :locale, limit: 16, null: false
       t.bigint :oauth2_client_id
       t.string :client_ip_addr, limit: 46
       t.text :user_agent
       t.datetime :processing_started_at
+      t.datetime :finished_at
       t.integer :attempts, null: false, default: 0
       t.timestamps
     end
 
     add_index :password_recovery_submissions,
-              %i[processing_started_at attempts created_at],
+              %i[finished_at processing_started_at attempts created_at],
               name: 'password_recovery_submissions_pending'
     add_index :password_recovery_submissions, :created_at
+    add_index :password_recovery_submissions,
+              %i[identifier_digest created_at],
+              name: 'password_recovery_submissions_identifier'
     add_index :password_recovery_submissions,
               %i[client_ip_addr created_at],
               name: 'password_recovery_submissions_source'
@@ -25,7 +30,6 @@ class AddPasswordRecovery < ActiveRecord::Migration[8.1]
 
     create_table :password_recovery_requests do |t|
       t.string :recipient_email, limit: 127, null: false
-      t.string :recipient_digest, limit: 64, null: false
       t.string :locale, limit: 16, null: false
       t.bigint :oauth2_client_id
       t.bigint :password_recovery_submission_id
@@ -35,9 +39,6 @@ class AddPasswordRecovery < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :password_recovery_requests,
-              %i[recipient_digest created_at],
-              name: 'password_recovery_requests_throttle'
     add_index :password_recovery_requests, :created_at
     add_index :password_recovery_requests, :oauth2_client_id
     add_index :password_recovery_requests,
