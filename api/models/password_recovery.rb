@@ -4,6 +4,7 @@ require 'securerandom'
 class PasswordRecovery < ApplicationRecord
   EMAIL_LIFETIME = 1.hour
   SESSION_LIFETIME = 15.minutes
+  COMPLETION_LIFETIME = 15.minutes
   MAX_TOTP_FAILED_ATTEMPTS = 5
   RECORD_RETENTION = 30.days
 
@@ -38,6 +39,12 @@ class PasswordRecovery < ApplicationRecord
 
   def self.find_by_session_token(token)
     active.find_by(session_token_digest: digest_token(token))
+  end
+
+  def self.find_recently_completed_by_session_token(token)
+    where(session_token_digest: digest_token(token))
+      .where(completed_at: COMPLETION_LIFETIME.ago..Time.current)
+      .take
   end
 
   def email_token_usable?

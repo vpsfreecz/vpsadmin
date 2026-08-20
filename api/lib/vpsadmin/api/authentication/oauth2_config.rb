@@ -21,7 +21,7 @@ module VpsAdmin::API
       passwords_do_not_match
     ].freeze
 
-    STATIC_I18N_KEYS = %i[forgot_password].freeze
+    STATIC_I18N_KEYS = %i[forgot_password password_changed].freeze
 
     def self.i18n_keys
       STATIC_I18N_KEYS.map { |key| "auth.oauth2.#{key}" } +
@@ -108,7 +108,12 @@ module VpsAdmin::API
 
     # @return [AuthResult, nil]
     def handle_get_authorize(sinatra_handler:, sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:)
-      sso = find_sso(sinatra_handler, client)
+      completed_recovery = completed_password_recovery(
+        sinatra_handler,
+        oauth2_response,
+        client
+      )
+      sso = find_sso(sinatra_handler, client) unless completed_recovery
       devices = find_devices(sinatra_handler)
 
       if sso && devices.detect { |d| d.user == sso.user } && sso.user.enable_oauth2_auth
@@ -141,7 +146,8 @@ module VpsAdmin::API
           sinatra_params:,
           sinatra_request:,
           client:,
-          devices:
+          devices:,
+          password_recovery_completed: completed_recovery.present?
         )
       end
     end
@@ -417,7 +423,7 @@ module VpsAdmin::API
     protected
 
     # @param auth_result [AuthResult]
-    def render_authorize_page(oauth2_request:, oauth2_response:, sinatra_params:, client:, devices:, auth_result: nil, sinatra_request: nil)
+    def render_authorize_page(oauth2_request:, oauth2_response:, sinatra_params:, client:, devices:, auth_result: nil, sinatra_request: nil, password_recovery_completed: false)
       # Variables passed to the ERB template
       auth_token = auth_result && auth_result.auth_token
       user = sinatra_params[:user]
@@ -770,6 +776,29 @@ module VpsAdmin::API
       return if sso.nil? || !sso.usable? || !sso.user.enable_single_sign_on
 
       sso
+    end
+
+    def completed_password_recovery(sinatra_handler, oauth2_response, client)
+      token = sinatra_handler.cookies[Authentication::PasswordRecovery::COMPLETION_COOKIE]
+      return unless token
+
+      recovery = ::PasswordRecovery.find_recently_completed_by_session_token(token)
+      unless recovery
+        clear_password_recovery_completion_cookie(oauth2_response)
+        return
+      end
+
+      return if recovery.password_recovery_request.oauth2_client_id != client.id
+
+      clear_password_recovery_completion_cookie(oauth2_response)
+      recovery
+    end
+
+    def clear_password_recovery_completion_cookie(oauth2_response)
+      oauth2_response.delete_cookie(
+        Authentication::PasswordRecovery::COMPLETION_COOKIE,
+        path: '/'
+      )
     end
 
     # @return [Array<::UserDevice>]

@@ -647,6 +647,26 @@ import ../make-test.nix (
         cfg.save! if cfg.changed? || cfg.new_record?
       end
 
+      password_recovery_completion_token = PasswordRecovery.generate_token
+      password_recovery_request = PasswordRecoveryRequest.create!(
+        recipient_email: admin.email,
+        locale: 'en',
+        oauth2_client: Oauth2Client.find_by!(client_id: 'vpsadmin-webui-test')
+      )
+      password_recovery_request.password_recoveries.create!(
+        user: admin,
+        outcome: :recoverable,
+        email_snapshot: admin.email,
+        email_expires_at: 1.hour.from_now,
+        email_consumed_at: 1.minute.ago,
+        session_token_digest: PasswordRecovery.digest_token(
+          password_recovery_completion_token
+        ),
+        session_expires_at: 14.minutes.from_now,
+        mfa_verified_at: 1.minute.ago,
+        completed_at: Time.current
+      )
+
       def ensure_cluster_resource(row)
         resource = ClusterResource.find_or_initialize_by(name: row[0].to_s)
         resource.label = row[1] if resource.new_record?
@@ -3835,6 +3855,9 @@ import ../make-test.nix (
         .index_by(&:filesystem)
 
       fixture_stdout.puts JSON.dump(
+        'passwordRecovery' => {
+          'completionToken' => password_recovery_completion_token
+        },
         'admin' => {
           'id' => ${toString adminUser.id},
           'username' => ${builtins.toJSON adminUser.login},

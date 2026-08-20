@@ -166,7 +166,11 @@
               <h5 class="card-subtitle text-center text-muted mb-2"><%= client.name %></h5>
               <hr>
               <div id="alert-area">
-                <% if step == :reset_password -%>
+                <% if password_recovery_completed -%>
+                  <div class="alert alert-success" role="alert">
+                    <%= html_t.call(:password_changed) %>
+                  </div>
+                <% elsif step == :reset_password -%>
                   <div class="alert alert-primary" role="alert">
                     <%= html_t.call(:set_new_password) %>
                   </div>
