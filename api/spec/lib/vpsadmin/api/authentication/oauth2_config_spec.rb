@@ -20,12 +20,13 @@ module OAuth2ConfigSpecFixtures
   end
 
   class FakeOAuth2Response
-    attr_reader :body, :cookies
+    attr_reader :body, :cookies, :deleted_cookies
     attr_accessor :content_type
 
     def initialize
       @body = +''
       @cookies = {}
+      @deleted_cookies = {}
     end
 
     def write(str)
@@ -34,6 +35,10 @@ module OAuth2ConfigSpecFixtures
 
     def set_cookie(name, value)
       @cookies[name] = value
+    end
+
+    def delete_cookie(name, value)
+      @deleted_cookies[name] = value
     end
   end
 
@@ -97,6 +102,27 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     )
   end
 
+  def create_completed_recovery!(target_user:, oauth2_client:, completed_at: Time.current)
+    token = PasswordRecovery.generate_token
+    recovery_request = PasswordRecoveryRequest.create!(
+      recipient_email: target_user.email,
+      locale: 'en',
+      oauth2_client:
+    )
+    recovery_request.password_recoveries.create!(
+      user: target_user,
+      outcome: :recoverable,
+      email_snapshot: target_user.email,
+      email_expires_at: 1.hour.from_now,
+      email_consumed_at: 1.minute.ago,
+      session_token_digest: PasswordRecovery.digest_token(token),
+      session_expires_at: 14.minutes.from_now,
+      mfa_verified_at: 1.minute.ago,
+      completed_at:
+    )
+    token
+  end
+
   it 'renders the authorize page for a valid client' do
     result = config.handle_get_authorize(
       sinatra_handler: handler,
@@ -111,6 +137,130 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(response.content_type).to eq('text/html')
     expect(response.body).to include(client.name)
     expect(response.body).to include('Log in')
+  end
+
+  it 'shows a completed recovery on the credentials form instead of using SSO' do
+    client.update!(allow_single_sign_on: true)
+    sso = create_single_sign_on!(user:)
+    device = create_user_device!(user:, known: true)
+    completion_token = create_completed_recovery!(
+      target_user: user,
+      oauth2_client: client
+    )
+    cookie_handler = OAuth2ConfigSpecFixtures::FakeSinatraHandler.new(
+      described_class::SSO_COOKIE => sso.token.token,
+      described_class::DEVICES_COOKIE => device.token.token,
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => completion_token
+    )
+
+    expect do
+      result = config.handle_get_authorize(
+        sinatra_handler: cookie_handler,
+        sinatra_request: request,
+        sinatra_params: {},
+        oauth2_request:,
+        oauth2_response: response,
+        client:
+      )
+
+      expect(result).to be_nil
+    end.not_to change(Oauth2Authorization, :count)
+
+    expect(response.body).to include('class="alert alert-success"')
+    expect(response.body).to include('Password changed.')
+    expect(response.body).to include('name="user"')
+    expect(response.deleted_cookies).to include(
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => { path: '/' }
+    )
+  end
+
+  it 'localizes the completed recovery alert using the authorization request' do
+    completion_token = create_completed_recovery!(
+      target_user: user,
+      oauth2_client: client
+    )
+    cookie_handler = OAuth2ConfigSpecFixtures::FakeSinatraHandler.new(
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => completion_token
+    )
+
+    config.handle_get_authorize(
+      sinatra_handler: cookie_handler,
+      sinatra_request: request,
+      sinatra_params: { ui_locales: 'cs' },
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(response.body).to include('Heslo změněno.')
+  end
+
+  it 'does not consume a completed recovery for another OAuth client' do
+    other_client = create_oauth2_client!
+    completion_token = create_completed_recovery!(
+      target_user: user,
+      oauth2_client: other_client
+    )
+    cookie_handler = OAuth2ConfigSpecFixtures::FakeSinatraHandler.new(
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => completion_token
+    )
+
+    config.handle_get_authorize(
+      sinatra_handler: cookie_handler,
+      sinatra_request: request,
+      sinatra_params: {},
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(response.body).not_to include('Password changed.')
+    expect(response.deleted_cookies).to be_empty
+  end
+
+  it 'clears an expired completed recovery without showing an alert' do
+    completion_token = create_completed_recovery!(
+      target_user: user,
+      oauth2_client: client,
+      completed_at: PasswordRecovery::COMPLETION_LIFETIME.ago - 1.second
+    )
+    cookie_handler = OAuth2ConfigSpecFixtures::FakeSinatraHandler.new(
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => completion_token
+    )
+
+    config.handle_get_authorize(
+      sinatra_handler: cookie_handler,
+      sinatra_request: request,
+      sinatra_params: {},
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(response.body).not_to include('Password changed.')
+    expect(response.deleted_cookies).to include(
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => { path: '/' }
+    )
+  end
+
+  it 'clears an invalid completed recovery without showing an alert' do
+    cookie_handler = OAuth2ConfigSpecFixtures::FakeSinatraHandler.new(
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => 'invalid-token'
+    )
+
+    config.handle_get_authorize(
+      sinatra_handler: cookie_handler,
+      sinatra_request: request,
+      sinatra_params: {},
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(response.body).not_to include('Password changed.')
+    expect(response.deleted_cookies).to include(
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => { path: '/' }
+    )
   end
 
   it 'links to password recovery with OAuth client and locale context when enabled' do
