@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body { color: #20252b; font-family: Arial, sans-serif; line-height: 1.5; }
+      h2 { font-size: 18px; margin: 24px 0 8px; }
+      p { margin: 12px 0; }
+      .account { border-top: 1px solid #d9dde2; margin-top: 20px; padding-top: 4px; }
+      .action { margin: 18px 0 22px; }
+      .action a { background: #0875c1; border: 1px solid #075f9d;
+                  border-radius: 4px; color: #fff; display: inline-block;
+                  padding: 10px 16px; text-decoration: none; }
+      .footer { color: #59636e; font-size: 13px; margin-top: 24px; }
+    </style>
+  </head>
+  <body>
+    <p>Hi,</p>
+    <p>
+      We received a password recovery request for the following vpsAdmin
+      account<%= @accounts.length == 1 ? '' : 's' %>:
+    </p>
+
+    <% @accounts.each do |account| -%>
+      <div class="account">
+        <h2>Login: <%= ERB::Util.html_escape(account[:login]) %></h2>
+        <% if account[:outcome] == 'recoverable' -%>
+          <p class="action">
+            <a href="<%= ERB::Util.html_escape(account[:reset_url]) %>">Set a new password</a>
+          </p>
+          <p>
+            This link is valid for one hour. After opening it, you will need to
+            verify your identity with TOTP or a passkey.
+          </p>
+        <% elsif account[:outcome] == 'no_mfa' -%>
+          <p>
+            This account does not have two-factor authentication configured,
+            so its password cannot be recovered automatically. Please contact
+            <%= ERB::Util.html_escape(@support_mail) %>.
+          </p>
+        <% else -%>
+          <p>
+            Password recovery is not available for this account. Please
+            contact <%= ERB::Util.html_escape(@support_mail) %> if you need help.
+          </p>
+        <% end -%>
+      </div>
+    <% end -%>
+
+    <p>
+      If you did not request this email, you can ignore it. No password has
+      been changed.
+    </p>
+    <p>Best regards,<br>vpsAdmin team</p>
+    <p class="footer">
+      (This is an automated email from vpsAdmin. Replies are sent to our support.)
+    </p>
+  </body>
+</html>
