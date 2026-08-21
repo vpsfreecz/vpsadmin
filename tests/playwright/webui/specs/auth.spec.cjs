@@ -26,6 +26,26 @@ async function expectNavLinks(page, hrefs) {
   }
 }
 
+test('password recovery completion opens the OAuth login form with a success alert', async ({ page }) => {
+  await page.context().addCookies([{
+    name: 'vpsadmin_password_recovery_completed',
+    value: fixtures.passwordRecovery.completionToken,
+    url: 'http://auth.vpsadmin.test',
+  }]);
+
+  await page.goto('/?page=login&action=login', { waitUntil: 'domcontentloaded' });
+
+  await expect(page).toHaveURL(/auth\.vpsadmin\.test/);
+  await expect(page.locator('.alert-success')).toContainText('Password changed.');
+  await expect(page.locator('input[name="user"]')).toBeVisible();
+  await expect(page.locator('input[name="password"]')).toBeVisible();
+
+  const completionCookies = await page.context().cookies('http://auth.vpsadmin.test');
+  const completionCookieNames = completionCookies.map((cookie) => cookie.name);
+  expect(completionCookieNames).not.toContain('vpsadmin_password_recovery_completed');
+  expect(completionCookieNames).not.toContain('vpsadmin_password_recovery_completion_shown');
+});
+
 test('anonymous webui loads', async ({ page }) => {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveTitle(/vpsAdmin/);
@@ -121,40 +141,6 @@ test('OAuth forgot-password link reaches the recovery form', async ({ page }) =>
 
   await expect(page).toHaveURL(/auth\.vpsadmin\.test/);
   await expect(page.locator('input[name="user"]')).toBeVisible();
-});
-
-test('interactive password recovery completion is not repeated on the OAuth login form', async ({ page }) => {
-  await page.context().addCookies([{
-    name: 'vpsadmin_password_recovery_completed',
-    value: fixtures.passwordRecovery.completionToken,
-    url: 'http://auth.vpsadmin.test',
-  }]);
-
-  await page.goto('http://auth.vpsadmin.test/oauth2/password-reset/complete?ui_locales=en');
-
-  await expect(page.getByRole('heading', { name: 'Password changed.' })).toBeVisible();
-  await expect(page.getByText(
-    'Continue to webui.vpsadmin.test. From there, you can open the vpsAdmin sign-in form.',
-  )).toBeVisible();
-  const continueButton = page.getByRole('link', { name: 'Continue to webui.vpsadmin.test' });
-  await expect(continueButton).toBeVisible();
-
-  const cardBox = await page.locator('main').boundingBox();
-  const buttonBox = await continueButton.boundingBox();
-  expect(cardBox).not.toBeNull();
-  expect(buttonBox).not.toBeNull();
-  expect(buttonBox.x).toBeGreaterThanOrEqual(cardBox.x);
-  expect(buttonBox.x + buttonBox.width).toBeLessThanOrEqual(cardBox.x + cardBox.width);
-
-  await continueButton.click();
-  await expect(page).toHaveURL(/auth\.vpsadmin\.test/);
-  await expect(page.locator('.alert-success')).toHaveCount(0);
-  await expect(page.locator('input[name="user"]')).toBeVisible();
-
-  const completionCookies = await page.context().cookies('http://auth.vpsadmin.test');
-  const completionCookieNames = completionCookies.map((cookie) => cookie.name);
-  expect(completionCookieNames).not.toContain('vpsadmin_password_recovery_completed');
-  expect(completionCookieNames).not.toContain('vpsadmin_password_recovery_completion_shown');
 });
 
 test('admin login and logout work', async ({ page }) => {
