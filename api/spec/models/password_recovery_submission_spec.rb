@@ -160,19 +160,22 @@ RSpec.describe PasswordRecoverySubmission do
   end
 
   it 'bounds stored payloads and uses the proxy source address' do
-    result = described_class.enqueue!(
-      identifier: "  #{'a' * 200}  ",
-      locale: :en,
-      oauth2_client: nil,
-      request: request(
-        ip: '192.0.2.1',
-        user_agent: 'u' * 1_000,
-        extra_env: {
-          'HTTP_CLIENT_IP' => '198.51.100.1',
-          'HTTP_X_REAL_IP' => '203.0.113.1'
-        }
+    result = nil
+    expect do
+      result = described_class.enqueue!(
+        identifier: "  #{'a' * 200}  ",
+        locale: :en,
+        oauth2_client: nil,
+        request: request(
+          ip: '192.0.2.1',
+          user_agent: 'u' * 1_000,
+          extra_env: {
+            'HTTP_CLIENT_IP' => '198.51.100.1',
+            'HTTP_X_REAL_IP' => '203.0.113.1'
+          }
+        )
       )
-    )
+    end.not_to change(UserAgent, :count)
     submission = result.submission
 
     expect(result).to be_accepted
