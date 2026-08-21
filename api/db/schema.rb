@@ -1296,6 +1296,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.index ["client_id"], name: "index_oauth2_clients_on_client_id", unique: true
   end
 
+  create_table "password_event_counters", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "event_count", default: 0, null: false, unsigned: true
+    t.datetime "last_occurred_at"
+    t.string "name", limit: 64, null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_password_event_counters_on_name", unique: true
+  end
+
   create_table "password_recoveries", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.datetime "completed_at"
     t.datetime "created_at", null: false

@@ -48,6 +48,7 @@ class User < ApplicationRecord
   before_validation :normalize_time_zone
   before_update :advance_authentication_generation, if: :will_save_change_to_password?
   after_update :invalidate_auth_tokens, if: :saved_change_to_password?
+  after_update :record_password_change, if: :saved_change_to_password?
 
   alias_attribute :role, :level
 
@@ -159,8 +160,9 @@ class User < ApplicationRecord
     last_activity_at || 'never'
   end
 
-  def set_password(plaintext, resolve_password_reset: true)
+  def set_password(plaintext, resolve_password_reset: true, source: :other)
     @password_plain = plaintext
+    @password_change_source = source
 
     VpsAdmin::API::CryptoProviders.current do |name, provider|
       self.password_version = name
@@ -185,6 +187,12 @@ class User < ApplicationRecord
 
   def advance_authentication_generation
     self.authentication_generation += 1
+  end
+
+  def record_password_change
+    PasswordEventCounter.record_password_change!(@password_change_source || :other)
+  ensure
+    @password_change_source = nil
   end
 
   def check_time_zone

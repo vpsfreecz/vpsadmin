@@ -350,6 +350,9 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     notification = password_changed_mails.order(:id).last
     expect(notification.user).to eq(user)
     expect(notification.text_plain).to include('Recovery route spec')
+    expect(
+      PasswordEventCounter.find_by!(name: 'password_change_recovery').event_count
+    ).to eq(1)
 
     get '/oauth2/password-reset/password'
     expect(last_response.status).to eq(400)

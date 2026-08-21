@@ -133,6 +133,44 @@ module VpsAdmin::API::Tasks
         labels: %i[vps_id user_id]
       )
 
+      @password_recovery_submissions_total = registry.counter(
+        :vpsadmin_password_recovery_submissions_total,
+        docstring: 'Number of password recovery submissions by admission result',
+        labels: [:result]
+      )
+
+      @password_recovery_pending_submissions = registry.gauge(
+        :vpsadmin_password_recovery_pending_submissions,
+        docstring: 'Number of unfinished password recovery submissions'
+      )
+
+      @password_recovery_submission_limit = registry.gauge(
+        :vpsadmin_password_recovery_submission_limit,
+        docstring: 'Maximum number of unfinished password recovery submissions'
+      )
+
+      @password_recovery_queue_capacity_reached_total = registry.counter(
+        :vpsadmin_password_recovery_queue_capacity_reached_total,
+        docstring: 'Number of times the password recovery queue reached capacity'
+      )
+
+      @password_recovery_queue_capacity_last_reached_timestamp_seconds = registry.gauge(
+        :vpsadmin_password_recovery_queue_capacity_last_reached_timestamp_seconds,
+        docstring: 'Unix timestamp when the password recovery queue last reached capacity'
+      )
+
+      @password_changes_total = registry.counter(
+        :vpsadmin_password_changes_total,
+        docstring: 'Number of committed password changes by source',
+        labels: [:source]
+      )
+
+      @password_change_last_timestamp_seconds = registry.gauge(
+        :vpsadmin_password_change_last_timestamp_seconds,
+        docstring: 'Unix timestamp of the last committed password change by source',
+        labels: [:source]
+      )
+
       @dns_zone_enabled = registry.gauge(
         :vpsadmin_dns_zone_enabled,
         docstring: '1 if the DNS zone is enabled, 0 otherwise',
@@ -486,6 +524,8 @@ module VpsAdmin::API::Tasks
         @dns_server_zone_refresh_at.set(server_zone.refresh_at.to_i, labels:)
       end
 
+      export_password_events
+
       save('vpsadmin-base')
     end
 
@@ -529,6 +569,49 @@ module VpsAdmin::API::Tasks
     protected
 
     attr_reader :registry
+
+    def export_password_events
+      events = ::PasswordEventCounter.where(
+        name: ::PasswordEventCounter::EVENT_NAMES
+      ).index_by(&:name)
+
+      ::PasswordEventCounter::RECOVERY_SUBMISSION_RESULTS.each do |result|
+        event = events["password_recovery_submission_#{result}"]
+        @password_recovery_submissions_total.increment(
+          by: event&.event_count || 0,
+          labels: { result: }
+        )
+      end
+
+      @password_recovery_pending_submissions.set(
+        ::PasswordRecoverySubmission.pending.count
+      )
+      @password_recovery_submission_limit.set(
+        ::PasswordRecoverySubmission::MAX_PENDING
+      )
+
+      capacity_event = events[
+        ::PasswordEventCounter::RECOVERY_QUEUE_CAPACITY_REACHED.to_s
+      ]
+      @password_recovery_queue_capacity_reached_total.increment(
+        by: capacity_event&.event_count || 0
+      )
+      @password_recovery_queue_capacity_last_reached_timestamp_seconds.set(
+        capacity_event&.last_occurred_at.to_i
+      )
+
+      ::PasswordEventCounter::PASSWORD_CHANGE_SOURCES.each do |source|
+        event = events["password_change_#{source}"]
+        @password_changes_total.increment(
+          by: event&.event_count || 0,
+          labels: { source: }
+        )
+        @password_change_last_timestamp_seconds.set(
+          event&.last_occurred_at.to_i,
+          labels: { source: }
+        )
+      end
+    end
 
     def check_record(server_zone, resolver, record)
       zone_name = record.dns_zone.name

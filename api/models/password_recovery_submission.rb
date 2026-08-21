@@ -43,11 +43,7 @@ class PasswordRecoverySubmission < ApplicationRecord
     identifier_digest = digest_identifier(normalized_identifier)
     source = client_ip(request).to_s[0, 46]
 
-    transaction do
-      config = ::SysConfig.where(
-        category: 'core',
-        name: 'password_recovery_enabled'
-      ).lock.take
+    with_queue_lock do |config|
       next EnqueueResult.new(:unavailable, nil, nil) unless config&.value
 
       now = Time.current
@@ -57,10 +53,13 @@ class PasswordRecoverySubmission < ApplicationRecord
       ].compact.max
       if retry_at
         retry_after = [(retry_at - Time.current).ceil, 1].max
+        ::PasswordEventCounter.record_recovery_submission!(:rate_limited, at: now)
         next EnqueueResult.new(:rate_limited, nil, retry_after)
       end
 
-      if pending.count >= MAX_PENDING
+      pending_count = pending.count
+      if pending_count >= MAX_PENDING
+        ::PasswordEventCounter.record_recovery_submission!(:queue_full, at: now)
         next EnqueueResult.new(:busy, nil, nil)
       end
 
@@ -72,12 +71,16 @@ class PasswordRecoverySubmission < ApplicationRecord
         client_ip_addr: source,
         user_agent: request.user_agent.to_s[0, USER_AGENT_LIMIT]
       )
+      ::PasswordEventCounter.record_recovery_submission!(:accepted, at: now)
+      if pending_count + 1 == MAX_PENDING
+        ::PasswordEventCounter.record_recovery_queue_capacity_reached!(at: now)
+      end
       EnqueueResult.new(:accepted, submission, nil)
     end
   end
 
   def self.claim_next
-    transaction do
+    with_queue_lock do
       finish_stale_exhausted!(Time.current)
       submission = claimable.order(:id).lock('FOR UPDATE SKIP LOCKED').first
       return unless submission
@@ -91,13 +94,27 @@ class PasswordRecoverySubmission < ApplicationRecord
   end
 
   def retry_or_finish!
-    with_lock do
+    self.class.with_queue_lock do
+      lock!
       finish_record! if attempts >= MAX_ATTEMPTS
     end
   end
 
   def finish!
-    with_lock { finish_record! }
+    self.class.with_queue_lock do
+      lock!
+      finish_record!
+    end
+  end
+
+  def self.with_queue_lock
+    transaction do
+      config = ::SysConfig.where(
+        category: 'core',
+        name: 'password_recovery_enabled'
+      ).lock.take
+      yield config
+    end
   end
 
   def self.client_ip(request)
