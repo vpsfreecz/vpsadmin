@@ -14,6 +14,7 @@ let
     client_secret_hash = "$2a$04$.CjIL4ngBsIDUHhlnpxt/efUr7asDojkCktOFYvhYqyzCPv5OnaM6";
     redirect_uri = "http://webui.vpsadmin.test/?page=login&action=callback";
     authorization_start_uri = "http://webui.vpsadmin.test/?page=login&action=login";
+    authorization_start_requires_user_action = true;
     access_token_lifetime = "renewable_auto";
     access_token_seconds = 20 * 60;
   };

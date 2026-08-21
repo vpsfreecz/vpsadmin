@@ -10,6 +10,9 @@ module VpsAdmin::API::Resources
       string :authorization_start_uri,
              label: 'Authorization start URI',
              desc: 'Absolute HTTP(S) URI where authorization restarts after password recovery'
+      bool :authorization_start_requires_user_action,
+           label: 'Authorization start requires user action',
+           desc: 'Show password recovery completion before opening an interactive authorization start URI'
       string :access_token_lifetime, choices: ::Oauth2Client.access_token_lifetimes.keys.map(&:to_s)
       integer :access_token_seconds
       integer :refresh_token_seconds
