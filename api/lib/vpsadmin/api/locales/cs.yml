@@ -2044,6 +2044,12 @@ cs:
       user_remove:
         description: Pokud je true, uživatel může tento plán odebrat z datasetu
         label: Odebrání uživatele
+      user_session_id:
+        label: ID uživatelské relace
+      user_session_owned_by_user:
+        description: Určuje, zda si dotčený uživatel může otevřít relaci, ze které
+          byla změna provedena
+        label: Relace patří uživateli
       user_suspended:
         label: Uživatel suspendován
       user_visibility:
@@ -3219,6 +3225,40 @@ cs:
             description: Filtrovat aktualizace nahlášené od zadaného data
           type:
             label: Typ
+      password_change_log:
+        attributes:
+          created_at:
+            label: Změněno
+          id:
+            label: ID
+          user_session:
+            label: Relace
+        input:
+          source:
+            choices:
+              administrator:
+                label: Změna správcem
+              authenticated:
+                label: Změna po přihlášení
+              forced_reset:
+                label: Povinná změna hesla
+              other:
+                label: Jiná změna
+              recovery:
+                label: Obnovení hesla
+        output:
+          source:
+            choices:
+              administrator:
+                label: Změna správcem
+              authenticated:
+                label: Změna po přihlášení
+              forced_reset:
+                label: Povinná změna hesla
+              other:
+                label: Jiná změna
+              recovery:
+                label: Obnovení hesla
       payment_stats:
         attributes:
           user_count:

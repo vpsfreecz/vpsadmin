@@ -34,6 +34,7 @@ class User < ApplicationRecord
   has_many :webauthn_credentials
   has_many :webauthn_challenges
   has_many :password_recoveries
+  has_many :password_change_logs
   has_many :user_failed_logins
   has_many :metrics_access_tokens
   has_many :dns_zones
@@ -160,9 +161,23 @@ class User < ApplicationRecord
     last_activity_at || 'never'
   end
 
-  def set_password(plaintext, resolve_password_reset: true, source: :other)
+  def set_password(
+    plaintext,
+    resolve_password_reset: true,
+    source: :other,
+    user_session: ::UserSession.current
+  )
+    normalized_source = source.to_sym
+    unless VpsAdmin::API::PasswordChanges::SOURCES.include?(normalized_source)
+      raise ArgumentError, "unsupported password change source: #{source.inspect}"
+    end
+
     @password_plain = plaintext
-    @password_change_source = source
+    @password_change_source = normalized_source
+    if persisted?
+      @password_change_user_session = user_session
+      @password_change_user_session_set = true
+    end
 
     VpsAdmin::API::CryptoProviders.current do |name, provider|
       self.password_version = name
@@ -190,9 +205,23 @@ class User < ApplicationRecord
   end
 
   def record_password_change
-    PasswordEventCounter.record_password_change!(@password_change_source || :other)
+    source = @password_change_source || :other
+    user_session = if @password_change_user_session_set
+                     @password_change_user_session
+                   else
+                     ::UserSession.current
+                   end
+
+    PasswordChangeLog.create!(
+      user: self,
+      user_session:,
+      source:
+    )
+    PasswordEventCounter.record_password_change!(source)
   ensure
     @password_change_source = nil
+    @password_change_user_session = nil
+    @password_change_user_session_set = false
   end
 
   def check_time_zone

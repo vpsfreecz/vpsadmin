@@ -425,7 +425,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
           u.set_password(
             new_password,
-            source: current_user == u ? :authenticated : :administrator
+            source: current_user == u ? :authenticated : :administrator,
+            user_session: ::UserSession.current
           )
           u.update!(to_db_names(input))
           if current_user == u

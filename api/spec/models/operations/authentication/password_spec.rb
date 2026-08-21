@@ -109,11 +109,19 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::Password do
       password_version: :md5,
       password: VpsAdmin::API::CryptoProviders::Md5.encrypt(user.login, 'secret')
     )
+    PasswordChangeLog.where(user:).delete_all
+    session = create_open_session!(user:, auth_type: :basic)
+    UserSession.current = session
 
     result = op.run(user.login, 'secret', request:)
 
     expect(result).to be_authenticated
     expect(user.reload.password_version).to eq('bcrypt')
     expect(VpsAdmin::API::CryptoProviders::Bcrypt.matches?(user.password, user.login, 'secret')).to be(true)
+    expect(PasswordChangeLog.find_by!(user:)).to have_attributes(
+      source: 'other',
+      user_session_id: session.id,
+      user_session_owned_by_user: true
+    )
   end
 end

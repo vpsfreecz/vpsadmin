@@ -2049,6 +2049,11 @@ en:
       user_remove:
         description: If true, the user can remove this plan from a dataset
         label: User remove
+      user_session_id:
+        label: User session ID
+      user_session_owned_by_user:
+        description: Whether the affected user can open the initiating session
+        label: Session belongs to user
       user_suspended:
         label: User_suspended
       user_visibility:
@@ -3226,6 +3231,40 @@ en:
             description: Filter updates reported since specified date
           type:
             label: Type
+      password_change_log:
+        attributes:
+          created_at:
+            label: Changed at
+          id:
+            label: ID
+          user_session:
+            label: Session
+        input:
+          source:
+            choices:
+              administrator:
+                label: administrator
+              authenticated:
+                label: authenticated
+              forced_reset:
+                label: forced_reset
+              other:
+                label: other
+              recovery:
+                label: recovery
+        output:
+          source:
+            choices:
+              administrator:
+                label: Administrator change
+              authenticated:
+                label: Signed-in change
+              forced_reset:
+                label: Required password change
+              other:
+                label: Other
+              recovery:
+                label: Password recovery
       payment_stats:
         attributes:
           user_count:

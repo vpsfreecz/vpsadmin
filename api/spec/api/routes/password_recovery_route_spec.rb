@@ -411,6 +411,10 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(
       PasswordEventCounter.find_by!(name: 'password_change_recovery').event_count
     ).to eq(1)
+    expect(PasswordChangeLog.find_by!(user:)).to have_attributes(
+      source: 'recovery',
+      user_session_id: nil
+    )
 
     get '/oauth2/password-reset/password'
     expect(last_response.status).to eq(400)

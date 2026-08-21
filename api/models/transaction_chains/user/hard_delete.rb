@@ -72,6 +72,7 @@ module TransactionChains
       user.single_sign_ons.destroy_all
       user.oauth2_authorizations.destroy_all
       user.metrics_access_tokens.destroy_all
+      ::PasswordChangeLog.where(user:).delete_all
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
         # Free all IP addresses
