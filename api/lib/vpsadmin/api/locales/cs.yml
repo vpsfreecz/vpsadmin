@@ -210,6 +210,10 @@ cs:
           token:
             label: token
         label: Typ autentizace
+      authorization_start_requires_user_action:
+        description: Před otevřením interaktivního URI pro zahájení autorizace zobrazit
+          potvrzení o změně hesla
+        label: Zahájení autorizace vyžaduje další krok
       authorization_start_uri:
         description: Absolutní HTTP(S) URI pro nové zahájení autorizace po obnovení
           hesla
@@ -2171,6 +2175,9 @@ cs:
         change_password: Změnit heslo
         complete: Heslo změněno.
         continue: Pokračovat
+        continue_to_service: Pokračovat na %{host}
+        continue_to_service_explanation: Pokračuj na %{host}. Odtud se dostaneš k
+          přihlašovacímu formuláři vpsAdminu.
         email_sent: Zkontroluj si e-mail
         email_sent_explanation: Pokud jsme našli odpovídající účet, poslali jsme pokyny
           na jeho hlavní e-mailovou adresu. Doručení zprávy může několik minut trvat.

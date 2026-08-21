@@ -172,6 +172,46 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(response.deleted_cookies).to include(
       VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => { path: '/' }
     )
+    expect(response.deleted_cookies).to include(
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_SHOWN_COOKIE => { path: '/' }
+    )
+  end
+
+  it 'does not repeat a completed recovery alert already shown before authorization' do
+    client.update!(allow_single_sign_on: true)
+    sso = create_single_sign_on!(user:)
+    device = create_user_device!(user:, known: true)
+    completion_token = create_completed_recovery!(
+      target_user: user,
+      oauth2_client: client
+    )
+    cookie_handler = OAuth2ConfigSpecFixtures::FakeSinatraHandler.new(
+      described_class::SSO_COOKIE => sso.token.token,
+      described_class::DEVICES_COOKIE => device.token.token,
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => completion_token,
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_SHOWN_COOKIE =>
+        PasswordRecovery.digest_token(completion_token)
+    )
+
+    expect do
+      result = config.handle_get_authorize(
+        sinatra_handler: cookie_handler,
+        sinatra_request: request,
+        sinatra_params: {},
+        oauth2_request:,
+        oauth2_response: response,
+        client:
+      )
+
+      expect(result).to be_nil
+    end.not_to change(Oauth2Authorization, :count)
+
+    expect(response.body).not_to include('Password changed.')
+    expect(response.body).to include('name="user"')
+    expect(response.deleted_cookies).to include(
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => { path: '/' },
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_SHOWN_COOKIE => { path: '/' }
+    )
   end
 
   it 'localizes the completed recovery alert using the authorization request' do
@@ -202,7 +242,9 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
       oauth2_client: other_client
     )
     cookie_handler = OAuth2ConfigSpecFixtures::FakeSinatraHandler.new(
-      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => completion_token
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => completion_token,
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_SHOWN_COOKIE =>
+        PasswordRecovery.digest_token(completion_token)
     )
 
     config.handle_get_authorize(
@@ -241,11 +283,15 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(response.deleted_cookies).to include(
       VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => { path: '/' }
     )
+    expect(response.deleted_cookies).to include(
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_SHOWN_COOKIE => { path: '/' }
+    )
   end
 
   it 'clears an invalid completed recovery without showing an alert' do
     cookie_handler = OAuth2ConfigSpecFixtures::FakeSinatraHandler.new(
-      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => 'invalid-token'
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => 'invalid-token',
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_SHOWN_COOKIE => 'invalid-digest'
     )
 
     config.handle_get_authorize(
@@ -260,6 +306,35 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(response.body).not_to include('Password changed.')
     expect(response.deleted_cookies).to include(
       VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => { path: '/' }
+    )
+    expect(response.deleted_cookies).to include(
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_SHOWN_COOKIE => { path: '/' }
+    )
+  end
+
+  it 'shows the alert when the completion-shown marker does not match' do
+    completion_token = create_completed_recovery!(
+      target_user: user,
+      oauth2_client: client
+    )
+    cookie_handler = OAuth2ConfigSpecFixtures::FakeSinatraHandler.new(
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => completion_token,
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_SHOWN_COOKIE => 'invalid-digest'
+    )
+
+    config.handle_get_authorize(
+      sinatra_handler: cookie_handler,
+      sinatra_request: request,
+      sinatra_params: {},
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(response.body).to include('Password changed.')
+    expect(response.deleted_cookies).to include(
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => { path: '/' },
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_SHOWN_COOKIE => { path: '/' }
     )
   end
 

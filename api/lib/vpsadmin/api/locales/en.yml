@@ -212,6 +212,10 @@ en:
           token:
             label: token
         label: Authentication type
+      authorization_start_requires_user_action:
+        description: Show password recovery completion before opening an interactive
+          authorization start URI
+        label: Authorization start requires user action
       authorization_start_uri:
         description: Absolute HTTP(S) URI where authorization restarts after password
           recovery
@@ -2176,6 +2180,9 @@ en:
         change_password: Change password
         complete: Password changed.
         continue: Continue
+        continue_to_service: Continue to %{host}
+        continue_to_service_explanation: Continue to %{host}. From there, you can
+          open the vpsAdmin sign-in form.
         email_sent: Check your email
         email_sent_explanation: If a matching account was found, instructions were
           sent to its primary address. The message may take a few minutes to arrive.

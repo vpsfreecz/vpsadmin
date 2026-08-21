@@ -10,12 +10,15 @@ module VpsAdmin::API
     CSRF_COOKIE = :vpsadmin_password_recovery_csrf
     FLOW_COOKIE = :vpsadmin_password_recovery
     COMPLETION_COOKIE = :vpsadmin_password_recovery_completed
+    COMPLETION_SHOWN_COOKIE = :vpsadmin_password_recovery_completion_shown
 
     I18N_KEYS = %i[
       back_to_sign_in
       change_password
       complete
       continue
+      continue_to_service
+      continue_to_service_explanation
       email_sent
       email_sent_explanation
       identifier
@@ -358,9 +361,10 @@ module VpsAdmin::API
       client = recovery_request.oauth2_client
       completion_token = @handler.cookies[FLOW_COOKIE]
       clear_flow_cookie
+      set_completion_cookie(completion_token)
 
-      if client&.authorization_start_uri.present?
-        set_completion_cookie(completion_token)
+      if client&.authorization_start_uri.present? &&
+         !client.authorization_start_requires_user_action?
         return @handler.redirect(client.authorization_start_uri, 303)
       end
 
@@ -371,6 +375,34 @@ module VpsAdmin::API
     end
 
     def complete
+      token = @handler.cookies[COMPLETION_COOKIE]
+      recovery = token && ::PasswordRecovery.find_recently_completed_by_session_token(token)
+      unless recovery
+        clear_completion_cookies
+        return render(:invalid, status: 400)
+      end
+
+      recovery_request = recovery.password_recovery_request
+      use_persisted_locale(recovery_request.locale)
+      client = recovery_request.oauth2_client
+      continuation_uri = client&.authorization_start_uri
+
+      if continuation_uri.present?
+        unless client.authorization_start_requires_user_action?
+          return @handler.redirect(continuation_uri, 303)
+        end
+
+        continuation_host = URI.parse(continuation_uri).host
+        if continuation_host.present?
+          set_completion_shown_cookie(recovery.session_token_digest)
+          return render(:complete, continuation_uri:, continuation_host:)
+        end
+      end
+
+      clear_completion_cookies
+      render(:complete)
+    rescue URI::InvalidURIError
+      clear_completion_cookies
       render(:complete)
     end
 
@@ -520,6 +552,25 @@ module VpsAdmin::API
       )
     end
 
+    def set_completion_shown_cookie(session_token_digest)
+      @handler.response.set_cookie(
+        COMPLETION_SHOWN_COOKIE,
+        value: session_token_digest,
+        path: '/',
+        max_age: ::PasswordRecovery::COMPLETION_LIFETIME.to_i,
+        httponly: true,
+        secure: secure_cookie?,
+        same_site: :lax
+      )
+    end
+
+    def clear_completion_cookies
+      [COMPLETION_COOKIE, COMPLETION_SHOWN_COOKIE].each do |name|
+        @handler.response.delete_cookie(name, path: '/')
+      end
+      nil
+    end
+
     def set_cookie(name, value, max_age:)
       @handler.response.set_cookie(
         name,
@@ -550,6 +601,15 @@ module VpsAdmin::API
       return if client_id.empty?
 
       ::Oauth2Client.find_by(client_id:)
+    end
+
+    def use_persisted_locale(value)
+      selected = value.to_s.downcase.to_sym
+      @locale = if VpsAdmin::API::I18n.available_locales.include?(selected)
+                  selected
+                else
+                  VpsAdmin::API::I18n::DEFAULT_LOCALE
+                end
     end
 
     def locale
@@ -594,6 +654,8 @@ module VpsAdmin::API
     def render(state, status: 200, **locals)
       oauth2_client = locals[:oauth2_client]
       back_to_sign_in_uri = oauth2_client&.authorization_start_uri
+      continuation_uri = locals[:continuation_uri]
+      continuation_host = locals[:continuation_host]
       recovery = locals[:recovery]
       mfa_methods = locals[:mfa_methods] || []
       error = locals[:error]
