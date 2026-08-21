@@ -503,6 +503,9 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect(AuthToken.where(id: [mfa_token.id, password_token.id])).to be_empty
       expect(SpecSeed.user.reload.authentication_generation).to eq(old_generation + 1)
       expect(MailLog.order(:id).last.user).to eq(SpecSeed.user)
+      expect(
+        PasswordEventCounter.find_by!(name: 'password_change_authenticated').event_count
+      ).to eq(1)
 
       clear_login
       basic_authorize('user', new_password)
@@ -584,6 +587,9 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
 
       expect_status(200)
       expect(json['status']).to be(true)
+      expect(
+        PasswordEventCounter.find_by!(name: 'password_change_administrator').event_count
+      ).to eq(1)
 
       clear_login
       basic_authorize(SpecSeed.other_user.login, new_password)

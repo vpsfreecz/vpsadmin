@@ -34,6 +34,12 @@ RSpec.describe PasswordRecoverySubmission do
     expect(second).to be_rate_limited
     expect(second.retry_after).to be_between(1, described_class::IDENTIFIER_INTERVAL.to_i)
     expect(described_class.count).to eq(1)
+    expect(
+      PasswordEventCounter.find_by!(name: 'password_recovery_submission_accepted').event_count
+    ).to eq(1)
+    expect(
+      PasswordEventCounter.find_by!(name: 'password_recovery_submission_rate_limited').event_count
+    ).to eq(1)
   end
 
   it 'bounds accepted requests per source across submitted values' do
@@ -76,6 +82,12 @@ RSpec.describe PasswordRecoverySubmission do
 
     expect(first).to be_accepted
     expect(second).to be_busy
+    expect(
+      PasswordEventCounter.find_by!(name: 'password_recovery_queue_capacity_reached').event_count
+    ).to eq(1)
+    expect(
+      PasswordEventCounter.find_by!(name: 'password_recovery_submission_queue_full').event_count
+    ).to eq(1)
 
     first.submission.finish!
     third = described_class.enqueue!(
@@ -88,6 +100,9 @@ RSpec.describe PasswordRecoverySubmission do
     expect(third).to be_accepted
     expect(described_class.pending.count).to eq(1)
     expect(described_class.count).to eq(2)
+    expect(
+      PasswordEventCounter.find_by!(name: 'password_recovery_queue_capacity_reached').event_count
+    ).to eq(2)
   end
 
   it 'keeps a finished digest for throttling and clears queued payload data' do
@@ -169,4 +184,78 @@ RSpec.describe PasswordRecoverySubmission do
   it 'uses a queue capacity of one hundred unfinished submissions' do
     expect(described_class::MAX_PENDING).to eq(100)
   end
+
+  # The worker thread needs a committed fixture outside the per-example
+  # transaction in spec_helper so its independent connection can see it.
+  # rubocop:disable RSpec/LeakyLocalVariable
+  queue_serialization_state = {}
+
+  describe 'queue admission serialization' do
+    before(:context) do
+      config = SysConfig.find_by!(
+        category: 'core',
+        name: 'password_recovery_enabled'
+      )
+      queue_serialization_state[:previous_recovery_enabled] = config.value
+      config.update!(value: true)
+      queue_serialization_state[:submission] = described_class.create!(
+        identifier: 'serialized@example.test',
+        identifier_digest: Digest::SHA256.hexdigest('serialized@example.test'),
+        locale: 'en'
+      )
+    end
+
+    after(:context) do
+      queue_serialization_state[:submission].destroy!
+      SysConfig.find_by!(
+        category: 'core',
+        name: 'password_recovery_enabled'
+      ).update!(value: queue_serialization_state[:previous_recovery_enabled])
+    end
+
+    it 'serializes worker completion with admission capacity accounting' do
+      lock_acquired = Queue.new
+      release_lock = Queue.new
+      finish_started = Queue.new
+      finished_at = Queue.new
+      errors = Queue.new
+
+      lock_holder = Thread.new do
+        ActiveRecord::Base.connection_pool.with_connection do
+          described_class.with_queue_lock do
+            lock_acquired << true
+            release_lock.pop
+          end
+        end
+      rescue StandardError => e
+        errors << e
+      end
+      lock_acquired.pop
+
+      finisher = Thread.new do
+        ActiveRecord::Base.connection_pool.with_connection do
+          submission = described_class.find(queue_serialization_state[:submission].id)
+          finish_started << true
+          submission.finish!
+          finished_at << submission.finished_at
+        end
+      rescue StandardError => e
+        errors << e
+      end
+      finish_started.pop
+
+      begin
+        expect(finisher.join(0.2)).to be_nil
+      ensure
+        release_lock << true
+        lock_holder.join
+        finisher.join
+      end
+
+      raise errors.pop unless errors.empty?
+
+      expect(finished_at.pop).to be_present
+    end
+  end
+  # rubocop:enable RSpec/LeakyLocalVariable
 end

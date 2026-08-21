@@ -15,7 +15,7 @@ module VpsAdmin::API
           raise Exceptions::AuthenticationError, 'invalid token'
         end
 
-        user.set_password(new_password)
+        user.set_password(new_password, source: :forced_reset)
         user.save!
         ::TransactionChains::User::PasswordChanged.fire(user, request)
         user

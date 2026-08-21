@@ -423,7 +423,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
             )
           end
 
-          u.set_password(new_password)
+          u.set_password(
+            new_password,
+            source: current_user == u ? :authenticated : :administrator
+          )
           u.update!(to_db_names(input))
           if current_user == u
             ::TransactionChains::User::PasswordChanged.fire(u, request)
