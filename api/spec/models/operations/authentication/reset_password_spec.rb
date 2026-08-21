@@ -35,6 +35,9 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::ResetPassword do
     mail = MailLog.order(:id).last
     expect(mail.mail_template.name).to eq('user_password_changed')
     expect(mail.text_plain).to include('192.0.2.41', 'Forced reset spec')
+    expect(
+      PasswordEventCounter.find_by!(name: 'password_change_forced_reset').event_count
+    ).to eq(1)
   end
 
   it 'rejects a token from an older password generation' do

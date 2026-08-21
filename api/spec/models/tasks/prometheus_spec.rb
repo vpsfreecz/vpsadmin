@@ -67,6 +67,46 @@ RSpec.describe VpsAdmin::API::Tasks::Prometheus do
       expect(text).to include(%(dataset_name="#{fixture.fetch(:dataset).full_name}"))
       expect(text).to include(%(ip_address_id="#{export_host.ip_address_id}"))
     end
+
+    it 'exports recovery admission, queue capacity, and password change metrics' do
+      export_file = File.join(Dir.mktmpdir, 'base.prom')
+      stub_const("#{described_class}::EXPORT_FILE", export_file)
+      occurred_at = Time.utc(2026, 8, 21, 12, 34, 56)
+      PasswordEventCounter.record_recovery_submission!(:accepted, at: occurred_at)
+      PasswordEventCounter.record_recovery_queue_capacity_reached!(at: occurred_at)
+      PasswordEventCounter.record_password_change!(:recovery, at: occurred_at)
+      PasswordRecoverySubmission.create!(
+        identifier: 'pending@example.test',
+        identifier_digest: Digest::SHA256.hexdigest('pending@example.test'),
+        locale: 'en'
+      )
+
+      task.export_base
+
+      text = File.read(export_file)
+      expect(text).to include(
+        'vpsadmin_password_recovery_submissions_total{result="accepted"} 1.0'
+      )
+      expect(text).to include(
+        'vpsadmin_password_recovery_submissions_total{result="rate_limited"} 0.0'
+      )
+      expect(text).to include(
+        'vpsadmin_password_recovery_submissions_total{result="queue_full"} 0.0'
+      )
+      expect(text).to include('vpsadmin_password_recovery_pending_submissions 1.0')
+      expect(text).to include(
+        "vpsadmin_password_recovery_submission_limit #{PasswordRecoverySubmission::MAX_PENDING}.0"
+      )
+      expect(text).to include('vpsadmin_password_recovery_queue_capacity_reached_total 1.0')
+      expect(text).to include(
+        "vpsadmin_password_recovery_queue_capacity_last_reached_timestamp_seconds #{occurred_at.to_i}.0"
+      )
+      expect(text).to include('vpsadmin_password_changes_total{source="recovery"} 1.0')
+      expect(text).to include('vpsadmin_password_changes_total{source="other"} 0.0')
+      expect(text).to match(
+        /vpsadmin_password_change_last_timestamp_seconds\{source="recovery"\} #{occurred_at.to_i}\.0/
+      )
+    end
   end
 
   describe '#export_dns_records' do
