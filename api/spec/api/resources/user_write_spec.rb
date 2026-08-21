@@ -506,6 +506,10 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect(
         PasswordEventCounter.find_by!(name: 'password_change_authenticated').event_count
       ).to eq(1)
+      password_change = PasswordChangeLog.find_by!(user: SpecSeed.user)
+      expect(password_change.source).to eq('authenticated')
+      expect(password_change.user_session).to be_present
+      expect(password_change.user_session.user).to eq(SpecSeed.user)
 
       clear_login
       basic_authorize('user', new_password)
@@ -590,6 +594,10 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect(
         PasswordEventCounter.find_by!(name: 'password_change_administrator').event_count
       ).to eq(1)
+      password_change = PasswordChangeLog.find_by!(user: SpecSeed.other_user)
+      expect(password_change.source).to eq('administrator')
+      expect(password_change.user_session).to be_present
+      expect(password_change.user_session.user).to eq(SpecSeed.admin)
 
       clear_login
       basic_authorize(SpecSeed.other_user.login, new_password)

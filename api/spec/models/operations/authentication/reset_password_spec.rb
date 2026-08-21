@@ -38,6 +38,10 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::ResetPassword do
     expect(
       PasswordEventCounter.find_by!(name: 'password_change_forced_reset').event_count
     ).to eq(1)
+    expect(PasswordChangeLog.find_by!(user:)).to have_attributes(
+      source: 'forced_reset',
+      user_session_id: nil
+    )
   end
 
   it 'rejects a token from an older password generation' do

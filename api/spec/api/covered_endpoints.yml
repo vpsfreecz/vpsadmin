@@ -313,6 +313,8 @@ covered:
 - pool#index
 - pool#set_maintenance
 - pool#show
+- password_change_log#index
+- password_change_log#show
 - payment_stats#estimate_income
 - metrics_access_token#create
 - metrics_access_token#delete

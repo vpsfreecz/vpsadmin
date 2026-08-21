@@ -1262,6 +1262,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.bigint "code_id"
     t.datetime "created_at", null: false
     t.bigint "oauth2_client_id", null: false
+    t.bigint "password_change_log_id"
     t.bigint "refresh_token_id"
     t.text "scope", null: false
     t.integer "single_sign_on_id"
@@ -1272,6 +1273,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.bigint "user_session_id"
     t.index ["code_id"], name: "index_oauth2_authorizations_on_code_id"
     t.index ["oauth2_client_id"], name: "index_oauth2_authorizations_on_oauth2_client_id"
+    t.index ["password_change_log_id"], name: "index_oauth2_authorizations_on_password_change_log_id", unique: true
     t.index ["refresh_token_id"], name: "index_oauth2_authorizations_on_refresh_token_id"
     t.index ["single_sign_on_id"], name: "index_oauth2_authorizations_on_single_sign_on_id"
     t.index ["user_device_id"], name: "index_oauth2_authorizations_on_user_device_id"
@@ -1294,6 +1296,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.integer "refresh_token_seconds", default: 3600, null: false
     t.datetime "updated_at", null: false
     t.index ["client_id"], name: "index_oauth2_clients_on_client_id", unique: true
+  end
+
+  create_table "password_change_logs", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.string "client_ip_addr", limit: 46
+    t.string "client_ip_ptr"
+    t.datetime "created_at", null: false
+    t.string "source", limit: 32, null: false
+    t.integer "user_agent_id"
+    t.integer "user_id", null: false, unsigned: true
+    t.integer "user_session_id", unsigned: true
+    t.index ["user_agent_id"], name: "index_password_change_logs_on_user_agent_id"
+    t.index ["user_id", "id"], name: "password_change_logs_user"
+    t.index ["user_id", "source", "id"], name: "password_change_logs_user_source"
+    t.index ["user_session_id"], name: "index_password_change_logs_on_user_session_id"
   end
 
   create_table "password_event_counters", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
