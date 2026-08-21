@@ -2190,6 +2190,7 @@ en:
         invalid_link: This password recovery link is invalid, expired, or has already
           been used. Start again to request a new link.
         invalid_totp_code: The TOTP code is not valid.
+        login: Login
         mfa_explanation_totp: Before choosing a new password, verify your identity
           with your TOTP authenticator.
         mfa_explanation_totp_webauthn: Before choosing a new password, verify your

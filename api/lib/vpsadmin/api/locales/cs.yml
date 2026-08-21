@@ -2185,6 +2185,7 @@ cs:
         invalid_link: Tento odkaz pro obnovení hesla je neplatný, vypršel nebo už
           byl použit. Požádej o nový odkaz.
         invalid_totp_code: TOTP kód není platný.
+        login: Přezdívka
         mfa_explanation_totp: Než si zvolíš nové heslo, ověř svou totožnost pomocí
           TOTP autentizátoru.
         mfa_explanation_totp_webauthn: Než si zvolíš nové heslo, ověř svou totožnost

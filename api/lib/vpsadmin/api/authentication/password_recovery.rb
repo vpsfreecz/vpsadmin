@@ -24,6 +24,7 @@ module VpsAdmin::API
       identifier
       invalid_link
       invalid_totp_code
+      login
       mfa_explanation_totp
       mfa_explanation_webauthn
       mfa_explanation_totp_webauthn
