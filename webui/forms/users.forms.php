@@ -294,6 +294,84 @@ function list_user_sessions($user_id)
     $xtpl->sbar_add('<br><img src="template/icons/m_edit.png"  title="' . _("Back to user details") . '" />' . _('Back to user details'), "?page=adminm&action=edit&id=$user_id");
 }
 
+function list_password_changes($user_id)
+{
+    global $xtpl, $api;
+
+    $u = $api->user->find($user_id);
+    $output = $api->password_change_log->show->getParameters('output');
+    $pagination = new \Pagination\System(null, $api->password_change_log->index);
+
+    $params = [
+        'user' => $user_id,
+        'limit' => api_get_uint('limit', 25),
+    ];
+
+    $fromId = api_get_uint('from_id');
+    if ($fromId !== null && $fromId > 0) {
+        $params['from_id'] = $fromId;
+    }
+
+    if (isAdmin()) {
+        $params['meta'] = ['includes' => 'user_session'];
+    }
+
+    $changes = $api->password_change_log->list($params);
+    $pagination->setResourceList($changes);
+
+    $xtpl->title(
+        _('Password changes for')
+        . ' <a href="?page=adminm&action=edit&id=' . $u->id . '">#' . $u->id . '</a> '
+        . h($u->login)
+    );
+
+    $xtpl->table_add_category(_('Changed at'));
+    $xtpl->table_add_category(_('Change type'));
+    $xtpl->table_add_category(_('Session'));
+
+    if (count($changes) === 0) {
+        $xtpl->table_td(_('No password changes have been recorded yet.'), false, false, 3);
+        $xtpl->table_tr();
+    }
+
+    foreach ($changes as $change) {
+        $xtpl->table_td(tolocaltz($change->created_at));
+        $xtpl->table_td(h(api_param_choice_label($output->source, $change->source)));
+
+        $session = '---';
+        if ($change->user_session_id) {
+            $sessionId = (int) $change->user_session_id;
+            $sessionOwnerId = null;
+
+            if (isAdmin() && ($change->user_session ?? null)) {
+                $sessionOwnerId = (int) $change->user_session->user_id;
+            } elseif ($change->user_session_owned_by_user) {
+                $sessionOwnerId = (int) $u->id;
+            }
+
+            if ($sessionOwnerId !== null) {
+                $session = '<a href="?page=adminm&action=user_sessions&id=' . $sessionOwnerId
+                    . '&list=1&session_id=' . $sessionId . '&details=1">#'
+                    . $sessionId . '</a>';
+            } else {
+                $session = '#' . $sessionId;
+            }
+        }
+
+        $xtpl->table_td($session);
+        $xtpl->table_tr();
+    }
+
+    $xtpl->table_pagination($pagination);
+    $xtpl->table_out();
+
+    $xtpl->sbar_add(
+        '<br><img src="template/icons/m_edit.png"  title="'
+        . _("Back to user details") . '" />' . _('Back to user details'),
+        "?page=adminm&action=edit&id=$user_id"
+    );
+}
+
 function user_session_edit_form($id)
 {
     global $api, $xtpl;

@@ -1455,9 +1455,9 @@ msgstr "není povoleno"
 msgid "Owner"
 msgstr "Majitel"
 
-#: forms/dns.forms.php
+#: forms/dns.forms.php forms/users.forms.php
 msgid "Change type"
-msgstr "Změnit typ"
+msgstr "Typ změny"
 
 #: forms/dns.forms.php pages/page_transactions.php
 msgid "Transaction chain"
@@ -2472,7 +2472,8 @@ msgstr "Detailní výstup"
 msgid "Created at"
 msgstr "Vytvořeno"
 
-#: forms/object_history.forms.php pages/page_transactions.php
+#: forms/object_history.forms.php forms/users.forms.php
+#: pages/page_transactions.php
 msgid "Session"
 msgstr "Relace"
 
@@ -3424,6 +3425,18 @@ msgstr "Typ ověření"
 #: forms/users.forms.php
 msgid "Close"
 msgstr "Ukončit"
+
+#: forms/users.forms.php
+msgid "Password changes for"
+msgstr "Změny hesla uživatele"
+
+#: forms/users.forms.php
+msgid "Changed at"
+msgstr "Změněno"
+
+#: forms/users.forms.php
+msgid "No password changes have been recorded yet."
+msgstr "Zatím nejsou zaznamenané žádné změny hesla."
 
 #: forms/users.forms.php
 msgid "Edit user session"
@@ -5344,6 +5357,10 @@ msgstr "Známá přihlašovací zařízení"
 #: pages/page_adminm.php
 msgid "Sessions"
 msgstr "Relace"
+
+#: pages/page_adminm.php
+msgid "Password changes"
+msgstr "Změny hesla"
 
 #: pages/page_adminm.php
 msgid "Resource packages"
