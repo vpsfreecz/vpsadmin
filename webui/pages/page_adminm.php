@@ -395,6 +395,7 @@ function print_editm($u)
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Passkeys") . '" />' . _('Passkeys'), "?page=adminm&section=members&action=webauthn_list&id={$u->id}", 'member.passkeys');
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Known login devices") . '" />' . _('Known login devices'), "?page=adminm&action=known_devices&id={$u->id}");
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Sessions") . '" />' . _('Sessions'), "?page=adminm&action=user_sessions&id={$u->id}", 'member.sessions');
+    $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Password changes") . '" />' . _('Password changes'), "?page=adminm&action=password_changes&id={$u->id}", 'member.password-changes');
     $xtpl->sbar_add('<img src="template/icons/m_edit.png"  title="' . _("Metrics access tokens") . '" />' . _('Metrics access tokens'), "?page=adminm&action=metrics&id={$u->id}", 'member.metrics-access-tokens');
 
     if (isAdmin()) {
@@ -1812,6 +1813,10 @@ if (isLoggedIn()) {
 
         case 'user_sessions':
             list_user_sessions($_GET['id']);
+            break;
+
+        case 'password_changes':
+            list_password_changes($_GET['id']);
             break;
 
         case 'user_session_edit':

@@ -246,6 +246,20 @@ test.describe.serial('user members self-service browser coverage', () => {
       activePassword = temporaryPassword;
       await changePassword(page, fixtures.user.id, temporaryPassword, fixtures.user.password);
       activePassword = fixtures.user.password;
+
+      await page.goto(memberActionUrl('password_changes', fixtures.user.id), {
+        waitUntil: 'domcontentloaded',
+      });
+      await expect(page.locator('#content-in')).toContainText('Password changes for');
+      const signedInChanges = page.locator('table.table-style01 tr', {
+        hasText: 'Signed-in change',
+      });
+      await expect(
+        signedInChanges.first().locator('a[href*="action=user_sessions"]'),
+      ).toBeVisible();
+      await expect(
+        signedInChanges.nth(1).locator('a[href*="action=user_sessions"]'),
+      ).toBeVisible();
     } finally {
       if (activePassword !== fixtures.user.password) {
         await changePassword(page, fixtures.user.id, activePassword, fixtures.user.password);

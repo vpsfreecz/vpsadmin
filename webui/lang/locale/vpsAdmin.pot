@@ -1449,7 +1449,7 @@ msgstr ""
 msgid "Owner"
 msgstr ""
 
-#: forms/dns.forms.php
+#: forms/dns.forms.php forms/users.forms.php
 msgid "Change type"
 msgstr ""
 
@@ -2454,7 +2454,8 @@ msgstr ""
 msgid "Created at"
 msgstr ""
 
-#: forms/object_history.forms.php pages/page_transactions.php
+#: forms/object_history.forms.php forms/users.forms.php
+#: pages/page_transactions.php
 msgid "Session"
 msgstr ""
 
@@ -3392,6 +3393,18 @@ msgstr ""
 
 #: forms/users.forms.php
 msgid "Close"
+msgstr ""
+
+#: forms/users.forms.php
+msgid "Password changes for"
+msgstr ""
+
+#: forms/users.forms.php
+msgid "Changed at"
+msgstr ""
+
+#: forms/users.forms.php
+msgid "No password changes have been recorded yet."
 msgstr ""
 
 #: forms/users.forms.php
@@ -5272,6 +5285,10 @@ msgstr ""
 
 #: pages/page_adminm.php
 msgid "Sessions"
+msgstr ""
+
+#: pages/page_adminm.php
+msgid "Password changes"
 msgstr ""
 
 #: pages/page_adminm.php
