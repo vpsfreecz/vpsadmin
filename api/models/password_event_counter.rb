@@ -1,11 +1,5 @@
 class PasswordEventCounter < ApplicationRecord
-  PASSWORD_CHANGE_SOURCES = %i[
-    authenticated
-    forced_reset
-    recovery
-    administrator
-    other
-  ].freeze
+  PASSWORD_CHANGE_SOURCES = VpsAdmin::API::PasswordChanges::SOURCES
 
   RECOVERY_SUBMISSION_RESULTS = %i[
     accepted

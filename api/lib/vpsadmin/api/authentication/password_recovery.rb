@@ -347,7 +347,7 @@ module VpsAdmin::API
           raise ActiveRecord::Rollback
         end
 
-        user.set_password(password, source: :recovery)
+        user.set_password(password, source: :recovery, user_session: nil)
         user.save!
         recovery.update!(completed_at: Time.current)
         ::TransactionChains::User::PasswordChanged.fire(user, @request)

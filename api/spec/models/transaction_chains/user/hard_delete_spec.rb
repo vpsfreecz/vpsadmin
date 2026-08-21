@@ -38,6 +38,12 @@ RSpec.describe TransactionChains::User::HardDelete do
     userns, userns_map = create_user_namespace_with_map!(user: user, block_count: 2)
     attach_blocks_to_user_namespace!(userns)
     auth_cleanup = create_auth_cleanup_fixture!(user: user)
+    password_change_log = PasswordChangeLog.create!(
+      user:,
+      user_session: auth_cleanup.fetch(:token_session),
+      source: 'authenticated',
+      created_at: Time.current
+    )
     public_key = create_user_public_key!(
       user: user,
       key: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINixoscreate create@test',
@@ -72,6 +78,7 @@ RSpec.describe TransactionChains::User::HardDelete do
       user_namespace: userns,
       user_namespace_map: userns_map,
       auth_cleanup: auth_cleanup,
+      password_change_log: password_change_log,
       public_key: public_key,
       user_data: user_data,
       totp: totp,
@@ -164,5 +171,6 @@ RSpec.describe TransactionChains::User::HardDelete do
     expect(SingleSignOn.exists?(auth.fetch(:single_sign_on).id)).to be(false)
     expect(Oauth2Authorization.exists?(auth.fetch(:oauth2_authorization).id)).to be(false)
     expect(MetricsAccessToken.exists?(auth.fetch(:metrics_access_token).id)).to be(false)
+    expect(PasswordChangeLog.exists?(fixture.fetch(:password_change_log).id)).to be(false)
   end
 end
