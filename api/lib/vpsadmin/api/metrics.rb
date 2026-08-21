@@ -4,7 +4,7 @@ require 'prometheus/client/formats/text'
 module VpsAdmin::API
   class Metrics
     # Bump version when metrics, labels or the meaning of values changes
-    VERSION = 1.0
+    VERSION = 1.1
 
     NODE_LABELS = %i[node_id node_name location_id location_label].freeze
 
@@ -239,6 +239,18 @@ module VpsAdmin::API
       user.user_failed_logins.group(:auth_type).count.each do |auth_type, cnt|
         @user_failed_logins.set(cnt, labels: { auth_type: })
       end
+
+      @user_password_generation.set(user.authentication_generation)
+      @user_password_reset_required.set(user.password_reset? ? 1 : 0)
+      @user_multi_factor_auth_enabled.set(user.enable_multi_factor_auth? ? 1 : 0)
+      @user_multi_factor_auth_method_count.set(
+        user.user_totp_devices.where(enabled: true, confirmed: true).count,
+        labels: { method: :totp }
+      )
+      @user_multi_factor_auth_method_count.set(
+        user.webauthn_credentials.where(enabled: true).count,
+        labels: { method: :webauthn }
+      )
 
       user.dns_zones.each do |zone|
         labels = { dns_zone: zone.name, dns_source: zone.zone_source, dns_role: zone.zone_role }
@@ -526,6 +538,31 @@ module VpsAdmin::API
         :user_failed_logins,
         docstring: 'Number of failed logins to vpsAdmin',
         labels: %i[auth_type]
+      )
+
+      @user_password_generation = add_metric(
+        :gauge,
+        :user_password_generation,
+        docstring: 'Generation incremented whenever the user password changes'
+      )
+
+      @user_password_reset_required = add_metric(
+        :gauge,
+        :user_password_reset_required,
+        docstring: '1 if the user must reset their password, 0 otherwise'
+      )
+
+      @user_multi_factor_auth_enabled = add_metric(
+        :gauge,
+        :user_multi_factor_auth_enabled,
+        docstring: '1 if multi-factor authentication is enabled, 0 otherwise'
+      )
+
+      @user_multi_factor_auth_method_count = add_metric(
+        :gauge,
+        :user_multi_factor_auth_method_count,
+        docstring: 'Number of enabled multi-factor authentication methods',
+        labels: %i[method]
       )
 
       @dns_zone_enabled = add_metric(
