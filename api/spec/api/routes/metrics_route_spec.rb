@@ -53,6 +53,47 @@ RSpec.describe 'VpsAdmin::API::Metrics' do
       expect(token.last_use).not_to be_nil
     end
 
+    it 'exports password and MFA state only for the token owner' do
+      user.update_columns(
+        authentication_generation: 7,
+        password_reset: true,
+        enable_multi_factor_auth: true
+      )
+      create_totp_device!(user:)
+      create_totp_device!(user:, enabled: false)
+      create_totp_device!(user:, confirmed: false)
+      user.webauthn_credentials.create!(
+        label: 'Metrics passkey',
+        external_id: Base64.strict_encode64(SecureRandom.random_bytes(16)),
+        public_key: 'metrics-public-key',
+        sign_count: 0
+      )
+      user.webauthn_credentials.create!(
+        label: 'Disabled metrics passkey',
+        external_id: Base64.strict_encode64(SecureRandom.random_bytes(16)),
+        public_key: 'disabled-metrics-public-key',
+        sign_count: 0,
+        enabled: false
+      )
+      SpecSeed.other_user.update_column(:authentication_generation, 42)
+
+      request_metrics(access_token: token.access_token)
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to include('spec_metricsmetrics_version 1.1')
+      expect(last_response.body).to include('spec_metricsuser_password_generation 7.0')
+      expect(last_response.body).to include('spec_metricsuser_password_reset_required 1.0')
+      expect(last_response.body).to include('spec_metricsuser_multi_factor_auth_enabled 1.0')
+      expect(last_response.body).to include(
+        'spec_metricsuser_multi_factor_auth_method_count{method="totp"} 1.0'
+      )
+      expect(last_response.body).to include(
+        'spec_metricsuser_multi_factor_auth_method_count{method="webauthn"} 1.0'
+      )
+      expect(last_response.body).not_to include(' 42.0')
+      expect(last_response.body).not_to include('user_id=')
+    end
+
     context 'with payments plugin metrics', requires_plugins: :payments do
       it 'includes plugin metrics for the token user' do
         user.user_account.update!(monthly_payment: 456, paid_until: Time.local(2026, 6, 1))
