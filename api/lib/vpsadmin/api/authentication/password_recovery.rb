@@ -24,7 +24,9 @@ module VpsAdmin::API
       identifier
       invalid_link
       invalid_totp_code
-      mfa_explanation
+      mfa_explanation_totp
+      mfa_explanation_webauthn
+      mfa_explanation_totp_webauthn
       mfa_heading
       new_password
       password_heading
@@ -438,6 +440,14 @@ module VpsAdmin::API
       password_recovery_policy(user).mfa_methods
     end
 
+    def mfa_explanation_key(methods)
+      return :mfa_explanation_totp_webauthn if methods.include?(:totp) && methods.include?(:webauthn)
+      return :mfa_explanation_totp if methods.include?(:totp)
+      return :mfa_explanation_webauthn if methods.include?(:webauthn)
+
+      :recovery_unavailable
+    end
+
     def password_recovery_policy(user, lock_mfa: false)
       Operations::Authentication::PasswordRecoveryPolicy.run(user, @request, lock_mfa:)
     end
@@ -658,6 +668,7 @@ module VpsAdmin::API
       continuation_host = locals[:continuation_host]
       recovery = locals[:recovery]
       mfa_methods = locals[:mfa_methods] || []
+      mfa_explanation_key = mfa_explanation_key(mfa_methods)
       error = locals[:error]
       support_mail = ::SysConfig.get(:core, :support_mail).to_s
       logo_url = self.class.configured_logo&.fetch(:url)
