@@ -2186,6 +2186,7 @@ en:
         email_sent: Check your email
         email_sent_explanation: If a matching account was found, instructions were
           sent to its primary address. The message may take a few minutes to arrive.
+        hide_passwords: Hide passwords
         identifier: Login or primary email address
         invalid_link: This password recovery link is invalid, expired, or has already
           been used. Start again to request a new link.
@@ -2213,6 +2214,7 @@ en:
           saved on your account.
         request_heading: Reset your password
         send_email: Send password recovery email
+        show_passwords: Show passwords
         sign_out_all: Sign out all existing sessions
         signing_in_passkey: Verifying passkey…
         temporarily_unavailable: Password recovery is temporarily unavailable. Try

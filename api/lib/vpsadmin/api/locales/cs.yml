@@ -2181,6 +2181,7 @@ cs:
         email_sent: Zkontroluj si e-mail
         email_sent_explanation: Pokud jsme našli odpovídající účet, poslali jsme pokyny
           na jeho hlavní e-mailovou adresu. Doručení zprávy může několik minut trvat.
+        hide_passwords: Skrýt hesla
         identifier: Přezdívka nebo hlavní e-mailová adresa
         invalid_link: Tento odkaz pro obnovení hesla je neplatný, vypršel nebo už
           byl použit. Požádej o nový odkaz.
@@ -2208,6 +2209,7 @@ cs:
           uloženou u účtu.
         request_heading: Obnov si heslo
         send_email: Poslat e-mail pro obnovení hesla
+        show_passwords: Zobrazit hesla
         sign_out_all: Odhlásit všechna existující přihlášení
         signing_in_passkey: Ověřování přístupovým klíčem…
         temporarily_unavailable: Obnovení hesla je dočasně nedostupné. Zkus to později.
