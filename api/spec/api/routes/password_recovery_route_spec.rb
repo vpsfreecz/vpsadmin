@@ -341,6 +341,11 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
 
     get '/oauth2/password-reset/password'
     expect(last_response.status).to eq(200)
+    expect(last_response.body).to include('<label for="recovery-login">Login</label>')
+    expect(last_response.body).to include(
+      'id="recovery-login" class="account" type="text" autocomplete="username"'
+    )
+    expect(last_response.body).to include("value=\"#{user.login}\" readonly")
     csrf = csrf_from_body
     post '/oauth2/password-reset/password',
          csrf_token: csrf,
@@ -755,5 +760,25 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     get '/oauth2/password-reset/password'
     expect(last_response.status).to eq(200)
     expect(last_response.body).to include('Choose a new password')
+  end
+
+  it 'localizes and escapes the labelled recovery login field' do
+    user = create_user_with_totp
+    user.update_column(:login, 'spec&login')
+    recovery, raw_token = create_recovery(user:, locale: 'cs')
+    header 'Accept-Language', 'cs'
+    exchange_email_token(raw_token)
+    recovery.update!(mfa_verified_at: Time.current)
+
+    get '/oauth2/password-reset/password'
+
+    expect(last_response.status).to eq(200)
+    expect(last_response.body).to include('<label for="recovery-login">Přezdívka</label>')
+    expect(last_response.body).to include('value="spec&amp;login" readonly')
+    expect(last_response.body).to include(
+      'id="new-password" name="new_password" type="password"'
+    )
+    expect(last_response.body).to match(/id="new-password"[^>]+required autofocus/)
+    header 'Accept-Language', nil
   end
 end
