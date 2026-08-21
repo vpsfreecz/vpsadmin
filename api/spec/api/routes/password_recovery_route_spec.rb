@@ -346,6 +346,14 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
       'id="recovery-login" class="account" type="text" autocomplete="username"'
     )
     expect(last_response.body).to include("value=\"#{user.login}\" readonly")
+    expect(last_response.body).to include(
+      'id="new-password" class="password-toggle" name="new_password"'
+    )
+    expect(last_response.body.scan('class="password-visibility" type="button"').length).to eq(2)
+    expect(last_response.body.scan('aria-label="Show passwords"').length).to eq(2)
+    expect(last_response.body.scan(/<button[^>]+data-visible="false"/).length).to eq(2)
+    expect(last_response.body).not_to include('aria-pressed')
+    expect(last_response.body).to include('function toggleRecoveryPasswords()')
     csrf = csrf_from_body
     post '/oauth2/password-reset/password',
          csrf_token: csrf,
@@ -776,9 +784,11 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(last_response.body).to include('<label for="recovery-login">Přezdívka</label>')
     expect(last_response.body).to include('value="spec&amp;login" readonly')
     expect(last_response.body).to include(
-      'id="new-password" name="new_password" type="password"'
+      'id="new-password" class="password-toggle" name="new_password"'
     )
     expect(last_response.body).to match(/id="new-password"[^>]+required autofocus/)
+    expect(last_response.body.scan('aria-label="Zobrazit hesla"').length).to eq(2)
+    expect(last_response.body).to include('const label = reveal ? "Skrýt hesla" : "Zobrazit hesla";')
     header 'Accept-Language', nil
   end
 end

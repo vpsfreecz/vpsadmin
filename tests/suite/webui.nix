@@ -647,6 +647,10 @@ import ../make-test.nix (
         cfg.save! if cfg.changed? || cfg.new_record?
       end
 
+      # The active form fixture has to survive the complete Playwright suite.
+      # Production recovery sessions still use
+      # PasswordRecovery::SESSION_LIFETIME.
+      password_recovery_fixture_expires_at = 1.hour.from_now
       password_recovery_completion_token = PasswordRecovery.generate_token
       password_recovery_request = PasswordRecoveryRequest.create!(
         recipient_email: admin.email,
@@ -665,6 +669,25 @@ import ../make-test.nix (
         session_expires_at: 14.minutes.from_now,
         mfa_verified_at: 1.minute.ago,
         completed_at: Time.current
+      )
+
+      password_recovery_form_token = PasswordRecovery.generate_token
+      password_recovery_form_request = PasswordRecoveryRequest.create!(
+        recipient_email: admin.email,
+        locale: 'en',
+        oauth2_client: Oauth2Client.find_by!(client_id: 'vpsadmin-webui-test')
+      )
+      password_recovery_form_request.password_recoveries.create!(
+        user: admin,
+        outcome: :recoverable,
+        email_snapshot: admin.email,
+        email_expires_at: 1.hour.from_now,
+        email_consumed_at: 1.minute.ago,
+        session_token_digest: PasswordRecovery.digest_token(
+          password_recovery_form_token
+        ),
+        session_expires_at: password_recovery_fixture_expires_at,
+        mfa_verified_at: 1.minute.ago
       )
 
       def ensure_cluster_resource(row)
@@ -3856,7 +3879,8 @@ import ../make-test.nix (
 
       fixture_stdout.puts JSON.dump(
         'passwordRecovery' => {
-          'completionToken' => password_recovery_completion_token
+          'completionToken' => password_recovery_completion_token,
+          'formToken' => password_recovery_form_token
         },
         'admin' => {
           'id' => ${toString adminUser.id},

@@ -21,6 +21,7 @@ module VpsAdmin::API
       continue_to_service_explanation
       email_sent
       email_sent_explanation
+      hide_passwords
       identifier
       invalid_link
       invalid_totp_code
@@ -41,6 +42,7 @@ module VpsAdmin::API
       request_explanation
       request_heading
       send_email
+      show_passwords
       sign_out_all
       signing_in_passkey
       temporarily_unavailable

@@ -549,6 +549,13 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(result).to be_reset_password
     expect(result.errors).to include(:passwords_do_not_match)
     expect(response.body).to include('passwords do not match')
+    expect(response.body).to include(
+      'class="form-control password-toggle" name="new_password1"'
+    )
+    expect(response.body).to include(
+      'class="form-control password-toggle" name="new_password2"'
+    )
+    expect(response.body.scan('onclick="togglePasswords();"').length).to eq(2)
   end
 
   it 'creates a user session, destroys the auth code, and returns access and refresh tokens' do
