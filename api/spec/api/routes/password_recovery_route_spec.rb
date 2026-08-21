@@ -244,6 +244,51 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(last_response.body).to include('invalid, expired, or has already been used')
   end
 
+  it 'describes only the MFA methods available to the account' do
+    totp_user = create_user_with_totp
+    _recovery, raw_token = create_recovery(user: totp_user)
+    exchange_email_token(raw_token)
+    get '/oauth2/password-reset/verify'
+    expect(last_response.body).to include(
+      'Before choosing a new password, verify your identity with your TOTP authenticator.'
+    )
+    expect(last_response.body).not_to include('Verify with a passkey')
+
+    passkey_user = create_lifecycle_user!
+    passkey_user.update!(enable_multi_factor_auth: true)
+    passkey_user.webauthn_credentials.create!(
+      label: 'Passkey only',
+      external_id: Base64.strict_encode64(SecureRandom.random_bytes(16)),
+      public_key: 'passkey-only-public-key',
+      sign_count: 0
+    )
+    _recovery, raw_token = create_recovery(user: passkey_user)
+    exchange_email_token(raw_token)
+    get '/oauth2/password-reset/verify'
+    expect(last_response.body).to include(
+      'Before choosing a new password, verify your identity with your passkey.'
+    )
+    expect(last_response.body).not_to include('TOTP code')
+
+    both_user = create_user_with_totp
+    both_user.webauthn_credentials.create!(
+      label: 'Combined passkey',
+      external_id: Base64.strict_encode64(SecureRandom.random_bytes(16)),
+      public_key: 'combined-public-key',
+      sign_count: 0
+    )
+    _recovery, raw_token = create_recovery(user: both_user, locale: 'cs')
+    header 'Accept-Language', 'cs'
+    exchange_email_token(raw_token)
+    get '/oauth2/password-reset/verify'
+    expect(last_response.body).to include(
+      'Než si zvolíš nové heslo, ověř svou totožnost pomocí TOTP autentizátoru ' \
+      'nebo přístupového klíče.'
+    )
+    expect(last_response.body).to include('TOTP kód', 'Ověřit přístupovým klíčem')
+    header 'Accept-Language', nil
+  end
+
   it 'rejects an email token completed after its active lookup' do
     user = create_user_with_totp
     recovery, raw_token = create_recovery(user:)
@@ -538,6 +583,9 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(last_response.status).to eq(422)
     expect(last_response.body).to include('The TOTP code is not valid.')
     expect(last_response.body).not_to include('recovery code')
+    expect(last_response.body).to include(
+      'Before choosing a new password, verify your identity with your TOTP authenticator.'
+    )
 
     post '/oauth2/password-reset/verify/totp',
          csrf_token: csrf_from_body,
