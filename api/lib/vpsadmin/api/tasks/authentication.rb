@@ -74,14 +74,14 @@ module VpsAdmin::API::Tasks
         recovery_request.destroy! if ENV['EXECUTE'] == 'yes'
       end
 
-      stale_submissions = ::PasswordRecoverySubmission.where(
-        'created_at < ?',
-        ::PasswordRecoverySubmission::RECORD_RETENTION.ago
-      )
+      submissions_before = ::PasswordRecoverySubmission::RECORD_RETENTION.ago
+      stale_submissions = ::PasswordRecoverySubmission.where('created_at < ?', submissions_before)
       stale_submissions.each do |submission|
         puts "Password recovery submission ##{submission.id} is stale"
-        submission.destroy! if ENV['EXECUTE'] == 'yes'
       end
+      return unless ENV['EXECUTE'] == 'yes'
+
+      ::PasswordRecoverySubmission.destroy_stale!(before: submissions_before)
     end
 
     # Email users about failed login attempts

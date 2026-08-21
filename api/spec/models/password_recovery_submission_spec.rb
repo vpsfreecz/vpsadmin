@@ -260,5 +260,77 @@ RSpec.describe PasswordRecoverySubmission do
       expect(finished_at.pop).to be_present
     end
   end
+
+  cleanup_serialization_state = {}
+
+  describe 'retention cleanup serialization' do
+    before(:context) do
+      config = SysConfig.find_by!(
+        category: 'core',
+        name: 'password_recovery_enabled'
+      )
+      cleanup_serialization_state[:previous_recovery_enabled] = config.value
+      config.update!(value: true)
+      cleanup_serialization_state[:submission] = described_class.create!(
+        identifier: 'stale-serialized@example.test',
+        identifier_digest: Digest::SHA256.hexdigest('stale-serialized@example.test'),
+        locale: 'en',
+        created_at: described_class::RECORD_RETENTION.ago - 1.minute
+      )
+    end
+
+    after(:context) do
+      described_class.where(id: cleanup_serialization_state[:submission].id).delete_all
+      SysConfig.find_by!(
+        category: 'core',
+        name: 'password_recovery_enabled'
+      ).update!(value: cleanup_serialization_state[:previous_recovery_enabled])
+    end
+
+    it 'serializes pending retention cleanup with queue admission' do
+      lock_acquired = Queue.new
+      release_lock = Queue.new
+      cleanup_started = Queue.new
+      submission_exists = Queue.new
+      errors = Queue.new
+
+      lock_holder = Thread.new do
+        ActiveRecord::Base.connection_pool.with_connection do
+          described_class.with_queue_lock do
+            lock_acquired << true
+            release_lock.pop
+          end
+        end
+      rescue StandardError => e
+        errors << e
+      end
+      lock_acquired.pop
+
+      cleaner = Thread.new do
+        ActiveRecord::Base.connection_pool.with_connection do
+          cleanup_started << true
+          described_class.destroy_stale!(before: Time.current)
+          submission_exists << described_class.exists?(
+            cleanup_serialization_state[:submission].id
+          )
+        end
+      rescue StandardError => e
+        errors << e
+      end
+      cleanup_started.pop
+
+      begin
+        expect(cleaner.join(0.2)).to be_nil
+      ensure
+        release_lock << true
+        lock_holder.join
+        cleaner.join
+      end
+
+      raise errors.pop unless errors.empty?
+
+      expect(submission_exists.pop).to be(false)
+    end
+  end
   # rubocop:enable RSpec/LeakyLocalVariable
 end

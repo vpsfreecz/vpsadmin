@@ -117,6 +117,14 @@ class PasswordRecoverySubmission < ApplicationRecord
     end
   end
 
+  def self.destroy_stale!(before:)
+    where.not(finished_at: nil).where('created_at < ?', before).find_each(&:destroy!)
+
+    with_queue_lock do
+      pending.where('created_at < ?', before).lock.find_each(&:destroy!)
+    end
+  end
+
   def self.client_ip(request)
     request.env['HTTP_X_REAL_IP'].presence || request.ip
   end
