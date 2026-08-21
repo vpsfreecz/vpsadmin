@@ -143,6 +143,45 @@ test('OAuth forgot-password link reaches the recovery form', async ({ page }) =>
   await expect(page.locator('input[name="user"]')).toBeVisible();
 });
 
+test('password recovery form reveals and masks both new passwords', async ({ page }) => {
+  await page.context().addCookies([{
+    name: 'vpsadmin_password_recovery',
+    value: fixtures.passwordRecovery.formToken,
+    url: 'http://auth.vpsadmin.test',
+  }]);
+
+  await page.goto('http://auth.vpsadmin.test/oauth2/password-reset/password', {
+    waitUntil: 'domcontentloaded',
+  });
+
+  const password = page.locator('#new-password');
+  const confirmation = page.locator('#repeat-new-password');
+  await expect(password).toHaveAttribute('type', 'password');
+  await expect(confirmation).toHaveAttribute('type', 'password');
+  await password.fill('new-password-one');
+  await confirmation.fill('new-password-two');
+
+  const showButtons = page.getByRole('button', { name: 'Show passwords' });
+  await expect(showButtons).toHaveCount(2);
+  await expect(showButtons.first()).toHaveAttribute('data-visible', 'false');
+  await showButtons.first().click();
+
+  await expect(password).toHaveAttribute('type', 'text');
+  await expect(confirmation).toHaveAttribute('type', 'text');
+  await expect(password).toHaveValue('new-password-one');
+  await expect(confirmation).toHaveValue('new-password-two');
+
+  const hideButtons = page.getByRole('button', { name: 'Hide passwords' });
+  await expect(hideButtons).toHaveCount(2);
+  await expect(hideButtons.first()).toHaveAttribute('data-visible', 'true');
+  await hideButtons.last().click();
+
+  await expect(password).toHaveAttribute('type', 'password');
+  await expect(confirmation).toHaveAttribute('type', 'password');
+  await expect(password).toHaveValue('new-password-one');
+  await expect(confirmation).toHaveValue('new-password-two');
+});
+
 test('admin login and logout work', async ({ page }) => {
   await login(page, fixtures.admin);
   await expect(page.locator('#nav a[href="?page=cluster"]')).toBeVisible();
