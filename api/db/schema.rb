@@ -1283,6 +1283,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.integer "access_token_lifetime", default: 0, null: false
     t.integer "access_token_seconds", default: 900, null: false
     t.boolean "allow_single_sign_on", default: true, null: false
+    t.boolean "authorization_start_requires_user_action", default: false, null: false
     t.string "authorization_start_uri"
     t.string "client_id", null: false
     t.string "client_secret_hash", null: false

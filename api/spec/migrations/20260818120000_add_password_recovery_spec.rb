@@ -22,6 +22,11 @@ RSpec.describe AddPasswordRecovery do
     migrate_up!
 
     expect(column_exists?(:oauth2_clients, :authorization_start_uri)).to be(true)
+    expect(column(:oauth2_clients, :authorization_start_requires_user_action)).to have_attributes(
+      type: :boolean,
+      null: false,
+      default: false
+    )
     expect(index_exists?(:users, [:email])).to be(true)
     expect(table_exists?(:password_recovery_submissions)).to be(true)
     expect(table_exists?(:password_recovery_requests)).to be(true)
@@ -69,6 +74,8 @@ RSpec.describe AddPasswordRecovery do
     expect(table_exists?(:password_recoveries)).to be(false)
     expect(table_exists?(:password_recovery_submissions)).to be(false)
     expect(column_exists?(:oauth2_clients, :authorization_start_uri)).to be(false)
+    expect(column_exists?(:oauth2_clients,
+                          :authorization_start_requires_user_action)).to be(false)
     expect(column_exists?(:webauthn_challenges, :password_recovery_id)).to be(false)
     expect(index_exists?(:users, [:email])).to be(false)
   end

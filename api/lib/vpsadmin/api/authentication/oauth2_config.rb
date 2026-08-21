@@ -108,7 +108,7 @@ module VpsAdmin::API
 
     # @return [AuthResult, nil]
     def handle_get_authorize(sinatra_handler:, sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:)
-      completed_recovery = completed_password_recovery(
+      completed_recovery, completion_shown = completed_password_recovery(
         sinatra_handler,
         oauth2_response,
         client
@@ -147,7 +147,7 @@ module VpsAdmin::API
           sinatra_request:,
           client:,
           devices:,
-          password_recovery_completed: completed_recovery.present?
+          password_recovery_completed: completed_recovery.present? && !completion_shown
         )
       end
     end
@@ -780,25 +780,39 @@ module VpsAdmin::API
 
     def completed_password_recovery(sinatra_handler, oauth2_response, client)
       token = sinatra_handler.cookies[Authentication::PasswordRecovery::COMPLETION_COOKIE]
-      return unless token
+      shown_digest = sinatra_handler.cookies[
+        Authentication::PasswordRecovery::COMPLETION_SHOWN_COOKIE
+      ]
+      unless token
+        clear_password_recovery_completion_cookies(oauth2_response) if shown_digest
+        return
+      end
 
       recovery = ::PasswordRecovery.find_recently_completed_by_session_token(token)
       unless recovery
-        clear_password_recovery_completion_cookie(oauth2_response)
+        clear_password_recovery_completion_cookies(oauth2_response)
         return
       end
 
       return if recovery.password_recovery_request.oauth2_client_id != client.id
 
-      clear_password_recovery_completion_cookie(oauth2_response)
-      recovery
+      completion_shown = shown_digest.present? &&
+                         shown_digest.bytesize == recovery.session_token_digest.bytesize &&
+                         Rack::Utils.secure_compare(
+                           shown_digest,
+                           recovery.session_token_digest
+                         )
+      clear_password_recovery_completion_cookies(oauth2_response)
+      [recovery, completion_shown]
     end
 
-    def clear_password_recovery_completion_cookie(oauth2_response)
-      oauth2_response.delete_cookie(
+    def clear_password_recovery_completion_cookies(oauth2_response)
+      [
         Authentication::PasswordRecovery::COMPLETION_COOKIE,
-        path: '/'
-      )
+        Authentication::PasswordRecovery::COMPLETION_SHOWN_COOKIE
+      ].each do |name|
+        oauth2_response.delete_cookie(name, path: '/')
+      end
     end
 
     # @return [Array<::UserDevice>]

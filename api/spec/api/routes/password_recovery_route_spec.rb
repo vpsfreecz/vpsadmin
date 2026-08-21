@@ -114,6 +114,14 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     )
   end
 
+  it 'does not report success without a completed recovery marker' do
+    get '/oauth2/password-reset/complete'
+
+    expect(last_response.status).to eq(400)
+    expect(last_response.body).to include('This password recovery link is invalid')
+    expect(last_response.body).not_to include('<h1>Password changed.</h1>')
+  end
+
   it 'centers links that restart sign-in from the request and sent pages' do
     client = create_oauth2_client!(
       authorization_start_uri: 'https://service.example.test/sign-in'
@@ -345,6 +353,47 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
 
     get '/oauth2/password-reset/password'
     expect(last_response.status).to eq(400)
+  end
+
+  it 'shows completion before opening an interactive authorization start URI' do
+    user = create_user_with_totp
+    client = create_oauth2_client!(
+      authorization_start_uri: 'https://service.example.test/sign-in?from=recovery',
+      authorization_start_requires_user_action: true
+    )
+    recovery, raw_token = create_recovery(user:, client:, locale: 'cs')
+    exchange_email_token(raw_token)
+    recovery.update!(mfa_verified_at: Time.current)
+
+    get '/oauth2/password-reset/password'
+    post '/oauth2/password-reset/password',
+         csrf_token: csrf_from_body,
+         new_password: 'new-secret-password',
+         repeat_new_password: 'new-secret-password',
+         client_id: 'ignored-client',
+         ui_locales: 'en'
+
+    expect(last_response.status).to eq(303)
+    expect(last_response.headers['Location']).to end_with(
+      '/oauth2/password-reset/complete?ui_locales=cs'
+    )
+    follow_redirect!
+
+    expect(last_response.status).to eq(200)
+    expect(last_response.body).to include('<h1>Heslo změněno.</h1>')
+    expect(last_response.body).to include(
+      'Pokračuj na service.example.test. Odtud se dostaneš k přihlašovacímu formuláři vpsAdminu.'
+    )
+    expect(last_response.body).to include(
+      '<a class="button" href="https://service.example.test/sign-in?from=recovery">' \
+      'Pokračovat na service.example.test</a>'
+    )
+    cookies = Array(last_response.headers['Set-Cookie']).join("\n")
+    expect(cookies).to include(
+      "vpsadmin_password_recovery_completion_shown=#{recovery.session_token_digest}"
+    )
+    expect(cookies.downcase).to include('httponly')
+    expect(cookies.downcase).to include('samesite=lax')
   end
 
   it 'renders the persisted recovery locale on the fallback completion page' do

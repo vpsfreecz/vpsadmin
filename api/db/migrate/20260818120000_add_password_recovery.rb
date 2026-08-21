@@ -1,6 +1,11 @@
 class AddPasswordRecovery < ActiveRecord::Migration[8.1]
   def change
     add_column :oauth2_clients, :authorization_start_uri, :string
+    add_column :oauth2_clients,
+               :authorization_start_requires_user_action,
+               :boolean,
+               null: false,
+               default: false
     add_index :users, :email
 
     create_table :password_recovery_submissions do |t|
