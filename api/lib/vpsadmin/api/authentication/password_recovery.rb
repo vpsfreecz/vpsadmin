@@ -23,7 +23,9 @@ module VpsAdmin::API
       email_sent_explanation
       hide_passwords
       identifier
+      invalid_heading
       invalid_link
+      invalid_session
       invalid_totp_code
       login
       mfa_explanation_totp
@@ -39,6 +41,7 @@ module VpsAdmin::API
       passkey_start_failed
       recovery_unavailable
       repeat_new_password
+      request_new_link
       request_explanation
       request_heading
       send_email
@@ -172,11 +175,13 @@ module VpsAdmin::API
     end
 
     def landing
-      render(:landing)
+      render(:landing, oauth2_client: requested_client)
     end
 
     def exchange
-      verify_csrf!
+      recovery_context = ::PasswordRecovery.find_any_by_email_token(@params['token'].to_s)
+      use_recovery_context(recovery_context)
+      verify_csrf!(recovery: recovery_context)
       recovery = ::PasswordRecovery.find_by_email_token(@params['token'].to_s)
       session_token = nil
 
@@ -198,25 +203,25 @@ module VpsAdmin::API
 
       if session_token
         set_flow_cookie(session_token)
-        return redirect_to("#{BASE_PATH}/verify")
+        return redirect_to_flow("#{BASE_PATH}/verify", recovery:)
       end
 
-      render(:invalid, status: 400)
+      render(:invalid, recovery:, status: 400)
     end
 
     def verify
       recovery = current_recovery(require_mfa: true)
       return render(:invalid, status: 400) unless recovery
-      return redirect_to("#{BASE_PATH}/password") if recovery.mfa_verified?
+      return redirect_to_flow("#{BASE_PATH}/password", recovery:) if recovery.mfa_verified?
 
       render(:mfa, recovery:, mfa_methods: mfa_methods(recovery.user))
     end
 
     def verify_totp
-      verify_csrf!
+      verify_csrf!(recovery: recovery_context_from_flow)
       recovery = current_recovery(require_mfa: true)
       return render(:invalid, status: 400) unless recovery
-      return redirect_to("#{BASE_PATH}/password") if recovery.mfa_verified?
+      return redirect_to_flow("#{BASE_PATH}/password", recovery:) if recovery.mfa_verified?
 
       result = Operations::Authentication::PasswordRecoveryTotp.run(
         recovery,
@@ -225,10 +230,15 @@ module VpsAdmin::API
       )
 
       if result.authenticated?
-        redirect_to("#{BASE_PATH}/password")
+        redirect_to_flow("#{BASE_PATH}/password", recovery:)
       elsif result.failure_limit_exceeded?
         clear_flow_cookie
-        render(:invalid, error: text(:too_many_totp_attempts), status: 400)
+        render(
+          :invalid,
+          recovery:,
+          error: text(:too_many_totp_attempts),
+          status: 400
+        )
       else
         render(
           :mfa,
@@ -241,7 +251,7 @@ module VpsAdmin::API
     end
 
     def webauthn_begin
-      verify_json_csrf!
+      verify_json_csrf!(recovery: recovery_context_from_flow)
       recovery = current_recovery(require_mfa: true)
       return json_error(text(:invalid_link), 400) unless recovery && !recovery.mfa_verified?
 
@@ -264,7 +274,7 @@ module VpsAdmin::API
     end
 
     def webauthn_finish
-      verify_json_csrf!
+      verify_json_csrf!(recovery: recovery_context_from_flow)
       recovery = current_recovery(require_mfa: true)
       return json_error(text(:invalid_link), 400) unless recovery && !recovery.mfa_verified?
 
@@ -310,7 +320,7 @@ module VpsAdmin::API
 
       return json_error(text(:passkey_failed), 422) unless verified
 
-      json_ok
+      json_ok(password_uri: flow_uri("#{BASE_PATH}/password", recovery:))
     rescue ArgumentError, ActiveRecord::RecordNotFound, WebAuthn::Error => e
       warn "[vpsAdmin API] Password recovery WebAuthn verification failed: #{e.class}: #{e.message}"
       json_error(text(:passkey_failed), 422)
@@ -324,7 +334,7 @@ module VpsAdmin::API
     end
 
     def password_submit
-      verify_csrf!
+      verify_csrf!(recovery: recovery_context_from_flow)
       recovery = current_recovery
       return render(:invalid, status: 400) unless recovery&.mfa_verified?
 
@@ -359,7 +369,7 @@ module VpsAdmin::API
 
       unless recovery.reload.completed_at?
         clear_flow_cookie
-        return render(:invalid, status: 400)
+        return render(:invalid, recovery:, status: 400)
       end
 
       recovery_request = recovery.password_recovery_request
@@ -373,9 +383,9 @@ module VpsAdmin::API
         return @handler.redirect(client.authorization_start_uri, 303)
       end
 
-      redirect_to(
+      redirect_to_flow(
         "#{BASE_PATH}/complete",
-        ui_locales: recovery_request.locale
+        recovery:
       )
     end
 
@@ -384,7 +394,7 @@ module VpsAdmin::API
       recovery = token && ::PasswordRecovery.find_recently_completed_by_session_token(token)
       unless recovery
         clear_completion_cookies
-        return render(:invalid, status: 400)
+        return render(:invalid, oauth2_client: requested_client, status: 400)
       end
 
       recovery_request = recovery.password_recovery_request
@@ -420,6 +430,7 @@ module VpsAdmin::API
       recovery = ::PasswordRecovery.find_by_session_token(token)
       return clear_flow_cookie unless recovery
 
+      @recovery_context = recovery
       effective_mfa_required = require_mfa && !recovery.mfa_verified?
       unless recovery.session_usable? &&
              recovery_still_eligible?(recovery, require_mfa: effective_mfa_required)
@@ -525,16 +536,51 @@ module VpsAdmin::API
       JSON.dump(status: false, message:)
     end
 
-    def verify_json_csrf!
-      verify_csrf!(@request.env['HTTP_X_CSRF_TOKEN'])
+    def verify_json_csrf!(recovery: nil)
+      return if csrf_valid?(@request.env['HTTP_X_CSRF_TOKEN'])
+
+      use_recovery_context(recovery)
+      @handler.halt(
+        400,
+        { 'Content-Type' => 'application/json' },
+        JSON.dump(status: false, message: text(:invalid_session))
+      )
     end
 
-    def verify_csrf!(submitted = @params['csrf_token'])
+    def verify_csrf!(submitted = @params['csrf_token'], recovery: nil)
+      return if csrf_valid?(submitted)
+
+      use_recovery_context(recovery)
+      @handler.halt(
+        400,
+        render(
+          :invalid,
+          recovery:,
+          error: text(:invalid_session),
+          status: 400
+        )
+      )
+    end
+
+    def csrf_valid?(submitted)
       cookie = @handler.cookies[CSRF_COOKIE]
-      valid = cookie.present? && submitted.present? &&
-              cookie.bytesize == submitted.bytesize &&
-              Rack::Utils.secure_compare(cookie, submitted)
-      @handler.halt(400, text(:recovery_unavailable)) unless valid
+      cookie.present? && submitted.present? &&
+        cookie.bytesize == submitted.bytesize &&
+        Rack::Utils.secure_compare(cookie, submitted)
+    end
+
+    def recovery_context_from_flow
+      token = @handler.cookies[FLOW_COOKIE]
+      return if token.blank?
+
+      ::PasswordRecovery.find_any_by_session_token(token)
+    end
+
+    def use_recovery_context(recovery)
+      return unless recovery
+
+      @recovery_context = recovery
+      use_persisted_locale(recovery.password_recovery_request.locale)
     end
 
     def csrf_token
@@ -658,6 +704,27 @@ module VpsAdmin::API
       @handler.redirect(target, 303)
     end
 
+    def redirect_to_flow(path, recovery: nil)
+      @handler.redirect(flow_uri(path, recovery:), 303)
+    end
+
+    def flow_uri(path, recovery: nil)
+      client = oauth2_client_for(recovery)
+      selected_locale = recovery ? recovery.password_recovery_request.locale : locale
+      values = {
+        client_id: client&.client_id,
+        ui_locales: selected_locale
+      }.compact.reject { |_, value| value.to_s.empty? }
+
+      values.empty? ? path : "#{path}?#{URI.encode_www_form(values)}"
+    end
+
+    def oauth2_client_for(recovery)
+      return recovery.password_recovery_request.oauth2_client if recovery
+
+      requested_client
+    end
+
     def text(key, **values)
       ::I18n.with_locale(locale) do
         VpsAdmin::API::I18n.t("auth.password_recovery.#{key}", **values)
@@ -665,11 +732,21 @@ module VpsAdmin::API
     end
 
     def render(state, status: 200, **locals)
-      oauth2_client = locals[:oauth2_client]
+      recovery = locals[:recovery] || @recovery_context
+      oauth2_client = if locals.has_key?(:oauth2_client)
+                        locals[:oauth2_client]
+                      else
+                        oauth2_client_for(recovery)
+                      end
       back_to_sign_in_uri = oauth2_client&.authorization_start_uri
+      restart_uri = flow_uri(BASE_PATH, recovery:)
+      landing_action_uri = flow_uri("#{BASE_PATH}/continue", recovery:)
+      totp_action_uri = flow_uri("#{BASE_PATH}/verify/totp", recovery:)
+      webauthn_begin_uri = flow_uri("#{BASE_PATH}/verify/webauthn/begin", recovery:)
+      webauthn_finish_uri = flow_uri("#{BASE_PATH}/verify/webauthn/finish", recovery:)
+      password_uri = flow_uri("#{BASE_PATH}/password", recovery:)
       continuation_uri = locals[:continuation_uri]
       continuation_host = locals[:continuation_host]
-      recovery = locals[:recovery]
       mfa_methods = locals[:mfa_methods] || []
       mfa_explanation_key = mfa_explanation_key(mfa_methods)
       error = locals[:error]

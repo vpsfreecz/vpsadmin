@@ -182,6 +182,68 @@ test('password recovery form reveals and masks both new passwords', async ({ pag
   await expect(confirmation).toHaveValue('new-password-two');
 });
 
+test('expired password recovery form offers a new link and sign-in', async ({ page }) => {
+  await page.context().addCookies([{
+    name: 'vpsadmin_password_recovery',
+    value: fixtures.passwordRecovery.formToken,
+    url: 'http://auth.vpsadmin.test',
+  }]);
+
+  await page.goto(
+    'http://auth.vpsadmin.test/oauth2/password-reset/password' +
+      '?client_id=vpsadmin-webui-test&ui_locales=en',
+    { waitUntil: 'domcontentloaded' },
+  );
+  await page.locator('#new-password').fill('new-password-one');
+  await page.locator('#repeat-new-password').fill('new-password-one');
+
+  await page.context().clearCookies();
+  await page.getByRole('button', { name: 'Change password' }).click();
+
+  await expect(page.getByRole('img', { name: 'vpsFree.cz' })).toBeVisible();
+  await expect(page.getByRole('heading', {
+    name: 'Password recovery could not continue',
+  })).toBeVisible();
+  await expect(page.locator('.error')).toContainText(
+    'This password recovery session is no longer valid.',
+  );
+  const requestNewLink = page.getByRole('link', { name: 'Request a new link' });
+  await expect(requestNewLink).toBeVisible();
+  await expect(requestNewLink).toHaveAttribute(
+    'href',
+    '/oauth2/password-reset?client_id=vpsadmin-webui-test&ui_locales=en',
+  );
+  const backToSignIn = page.getByRole('link', { name: 'Back to sign in' });
+  await expect(backToSignIn).toBeVisible();
+  await expect(backToSignIn).toHaveAttribute(
+    'href',
+    'http://webui.vpsadmin.test/?page=login&action=login',
+  );
+
+  await requestNewLink.click();
+
+  await expect(page.getByRole('heading', { name: 'Reset your password' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back to sign in' })).toBeVisible();
+});
+
+test('invalid Czech password recovery link stays on the branded page', async ({ page }) => {
+  await page.goto(
+    'http://auth.vpsadmin.test/oauth2/password-reset/continue' +
+      '?client_id=vpsadmin-webui-test&ui_locales=cs#token=invalid-token',
+    { waitUntil: 'domcontentloaded' },
+  );
+
+  await expect(page.getByRole('img', { name: 'vpsFree.cz' })).toBeVisible();
+  await expect(page.getByRole('heading', {
+    name: 'V obnovení hesla nejde pokračovat',
+  })).toBeVisible();
+  await expect(page.locator('.error')).toContainText(
+    'Tento odkaz pro obnovení hesla je neplatný, vypršel nebo už byl použit.',
+  );
+  await expect(page.getByRole('link', { name: 'Požádat o nový odkaz' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Zpět na přihlášení' })).toBeVisible();
+});
+
 test('admin login and logout work', async ({ page }) => {
   await login(page, fixtures.admin);
   await expect(page.locator('#nav a[href="?page=cluster"]')).toBeVisible();

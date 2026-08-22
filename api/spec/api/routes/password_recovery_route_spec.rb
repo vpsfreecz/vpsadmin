@@ -26,6 +26,36 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     )
   end
 
+  def expect_branded_failure(message:, client: nil, locale: 'en')
+    heading = if locale == 'cs'
+                'V obnovení hesla nejde pokračovat'
+              else
+                'Password recovery could not continue'
+              end
+    request_new_link = locale == 'cs' ? 'Požádat o nový odkaz' : 'Request a new link'
+    query = [client && "client_id=#{client.client_id}", "ui_locales=#{locale}"].compact.join('&amp;')
+
+    expect(last_response.status).to eq(400)
+    expect(last_response.content_type).to start_with('text/html')
+    expect(last_response.body).to include('<!DOCTYPE html>')
+    expect(last_response.body).to include(
+      '<img class="logo" src="https://assets.example.test/vpsfree-logo.png" alt="vpsFree.cz">'
+    )
+    expect(last_response.body).to include("<h1>#{heading}</h1>", message)
+    expect(last_response.body).to include(
+      "<a class=\"button\" href=\"/oauth2/password-reset?#{query}\">#{request_new_link}</a>"
+    )
+
+    if client
+      expect(last_response.body).to include(
+        "<p class=\"muted back-to-sign-in\"><a href=\"#{client.authorization_start_uri}\">" \
+        "#{locale == 'cs' ? 'Zpět na přihlášení' : 'Back to sign in'}</a></p>"
+      )
+    else
+      expect(last_response.body).not_to include('Back to sign in', 'Zpět na přihlášení')
+    end
+  end
+
   def create_user_with_totp
     create_lifecycle_user!.tap do |user|
       user.update!(enable_multi_factor_auth: true)
@@ -57,7 +87,9 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
 
     post '/oauth2/password-reset/continue', csrf_token: csrf, token: raw_token
     expect(last_response.status).to eq(303)
-    expect(last_response.headers['Location']).to end_with('/oauth2/password-reset/verify')
+    expect(URI.parse(last_response.headers['Location']).path).to eq(
+      '/oauth2/password-reset/verify'
+    )
     csrf
   end
 
@@ -117,8 +149,9 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
   it 'does not report success without a completed recovery marker' do
     get '/oauth2/password-reset/complete'
 
-    expect(last_response.status).to eq(400)
-    expect(last_response.body).to include('This password recovery link is invalid')
+    expect_branded_failure(
+      message: 'This password recovery link is invalid, expired, or has already been used.'
+    )
     expect(last_response.body).not_to include('<h1>Password changed.</h1>')
   end
 
@@ -220,19 +253,26 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
 
   it 'rejects a reused or expired email token' do
     user = create_user_with_totp
-    recovery, raw_token = create_recovery(user:)
+    client = create_oauth2_client!(
+      authorization_start_uri: 'https://service.example.test/sign-in'
+    )
+    recovery, raw_token = create_recovery(user:, client:)
     exchange_email_token(raw_token)
 
-    get '/oauth2/password-reset/continue'
+    context_path = "/oauth2/password-reset/continue?client_id=#{client.client_id}&ui_locales=en"
+    get context_path
     csrf = csrf_from_body
-    post '/oauth2/password-reset/continue', csrf_token: csrf, token: raw_token
+    post context_path, csrf_token: csrf, token: raw_token
 
-    expect(last_response.status).to eq(400)
-    expect(last_response.body).to include('invalid, expired, or has already been used')
+    expect_branded_failure(
+      client:,
+      message: 'This password recovery link is invalid, expired, or has already been used.'
+    )
     expect(recovery.reload.email_consumed_at).to be_present
 
     _expired_recovery, expired_token = create_recovery(
       user:,
+      client:,
       email_lifetime: -1.minute
     )
     get '/oauth2/password-reset/continue'
@@ -240,8 +280,124 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
          csrf_token: csrf_from_body,
          token: expired_token
 
-    expect(last_response.status).to eq(400)
-    expect(last_response.body).to include('invalid, expired, or has already been used')
+    expect_branded_failure(
+      client:,
+      message: 'This password recovery link is invalid, expired, or has already been used.'
+    )
+  end
+
+  it 'renders a branded failure when an open password form loses its cookies' do
+    user = create_user_with_totp
+    client = create_oauth2_client!(
+      authorization_start_uri: 'https://service.example.test/sign-in'
+    )
+    recovery, raw_token = create_recovery(user:, client:)
+    exchange_email_token(raw_token)
+    recovery.update!(mfa_verified_at: Time.current)
+    path = "/oauth2/password-reset/password?client_id=#{client.client_id}&ui_locales=en"
+
+    get path
+    expect(last_response.body).to include(
+      "action=\"/oauth2/password-reset/password?client_id=#{client.client_id}" \
+      '&amp;ui_locales=en"'
+    )
+    post path,
+         csrf_token: 'expired-csrf-cookie',
+         new_password: 'new-secret-password',
+         repeat_new_password: 'new-secret-password'
+
+    expect_branded_failure(
+      client:,
+      message: 'This password recovery session is no longer valid.'
+    )
+    expect(recovery.reload.completed_at).to be_nil
+  end
+
+  it 'uses persisted recovery context when invalid CSRF parameters conflict' do
+    user = create_user_with_totp
+    original_client = create_oauth2_client!(
+      authorization_start_uri: 'https://original.example.test/sign-in'
+    )
+    other_client = create_oauth2_client!(
+      authorization_start_uri: 'https://other.example.test/sign-in'
+    )
+    recovery, raw_token = create_recovery(
+      user:,
+      client: original_client,
+      locale: 'cs'
+    )
+    exchange_email_token(raw_token)
+    recovery.update!(mfa_verified_at: Time.current)
+
+    post "/oauth2/password-reset/password?client_id=#{other_client.client_id}&ui_locales=en",
+         csrf_token: 'invalid-csrf-token',
+         new_password: 'new-secret-password',
+         repeat_new_password: 'new-secret-password'
+
+    expect_branded_failure(
+      client: original_client,
+      locale: 'cs',
+      message: 'Toto obnovení hesla už není platné.'
+    )
+    expect(last_response.body).not_to include(other_client.authorization_start_uri)
+    expect(recovery.reload.completed_at).to be_nil
+  end
+
+  it 'uses persisted email-token context when the exchange CSRF token is invalid' do
+    user = create_user_with_totp
+    original_client = create_oauth2_client!(
+      authorization_start_uri: 'https://original.example.test/sign-in'
+    )
+    other_client = create_oauth2_client!(
+      authorization_start_uri: 'https://other.example.test/sign-in'
+    )
+    recovery, raw_token = create_recovery(
+      user:,
+      client: original_client,
+      locale: 'cs'
+    )
+    get "/oauth2/password-reset/continue?client_id=#{other_client.client_id}&ui_locales=en"
+
+    post "/oauth2/password-reset/continue?client_id=#{other_client.client_id}&ui_locales=en",
+         csrf_token: 'invalid-csrf-token',
+         token: raw_token
+
+    expect_branded_failure(
+      client: original_client,
+      locale: 'cs',
+      message: 'Toto obnovení hesla už není platné.'
+    )
+    expect(last_response.body).not_to include(other_client.authorization_start_uri)
+    expect(recovery.reload.email_consumed_at).to be_nil
+  end
+
+  it 'uses persisted context when an invalidated email token is submitted' do
+    user = create_user_with_totp
+    original_client = create_oauth2_client!(
+      authorization_start_uri: 'https://original.example.test/sign-in'
+    )
+    other_client = create_oauth2_client!(
+      authorization_start_uri: 'https://other.example.test/sign-in'
+    )
+    recovery, raw_token = create_recovery(
+      user:,
+      client: original_client,
+      locale: 'cs'
+    )
+    recovery.invalidate!
+    path = "/oauth2/password-reset/continue?client_id=#{other_client.client_id}&ui_locales=en"
+    get path
+
+    post path, csrf_token: csrf_from_body, token: raw_token
+
+    expect_branded_failure(
+      client: original_client,
+      locale: 'cs',
+      message: 'Tento odkaz pro obnovení hesla je neplatný, vypršel nebo už byl použit.'
+    )
+    expect(last_response.body).not_to include(other_client.authorization_start_uri)
+    expect(recovery.reload.invalidated_at).to be_present
+    expect(recovery.email_consumed_at).to be_nil
   end
 
   it 'describes only the MFA methods available to the account' do
@@ -309,13 +465,19 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
 
   it 'invalidates an expired recovery session' do
     user = create_user_with_totp
-    recovery, raw_token = create_recovery(user:)
+    client = create_oauth2_client!(
+      authorization_start_uri: 'https://service.example.test/sign-in'
+    )
+    recovery, raw_token = create_recovery(user:, client:)
     exchange_email_token(raw_token)
     recovery.update!(session_expires_at: 1.minute.ago)
 
-    get '/oauth2/password-reset/verify'
+    get "/oauth2/password-reset/verify?client_id=#{client.client_id}&ui_locales=en"
 
-    expect(last_response.status).to eq(400)
+    expect_branded_failure(
+      client:,
+      message: 'This password recovery link is invalid, expired, or has already been used.'
+    )
     expect(recovery.reload.invalidated_at).to be_present
   end
 
@@ -440,7 +602,7 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
 
     expect(last_response.status).to eq(303)
     expect(last_response.headers['Location']).to end_with(
-      '/oauth2/password-reset/complete?ui_locales=cs'
+      "/oauth2/password-reset/complete?client_id=#{client.client_id}&ui_locales=cs"
     )
     follow_redirect!
 
@@ -478,7 +640,7 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
 
     expect(last_response.status).to eq(303)
     expect(last_response.headers['Location']).to end_with(
-      '/oauth2/password-reset/complete?ui_locales=cs'
+      "/oauth2/password-reset/complete?client_id=#{client.client_id}&ui_locales=cs"
     )
     follow_redirect!
     expect(last_response.status).to eq(200)
@@ -642,6 +804,21 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     get '/oauth2/password-reset/verify'
     expect(last_response.status).to eq(200)
     expect(last_response.body).to include('Verify your identity')
+  end
+
+  it 'returns JSON when a passkey request has an invalid CSRF token' do
+    get '/oauth2/password-reset'
+    header 'X-CSRF-Token', 'expired-csrf-cookie'
+    header 'Content-Type', 'application/json'
+
+    post '/oauth2/password-reset/verify/webauthn/begin', '{}'
+
+    expect(last_response.status).to eq(400)
+    expect(last_response.content_type).to start_with('application/json')
+    expect(JSON.parse(last_response.body)).to eq(
+      'status' => false,
+      'message' => 'This password recovery session is no longer valid.'
+    )
   end
 
   it 'records passkey challenges using the proxy-controlled address' do

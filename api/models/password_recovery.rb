@@ -37,8 +37,16 @@ class PasswordRecovery < ApplicationRecord
     active.find_by(email_token_digest: digest_token(token))
   end
 
+  def self.find_any_by_email_token(token)
+    find_by(email_token_digest: digest_token(token))
+  end
+
   def self.find_by_session_token(token)
     active.find_by(session_token_digest: digest_token(token))
+  end
+
+  def self.find_any_by_session_token(token)
+    find_by(session_token_digest: digest_token(token))
   end
 
   def self.find_recently_completed_by_session_token(token)

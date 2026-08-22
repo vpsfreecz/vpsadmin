@@ -1,3 +1,5 @@
+require 'uri'
+
 module VpsAdmin::API
   class Operations::Authentication::RequestPasswordRecovery < Operations::Base
     Account = Struct.new(:recovery, :token) do
@@ -5,7 +7,7 @@ module VpsAdmin::API
         {
           login: recovery.user.login,
           outcome: recovery.outcome,
-          reset_url: token && "#{auth_url}/oauth2/password-reset/continue#token=#{token}"
+          reset_url:
         }
       end
 
@@ -13,6 +15,19 @@ module VpsAdmin::API
 
       def auth_url
         (::SysConfig.get(:core, :auth_url) || ::SysConfig.get(:core, :api_url)).to_s.chomp('/')
+      end
+
+      def reset_url
+        return unless token
+
+        request = recovery.password_recovery_request
+        query = {
+          client_id: request.oauth2_client&.client_id,
+          ui_locales: request.locale
+        }.compact.reject { |_, value| value.to_s.empty? }
+        suffix = query.empty? ? '' : "?#{URI.encode_www_form(query)}"
+        "#{auth_url}/oauth2/password-reset/continue#{suffix}" \
+          "#token=#{URI.encode_www_form_component(token)}"
       end
     end
 
