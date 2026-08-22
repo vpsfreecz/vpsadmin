@@ -2189,8 +2189,10 @@ cs:
           na jeho hlavní e-mailovou adresu. Doručení zprávy může několik minut trvat.
         hide_passwords: Skrýt hesla
         identifier: Přezdívka nebo hlavní e-mailová adresa
+        invalid_heading: V obnovení hesla nejde pokračovat
         invalid_link: Tento odkaz pro obnovení hesla je neplatný, vypršel nebo už
-          byl použit. Požádej o nový odkaz.
+          byl použit.
+        invalid_session: Toto obnovení hesla už není platné.
         invalid_totp_code: TOTP kód není platný.
         login: Přezdívka
         mfa_explanation_totp: Než si zvolíš nové heslo, ověř svou totožnost pomocí
@@ -2207,13 +2209,13 @@ cs:
         password_heading: Zvol si nové heslo
         password_too_short: Heslo musí mít alespoň 8 znaků.
         passwords_do_not_match: Hesla se neshodují.
-        recovery_unavailable: V obnovení hesla nejde pokračovat. Začni znovu nebo
-          kontaktuj podporu.
+        recovery_unavailable: V obnovení hesla nejde pokračovat.
         repeat_new_password: Zopakuj nové heslo
         request_explanation: Obnovení hesla je dostupné jen pro účty s nastaveným
           TOTP nebo přístupovým klíčem. Zadej přezdívku nebo hlavní e-mailovou adresu
           uloženou u účtu.
         request_heading: Obnov si heslo
+        request_new_link: Požádat o nový odkaz
         send_email: Poslat e-mail pro obnovení hesla
         show_passwords: Zobrazit hesla
         sign_out_all: Odhlásit všechna existující přihlášení
