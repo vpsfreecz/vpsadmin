@@ -32,6 +32,7 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::RequestPasswordRecover
 
   it 'sends one account-neutral mail with one entry per matching login' do
     email = 'Shared.Address@example.test'
+    client = create_oauth2_client!
     first = create_user(login: 'shared-a', email:)
     second = create_user(login: 'shared-b', email:, mfa: false)
     third = create_user(login: 'shared-c', email:, oauth2: false)
@@ -39,7 +40,7 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::RequestPasswordRecover
     recovery_request = described_class.run(
       'shared.address@EXAMPLE.test',
       locale: :en,
-      oauth2_client: nil,
+      oauth2_client: client,
       request:
     )
 
@@ -57,13 +58,17 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::RequestPasswordRecover
 
     body = recovery_request.mail_log.text_plain
     expect(body).to include('Login: shared-a', 'Login: shared-b', 'Login: shared-c')
-    expect(body.scan('/oauth2/password-reset/continue#token=').length).to eq(1)
+    expect(body.scan(
+      "/oauth2/password-reset/continue?client_id=#{client.client_id}&ui_locales=en#token="
+    ).length).to eq(1)
     expect(body).not_to include('can be used once', 'recovery code')
 
     html = recovery_request.mail_log.text_html
     expect(html).to include('Login: shared-a', 'Login: shared-b', 'Login: shared-c')
     expect(html).to include('class="action"', '>Set a new password</a>')
-    expect(html.scan('/oauth2/password-reset/continue#token=').length).to eq(1)
+    expect(html.scan(
+      "/oauth2/password-reset/continue?client_id=#{client.client_id}&amp;ui_locales=en#token="
+    ).length).to eq(1)
     expect(html).not_to include('can be used once', 'recovery code')
 
     raw_token = body.match(/#token=([^\s]+)/)[1]
