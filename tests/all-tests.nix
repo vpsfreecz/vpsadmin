@@ -118,6 +118,7 @@ testLib.makeTests [
   "vps/reinstall"
   "vps/reinstall-with-user-data-and-keys"
   "vps/start-stop-restart-boot"
+  "vps/autostart-monitoring"
   "vps/update-resources-and-features"
   "vps/swap-across-locations"
   "vps/clone-same-node"

@@ -4,6 +4,7 @@ require 'libosctl'
 require 'nodectld/utils'
 require 'nodectld/exceptions'
 require 'nodectld/system_probes'
+require 'nodectld/vps_autostart_status'
 
 module NodeCtld
   class VpsStatus
@@ -39,10 +40,13 @@ module NodeCtld
 
     @@mutex = Mutex.new
 
+    attr_reader :vps_autostart_status
+
     def initialize
       @tics_per_sec = Etc.sysconf(Etc::SC_CLK_TCK).to_i
       @channel = NodeBunny.create_channel
       @exchange = @channel.direct(NodeBunny.exchange_name)
+      @vps_autostart_status = VpsAutostartStatus.new
     end
 
     # @param top_data [Hash] data from osctl ct top
@@ -58,13 +62,16 @@ module NodeCtld
     def safe_update
       vpsadmin_vpses = {}
 
-      fetch_vpses.each do |vps|
+      fetched_vpses = fetch_vpses
+
+      fetched_vpses.each do |vps|
         ent = Entry.new(vps)
         vpsadmin_vpses[ent.id] = ent
       end
 
       t = Time.now
       cts = ct_list
+      update_vps_autostart_status(fetched_vpses, cts, now: t)
 
       begin
         lavgs = OsCtl::Lib::LoadAvgReader.read_for(cts)
@@ -146,8 +153,12 @@ module NodeCtld
           routing_key: 'vps_statuses'
         )
       end
-    rescue SystemCommandFailed => e
+    rescue SystemCommandFailed, RpcClient::Error => e
+      @vps_autostart_status.failed
       log(:fatal, :vps_status, e.message)
+    rescue StandardError
+      @vps_autostart_status.failed
+      raise
     end
 
     protected
@@ -158,6 +169,13 @@ module NodeCtld
 
     def ct_list
       osctl_parse(%i[ct ls]).map { |v| OsCtlContainer.new(v) }
+    end
+
+    def update_vps_autostart_status(vpses, cts, now:)
+      @vps_autostart_status.update(vpses, cts, now:)
+    rescue VpsAutostartStatus::UnsupportedResponse => e
+      @vps_autostart_status.failed
+      log(:warn, :vps_autostart_status, e.message)
     end
 
     def run_or_skip(vps)

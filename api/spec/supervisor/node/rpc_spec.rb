@@ -166,6 +166,7 @@ RSpec.describe 'VpsAdmin::Supervisor::Node::Rpc::Handler' do
 
       valid_vps = create_vps!(dataset_in_pool: valid_dip)
       invalid_vps = create_vps!(dataset_in_pool: invalid_dip)
+      valid_vps.update!(autostart_enable: true)
       invalid_vps.update_column(:dataset_in_pool_id, nil)
       result = nil
 
@@ -177,6 +178,7 @@ RSpec.describe 'VpsAdmin::Supervisor::Node::Rpc::Handler' do
         {
           id: valid_vps.id,
           read_hostname: false,
+          autostart_enable: true,
           pool_fs: SpecSeed.pool.filesystem
         }
       )

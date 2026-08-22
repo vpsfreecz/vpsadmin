@@ -183,7 +183,10 @@ module VpsAdmin::Supervisor
             object_state: %w[active suspended],
             confirmed: ::Vps.confirmed(:confirmed)
           ).left_outer_joins(dataset_in_pool: :pool)
-          .select('vpses.id, vpses.manage_hostname, pools.filesystem AS pool_fs')
+          .select(
+            'vpses.id, vpses.manage_hostname, vpses.autostart_enable, ' \
+            'pools.filesystem AS pool_fs'
+          )
           .filter_map do |vps|
             pool_fs = vps[:pool_fs]
 
@@ -198,6 +201,7 @@ module VpsAdmin::Supervisor
             {
               id: vps.id,
               read_hostname: !vps.manage_hostname,
+              autostart_enable: vps.autostart_enable,
               pool_fs:
             }
           end
