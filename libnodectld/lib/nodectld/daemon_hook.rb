@@ -11,7 +11,7 @@ module NodeCtld
     RESUME_RETRY_INTERVAL = 0.2
 
     def self.pre_stop(env)
-      DaemonRestartBarrier.persist(reason: 'osctld-restart')
+      DaemonRestartBarrier.acquire_ordinary
       reply = Timeout.timeout(pre_stop_timeout(env)) do
         RemoteClient.send(RemoteControl::SOCKET, :pause)
       end
@@ -33,7 +33,8 @@ module NodeCtld
       Timeout.timeout(pre_stop_timeout(env)) do
         resume_attempted = true
         send_checked(:resume)
-        DaemonRestartBarrier.clear
+        release = DaemonRestartBarrier.release_ordinary
+        return true if release == :deferred
 
         loop do
           return true if nodectld_unpaused_without_barrier?
@@ -76,7 +77,7 @@ module NodeCtld
     def self.restore_restart_barrier
       errors = []
       begin
-        DaemonRestartBarrier.persist(reason: 'osctld-restart')
+        DaemonRestartBarrier.acquire_ordinary
       rescue StandardError => e
         errors << "marker: #{e.class}: #{e.message}"
       end
