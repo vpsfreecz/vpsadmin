@@ -143,6 +143,18 @@ RSpec.describe 'VpsAdmin::API::Resources::PasswordChangeLog' do
       expect(recovery['user_session_owned_by_user']).to be(false)
     end
 
+    it 'does not expose an administrator through a nested session include to owners' do
+      as(user) do
+        json_get index_path, _meta: { includes: 'user_session__user' }
+      end
+
+      expect_status(200)
+      administrator = changes.find do |row|
+        row['id'] == fixtures[:administrator_change].id
+      end
+      expect(administrator).not_to have_key('user_session')
+    end
+
     it 'ignores another-user filters from account owners' do
       as(user) do
         json_get index_path, password_change_log: { user: other_user.id }
@@ -158,7 +170,7 @@ RSpec.describe 'VpsAdmin::API::Resources::PasswordChangeLog' do
           user: user.id,
           source: 'administrator',
           user_session_id: fixtures[:admin_session].id
-        }, _meta: { includes: 'user_session' }
+        }, _meta: { includes: 'user_session__user' }
       end
 
       expect_status(200)
@@ -167,6 +179,8 @@ RSpec.describe 'VpsAdmin::API::Resources::PasswordChangeLog' do
       )
       expect(changes.first['user_session_id']).to eq(fixtures[:admin_session].id)
       expect(changes.first.dig('user_session', 'id')).to eq(fixtures[:admin_session].id)
+      expect(changes.first.dig('user_session', 'user', 'id')).to eq(admin.id)
+      expect(changes.first.dig('user_session', 'user', 'login')).to eq(admin.login)
     end
 
     it 'supports descending pagination and total counts' do
