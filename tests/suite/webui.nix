@@ -1849,12 +1849,19 @@ import ../make-test.nix (
         .where('metric_prefix LIKE ?', 'webui_admin_managed%')
         .find_each(&:destroy!)
 
-      PasswordChangeLog.find_or_create_by!(
+      password_change_agent = UserAgent.find_or_create!(
+        'webui-playwright-password-change/' + ('x' * 300)
+      )
+      password_change_log = PasswordChangeLog.find_or_initialize_by(
         user: admin_managed_user,
         user_session_id: nil,
         source: 'forced_reset',
         created_at: Time.utc(2026, 8, 23, 12, 0, 0)
       )
+      password_change_log.client_ip_addr = '203.0.113.81'
+      password_change_log.client_ip_ptr = 'playwright-password-change.example.test'
+      password_change_log.user_agent = password_change_agent
+      password_change_log.save!
 
       admin_session_agent = UserAgent.find_or_create!(
         'webui-playwright-admin-managed-session'

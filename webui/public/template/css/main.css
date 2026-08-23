@@ -97,6 +97,22 @@ dl.inline dd {
   margin: 0;
 }
 
+#password-change-history {
+  table-layout: fixed;
+}
+
+#password-change-history .password-change-client-row td {
+  overflow-wrap: anywhere;
+  padding-bottom: 10px;
+  padding-top: 6px;
+  word-break: break-word;
+}
+
+dl.password-change-client-details {
+  grid-template-columns: max-content minmax(0, 1fr);
+  margin: 0;
+}
+
 /* ----------------------------------------------------------------------------------------------------------
 4) Layout
 ---------------------------------------------------------------------------------------------------------- */
