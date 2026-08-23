@@ -251,6 +251,9 @@ test.describe.serial('user members self-service browser coverage', () => {
         waitUntil: 'domcontentloaded',
       });
       await expect(page.locator('#content-in')).toContainText('Password changes for');
+      await expect(page.locator('table.table-style01').first().getByText('Admin', {
+        exact: true,
+      })).toHaveCount(0);
       const signedInChanges = page.locator('table.table-style01 tr', {
         hasText: 'Signed-in change',
       });

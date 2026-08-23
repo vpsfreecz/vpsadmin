@@ -298,6 +298,7 @@ function list_password_changes($user_id)
 {
     global $xtpl, $api;
 
+    $isAdmin = isAdmin();
     $u = $api->user->find($user_id);
     $output = $api->password_change_log->show->getParameters('output');
     $pagination = new \Pagination\System(null, $api->password_change_log->index);
@@ -312,8 +313,8 @@ function list_password_changes($user_id)
         $params['from_id'] = $fromId;
     }
 
-    if (isAdmin()) {
-        $params['meta'] = ['includes' => 'user_session'];
+    if ($isAdmin) {
+        $params['meta'] = ['includes' => 'user_session,user_session__user'];
     }
 
     $changes = $api->password_change_log->list($params);
@@ -328,9 +329,17 @@ function list_password_changes($user_id)
     $xtpl->table_add_category(_('Changed at'));
     $xtpl->table_add_category(_('Change type'));
     $xtpl->table_add_category(_('Session'));
+    if ($isAdmin) {
+        $xtpl->table_add_category(_('Admin'));
+    }
 
     if (count($changes) === 0) {
-        $xtpl->table_td(_('No password changes have been recorded yet.'), false, false, 3);
+        $xtpl->table_td(
+            _('No password changes have been recorded yet.'),
+            false,
+            false,
+            $isAdmin ? 4 : 3
+        );
         $xtpl->table_tr();
     }
 
@@ -343,7 +352,7 @@ function list_password_changes($user_id)
             $sessionId = (int) $change->user_session_id;
             $sessionOwnerId = null;
 
-            if (isAdmin() && ($change->user_session ?? null)) {
+            if ($isAdmin && ($change->user_session ?? null)) {
                 $sessionOwnerId = (int) $change->user_session->user_id;
             } elseif ($change->user_session_owned_by_user) {
                 $sessionOwnerId = (int) $u->id;
@@ -359,6 +368,17 @@ function list_password_changes($user_id)
         }
 
         $xtpl->table_td($session);
+
+        if ($isAdmin) {
+            $administrator = '---';
+            $sessionUser = $change->user_session->user ?? null;
+            if ($change->source === 'administrator' && $sessionUser) {
+                $administrator = '<a href="?page=adminm&action=edit&id='
+                    . (int) $sessionUser->id . '">' . h($sessionUser->login) . '</a>';
+            }
+            $xtpl->table_td($administrator);
+        }
+
         $xtpl->table_tr();
     }
 
