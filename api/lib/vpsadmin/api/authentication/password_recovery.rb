@@ -373,7 +373,7 @@ module VpsAdmin::API
       end
 
       recovery_request = recovery.password_recovery_request
-      client = recovery_request.oauth2_client
+      client = oauth2_client_for(recovery)
       completion_token = @handler.cookies[FLOW_COOKIE]
       clear_flow_cookie
       set_completion_cookie(completion_token)
@@ -399,7 +399,7 @@ module VpsAdmin::API
 
       recovery_request = recovery.password_recovery_request
       use_persisted_locale(recovery_request.locale)
-      client = recovery_request.oauth2_client
+      client = oauth2_client_for(recovery)
       continuation_uri = client&.authorization_start_uri
 
       if continuation_uri.present?
@@ -657,9 +657,8 @@ module VpsAdmin::API
 
     def requested_client
       client_id = @params['client_id'].to_s
-      return if client_id.empty?
-
-      ::Oauth2Client.find_by(client_id:)
+      requested = ::Oauth2Client.find_by(client_id:) unless client_id.empty?
+      requested || ::Oauth2Client.default_client
     end
 
     def use_persisted_locale(value)
@@ -720,7 +719,10 @@ module VpsAdmin::API
     end
 
     def oauth2_client_for(recovery)
-      return recovery.password_recovery_request.oauth2_client if recovery
+      if recovery
+        return recovery.password_recovery_request.oauth2_client ||
+               ::Oauth2Client.default_client
+      end
 
       requested_client
     end
