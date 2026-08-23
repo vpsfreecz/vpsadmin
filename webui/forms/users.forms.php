@@ -348,12 +348,14 @@ function list_password_changes($user_id)
         $xtpl->table_td(h(api_param_choice_label($output->source, $change->source)));
 
         $session = '---';
+        $sessionResource = null;
         if ($change->user_session_id) {
             $sessionId = (int) $change->user_session_id;
             $sessionOwnerId = null;
 
-            if ($isAdmin && ($change->user_session ?? null)) {
-                $sessionOwnerId = (int) $change->user_session->user_id;
+            if ($isAdmin) {
+                $sessionResource = $change->user_session;
+                $sessionOwnerId = (int) $sessionResource->user_id;
             } elseif ($change->user_session_owned_by_user) {
                 $sessionOwnerId = (int) $u->id;
             }
@@ -371,7 +373,7 @@ function list_password_changes($user_id)
 
         if ($isAdmin) {
             $administrator = '---';
-            $sessionUser = $change->user_session->user ?? null;
+            $sessionUser = $sessionResource ? $sessionResource->user : null;
             if ($change->source === 'administrator' && $sessionUser) {
                 $administrator = '<a href="?page=adminm&action=edit&id='
                     . (int) $sessionUser->id . '">' . h($sessionUser->login) . '</a>';

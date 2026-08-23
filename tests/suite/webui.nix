@@ -1827,6 +1827,13 @@ import ../make-test.nix (
         .where('metric_prefix LIKE ?', 'webui_admin_managed%')
         .find_each(&:destroy!)
 
+      PasswordChangeLog.find_or_create_by!(
+        user: admin_managed_user,
+        user_session_id: nil,
+        source: 'forced_reset',
+        created_at: Time.utc(2026, 8, 23, 12, 0, 0)
+      )
+
       admin_session_agent = UserAgent.find_or_create!(
         'webui-playwright-admin-managed-session'
       )
