@@ -2138,6 +2138,7 @@ cs:
         label: Rok narození
     auth:
       oauth2:
+        account_login: Login
         cancel: Zrušit
         credentials_unavailable: Přihlašovací údaje nejsou dostupné.
         error_prefix: 'Chyba:'
@@ -2171,7 +2172,7 @@ cs:
         password: Heslo
         password_changed: Heslo změněno.
         repeat_new_password: Zopakovat nové heslo
-        set_new_password: Nastavte prosím nové heslo.
+        set_new_password: Zvol si nové heslo.
         signing_in: Přihlašování...
         signing_in_passkey: Přihlašování přístupovým klíčem...
         support: podporu

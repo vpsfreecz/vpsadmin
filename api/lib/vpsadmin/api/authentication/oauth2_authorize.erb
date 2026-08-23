@@ -255,11 +255,18 @@
 
                 <% elsif step == :reset_password -%>
                   <div class="form-group">
+                    <label for="reset-login"><%= html_t.call(:account_login) %></label>
+                    <input type="text" class="form-control" id="reset-login"
+                           value="<%= Rack::Utils.escape_html(user) %>"
+                           autocomplete="username" readonly>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="new-password"><%= html_t.call(:new_password) %></label>
                     <div class="input-group">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
-                      </div>
-                      <input type="password" class="form-control password-toggle" name="new_password1" placeholder="<%= html_t.call(:new_password) %>" minlength="8" autofocus>
+                      <input type="password" class="form-control password-toggle"
+                             id="new-password" name="new_password1" minlength="8"
+                             autocomplete="new-password" required autofocus>
                       <div class="input-group-append">
                         <a href="#" onclick="togglePasswords();" class="input-group-text"><i class="fa fa-eye-slash password-toggle" aria-hidden="true"></i></a>
                       </div>
@@ -267,11 +274,11 @@
                   </div>
 
                   <div class="form-group">
+                    <label for="repeat-new-password"><%= html_t.call(:repeat_new_password) %></label>
                     <div class="input-group">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
-                      </div>
-                      <input type="password" class="form-control password-toggle" name="new_password2" placeholder="<%= html_t.call(:repeat_new_password) %>" minlength="8">
+                      <input type="password" class="form-control password-toggle"
+                             id="repeat-new-password" name="new_password2" minlength="8"
+                             autocomplete="new-password" required>
                       <div class="input-group-append">
                         <a href="#" onclick="togglePasswords();" class="input-group-text"><i class="fa fa-eye-slash password-toggle" aria-hidden="true"></i></a>
                       </div>

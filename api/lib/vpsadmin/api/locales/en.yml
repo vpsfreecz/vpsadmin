@@ -2142,6 +2142,7 @@ en:
         label: Year of birth
     auth:
       oauth2:
+        account_login: Login
         cancel: Cancel
         credentials_unavailable: Credentials are not available.
         error_prefix: 'Error:'
@@ -2175,7 +2176,7 @@ en:
         password: Password
         password_changed: Password changed.
         repeat_new_password: Repeat new password
-        set_new_password: Please set a new password.
+        set_new_password: Choose a new password.
         signing_in: Signing in...
         signing_in_passkey: Signing in with a passkey...
         support: support

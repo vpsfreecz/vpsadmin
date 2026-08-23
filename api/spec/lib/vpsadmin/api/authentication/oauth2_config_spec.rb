@@ -536,6 +536,7 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
       sinatra_params: {
         login_reset_password: '1',
         auth_token: auth_token.to_s,
+        user: 'submitted-login',
         new_password1: 'new-password-1',
         new_password2: 'new-password-2'
       },
@@ -550,12 +551,51 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(result.errors).to include(:passwords_do_not_match)
     expect(response.body).to include('passwords do not match')
     expect(response.body).to include(
-      'class="form-control password-toggle" name="new_password1"'
+      '<label for="reset-login">Login</label>'
+    )
+    expect(response.body).to include("value=\"#{user.login}\"")
+    expect(response.body).not_to include('value="submitted-login"')
+    expect(response.body).to include(
+      '<label for="new-password">New password</label>'
     )
     expect(response.body).to include(
-      'class="form-control password-toggle" name="new_password2"'
+      '<label for="repeat-new-password">Repeat new password</label>'
+    )
+    expect(response.body).to match(/id="reset-login"[^>]+autocomplete="username" readonly/)
+    expect(response.body).to match(
+      /id="new-password" name="new_password1"[^>]+autocomplete="new-password" required autofocus/
+    )
+    expect(response.body).to match(
+      /id="repeat-new-password" name="new_password2"[^>]+autocomplete="new-password" required/
     )
     expect(response.body.scan('onclick="togglePasswords();"').length).to eq(2)
+  end
+
+  it 'localizes the labelled reset-password branch in Czech' do
+    auth_token = create_auth_token!(user:, purpose: 'reset_password')
+
+    result = config.handle_post_authorize(
+      sinatra_handler: handler,
+      sinatra_request: request,
+      sinatra_params: {
+        login_reset_password: '1',
+        auth_token: auth_token.to_s,
+        new_password1: 'new-password-1',
+        new_password2: 'new-password-2',
+        ui_locales: 'cs'
+      },
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(result).to be_reset_password
+    expect(response.body).to include('Zvol si nové heslo.')
+    expect(response.body).to include('<label for="reset-login">Login</label>')
+    expect(response.body).to include('<label for="new-password">Nové heslo</label>')
+    expect(response.body).to include(
+      '<label for="repeat-new-password">Zopakovat nové heslo</label>'
+    )
   end
 
   it 'creates a user session, destroys the auth code, and returns access and refresh tokens' do
