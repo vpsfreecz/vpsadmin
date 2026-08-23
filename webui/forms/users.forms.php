@@ -382,10 +382,23 @@ function list_password_changes($user_id)
         }
 
         $xtpl->table_tr();
+        $changeAttributes = $change->attributes();
+
+        $xtpl->table_td(
+            makeDefinitionList([
+                _('IP address') => $changeAttributes['client_ip_addr'] ?? '---',
+                _('IP PTR') => $changeAttributes['client_ip_ptr'] ?? '---',
+                _('User agent') => $changeAttributes['user_agent'] ?? '---',
+            ], 'inline password-change-client-details'),
+            false,
+            false,
+            $isAdmin ? 4 : 3
+        );
+        $xtpl->table_tr(false, 'password-change-client-row');
     }
 
     $xtpl->table_pagination($pagination);
-    $xtpl->table_out();
+    $xtpl->table_out('password-change-history');
 
     $xtpl->sbar_add(
         '<br><img src="template/icons/m_edit.png"  title="'

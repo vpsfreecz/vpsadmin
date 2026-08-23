@@ -3439,6 +3439,10 @@ msgid "No password changes have been recorded yet."
 msgstr "Zatím nejsou zaznamenané žádné změny hesla."
 
 #: forms/users.forms.php
+msgid "IP PTR"
+msgstr "PTR IP adresy"
+
+#: forms/users.forms.php
 msgid "Edit user session"
 msgstr "Upravit relaci uživatele"
 

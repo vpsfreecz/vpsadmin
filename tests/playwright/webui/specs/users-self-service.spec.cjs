@@ -263,6 +263,10 @@ test.describe.serial('user members self-service browser coverage', () => {
       await expect(
         signedInChanges.nth(1).locator('a[href*="action=user_sessions"]'),
       ).toBeVisible();
+      const clientDetails = signedInChanges.first().locator('xpath=following-sibling::tr[1]');
+      await expect(clientDetails).toContainText('IP address:');
+      await expect(clientDetails).toContainText('IP PTR:');
+      await expect(clientDetails).toContainText('User agent:');
     } finally {
       if (activePassword !== fixtures.user.password) {
         await changePassword(page, fixtures.user.id, activePassword, fixtures.user.password);

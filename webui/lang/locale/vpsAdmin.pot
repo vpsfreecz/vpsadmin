@@ -3408,6 +3408,10 @@ msgid "No password changes have been recorded yet."
 msgstr ""
 
 #: forms/users.forms.php
+msgid "IP PTR"
+msgstr ""
+
+#: forms/users.forms.php
 msgid "Edit user session"
 msgstr ""
 

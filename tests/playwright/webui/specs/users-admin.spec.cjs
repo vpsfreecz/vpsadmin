@@ -210,6 +210,13 @@ test.describe.serial('admin member and user management browser coverage', () => 
     await expect(sessionlessChange).toBeVisible();
     await expect(sessionlessChange.locator('a[href*="action=user_sessions"]')).toHaveCount(0);
     await expect(sessionlessChange.locator('a[href*="action=edit"]')).toHaveCount(0);
+    const sessionlessClient = sessionlessChange.locator('xpath=following-sibling::tr[1]');
+    await expect(sessionlessClient).toContainText('203.0.113.81');
+    await expect(sessionlessClient).toContainText('playwright-password-change.example.test');
+    await expect(sessionlessClient).toContainText('webui-playwright-password-change/');
+    expect(await sessionlessClient.locator('dl.password-change-client-details').evaluate((element) => (
+      element.scrollWidth <= element.clientWidth
+    ))).toBe(true);
     const administratorChanges = page.locator('table.table-style01 tr', {
       hasText: 'Administrator change',
     });
