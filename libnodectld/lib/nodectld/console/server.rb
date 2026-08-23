@@ -42,7 +42,7 @@ module NodeCtld
 
     def publish_output(data, **opts)
       @output_mutex.synchronize do
-        @output_exchange.publish(data, **opts)
+        NodeBunny.publish_wait(@output_exchange, data, **opts)
       end
     end
 

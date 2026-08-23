@@ -1,5 +1,6 @@
 require 'bunny'
 require 'libosctl'
+require 'monitor'
 require 'singleton'
 
 module NodeCtld
@@ -21,9 +22,10 @@ module NodeCtld
 
     def initialize
       @channel_creation_mutex = Mutex.new
-      @connection_recovery_mutex = Mutex.new
-      @connection_recovery_condition = ConditionVariable.new
+      @connection_recovery_mutex = Monitor.new
+      @connection_recovery_condition = @connection_recovery_mutex.new_cond
       @connection_recovery_generation = 0
+      @connection_recovering = false
       @timed_out_channels = []
 
       opts = {
@@ -45,7 +47,7 @@ module NodeCtld
       end
 
       @connection = ::Bunny.new(**opts)
-      @connection.before_recovery_attempt_starts { remove_timed_out_channels }
+      @connection.before_recovery_attempt_starts { connection_recovery_started }
       @connection.after_recovery_completed { connection_recovered }
 
       begin
@@ -96,7 +98,14 @@ module NodeCtld
 
     # Call {Bunny::Exchange#publish} and handle connection closed errors
     def publish_wait(exchange, msg, **)
-      exchange.publish(msg, **)
+      @connection_recovery_mutex.synchronize do
+        while @connection_recovering
+          log(:info, 'publish_wait: waiting for connection and channel recovery')
+          @connection_recovery_condition.wait
+        end
+
+        exchange.publish(msg, **)
+      end
     rescue Bunny::ConnectionClosedError
       log(:warn, 'publish_wait: connection currently closed, retry in 15s')
       sleep(15)
@@ -105,11 +114,25 @@ module NodeCtld
 
     # Call {Bunny::Exchange#publish} and drop message if the connection is closed
     def publish_drop(exchange, msg, **)
+      publisher_gate_locked = @connection_recovery_mutex.try_enter
+
+      unless publisher_gate_locked
+        log(:warn, 'publish_drop: publisher gate busy, message dropped')
+        return false
+      end
+
+      if @connection_recovering
+        log(:warn, 'publish_drop: connection recovery in progress, message dropped')
+        return false
+      end
+
       exchange.publish(msg, **)
       true
     rescue Bunny::ConnectionClosedError
       log(:warn, 'publish_drop: connection currently closed, message dropped')
       false
+    ensure
+      @connection_recovery_mutex.exit if publisher_gate_locked
     end
 
     # @return [String]
@@ -143,14 +166,16 @@ module NodeCtld
       @connection.close_transport
 
       @connection_recovery_mutex.synchronize do
-        @connection_recovery_condition.wait(@connection_recovery_mutex) while @connection_recovery_generation == generation
+        @connection_recovery_condition.wait while @connection_recovery_generation == generation
       end
     end
 
-    # Remove channels whose open timed out after the old transport is closed
-    # and before Bunny recovers registered channels on the new transport.
-    def remove_timed_out_channels
+    # Close the publisher gate and remove channels whose open timed out after
+    # the old transport is closed and before Bunny recovers registered channels
+    # on the new transport.
+    def connection_recovery_started
       channels = @connection_recovery_mutex.synchronize do
+        @connection_recovering = true
         ret = @timed_out_channels
         @timed_out_channels = []
         ret
@@ -161,6 +186,7 @@ module NodeCtld
 
     def connection_recovered
       @connection_recovery_mutex.synchronize do
+        @connection_recovering = false
         @connection_recovery_generation += 1
         @connection_recovery_condition.broadcast
       end
