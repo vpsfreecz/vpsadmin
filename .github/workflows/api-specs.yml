@@ -105,6 +105,7 @@ jobs:
               spec/api/resources/user_webauthn_credential_spec.rb
               spec/api/resources/user_write_spec.rb
               spec/api/resources/oauth2_client_spec.rb
+              spec/api/resources/password_change_log_spec.rb
               spec/api/resources/webauthn_spec.rb
 
           - topic: vps
