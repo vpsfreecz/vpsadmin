@@ -65,6 +65,22 @@ RSpec.describe VpsAdmin::API::PasswordRecoveryWorker do
     expect(worker.process_next).to eq(:idle)
   end
 
+  it 'waits five seconds by default when the queue is empty' do
+    delays = []
+    running_worker = nil
+    running_worker = described_class.new(
+      sleep_handler: lambda do |seconds|
+        delays << seconds
+        running_worker.stop
+      end
+    )
+    allow(running_worker).to receive(:process_next).and_return(:idle)
+
+    running_worker.run
+
+    expect(delays).to eq([5])
+  end
+
   it 'finishes queued work after the feature is disabled' do
     submission = enqueue_submission
     SysConfig.find_by!(category: 'core', name: 'password_recovery_enabled')
