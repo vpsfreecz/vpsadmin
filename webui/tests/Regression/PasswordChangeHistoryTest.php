@@ -35,6 +35,12 @@ final class PasswordChangeHistoryTest extends TestCase
             $source
         );
         self::assertStringContainsString("\$xtpl->table_add_category(_('Admin'))", $source);
+        self::assertStringContainsString("_('IP address')", $source);
+        self::assertStringContainsString("_('IP PTR')", $source);
+        self::assertStringContainsString("_('User agent')", $source);
+        self::assertStringContainsString('$changeAttributes = $change->attributes()', $source);
+        self::assertStringContainsString("'inline password-change-client-details'", $source);
+        self::assertStringContainsString("table_out('password-change-history')", $source);
         self::assertStringContainsString('h($u->login)', $source);
         self::assertStringContainsString('h($sessionUser->login)', $source);
     }
