@@ -9,6 +9,9 @@ Set a new password: <%= account[:reset_url] %>
 
 This link is valid for one hour. After opening it, you will need to verify your
 identity with TOTP or a passkey.
+<% elsif account[:outcome] == 'administrator' -%>
+Password recovery is not available for administrator accounts. Ask another
+administrator to change the password.
 <% elsif account[:outcome] == 'no_mfa' -%>
 This account does not have two-factor authentication configured, so its
 password cannot be recovered automatically. Please contact <%= @support_mail %>.

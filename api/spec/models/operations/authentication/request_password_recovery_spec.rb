@@ -20,11 +20,12 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::RequestPasswordRecover
     )
   end
 
-  def create_user(login:, email:, mfa: true, oauth2: true)
+  def create_user(login:, email:, mfa: true, oauth2: true, level: 1)
     create_lifecycle_user!(login:, email:).tap do |user|
       user.update!(
         enable_multi_factor_auth: mfa,
-        enable_oauth2_auth: oauth2
+        enable_oauth2_auth: oauth2,
+        level:
       )
       create_totp_device!(user:) if mfa
     end
@@ -36,6 +37,7 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::RequestPasswordRecover
     first = create_user(login: 'shared-a', email:)
     second = create_user(login: 'shared-b', email:, mfa: false)
     third = create_user(login: 'shared-c', email:, oauth2: false)
+    administrator = create_user(login: 'shared-d', email:, mfa: false, level: 99)
 
     recovery_request = described_class.run(
       'shared.address@EXAMPLE.test',
@@ -53,19 +55,38 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::RequestPasswordRecover
     expect(recovery_request.password_recoveries.order(:user_id).pluck(:user_id, :outcome)).to contain_exactly(
       [first.id, 'recoverable'],
       [second.id, 'no_mfa'],
-      [third.id, 'unavailable']
+      [third.id, 'unavailable'],
+      [administrator.id, 'unavailable']
     )
 
     body = recovery_request.mail_log.text_plain
-    expect(body).to include('Login: shared-a', 'Login: shared-b', 'Login: shared-c')
+    expect(body).to include(
+      'Login: shared-a',
+      'Login: shared-b',
+      'Login: shared-c',
+      'Login: shared-d'
+    )
+    normalized_body = body.gsub(/\s+/, ' ')
+    expect(normalized_body).to include(
+      'Password recovery is not available for administrator accounts. ' \
+      'Ask another administrator to change the password.'
+    )
     expect(body.scan(
       "/oauth2/password-reset/continue?client_id=#{client.client_id}&ui_locales=en#token="
     ).length).to eq(1)
     expect(body).not_to include('can be used once', 'recovery code')
 
     html = recovery_request.mail_log.text_html
-    expect(html).to include('Login: shared-a', 'Login: shared-b', 'Login: shared-c')
+    expect(html).to include(
+      'Login: shared-a',
+      'Login: shared-b',
+      'Login: shared-c',
+      'Login: shared-d'
+    )
     expect(html).to include('class="action"', '>Set a new password</a>')
+    expect(html).to include(
+      'Password recovery is not available for administrator accounts. Ask'
+    )
     expect(html.scan(
       "/oauth2/password-reset/continue?client_id=#{client.client_id}&amp;ui_locales=en#token="
     ).length).to eq(1)
@@ -75,6 +96,40 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::RequestPasswordRecover
     recovery = recovery_request.password_recoveries.find_by!(user: first)
     expect(recovery.email_token_digest).to eq(PasswordRecovery.digest_token(raw_token))
     expect(recovery.email_token_digest).not_to eq(raw_token)
+    expect(
+      recovery_request.password_recoveries.find_by!(user: administrator)
+    ).to have_attributes(email_token_digest: nil, email_expires_at: nil)
+  end
+
+  it 'uses the administrator message for support accounts with MFA' do
+    support = create_user(
+      login: 'support-recovery',
+      email: 'support-recovery@example.test',
+      level: 21
+    )
+
+    recovery_request = described_class.run(
+      support.login,
+      locale: :cs,
+      oauth2_client: nil,
+      request:
+    )
+
+    recovery = recovery_request.password_recoveries.find_by!(user: support)
+    expect(recovery).to have_attributes(
+      outcome: 'unavailable',
+      email_token_digest: nil,
+      email_expires_at: nil
+    )
+    normalized_body = recovery_request.mail_log.text_plain.gsub(/\s+/, ' ')
+    expect(normalized_body).to include(
+      'Obnovení hesla není pro administrátorské účty dostupné. ' \
+      'O změnu hesla požádej jiného administrátora.'
+    )
+    expect(recovery_request.mail_log.text_plain).not_to include(
+      '/oauth2/password-reset/continue',
+      'nemá nastavené dvoufázové ověření'
+    )
   end
 
   it 'prefers an exact case-sensitive login over email matching' do

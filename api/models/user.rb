@@ -50,6 +50,8 @@ class User < ApplicationRecord
   before_update :advance_authentication_generation, if: :will_save_change_to_password?
   after_update :invalidate_auth_tokens, if: :saved_change_to_password?
   after_update :record_password_change, if: :saved_change_to_password?
+  after_update :invalidate_password_recoveries_after_role_change,
+               if: :saved_change_to_level?
 
   alias_attribute :role, :level
 
@@ -131,14 +133,18 @@ class User < ApplicationRecord
     99 => 'God'
   }.freeze
 
-  def role
-    if level >= 90
+  def self.role_for_level(level)
+    if level.to_i >= 90
       :admin
-    elsif level >= 21
+    elsif level.to_i >= 21
       :support
-    elsif level >= 1
+    elsif level.to_i >= 1
       :user
     end
+  end
+
+  def role
+    self.class.role_for_level(level)
   end
 
   def dokuwiki_groups
@@ -222,6 +228,15 @@ class User < ApplicationRecord
     @password_change_source = nil
     @password_change_user_session = nil
     @password_change_user_session_set = false
+  end
+
+  def invalidate_password_recoveries_after_role_change
+    previous_level, current_level = saved_change_to_level
+    was_eligible = self.class.role_for_level(previous_level) == :user
+    is_eligible = self.class.role_for_level(current_level) == :user
+    return if was_eligible == is_eligible
+
+    password_recoveries.active.update_all(invalidated_at: Time.current)
   end
 
   def check_time_zone

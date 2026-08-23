@@ -9,6 +9,9 @@ Nastavit nové heslo: <%= account[:reset_url] %>
 
 Odkaz platí jednu hodinu. Po otevření ověříš svou totožnost pomocí TOTP nebo
 přístupového klíče.
+<% elsif account[:outcome] == 'administrator' -%>
+Obnovení hesla není pro administrátorské účty dostupné. O změnu hesla požádej
+jiného administrátora.
 <% elsif account[:outcome] == 'no_mfa' -%>
 Tento účet nemá nastavené dvoufázové ověření, takže u něj nejde heslo obnovit
 automaticky. Kontaktuj prosím <%= @support_mail %>.
