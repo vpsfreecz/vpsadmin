@@ -651,49 +651,6 @@ import ../make-test.nix (
       webui_oauth_client.is_default = true
       webui_oauth_client.save_with_default!
 
-      # The active form fixture has to survive the complete Playwright suite.
-      # Production recovery sessions still use
-      # PasswordRecovery::SESSION_LIFETIME.
-      password_recovery_fixture_expires_at = 1.hour.from_now
-      password_recovery_completion_token = PasswordRecovery.generate_token
-      password_recovery_request = PasswordRecoveryRequest.create!(
-        recipient_email: admin.email,
-        locale: 'en',
-        oauth2_client: webui_oauth_client
-      )
-      password_recovery_request.password_recoveries.create!(
-        user: admin,
-        outcome: :recoverable,
-        email_snapshot: admin.email,
-        email_expires_at: 1.hour.from_now,
-        email_consumed_at: 1.minute.ago,
-        session_token_digest: PasswordRecovery.digest_token(
-          password_recovery_completion_token
-        ),
-        session_expires_at: 14.minutes.from_now,
-        mfa_verified_at: 1.minute.ago,
-        completed_at: Time.current
-      )
-
-      password_recovery_form_token = PasswordRecovery.generate_token
-      password_recovery_form_request = PasswordRecoveryRequest.create!(
-        recipient_email: admin.email,
-        locale: 'en',
-        oauth2_client: webui_oauth_client
-      )
-      password_recovery_form_request.password_recoveries.create!(
-        user: admin,
-        outcome: :recoverable,
-        email_snapshot: admin.email,
-        email_expires_at: 1.hour.from_now,
-        email_consumed_at: 1.minute.ago,
-        session_token_digest: PasswordRecovery.digest_token(
-          password_recovery_form_token
-        ),
-        session_expires_at: password_recovery_fixture_expires_at,
-        mfa_verified_at: 1.minute.ago
-      )
-
       def ensure_cluster_resource(row)
         resource = ClusterResource.find_or_initialize_by(name: row[0].to_s)
         resource.label = row[1] if resource.new_record?
@@ -1502,6 +1459,71 @@ import ../make-test.nix (
         env: env,
         language: language
       )
+
+      password_recovery_user = ensure_webui_user(
+        login: 'webui-password-recovery-user',
+        full_name: 'Webui Password Recovery User',
+        email: 'webui-password-recovery-user@example.test',
+        password: 'webuiPasswordRecoveryUserPassword',
+        env: env,
+        language: language
+      )
+      password_recovery_user.update!(enable_multi_factor_auth: true)
+      password_recovery_totp = UserTotpDevice.find_or_initialize_by(
+        user: password_recovery_user,
+        label: 'Webui password recovery TOTP'
+      )
+      password_recovery_totp.assign_attributes(
+        secret: 'JBSWY3DPEHPK3PXP',
+        recovery_code: nil,
+        confirmed: true,
+        enabled: true
+      )
+      password_recovery_totp.save!
+
+      # The active form fixture has to survive the complete Playwright suite.
+      # Production recovery sessions still use
+      # PasswordRecovery::SESSION_LIFETIME.
+      password_recovery_fixture_expires_at = 1.hour.from_now
+      password_recovery_completion_token = PasswordRecovery.generate_token
+      password_recovery_request = PasswordRecoveryRequest.create!(
+        recipient_email: password_recovery_user.email,
+        locale: 'en',
+        oauth2_client: webui_oauth_client
+      )
+      password_recovery_request.password_recoveries.create!(
+        user: password_recovery_user,
+        outcome: :recoverable,
+        email_snapshot: password_recovery_user.email,
+        email_expires_at: 1.hour.from_now,
+        email_consumed_at: 1.minute.ago,
+        session_token_digest: PasswordRecovery.digest_token(
+          password_recovery_completion_token
+        ),
+        session_expires_at: 14.minutes.from_now,
+        mfa_verified_at: 1.minute.ago,
+        completed_at: Time.current
+      )
+
+      password_recovery_form_token = PasswordRecovery.generate_token
+      password_recovery_form_request = PasswordRecoveryRequest.create!(
+        recipient_email: password_recovery_user.email,
+        locale: 'en',
+        oauth2_client: webui_oauth_client
+      )
+      password_recovery_form_request.password_recoveries.create!(
+        user: password_recovery_user,
+        outcome: :recoverable,
+        email_snapshot: password_recovery_user.email,
+        email_expires_at: 1.hour.from_now,
+        email_consumed_at: 1.minute.ago,
+        session_token_digest: PasswordRecovery.digest_token(
+          password_recovery_form_token
+        ),
+        session_expires_at: password_recovery_fixture_expires_at,
+        mfa_verified_at: 1.minute.ago
+      )
+
       secondary_user = ensure_webui_user(
         login: 'webui-user-secondary',
         full_name: 'Webui Browser Secondary User',

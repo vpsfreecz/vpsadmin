@@ -2,11 +2,11 @@ require 'uri'
 
 module VpsAdmin::API
   class Operations::Authentication::RequestPasswordRecovery < Operations::Base
-    Account = Struct.new(:recovery, :token) do
+    Account = Struct.new(:recovery, :token, :mail_outcome) do
       def to_mail_hash
         {
           login: recovery.user.login,
-          outcome: recovery.outcome,
+          outcome: mail_outcome.to_s,
           reset_url:
         }
       end
@@ -97,7 +97,7 @@ module VpsAdmin::API
     end
 
     def create_account(recovery_request, user, recipient_email, request)
-      outcome = account_outcome(user, request)
+      outcome, mail_outcome = account_outcomes(user, request)
       token = outcome == :recoverable ? ::PasswordRecovery.generate_token : nil
 
       recovery = recovery_request.password_recoveries.create!(
@@ -108,15 +108,16 @@ module VpsAdmin::API
         email_expires_at: token && (Time.current + ::PasswordRecovery::EMAIL_LIFETIME)
       )
 
-      Account.new(recovery:, token:)
+      Account.new(recovery:, token:, mail_outcome:)
     end
 
-    def account_outcome(user, request)
+    def account_outcomes(user, request)
       policy = Operations::Authentication::PasswordRecoveryPolicy.run(user, request)
-      return :unavailable unless policy.eligible?
-      return :no_mfa unless policy.effective_mfa?
+      return %i[unavailable administrator] if policy.administrator_account?
+      return %i[unavailable unavailable] unless policy.eligible?
+      return %i[no_mfa no_mfa] unless policy.effective_mfa?
 
-      :recoverable
+      %i[recoverable recoverable]
     end
 
     def client_ip(request)

@@ -359,6 +359,26 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     )
   end
 
+  it 'rejects an administrator recovery token issued by an older process' do
+    user = create_user_with_totp
+    user.update!(level: 99)
+    recovery, raw_token = create_recovery(user:)
+
+    get '/oauth2/password-reset/continue'
+    post '/oauth2/password-reset/continue',
+         csrf_token: csrf_from_body,
+         token: raw_token
+
+    expect_branded_failure(
+      message: 'This password recovery link is invalid, expired, or has already been used.'
+    )
+    expect(recovery.reload).to have_attributes(
+      invalidated_at: be_present,
+      email_consumed_at: nil,
+      completed_at: nil
+    )
+  end
+
   it 'renders a branded failure when an open password form loses its cookies' do
     user = create_user_with_totp
     client = create_oauth2_client!(
@@ -959,6 +979,25 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
         multi_factor: false
       )
     ).to be_authenticated
+  end
+
+  it 'rejects the final password write when the account has become privileged' do
+    user = create_user_with_totp
+    recovery, raw_token = create_recovery(user:)
+    exchange_email_token(raw_token)
+    recovery.update!(mfa_verified_at: Time.current)
+    old_password = user.password
+
+    get '/oauth2/password-reset/password'
+    User.where(id: user.id).update_all(level: 21)
+    post '/oauth2/password-reset/password',
+         csrf_token: csrf_from_body,
+         new_password: 'new-secret-password',
+         repeat_new_password: 'new-secret-password'
+
+    expect(last_response.status).to eq(400)
+    expect(recovery.reload.completed_at).to be_nil
+    expect(user.reload.password).to eq(old_password)
   end
 
   it 'rejects a recovery invalidated after its active lookup' do

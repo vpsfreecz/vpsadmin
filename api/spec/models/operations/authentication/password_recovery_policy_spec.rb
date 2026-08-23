@@ -48,4 +48,16 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::PasswordRecoveryPolicy
     expect(result).not_to be_effective_mfa
     expect(result.mfa_methods).to be_empty
   end
+
+  it 'rejects support and administrator accounts before checking MFA' do
+    [21, 99].each do |level|
+      user.update!(level:, enable_multi_factor_auth: false)
+
+      result = described_class.run(user, request)
+
+      expect(result).not_to be_eligible
+      expect(result).to be_administrator_account
+      expect(result.mfa_methods).to be_empty
+    end
+  end
 end
