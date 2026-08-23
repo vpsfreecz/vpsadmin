@@ -2901,7 +2901,7 @@ msgstr "Nelze vypsat odstávky a výpadky"
 #: forms/outage.forms.php forms/security_advisory.forms.php
 #: forms/users.forms.php pages/page_adminm.php
 msgid "Login"
-msgstr "Přezdívka"
+msgstr "Login"
 
 #: forms/outage.forms.php forms/security_advisory.forms.php
 #: forms/users.forms.php pages/page_adminm.php pages/page_cluster.php

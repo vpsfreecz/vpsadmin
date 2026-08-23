@@ -1035,7 +1035,7 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     get '/oauth2/password-reset/password'
 
     expect(last_response.status).to eq(200)
-    expect(last_response.body).to include('<label for="recovery-login">Přezdívka</label>')
+    expect(last_response.body).to include('<label for="recovery-login">Login</label>')
     expect(last_response.body).to include('value="spec&amp;login" readonly')
     expect(last_response.body).to include(
       'id="new-password" class="password-toggle" name="new_password"'

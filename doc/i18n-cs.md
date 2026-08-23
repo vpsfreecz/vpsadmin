@@ -33,9 +33,8 @@ Always translate with context. The same English word can mean different things:
   `odhlášení` or `ukončené přihlášení`, e.g. `Přihlášení bylo ukončeno` and
   `Byli jste odhlášeni z důvodu neaktivity`.
 - `User data` stays `User data`.
-- A `Login` field or column that identifies a user's account name is
-  `Přezdívka`. The technical term `login` may remain untranslated when it
-  describes the authentication process rather than the account name.
+- A `Login` field or column that identifies a user's account name stays
+  `Login`. `Přezdívka` is reserved for the separate `Nickname` field.
 - `Event log` is usually `Události`.
 - `Incident reports` are `Incidenty`.
 - `DNS resolvers` are `DNS resolvery`.

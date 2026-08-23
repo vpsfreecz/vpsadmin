@@ -3,7 +3,7 @@ Ahoj,
 dostali jsme žádost o obnovení hesla pro následující <%= @accounts.length == 1 ? 'účet' : 'účty' %> ve vpsAdminu:
 
 <% @accounts.each do |account| -%>
-Přezdívka: <%= account[:login] %>
+Login: <%= account[:login] %>
 <% if account[:outcome] == 'recoverable' -%>
 Nastavit nové heslo: <%= account[:reset_url] %>
 

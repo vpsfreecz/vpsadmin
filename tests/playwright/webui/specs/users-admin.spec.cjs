@@ -525,7 +525,7 @@ test.describe.serial('admin member and user management browser coverage', () => 
       });
       const payset = page.locator('#content-in');
       await expect(payset).toContainText('Platby uživatele');
-      await expect(payset).toContainText('Přezdívka:');
+      await expect(payset).toContainText('Login:');
       await expect(payset).toContainText('Částka:');
       await expect(payset).toContainText('Přehled plateb');
       await expect(tableAfterHeading(page, 'Přehled plateb').locator('th')).toHaveText([
