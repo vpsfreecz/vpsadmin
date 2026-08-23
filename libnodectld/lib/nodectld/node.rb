@@ -108,6 +108,15 @@ module NodeCtld
       install_daemon_hooks
     end
 
+    # Install osctld daemon hooks independently of pool readiness. osctld can
+    # be unavailable for a bounded period during a runtime system switch, but
+    # its persistent /run hook directory is usually already present and the
+    # remote-control endpoint needed by the hooks starts before this method is
+    # called.
+    def refresh_daemon_hooks
+      install_daemon_hooks
+    end
+
     protected
 
     def wait_for_pool(pool)

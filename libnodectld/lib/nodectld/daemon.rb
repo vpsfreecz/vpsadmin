@@ -80,6 +80,11 @@ module NodeCtld
 
       @remote_control.start
 
+      # osctld restart coordination must not depend on all pools becoming
+      # ready. Refresh hooks as soon as their nodectld control endpoint exists;
+      # Node#init retries after pool discovery as before.
+      @node.refresh_daemon_hooks
+
       NetAccounting.init
       Shaper.init_node if $CFG.get(:shaper, :enable)
       @node.init
