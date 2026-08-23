@@ -24,7 +24,7 @@
 
     <% @accounts.each do |account| -%>
       <div class="account">
-        <h2>Přezdívka: <%= ERB::Util.html_escape(account[:login]) %></h2>
+        <h2>Login: <%= ERB::Util.html_escape(account[:login]) %></h2>
         <% if account[:outcome] == 'recoverable' -%>
           <p class="action">
             <a href="<%= ERB::Util.html_escape(account[:reset_url]) %>">Nastavit nové heslo</a>

@@ -125,7 +125,7 @@ final class LanguageSelectionTest extends TestCase
             dirname(__DIR__, 2) . '/lang/locale/cs_CZ.utf8/LC_MESSAGES/vpsAdmin.po'
         );
         $expected = [
-            'Login' => 'Přezdívka',
+            'Login' => 'Login',
             'User payments' => 'Platby uživatele',
             'Amount' => 'Částka',
             'Payment log' => 'Přehled plateb',
