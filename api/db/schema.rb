@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_12_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_23_170000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -1360,14 +1360,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_120000) do
     t.string "name", limit: 50, null: false
     t.integer "oom_report_id", null: false
     t.integer "oom_score_adj", null: false
-    t.integer "pgtables_bytes", null: false
-    t.integer "rss", null: false
-    t.integer "rss_anon"
-    t.integer "rss_file"
-    t.integer "rss_shmem"
-    t.integer "swapents", null: false
+    t.bigint "pgtables_bytes", null: false, unsigned: true
+    t.bigint "rss", null: false, unsigned: true
+    t.bigint "rss_anon", unsigned: true
+    t.bigint "rss_file", unsigned: true
+    t.bigint "rss_shmem", unsigned: true
+    t.bigint "swapents", null: false, unsigned: true
     t.integer "tgid", null: false
-    t.integer "total_vm", null: false
+    t.bigint "total_vm", null: false, unsigned: true
     t.integer "vps_pid"
     t.integer "vps_uid", unsigned: true
     t.index ["oom_report_id"], name: "index_oom_report_tasks_on_oom_report_id"

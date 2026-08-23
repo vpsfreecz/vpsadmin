@@ -278,13 +278,13 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
       host_uid: 0,
       vps_uid: 1000,
       tgid: 1000,
-      total_vm: 10_000,
-      rss: 5_000,
-      rss_anon: 1_000,
-      rss_file: 2_000,
-      rss_shmem: 3_000,
-      pgtables_bytes: 4096,
-      swapents: 0,
+      total_vm: 2_148_035_001,
+      rss: 2_148_035_002,
+      rss_anon: 2_148_035_003,
+      rss_file: 2_148_035_004,
+      rss_shmem: 2_148_035_005,
+      pgtables_bytes: 2_148_035_006,
+      swapents: 2_148_035_007,
       oom_score_adj: 0
     )
 
@@ -849,6 +849,15 @@ RSpec.describe 'VpsAdmin::API::Resources::OomReport' do
         'id', 'name', 'host_pid', 'vps_pid', 'vps_uid', 'tgid', 'total_vm',
         'rss', 'rss_anon', 'rss_file', 'rss_shmem', 'pgtables_bytes',
         'swapents', 'oom_score_adj'
+      )
+      expect(tasks.find { |row| row['id'] == task_user_primary.id }).to include(
+        'total_vm' => 2_148_035_001,
+        'rss' => 2_148_035_002,
+        'rss_anon' => 2_148_035_003,
+        'rss_file' => 2_148_035_004,
+        'rss_shmem' => 2_148_035_005,
+        'pgtables_bytes' => 2_148_035_006,
+        'swapents' => 2_148_035_007
       )
     end
 

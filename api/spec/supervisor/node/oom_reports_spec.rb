@@ -39,12 +39,19 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
   end
 
   describe '#save_report' do
-    it 'creates report, usage, stat, task and counter rows with unsigned UIDs' do
+    it 'creates report rows with unsigned UIDs and 64-bit memory counters' do
       vps = create_vps!
       payload = build_oom_report_payload(vps:, count: 7)
       payload.fetch('tasks').first.update(
         'uid' => 2_147_756_930,
-        'vps_uid' => (2**32) - 2
+        'vps_uid' => (2**32) - 2,
+        'total_vm' => 2_148_035_001,
+        'rss' => 2_148_035_002,
+        'rss_anon' => 2_148_035_003,
+        'rss_file' => 2_148_035_004,
+        'rss_shmem' => 2_148_035_005,
+        'pgtables_bytes' => 2_148_035_006,
+        'swapents' => 2_148_035_007
       )
 
       report = supervisor.send(:save_report, payload)
@@ -58,8 +65,36 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
         ['cache', 10.to_d],
         ['rss', 20.to_d]
       )
-      expect(report.oom_report_tasks.pluck(:host_pid, :vps_pid, :name, :host_uid, :vps_uid)).to eq(
-        [[300, 30, 'worker', 2_147_756_930, (2**32) - 2]]
+      expect(
+        report.oom_report_tasks.pluck(
+          :host_pid,
+          :vps_pid,
+          :name,
+          :host_uid,
+          :vps_uid,
+          :total_vm,
+          :rss,
+          :rss_anon,
+          :rss_file,
+          :rss_shmem,
+          :pgtables_bytes,
+          :swapents
+        )
+      ).to eq(
+        [[
+          300,
+          30,
+          'worker',
+          2_147_756_930,
+          (2**32) - 2,
+          2_148_035_001,
+          2_148_035_002,
+          2_148_035_003,
+          2_148_035_004,
+          2_148_035_005,
+          2_148_035_006,
+          2_148_035_007
+        ]]
       )
       expect(OomReportCounter.find_by!(vps:, cgroup: payload.fetch('cgroup')).counter).to eq(7)
     end
