@@ -26,10 +26,14 @@ final class PasswordChangeHistoryTest extends TestCase
             "'includes' => 'user_session,user_session__user'",
             $source
         );
-        self::assertStringContainsString("\$isAdmin && (\$change->user_session ?? null)", $source);
+        self::assertStringContainsString('if ($change->user_session_id)', $source);
+        self::assertStringContainsString('$sessionResource = $change->user_session', $source);
         self::assertStringContainsString('$change->user_session_owned_by_user', $source);
         self::assertStringContainsString("\$change->source === 'administrator'", $source);
-        self::assertStringContainsString("\$change->user_session->user ?? null", $source);
+        self::assertStringContainsString(
+            '$sessionUser = $sessionResource ? $sessionResource->user : null',
+            $source
+        );
         self::assertStringContainsString("\$xtpl->table_add_category(_('Admin'))", $source);
         self::assertStringContainsString('h($u->login)', $source);
         self::assertStringContainsString('h($sessionUser->login)', $source);
