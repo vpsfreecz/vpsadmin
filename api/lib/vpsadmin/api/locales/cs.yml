@@ -892,6 +892,9 @@ cs:
         label: IPv6
       ipv6_addr:
         label: IPv6 adresa
+      is_default:
+        description: Použít tohoto klienta, pokud požadavek OAuth neurčuje klienta
+        label: Výchozí klient
       is_open:
         label: Otevřeno
       is_personal:

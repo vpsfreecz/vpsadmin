@@ -894,6 +894,9 @@ en:
         label: IPv6
       ipv6_addr:
         label: Ipv6_addr
+      is_default:
+        description: Use this client when an OAuth flow has no client context
+        label: Default client
       is_open:
         label: Is_open
       is_personal:

@@ -13,6 +13,9 @@ module VpsAdmin::API::Resources
       bool :authorization_start_requires_user_action,
            label: 'Authorization start requires user action',
            desc: 'Show password recovery completion before opening an interactive authorization start URI'
+      bool :is_default,
+           label: 'Default client',
+           desc: 'Use this client when an OAuth flow has no client context'
       string :access_token_lifetime, choices: ::Oauth2Client.access_token_lifetimes.keys.map(&:to_s)
       integer :access_token_seconds
       integer :refresh_token_seconds
@@ -100,10 +103,12 @@ module VpsAdmin::API::Resources
 
         client = ::Oauth2Client.new(input)
         client.set_secret(secret)
-        client.save!
+        client.save_with_default!
         client
       rescue ActiveRecord::RecordInvalid => e
         error!('create failed', e.record.errors.to_hash)
+      rescue ActiveRecord::RecordNotUnique
+        error!('create failed', is_default: ['has already been taken'])
       end
     end
 
@@ -124,12 +129,12 @@ module VpsAdmin::API::Resources
         secret = input.delete(:client_secret)
 
         client = self.class.model.find(path_params['oauth2_client_id'])
-        client.set_secret(secret) if secret
-        client.assign_attributes(input)
-        client.save!
+        client.update_with_default!(input, client_secret: secret)
         client
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', e.record.errors.to_hash)
+      rescue ActiveRecord::RecordNotUnique
+        error!('update failed', is_default: ['has already been taken'])
       end
     end
 

@@ -143,6 +143,28 @@ test('OAuth forgot-password link reaches the recovery form', async ({ page }) =>
   await expect(page.locator('input[name="user"]')).toBeVisible();
 });
 
+test('queryless password recovery returns to the default OAuth client', async ({ page }) => {
+  await page.goto('http://auth.vpsadmin.test/oauth2/password-reset', {
+    waitUntil: 'domcontentloaded',
+  });
+
+  await page.getByLabel('Login or primary email address').fill(
+    `unknown-default-${Date.now()}@example.test`,
+  );
+  await page.getByRole('button', { name: 'Send password recovery email' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+  const backToSignIn = page.getByRole('link', { name: 'Back to sign in' });
+  await expect(backToSignIn).toHaveAttribute(
+    'href',
+    'http://webui.vpsadmin.test/?page=login&action=login',
+  );
+
+  await backToSignIn.click();
+  await expect(page).toHaveURL(/auth\.vpsadmin\.test/);
+  await expect(page.locator('input[name="user"]')).toBeVisible();
+});
+
 test('password recovery form reveals and masks both new passwords', async ({ page }) => {
   await page.context().addCookies([{
     name: 'vpsadmin_password_recovery',

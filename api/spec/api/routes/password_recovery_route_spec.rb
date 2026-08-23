@@ -173,6 +173,79 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     )
   end
 
+  it 'uses the default OAuth client for a queryless recovery request' do
+    default_client = create_oauth2_client!(
+      authorization_start_uri: 'https://default.example.test/sign-in',
+      is_default: true
+    )
+
+    get '/oauth2/password-reset'
+
+    expect(last_response.status).to eq(200)
+    expect(last_response.body).to include(
+      "<input type=\"hidden\" name=\"client_id\" value=\"#{default_client.client_id}\">"
+    )
+    expect(last_response.body).to include(default_client.authorization_start_uri)
+
+    post '/oauth2/password-reset',
+         csrf_token: csrf_from_body,
+         identifier: 'unknown-default@example.test'
+
+    expect(last_response.status).to eq(303)
+    expect(PasswordRecoverySubmission.order(:id).last.oauth2_client).to eq(default_client)
+    expect(URI.parse(last_response.headers['Location']).query).to eq(
+      "client_id=#{default_client.client_id}"
+    )
+
+    follow_redirect!
+    expect(last_response.body).to include('<h1>Check your email</h1>')
+    expect(last_response.body).to include(default_client.authorization_start_uri)
+  end
+
+  it 'prefers an explicit OAuth client to the default client' do
+    create_oauth2_client!(
+      authorization_start_uri: 'https://default.example.test/sign-in',
+      is_default: true
+    )
+    explicit_client = create_oauth2_client!(
+      authorization_start_uri: 'https://explicit.example.test/sign-in'
+    )
+
+    get '/oauth2/password-reset', client_id: explicit_client.client_id
+    post '/oauth2/password-reset',
+         csrf_token: csrf_from_body,
+         client_id: explicit_client.client_id,
+         identifier: 'unknown-explicit@example.test'
+
+    expect(last_response.status).to eq(303)
+    expect(PasswordRecoverySubmission.order(:id).last.oauth2_client).to eq(explicit_client)
+    follow_redirect!
+    expect(last_response.body).to include(explicit_client.authorization_start_uri)
+    expect(last_response.body).not_to include('https://default.example.test/sign-in')
+  end
+
+  it 'uses the default instead of caller context for a stored queryless recovery' do
+    user = create_user_with_totp
+    default_client = create_oauth2_client!(
+      authorization_start_uri: 'https://default.example.test/sign-in',
+      is_default: true
+    )
+    other_client = create_oauth2_client!(
+      authorization_start_uri: 'https://other.example.test/sign-in'
+    )
+    _recovery, raw_token = create_recovery(user:)
+    path = "/oauth2/password-reset/continue?client_id=#{other_client.client_id}"
+
+    get path
+    post path, csrf_token: csrf_from_body, token: raw_token
+
+    expect(last_response.status).to eq(303)
+    location = URI.parse(last_response.headers['Location'])
+    expect(location.path).to eq('/oauth2/password-reset/verify')
+    expect(location.query).to include("client_id=#{default_client.client_id}")
+    expect(location.query).not_to include(other_client.client_id)
+  end
+
   it 'omits a logo that cannot be loaded safely' do
     SysConfig.find_by!(category: 'core', name: 'logo_url').update!(
       value: 'javascript:alert(1)'
