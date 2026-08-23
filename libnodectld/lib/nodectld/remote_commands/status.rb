@@ -1,3 +1,5 @@
+require 'nodectld/daemon_restart_barrier'
+
 module NodeCtld::RemoteCommands
   class Status < Base
     handle :status
@@ -61,6 +63,7 @@ module NodeCtld::RemoteCommands
             initialized: @daemon.initialized?,
             run: @daemon.run?,
             pause: @daemon.paused?,
+            restart_barrier: NodeCtld::DaemonRestartBarrier.active?,
             status: @daemon.exitstatus
           },
           queues: res_queues,

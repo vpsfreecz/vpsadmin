@@ -1,4 +1,5 @@
 require 'timeout'
+require 'nodectld/daemon_restart_barrier'
 require 'nodectld/remote_client'
 require 'nodectld/remote_control'
 
@@ -9,6 +10,7 @@ module NodeCtld
     DEFAULT_PRE_STOP_TIMEOUT = 5
 
     def self.pre_stop(env)
+      DaemonRestartBarrier.persist(reason: 'osctld-restart')
       reply = Timeout.timeout(pre_stop_timeout(env)) do
         RemoteClient.send(RemoteControl::SOCKET, :pause)
       end
@@ -21,11 +23,19 @@ module NodeCtld
     end
 
     def self.post_resume(env)
+      # A legacy upgrade resumes only after switch-to-configuration has
+      # observed target osctld readiness. Keep malformed barriers paused for
+      # operator recovery instead of clearing them opportunistically.
+      return true if DaemonRestartBarrier.coordinator_resume?
+
       reply = Timeout.timeout(pre_stop_timeout(env)) do
         RemoteClient.send(RemoteControl::SOCKET, :resume)
       end
 
-      return true if reply[:status].to_s == 'ok'
+      if reply[:status].to_s == 'ok'
+        DaemonRestartBarrier.clear
+        return true
+      end
 
       raise "nodectld rejected the resume request: #{reply[:error].inspect}"
     rescue StandardError => e

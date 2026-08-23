@@ -47,6 +47,15 @@ RSpec.describe NodeCtld::Daemon do
     })
   end
 
+  it 'starts with transaction admission paused while the restart barrier exists' do
+    allow(NodeCtld::DaemonRestartBarrier).to receive(:active?).and_return(true)
+
+    daemon.send(:apply_restart_barrier)
+
+    expect(daemon.paused?).to be(true)
+    expect(daemon.run?).to be(false)
+  end
+
   it 'selects root queued transactions for the current node' do
     chain_id = insert_chain(state: NodeCtldSpec::TxState::CHAIN_QUEUED)
     tx_id = insert_transaction(

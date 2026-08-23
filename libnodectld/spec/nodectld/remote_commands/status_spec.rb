@@ -2,6 +2,7 @@
 
 require 'spec_helper'
 require 'ostruct'
+require 'nodectld/queues'
 require 'nodectld/remote_control'
 require 'nodectld/remote_commands/base'
 require 'nodectld/remote_commands/status'
@@ -47,6 +48,8 @@ RSpec.describe NodeCtld::RemoteCommands::Status do
     allow(queues).to receive(:each).and_yield(:vps, queue)
     allow(daemon).to receive(:chain_blockers).and_yield({ 10 => [555] })
     allow(NodeCtld::Db).to receive(:new).and_return(db)
+    allow(NodeCtld::DaemonRestartBarrier).to receive(:active?)
+      .and_return(false)
     allow(db).to receive(:prepared).and_return(double(get: { 'cnt' => 5 }))
 
     ret = described_class.new({}, daemon).exec
@@ -56,6 +59,7 @@ RSpec.describe NodeCtld::RemoteCommands::Status do
       initialized: true,
       run: true,
       pause: nil,
+      restart_barrier: false,
       status: 0
     )
     expect(ret[:output][:queues][:vps]).to include(

@@ -4,6 +4,13 @@ require 'spec_helper'
 require 'nodectld/daemon_hook'
 
 RSpec.describe NodeCtld::DaemonHook do
+  before do
+    allow(NodeCtld::DaemonRestartBarrier).to receive(:persist)
+    allow(NodeCtld::DaemonRestartBarrier).to receive(:clear)
+    allow(NodeCtld::DaemonRestartBarrier).to receive(:coordinator_resume?)
+      .and_return(false)
+  end
+
   it 'sends a synchronous daemon pause request' do
     allow(NodeCtld::RemoteClient).to receive(:send)
       .with(NodeCtld::RemoteControl::SOCKET, :pause)
@@ -13,6 +20,8 @@ RSpec.describe NodeCtld::DaemonHook do
 
     expect(NodeCtld::RemoteClient).to have_received(:send)
       .with(NodeCtld::RemoteControl::SOCKET, :pause)
+    expect(NodeCtld::DaemonRestartBarrier).to have_received(:persist)
+      .with(reason: 'osctld-restart')
   end
 
   it 'uses the configured pause timeout' do
@@ -55,6 +64,18 @@ RSpec.describe NodeCtld::DaemonHook do
 
     expect(NodeCtld::RemoteClient).to have_received(:send)
       .with(NodeCtld::RemoteControl::SOCKET, :resume)
+    expect(NodeCtld::DaemonRestartBarrier).to have_received(:clear)
+  end
+
+  it 'leaves a legacy upgrade paused for the ready coordinator' do
+    allow(NodeCtld::DaemonRestartBarrier).to receive(:coordinator_resume?)
+      .and_return(true)
+    allow(NodeCtld::RemoteClient).to receive(:send)
+
+    expect(described_class.post_resume({})).to be(true)
+
+    expect(NodeCtld::RemoteClient).not_to have_received(:send)
+    expect(NodeCtld::DaemonRestartBarrier).not_to have_received(:clear)
   end
 
   it 'fails when nodectld cannot be resumed' do
@@ -65,6 +86,7 @@ RSpec.describe NodeCtld::DaemonHook do
     expect do
       described_class.post_resume({})
     end.to raise_error(RuntimeError, /Failed to resume nodectld: Errno::ENOENT/)
+    expect(NodeCtld::DaemonRestartBarrier).not_to have_received(:clear)
   end
 
   it 'fails when nodectld rejects the resume request' do
@@ -75,5 +97,6 @@ RSpec.describe NodeCtld::DaemonHook do
     expect do
       described_class.post_resume({})
     end.to raise_error(RuntimeError, /rejected the resume request: "paused"/)
+    expect(NodeCtld::DaemonRestartBarrier).not_to have_received(:clear)
   end
 end

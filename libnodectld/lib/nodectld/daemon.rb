@@ -1,6 +1,7 @@
 require 'libosctl'
 require 'nodectld/db'
 require 'nodectld/command'
+require 'nodectld/daemon_restart_barrier'
 require 'nodectld/queues'
 require 'nodectld/mount_reporter'
 require 'nodectld/remote_control'
@@ -46,6 +47,7 @@ module NodeCtld
     def initialize
       self.class.instance = self
       @init = false
+      apply_restart_barrier
       @start_time = Time.new
       @start_monotonic = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       @cmd_counter = 0
@@ -434,6 +436,10 @@ module NodeCtld
 
     def can_stop?
       !@pause && @queues.empty? && @blockers_mutex.synchronize { @chain_blockers.empty? }
+    end
+
+    def apply_restart_barrier
+      pause! if DaemonRestartBarrier.active?
     end
 
     def exitstatus
