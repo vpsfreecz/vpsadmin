@@ -121,6 +121,33 @@ test('invalid OAuth password stays on auth form', async ({ page }) => {
   await expect(page).toHaveURL(/auth\.vpsadmin\.test/);
 });
 
+test('required password reset uses labelled account and password fields', async ({ page }) => {
+  const account = fixtures.requiredPasswordReset;
+
+  await openWebuiLogin(page, account.username);
+  await submitCredentials(page, account.username, account.password);
+
+  await expect(page.locator('.alert-primary')).toContainText('Choose a new password.');
+  await expect(page.getByLabel('Login')).toHaveValue(account.username);
+  await expect(page.getByLabel('Login')).toHaveAttribute('readonly', '');
+
+  const password = page.getByLabel('New password', { exact: true });
+  const confirmation = page.getByLabel('Repeat new password', { exact: true });
+  await expect(password).toHaveAttribute('type', 'password');
+  await expect(password).toHaveAttribute('autocomplete', 'new-password');
+  await expect(confirmation).toHaveAttribute('type', 'password');
+  await expect(confirmation).toHaveAttribute('autocomplete', 'new-password');
+
+  await password.fill('required-password-one');
+  await confirmation.fill('required-password-two');
+  await page.locator('.input-group-append a').first().click();
+
+  await expect(password).toHaveAttribute('type', 'text');
+  await expect(confirmation).toHaveAttribute('type', 'text');
+  await expect(password).toHaveValue('required-password-one');
+  await expect(confirmation).toHaveValue('required-password-two');
+});
+
 test('OAuth forgot-password link reaches the recovery form', async ({ page }) => {
   await openWebuiLogin(page);
   await expect(page).toHaveURL(/auth\.vpsadmin\.test/);

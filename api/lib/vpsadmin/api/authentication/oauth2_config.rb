@@ -426,7 +426,11 @@ module VpsAdmin::API
     def render_authorize_page(oauth2_request:, oauth2_response:, sinatra_params:, client:, devices:, auth_result: nil, sinatra_request: nil, password_recovery_completed: false)
       # Variables passed to the ERB template
       auth_token = auth_result && auth_result.auth_token
-      user = sinatra_params[:user]
+      user = if auth_token && auth_result.reset_password
+               auth_result.user&.login || auth_token.user.login
+             else
+               sinatra_params[:user]
+             end
       ui_locales = sinatra_params[UI_LOCALES_PARAM] || sinatra_params[UI_LOCALES_PARAM.to_s]
       next_multi_factor_auth = sinatra_params[:next_multi_factor_auth] || find_next_multi_factor_auth(devices)
       step =
