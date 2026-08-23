@@ -33,6 +33,11 @@
             This link is valid for one hour. After opening it, you will need to
             verify your identity with TOTP or a passkey.
           </p>
+        <% elsif account[:outcome] == 'administrator' -%>
+          <p>
+            Password recovery is not available for administrator accounts. Ask
+            another administrator to change the password.
+          </p>
         <% elsif account[:outcome] == 'no_mfa' -%>
           <p>
             This account does not have two-factor authentication configured,

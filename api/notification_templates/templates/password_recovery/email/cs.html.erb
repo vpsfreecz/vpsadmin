@@ -33,6 +33,11 @@
             Odkaz platí jednu hodinu. Po otevření ověříš svou totožnost pomocí
             TOTP nebo přístupového klíče.
           </p>
+        <% elsif account[:outcome] == 'administrator' -%>
+          <p>
+            Obnovení hesla není pro administrátorské účty dostupné. O změnu hesla
+            požádej jiného administrátora.
+          </p>
         <% elsif account[:outcome] == 'no_mfa' -%>
           <p>
             Tento účet nemá nastavené dvoufázové ověření, takže u něj nejde

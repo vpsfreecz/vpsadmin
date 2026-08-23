@@ -670,6 +670,12 @@ RSpec.describe VpsAdmin::API::MailTemplates do
     expect(cs_content.scan('Login:').length).to eq(2)
     expect(cs_content).not_to include('Přezdívka:')
     expect(translations.fetch('en').values_at(:text_plain, :text_html)).to all(
+      include('Password recovery is not available for administrator accounts.')
+    )
+    expect(translations.fetch('cs').values_at(:text_plain, :text_html)).to all(
+      include('Obnovení hesla není pro administrátorské účty dostupné.')
+    )
+    expect(translations.fetch('en').values_at(:text_plain, :text_html)).to all(
       include('(This is an automated mail from vpsAdmin, your reply will be sent to our support)')
     )
     expect(translations.fetch('cs').values_at(:text_plain, :text_html)).to all(

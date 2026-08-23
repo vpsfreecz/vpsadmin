@@ -26,6 +26,26 @@ RSpec.describe PasswordRecovery do
     expect(recovery.reload.invalidated_at).to be_present
   end
 
+  it 'invalidates active recovery when crossing the privileged-account boundary' do
+    promoted = create_recovery
+    user.update!(level: 21)
+
+    expect(promoted.reload.invalidated_at).to be_present
+
+    demoted = create_recovery
+    user.update!(level: 1)
+
+    expect(demoted.reload.invalidated_at).to be_present
+  end
+
+  it 'keeps active recovery when changing between ordinary user levels' do
+    recovery = create_recovery
+
+    user.update!(level: 2)
+
+    expect(recovery.reload.invalidated_at).to be_nil
+  end
+
   it 'exchanges an email token for a short-lived session token only once' do
     recovery = create_recovery
 
