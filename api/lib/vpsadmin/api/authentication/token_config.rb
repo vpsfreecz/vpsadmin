@@ -166,7 +166,7 @@ module VpsAdmin::API
         end
 
         opts = auth_token.opts || {}
-        user = Operations::Authentication::ResetPassword.run(
+        password_reset = Operations::Authentication::ResetPassword.run(
           auth_token,
           req.input[:new_password1],
           request: req.request
@@ -174,12 +174,13 @@ module VpsAdmin::API
 
         begin
           session = Operations::UserSession::NewTokenLogin.run(
-            user,
+            password_reset.user,
             req.request,
             opts.fetch('lifetime', 'fixed'),
             opts.fetch('interval', 5 * 60),
             opts.fetch('scope', ['all']),
-            authentication_generation: user.authentication_generation
+            authentication_generation: password_reset.user.authentication_generation,
+            password_change_log: password_reset.password_change_log
           )
         rescue Exceptions::OperationError => e
           raise Exceptions::AuthenticationError, e.message

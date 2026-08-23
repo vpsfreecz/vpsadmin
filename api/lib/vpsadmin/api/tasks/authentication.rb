@@ -1,10 +1,12 @@
 module VpsAdmin::API::Tasks
   class Authentication < Base
-    # Close expired authentication processes
+    # Reconcile password-change sessions and close expired authentication processes
     #
     # Accepts the following environment variables:
-    # [EXECUTE]: The authentication processes are closed only when set to 'yes'
+    # [EXECUTE]: The changes are applied only when set to 'yes'
     def close_expired
+      reconcile_password_change_sessions
+
       ::AuthToken.joins(:token).includes(:token).where(
         'tokens.valid_to IS NOT NULL AND tokens.valid_to < ?',
         Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
@@ -82,6 +84,22 @@ module VpsAdmin::API::Tasks
       return unless ENV['EXECUTE'] == 'yes'
 
       ::PasswordRecoverySubmission.destroy_stale!(before: submissions_before)
+    end
+
+    def reconcile_password_change_sessions
+      authorizations = ::Oauth2Authorization
+                       .joins(:password_change_log)
+                       .includes(:password_change_log, :user_session)
+                       .where.not(oauth2_authorizations: { user_session_id: nil })
+                       .where(password_change_logs: { user_session_id: nil })
+
+      authorizations.each do |authorization|
+        puts "OAuth2 authorization #{authorization.id} has an unlinked " \
+             "password change ##{authorization.password_change_log_id}"
+        next unless ENV['EXECUTE'] == 'yes'
+
+        authorization.password_change_log.attach_user_session!(authorization.user_session)
+      end
     end
 
     # Email users about failed login attempts

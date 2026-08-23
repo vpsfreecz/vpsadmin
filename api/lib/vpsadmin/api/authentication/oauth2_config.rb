@@ -213,7 +213,7 @@ module VpsAdmin::API
 
     # @param authorization [Oauth2Authorization]
     def get_tokens(authorization, sinatra_request)
-      ::ActiveRecord::Base.transaction do
+      ::ActiveRecord::Base.transaction(requires_new: true) do
         authorization.user.lock!
         authorization.reload
         unless authorization.code&.valid_to&.future? &&
@@ -727,11 +727,12 @@ module VpsAdmin::API
         return ret
       end
 
-      ret.user = Operations::Authentication::ResetPassword.run(
+      password_reset = Operations::Authentication::ResetPassword.run(
         auth_token,
         sinatra_params[:new_password1],
         request: sinatra_request
       )
+      ret.user = password_reset.user
 
       ret.auth_token = nil
       ret.complete = true
@@ -744,7 +745,8 @@ module VpsAdmin::API
         oauth2_request:,
         oauth2_response:,
         client:,
-        devices:
+        devices:,
+        password_change_log: password_reset.password_change_log
       )
 
       ret
@@ -854,7 +856,7 @@ module VpsAdmin::API
       device
     end
 
-    def create_authorization(auth_result:, sinatra_request:, oauth2_request:, oauth2_response:, client:, devices:, sso: nil, skip_multi_factor_auth_until: nil, last_next_multi_factor_auth: 'require', set_multi_factor_auth_until: false)
+    def create_authorization(auth_result:, sinatra_request:, oauth2_request:, oauth2_response:, client:, devices:, sso: nil, skip_multi_factor_auth_until: nil, last_next_multi_factor_auth: 'require', set_multi_factor_auth_until: false, password_change_log: nil)
       now = Time.now
       expires_at = now + (10 * 60)
 
@@ -960,6 +962,7 @@ module VpsAdmin::API
 
         authorization = ::Oauth2Authorization.new(
           oauth2_client: client,
+          password_change_log:,
           user: auth_result.user,
           scope: oauth2_request.scope,
           code_challenge: oauth2_request.code_challenge,

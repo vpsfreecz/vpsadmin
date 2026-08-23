@@ -890,6 +890,85 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     end.not_to change(Oauth2Authorization, :count)
     expect(TransactionChains::User::PasswordChanged)
       .to have_received(:fire).with(user, request)
+    expect(PasswordChangeLog.find_by!(user:, source: 'forced_reset')).to have_attributes(
+      user_session_id: nil,
+      client_ip_addr: '198.51.100.71',
+      client_ip_ptr: 'ptr.example.test'
+    )
+  end
+
+  it 'attaches a required password change only when its OAuth code is exchanged' do
+    user.update!(password_reset: true)
+    allow(TransactionChains::User::PasswordChanged).to receive(:fire)
+    auth_token = create_auth_token!(user:, purpose: 'reset_password')
+
+    result = config.handle_post_authorize(
+      sinatra_handler: handler,
+      sinatra_request: request,
+      sinatra_params: {
+        login_reset_password: '1',
+        auth_token: auth_token.to_s,
+        new_password1: 'new-password',
+        new_password2: 'new-password'
+      },
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    password_change = PasswordChangeLog.find_by!(user:, source: 'forced_reset')
+    expect(result.authorization.password_change_log).to eq(password_change)
+    expect(password_change).to have_attributes(
+      user_session_id: nil,
+      client_ip_addr: '198.51.100.71',
+      client_ip_ptr: 'ptr.example.test'
+    )
+    expect(password_change.user_agent.agent).to eq('RSpec/OAuth2')
+
+    config.get_tokens(result.authorization, request)
+
+    expect(password_change.reload.user_session).to eq(
+      result.authorization.reload.user_session
+    )
+  end
+
+  it 'rolls back OAuth code exchange when the password change cannot be attached' do
+    password_change = PasswordChangeLog.create!(
+      user: SpecSeed.other_user,
+      source: 'forced_reset',
+      created_at: Time.current
+    )
+    auth_result = described_class::AuthResult.new(
+      authenticated: true,
+      complete: true,
+      user:,
+      authentication_generation: user.authentication_generation
+    )
+
+    config.send(
+      :create_authorization,
+      auth_result:,
+      sinatra_request: request,
+      oauth2_request:,
+      oauth2_response: response,
+      client:,
+      devices: [],
+      password_change_log: password_change
+    )
+    authorization = auth_result.authorization
+    code_id = authorization.code_id
+    session_ids_before = UserSession.where(user:).pluck(:id)
+
+    expect do
+      config.get_tokens(authorization, request)
+    end.to raise_error(ArgumentError, 'user session belongs to another user')
+
+    expect(UserSession.where(user:).pluck(:id)).to eq(session_ids_before)
+    expect(authorization.reload).to have_attributes(
+      code_id:,
+      user_session_id: nil
+    )
+    expect(password_change.reload.user_session_id).to be_nil
   end
 
   it 'creates authorization cookies and SSO metadata' do

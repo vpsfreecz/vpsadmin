@@ -1,5 +1,6 @@
 class Oauth2Authorization < ApplicationRecord
   belongs_to :oauth2_client
+  belongs_to :password_change_log, optional: true
   belongs_to :user
   belongs_to :code, class_name: 'Token', dependent: :destroy
   belongs_to :user_session

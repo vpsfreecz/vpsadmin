@@ -22,6 +22,7 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::Password do
       enable_basic_auth: true
     )
     stub_ptr_lookup!(op, ptr: 'ptr.example.test')
+    allow(op).to receive(:resolve_password_change_ptr).and_return('password.example.test')
   end
 
   it 'returns nil for an unknown login' do
@@ -121,7 +122,30 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::Password do
     expect(PasswordChangeLog.find_by!(user:)).to have_attributes(
       source: 'other',
       user_session_id: session.id,
+      client_ip_addr: session.client_ip_addr,
+      client_ip_ptr: session.client_ip_ptr,
+      user_agent_id: session.user_agent_id,
       user_session_owned_by_user: true
     )
+  end
+
+  it 'records request metadata for a sessionless password hash upgrade' do
+    user.update!(
+      password_version: :md5,
+      password: VpsAdmin::API::CryptoProviders::Md5.encrypt(user.login, 'secret')
+    )
+    PasswordChangeLog.where(user:).delete_all
+    UserSession.current = nil
+
+    result = op.run(user.login, 'secret', request:)
+
+    expect(result).to be_authenticated
+    expect(PasswordChangeLog.find_by!(user:)).to have_attributes(
+      source: 'other',
+      user_session_id: nil,
+      client_ip_addr: '203.0.113.9',
+      client_ip_ptr: 'password.example.test'
+    )
+    expect(PasswordChangeLog.find_by!(user:).user_agent.agent).to eq('RSpec/Password')
   end
 end

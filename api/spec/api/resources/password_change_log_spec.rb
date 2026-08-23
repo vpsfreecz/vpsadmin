@@ -9,24 +9,36 @@ RSpec.describe 'VpsAdmin::API::Resources::PasswordChangeLog' do
     user_change = PasswordChangeLog.create!(
       user:,
       user_session:,
+      client_ip_addr: user_session.client_ip_addr,
+      client_ip_ptr: user_session.client_ip_ptr,
+      user_agent: user_session.user_agent,
       source: 'authenticated',
       created_at: 3.minutes.ago
     )
     administrator_change = PasswordChangeLog.create!(
       user:,
       user_session: admin_session,
+      client_ip_addr: admin_session.client_ip_addr,
+      client_ip_ptr: admin_session.client_ip_ptr,
+      user_agent: admin_session.user_agent,
       source: 'administrator',
       created_at: 2.minutes.ago
     )
     recovery_change = PasswordChangeLog.create!(
       user:,
       user_session: nil,
+      client_ip_addr: '198.51.100.30',
+      client_ip_ptr: 'recovery.example.test',
+      user_agent: UserAgent.find_or_create!('Recovery browser agent'),
       source: 'recovery',
       created_at: 1.minute.ago
     )
     other_change = PasswordChangeLog.create!(
       user: other_user,
       user_session: other_session,
+      client_ip_addr: other_session.client_ip_addr,
+      client_ip_ptr: other_session.client_ip_ptr,
+      user_agent: other_session.user_agent,
       source: 'authenticated',
       created_at: Time.current
     )
@@ -63,7 +75,9 @@ RSpec.describe 'VpsAdmin::API::Resources::PasswordChangeLog' do
       user:,
       auth_type: 'basic',
       api_ip_addr: '192.0.2.101',
+      api_ip_ptr: 'api.example.test',
       client_ip_addr: '192.0.2.101',
+      client_ip_ptr: 'client.example.test',
       user_agent: UserAgent.find_or_create!("#{label} agent"),
       client_version: label,
       scope: ['all'],
@@ -130,6 +144,11 @@ RSpec.describe 'VpsAdmin::API::Resources::PasswordChangeLog' do
       own = changes.find { |row| row['id'] == fixtures[:user_change].id }
       expect(own['user_session_id']).to eq(fixtures[:user_session].id)
       expect(own['user_session_owned_by_user']).to be(true)
+      expect(own).to include(
+        'client_ip_addr' => '192.0.2.101',
+        'client_ip_ptr' => 'client.example.test',
+        'user_agent' => 'User password session agent'
+      )
       expect(own).not_to have_key('user_session')
 
       administrator = changes.find do |row|
@@ -137,10 +156,20 @@ RSpec.describe 'VpsAdmin::API::Resources::PasswordChangeLog' do
       end
       expect(administrator['user_session_id']).to eq(fixtures[:admin_session].id)
       expect(administrator['user_session_owned_by_user']).to be(false)
+      expect(administrator).to include(
+        'client_ip_addr' => nil,
+        'client_ip_ptr' => nil,
+        'user_agent' => nil
+      )
       expect(administrator).not_to have_key('user_session')
       recovery = changes.find { |row| row['id'] == fixtures[:recovery_change].id }
       expect(recovery['user_session_id']).to be_nil
       expect(recovery['user_session_owned_by_user']).to be(false)
+      expect(recovery).to include(
+        'client_ip_addr' => '198.51.100.30',
+        'client_ip_ptr' => 'recovery.example.test',
+        'user_agent' => 'Recovery browser agent'
+      )
     end
 
     it 'does not expose an administrator through a nested session include to owners' do
@@ -181,6 +210,11 @@ RSpec.describe 'VpsAdmin::API::Resources::PasswordChangeLog' do
       expect(changes.first.dig('user_session', 'id')).to eq(fixtures[:admin_session].id)
       expect(changes.first.dig('user_session', 'user', 'id')).to eq(admin.id)
       expect(changes.first.dig('user_session', 'user', 'login')).to eq(admin.login)
+      expect(changes.first).to include(
+        'client_ip_addr' => '192.0.2.101',
+        'client_ip_ptr' => 'client.example.test',
+        'user_agent' => 'Administrator password session agent'
+      )
     end
 
     it 'supports descending pagination and total counts' do
@@ -212,11 +246,27 @@ RSpec.describe 'VpsAdmin::API::Resources::PasswordChangeLog' do
       expect_status(404)
     end
 
-    it 'allows administrators to view every change' do
-      as(admin) { json_get show_path(fixtures[:other_change].id) }
+    it 'redacts administrator client details from account owners' do
+      as(user) { json_get show_path(fixtures[:administrator_change].id) }
 
       expect_status(200)
-      expect(change['id']).to eq(fixtures[:other_change].id)
+      expect(change).to include(
+        'client_ip_addr' => nil,
+        'client_ip_ptr' => nil,
+        'user_agent' => nil
+      )
+    end
+
+    it 'allows administrators to view every change' do
+      as(admin) { json_get show_path(fixtures[:administrator_change].id) }
+
+      expect_status(200)
+      expect(change['id']).to eq(fixtures[:administrator_change].id)
+      expect(change).to include(
+        'client_ip_addr' => '192.0.2.101',
+        'client_ip_ptr' => 'client.example.test',
+        'user_agent' => 'Administrator password session agent'
+      )
     end
   end
 end

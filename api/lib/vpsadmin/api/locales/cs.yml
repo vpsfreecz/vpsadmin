@@ -3233,6 +3233,8 @@ cs:
             label: Typ
       password_change_log:
         attributes:
+          client_ip_addr:
+            label: IP adresa klienta
           created_at:
             label: Změněno
           id:

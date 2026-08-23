@@ -24,6 +24,7 @@ module VpsAdmin::API
         token_interval:
       )
 
+      authorization.password_change_log&.attach_user_session!(session)
       ::UserSession.current = session
 
       return session if authorization.user_device.known
