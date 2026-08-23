@@ -576,6 +576,9 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
 
   it 'keeps password errors in the password stage and completes the reset after TOTP' do
     header 'User-Agent', 'Recovery route spec'
+    header 'X-Real-IP', '198.51.100.81'
+    resolver = instance_double(Resolv, getname: 'recovery.example.test')
+    allow(Resolv).to receive(:new).and_return(resolver)
     user = create_user_with_totp
     client = create_oauth2_client!(
       authorization_start_uri: 'https://service.example.test/sign-in?from=recovery'
@@ -668,8 +671,11 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     ).to eq(1)
     expect(PasswordChangeLog.find_by!(user:)).to have_attributes(
       source: 'recovery',
-      user_session_id: nil
+      user_session_id: nil,
+      client_ip_addr: '198.51.100.81',
+      client_ip_ptr: 'recovery.example.test'
     )
+    expect(PasswordChangeLog.find_by!(user:).user_agent.agent).to eq('Recovery route spec')
 
     get '/oauth2/password-reset/password'
     expect(last_response.status).to eq(400)

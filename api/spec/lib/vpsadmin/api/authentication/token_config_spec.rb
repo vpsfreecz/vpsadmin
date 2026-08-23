@@ -17,6 +17,8 @@ RSpec.describe VpsAdmin::API::Authentication::TokenConfig do
       password_reset: false,
       lockout: false
     )
+    resolver = instance_double(Resolv, getname: 'ptr.example.test')
+    allow(Resolv).to receive(:new).and_return(resolver)
   end
 
   def request_token(password: 'secret', auth_request: request, scope: 'all')
@@ -253,6 +255,14 @@ RSpec.describe VpsAdmin::API::Authentication::TokenConfig do
     session = UserSession.joins(:token).find_by!(tokens: { token: result.token })
     expect(session.user).to eq(user)
     expect(session.auth_type).to eq('token')
+    expect(PasswordChangeLog.find_by!(user:, source: 'forced_reset')).to have_attributes(
+      user_session_id: session.id,
+      client_ip_addr: '127.0.0.1',
+      client_ip_ptr: 'ptr.example.test'
+    )
+    expect(
+      PasswordChangeLog.find_by!(user:, source: 'forced_reset').user_agent.agent
+    ).to eq('RSpec/TokenConfig')
     expect(user.reload.password_reset).to be(false)
     expect(user.lockout).to be(false)
     expect(TransactionChains::User::PasswordChanged)

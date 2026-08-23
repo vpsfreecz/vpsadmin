@@ -55,7 +55,7 @@ class User < ApplicationRecord
 
   alias_attribute :role, :level
 
-  attr_reader :password_plain
+  attr_reader :password_plain, :recorded_password_change
 
   has_paper_trail only: %i[login level full_name email address time_zone
                            mailer_enabled object_state expiration_date]
@@ -171,19 +171,20 @@ class User < ApplicationRecord
     plaintext,
     resolve_password_reset: true,
     source: :other,
-    user_session: ::UserSession.current
+    user_session: ::UserSession.current,
+    client_ip_addr: nil,
+    client_ip_ptr: nil,
+    user_agent: nil
   )
-    normalized_source = source.to_sym
-    unless VpsAdmin::API::PasswordChanges::SOURCES.include?(normalized_source)
-      raise ArgumentError, "unsupported password change source: #{source.inspect}"
-    end
+    set_password_change_context(
+      source:,
+      user_session:,
+      client_ip_addr:,
+      client_ip_ptr:,
+      user_agent:
+    )
 
     @password_plain = plaintext
-    @password_change_source = normalized_source
-    if persisted?
-      @password_change_user_session = user_session
-      @password_change_user_session_set = true
-    end
 
     VpsAdmin::API::CryptoProviders.current do |name, provider|
       self.password_version = name
@@ -196,6 +197,43 @@ class User < ApplicationRecord
 
     self.password_reset = false
     self.lockout = false
+  end
+
+  def set_password_change_context(
+    source:,
+    user_session:,
+    client_ip_addr: nil,
+    client_ip_ptr: nil,
+    user_agent: nil
+  )
+    normalized_source = source.to_sym
+    unless VpsAdmin::API::PasswordChanges::SOURCES.include?(normalized_source)
+      raise ArgumentError, "unsupported password change source: #{source.inspect}"
+    end
+
+    @password_change_source = normalized_source
+    @recorded_password_change = nil
+    @password_change_client_ip_addr = nil
+    @password_change_client_ip_ptr = nil
+    @password_change_user_agent = nil
+    return unless persisted?
+
+    @password_change_user_session = user_session
+    @password_change_user_session_set = true
+    if client_ip_addr || client_ip_ptr || user_agent
+      @password_change_client_ip_addr = client_ip_addr
+      @password_change_client_ip_ptr = client_ip_ptr
+      @password_change_user_agent = user_agent
+    elsif user_session
+      if user_session.client_ip_addr.present?
+        @password_change_client_ip_addr = user_session.client_ip_addr
+        @password_change_client_ip_ptr = user_session.client_ip_ptr
+      else
+        @password_change_client_ip_addr = user_session.api_ip_addr
+        @password_change_client_ip_ptr = user_session.api_ip_ptr
+      end
+      @password_change_user_agent = user_session.user_agent
+    end
   end
 
   def normalize_time_zone
@@ -218,9 +256,12 @@ class User < ApplicationRecord
                      ::UserSession.current
                    end
 
-    PasswordChangeLog.create!(
+    @recorded_password_change = PasswordChangeLog.create!(
       user: self,
       user_session:,
+      client_ip_addr: @password_change_client_ip_addr,
+      client_ip_ptr: @password_change_client_ip_ptr,
+      user_agent: @password_change_user_agent,
       source:
     )
     PasswordEventCounter.record_password_change!(source)
@@ -228,6 +269,9 @@ class User < ApplicationRecord
     @password_change_source = nil
     @password_change_user_session = nil
     @password_change_user_session_set = false
+    @password_change_client_ip_addr = nil
+    @password_change_client_ip_ptr = nil
+    @password_change_user_agent = nil
   end
 
   def invalidate_password_recoveries_after_role_change

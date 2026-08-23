@@ -55,6 +55,50 @@ RSpec.describe VpsAdmin::API::Operations::UserSession::NewTokenLogin do
     expect(TransactionChains::User::NewToken).to have_received(:fire2).with(args: [kind_of(UserSession)])
   end
 
+  it 'atomically attaches a required password change to the new session' do
+    password_change = PasswordChangeLog.create!(
+      user:,
+      source: 'forced_reset',
+      created_at: Time.current
+    )
+
+    session = op.run(
+      user,
+      request,
+      'fixed',
+      3600,
+      ['all'],
+      authentication_generation: user.authentication_generation,
+      password_change_log: password_change
+    )
+
+    expect(password_change.reload.user_session).to eq(session)
+  end
+
+  it 'rolls back session creation when the password change cannot be attached' do
+    session_ids_before = UserSession.where(user:, auth_type: 'token').pluck(:id)
+    password_change = PasswordChangeLog.create!(
+      user: SpecSeed.other_user,
+      source: 'forced_reset',
+      created_at: Time.current
+    )
+
+    expect do
+      op.run(
+        user,
+        request,
+        'fixed',
+        3600,
+        ['all'],
+        authentication_generation: user.authentication_generation,
+        password_change_log: password_change
+      )
+    end.to raise_error(ArgumentError, 'user session belongs to another user')
+
+    expect(UserSession.where(user:, auth_type: 'token').pluck(:id)).to eq(session_ids_before)
+    expect(password_change.reload.user_session_id).to be_nil
+  end
+
   it 'rejects session creation from an older authentication generation' do
     generation = user.authentication_generation
     user.set_password('new-secret')
