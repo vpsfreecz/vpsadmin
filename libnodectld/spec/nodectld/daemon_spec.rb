@@ -214,6 +214,31 @@ RSpec.describe NodeCtld::Daemon do
     expect(NodeCtld::Command).to have_received(:new).once
   end
 
+  it 'records a successful transaction metadata poll using both clocks' do
+    result = double(get: { 'update_time' => Time.at(123) })
+    allow(shared_db).to receive(:prepared).and_return(result)
+    allow(Process).to receive(:clock_gettime)
+      .with(Process::CLOCK_MONOTONIC)
+      .and_return(456.5)
+
+    expect(daemon.check_commands?(shared_db)).to be(true)
+    expect(daemon.last_transaction_check).to be_a(Time)
+    expect(daemon.last_transaction_check_monotonic).to eq(456.5)
+  end
+
+  it 'does not record a failed transaction metadata poll' do
+    result = double(get: nil)
+    allow(shared_db).to receive(:prepared).and_return(result)
+    daemon.instance_variable_set(:@last_transaction_check, Time.at(123))
+    daemon.instance_variable_set(:@last_transaction_check_monotonic, 456.5)
+
+    expect do
+      daemon.check_commands?(shared_db)
+    end.to raise_error(NodeCtld::TransactionCheckError)
+    expect(daemon.last_transaction_check).to eq(Time.at(123))
+    expect(daemon.last_transaction_check_monotonic).to eq(456.5)
+  end
+
   it 'skips execute commands while the chain is blocked' do
     cmd = instance_double(
       NodeCtld::Command,

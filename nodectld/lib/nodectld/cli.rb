@@ -3,10 +3,16 @@ require 'libosctl'
 require 'nodectld/config'
 require 'nodectld/daemon'
 require 'nodectld/remote_control'
+require 'nodectld/transaction_watchdog'
+require 'io/wait'
+require 'timeout'
 
 module NodeCtld
   class Cli
     include OsCtl::Lib::Utils::Log
+
+    WATCHDOG_CHECK_INTERVAL = 30
+    WATCHDOG_RPC_TIMEOUT = 10
 
     def self.run
       new.run
@@ -86,13 +92,13 @@ module NodeCtld
     def run_wrapper(watchdog:)
       @stop = false
       @stop_queue = OsCtl::Lib::Queue.new
-      @watchdog_watcher_queue = OsCtl::Lib::Queue.new
-      @watchdog_worker_queue = OsCtl::Lib::Queue.new
+      @watchdog_queue = OsCtl::Lib::Queue.new
 
       loop do
         r, w = IO.pipe
 
         pid = Process.fork do
+          reset_child_signal_handlers
           $stdout.reopen(w)
           $stderr.reopen(w)
           r.close
@@ -121,8 +127,8 @@ module NodeCtld
         end
 
         if watchdog
-          @watchdog_watcher_thread = Thread.new { run_watchdog_watcher(pid) }
-          @watchdog_worker_thread = Thread.new { run_watchdog_worker }
+          daemon_started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+          @watchdog_thread = Thread.new { run_watchdog(pid, daemon_started_at:) }
         end
 
         begin
@@ -137,8 +143,8 @@ module NodeCtld
         @stop_queue << pid
 
         if watchdog
-          [@watchdog_watcher_queue, @watchdog_worker_queue].each { |q| q << :stop }
-          [@watchdog_watcher_thread, @watchdog_worker_thread].each(&:join)
+          @watchdog_queue << :stop
+          @watchdog_thread.join
         end
 
         if @stop
@@ -185,73 +191,109 @@ module NodeCtld
       Process.kill('KILL', pid)
     end
 
-    def run_watchdog_watcher(pid)
-      timeout = 90
-      missed = 0
-      limit = 900
+    def run_watchdog(pid, daemon_started_at:)
+      state = TransactionWatchdog.new(started_at: daemon_started_at)
 
       loop do
-        v = @watchdog_watcher_queue.pop(timeout:)
-
-        if v == :stop
-          break
-        elsif v == :alive
-          if missed > 0
-            log "Watchdog: daemon responded after #{missed}/#{limit} seconds"
-          end
-
-          missed = 0
-          next
-        end
-
-        missed += timeout
-
-        log "Watchdog: Daemon is unresponsive for #{missed}/#{limit} seconds"
-        next if missed < limit
-
-        log 'Watchdog: Daemon did not send status in time, restarting'
-        @stop = true
-        stop_daemon(pid)
-      end
-    end
-
-    def run_watchdog_worker
-      loop do
-        v = @watchdog_worker_queue.pop(timeout: 60)
+        v = @watchdog_queue.pop(timeout: WATCHDOG_CHECK_INTERVAL)
         break if v == :stop
 
-        begin
-          response = get_daemon_status
-          next if response[:status] != 'ok'
+        last_check = nil
 
-          next if response[:response][:last_transaction_check] + 600 < Time.now.to_i
+        begin
+          response = get_daemon_response(:watchdog_status)
+          if response[:status] == 'ok'
+            last_check = response[:response][:last_transaction_check_monotonic]
+          end
         rescue StandardError => e
           log "Watchdog: Failed to check daemon status: #{e.message} (#{e.class})"
-          next
         end
 
-        @watchdog_watcher_queue << :alive
+        result = state.observe(now: monotonic_now, last_check:)
+
+        if result.recovered_from
+          log "Watchdog: transaction polling recovered after #{result.recovered_from.to_i} seconds"
+        end
+
+        if result.warn
+          log 'Watchdog: transaction polling is stale for ' \
+              "#{result.stale_for.to_i}/#{TransactionWatchdog::RESTART_AFTER} seconds"
+        end
+
+        log_watchdog_debug(result.stale_for) if result.debug && !result.restart
+
+        next unless result.restart
+
+        log 'Watchdog: transaction polling did not recover in time, restarting'
+        @stop = true
+        stop_daemon(pid)
+        break
       end
     end
 
-    def get_daemon_status
-      sock = UNIXSocket.new(NodeCtld::RemoteControl::SOCKET)
-      _greetings = remote_receive(sock)
+    def get_daemon_response(command)
+      sock = nil
+      deadline = monotonic_now + WATCHDOG_RPC_TIMEOUT
 
-      sock.puts({ command: :status, params: {} }.to_json)
+      Timeout.timeout(
+        WATCHDOG_RPC_TIMEOUT,
+        Timeout::Error,
+        'nodectld remote control timed out'
+      ) do
+        sock = UNIXSocket.new(NodeCtld::RemoteControl::SOCKET)
+        _greetings = remote_receive(sock, deadline:)
 
-      remote_receive(sock)
+        sock.puts({ command:, params: {} }.to_json)
+
+        remote_receive(sock, deadline:)
+      end
+    ensure
+      sock&.close
     end
 
-    def remote_receive(sock)
+    def remote_receive(sock, deadline:)
       buf = ''
 
-      while (m = sock.recv(1024))
+      loop do
+        remaining = deadline - monotonic_now
+        raise Timeout::Error, 'nodectld remote control timed out' if remaining <= 0
+
+        readable = sock.wait_readable(remaining)
+        raise Timeout::Error, 'nodectld remote control timed out' if readable.nil?
+
+        m = sock.recv(1024)
+        raise EOFError, 'nodectld remote control closed the connection' if m.empty?
+
         buf += m
-        break if m[-1].chr == "\n"
+        break if m.end_with?("\n")
       end
 
       JSON.parse(buf, symbolize_names: true)
+    end
+
+    def log_watchdog_debug(stale_for)
+      log "Watchdog: transaction polling is stale for #{stale_for.to_i} seconds, " \
+          'collecting transaction-loop backtrace'
+      response = get_daemon_response(:watchdog_debug)
+
+      unless response[:status] == 'ok'
+        log "Watchdog: Failed to collect transaction-loop backtrace: #{response.inspect}"
+        return
+      end
+
+      thread = response[:response][:transaction_thread]
+      log "Watchdog: transaction-loop thread status: #{thread[:status].inspect}"
+      thread[:backtrace].each { |line| log "Watchdog: transaction-loop backtrace: #{line}" }
+    rescue StandardError => e
+      log "Watchdog: Failed to collect transaction-loop backtrace: #{e.message} (#{e.class})"
+    end
+
+    def reset_child_signal_handlers
+      %w[CHLD TERM INT HUP].each { |signal| Signal.trap(signal, 'DEFAULT') }
+    end
+
+    def monotonic_now
+      Process.clock_gettime(Process::CLOCK_MONOTONIC)
     end
   end
 end

@@ -25,7 +25,9 @@ module NodeCtldSpec
   end
 
   class FakeDaemon
-    attr_reader :queues, :console, :last_transaction_check, :start_time, :exitstatus
+    attr_reader :queues, :console, :last_transaction_check,
+                :last_transaction_check_monotonic, :start_time,
+                :start_monotonic, :transaction_thread, :exitstatus
 
     def initialized?; end
     def run?; end

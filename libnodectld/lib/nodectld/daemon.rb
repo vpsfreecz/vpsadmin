@@ -40,12 +40,14 @@ module NodeCtld
     end
 
     attr_reader :start_time, :ct_top, :node, :console, :queues,
-                :last_transaction_check, :vps_status
+                :last_transaction_check, :last_transaction_check_monotonic,
+                :start_monotonic, :transaction_thread, :vps_status
 
     def initialize
       self.class.instance = self
       @init = false
       @start_time = Time.new
+      @start_monotonic = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       @cmd_counter = 0
       @threads = {}
       @blockers_mutex = Mutex.new
@@ -106,6 +108,8 @@ module NodeCtld
     end
 
     def start
+      @transaction_thread = Thread.current
+      @transaction_thread.name = 'nodectld-transaction-loop'
       @cmd_db = nil
       @cmd_db_created = nil
 
@@ -172,11 +176,12 @@ module NodeCtld
         'transactions'
       ).get
 
-      @last_transaction_check = Time.now
-
       # Sometimes, update_rs is nil, i.e. no row is returned. It's not clear
       # how this could happen, but handle it to avoid a crash.
       raise TransactionCheckError if update_rs.nil?
+
+      @last_transaction_check = Time.now
+      @last_transaction_check_monotonic = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
       @skipped_transaction_checks ||= 0
 
