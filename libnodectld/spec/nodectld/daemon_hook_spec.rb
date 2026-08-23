@@ -26,23 +26,54 @@ RSpec.describe NodeCtld::DaemonHook do
     expect(Timeout).to have_received(:timeout).with(2.5)
   end
 
-  it 'warns and continues when nodectld is unavailable' do
+  it 'fails when nodectld cannot be paused' do
     allow(NodeCtld::RemoteClient).to receive(:send)
       .with(NodeCtld::RemoteControl::SOCKET, :pause)
       .and_raise(Errno::ENOENT)
 
     expect do
       described_class.pre_stop({})
-    end.to output(/Failed to pause nodectld: Errno::ENOENT/).to_stderr
+    end.to raise_error(RuntimeError, /Failed to pause nodectld: Errno::ENOENT/)
   end
 
-  it 'warns and continues when nodectld rejects the pause request' do
+  it 'fails when nodectld rejects the pause request' do
     allow(NodeCtld::RemoteClient).to receive(:send)
       .with(NodeCtld::RemoteControl::SOCKET, :pause)
       .and_return(status: :failed, error: 'unsupported')
 
     expect do
       described_class.pre_stop({})
-    end.to output(/Failed to pause nodectld: "unsupported"/).to_stderr
+    end.to raise_error(RuntimeError, /rejected the pause request: "unsupported"/)
+  end
+
+  it 'sends a synchronous daemon resume request' do
+    allow(NodeCtld::RemoteClient).to receive(:send)
+      .with(NodeCtld::RemoteControl::SOCKET, :resume)
+      .and_return(status: :ok)
+
+    described_class.post_resume({})
+
+    expect(NodeCtld::RemoteClient).to have_received(:send)
+      .with(NodeCtld::RemoteControl::SOCKET, :resume)
+  end
+
+  it 'fails when nodectld cannot be resumed' do
+    allow(NodeCtld::RemoteClient).to receive(:send)
+      .with(NodeCtld::RemoteControl::SOCKET, :resume)
+      .and_raise(Errno::ENOENT)
+
+    expect do
+      described_class.post_resume({})
+    end.to raise_error(RuntimeError, /Failed to resume nodectld: Errno::ENOENT/)
+  end
+
+  it 'fails when nodectld rejects the resume request' do
+    allow(NodeCtld::RemoteClient).to receive(:send)
+      .with(NodeCtld::RemoteControl::SOCKET, :resume)
+      .and_return(status: :failed, error: 'paused')
+
+    expect do
+      described_class.post_resume({})
+    end.to raise_error(RuntimeError, /rejected the resume request: "paused"/)
   end
 end

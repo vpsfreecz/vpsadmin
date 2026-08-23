@@ -13,11 +13,23 @@ module NodeCtld
         RemoteClient.send(RemoteControl::SOCKET, :pause)
       end
 
-      return if reply[:status].to_s == 'ok'
+      return true if reply[:status].to_s == 'ok'
 
-      warn "Failed to pause nodectld: #{reply[:error].inspect}"
+      raise "nodectld rejected the pause request: #{reply[:error].inspect}"
     rescue StandardError => e
-      warn "Failed to pause nodectld: #{e.class}: #{e.message}"
+      raise "Failed to pause nodectld: #{e.class}: #{e.message}", cause: e
+    end
+
+    def self.post_resume(env)
+      reply = Timeout.timeout(pre_stop_timeout(env)) do
+        RemoteClient.send(RemoteControl::SOCKET, :resume)
+      end
+
+      return true if reply[:status].to_s == 'ok'
+
+      raise "nodectld rejected the resume request: #{reply[:error].inspect}"
+    rescue StandardError => e
+      raise "Failed to resume nodectld: #{e.class}: #{e.message}", cause: e
     end
 
     def self.pre_stop_timeout(env)

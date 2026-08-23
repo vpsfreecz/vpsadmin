@@ -81,6 +81,11 @@ RSpec.describe NodeCtld::Node do
     expect(File.file?(hook_path)).to be(true)
     expect(File.stat(hook_path).mode & 0o777).to eq(0o500)
     expect(File.read(hook_path)).to include('NodeCtld::DaemonHook.pre_stop(ENV)')
+
+    resume_hook_path = File.join(tmpdir, 'post-resume')
+    expect(File.file?(resume_hook_path)).to be(true)
+    expect(File.stat(resume_hook_path).mode & 0o777).to eq(0o500)
+    expect(File.read(resume_hook_path)).to include('NodeCtld::DaemonHook.post_resume(ENV)')
   ensure
     FileUtils.rm_rf(tmpdir) if tmpdir
   end

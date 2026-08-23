@@ -182,7 +182,7 @@ module NodeCtld
         return
       end
 
-      %w[pre-stop].each do |hook|
+      %w[pre-stop post-resume].each do |hook|
         dst = File.join(DAEMON_HOOK_DIR, hook)
 
         FileUtils.cp(
