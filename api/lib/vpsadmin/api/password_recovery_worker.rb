@@ -2,7 +2,7 @@ require 'rack/mock'
 
 module VpsAdmin::API
   class PasswordRecoveryWorker
-    POLL_INTERVAL = 1
+    POLL_INTERVAL = 5
     ERROR_RETRY_INTERVAL = 30
 
     def initialize(
