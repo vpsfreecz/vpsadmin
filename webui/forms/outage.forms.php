@@ -143,6 +143,24 @@ function outage_state_label($state)
     return api_param_choice_label($input->state, $state);
 }
 
+function outage_localized_text($outage, $field)
+{
+    global $langs;
+
+    $codes = [webui_current_api_language($langs ?? null), 'en'];
+
+    foreach (array_unique($codes) as $code) {
+        $name = $code . '_' . $field;
+        $value = $outage->{$name};
+
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+    }
+
+    return '';
+}
+
 function outage_report_form()
 {
     global $xtpl, $api;
@@ -1046,7 +1064,7 @@ function outage_list()
             $outage->entity->list()->asArray()
         )));
         $xtpl->table_td(outage_impact_label($outage->impact));
-        $xtpl->table_td(h($outage->en_summary));
+        $xtpl->table_td(h(outage_localized_text($outage, 'summary')));
 
         if (isAdmin()) {
             if ($outage->state == 'staged') {
@@ -1446,7 +1464,7 @@ function outage_list_overview($outages)
             $outage->entity->list()->asArray()
         )));
         $xtpl->table_td(outage_impact_label($outage->impact));
-        $xtpl->table_td(h($outage->en_summary));
+        $xtpl->table_td(h(outage_localized_text($outage, 'summary')));
 
         if (isAdmin()) {
             $xtpl->table_td(

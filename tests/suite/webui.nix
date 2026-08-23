@@ -1063,7 +1063,8 @@ import ../make-test.nix (
         node:,
         handler:,
         vps: nil,
-        export: nil
+        export: nil,
+        summary_cs: nil
       )
         translation = OutageTranslation.find_by(
           summary: summary,
@@ -1082,7 +1083,14 @@ import ../make-test.nix (
         outage.save! if outage.changed? || outage.new_record?
 
         Language.find_each do |lang|
-          localized_summary = lang.code == 'en' ? summary : "#{summary} #{lang.code}"
+          localized_summary =
+            if lang.code == 'en'
+              summary
+            elsif lang.code == 'cs' && summary_cs
+              summary_cs
+            else
+              "#{summary} #{lang.code}"
+            end
           localized_description = lang.code == 'en' ? description : "#{description} #{lang.code}"
 
           OutageTranslation.find_or_initialize_by(
@@ -1108,7 +1116,14 @@ import ../make-test.nix (
         update.save! if update.changed? || update.new_record?
 
         Language.find_each do |lang|
-          localized_summary = lang.code == 'en' ? summary : "#{summary} #{lang.code}"
+          localized_summary =
+            if lang.code == 'en'
+              summary
+            elsif lang.code == 'cs' && summary_cs
+              summary_cs
+            else
+              "#{summary} #{lang.code}"
+            end
           localized_description = lang.code == 'en' ? description : "#{description} #{lang.code}"
 
           OutageTranslation.find_or_initialize_by(
@@ -3558,6 +3573,7 @@ import ../make-test.nix (
 
       support_outage_public = ensure_outage_fixture(
         summary: 'Webui Support Public Outage',
+        summary_cs: 'Veřejný výpadek pro test WebUI',
         description: 'Deterministic outage visible to users and the public.',
         state: :announced,
         outage_type: :planned_outage,
@@ -4513,6 +4529,7 @@ import ../make-test.nix (
             'public' => {
               'id' => support_outage_public.id,
               'summary' => 'Webui Support Public Outage',
+              'summaryCs' => 'Veřejný výpadek pro test WebUI',
               'vpsId' => support_vps.id,
               'vpsHostname' => support_vps.hostname,
               'exportId' => storage_exports.fetch(:list).fetch(:export).id,

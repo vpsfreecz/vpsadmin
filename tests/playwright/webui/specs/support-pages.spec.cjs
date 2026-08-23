@@ -294,7 +294,20 @@ test.describe('support and status browser coverage', () => {
     await expect(content(page)).toContainText('Affected exports');
     await expect(rowWithText(page, outage.exportPath)).toBeVisible();
 
-    await logout(page, fixtures.user.username);
+    try {
+      await switchLanguage(page, 'cs_CZ.utf8');
+      await page.goto(
+        `/?page=outage&action=list&affected=yes&vps=${outage.vpsId}&state=announced`,
+        { waitUntil: 'domcontentloaded' },
+      );
+      await expect(rowWithText(page, outage.summaryCs)).toBeVisible();
+
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
+      await expect(rowWithText(page, outage.summaryCs)).toBeVisible();
+    } finally {
+      await switchLanguage(page, 'en_US.utf8');
+      await logout(page, fixtures.user.username);
+    }
   });
 
   test('admin outage filters, forms, updates, and state changes are wired', async ({ page }) => {
