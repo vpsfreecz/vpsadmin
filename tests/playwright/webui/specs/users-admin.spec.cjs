@@ -198,6 +198,28 @@ test.describe.serial('admin member and user management browser coverage', () => 
       }
     }
 
+    await page.goto(memberActionUrl('password_changes', target.id), {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(page.locator('table.table-style01').first().getByText('Admin', {
+      exact: true,
+    })).toBeVisible();
+    const sessionlessChange = page.locator('table.table-style01 tr', {
+      hasText: 'Required password change',
+    }).first();
+    await expect(sessionlessChange).toBeVisible();
+    await expect(sessionlessChange.locator('a[href*="action=user_sessions"]')).toHaveCount(0);
+    await expect(sessionlessChange.locator('a[href*="action=edit"]')).toHaveCount(0);
+    const administratorChanges = page.locator('table.table-style01 tr', {
+      hasText: 'Administrator change',
+    });
+    for (const row of [administratorChanges.first(), administratorChanges.nth(1)]) {
+      await expect(row.locator('a[href*="action=user_sessions"]')).toBeVisible();
+      await expect(
+        row.locator(`a[href="?page=adminm&action=edit&id=${fixtures.admin.id}"]`),
+      ).toHaveText(fixtures.admin.username);
+    }
+
     await submitAuthSettings(page, target.id, {
       enable_basic_auth: false,
       enable_token_auth: false,
