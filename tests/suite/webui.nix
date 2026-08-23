@@ -647,6 +647,10 @@ import ../make-test.nix (
         cfg.save! if cfg.changed? || cfg.new_record?
       end
 
+      webui_oauth_client = Oauth2Client.find_by!(client_id: 'vpsadmin-webui-test')
+      webui_oauth_client.is_default = true
+      webui_oauth_client.save_with_default!
+
       # The active form fixture has to survive the complete Playwright suite.
       # Production recovery sessions still use
       # PasswordRecovery::SESSION_LIFETIME.
@@ -655,7 +659,7 @@ import ../make-test.nix (
       password_recovery_request = PasswordRecoveryRequest.create!(
         recipient_email: admin.email,
         locale: 'en',
-        oauth2_client: Oauth2Client.find_by!(client_id: 'vpsadmin-webui-test')
+        oauth2_client: webui_oauth_client
       )
       password_recovery_request.password_recoveries.create!(
         user: admin,
@@ -675,7 +679,7 @@ import ../make-test.nix (
       password_recovery_form_request = PasswordRecoveryRequest.create!(
         recipient_email: admin.email,
         locale: 'en',
-        oauth2_client: Oauth2Client.find_by!(client_id: 'vpsadmin-webui-test')
+        oauth2_client: webui_oauth_client
       )
       password_recovery_form_request.password_recoveries.create!(
         user: admin,

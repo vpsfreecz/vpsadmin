@@ -1289,11 +1289,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.string "client_secret_hash", null: false
     t.datetime "created_at", null: false
     t.boolean "issue_refresh_token", default: false, null: false
+    t.boolean "is_default"
     t.string "name", null: false
     t.string "redirect_uri", null: false
     t.integer "refresh_token_seconds", default: 3600, null: false
     t.datetime "updated_at", null: false
     t.index ["client_id"], name: "index_oauth2_clients_on_client_id", unique: true
+    t.index ["is_default"], name: "index_oauth2_clients_on_is_default", unique: true
   end
 
   create_table "password_change_logs", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|

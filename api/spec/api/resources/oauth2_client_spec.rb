@@ -186,7 +186,8 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(client_obj['redirect_uri']).to eq('https://example.invalid/callback-a')
       expect(client_obj).to include(
         'authorization_start_uri',
-        'authorization_start_requires_user_action' => false
+        'authorization_start_requires_user_action' => false,
+        'is_default' => false
       )
       expect(client_obj).not_to include('client_secret', 'client_secret_hash')
     end
@@ -225,6 +226,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
           redirect_uri: 'https://example.invalid/callback-created',
           authorization_start_uri: 'https://example.invalid/sign-in?client=created',
           authorization_start_requires_user_action: true,
+          is_default: true,
           client_secret: 'spec-created-secret'
         }
       end
@@ -237,11 +239,13 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(client_obj['redirect_uri']).to eq('https://example.invalid/callback-created')
       expect(client_obj['authorization_start_uri']).to eq('https://example.invalid/sign-in?client=created')
       expect(client_obj['authorization_start_requires_user_action']).to be(true)
+      expect(client_obj['is_default']).to be(true)
       expect(client_obj).not_to include('client_secret', 'client_secret_hash')
 
       record = Oauth2Client.find_by!(client_id: 'spec-created')
       expect(record.name).to eq('Spec Created')
       expect(record.check_secret('spec-created-secret')).to be(true)
+      expect(record.is_default?).to be(true)
     end
 
     it 'returns validation errors for missing name' do
@@ -282,6 +286,22 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
           client_id: 'spec-unsafe-start',
           redirect_uri: 'https://example.invalid/callback',
           authorization_start_uri: 'https://user@example.invalid/sign-in#token',
+          client_secret: 'spec-secret'
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_errors.keys.map(&:to_s)).to include('authorization_start_uri')
+    end
+
+    it 'requires an authorization start URI on the default client' do
+      as(admin) do
+        json_post index_path, oauth2_client: {
+          name: 'Spec Default Without Start',
+          client_id: 'spec-default-without-start',
+          redirect_uri: 'https://example.invalid/callback',
+          is_default: true,
           client_secret: 'spec-secret'
         }
       end
@@ -362,6 +382,98 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect(response_errors).to be_a(Hash)
       expect(response_errors.keys.map(&:to_s)).to include('client_id')
     end
+
+    it 'switches the default client atomically' do
+      primary_client.update!(
+        authorization_start_uri: 'https://example.invalid/sign-in-a'
+      )
+      primary_client.is_default = true
+      primary_client.save_with_default!
+      previous_updated_at = 1.day.ago
+      primary_client.update_column(:updated_at, previous_updated_at)
+
+      as(admin) do
+        json_put show_path(secondary_client.id), oauth2_client: {
+          authorization_start_uri: 'https://example.invalid/sign-in-b',
+          is_default: true
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(client_obj['is_default']).to be(true)
+      expect(primary_client.reload.is_default?).to be(false)
+      expect(primary_client.updated_at).to be > previous_updated_at
+      expect(secondary_client.reload.is_default?).to be(true)
+      expect(Oauth2Client.default_client).to eq(secondary_client)
+    end
+
+    it 'preserves a newer default when updating a stale former default' do
+      primary_client.update_with_default!({
+        authorization_start_uri: 'https://example.invalid/sign-in-a',
+        is_default: true
+      })
+      stale_primary = Oauth2Client.find(primary_client.id)
+
+      secondary_client.update_with_default!({
+        authorization_start_uri: 'https://example.invalid/sign-in-b',
+        is_default: true
+      })
+      stale_primary.update_with_default!({ name: 'Spec Client A Updated' })
+
+      expect(stale_primary.name).to eq('Spec Client A Updated')
+      expect(stale_primary.is_default?).to be(false)
+      expect(secondary_client.reload.is_default?).to be(true)
+      expect(Oauth2Client.default_client).to eq(secondary_client)
+    end
+
+    it 'validates a stale update against the current default state' do
+      primary_client.update!(
+        authorization_start_uri: 'https://example.invalid/sign-in-a'
+      )
+      stale_primary = Oauth2Client.find(primary_client.id)
+      primary_client.update_with_default!({ is_default: true })
+
+      expect do
+        stale_primary.update_with_default!({ authorization_start_uri: nil })
+      end.to raise_error(ActiveRecord::RecordInvalid)
+
+      primary_client.reload
+      expect(primary_client.is_default?).to be(true)
+      expect(primary_client.authorization_start_uri).to eq(
+        'https://example.invalid/sign-in-a'
+      )
+    end
+
+    it 'applies an explicit default clear after reloading stale state' do
+      primary_client.update!(
+        authorization_start_uri: 'https://example.invalid/sign-in-a'
+      )
+      stale_primary = Oauth2Client.find(primary_client.id)
+      primary_client.update_with_default!({ is_default: true })
+
+      stale_primary.update_with_default!({ is_default: false })
+
+      expect(stale_primary.is_default?).to be(false)
+      expect(Oauth2Client.default_client).to be_nil
+    end
+
+    it 'allows admin to clear the default client' do
+      primary_client.update!(
+        authorization_start_uri: 'https://example.invalid/sign-in-a'
+      )
+      primary_client.is_default = true
+      primary_client.save_with_default!
+
+      as(admin) do
+        json_put show_path(primary_client.id), oauth2_client: { is_default: false }
+      end
+
+      expect_status(200)
+      expect(client_obj['is_default']).to be(false)
+      expect(primary_client.reload[:is_default]).to be_nil
+      expect(Oauth2Client.default_client).to be_nil
+    end
   end
 
   describe 'Delete' do
@@ -385,6 +497,19 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect_status(200)
       expect(json['status']).to be(true)
       expect(Oauth2Client.find_by(id: primary_client.id)).to be_nil
+    end
+
+    it 'allows admin to delete the default client' do
+      primary_client.update!(
+        authorization_start_uri: 'https://example.invalid/sign-in-a'
+      )
+      primary_client.is_default = true
+      primary_client.save_with_default!
+
+      as(admin) { json_delete show_path(primary_client.id) }
+
+      expect_status(200)
+      expect(Oauth2Client.default_client).to be_nil
     end
   end
 end
