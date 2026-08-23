@@ -5,6 +5,12 @@ require_relative '../migration_helper'
 MigrationSpecSupport.require_migration('20260821210000_add_password_change_logs')
 
 RSpec.describe AddPasswordChangeLogs do
+  before do
+    define_schema do
+      create_table :oauth2_authorizations
+    end
+  end
+
   it 'adds the password change history table' do
     migrate_up!
 
@@ -18,6 +24,20 @@ RSpec.describe AddPasswordChangeLogs do
       type: :integer,
       null: true,
       unsigned?: true
+    )
+    expect(column(:password_change_logs, :client_ip_addr)).to have_attributes(
+      type: :string,
+      limit: 46,
+      null: true
+    )
+    expect(column(:password_change_logs, :client_ip_ptr)).to have_attributes(
+      type: :string,
+      limit: 255,
+      null: true
+    )
+    expect(column(:password_change_logs, :user_agent_id)).to have_attributes(
+      type: :integer,
+      null: true
     )
     expect(column(:password_change_logs, :source)).to have_attributes(
       type: :string,
@@ -33,6 +53,20 @@ RSpec.describe AddPasswordChangeLogs do
     expect(
       index_exists?(:password_change_logs, :index_password_change_logs_on_user_session_id)
     ).to be(true)
+    expect(
+      index_exists?(:password_change_logs, :index_password_change_logs_on_user_agent_id)
+    ).to be(true)
+    expect(column(:oauth2_authorizations, :password_change_log_id)).to have_attributes(
+      type: :integer,
+      null: true
+    )
+    expect(
+      index_exists?(:oauth2_authorizations, :index_oauth2_authorizations_on_password_change_log_id)
+    ).to be(true)
+    oauth_index = connection.indexes(:oauth2_authorizations).find do |candidate|
+      candidate.name == 'index_oauth2_authorizations_on_password_change_log_id'
+    end
+    expect(oauth_index.unique).to be(true)
   end
 
   it 'removes the password change history table on rollback' do
@@ -41,5 +75,6 @@ RSpec.describe AddPasswordChangeLogs do
     migrate_down!
 
     expect(table_exists?(:password_change_logs)).to be(false)
+    expect(column_exists?(:oauth2_authorizations, :password_change_log_id)).to be(false)
   end
 end

@@ -20,9 +20,9 @@ namespace :vpsadmin do
   end
 
   namespace :auth do
-    desc 'Close expired authentication processes'
+    desc 'Maintain authentication processes'
     task :close_expired do
-      puts 'Close expired authentication processes'
+      puts 'Maintain authentication processes'
       VpsAdmin::API::Tasks.run(:authentication, :close_expired)
     end
 

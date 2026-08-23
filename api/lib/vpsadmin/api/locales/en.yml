@@ -3250,6 +3250,8 @@ en:
             label: Type
       password_change_log:
         attributes:
+          client_ip_addr:
+            label: Client IP address
           created_at:
             label: Changed at
           id:

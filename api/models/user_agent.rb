@@ -4,6 +4,7 @@ class UserAgent < ApplicationRecord
   has_many :user_sessions
   has_many :user_failed_logins
   has_many :oauth2_authorizations
+  has_many :password_change_logs
 
   def self.find_or_create!(user_agent)
     hash = Digest::SHA1.hexdigest(user_agent)

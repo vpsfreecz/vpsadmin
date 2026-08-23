@@ -12,8 +12,8 @@ module VpsAdmin::API
     # @param scope [Array<String>]
     # @param authentication_generation [Integer]
     # @return [::UserSession]
-    def run(user, request, token_lifetime, token_interval, scope, authentication_generation:)
-      ::UserSession.transaction do
+    def run(user, request, token_lifetime, token_interval, scope, authentication_generation:, password_change_log: nil)
+      ::UserSession.transaction(requires_new: true) do
         user.lock!
         if user.authentication_generation != authentication_generation
           raise Exceptions::OperationError, 'authentication expired'
@@ -30,6 +30,8 @@ module VpsAdmin::API
           token_lifetime:,
           token_interval:
         )
+
+        password_change_log&.attach_user_session!(session)
 
         ::UserSession.current = session
 

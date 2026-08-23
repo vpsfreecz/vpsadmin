@@ -6,6 +6,8 @@ require 'uri'
 
 module VpsAdmin::API
   class Authentication::PasswordRecovery
+    include PasswordChanges::ClientInfo
+
     BASE_PATH = '/oauth2/password-reset'.freeze
     CSRF_COOKIE = :vpsadmin_password_recovery_csrf
     FLOW_COOKIE = :vpsadmin_password_recovery
@@ -357,7 +359,12 @@ module VpsAdmin::API
           raise ActiveRecord::Rollback
         end
 
-        user.set_password(password, source: :recovery, user_session: nil)
+        user.set_password(
+          password,
+          source: :recovery,
+          user_session: nil,
+          **password_change_client_info(@request)
+        )
         user.save!
         recovery.update!(completed_at: Time.current)
         ::TransactionChains::User::PasswordChanged.fire(user, @request)

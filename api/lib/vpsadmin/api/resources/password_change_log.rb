@@ -18,6 +18,18 @@ module VpsAdmin::API::Resources
       resource User, value_label: :login
       integer :user_session_id, label: 'User session ID', nullable: true
       resource UserSession, label: 'Session', value_label: :label, nullable: true
+      string :client_ip_addr,
+             label: 'Client IP address',
+             db_name: :visible_client_ip_addr,
+             nullable: true
+      string :client_ip_ptr,
+             label: 'Client IP PTR',
+             db_name: :visible_client_ip_ptr,
+             nullable: true
+      string :user_agent,
+             label: 'User agent',
+             db_name: :visible_user_agent_string,
+             nullable: true
       bool :user_session_owned_by_user,
            label: 'Session belongs to user',
            desc: 'Whether the affected user can open the initiating session'
@@ -61,7 +73,7 @@ module VpsAdmin::API::Resources
 
       def exec
         with_desc_pagination(with_includes(query))
-          .includes(:user_session)
+          .includes(:user_agent, :user_session)
           .order('password_change_logs.id DESC')
       end
     end

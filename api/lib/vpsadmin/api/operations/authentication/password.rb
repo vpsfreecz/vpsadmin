@@ -3,6 +3,8 @@ require 'vpsadmin/api/operations/utils/dns'
 
 module VpsAdmin::API
   class Operations::Authentication::Password < Operations::Base
+    include PasswordChanges::ClientInfo
+
     Result = Struct.new(
       :user,
       :authenticated,
@@ -50,6 +52,16 @@ module VpsAdmin::API
 
         if authenticated
           if CryptoProviders.update?(user.password_version)
+            client_info = if ::UserSession.current || request.nil?
+                            {}
+                          else
+                            password_change_client_info(request)
+                          end
+            user.set_password_change_context(
+              source: :other,
+              user_session: ::UserSession.current,
+              **client_info
+            )
             CryptoProviders.current do |current_name, current_provider|
               user.update!(
                 password_version: current_name,

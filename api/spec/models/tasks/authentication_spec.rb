@@ -53,10 +53,13 @@ RSpec.describe VpsAdmin::API::Tasks::Authentication do
     end
   end
 
-  def create_oauth_authorization!(code_valid_to: 1.hour.ago)
+  def create_oauth_authorization!(code_valid_to: 1.hour.ago, password_change_log: nil,
+                                  user_session: nil)
     Oauth2Authorization.create!(
       oauth2_client: create_oauth_client!,
       user: user,
+      user_session:,
+      password_change_log:,
       code: Token.get!(valid_to: code_valid_to),
       scope: ['*'],
       client_ip_addr: '127.0.0.1',
@@ -96,6 +99,32 @@ RSpec.describe VpsAdmin::API::Tasks::Authentication do
   end
 
   describe '#close_expired' do
+    it 'reconciles a password change session left by an older OAuth code exchanger' do
+      password_change = PasswordChangeLog.create!(
+        user:,
+        source: 'forced_reset',
+        created_at: Time.current
+      )
+      user_session = create_open_session!(user:, auth_type: 'oauth2')
+      authorization = create_oauth_authorization!(
+        code_valid_to: 1.hour.from_now,
+        password_change_log: password_change,
+        user_session:
+      )
+      authorization.code.destroy!
+      authorization.update!(code: nil)
+
+      task.close_expired
+      expect(password_change.reload.user_session_id).to be_nil
+
+      with_env('EXECUTE' => 'yes') { task.close_expired }
+      expect(password_change.reload.user_session).to eq(user_session)
+
+      with_env('EXECUTE' => 'yes') { task.close_expired }
+      expect(password_change.reload.user_session).to eq(user_session)
+      expect(authorization.reload.password_change_log).to eq(password_change)
+    end
+
     it 'keeps expired authentication tokens in dry-run mode' do
       auth_token = create_auth_token!
       allow(VpsAdmin::API::Operations::User::IncompleteLogin).to receive(:run)
