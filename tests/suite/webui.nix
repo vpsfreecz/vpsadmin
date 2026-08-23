@@ -1519,6 +1519,15 @@ import ../make-test.nix (
         language: language,
         monthly_payment: 100
       )
+      required_password_reset_user = ensure_webui_user(
+        login: 'webui-required-password-reset',
+        full_name: 'Webui Required Password Reset User',
+        email: 'webui-required-password-reset@example.test',
+        password: 'webuiRequiredPasswordResetPassword',
+        env: env,
+        language: language
+      )
+      required_password_reset_user.update!(password_reset: true)
       hard_deleted_request_user = User.unscoped.find_by(
         login: 'webui-hard-deleted-request-user'
       )
@@ -3885,6 +3894,11 @@ import ../make-test.nix (
         'passwordRecovery' => {
           'completionToken' => password_recovery_completion_token,
           'formToken' => password_recovery_form_token
+        },
+        'requiredPasswordReset' => {
+          'id' => required_password_reset_user.id,
+          'username' => required_password_reset_user.login,
+          'password' => 'webuiRequiredPasswordResetPassword'
         },
         'admin' => {
           'id' => ${toString adminUser.id},
