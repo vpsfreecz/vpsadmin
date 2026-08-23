@@ -57,68 +57,70 @@ module VpsAdmin::Supervisor
       cgroup = full_cgroup[0..254]
       count = report.fetch('count')
 
-      counter = ::OomReportCounter.find_or_create_by!(vps:, cgroup:)
-      ::OomReportCounter.increment_counter(:counter, counter.id, by: count)
+      ::OomReport.transaction(requires_new: true) do
+        counter = ::OomReportCounter.find_or_create_by!(vps:, cgroup:)
+        ::OomReportCounter.increment_counter(:counter, counter.id, by: count)
 
-      rule = evaluate_rules(vps, full_cgroup)
+        rule = evaluate_rules(vps, full_cgroup)
 
-      if rule
-        ::OomReportRule.increment_counter(:hit_count, rule.id)
-      else
-        ::Vps.increment_counter(:implicit_oom_report_rule_hit_count, vps.id)
+        if rule
+          ::OomReportRule.increment_counter(:hit_count, rule.id)
+        else
+          ::Vps.increment_counter(:implicit_oom_report_rule_hit_count, vps.id)
+        end
+
+        new_report = ::OomReport.create!(
+          vps:,
+          cgroup:,
+          invoked_by_pid: report.fetch('invoked_by_pid'),
+          invoked_by_name: invoked_by_name && invoked_by_name[0..49],
+          killed_pid: report.fetch('killed_pid'),
+          killed_name: killed_name && killed_name[0..49],
+          count:,
+          created_at: Time.at(report.fetch('time')),
+          processed: true,
+          ignored: rule&.action == 'ignore',
+          oom_report_rule: rule
+        )
+
+        new_report.oom_report_usages.insert_all(
+          report.fetch('usage').map do |type, attrs|
+            {
+              memtype: type,
+              usage: attrs['usage'],
+              limit: attrs['limit'],
+              failcnt: attrs['failcnt']
+            }
+          end
+        )
+
+        new_report.oom_report_stats.insert_all(
+          report.fetch('stats').map do |param, value|
+            {
+              parameter: param,
+              value:
+            }
+          end
+        )
+
+        task_rows = report.fetch('tasks').map { |task| task_row(task) }
+
+        begin
+          new_report.oom_report_tasks.insert_all(task_rows)
+        rescue ActiveModel::RangeError => e
+          message = begin
+            task_range_error_message(new_report, task_rows)
+          rescue StandardError => diagnostic_error
+            "OOM report ##{new_report.id} for VPS ##{new_report.vps_id} has " \
+            "#{task_rows.length} task(s) with values outside their column range; " \
+            "diagnostics failed: #{diagnostic_error.class}: #{diagnostic_error.message}"
+          end
+
+          raise TaskRangeError, message, cause: e
+        end
+
+        new_report
       end
-
-      new_report = ::OomReport.create!(
-        vps:,
-        cgroup:,
-        invoked_by_pid: report.fetch('invoked_by_pid'),
-        invoked_by_name: invoked_by_name && invoked_by_name[0..49],
-        killed_pid: report.fetch('killed_pid'),
-        killed_name: killed_name && killed_name[0..49],
-        count:,
-        created_at: Time.at(report.fetch('time')),
-        processed: true,
-        ignored: rule&.action == 'ignore',
-        oom_report_rule: rule
-      )
-
-      new_report.oom_report_usages.insert_all(
-        report.fetch('usage').map do |type, attrs|
-          {
-            memtype: type,
-            usage: attrs['usage'],
-            limit: attrs['limit'],
-            failcnt: attrs['failcnt']
-          }
-        end
-      )
-
-      new_report.oom_report_stats.insert_all(
-        report.fetch('stats').map do |param, value|
-          {
-            parameter: param,
-            value:
-          }
-        end
-      )
-
-      task_rows = report.fetch('tasks').map { |task| task_row(task) }
-
-      begin
-        new_report.oom_report_tasks.insert_all(task_rows)
-      rescue ActiveModel::RangeError => e
-        message = begin
-          task_range_error_message(new_report, task_rows)
-        rescue StandardError => diagnostic_error
-          "OOM report ##{new_report.id} for VPS ##{new_report.vps_id} has " \
-          "#{task_rows.length} task(s) with values outside their column range; " \
-          "diagnostics failed: #{diagnostic_error.class}: #{diagnostic_error.message}"
-        end
-
-        raise TaskRangeError, message, cause: e
-      end
-
-      new_report
     end
 
     def task_row(task)

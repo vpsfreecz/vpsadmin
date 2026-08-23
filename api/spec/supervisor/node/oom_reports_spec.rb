@@ -102,10 +102,18 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
     it 'identifies out-of-range task fields and preserves the original exception' do
       vps = create_vps!
       payload = build_oom_report_payload(vps:)
+      rule = OomReportRule.create!(
+        vps:,
+        action: :notify,
+        cgroup_pattern: payload.fetch('cgroup'),
+        hit_count: 0
+      )
       task = payload.fetch('tasks').first
       payload['tasks'] = Array.new(11) do |i|
         task.merge('pid' => 2_147_483_648 + i)
       end
+      models = [OomReportCounter, OomReport, OomReportUsage, OomReportStat, OomReportTask]
+      counts_before = models.to_h { |model| [model, model.count] }
 
       expect do
         supervisor.send(:save_report, payload)
@@ -120,6 +128,9 @@ RSpec.describe VpsAdmin::Supervisor::Node::OomReports do
         expect(error.message).not_to include('task[10].host_pid')
         expect(error.cause).to be_a(ActiveModel::RangeError)
       end
+
+      expect(rule.reload.hit_count).to eq(0)
+      expect(models.to_h { |model| [model, model.count] }).to eq(counts_before)
     end
 
     it 'does not let diagnostic failures hide the original range error' do
