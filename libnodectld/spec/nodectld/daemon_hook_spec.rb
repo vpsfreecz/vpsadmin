@@ -59,12 +59,67 @@ RSpec.describe NodeCtld::DaemonHook do
     allow(NodeCtld::RemoteClient).to receive(:send)
       .with(NodeCtld::RemoteControl::SOCKET, :resume)
       .and_return(status: :ok)
+    allow(NodeCtld::RemoteClient).to receive(:send)
+      .with(NodeCtld::RemoteControl::SOCKET, :status)
+      .and_return(
+        status: :ok,
+        response: { state: { pause: nil, restart_barrier: false } }
+      )
 
     described_class.post_resume({})
 
     expect(NodeCtld::RemoteClient).to have_received(:send)
       .with(NodeCtld::RemoteControl::SOCKET, :resume)
+    expect(NodeCtld::RemoteClient).to have_received(:send)
+      .with(NodeCtld::RemoteControl::SOCKET, :status)
     expect(NodeCtld::DaemonRestartBarrier).to have_received(:clear)
+  end
+
+  it 'resumes a replacement daemon which started across marker removal' do
+    commands = []
+    status_replies = [
+      {
+        status: :ok,
+        response: { state: { pause: true, restart_barrier: false } }
+      },
+      {
+        status: :ok,
+        response: { state: { pause: nil, restart_barrier: false } }
+      }
+    ]
+    allow(NodeCtld::RemoteClient).to receive(:send) do |_socket, command|
+      commands << command
+      command == :status ? status_replies.shift : { status: :ok }
+    end
+    allow(described_class).to receive(:sleep)
+
+    expect(described_class.post_resume({})).to be(true)
+
+    expect(commands).to eq(%i[resume status resume status])
+    expect(NodeCtld::DaemonRestartBarrier).to have_received(:clear).once
+  end
+
+  it 'restores the barrier and pauses nodectld when verification fails' do
+    allow(NodeCtld::RemoteClient).to receive(:send) do |_socket, command|
+      if command == :status
+        {
+          status: :ok,
+          response: { state: { pause: true, restart_barrier: false } }
+        }
+      else
+        { status: :ok }
+      end
+    end
+    allow(described_class).to receive(:sleep).and_raise(Timeout::Error)
+
+    expect do
+      described_class.post_resume({})
+    end.to raise_error(RuntimeError, /Failed to resume nodectld: Timeout::Error/)
+
+    expect(NodeCtld::DaemonRestartBarrier).to have_received(:persist)
+      .with(reason: 'osctld-restart')
+    expect(NodeCtld::RemoteClient).to have_received(:send)
+      .with(NodeCtld::RemoteControl::SOCKET, :pause)
   end
 
   it 'leaves a legacy upgrade paused for the ready coordinator' do

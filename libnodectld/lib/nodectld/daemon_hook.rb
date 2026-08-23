@@ -8,6 +8,7 @@ module NodeCtld
   module DaemonHook
     PRE_STOP_TIMEOUT = 'NODECTLD_PRE_STOP_TIMEOUT'.freeze
     DEFAULT_PRE_STOP_TIMEOUT = 5
+    RESUME_RETRY_INTERVAL = 0.2
 
     def self.pre_stop(env)
       DaemonRestartBarrier.persist(reason: 'osctld-restart')
@@ -28,18 +29,61 @@ module NodeCtld
       # operator recovery instead of clearing them opportunistically.
       return true if DaemonRestartBarrier.coordinator_resume?
 
-      reply = Timeout.timeout(pre_stop_timeout(env)) do
-        RemoteClient.send(RemoteControl::SOCKET, :resume)
-      end
-
-      if reply[:status].to_s == 'ok'
+      barrier_cleared = false
+      Timeout.timeout(pre_stop_timeout(env)) do
+        send_checked(:resume)
         DaemonRestartBarrier.clear
-        return true
+        barrier_cleared = true
+
+        loop do
+          return true if nodectld_unpaused_without_barrier?
+
+          send_best_effort(:resume)
+          sleep(RESUME_RETRY_INTERVAL)
+        end
+      end
+    rescue StandardError => e
+      restore_restart_barrier if barrier_cleared
+      raise "Failed to resume nodectld: #{e.class}: #{e.message}", cause: e
+    end
+
+    def self.nodectld_unpaused_without_barrier?
+      reply = RemoteClient.send(RemoteControl::SOCKET, :status)
+      return false unless reply[:status].to_s == 'ok'
+
+      state = reply.dig(:response, :state)
+      state.is_a?(Hash) \
+        && state.has_key?(:pause) \
+        && state[:pause] != true \
+        && state[:restart_barrier] == false
+    rescue StandardError
+      false
+    end
+
+    def self.send_checked(command)
+      reply = RemoteClient.send(RemoteControl::SOCKET, command)
+      return true if reply[:status].to_s == 'ok'
+
+      raise "nodectld rejected the #{command} request: #{reply[:error].inspect}"
+    end
+
+    def self.send_best_effort(command)
+      send_checked(command)
+    rescue StandardError
+      false
+    end
+
+    def self.restore_restart_barrier
+      errors = []
+      begin
+        DaemonRestartBarrier.persist(reason: 'osctld-restart')
+      rescue StandardError => e
+        errors << "marker: #{e.class}: #{e.message}"
       end
 
-      raise "nodectld rejected the resume request: #{reply[:error].inspect}"
-    rescue StandardError => e
-      raise "Failed to resume nodectld: #{e.class}: #{e.message}", cause: e
+      errors << 'pause request failed' unless send_best_effort(:pause)
+      warn "Failed to restore nodectld restart barrier: #{errors.join('; ')}" \
+        unless errors.empty?
     end
 
     def self.pre_stop_timeout(env)
