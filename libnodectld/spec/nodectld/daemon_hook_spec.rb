@@ -133,25 +133,42 @@ RSpec.describe NodeCtld::DaemonHook do
     expect(NodeCtld::DaemonRestartBarrier).not_to have_received(:clear)
   end
 
-  it 'fails when nodectld cannot be resumed' do
+  it 'rearms the barrier when the first resume acknowledgement is lost' do
+    resumed = false
     allow(NodeCtld::RemoteClient).to receive(:send)
-      .with(NodeCtld::RemoteControl::SOCKET, :resume)
-      .and_raise(Errno::ENOENT)
+      .with(NodeCtld::RemoteControl::SOCKET, :resume) do
+        resumed = true
+        raise EOFError
+      end
+    allow(NodeCtld::RemoteClient).to receive(:send)
+      .with(NodeCtld::RemoteControl::SOCKET, :pause)
+      .and_return(status: :ok)
 
     expect do
       described_class.post_resume({})
-    end.to raise_error(RuntimeError, /Failed to resume nodectld: Errno::ENOENT/)
+    end.to raise_error(RuntimeError, /Failed to resume nodectld: EOFError/)
+
+    expect(resumed).to be(true)
     expect(NodeCtld::DaemonRestartBarrier).not_to have_received(:clear)
+    expect(NodeCtld::DaemonRestartBarrier).to have_received(:persist)
+      .with(reason: 'osctld-restart')
+    expect(NodeCtld::RemoteClient).to have_received(:send)
+      .with(NodeCtld::RemoteControl::SOCKET, :pause)
   end
 
   it 'fails when nodectld rejects the resume request' do
     allow(NodeCtld::RemoteClient).to receive(:send)
       .with(NodeCtld::RemoteControl::SOCKET, :resume)
       .and_return(status: :failed, error: 'paused')
+    allow(NodeCtld::RemoteClient).to receive(:send)
+      .with(NodeCtld::RemoteControl::SOCKET, :pause)
+      .and_return(status: :ok)
 
     expect do
       described_class.post_resume({})
     end.to raise_error(RuntimeError, /rejected the resume request: "paused"/)
     expect(NodeCtld::DaemonRestartBarrier).not_to have_received(:clear)
+    expect(NodeCtld::DaemonRestartBarrier).to have_received(:persist)
+      .with(reason: 'osctld-restart')
   end
 end

@@ -427,11 +427,11 @@ module NodeCtld
     end
 
     def run?
-      @@mutex.synchronize { @@run }
+      @@mutex.synchronize { @@run } && !DaemonRestartBarrier.active?
     end
 
     def paused?
-      @pause
+      @pause || DaemonRestartBarrier.active?
     end
 
     def can_stop?

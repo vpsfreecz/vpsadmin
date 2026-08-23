@@ -29,11 +29,11 @@ module NodeCtld
       # operator recovery instead of clearing them opportunistically.
       return true if DaemonRestartBarrier.coordinator_resume?
 
-      barrier_cleared = false
+      resume_attempted = false
       Timeout.timeout(pre_stop_timeout(env)) do
+        resume_attempted = true
         send_checked(:resume)
         DaemonRestartBarrier.clear
-        barrier_cleared = true
 
         loop do
           return true if nodectld_unpaused_without_barrier?
@@ -43,7 +43,7 @@ module NodeCtld
         end
       end
     rescue StandardError => e
-      restore_restart_barrier if barrier_cleared
+      restore_restart_barrier if resume_attempted
       raise "Failed to resume nodectld: #{e.class}: #{e.message}", cause: e
     end
 
