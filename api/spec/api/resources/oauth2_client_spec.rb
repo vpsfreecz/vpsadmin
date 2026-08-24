@@ -56,6 +56,23 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
     clients.fetch(:secondary)
   end
 
+  def create_recovery_for(client, completed: false)
+    target_user = create_lifecycle_user!
+    request = PasswordRecoveryRequest.create!(
+      recipient_email: target_user.email,
+      locale: 'en',
+      oauth2_client: client
+    )
+    request.password_recoveries.create!(
+      user: target_user,
+      outcome: :recoverable,
+      email_snapshot: target_user.email,
+      email_token_digest: PasswordRecovery.digest_token(SecureRandom.hex(16)),
+      email_expires_at: 1.hour.from_now,
+      completed_at: completed ? Time.current : nil
+    )
+  end
+
   def index_path
     vpath('/oauth2_clients')
   end
@@ -497,6 +514,19 @@ RSpec.describe 'VpsAdmin::API::Resources::Oauth2Client' do
       expect_status(200)
       expect(json['status']).to be(true)
       expect(Oauth2Client.find_by(id: primary_client.id)).to be_nil
+    end
+
+    it 'invalidates active recoveries but preserves completed recovery records' do
+      active = create_recovery_for(primary_client)
+      completed = create_recovery_for(primary_client, completed: true)
+
+      as(admin) { json_delete show_path(primary_client.id) }
+
+      expect_status(200)
+      expect(active.reload.invalidated_at).to be_present
+      expect(completed.reload.invalidated_at).to be_nil
+      expect(active.password_recovery_request.reload.oauth2_client_id).to be_nil
+      expect(completed.password_recovery_request.reload.oauth2_client_id).to be_nil
     end
 
     it 'allows admin to delete the default client' do

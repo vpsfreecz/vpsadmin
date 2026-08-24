@@ -99,12 +99,17 @@ class PasswordRecovery < ApplicationRecord
     active.where(verified_factor_column(factor) => factor.id)
   end
 
-  def self.lock_active_verified_with_totp(user)
-    active.where(user:)
-          .where.not(verified_totp_device_id: nil)
-          .order(:id)
-          .lock
-          .to_a
+  def self.lock_for_totp_verification(user, current: nil)
+    relation = active.where(user:).where.not(verified_totp_device_id: nil)
+    relation = relation.or(where(user:, id: current.id)) if current
+    locked = relation.order(:id).lock.to_a
+
+    [
+      current && locked.find { |recovery| recovery.id == current.id },
+      locked.select do |recovery|
+        recovery.active_state? && recovery.verified_totp_device_id.present?
+      end
+    ]
   end
 
   def self.invalidate_locked_verified_with!(recoveries, factor, except: nil)

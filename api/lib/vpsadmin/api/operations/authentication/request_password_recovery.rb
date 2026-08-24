@@ -35,19 +35,29 @@ module VpsAdmin::API
       identifier = identifier.to_s.strip
       return if identifier.empty?
 
-      if submission
-        processed = ::PasswordRecoveryRequest.find_by(
-          password_recovery_submission_id: submission.id
-        )
-        return processed if processed
-      end
-
       users, recipient_email = find_users_and_recipient(identifier)
       return if users.empty? || recipient_email.blank?
 
       account_user_ids = users.map(&:id)
+      oauth2_client_id = oauth2_client&.id
 
       ::PasswordRecoveryRequest.transaction do
+        if submission
+          submission = ::PasswordRecoverySubmission.where(id: submission.id).lock.take
+          return unless submission
+
+          processed = ::PasswordRecoveryRequest.find_by(
+            password_recovery_submission_id: submission.id
+          )
+          return processed if processed
+          return if submission.finished_at?
+        end
+
+        if oauth2_client_id
+          oauth2_client = ::Oauth2Client.where(id: oauth2_client_id).lock.take
+          return unless oauth2_client
+        end
+
         locked_users = ::User.including_deleted.where(email: recipient_email)
                              .order(:id)
                              .lock

@@ -60,6 +60,31 @@ class Oauth2Client < ApplicationRecord
     end
   end
 
+  def destroy_with_password_recoveries!
+    ::PasswordRecoverySubmission.with_queue_lock do
+      submissions = ::PasswordRecoverySubmission.pending
+                                                .where(oauth2_client_id: id)
+                                                .order(:id)
+                                                .lock
+                                                .to_a
+      lock!
+      recoveries = ::PasswordRecovery.joins(:password_recovery_request)
+                                     .active
+                                     .where(
+                                       password_recovery_requests: {
+                                         oauth2_client_id: id
+                                       }
+                                     )
+                                     .order('password_recoveries.id')
+                                     .lock
+                                     .to_a
+      now = Time.current
+      submissions.each(&:finish_locked!)
+      recoveries.each { |recovery| recovery.update!(invalidated_at: now) }
+      destroy!
+    end
+  end
+
   protected
 
   def clear_previous_default!
