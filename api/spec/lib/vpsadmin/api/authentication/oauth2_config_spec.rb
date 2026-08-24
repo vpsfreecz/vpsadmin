@@ -261,6 +261,59 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(response.deleted_cookies).to be_empty
   end
 
+  it 'shows a completed recovery through the current default after its client is deleted' do
+    deleted_client = create_oauth2_client!
+    completion_token = create_completed_recovery!(
+      target_user: user,
+      oauth2_client: deleted_client
+    )
+    client.update!(
+      authorization_start_uri: 'https://default.example.test/sign-in'
+    )
+    client.is_default = true
+    client.save_with_default!
+    deleted_client.destroy_with_password_recoveries!
+    cookie_handler = OAuth2ConfigSpecFixtures::FakeSinatraHandler.new(
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => completion_token
+    )
+
+    config.handle_get_authorize(
+      sinatra_handler: cookie_handler,
+      sinatra_request: request,
+      sinatra_params: {},
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(response.body).to include('Password changed.')
+    expect(response.body).to include('name="user"')
+  end
+
+  it 'does not show a deleted-client completion through a non-default client' do
+    deleted_client = create_oauth2_client!
+    completion_token = create_completed_recovery!(
+      target_user: user,
+      oauth2_client: deleted_client
+    )
+    deleted_client.destroy_with_password_recoveries!
+    cookie_handler = OAuth2ConfigSpecFixtures::FakeSinatraHandler.new(
+      VpsAdmin::API::Authentication::PasswordRecovery::COMPLETION_COOKIE => completion_token
+    )
+
+    config.handle_get_authorize(
+      sinatra_handler: cookie_handler,
+      sinatra_request: request,
+      sinatra_params: {},
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(response.body).not_to include('Password changed.')
+    expect(response.deleted_cookies).to be_empty
+  end
+
   it 'clears an expired completed recovery without showing an alert' do
     completion_token = create_completed_recovery!(
       target_user: user,

@@ -46,6 +46,11 @@ class PasswordRecoverySubmission < ApplicationRecord
     with_queue_lock do |config|
       next EnqueueResult.new(:unavailable, nil, nil) unless config&.value
 
+      if oauth2_client
+        oauth2_client = ::Oauth2Client.where(id: oauth2_client.id).lock.take
+        next EnqueueResult.new(:accepted, nil, nil) unless oauth2_client
+      end
+
       now = Time.current
       retry_at = [
         identifier_retry_at(identifier_digest, now),
@@ -105,6 +110,12 @@ class PasswordRecoverySubmission < ApplicationRecord
       lock!
       finish_record!
     end
+  end
+
+  # The caller must hold both the global queue lock and this submission's row
+  # lock. This is used when an OAuth client atomically cancels queued work.
+  def finish_locked!
+    finish_record!
   end
 
   def self.with_queue_lock

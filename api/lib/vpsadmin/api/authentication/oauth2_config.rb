@@ -800,7 +800,12 @@ module VpsAdmin::API
         return
       end
 
-      return if recovery.password_recovery_request.oauth2_client_id != client.id
+      recovery_client_id = recovery.password_recovery_request.oauth2_client_id
+      if recovery_client_id
+        return if recovery_client_id != client.id
+      else
+        return unless client.is_default? && ::Oauth2Client.default_client&.id == client.id
+      end
 
       completion_shown = shown_digest.present? &&
                          shown_digest.bytesize == recovery.session_token_digest.bytesize &&

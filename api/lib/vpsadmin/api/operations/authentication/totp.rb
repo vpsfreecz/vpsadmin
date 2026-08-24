@@ -62,7 +62,7 @@ module VpsAdmin::API
           raise Exceptions::AuthenticationError, 'invalid token'
         end
 
-        recoveries = ::PasswordRecovery.lock_active_verified_with_totp(user)
+        _, recoveries = ::PasswordRecovery.lock_for_totp_verification(user)
         verification = Operations::Authentication::TotpFactor.run(user, code)
 
         if verification
