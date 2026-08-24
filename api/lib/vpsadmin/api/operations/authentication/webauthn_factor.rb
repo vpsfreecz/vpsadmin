@@ -6,19 +6,13 @@ module VpsAdmin::API
     # credential is then loaded and verified against its latest counter while
     # its row lock is held.
     def run(user, challenge, public_key_credential)
-      credential = WebAuthn::Credential.from_get(
-        stringify_credential_keys(public_key_credential)
-      )
+      credential = parse_credential(public_key_credential)
       stored = user.webauthn_credentials.where(
         external_id: Base64.strict_encode64(credential.raw_id),
         enabled: true
       ).lock.take!
 
-      credential.verify(
-        challenge.challenge,
-        public_key: stored.public_key,
-        sign_count: stored.sign_count
-      )
+      verify_credential(credential, challenge, stored)
       stored.update!(
         sign_count: credential.sign_count,
         last_use_at: Time.current,
@@ -28,6 +22,27 @@ module VpsAdmin::API
     end
 
     protected
+
+    def parse_credential(public_key_credential)
+      WebAuthn::Credential.from_get(
+        stringify_credential_keys(public_key_credential)
+      )
+    rescue StandardError => e
+      # Keep failures from the WebAuthn parser at the authentication boundary.
+      # The gem raises several unrelated exception classes for malformed,
+      # attacker-controlled credential fields.
+      raise ArgumentError, e.message
+    end
+
+    def verify_credential(credential, challenge, stored)
+      credential.verify(
+        challenge.challenge,
+        public_key: stored.public_key,
+        sign_count: stored.sign_count
+      )
+    rescue StandardError => e
+      raise ArgumentError, e.message
+    end
 
     def stringify_credential_keys(value)
       case value
