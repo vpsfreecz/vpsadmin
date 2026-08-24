@@ -177,9 +177,9 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
       response = begin_registration_for(user)
       challenge = find_challenge(response.fetch('challenge_token'))
 
-      expect(challenge.client_ip_addr).to eq('203.0.113.80')
+      expect(challenge.client_ip_addr).to eq('203.0.113.81')
       expect(challenge.client_ip_addr).not_to eq(challenge.api_ip_addr)
-      expect(challenge.client_ip_addr).not_to eq('203.0.113.81')
+      expect(challenge.client_ip_addr).not_to eq('203.0.113.80')
     end
   end
 
