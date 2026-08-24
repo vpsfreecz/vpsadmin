@@ -274,6 +274,7 @@ module VpsAdmin::API
           allow: credentials.pluck(:external_id),
           user_verification: 'discouraged'
         )
+        recovery.webauthn_challenges.order(:id).lock.each(&:destroy!)
         challenge = create_webauthn_challenge!(
           recovery,
           options.challenge,
