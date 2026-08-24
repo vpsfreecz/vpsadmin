@@ -65,6 +65,8 @@ class AddPasswordRecovery < ActiveRecord::Migration[8.1]
       t.datetime :session_expires_at
       t.datetime :email_consumed_at
       t.datetime :mfa_verified_at
+      t.integer :verified_totp_device_id, unsigned: true
+      t.bigint :verified_webauthn_credential_id
       t.datetime :completed_at
       t.datetime :invalidated_at
       t.integer :totp_failed_attempts, null: false, default: 0
@@ -74,6 +76,8 @@ class AddPasswordRecovery < ActiveRecord::Migration[8.1]
     add_index :password_recoveries, :user_id
     add_index :password_recoveries, :email_token_digest, unique: true
     add_index :password_recoveries, :session_token_digest, unique: true
+    add_index :password_recoveries, :verified_totp_device_id
+    add_index :password_recoveries, :verified_webauthn_credential_id
     add_index :password_recoveries,
               %i[user_id completed_at invalidated_at],
               name: 'password_recoveries_active_user'

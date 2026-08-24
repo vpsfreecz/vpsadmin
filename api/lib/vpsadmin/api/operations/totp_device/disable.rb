@@ -5,8 +5,13 @@ module VpsAdmin::API
     # @param device [::UserTotpDevice]
     # @return [::UserTotpDevice]
     def run(device)
-      device.update!(enabled: false)
-      device
+      Operations::Authentication::MfaFactorChange.run(
+        device,
+        revoke_recovery: true
+      ) do |locked_device, _user|
+        locked_device.update!(enabled: false)
+        locked_device
+      end
     end
   end
 end

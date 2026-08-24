@@ -46,6 +46,48 @@ RSpec.describe PasswordRecovery do
     expect(recovery.reload.invalidated_at).to be_nil
   end
 
+  it 'records the exact factor used for MFA verification' do
+    totp = create_totp_device!(user:)
+    passkey = WebauthnCredential.create!(
+      user:,
+      label: 'Spec passkey',
+      external_id: SecureRandom.hex(16),
+      public_key: 'spec-public-key',
+      sign_count: 0
+    )
+    recovery = create_recovery
+
+    recovery.verify_mfa_with!(totp)
+    expect(recovery).to have_attributes(
+      verified_totp_device_id: totp.id,
+      verified_webauthn_credential_id: nil
+    )
+
+    recovery.verify_mfa_with!(passkey)
+    expect(recovery).to have_attributes(
+      verified_totp_device_id: nil,
+      verified_webauthn_credential_id: passkey.id
+    )
+  end
+
+  it 'does not trust an MFA timestamp without an exact verified factor' do
+    recovery = create_recovery
+    recovery.update!(mfa_verified_at: Time.current)
+
+    expect(recovery).not_to be_mfa_verified
+  end
+
+  it 'invalidates active recoveries and MFA tokens when account MFA is disabled' do
+    user.update!(enable_multi_factor_auth: true)
+    recovery = create_recovery
+    auth_token = create_auth_token!(user:, purpose: 'mfa')
+
+    user.update!(enable_multi_factor_auth: false)
+
+    expect(recovery.reload.invalidated_at).to be_present
+    expect(AuthToken.exists?(auth_token.id)).to be(false)
+  end
+
   it 'exchanges an email token for a short-lived session token only once' do
     recovery = create_recovery
 

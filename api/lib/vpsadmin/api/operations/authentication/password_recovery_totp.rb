@@ -20,42 +20,38 @@ module VpsAdmin::API
         recovery.lock!
         return Result.new(authenticated: false) unless recovery.session_usable?
 
-        user.user_totp_devices.where(
-          enabled: true,
-          confirmed: true
-        ).order('last_use_at DESC').each do |device|
-          last_verification_at = device.totp.verify(
-            code,
-            after: device.last_verification_at
-          )
-          recovery_code = recovery_code?(device, code)
-          next unless last_verification_at || recovery_code
+        policy = Operations::Authentication::PasswordRecoveryPolicy.run(user, request)
+        unless policy.eligible? && policy.mfa_methods.include?(:totp)
+          recovery.update!(invalidated_at: Time.current)
+          return Result.new(authenticated: false)
+        end
 
-          if last_verification_at
-            device.update!(last_verification_at:, last_use_at: Time.current)
-            ::UserTotpDevice.increment_counter(:use_count, device.id)
-          else
-            device.update!(enabled: false)
-          end
+        recoveries = ::PasswordRecovery.lock_active_verified_with_totp(user)
+        verification = Operations::Authentication::TotpFactor.run(user, code)
+        if verification
+          recovery.verify_mfa_with!(verification.device)
 
-          recovery.update!(mfa_verified_at: Time.current)
-
-          if recovery_code
+          if verification.recovery_code?
+            ::PasswordRecovery.invalidate_locked_verified_with!(
+              recoveries,
+              verification.device,
+              except: recovery
+            )
             TransactionChains::User::TotpRecoveryCodeUsed.fire(
               user,
-              device,
+              verification.device,
               request
             )
           end
 
           return Result.new(
             authenticated: true,
-            recovery_device: recovery_code ? device : nil,
+            recovery_device: verification.recovery_code? ? verification.device : nil,
             failure_limit_exceeded: false
           )
+        else
+          record_failure(recovery, user, request)
         end
-
-        record_failure(recovery, user, request)
       end
     end
 
@@ -79,10 +75,6 @@ module VpsAdmin::API
         authenticated: false,
         failure_limit_exceeded: limit_exceeded
       )
-    end
-
-    def recovery_code?(device, code)
-      CryptoProviders::Bcrypt.matches?(device.recovery_code, nil, code)
     end
   end
 end

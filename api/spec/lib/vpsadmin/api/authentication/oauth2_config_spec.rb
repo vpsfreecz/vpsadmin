@@ -118,6 +118,7 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
       session_token_digest: PasswordRecovery.digest_token(token),
       session_expires_at: 14.minutes.from_now,
       mfa_verified_at: 1.minute.ago,
+      verified_totp_device_id: 1,
       completed_at:
     )
     token

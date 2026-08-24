@@ -80,6 +80,12 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     [recovery, raw_token]
   end
 
+  def mark_recovery_mfa_verified(recovery)
+    recovery.verify_mfa_with!(
+      recovery.user.user_totp_devices.where(enabled: true, confirmed: true).take!
+    )
+  end
+
   def exchange_email_token(raw_token)
     get '/oauth2/password-reset/continue'
     expect(last_response.status).to eq(200)
@@ -386,7 +392,7 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     )
     recovery, raw_token = create_recovery(user:, client:)
     exchange_email_token(raw_token)
-    recovery.update!(mfa_verified_at: Time.current)
+    mark_recovery_mfa_verified(recovery)
     path = "/oauth2/password-reset/password?client_id=#{client.client_id}&ui_locales=en"
 
     get path
@@ -420,7 +426,7 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
       locale: 'cs'
     )
     exchange_email_token(raw_token)
-    recovery.update!(mfa_verified_at: Time.current)
+    mark_recovery_mfa_verified(recovery)
 
     post "/oauth2/password-reset/password?client_id=#{other_client.client_id}&ui_locales=en",
          csrf_token: 'invalid-csrf-token',
@@ -689,7 +695,7 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     )
     recovery, raw_token = create_recovery(user:, client:, locale: 'cs')
     exchange_email_token(raw_token)
-    recovery.update!(mfa_verified_at: Time.current)
+    mark_recovery_mfa_verified(recovery)
 
     get '/oauth2/password-reset/password'
     post '/oauth2/password-reset/password',
@@ -727,7 +733,7 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     client = create_oauth2_client!
     recovery, raw_token = create_recovery(user:, client:, locale: 'cs')
     exchange_email_token(raw_token)
-    recovery.update!(mfa_verified_at: Time.current)
+    mark_recovery_mfa_verified(recovery)
 
     get '/oauth2/password-reset/password'
     post '/oauth2/password-reset/password',
@@ -763,7 +769,7 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     password_token = create_auth_token!(user:, purpose: 'reset_password')
     token_ids = [mfa_token.token_id, password_token.token_id]
     exchange_email_token(raw_token)
-    recovery.update!(mfa_verified_at: Time.current)
+    mark_recovery_mfa_verified(recovery)
 
     get '/oauth2/password-reset/password'
     post '/oauth2/password-reset/password',
@@ -792,7 +798,7 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     user = create_user_with_totp
     recovery, raw_token = create_recovery(user:)
     exchange_email_token(raw_token)
-    recovery.update!(mfa_verified_at: Time.current)
+    mark_recovery_mfa_verified(recovery)
     lock_queries = []
 
     get '/oauth2/password-reset/password'
@@ -826,7 +832,7 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     code_id = authorization.code.id
     recovery, raw_token = create_recovery(user:)
     exchange_email_token(raw_token)
-    recovery.update!(mfa_verified_at: Time.current)
+    mark_recovery_mfa_verified(recovery)
 
     get '/oauth2/password-reset/password'
     post '/oauth2/password-reset/password',
@@ -965,7 +971,7 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     user = create_user_with_totp
     recovery, raw_token = create_recovery(user:)
     exchange_email_token(raw_token)
-    recovery.update!(mfa_verified_at: Time.current)
+    mark_recovery_mfa_verified(recovery)
     recovery.user
     User.where(id: user.id).update_all(email: 'changed@example.test')
     allow(PasswordRecovery).to receive(:find_by_session_token).and_return(recovery)
@@ -991,7 +997,7 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     user = create_user_with_totp
     recovery, raw_token = create_recovery(user:)
     exchange_email_token(raw_token)
-    recovery.update!(mfa_verified_at: Time.current)
+    mark_recovery_mfa_verified(recovery)
     old_password = user.password
 
     get '/oauth2/password-reset/password'
@@ -1010,7 +1016,7 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     user = create_user_with_totp
     recovery, raw_token = create_recovery(user:)
     exchange_email_token(raw_token)
-    recovery.update!(mfa_verified_at: Time.current)
+    mark_recovery_mfa_verified(recovery)
 
     get '/oauth2/password-reset/password'
     csrf = csrf_from_body
@@ -1062,7 +1068,11 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
 
     expect(last_response.status).to eq(200)
     expect(JSON.parse(last_response.body)['status']).to be(true)
-    expect(recovery.reload.mfa_verified_at).to be_present
+    expect(recovery.reload).to have_attributes(
+      mfa_verified_at: be_present,
+      verified_totp_device_id: nil,
+      verified_webauthn_credential_id: credential.id
+    )
     expect(credential.reload.use_count).to eq(1)
     get '/oauth2/password-reset/password'
     expect(last_response.status).to eq(200)
@@ -1075,7 +1085,7 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     recovery, raw_token = create_recovery(user:, locale: 'cs')
     header 'Accept-Language', 'cs'
     exchange_email_token(raw_token)
-    recovery.update!(mfa_verified_at: Time.current)
+    mark_recovery_mfa_verified(recovery)
 
     get '/oauth2/password-reset/password'
 

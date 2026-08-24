@@ -68,8 +68,68 @@ class PasswordRecovery < ApplicationRecord
   end
 
   def mfa_verified?
-    mfa_verified_at.present?
+    mfa_verified_at.present? &&
+      [verified_totp_device_id, verified_webauthn_credential_id].compact.one?
   end
+
+  def verify_mfa_with!(factor)
+    unless factor.user_id == user_id
+      raise ArgumentError, 'MFA factor belongs to another user'
+    end
+
+    case factor
+    when UserTotpDevice
+      update!(
+        mfa_verified_at: Time.current,
+        verified_totp_device_id: factor.id,
+        verified_webauthn_credential_id: nil
+      )
+    when WebauthnCredential
+      update!(
+        mfa_verified_at: Time.current,
+        verified_totp_device_id: nil,
+        verified_webauthn_credential_id: factor.id
+      )
+    else
+      raise ArgumentError, "unsupported MFA factor: #{factor.class}"
+    end
+  end
+
+  def self.active_verified_with(factor)
+    active.where(verified_factor_column(factor) => factor.id)
+  end
+
+  def self.lock_active_verified_with_totp(user)
+    active.where(user:)
+          .where.not(verified_totp_device_id: nil)
+          .order(:id)
+          .lock
+          .to_a
+  end
+
+  def self.invalidate_locked_verified_with!(recoveries, factor, except: nil)
+    column = verified_factor_column(factor)
+    except_id = except&.id
+    now = Time.current
+    recoveries.each do |recovery|
+      next if recovery.id == except_id || recovery.public_send(column) != factor.id
+
+      recovery.update!(invalidated_at: now)
+    end
+  end
+
+  def self.verified_factor_column(factor)
+    case factor
+    when UserTotpDevice
+      :verified_totp_device_id
+    when WebauthnCredential
+      :verified_webauthn_credential_id
+    else
+      raise ArgumentError, "unsupported MFA factor: #{factor.class}"
+    end
+  end
+
+  private_class_method :verified_factor_column
 
   def consume_email_token!
     unless email_token_usable?

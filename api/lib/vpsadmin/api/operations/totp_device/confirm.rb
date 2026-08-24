@@ -7,21 +7,27 @@ module VpsAdmin::API
     # @param code [String]
     # @return [String] recovery code
     def run(device, code)
-      raise Exceptions::OperationError, 'the device is already confirmed' if device.confirmed
+      Operations::Authentication::MfaFactorChange.run(device) do |locked_device, user|
+        if locked_device.confirmed
+          raise Exceptions::OperationError, 'the device is already confirmed'
+        end
 
-      raise Exceptions::OperationError, 'invalid totp code' unless device.totp.verify(code)
+        unless locked_device.totp.verify(code)
+          raise Exceptions::OperationError, 'invalid totp code'
+        end
 
-      recovery_code = SecureRandom.hex(20)
+        recovery_code = SecureRandom.hex(20)
 
-      device.update!(
-        confirmed: true,
-        enabled: true,
-        recovery_code: CryptoProviders::Bcrypt.encrypt(nil, recovery_code)
-      )
+        locked_device.update!(
+          confirmed: true,
+          enabled: true,
+          recovery_code: CryptoProviders::Bcrypt.encrypt(nil, recovery_code)
+        )
 
-      device.user.update!(enable_multi_factor_auth: true) unless device.user.enable_multi_factor_auth
+        user.update!(enable_multi_factor_auth: true) unless user.enable_multi_factor_auth
 
-      recovery_code
+        recovery_code
+      end
     end
   end
 end
