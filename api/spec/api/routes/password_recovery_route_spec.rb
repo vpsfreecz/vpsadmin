@@ -940,6 +940,7 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     header 'Client-IP', '203.0.113.60'
     header 'X-Forwarded-For', '203.0.113.60'
     header 'X-Real-IP', '192.0.2.60'
+    header 'User-Agent', 'Untrusted recovery browser'
     header 'X-CSRF-Token', csrf
     header 'Content-Type', 'application/json'
     post '/oauth2/password-reset/verify/webauthn/begin', '{}'
@@ -948,6 +949,9 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     challenge = recovery.webauthn_challenges.order(:id).last
     expect(challenge.client_ip_addr).to eq('192.0.2.60')
     expect(challenge.client_ip_addr).not_to eq('203.0.113.60')
+    expect(challenge.user_agent.agent).to eq('Password recovery WebAuthn')
+    expect(challenge.client_version).to eq('Untrusted recovery browser')
+    expect(UserAgent.find_by(agent: 'Untrusted recovery browser')).to be_nil
   end
 
   it 'rejects non-object passkey responses without failing the request' do
