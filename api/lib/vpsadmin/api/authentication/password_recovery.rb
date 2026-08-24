@@ -495,7 +495,7 @@ module VpsAdmin::API
         api_ip_ptr:,
         client_ip_addr:,
         client_ip_ptr:,
-        user_agent: ::UserAgent.find_or_create!(@request.user_agent.to_s),
+        user_agent: ::UserAgent.find_or_create!('Password recovery WebAuthn'),
         client_version: @request.user_agent.to_s
       }
     end
