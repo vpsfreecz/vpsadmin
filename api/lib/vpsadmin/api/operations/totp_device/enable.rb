@@ -5,11 +5,15 @@ module VpsAdmin::API
     # @param device [::UserTotpDevice]
     # @return [::UserTotpDevice]
     def run(device)
-      raise Exceptions::OperationError, 'unconfirmed device cannot be enabled' unless device.confirmed
+      Operations::Authentication::MfaFactorChange.run(device) do |locked_device, user|
+        unless locked_device.confirmed
+          raise Exceptions::OperationError, 'unconfirmed device cannot be enabled'
+        end
 
-      device.update!(enabled: true)
-      device.user.update!(enable_multi_factor_auth: true) unless device.user.enable_multi_factor_auth
-      device
+        locked_device.update!(enabled: true)
+        user.update!(enable_multi_factor_auth: true) unless user.enable_multi_factor_auth
+        locked_device
+      end
     end
   end
 end

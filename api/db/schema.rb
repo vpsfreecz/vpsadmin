@@ -1339,11 +1339,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.integer "totp_failed_attempts", default: 0, null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false, unsigned: true
+    t.integer "verified_totp_device_id", unsigned: true
+    t.bigint "verified_webauthn_credential_id"
     t.index ["email_token_digest"], name: "index_password_recoveries_on_email_token_digest", unique: true
     t.index ["password_recovery_request_id"], name: "password_recoveries_request"
     t.index ["session_token_digest"], name: "index_password_recoveries_on_session_token_digest", unique: true
     t.index ["user_id", "completed_at", "invalidated_at"], name: "password_recoveries_active_user"
     t.index ["user_id"], name: "index_password_recoveries_on_user_id"
+    t.index ["verified_totp_device_id"], name: "index_password_recoveries_on_verified_totp_device_id"
+    t.index ["verified_webauthn_credential_id"], name: "index_password_recoveries_on_verified_webauthn_credential_id"
   end
 
   create_table "password_recovery_requests", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|

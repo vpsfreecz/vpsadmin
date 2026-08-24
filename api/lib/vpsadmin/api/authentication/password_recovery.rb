@@ -257,14 +257,30 @@ module VpsAdmin::API
       recovery = current_recovery(require_mfa: true)
       return json_error(text(:invalid_link), 400) unless recovery && !recovery.mfa_verified?
 
-      credentials = recovery.user.webauthn_credentials.where(enabled: true)
-      return json_error(text(:passkey_start_failed), 422) unless credentials.exists?
+      client_info = webauthn_client_info
+      options = nil
+      challenge = nil
+      ::PasswordRecovery.transaction do
+        user = recovery.user
+        user.lock!
+        recovery.lock!
+        next unless recovery.session_usable? && !recovery.mfa_verified? &&
+                    recovery_still_eligible?(recovery, require_mfa: true)
 
-      options = WebAuthn::Credential.options_for_get(
-        allow: credentials.pluck(:external_id),
-        user_verification: 'discouraged'
-      )
-      challenge = create_webauthn_challenge!(recovery, options.challenge)
+        credentials = user.webauthn_credentials.where(enabled: true).order(:id).lock
+        next unless credentials.exists?
+
+        options = WebAuthn::Credential.options_for_get(
+          allow: credentials.pluck(:external_id),
+          user_verification: 'discouraged'
+        )
+        challenge = create_webauthn_challenge!(
+          recovery,
+          options.challenge,
+          client_info:
+        )
+      end
+      return json_error(text(:passkey_start_failed), 422) unless challenge
 
       json_ok(
         challenge_token: challenge.token.token,
@@ -288,39 +304,22 @@ module VpsAdmin::API
         challenge_type: 'authentication',
         tokens: { token: input['challenge_token'] }
       ).take
-      return json_error(text(:passkey_failed), 422) unless challenge&.token_valid?
+      return json_error(text(:passkey_failed), 422) unless challenge
 
       public_key_credential = input['public_key_credential']
-      return json_error(text(:passkey_failed), 422) unless valid_webauthn_input?(public_key_credential)
-
-      credential = WebAuthn::Credential.from_get(
-        stringify_keys(public_key_credential)
-      )
-      stored = recovery.user.webauthn_credentials.find_by!(
-        external_id: Base64.strict_encode64(credential.raw_id),
-        enabled: true
-      )
-      credential.verify(
-        challenge.challenge,
-        public_key: stored.public_key,
-        sign_count: stored.sign_count
+      public_key_credential = nil unless valid_webauthn_input?(public_key_credential)
+      result = Operations::Authentication::PasswordRecoveryWebauthn.run(
+        recovery,
+        challenge,
+        public_key_credential,
+        @request
       )
 
-      verified = false
-      ::PasswordRecovery.transaction do
-        recovery.lock!
-        challenge.lock!
-
-        if recovery.session_usable? && !recovery.mfa_verified? && challenge.token_valid?
-          challenge.destroy!
-          stored.update!(sign_count: credential.sign_count, last_use_at: Time.current)
-          ::WebauthnCredential.increment_counter(:use_count, stored.id)
-          recovery.update!(mfa_verified_at: Time.current)
-          verified = true
-        end
+      if result.error
+        warn '[vpsAdmin API] Password recovery WebAuthn verification failed: ' \
+             "#{result.error.class}: #{result.error.message}"
       end
-
-      return json_error(text(:passkey_failed), 422) unless verified
+      return json_error(text(:passkey_failed), 422) unless result.authenticated?
 
       json_ok(password_uri: flow_uri("#{BASE_PATH}/password", recovery:))
     rescue ArgumentError, ActiveRecord::RecordNotFound, WebAuthn::Error => e
@@ -473,43 +472,38 @@ module VpsAdmin::API
       Operations::Authentication::PasswordRecoveryPolicy.run(user, @request, lock_mfa:)
     end
 
-    def create_webauthn_challenge!(recovery, challenge_value)
-      api_ip_addr = @request.ip
-      api_ip_ptr = resolve_ptr(api_ip_addr)
-      client_ip_addr = @request.env['HTTP_X_REAL_IP'] || api_ip_addr
-      client_ip_ptr = client_ip_addr == api_ip_addr ? api_ip_ptr : resolve_ptr(client_ip_addr)
-
+    def create_webauthn_challenge!(recovery, challenge_value, client_info:)
       ::Token.for_new_record!(2.minutes.from_now) do |token|
         recovery.webauthn_challenges.create!(
           user: recovery.user,
           token:,
           challenge_type: 'authentication',
           challenge: challenge_value,
-          api_ip_addr:,
-          api_ip_ptr:,
-          client_ip_addr:,
-          client_ip_ptr:,
-          user_agent: ::UserAgent.find_or_create!(@request.user_agent.to_s),
-          client_version: @request.user_agent.to_s
+          **client_info
         )
       end
+    end
+
+    def webauthn_client_info
+      api_ip_addr = @request.ip
+      api_ip_ptr = resolve_ptr(api_ip_addr)
+      client_ip_addr = @request.env['HTTP_X_REAL_IP'] || api_ip_addr
+      client_ip_ptr = client_ip_addr == api_ip_addr ? api_ip_ptr : resolve_ptr(client_ip_addr)
+
+      {
+        api_ip_addr:,
+        api_ip_ptr:,
+        client_ip_addr:,
+        client_ip_ptr:,
+        user_agent: ::UserAgent.find_or_create!(@request.user_agent.to_s),
+        client_version: @request.user_agent.to_s
+      }
     end
 
     def resolve_ptr(address)
       Resolv.new.getname(address)
     rescue Resolv::ResolvError
       address
-    end
-
-    def stringify_keys(value)
-      case value
-      when Hash
-        value.to_h { |key, item| [key.to_s, stringify_keys(item)] }
-      when Array
-        value.map { |item| stringify_keys(item) }
-      else
-        value
-      end
     end
 
     def valid_webauthn_input?(value)

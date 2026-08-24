@@ -978,7 +978,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         object_state_check!(device.user)
 
         if input[:label]
-          VpsAdmin::API::Operations::TotpDevice::Update.run(
+          device = VpsAdmin::API::Operations::TotpDevice::Update.run(
             device,
             label: input[:label]
           )
@@ -992,7 +992,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
               VpsAdmin::API::Operations::TotpDevice::Disable
             end
 
-          op.run(device)
+          device = op.run(device)
         end
 
         device
@@ -1130,8 +1130,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         )
         object_state_check!(cred.user)
 
-        cred.update!(input)
-        cred
+        VpsAdmin::API::Operations::WebauthnCredential::Update.run(cred, input)
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', e.record.errors.to_hash)
       rescue VpsAdmin::API::Exceptions::OperationError => e
@@ -1157,7 +1156,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         )
         object_state_check!(cred.user)
 
-        cred.destroy!
+        VpsAdmin::API::Operations::WebauthnCredential::Delete.run(cred)
 
         ok!
       rescue VpsAdmin::API::Exceptions::OperationError => e

@@ -50,6 +50,15 @@ RSpec.describe AddPasswordRecovery do
       null: false,
       unsigned?: true
     )
+    expect(column(:password_recoveries, :verified_totp_device_id)).to have_attributes(
+      type: :integer,
+      null: true,
+      unsigned?: true
+    )
+    expect(column(:password_recoveries, :verified_webauthn_credential_id)).to have_attributes(
+      type: :integer,
+      null: true
+    )
     expect(column_exists?(:webauthn_challenges, :password_recovery_id)).to be(true)
     expect(index_exists?(:password_recovery_requests, [:created_at])).to be(true)
     expect(index_exists?(:password_recovery_submissions, 'password_recovery_submissions_pending'))
@@ -63,6 +72,8 @@ RSpec.describe AddPasswordRecovery do
                          'password_recovery_requests_submission')).to be(true)
     expect(index_exists?(:password_recoveries, [:email_token_digest])).to be(true)
     expect(index_exists?(:password_recoveries, [:session_token_digest])).to be(true)
+    expect(index_exists?(:password_recoveries, [:verified_totp_device_id])).to be(true)
+    expect(index_exists?(:password_recoveries, [:verified_webauthn_credential_id])).to be(true)
   end
 
   it 'removes all recovery schema on rollback' do

@@ -52,6 +52,8 @@ class User < ApplicationRecord
   after_update :record_password_change, if: :saved_change_to_password?
   after_update :invalidate_password_recoveries_after_role_change,
                if: :saved_change_to_level?
+  after_update :invalidate_password_recoveries_after_mfa_disable,
+               if: :saved_change_to_enable_multi_factor_auth?
 
   alias_attribute :role, :level
 
@@ -281,6 +283,13 @@ class User < ApplicationRecord
     return if was_eligible == is_eligible
 
     password_recoveries.active.update_all(invalidated_at: Time.current)
+  end
+
+  def invalidate_password_recoveries_after_mfa_disable
+    return if enable_multi_factor_auth?
+
+    password_recoveries.active.update_all(invalidated_at: Time.current)
+    auth_tokens.destroy_all
   end
 
   def check_time_zone

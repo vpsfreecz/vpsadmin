@@ -64,20 +64,21 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
       include VpsAdmin::API::Resources::Webauthn::Utils
 
       def exec
-        object_state_check!(current_user)
+        current_user.with_lock do
+          object_state_check!(current_user)
 
-        if current_user.webauthn_id.nil?
-          current_user.update!(webauthn_id: WebAuthn.generate_user_id)
+          if current_user.webauthn_id.nil?
+            current_user.update!(webauthn_id: WebAuthn.generate_user_id)
+          end
+
+          options = WebAuthn::Credential.options_for_create(
+            user: { id: current_user.webauthn_id, name: current_user.login },
+            exclude: current_user.webauthn_credentials.pluck(:external_id)
+          )
+          challenge = create_challenge!(current_user, 'registration', options.challenge)
+
+          { challenge_token: challenge.token.token, options: options.as_json }
         end
-
-        options = WebAuthn::Credential.options_for_create(
-          user: { id: current_user.webauthn_id, name: current_user.login },
-          exclude: current_user.webauthn_credentials.pluck(:external_id)
-        )
-
-        challenge = create_challenge!(current_user, 'registration', options.challenge)
-
-        { challenge_token: challenge.token.token, options: options.as_json }
       end
     end
 
@@ -96,8 +97,6 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
       include VpsAdmin::API::Resources::Webauthn::Utils
 
       def exec
-        object_state_check!(current_user)
-
         challenge = ::WebauthnChallenge.joins(:token).where(
           user: current_user,
           tokens: { token: input[:challenge_token] },
@@ -116,7 +115,15 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
           error!(e.message)
         end
 
-        ActiveRecord::Base.transaction do
+        current_user.with_lock do
+          object_state_check!(current_user)
+          challenge = ::WebauthnChallenge.where(
+            id: challenge.id,
+            user: current_user,
+            challenge_type: 'registration'
+          ).lock.take!
+          error!('challenge token expired') unless challenge.token_valid?
+
           current_user.webauthn_credentials.create!(
             label: input[:label],
             external_id: Base64.strict_encode64(webauthn_credential.raw_id),
@@ -157,17 +164,26 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
           tokens: { token: input[:auth_token] },
           purpose: 'mfa'
         ).take!
+        user = auth_token.user
 
-        error!('auth token expired') unless auth_token.token_valid?
+        user.with_lock do
+          auth_token = ::AuthToken.joins(:token).includes(:token, :user).where(
+            id: auth_token.id,
+            user:,
+            purpose: 'mfa'
+          ).lock.take!
+          unless auth_token.token_valid? && auth_token.authentication_current?
+            error!('auth token expired')
+          end
 
-        options = WebAuthn::Credential.options_for_get(
-          allow: auth_token.user.webauthn_credentials.where(enabled: true).pluck(:external_id),
-          user_verification: 'discouraged'
-        )
+          options = WebAuthn::Credential.options_for_get(
+            allow: user.webauthn_credentials.where(enabled: true).pluck(:external_id),
+            user_verification: 'discouraged'
+          )
+          challenge = create_challenge!(user, 'authentication', options.challenge)
 
-        challenge = create_challenge!(auth_token.user, 'authentication', options.challenge)
-
-        { challenge_token: challenge.token.token, options: options.as_json }
+          { challenge_token: challenge.token.token, options: options.as_json }
+        end
       end
     end
 
@@ -192,46 +208,20 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
           password_recovery_id: nil
         ).take!
 
-        error!('challenge token expired') unless challenge.token_valid?
-
         auth_token = ::AuthToken.joins(:token).where(
           tokens: { token: input[:auth_token] },
           purpose: 'mfa',
           user: challenge.user
         ).take!
-
-        error!('auth token expired') unless auth_token.token_valid?
-
-        webauthn_credential = WebAuthn::Credential.from_get(
-          stringify_credential_keys(input[:public_key_credential])
-        )
-
-        stored_credential = challenge.user.webauthn_credentials.find_by!(
-          external_id: Base64.strict_encode64(webauthn_credential.raw_id),
-          enabled: true
-        )
-
         begin
-          webauthn_credential.verify(
-            challenge.challenge,
-            public_key: stored_credential.public_key,
-            sign_count: stored_credential.sign_count
+          VpsAdmin::API::Operations::Authentication::Webauthn.run(
+            auth_token,
+            challenge,
+            input[:public_key_credential]
           )
-        rescue WebAuthn::Error => e
+        rescue VpsAdmin::API::Exceptions::AuthenticationError, ArgumentError,
+               ActiveRecord::RecordNotFound, WebAuthn::Error => e
           error!(e.message)
-        end
-
-        ActiveRecord::Base.transaction do
-          challenge.destroy!
-
-          stored_credential.update!(
-            sign_count: webauthn_credential.sign_count,
-            last_use_at: Time.now
-          )
-
-          ::WebauthnCredential.increment_counter(:use_count, stored_credential.id)
-
-          auth_token.update!(fulfilled: true)
         end
 
         ok!
