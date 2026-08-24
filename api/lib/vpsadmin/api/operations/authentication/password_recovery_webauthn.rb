@@ -23,6 +23,8 @@ module VpsAdmin::API
           next Result.new(authenticated: false, error: nil)
         end
 
+        challenge.destroy!
+
         begin
           raise ArgumentError, 'invalid WebAuthn input' unless public_key_credential
 
@@ -31,7 +33,6 @@ module VpsAdmin::API
             challenge,
             public_key_credential
           )
-          challenge.destroy!
           recovery.verify_mfa_with!(credential)
           Result.new(authenticated: true, error: nil)
         rescue ArgumentError, ActiveRecord::RecordNotFound, WebAuthn::Error => e

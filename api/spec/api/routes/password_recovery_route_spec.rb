@@ -905,6 +905,7 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     )
 
     expect(last_response.status).to eq(422)
+    expect(recovery.webauthn_challenges).to be_empty
     expect(recovery.reload.mfa_verified_at).to be_nil
     get '/oauth2/password-reset/verify'
     expect(last_response.status).to eq(200)
@@ -952,6 +953,35 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(challenge.user_agent.agent).to eq('Password recovery WebAuthn')
     expect(challenge.client_version).to eq('Untrusted recovery browser')
     expect(UserAgent.find_by(agent: 'Untrusted recovery browser')).to be_nil
+  end
+
+  it 'does not replace an ordinary authentication challenge' do
+    user = create_user_with_totp
+    user.webauthn_credentials.create!(
+      label: 'Spec passkey',
+      external_id: Base64.strict_encode64('credential-id'),
+      public_key: 'not-a-real-public-key',
+      sign_count: 0
+    )
+    auth_token = create_auth_token!(user:, purpose: 'mfa')
+
+    post vpath('/webauthn/authentication/begin'), JSON.dump(
+      authentication: { auth_token: auth_token.token.to_s }
+    ), 'CONTENT_TYPE' => 'application/json'
+    ordinary_token = json.dig('response', 'authentication', 'challenge_token')
+    ordinary_challenge = WebauthnChallenge.joins(:token).find_by!(
+      tokens: { token: ordinary_token }
+    )
+
+    recovery, raw_token = create_recovery(user:)
+    csrf = exchange_email_token(raw_token)
+    header 'X-CSRF-Token', csrf
+    header 'Content-Type', 'application/json'
+    post '/oauth2/password-reset/verify/webauthn/begin', '{}'
+
+    expect(last_response.status).to eq(200)
+    expect(WebauthnChallenge.exists?(ordinary_challenge.id)).to be(true)
+    expect(recovery.webauthn_challenges.count).to eq(1)
   end
 
   it 'rejects non-object passkey responses without failing the request' do
@@ -1057,7 +1087,22 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     header 'Content-Type', 'application/json'
     post '/oauth2/password-reset/verify/webauthn/begin', '{}'
     expect(last_response.status).to eq(200)
+    first_response = JSON.parse(last_response.body)
+    first_challenge = recovery.webauthn_challenges.take!
+
+    post '/oauth2/password-reset/verify/webauthn/begin', '{}'
+    expect(last_response.status).to eq(200)
     begin_response = JSON.parse(last_response.body)
+    expect(recovery.webauthn_challenges.count).to eq(1)
+    expect(WebauthnChallenge.exists?(first_challenge.id)).to be(false)
+
+    post '/oauth2/password-reset/verify/webauthn/finish', JSON.dump(
+      challenge_token: first_response.fetch('challenge_token'),
+      public_key_credential: {}
+    )
+    expect(last_response.status).to eq(422)
+    expect(recovery.webauthn_challenges.count).to eq(1)
+
     options = begin_response.fetch('options')
     assertion = fake_client.get(
       challenge: options.fetch('challenge'),
