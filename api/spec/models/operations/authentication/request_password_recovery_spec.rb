@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'timeout'
 
 RSpec.describe VpsAdmin::API::Operations::Authentication::RequestPasswordRecovery do
   let(:request) { build_request(user_agent: 'Password recovery spec') }
@@ -9,15 +10,40 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::RequestPasswordRecover
     unlock_transaction_signer!
     ensure_available_node_status!(SpecSeed.node)
     VpsAdmin::API::MailTemplates.install_defaults!
-    SysConfig.find_or_create_by!(category: 'core', name: 'api_url').update!(
-      value: 'https://auth.example.test'
-    )
     SysConfig.find_or_create_by!(category: 'core', name: 'support_mail').update!(
       value: 'support@example.test'
     )
     SysConfig.find_or_create_by!(category: 'core', name: 'password_recovery_enabled').update!(
       value: true
     )
+  end
+
+  around do |example|
+    if example.metadata[:no_transaction]
+      node = SpecSeed.node
+      node_attributes = node.attributes.slice(
+        'active',
+        'maintenance_lock',
+        'maintenance_lock_reason',
+        'updated_at'
+      )
+      node_status_attributes = NodeCurrentStatus.find_by(node:)&.attributes
+      config_values = %w[support_mail password_recovery_enabled].to_h do |name|
+        config = SysConfig.find_by!(category: 'core', name:)
+        [name, config.value]
+      end
+    end
+
+    example.run
+  ensure
+    config_values&.each do |name, value|
+      SysConfig.find_by!(category: 'core', name:).update!(value:)
+    end
+    if node
+      NodeCurrentStatus.where(node_id: node.id).delete_all
+      NodeCurrentStatus.create!(node_status_attributes) if node_status_attributes
+      node.reload.update_columns(node_attributes)
+    end
   end
 
   def create_user(login:, email:, mfa: true, oauth2: true, level: 1)
@@ -28,6 +54,21 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::RequestPasswordRecover
         level:
       )
       create_totp_device!(user:) if mfa
+    end
+  end
+
+  def wait_for_blocking_query(connection_id, *fragments)
+    Timeout.timeout(5) do
+      loop do
+        info = ActiveRecord::Base.connection.select_value(
+          ApplicationRecord.sanitize_sql_array(
+            ['SELECT INFO FROM information_schema.PROCESSLIST WHERE ID = ?', connection_id]
+          )
+        )
+        break if info && fragments.all? { |fragment| info.include?(fragment) }
+
+        sleep(0.01)
+      end
     end
   end
 
@@ -229,6 +270,123 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::RequestPasswordRecover
         submission:
       )
       expect(second).to eq(first)
+    end.not_to change(PasswordRecoveryRequest, :count)
+  end
+
+  it 'serializes recovery creation with OAuth client deletion', :no_transaction do
+    user = create_user(
+      login: "oauth-delete-#{SecureRandom.hex(4)}",
+      email: "oauth-delete-#{SecureRandom.hex(4)}@example.test"
+    )
+    client = create_oauth2_client!
+    client_lock_acquired = Queue.new
+    continue_request = Queue.new
+    delete_connection = Queue.new
+    request_thread = Thread.new do
+      ActiveRecord::Base.connection_pool.with_connection do
+        owner_thread = Thread.current
+        callback = lambda do |_name, _start, _finish, _id, payload|
+          sql = payload[:sql]
+          next unless Thread.current == owner_thread &&
+                      sql.include?('FROM `oauth2_clients`') && sql.include?('FOR UPDATE')
+
+          client_lock_acquired << true
+          continue_request.pop
+        end
+        ActiveSupport::Notifications.subscribed(callback, 'sql.active_record') do
+          described_class.run(
+            user.login,
+            locale: :en,
+            oauth2_client: Oauth2Client.find(client.id),
+            request:
+          )
+        end
+      end
+    end
+
+    Timeout.timeout(5) { client_lock_acquired.pop }
+    delete_thread = Thread.new do
+      ActiveRecord::Base.connection_pool.with_connection do
+        delete_connection << ActiveRecord::Base.connection.select_value(
+          'SELECT CONNECTION_ID()'
+        )
+        Oauth2Client.find(client.id).destroy_with_password_recoveries!
+      end
+    end
+    connection_id = Timeout.timeout(5) { delete_connection.pop }
+    wait_for_blocking_query(connection_id, 'oauth2_clients', 'FOR UPDATE')
+    deletion_blocked = delete_thread.alive?
+    continue_request << true
+    recovery_request = request_thread.value
+    delete_thread.value
+
+    expect(deletion_blocked).to be(true)
+    expect(recovery_request.reload.oauth2_client_id).to be_nil
+    expect(recovery_request.password_recoveries).to all(
+      have_attributes(invalidated_at: be_present)
+    )
+  ensure
+    continue_request << true if request_thread&.alive?
+    request_thread&.join(5)
+    delete_thread&.join(5)
+    mail = recovery_request&.mail_log
+    chain = mail&.mail_transaction&.transaction_chain
+    recovery_request&.destroy! if recovery_request && PasswordRecoveryRequest.exists?(recovery_request.id)
+    mail&.destroy! if mail && MailLog.exists?(mail.id)
+    if chain && TransactionChain.exists?(chain.id)
+      chain.transactions.each { |transaction| transaction.transaction_confirmations.delete_all }
+      Transaction.where(transaction_chain_id: chain.id).delete_all
+      chain.transaction_chain_concerns.delete_all
+      chain.destroy!
+    end
+    UserTotpDevice.where(user_id: user.id).delete_all if user
+    PasswordChangeLog.where(user_id: user.id).delete_all if user
+    user&.delete if user && User.exists?(user.id)
+    client&.destroy! if client && Oauth2Client.exists?(client.id)
+  end
+
+  it 'does not create recovery state for an OAuth client already deleted' do
+    user = create_user(
+      login: "oauth-gone-#{SecureRandom.hex(4)}",
+      email: "oauth-gone-#{SecureRandom.hex(4)}@example.test"
+    )
+    client = create_oauth2_client!
+    client.destroy_with_password_recoveries!
+
+    expect do
+      result = described_class.run(
+        user.login,
+        locale: :en,
+        oauth2_client: client,
+        request:
+      )
+      expect(result).to be_nil
+    end.not_to change(PasswordRecoveryRequest, :count)
+  end
+
+  it 'cancels queued work when its OAuth client is deleted' do
+    user = create_user(
+      login: "oauth-queued-#{SecureRandom.hex(4)}",
+      email: "oauth-queued-#{SecureRandom.hex(4)}@example.test"
+    )
+    client = create_oauth2_client!
+    submission = PasswordRecoverySubmission.enqueue!(
+      identifier: user.login,
+      locale: :en,
+      oauth2_client: client,
+      request:
+    ).submission
+
+    client.destroy_with_password_recoveries!
+
+    expect(submission.reload).to have_attributes(
+      oauth2_client_id: nil,
+      identifier: nil,
+      user_agent: nil,
+      finished_at: be_present
+    )
+    expect do
+      expect(VpsAdmin::API::PasswordRecoveryWorker.new.process_next).to eq(:idle)
     end.not_to change(PasswordRecoveryRequest, :count)
   end
 end

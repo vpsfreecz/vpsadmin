@@ -17,7 +17,11 @@ module VpsAdmin::API
       ::PasswordRecovery.transaction do
         user = recovery.user
         user.lock!
-        recovery.lock!
+        recovery, recoveries = ::PasswordRecovery.lock_for_totp_verification(
+          user,
+          current: recovery
+        )
+        return Result.new(authenticated: false) unless recovery
         return Result.new(authenticated: false) unless recovery.session_usable?
 
         policy = Operations::Authentication::PasswordRecoveryPolicy.run(user, request)
@@ -26,7 +30,6 @@ module VpsAdmin::API
           return Result.new(authenticated: false)
         end
 
-        recoveries = ::PasswordRecovery.lock_active_verified_with_totp(user)
         verification = Operations::Authentication::TotpFactor.run(user, code)
         if verification
           recovery.verify_mfa_with!(verification.device)

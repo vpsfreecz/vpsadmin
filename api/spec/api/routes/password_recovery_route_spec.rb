@@ -1046,6 +1046,21 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(user.reload.password).to eq(old_password)
   end
 
+  it 'rejects a recovery after its OAuth client is deleted' do
+    user = create_user_with_totp
+    client = create_oauth2_client!
+    recovery, raw_token = create_recovery(user:, client:)
+    exchange_email_token(raw_token)
+    mark_recovery_mfa_verified(recovery)
+
+    client.destroy_with_password_recoveries!
+    get '/oauth2/password-reset/password'
+
+    expect(last_response.status).to eq(400)
+    expect(recovery.reload.invalidated_at).to be_present
+    expect(last_response.body).to include('Password recovery could not continue')
+  end
+
   it 'rejects a recovery invalidated after its active lookup' do
     user = create_user_with_totp
     recovery, raw_token = create_recovery(user:)

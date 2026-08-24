@@ -267,6 +267,72 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::MfaFactorChange,
     expect(recovery_item[:recovery].reload.mfa_verified_at).to be_nil
   end
 
+  it 'does not reverse recovery lock order against OAuth client deletion' do
+    user = create_lifecycle_user!
+    user.update!(enable_multi_factor_auth: true, enable_oauth2_auth: true)
+    device = create_totp_device!(user:)
+    client = create_oauth2_client!
+    request = PasswordRecoveryRequest.create!(
+      recipient_email: user.email,
+      locale: 'en',
+      oauth2_client: client
+    )
+    recoveries = 2.times.map do
+      request.password_recoveries.create!(
+        user:,
+        outcome: :recoverable,
+        email_snapshot: user.email,
+        email_token_digest: nil,
+        email_expires_at: 1.hour.from_now,
+        email_consumed_at: Time.current,
+        session_token_digest: PasswordRecovery.digest_token(SecureRandom.hex(16)),
+        session_expires_at: 15.minutes.from_now
+      )
+    end
+    recoveries.first.verify_mfa_with!(device)
+
+    before_recovery_locks = Queue.new
+    continue_verification = Queue.new
+    allow(PasswordRecovery).to receive(:lock_for_totp_verification)
+      .and_wrap_original do |method, *args, **kwargs|
+        before_recovery_locks << true
+        continue_verification.pop
+        method.call(*args, **kwargs)
+      end
+
+    verification_thread = Thread.new do
+      ActiveRecord::Base.connection_pool.with_connection do
+        described_class = VpsAdmin::API::Operations::Authentication::PasswordRecoveryTotp
+        described_class.run(
+          PasswordRecovery.find(recoveries.last.id),
+          device.totp.now,
+          build_request
+        )
+      end
+    end
+    Timeout.timeout(5) { before_recovery_locks.pop }
+
+    deletion_thread = Thread.new do
+      ActiveRecord::Base.connection_pool.with_connection do
+        Oauth2Client.find(client.id).destroy_with_password_recoveries!
+      end
+    end
+    Timeout.timeout(5) { deletion_thread.value }
+    continue_verification << true
+    result = Timeout.timeout(5) { verification_thread.value }
+
+    expect(result).not_to be_authenticated
+    expect(recoveries.map { |recovery| recovery.reload.invalidated_at }).to all(be_present)
+  ensure
+    continue_verification << true if verification_thread&.alive?
+    verification_thread&.join(5)
+    deletion_thread&.join(5)
+    request&.destroy! if request && PasswordRecoveryRequest.exists?(request.id)
+    device&.destroy! if device && UserTotpDevice.exists?(device.id)
+    client&.destroy! if client && Oauth2Client.exists?(client.id)
+    user&.delete if user && User.exists?(user.id)
+  end
+
   it 'invalidates a recovery when its passkey is deleted after verification' do
     item = @state.fetch(:recovery_webauthn_verify_first)
     started = Queue.new

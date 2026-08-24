@@ -145,7 +145,7 @@ module VpsAdmin::API::Resources
 
       def exec
         client = self.class.model.find(path_params['oauth2_client_id'])
-        client.destroy!
+        client.destroy_with_password_recoveries!
         ok!
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', e.record.errors.to_hash)
