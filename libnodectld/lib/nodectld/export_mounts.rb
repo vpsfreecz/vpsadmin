@@ -41,11 +41,12 @@ module NodeCtld
     def update_vps_ids(vps_ids)
       return if !enable? || vps_ids.empty?
 
-      osctl_parse(%i[ct ls], vps_ids, { state: 'running' }).each do |ct|
+      osctl_parse(%i[ct ls], vps_ids).each do |ct|
         osctl_ct = OsCtlContainer.new(ct)
 
         # While ct ls returns only the selected containers, let's be sure
         next unless vps_ids.include?(osctl_ct.vps_id)
+        next unless osctl_ct.runtime_state == 'running'
 
         @update_vps_queue << osctl_ct
       end
@@ -94,12 +95,13 @@ module NodeCtld
 
         log(:info, "Updating export mounts of #{vps_ids.length} VPS")
 
-        osctl_parse(%i[ct ls], vps_ids.keys, { state: 'running' }).each do |ct|
+        osctl_parse(%i[ct ls], vps_ids.keys).each do |ct|
           next unless /^\d+$/ =~ ct[:id]
 
           osctl_ct = OsCtlContainer.new(ct)
 
           next unless vps_ids.has_key?(osctl_ct.vps_id)
+          next unless osctl_ct.runtime_state == 'running'
 
           @update_vps_queue << osctl_ct
         end

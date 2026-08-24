@@ -1,5 +1,8 @@
 require 'json'
 require 'nodectld/daemon'
+require 'nodectld/mount_reporter'
+require 'nodectld/veth_map'
+require 'nodectld/vps_post_start'
 
 module NodeCtld
   # Interface to `osctl monitor`
@@ -57,23 +60,24 @@ module NodeCtld
 
     def process_event(event)
       case event[:type]
-      when 'state'
+      when 'runtime_state', 'state'
         vps_id = event[:opts][:id].to_i
+        runtime_state = event[:opts][:runtime_state] || event[:opts][:state]
 
         if vps_id > 0
-          send_event(vps_id, 'state', { 'state' => event[:opts][:state] })
+          send_event(vps_id, 'state', { 'state' => runtime_state })
         end
 
-        if vps_id > 0 && event[:opts][:state] == 'running'
+        if vps_id > 0 && runtime_state == 'running'
           VpsPostStart.run(vps_id)
         end
 
-        if vps_id > 0 && event[:opts][:state] == 'stopped'
+        if vps_id > 0 && runtime_state == 'stopped'
           MountReporter.report(event[:opts][:id], :all, :unmounted)
           VethMap.reset(vps_id)
         end
 
-        Daemon.instance.ct_top.refresh if %w[running stopped].include?(event[:opts][:state])
+        Daemon.instance.ct_top.refresh if %w[running stopped].include?(runtime_state)
 
       when 'ct_exit'
         vps_id = event[:opts][:id].to_i

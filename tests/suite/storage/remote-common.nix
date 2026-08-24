@@ -51,6 +51,34 @@
     end
   end
 
+  def osctl_container_runtime_keyword(node)
+    runtime_keyword = node.method(:wait_for_osctl_container).parameters.any? do |type, name|
+      %i[key keyreq].include?(type) && name == :runtime_state
+    end
+
+    runtime_keyword ? :runtime_state : :state
+  end
+
+  def wait_for_osctl_container_runtime(node, id, runtime_state:, timeout:)
+    keyword = osctl_container_runtime_keyword(node)
+    node.wait_for_osctl_container(
+      id,
+      **{ keyword => runtime_state, timeout: }
+    )
+  end
+
+  def ensure_osctl_container_running(node, id, timeout:)
+    keyword = osctl_container_runtime_keyword(node)
+    field = keyword == :runtime_state ? 'runtime_state' : 'state'
+    escaped_id = Shellwords.escape(id.to_s)
+
+    node.wait_until_succeeds(
+      "test \"$(osctl ct show -H -o #{field} #{escaped_id})\" = running || " \
+      "osctl ct start #{escaped_id}",
+      timeout:
+    )
+  end
+
   def wait_for_node_ready(services, node_id)
     wait_until_block_succeeds(name: "node #{node_id} ready in API") do
       _, output = services.vpsadminctl.succeeds(args: ['node', 'show', node_id.to_s])

@@ -33,11 +33,11 @@ class VpsAutostartExporterDaemon
 end
 
 RSpec.describe NodeCtld::Exporter do
-  def container(id:, state:, autostart:)
-    Struct.new(:id, :pool, :state, :autostart).new(
+  def container(id:, runtime_state:, autostart:)
+    Struct.new(:id, :pool, :runtime_state, :autostart).new(
       id.to_s,
       'tank',
-      state,
+      runtime_state,
       autostart
     )
   end
@@ -60,7 +60,7 @@ RSpec.describe NodeCtld::Exporter do
           'autostart_enable' => true
         }
       ],
-      [container(id: 101, state: 'stopped', autostart: false)],
+      [container(id: 101, runtime_state: 'stopped', autostart: false)],
       now: Time.at(1_234)
     )
 

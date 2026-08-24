@@ -59,12 +59,12 @@ module NodeCtld
         next unless desired_autostart
 
         expected[pool] += 1
-        next if ct&.state == 'running'
+        next if ct&.runtime_state == 'running'
 
         unsatisfied << Unsatisfied.new(
           pool:,
           vps_id:,
-          reason: ct ? ct.state.to_s.dup.freeze : 'missing'
+          reason: ct ? ct.runtime_state.to_s.dup.freeze : 'missing'
         ).freeze
       end
 

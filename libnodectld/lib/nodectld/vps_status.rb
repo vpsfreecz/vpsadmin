@@ -87,7 +87,7 @@ module NodeCtld
         next if vpsadmin_vps.nil?
 
         vpsadmin_vps.exists = true
-        vpsadmin_vps.running = ct.state == 'running'
+        vpsadmin_vps.running = ct.runtime_state == 'running'
 
         next unless vpsadmin_vps.running?
 

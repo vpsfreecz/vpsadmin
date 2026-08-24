@@ -136,7 +136,12 @@ import ../../make-test.nix (
             output.fetch('vps').fetch('is_running')
           end
 
-          node1.wait_for_osctl_container(@vps_id.to_s, state: 'running', timeout: 120)
+          wait_for_osctl_container_runtime(
+            node1,
+            @vps_id.to_s,
+            runtime_state: 'running',
+            timeout: 120
+          )
           wait_for_vps_exec(node1, vps_id: @vps_id)
         end
 
@@ -160,7 +165,12 @@ import ../../make-test.nix (
             vps.fetch('node').fetch('id') == node2_id && vps.fetch('is_running')
           end
 
-          node2.wait_for_osctl_container(@vps_id.to_s, state: 'running', timeout: 120)
+          wait_for_osctl_container_runtime(
+            node2,
+            @vps_id.to_s,
+            runtime_state: 'running',
+            timeout: 120
+          )
           expect_vps_migration_proof(node2, vps_id: @vps_id)
           expect_vps_container_absent(node1, vps_id: @vps_id)
         end

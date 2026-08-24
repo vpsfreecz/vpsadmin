@@ -11,7 +11,7 @@ module NodeCtld
     end
 
     def status
-      find_ct.state
+      find_ct.runtime_state
     end
 
     def honor_state

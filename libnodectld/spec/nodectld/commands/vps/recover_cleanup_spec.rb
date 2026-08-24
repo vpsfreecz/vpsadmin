@@ -19,8 +19,8 @@ RSpec.describe NodeCtld::Commands::Vps::RecoverCleanup do
       evidence: {
         observed_at: 1_721_234_567.0,
         requested: ['cgroups'],
-        lxc_state: 'stopped',
-        lxc_state_source: 'osctld-cache'
+        runtime_state: 'stopped',
+        runtime_state_source: 'osctld-cache'
       },
       hazards: []
     }
@@ -76,6 +76,30 @@ RSpec.describe NodeCtld::Commands::Vps::RecoverCleanup do
       101,
       cgroups: true,
       network_interfaces: true
+    )
+  end
+
+  it 'normalizes cleanup evidence from an old osctld' do
+    legacy_evidence = cleaned_result[:evidence].except(
+      :runtime_state,
+      :runtime_state_source
+    ).merge(
+      lxc_state: 'stopped',
+      lxc_state_source: 'osctld-cache'
+    )
+    result = Struct.new(:output).new(
+      JSON.generate(cleaned_result.merge(evidence: legacy_evidence))
+    )
+    allow(cmd).to receive(:osctl).and_return(result)
+
+    expect(cmd.exec).to eq(ret: :ok)
+    expect(cmd.output[:recovery_cleanup][:evidence]).to include(
+      runtime_state: 'stopped',
+      runtime_state_source: 'osctld-cache'
+    )
+    expect(cmd.output[:recovery_cleanup][:evidence]).not_to include(
+      :lxc_state,
+      :lxc_state_source
     )
   end
 
@@ -185,7 +209,7 @@ RSpec.describe NodeCtld::Commands::Vps::RecoverCleanup do
     end
   end
 
-  %i[observed_at requested lxc_state lxc_state_source].each do |key|
+  %i[observed_at requested runtime_state runtime_state_source].each do |key|
     it "does not accept cleaned evidence without evidence #{key}" do
       result = Struct.new(:output).new(
         JSON.generate(
@@ -240,8 +264,8 @@ RSpec.describe NodeCtld::Commands::Vps::RecoverCleanup do
       evidence: {
         observed_at: 1_721_234_567.0,
         requested: ['netifs'],
-        lxc_state: 'stopped',
-        lxc_state_source: 'osctld-cache'
+        runtime_state: 'stopped',
+        runtime_state_source: 'osctld-cache'
       }
     },
     'cleaned response contains hazards' => {

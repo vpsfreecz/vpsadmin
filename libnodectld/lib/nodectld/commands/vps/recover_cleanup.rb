@@ -18,8 +18,8 @@ module NodeCtld
     CLEANUP_EVIDENCE_KEYS = %i[
       observed_at
       requested
-      lxc_state
-      lxc_state_source
+      runtime_state
+      runtime_state_source
     ].freeze
 
     handle 3303
@@ -70,13 +70,14 @@ module NodeCtld
       parsed = parsed[:output] if parsed.is_a?(Hash) && parsed[:output].is_a?(Hash)
 
       if parsed.is_a?(Hash) && parsed[:outcome]
-        recovery = parsed.merge(
+        normalized = normalize_cleanup_evidence(parsed)
+        recovery = normalized.merge(
           outcome: parsed[:outcome].to_s,
           hazards: Array(parsed[:hazards])
         )
 
         if recovery[:outcome] == 'cleaned' &&
-           !complete_cleaned_evidence?(parsed, requested_cleanup)
+           !complete_cleaned_evidence?(normalized, requested_cleanup)
           return legacy_unknown(
             'the node returned incomplete structured cleanup evidence; ' \
             'cleanup result is unknown',
@@ -112,9 +113,9 @@ module NodeCtld
         recovery[:evidence].has_key?(key)
       end
       return false unless recovery[:evidence][:observed_at].is_a?(Numeric)
-      return false unless nonempty_string?(recovery[:evidence][:lxc_state])
+      return false unless nonempty_string?(recovery[:evidence][:runtime_state])
       return false unless nonempty_string?(
-        recovery[:evidence][:lxc_state_source]
+        recovery[:evidence][:runtime_state_source]
       )
 
       same_string_set?(recovery[:requested_cleanup], requested_cleanup) &&
@@ -124,6 +125,26 @@ module NodeCtld
 
     def boolean?(value)
       [true, false].include?(value)
+    end
+
+    def normalize_cleanup_evidence(recovery)
+      evidence = recovery[:evidence]
+      return recovery unless evidence.is_a?(Hash)
+
+      normalized = evidence.dup
+      {
+        runtime_state: :lxc_state,
+        runtime_state_source: :lxc_state_source
+      }.each do |current, legacy|
+        next if normalized.has_key?(current)
+        next unless normalized.has_key?(legacy)
+
+        normalized[current] = normalized[legacy]
+      end
+      normalized.delete(:lxc_state)
+      normalized.delete(:lxc_state_source)
+
+      recovery.merge(evidence: normalized)
     end
 
     def string_array?(value)

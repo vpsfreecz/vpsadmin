@@ -15,11 +15,12 @@ RSpec.describe NodeCtld::VpsAutostartStatus do
     }
   end
 
-  def container(id:, pool: 'tank', state: 'running', autostart: true)
+  def container(id:, pool: 'tank', runtime_state: 'running', autostart: true)
     NodeCtld::OsCtlContainer.new(
       id: id.to_s,
       pool:,
-      state:,
+      config_state: 'ready',
+      runtime_state:,
       autostart:
     )
   end
@@ -35,9 +36,9 @@ RSpec.describe NodeCtld::VpsAutostartStatus do
       ],
       [
         container(id: 101),
-        container(id: 102, state: 'starting'),
+        container(id: 102, runtime_state: 'starting'),
         container(id: 104),
-        container(id: 201, pool: 'archive', state: 'stopped')
+        container(id: 201, pool: 'archive', runtime_state: 'stopped')
       ],
       now: Time.at(1_234)
     )
@@ -118,7 +119,7 @@ RSpec.describe NodeCtld::VpsAutostartStatus do
   it 'retains only freshness after a failed check' do
     successful = status.update(
       [vps(id: 101)],
-      [container(id: 101, state: 'stopped')],
+      [container(id: 101, runtime_state: 'stopped')],
       now: Time.at(1_234)
     )
     failed = status.failed

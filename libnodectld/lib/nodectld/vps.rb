@@ -3,6 +3,7 @@ require 'tempfile'
 require 'fileutils'
 require 'libosctl'
 require 'nodectld/utils'
+require 'nodectld/container_state'
 
 module NodeCtld
   class Vps
@@ -48,7 +49,7 @@ module NodeCtld
     end
 
     def status
-      osctl_parse(%i[ct show], @veid)[:state].to_sym
+      ContainerState.normalize(osctl_parse(%i[ct show], @veid))[:runtime_state].to_sym
     end
 
     def honor_state

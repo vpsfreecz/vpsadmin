@@ -135,9 +135,10 @@ import ../../make-test.nix (
           node.wait_for_osctl_pool('tank')
           wait_for_running_nodectld(node)
 
-          node.wait_for_osctl_container(
+          wait_for_osctl_container_runtime(
+            node,
             healthy_id.to_s,
-            state: 'running',
+            runtime_state: 'running',
             timeout: 180
           )
 
@@ -171,14 +172,15 @@ import ../../make-test.nix (
           )
 
           node.succeeds("rm -f #{Shellwords.escape(hook_path)}")
-          node.wait_until_succeeds(
-            "test \"$(osctl ct show -H -o state #{Integer(blocked_id)})\" = running || " \
-            "osctl ct start #{Integer(blocked_id)}",
+          ensure_osctl_container_running(
+            node,
+            blocked_id,
             timeout: 180
           )
-          node.wait_for_osctl_container(
+          wait_for_osctl_container_runtime(
+            node,
             blocked_id.to_s,
-            state: 'running',
+            runtime_state: 'running',
             timeout: 180
           )
 

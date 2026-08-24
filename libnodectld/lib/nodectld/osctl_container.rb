@@ -1,3 +1,5 @@
+require 'nodectld/container_state'
+
 module NodeCtld
   class OsCtlContainer
     # @return [String]
@@ -16,7 +18,16 @@ module NodeCtld
     attr_reader :boot_rootfs
 
     # @return [String]
-    attr_reader :state
+    attr_reader :config_state
+
+    # @return [Hash, nil]
+    attr_reader :config_state_error
+
+    # @return [String]
+    attr_reader :runtime_state
+
+    # @return [Hash, nil]
+    attr_reader :runtime_state_error
 
     # @return [Boolean]
     attr_reader :autostart
@@ -26,11 +37,22 @@ module NodeCtld
 
     # @param ct [Hash] output of ct show/list
     def initialize(ct)
-      @ct = ct
-      @init_pid = ct[:init_pid]&.to_i
+      @ct = ContainerState.normalize(ct)
+      @init_pid = @ct[:init_pid]&.to_i
 
-      %i[autostart boot_dataset boot_rootfs dataset id pool state].each do |v|
-        instance_variable_set(:"@#{v}", ct[v])
+      %i[
+        autostart
+        boot_dataset
+        boot_rootfs
+        config_state
+        config_state_error
+        dataset
+        id
+        pool
+        runtime_state
+        runtime_state_error
+      ].each do |v|
+        instance_variable_set(:"@#{v}", @ct[v])
       end
 
       @vps_id = @id.to_i

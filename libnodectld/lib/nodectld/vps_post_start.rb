@@ -45,7 +45,7 @@ module NodeCtld
 
     def post_run(vps_id)
       ct = OsCtlContainer.new(osctl_parse(%i[ct show], [vps_id]))
-      return if ct.state != 'running'
+      return if ct.runtime_state != 'running'
 
       VpsSshHostKeys.update_ct(ct)
       VpsOsRelease.update_ct(ct)
