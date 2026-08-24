@@ -1502,6 +1502,7 @@ import ../make-test.nix (
         ),
         session_expires_at: 14.minutes.from_now,
         mfa_verified_at: 1.minute.ago,
+        verified_totp_device_id: password_recovery_totp.id,
         completed_at: Time.current
       )
 
@@ -1521,7 +1522,8 @@ import ../make-test.nix (
           password_recovery_form_token
         ),
         session_expires_at: password_recovery_fixture_expires_at,
-        mfa_verified_at: 1.minute.ago
+        mfa_verified_at: 1.minute.ago,
+        verified_totp_device_id: password_recovery_totp.id
       )
 
       secondary_user = ensure_webui_user(

@@ -41,7 +41,11 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::PasswordRecoveryTotp d
     result = described_class.run(recovery, code_at(Time.at(1_700_000_000)), request)
 
     expect(result).to be_authenticated
-    expect(recovery.reload.mfa_verified_at).to be_present
+    expect(recovery.reload).to have_attributes(
+      mfa_verified_at: be_present,
+      verified_totp_device_id: device.id,
+      verified_webauthn_credential_id: nil
+    )
     expect(device.reload.use_count).to eq(1)
   end
 
@@ -55,7 +59,29 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::PasswordRecoveryTotp d
     expect(result).to be_authenticated
     expect(result).to be_used_recovery_code
     expect(device.reload.enabled).to be(false)
-    expect(recovery.reload.mfa_verified_at).to be_present
+    expect(recovery.reload).to have_attributes(
+      mfa_verified_at: be_present,
+      verified_totp_device_id: device.id,
+      verified_webauthn_credential_id: nil,
+      invalidated_at: nil
+    )
+  end
+
+  it 'invalidates other recoveries verified by a fallback-disabled device' do
+    unlock_transaction_signer!
+    ensure_available_node_status!(SpecSeed.node)
+    VpsAdmin::API::MailTemplates.install_defaults!
+    other_recovery = recovery.dup
+    other_recovery.email_token_digest = PasswordRecovery.digest_token('spent-two')
+    other_recovery.session_token_digest = PasswordRecovery.digest_token('session-two')
+    other_recovery.save!
+    other_recovery.verify_mfa_with!(device)
+
+    result = described_class.run(recovery, 'recovery-code', request)
+
+    expect(result).to be_authenticated
+    expect(recovery.reload.invalidated_at).to be_nil
+    expect(other_recovery.reload.invalidated_at).to be_present
   end
 
   it 'invalidates the recovery after five bad codes' do

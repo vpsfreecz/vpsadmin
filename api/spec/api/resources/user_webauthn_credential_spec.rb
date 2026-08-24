@@ -75,6 +75,17 @@ RSpec.describe 'VpsAdmin::API::Resources::User::WebauthnCredential' do
     )
   end
 
+  def create_verified_recovery(owner, credential)
+    request = PasswordRecoveryRequest.create!(recipient_email: owner.email, locale: 'en')
+    request.password_recoveries.create!(
+      user: owner,
+      outcome: :recoverable,
+      email_snapshot: owner.email,
+      email_token_digest: PasswordRecovery.digest_token(SecureRandom.hex(16)),
+      email_expires_at: 1.hour.from_now
+    ).tap { |recovery| recovery.verify_mfa_with!(credential) }
+  end
+
   def suspend_user!(target = user)
     target.update!(
       object_state: :suspended,
@@ -287,6 +298,9 @@ RSpec.describe 'VpsAdmin::API::Resources::User::WebauthnCredential' do
 
     it 'disables a credential' do
       record = create_cred!(owner: user, label: 'Spec', enabled: true)
+      other = create_cred!(owner: user, label: 'Other', enabled: true)
+      invalidated = create_verified_recovery(user, record)
+      preserved = create_verified_recovery(user, other)
 
       as(user) { json_put show_path(user.id, record.id), webauthn_credential: { enabled: false } }
 
@@ -295,6 +309,8 @@ RSpec.describe 'VpsAdmin::API::Resources::User::WebauthnCredential' do
 
       record.reload
       expect(record.enabled).to be(false)
+      expect(invalidated.reload.invalidated_at).to be_present
+      expect(preserved.reload.invalidated_at).to be_nil
     end
 
     it 'rejects empty payload' do
@@ -364,12 +380,14 @@ RSpec.describe 'VpsAdmin::API::Resources::User::WebauthnCredential' do
 
     it 'deletes own credential' do
       record = create_cred!(owner: user, label: 'Spec', enabled: false)
+      recovery = create_verified_recovery(user, record)
 
       expect { as(user) { json_delete show_path(user.id, record.id) } }
         .to change(WebauthnCredential, :count).by(-1)
 
       expect_status(200)
       expect(json['status']).to be(true)
+      expect(recovery.reload.invalidated_at).to be_present
     end
 
     it 'denies deleting credentials for another user (non-admin)' do

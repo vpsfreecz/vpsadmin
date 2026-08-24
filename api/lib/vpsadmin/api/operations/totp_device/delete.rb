@@ -4,7 +4,12 @@ module VpsAdmin::API
   class Operations::TotpDevice::Delete < Operations::Base
     # @param device [::UserTotpDevice]
     def run(device)
-      device.destroy!
+      Operations::Authentication::MfaFactorChange.run(
+        device,
+        revoke_recovery: true
+      ) do |locked_device, _user|
+        locked_device.destroy!
+      end
     end
   end
 end

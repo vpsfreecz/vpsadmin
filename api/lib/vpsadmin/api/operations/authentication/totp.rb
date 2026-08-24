@@ -56,36 +56,22 @@ module VpsAdmin::API
 
       user = auth_token.user
       user.with_lock do
-        auth_token = find_auth_token(token)
+        auth_token = find_auth_token(token, lock: true)
         if auth_token.nil? || !auth_token.token_valid? ||
            !auth_token.authentication_current?
           raise Exceptions::AuthenticationError, 'invalid token'
         end
 
-        verification = nil
-        user.user_totp_devices.where(enabled: true).order('last_use_at DESC').each do |dev|
-          last_verification_at = dev.totp.verify(code, after: dev.last_verification_at)
-
-          next unless last_verification_at || is_recovery_code?(dev, code)
-
-          verification = [dev, last_verification_at]
-          break
-        end
+        recoveries = ::PasswordRecovery.lock_active_verified_with_totp(user)
+        verification = Operations::Authentication::TotpFactor.run(user, code)
 
         if verification
-          dev, last_verification_at = verification
-
-          if last_verification_at
-            dev.update!(
-              last_verification_at:,
-              last_use_at: Time.now
+          if verification.recovery_code?
+            ::PasswordRecovery.invalidate_locked_verified_with!(
+              recoveries,
+              verification.device
             )
-            ::UserTotpDevice.increment_counter(:use_count, dev.id)
-          else
-            # Recovery code was used, disable the device
-            dev.update!(enabled: false)
           end
-
           reset_password = user.password_reset
 
           if reset_password
@@ -97,7 +83,7 @@ module VpsAdmin::API
           Result.new(
             user:,
             auth_token:,
-            recovery_device: last_verification_at ? nil : dev,
+            recovery_device: verification.recovery_code? ? verification.device : nil,
             reset_password:,
             authenticated: true
           )
@@ -126,15 +112,13 @@ module VpsAdmin::API
 
     protected
 
-    def find_auth_token(token)
-      ::AuthToken.joins(:token).includes(:token, :user).find_by(
+    def find_auth_token(token, lock: false)
+      relation = ::AuthToken.joins(:token).includes(:token, :user).where(
         tokens: { token: },
         purpose: 'mfa'
       )
-    end
-
-    def is_recovery_code?(dev, code)
-      CryptoProviders::Bcrypt.matches?(dev.recovery_code, nil, code)
+      relation = relation.lock if lock
+      relation.take
     end
   end
 end

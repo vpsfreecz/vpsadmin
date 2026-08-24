@@ -7,8 +7,10 @@ module VpsAdmin::API
     # @option attrs [String] :label
     # @return [::UserTotpDevice]
     def run(device, attrs)
-      device.update!(label: attrs[:label])
-      device
+      Operations::Authentication::MfaFactorChange.run(device) do |locked_device, _user|
+        locked_device.update!(label: attrs[:label])
+        locked_device
+      end
     end
   end
 end

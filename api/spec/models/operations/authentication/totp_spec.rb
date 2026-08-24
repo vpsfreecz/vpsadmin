@@ -61,6 +61,18 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::Totp do
 
   it 'authenticates a recovery code, disables the device, and reports it' do
     auth_token = create_auth_token!(user:, purpose: 'mfa')
+    recovery_request = PasswordRecoveryRequest.create!(
+      recipient_email: user.email,
+      locale: 'en'
+    )
+    recovery = recovery_request.password_recoveries.create!(
+      user:,
+      outcome: :recoverable,
+      email_snapshot: user.email,
+      email_token_digest: PasswordRecovery.digest_token('ordinary-fallback'),
+      email_expires_at: 1.hour.from_now
+    )
+    recovery.verify_mfa_with!(device)
 
     result = described_class.run(auth_token.token.to_s, 'recovery-code')
 
@@ -68,6 +80,7 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::Totp do
     expect(result.used_recovery_code?).to be(true)
     expect(result.recovery_device).to eq(device)
     expect(device.reload.enabled).to be(false)
+    expect(recovery.reload.invalidated_at).to be_present
   end
 
   it 'does not consume a factor invalidated after token lookup' do
