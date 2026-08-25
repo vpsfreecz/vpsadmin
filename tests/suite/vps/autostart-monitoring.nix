@@ -187,6 +187,9 @@ import ../../make-test.nix (
           wait_for_metric(node, blocked, present: false)
           wait_for_metric(node, expected, present: true)
           wait_for_metric(node, check_success, present: true)
+
+          node.succeeds('poweroff -f', timeout: 120)
+          node.wait_for_shutdown(timeout: 120)
         end
       end
     '';
