@@ -12,6 +12,10 @@ module VpsAdmin::API
     # @param request [Sinatra::Request]
     # @raise [Exceptions::OperationError]
     def run(user, request, allow_password_reset: false)
+      unless user.authentication_allowed_by_lifecycle?
+        raise Exceptions::LoginDenied
+      end
+
       if user.lockout
         raise Exceptions::OperationError,
               'account is locked out, contact support'

@@ -231,6 +231,24 @@ RSpec.describe 'VpsAdmin::API::Resources::MetricsAccessToken' do
       expect(token_obj['metric_prefix']).to eq('spec_created')
     end
 
+    it 'rejects creation after a destructive lifecycle state is requested' do
+      record_requested_user_state!(user, :soft_delete)
+      access_token_count = MetricsAccessToken.count
+      token_count = Token.count
+
+      as(admin) do
+        json_post index_path, metrics_access_token: {
+          user: user.id,
+          metric_prefix: 'spec_rejected'
+        }
+      end
+
+      expect_status(423)
+      expect(json['status']).to be(false)
+      expect(MetricsAccessToken.count).to eq(access_token_count)
+      expect(Token.count).to eq(token_count)
+    end
+
     it 'denies creating a token while suspended' do
       suspend_user!
 

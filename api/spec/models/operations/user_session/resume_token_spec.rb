@@ -60,6 +60,15 @@ RSpec.describe VpsAdmin::API::Operations::UserSession::ResumeToken do
     expect(User.current).to eq(user)
   end
 
+  it 'keeps an existing session usable while soft-delete is pending' do
+    session = create_open_session!(user:, auth_type: 'token')
+    token = session.token.token
+    record_requested_user_state!(user, :soft_delete)
+
+    expect(described_class.run(token)).to eq(session)
+    expect(User.current).to eq(user)
+  end
+
   it 'increments request counters, renews renewable_auto tokens, and sets currents' do
     session = create_open_session!(
       user:,

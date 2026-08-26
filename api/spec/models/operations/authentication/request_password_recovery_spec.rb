@@ -173,6 +173,31 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::RequestPasswordRecover
     )
   end
 
+  it 'does not issue a recovery link after destructive lifecycle state is requested' do
+    user = create_user(
+      login: 'pending-delete-recovery',
+      email: 'pending-delete-recovery@example.test'
+    )
+    record_requested_user_state!(user, :soft_delete)
+
+    recovery_request = described_class.run(
+      user.login,
+      locale: :en,
+      oauth2_client: nil,
+      request:
+    )
+
+    recovery = recovery_request.password_recoveries.find_by!(user:)
+    expect(recovery).to have_attributes(
+      outcome: 'unavailable',
+      email_token_digest: nil,
+      email_expires_at: nil
+    )
+    expect(recovery_request.mail_log.text_plain).not_to include(
+      '/oauth2/password-reset/continue'
+    )
+  end
+
   it 'prefers an exact case-sensitive login over email matching' do
     selected = create_user(login: 'shared-login', email: 'shared@example.test')
     create_user(login: 'other-shared', email: 'shared-login')

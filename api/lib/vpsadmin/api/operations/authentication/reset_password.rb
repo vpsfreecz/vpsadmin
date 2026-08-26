@@ -14,6 +14,10 @@ module VpsAdmin::API
       user = auth_token.user
 
       user.with_lock do
+        unless user.authentication_allowed_by_lifecycle?
+          raise Exceptions::AuthenticationError, 'invalid token'
+        end
+
         current_token = ::AuthToken.find_by(id: auth_token.id)
         unless current_token&.token_valid? && current_token.authentication_current?
           raise Exceptions::AuthenticationError, 'invalid token'

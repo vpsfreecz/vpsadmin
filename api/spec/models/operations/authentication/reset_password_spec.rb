@@ -77,4 +77,17 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::ResetPassword do
       )
     ).to be(true)
   end
+
+  it 'rejects a reset after destructive lifecycle state is requested' do
+    token = auth_token
+    original_password = user.password
+    record_requested_user_state!(user, :soft_delete)
+
+    expect do
+      op.run(token, 'new-password', request:)
+    end.to raise_error(VpsAdmin::API::Exceptions::AuthenticationError, 'invalid token')
+
+    expect(user.reload.password).to eq(original_password)
+    expect(AuthToken.exists?(token.id)).to be(true)
+  end
 end

@@ -135,6 +135,8 @@ class User < ApplicationRecord
     99 => 'God'
   }.freeze
 
+  AUTHENTICATION_OBJECT_STATES = %w[active suspended].freeze
+
   def self.role_for_level(level)
     if level.to_i >= 90
       :admin
@@ -147,6 +149,38 @@ class User < ApplicationRecord
 
   def role
     self.class.role_for_level(level)
+  end
+
+  def authentication_allowed_by_lifecycle?
+    requested_state = current_object_state&.state
+
+    AUTHENTICATION_OBJECT_STATES.include?(object_state) &&
+      (requested_state.nil? || AUTHENTICATION_OBJECT_STATES.include?(requested_state))
+  end
+
+  # Authentication authority creation holds this same row lock. Keep it until
+  # the requested lifecycle state is published so neither change can pass the
+  # other one's final eligibility check.
+  def set_object_state(...)
+    with_lifecycle_lock { super }
+  end
+
+  def record_object_state_change(...)
+    with_lifecycle_lock { super }
+  end
+
+  def set_expiration(...)
+    with_lifecycle_lock do
+      ensure_no_pending_lifecycle_change!
+      super
+    end
+  end
+
+  def set_remind_after(...)
+    with_lifecycle_lock do
+      ensure_no_pending_lifecycle_change!
+      super
+    end
   end
 
   def dokuwiki_groups
@@ -353,6 +387,28 @@ class User < ApplicationRecord
   end
 
   private
+
+  # Lock through a separate model instance. ActiveRecord's #with_lock reloads
+  # +self+ and clears its association cache, which can discard unsaved changes
+  # held by transaction-chain callers before they publish a lifecycle change.
+  def with_lifecycle_lock
+    self.class.transaction do
+      locked_user = self.class.unscoped.lock.find(id)
+
+      self.object_state = locked_user.object_state
+      self.expiration_date = locked_user.expiration_date
+      self.remind_after_date = locked_user.remind_after_date
+
+      yield
+    end
+  end
+
+  def ensure_no_pending_lifecycle_change!
+    requested_state = current_object_state&.state
+    return if requested_state.nil? || requested_state == object_state
+
+    raise ResourceLocked.new(self, 'user lifecycle change is pending')
+  end
 
   def set_no_password
     self.password = '!' if password.nil? || password.empty?

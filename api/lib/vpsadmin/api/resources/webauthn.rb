@@ -172,7 +172,8 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
             user:,
             purpose: 'mfa'
           ).lock.take!
-          unless auth_token.token_valid? && auth_token.authentication_current?
+          unless auth_token.token_valid? && auth_token.authentication_current? &&
+                 user.authentication_allowed_by_lifecycle?
             error!('auth token expired')
           end
 
