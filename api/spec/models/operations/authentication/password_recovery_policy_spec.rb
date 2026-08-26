@@ -39,6 +39,16 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::PasswordRecoveryPolicy
     expect(result).not_to be_eligible
   end
 
+  it 'rejects an account with a pending destructive lifecycle state' do
+    create_totp_device!(user:)
+    record_requested_user_state!(user, :soft_delete)
+
+    result = described_class.run(user, request)
+
+    expect(result).not_to be_eligible
+    expect(result.denial_reason).to eq(:unavailable)
+  end
+
   it 'does not treat an unconfirmed TOTP device as effective MFA' do
     create_totp_device!(user:, confirmed: false)
 

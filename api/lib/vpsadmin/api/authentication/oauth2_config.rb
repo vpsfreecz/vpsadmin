@@ -666,14 +666,30 @@ module VpsAdmin::API
         fulfilled: true
       )
 
-      raise Exceptions::AuthenticationError, 'invalid token' if auth_token.nil? || !auth_token.token_valid?
+      raise Exceptions::AuthenticationError, 'invalid token' if auth_token.nil?
 
-      reset_password = auth_token.user.password_reset
+      user = auth_token.user
+      reset_password = nil
+      user.with_lock do
+        auth_token = ::AuthToken.joins(:token).includes(:token, :user).where(
+          id: auth_token.id,
+          user:,
+          purpose: 'mfa',
+          fulfilled: true
+        ).lock.take
+        if auth_token.nil? || !auth_token.token_valid? ||
+           !auth_token.authentication_current? ||
+           !user.authentication_allowed_by_lifecycle?
+          raise Exceptions::AuthenticationError, 'invalid token'
+        end
 
-      if reset_password
-        auth_token.update!(purpose: 'reset_password', fulfilled: false)
-      else
-        auth_token.destroy!
+        reset_password = user.password_reset
+
+        if reset_password
+          auth_token.update!(purpose: 'reset_password', fulfilled: false)
+        else
+          auth_token.destroy!
+        end
       end
 
       ret = AuthResult.new(
@@ -681,7 +697,7 @@ module VpsAdmin::API
         complete: !reset_password,
         reset_password: reset_password,
         auth_token:,
-        user: auth_token.user,
+        user:,
         authentication_generation: auth_token.authentication_generation
       )
 
@@ -1016,6 +1032,8 @@ module VpsAdmin::API
         allow_password_reset:
       )
       nil
+    rescue Exceptions::LoginDenied
+      :invalid_user_or_password
     rescue Exceptions::OperationError => e
       e.message
     end

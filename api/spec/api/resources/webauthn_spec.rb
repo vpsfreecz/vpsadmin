@@ -288,6 +288,20 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
       expect(response_message).to include('auth token expired')
     end
 
+    it 'rejects a token after a destructive lifecycle state is requested' do
+      auth_token = create_auth_token(user)
+      record_requested_user_state!(user, :soft_delete)
+
+      expect do
+        json_post authentication_begin_path, authentication: { auth_token: auth_token.token.to_s }
+      end.not_to change(WebauthnChallenge, :count)
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('auth token expired')
+      expect(auth_token.reload).to be_mfa
+    end
+
     it 'returns options and stores a challenge' do
       auth_token = create_auth_token(user)
 
@@ -415,6 +429,36 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
       auth_token.reload
       expect(auth_token.fulfilled).to be(true)
       expect(WebauthnChallenge.exists?(challenge.id)).to be(false)
+    end
+
+    it 'does not consume a challenge after a destructive lifecycle state is requested' do
+      credential = register_credential_for(user, label: 'Spec Key', client: fake_client)
+      auth_token = create_auth_token(user)
+
+      json_post authentication_begin_path, authentication: { auth_token: auth_token.token.to_s }
+      response = authentication_response
+      challenge = find_challenge(response.fetch('challenge_token'))
+      options = response.fetch('options')
+      assertion = fake_client.get(
+        challenge: options.fetch('challenge'),
+        allow_credentials: Array(options['allowCredentials']).map { |item| item['id'] },
+        rp_id: options['rpId']
+      )
+      record_requested_user_state!(user, :soft_delete)
+
+      json_post authentication_finish_path,
+                authentication: {
+                  challenge_token: response.fetch('challenge_token'),
+                  auth_token: auth_token.token.to_s,
+                  public_key_credential: assertion
+                }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('auth token expired')
+      expect(WebauthnChallenge.exists?(challenge.id)).to be(true)
+      expect(auth_token.reload.fulfilled).to be(false)
+      expect(credential.reload).to have_attributes(use_count: 0, last_use_at: nil)
     end
   end
 end

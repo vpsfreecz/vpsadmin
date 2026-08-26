@@ -130,7 +130,7 @@ RSpec.describe 'VpsAdmin::API::Resources::User::StateLog' do
     end
 
     it 'forbids normal users' do
-      as(user) { json_get index_path(user.id) }
+      as(other_user) { json_get index_path(user.id) }
 
       expect_status(403)
       expect(json['status']).to be(false)
@@ -194,7 +194,7 @@ RSpec.describe 'VpsAdmin::API::Resources::User::StateLog' do
     end
 
     it 'forbids normal users' do
-      as(user) { json_get show_path(user.id, seed[:a].id) }
+      as(other_user) { json_get show_path(user.id, seed[:a].id) }
 
       expect_status(403)
       expect(json['status']).to be(false)

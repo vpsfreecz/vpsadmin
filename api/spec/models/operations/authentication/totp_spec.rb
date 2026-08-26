@@ -107,6 +107,22 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::Totp do
     expect(device.reload.enabled).to be(true)
   end
 
+  it 'does not consume a factor after a destructive lifecycle state is requested' do
+    auth_token = create_auth_token!(user:, purpose: 'mfa')
+    record_requested_user_state!(user, :soft_delete)
+
+    expect do
+      described_class.run(auth_token.token.to_s, 'recovery-code')
+    end.to raise_error(VpsAdmin::API::Exceptions::AuthenticationError, 'invalid token')
+
+    expect(auth_token.reload).to be_mfa
+    expect(device.reload).to have_attributes(
+      enabled: true,
+      use_count: 0,
+      last_use_at: nil
+    )
+  end
+
   it 'leaves the token intact for an invalid code' do
     auth_token = create_auth_token!(user:, purpose: 'mfa')
 

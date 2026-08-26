@@ -32,7 +32,6 @@ module VpsAdmin::API
     protected
 
     def eligible?(user, request)
-      return false unless %w[active suspended].include?(user.object_state)
       return false unless user.enable_oauth2_auth
 
       Operations::User::CheckLogin.run(

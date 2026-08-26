@@ -35,9 +35,23 @@ RSpec.describe VpsAdmin::API::Operations::User::CheckLogin do
 
   it 'does not reject suspension by itself' do
     user.update!(object_state: :suspended)
+    record_requested_user_state!(user, :suspended)
     mark_user_paid_until!(user)
 
     expect(described_class.run(user, request)).to be_nil
+  end
+
+  %i[soft_delete hard_delete deleted].each do |state|
+    it "rejects a pending #{state} lifecycle state" do
+      record_requested_user_state!(user, state)
+
+      expect do
+        described_class.run(user, request)
+      end.to raise_error(
+        VpsAdmin::API::Exceptions::LoginDenied,
+        'invalid user or password'
+      )
+    end
   end
 
   it 'executes hooks for allowed users' do

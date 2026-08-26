@@ -10,7 +10,8 @@ module VpsAdmin::API
         unless challenge.token_valid?
           raise Exceptions::AuthenticationError, 'challenge token expired'
         end
-        unless auth_token.token_valid? && auth_token.authentication_current?
+        unless auth_token.token_valid? && auth_token.authentication_current? &&
+               user.authentication_allowed_by_lifecycle?
           raise Exceptions::AuthenticationError, 'auth token expired'
         end
 
