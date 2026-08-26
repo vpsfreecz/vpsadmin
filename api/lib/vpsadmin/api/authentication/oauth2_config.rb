@@ -452,6 +452,9 @@ module VpsAdmin::API
       password_recovery_enabled = ::SysConfig.get(:core, :password_recovery_enabled)
       password_recovery_query = { client_id: client.client_id }
       password_recovery_query[:ui_locales] = ui_locales if ui_locales.present?
+      if user.present? && user.length <= ::PasswordRecoverySubmission::IDENTIFIER_LIMIT
+        password_recovery_query[:identifier] = user
+      end
       password_recovery_path = '/oauth2/password-reset'
       if password_recovery_query.any?
         password_recovery_path += "?#{URI.encode_www_form(password_recovery_query)}"

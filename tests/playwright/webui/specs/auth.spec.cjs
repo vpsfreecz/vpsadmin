@@ -119,6 +119,13 @@ test('invalid OAuth password stays on auth form', async ({ page }) => {
   await expect(page.locator('.alert-danger')).toContainText('invalid user or password');
   await expect(page.locator('input[name="user"]')).toHaveValue(fixtures.admin.username);
   await expect(page).toHaveURL(/auth\.vpsadmin\.test/);
+
+  await page.getByRole('link', { name: 'Forgot your password?' }).click();
+
+  await expect(page).toHaveURL(/auth\.vpsadmin\.test\/oauth2\/password-reset/);
+  await expect(page.getByLabel('Login or primary email address')).toHaveValue(
+    fixtures.admin.username,
+  );
 });
 
 test('required password reset uses labelled account and password fields', async ({ page }) => {
