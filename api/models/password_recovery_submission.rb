@@ -1,6 +1,7 @@
 require 'digest'
 
 class PasswordRecoverySubmission < ApplicationRecord
+  IDENTIFIER_LIMIT = 127
   CLAIM_TIMEOUT = 5.minutes
   MAX_ATTEMPTS = 3
   MAX_PENDING = 100
@@ -37,7 +38,7 @@ class PasswordRecoverySubmission < ApplicationRecord
   }
 
   def self.enqueue!(identifier:, locale:, oauth2_client:, request:)
-    normalized_identifier = identifier.to_s.strip[0, 127]
+    normalized_identifier = identifier.to_s.strip[0, IDENTIFIER_LIMIT]
     return EnqueueResult.new(:accepted, nil, nil) if normalized_identifier.blank?
 
     identifier_digest = digest_identifier(normalized_identifier)

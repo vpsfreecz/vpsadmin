@@ -398,7 +398,11 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     config.handle_get_authorize(
       sinatra_handler: handler,
       sinatra_request: request,
-      sinatra_params: { ui_locales: 'cs-CZ' },
+      sinatra_params: {
+        ui_locales: 'cs-CZ',
+        user: 'member+test@example.test',
+        password: 'do-not-copy'
+      },
       oauth2_request:,
       oauth2_response: response,
       client:
@@ -406,9 +410,26 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
 
     expect(response.body).to include('Obnovit heslo')
     expect(response.body).to include(
-      "/oauth2/password-reset?client_id=#{client.client_id}&amp;ui_locales=cs-CZ"
+      "/oauth2/password-reset?client_id=#{client.client_id}&amp;ui_locales=cs-CZ" \
+      '&amp;identifier=member%2Btest%40example.test'
     )
+    expect(response.body).not_to include('do-not-copy')
     expect(response.body).not_to include('mailto:')
+  end
+
+  it 'does not copy an oversized login into the password recovery URL' do
+    SysConfig.find_by!(category: 'core', name: 'password_recovery_enabled').update!(value: true)
+
+    config.handle_get_authorize(
+      sinatra_handler: handler,
+      sinatra_request: request,
+      sinatra_params: { user: 'a' * (PasswordRecoverySubmission::IDENTIFIER_LIMIT + 1) },
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(response.body).not_to include('identifier=')
   end
 
   it 'keeps the support link while password recovery is disabled' do
