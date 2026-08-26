@@ -581,6 +581,86 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
       .to have_received(:fire).with(user, device, request)
   end
 
+  it 'does not convert fulfilled WebAuthn MFA after a destructive state is requested' do
+    user.update!(password_reset: true)
+    auth_token = create_auth_token!(user:, purpose: 'mfa')
+    auth_token.update!(fulfilled: true)
+    record_requested_user_state!(user, :soft_delete)
+
+    result = config.handle_post_authorize(
+      sinatra_handler: handler,
+      sinatra_request: request,
+      sinatra_params: {
+        login_webauthn: '1',
+        webauthn: '1',
+        auth_token: auth_token.to_s,
+        next_multi_factor_auth: 'require'
+      },
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(result.cancel).to be(true)
+    expect(auth_token.reload).to have_attributes(
+      purpose: 'mfa',
+      fulfilled: true
+    )
+  end
+
+  it 'completes fulfilled WebAuthn MFA and creates an authorization code' do
+    auth_token = create_auth_token!(user:, purpose: 'mfa')
+    auth_token.update!(fulfilled: true)
+
+    result = config.handle_post_authorize(
+      sinatra_handler: handler,
+      sinatra_request: request,
+      sinatra_params: {
+        login_webauthn: '1',
+        webauthn: '1',
+        auth_token: auth_token.to_s,
+        next_multi_factor_auth: 'require'
+      },
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(result.authenticated).to be(true)
+    expect(result.complete).to be(true)
+    expect(result.authorization).to be_present
+    expect(result.authorization.code).to be_present
+    expect(AuthToken.exists?(auth_token.id)).to be(false)
+  end
+
+  it 'converts fulfilled WebAuthn MFA to a required password reset' do
+    user.update!(password_reset: true)
+    auth_token = create_auth_token!(user:, purpose: 'mfa')
+    auth_token.update!(fulfilled: true)
+
+    result = config.handle_post_authorize(
+      sinatra_handler: handler,
+      sinatra_request: request,
+      sinatra_params: {
+        login_webauthn: '1',
+        webauthn: '1',
+        auth_token: auth_token.to_s
+      },
+      oauth2_request:,
+      oauth2_response: response,
+      client:
+    )
+
+    expect(result.authenticated).to be(true)
+    expect(result.complete).to be(false)
+    expect(result).to be_reset_password
+    expect(result.authorization).to be_nil
+    expect(auth_token.reload).to have_attributes(
+      purpose: 'reset_password',
+      fulfilled: false
+    )
+  end
+
   it 're-renders the reset-password branch when passwords do not match' do
     auth_token = create_auth_token!(user:, purpose: 'reset_password')
 
@@ -699,6 +779,21 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(authorization.reload.user_session).to be_nil
   end
 
+  it 'rejects authorization-code exchange after destructive lifecycle state is requested' do
+    authorization = create_oauth2_authorization!(user:, client:)
+    record_requested_user_state!(user, :soft_delete)
+
+    expect do
+      config.get_tokens(authorization, request)
+    end.to raise_error(
+      VpsAdmin::API::Exceptions::AuthenticationError,
+      'invalid authorization code'
+    )
+
+    expect(authorization.reload.user_session).to be_nil
+    expect(authorization.code).to be_present
+  end
+
   it 'does not find expired authorization codes' do
     authorization = create_oauth2_authorization!(
       user:,
@@ -775,6 +870,29 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
       'invalid refresh token'
     )
     expect(session.reload.token).to be_present
+  end
+
+  it 'rejects token refresh after destructive lifecycle state is requested' do
+    session = create_open_session!(user:, auth_type: 'oauth2')
+    authorization = create_oauth2_authorization!(
+      user:,
+      client:,
+      user_session: session,
+      refresh_valid_to: 1.hour.from_now
+    )
+    old_access_token = session.token
+    old_refresh_token = authorization.refresh_token
+    record_requested_user_state!(user, :soft_delete)
+
+    expect do
+      config.refresh_tokens(authorization, request)
+    end.to raise_error(
+      VpsAdmin::API::Exceptions::AuthenticationError,
+      'invalid refresh token'
+    )
+
+    expect(session.reload.token).to eq(old_access_token)
+    expect(authorization.reload.refresh_token).to eq(old_refresh_token)
   end
 
   it 'revokes access tokens only for the authenticated OAuth2 client' do
@@ -1137,6 +1255,32 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     )
     user.set_password('replacement-password')
     user.save!
+
+    expect do
+      config.send(
+        :create_authorization,
+        auth_result:,
+        sinatra_request: request,
+        oauth2_request:,
+        oauth2_response: response,
+        client:,
+        devices: []
+      )
+    end.not_to change(Oauth2Authorization, :count)
+
+    expect(auth_result.complete).to be(false)
+    expect(auth_result.authorization).to be_nil
+    expect(auth_result.errors).to include(:invalid_user_or_password)
+  end
+
+  it 'rejects authorization after destructive lifecycle state is requested' do
+    auth_result = described_class::AuthResult.new(
+      authenticated: true,
+      complete: true,
+      user:,
+      authentication_generation: user.authentication_generation
+    )
+    record_requested_user_state!(user, :soft_delete)
 
     expect do
       config.send(

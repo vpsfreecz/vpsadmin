@@ -47,6 +47,8 @@ module VpsAdmin::API
       end
 
       user.with_lock do
+        return unless user.authentication_allowed_by_lifecycle?
+
         provider = CryptoProviders.provider(user.password_version)
         authenticated = provider.matches?(user.password, user.login, password)
 

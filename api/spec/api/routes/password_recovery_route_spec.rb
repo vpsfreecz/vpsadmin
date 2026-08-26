@@ -1046,6 +1046,29 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(user.reload.password).to eq(old_password)
   end
 
+  it 'rejects the final password write after soft deletion is requested' do
+    user = create_user_with_totp
+    recovery, raw_token = create_recovery(user:)
+    exchange_email_token(raw_token)
+    mark_recovery_mfa_verified(recovery)
+    old_password = user.password
+
+    get '/oauth2/password-reset/password'
+    record_requested_user_state!(user, :soft_delete)
+    post '/oauth2/password-reset/password',
+         csrf_token: csrf_from_body,
+         new_password: 'new-secret-password',
+         repeat_new_password: 'new-secret-password'
+
+    expect(last_response.status).to eq(400)
+    expect(last_response.body).to include('Password recovery could not continue')
+    expect(recovery.reload).to have_attributes(
+      completed_at: nil,
+      invalidated_at: be_present
+    )
+    expect(user.reload.password).to eq(old_password)
+  end
+
   it 'rejects a recovery after its OAuth client is deleted' do
     user = create_user_with_totp
     client = create_oauth2_client!

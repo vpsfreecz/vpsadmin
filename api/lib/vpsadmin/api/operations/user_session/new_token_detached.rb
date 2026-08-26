@@ -15,17 +15,24 @@ module VpsAdmin::API
     # @param label [String]
     # @return [::UserSession]
     def run(user:, admin:, request:, token_lifetime:, token_interval:, scope:, label:)
-      open_session(
-        user:,
-        request:,
-        auth_type: :token,
-        scope:,
-        generate_token: true,
-        token_lifetime:,
-        token_interval:,
-        admin:,
-        label:
-      )
+      ::UserSession.transaction do
+        user.lock!
+        unless user.authentication_allowed_by_lifecycle?
+          raise ::ResourceLocked.new(user, 'user lifecycle change is pending')
+        end
+
+        open_session(
+          user:,
+          request:,
+          auth_type: :token,
+          scope:,
+          generate_token: true,
+          token_lifetime:,
+          token_interval:,
+          admin:,
+          label:
+        )
+      end
     end
   end
 end

@@ -326,6 +326,24 @@ RSpec.describe 'VpsAdmin::API::Resources::UserSession' do
       expect(session_obj['token_full']).not_to be_nil
     end
 
+    it 'rejects token creation after a destructive lifecycle state is requested' do
+      record_requested_user_state!(user, :soft_delete)
+
+      as(admin) do
+        json_post index_path, user_session: {
+          user: user.id,
+          token_lifetime: 'fixed',
+          token_interval: 3600,
+          scope: 'all',
+          label: 'Rejected token'
+        }
+      end
+
+      expect_status(423)
+      expect(json['status']).to be(false)
+      expect(UserSession.where(user:, auth_type: 'token', label: 'Rejected token')).to be_empty
+    end
+
     it 'allows admin to create a permanent token session without an interval' do
       as(admin) do
         json_post index_path, user_session: {

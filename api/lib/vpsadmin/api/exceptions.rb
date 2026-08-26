@@ -158,6 +158,12 @@ module VpsAdmin::API::Exceptions
   class OperationError < ::StandardError
   end
 
+  class LoginDenied < OperationError
+    def initialize
+      super('invalid user or password')
+    end
+  end
+
   class OperationNotSupported < OperationError
   end
 

@@ -39,6 +39,16 @@ module UserLifecycleChainSpecHelpers
     end
   end
 
+  def record_requested_user_state!(user, state, actor: SpecSeed.admin)
+    ObjectState.create!(
+      class_name: 'User',
+      row_id: user.id,
+      state:,
+      reason: 'spec requested state',
+      user: actor
+    )
+  end
+
   def create_detached_token_session!(user:, admin: SpecSeed.admin, label: 'spec-token')
     token = Token.get!(valid_to: Time.now + 3600)
     user_agent = UserAgent.find_or_create!('RSpec token')

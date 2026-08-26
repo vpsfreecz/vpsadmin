@@ -58,7 +58,8 @@ module VpsAdmin::API
       user.with_lock do
         auth_token = find_auth_token(token, lock: true)
         if auth_token.nil? || !auth_token.token_valid? ||
-           !auth_token.authentication_current?
+           !auth_token.authentication_current? ||
+           !user.authentication_allowed_by_lifecycle?
           raise Exceptions::AuthenticationError, 'invalid token'
         end
 

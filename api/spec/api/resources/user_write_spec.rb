@@ -678,7 +678,6 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       basic_authorize(target.login, SpecSeed::PASSWORD)
       json_get current_path
 
-      pending('Soft-deleted users can still authenticate until the state change chain runs')
       expect(last_response.status).to be_in([401, 403])
     ensure
       clear_login
@@ -725,6 +724,34 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       record = User.unscoped.find(target.id)
       expect(record.object_state).to eq('active')
       expect(record.expiration_date.to_i).to eq(expiration.to_i)
+    end
+
+    it 'does not let lifecycle metadata mask a queued destructive state' do
+      target.update!(expiration_date: Time.utc(2040, 1, 1, 12, 0, 0))
+      target.set_object_state(
+        :soft_delete,
+        reason: 'spec pending soft deletion',
+        user: admin
+      )
+
+      expect do
+        target.set_remind_after(
+          Time.utc(2039, 12, 1, 12, 0, 0),
+          reason: 'spec reminder update',
+          user: admin
+        )
+      end.to raise_error(ResourceLocked, 'user lifecycle change is pending')
+
+      expect do
+        target.set_expiration(
+          Time.utc(2041, 1, 1, 12, 0, 0),
+          reason: 'spec expiration update',
+          user: admin
+        )
+      end.to raise_error(ResourceLocked, 'user lifecycle change is pending')
+
+      expect(target.current_object_state&.state).to eq('soft_delete')
+      expect(target.reload.object_state).to eq('active')
     end
 
     states = %w[active suspended soft_delete hard_delete deleted]
