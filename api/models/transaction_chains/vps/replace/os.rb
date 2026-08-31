@@ -514,8 +514,9 @@ module TransactionChains
         destroyed_plans = {}
         destroyed_actions = {}
         destroyed_tasks = {}
-        destroyed_groups = {}
-        edited_group_actions = {}
+        group_actions = {}
+        destination_group_actions = {}
+        reassigned_groups = Hash.new { |h, action_id| h[action_id] = [] }
 
         datasets.each do |src, dst|
           moved_by_pool = backup_rewrites.select { |entry| entry[:src].id == src.id }.to_h do |entry|
@@ -533,7 +534,7 @@ module TransactionChains
           end
 
           reassign_snapshot_in_pools(t, dst, moved_by_pool.values, snapshot_replacements)
-          reassign_dataset_plans(
+          moved_dataset_plan_ids = reassign_dataset_plans(
             t,
             src,
             dst,
@@ -546,12 +547,20 @@ module TransactionChains
             t,
             src,
             dst,
-            destroyed_actions,
-            destroyed_tasks,
-            destroyed_groups,
-            edited_group_actions
+            moved_dataset_plan_ids,
+            group_actions,
+            destination_group_actions,
+            reassigned_groups
           )
         end
+
+        destroy_orphaned_group_snapshot_actions(
+          t,
+          reassigned_groups,
+          destination_group_actions,
+          destroyed_actions,
+          destroyed_tasks
+        )
       end
 
       return if snapshot_name_clones.empty?
@@ -643,6 +652,8 @@ module TransactionChains
     end
 
     def reassign_dataset_plans(t, src, dst, moved_by_pool, destroyed_plans, destroyed_actions, destroyed_tasks)
+      moved_dataset_plan_ids = {}
+
       src.dataset_in_pool_plans.includes(:environment_dataset_plan, :dataset_actions).each do |plan|
         dst_env_plan = ::EnvironmentDatasetPlan.find_by(
           environment: dst.pool.node.location.environment,
@@ -653,6 +664,8 @@ module TransactionChains
           destroy_dataset_plan(t, plan, destroyed_plans, destroyed_actions, destroyed_tasks)
           next
         end
+
+        moved_dataset_plan_ids[plan.environment_dataset_plan.dataset_plan_id] = true
 
         ::DatasetInPoolPlan.where(
           dataset_in_pool: dst,
@@ -681,6 +694,8 @@ module TransactionChains
           )
         end
       end
+
+      moved_dataset_plan_ids
     end
 
     def destroy_dataset_plan(t, plan, destroyed_plans, destroyed_actions, destroyed_tasks)
@@ -707,37 +722,87 @@ module TransactionChains
       destroyed_actions[action.id] = true
     end
 
-    def reassign_group_snapshots(t, src, dst, destroyed_actions, destroyed_tasks, destroyed_groups,
-                                 edited_group_actions)
+    def reassign_group_snapshots(t, src, dst, moved_dataset_plan_ids, group_actions, destination_group_actions,
+                                 reassigned_groups)
       src.group_snapshots.includes(:dataset_action).each do |group|
-        action = group.dataset_action
+        src_action = group.dataset_action
+        reassigned_groups[src_action.id] << group.id
 
-        ::DatasetAction.where(
-          pool_id: dst.pool_id,
-          action: ::DatasetAction.actions[:group_snapshot],
-          dataset_plan_id: action.dataset_plan_id
-        ).where.not(id: action.id).each do |dst_action|
-          destroy_group_snapshot_action(t, dst_action, destroyed_actions, destroyed_tasks, destroyed_groups)
+        unless moved_dataset_plan_ids[src_action.dataset_plan_id]
+          t.just_destroy(group)
+          next
         end
 
-        t.edit(group, dataset_in_pool_id: dst.id)
+        key = [dst.pool_id, src_action.dataset_plan_id]
+        dst_action = group_actions[key] ||=
+          find_or_create_group_snapshot_action(t, dst, src_action)
+        destination_group_actions[dst_action.id] = true
 
-        next if edited_group_actions[action.id]
+        duplicate = dst_action.group_snapshots.where(
+          dataset_in_pool_id: dst.id
+        ).where.not(id: group.id).take
 
-        t.edit(action, pool_id: dst.pool_id)
-        edited_group_actions[action.id] = true
+        if duplicate
+          t.just_destroy(group)
+        else
+          t.edit(
+            group,
+            dataset_in_pool_id: dst.id,
+            dataset_action_id: dst_action.id
+          )
+        end
       end
     end
 
-    def destroy_group_snapshot_action(t, action, destroyed_actions, destroyed_tasks, destroyed_groups)
-      action.group_snapshots.each do |group|
-        next if destroyed_groups[group.id]
+    def find_or_create_group_snapshot_action(t, dst, src_action)
+      ::Pool.lock.find(dst.pool_id)
 
-        t.just_destroy(group)
-        destroyed_groups[group.id] = true
+      actions = ::DatasetAction.where(
+        pool_id: dst.pool_id,
+        action: ::DatasetAction.actions[:group_snapshot],
+        dataset_plan_id: src_action.dataset_plan_id
+      ).limit(2).to_a
+
+      if actions.length > 1
+        raise "multiple group snapshot actions for pool #{dst.pool_id} " \
+              "and dataset plan #{src_action.dataset_plan_id}"
       end
 
-      destroy_dataset_action(t, action, destroyed_actions, destroyed_tasks)
+      return actions.first if actions.first
+
+      action = ::DatasetAction.create!(
+        pool_id: dst.pool_id,
+        action: ::DatasetAction.actions[:group_snapshot],
+        dataset_plan_id: src_action.dataset_plan_id
+      )
+      t.just_create(action)
+
+      src_task = ::RepeatableTask.find_for!(src_action)
+      task = ::RepeatableTask.create!(
+        class_name: action.class.name,
+        table_name: action.class.table_name,
+        row_id: action.id,
+        minute: src_task.minute,
+        hour: src_task.hour,
+        day_of_month: src_task.day_of_month,
+        month: src_task.month,
+        day_of_week: src_task.day_of_week
+      )
+      t.just_create(task)
+
+      action
+    end
+
+    def destroy_orphaned_group_snapshot_actions(t, reassigned_groups, destination_group_actions,
+                                                destroyed_actions, destroyed_tasks)
+      reassigned_groups.each do |action_id, group_ids|
+        next if destination_group_actions[action_id]
+
+        action = ::DatasetAction.find(action_id)
+        next if action.group_snapshots.where.not(id: group_ids).exists?
+
+        destroy_dataset_action(t, action, destroyed_actions, destroyed_tasks)
+      end
     end
 
     def topmost_dips(dips)

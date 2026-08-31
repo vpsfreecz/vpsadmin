@@ -151,7 +151,7 @@ RSpec.describe TransactionChains::Vps::Replace::Os do
       end
     src_pool = create_pool!(node: src_node, role: :hypervisor)
     src_pool.update!(migration_public_key: 'spec-src-pubkey')
-    create_pool!(
+    dst_pool = create_pool!(
       node: dst_node,
       role: :hypervisor,
       filesystem: "spec_hv_dst_#{SecureRandom.hex(4)}"
@@ -182,6 +182,7 @@ RSpec.describe TransactionChains::Vps::Replace::Os do
       src_node: src_node,
       dst_node: dst_node,
       src_pool: src_pool,
+      dst_pool: dst_pool,
       root_dataset: root_dataset,
       root_dip: root_dip,
       child_dataset: child_dataset,
@@ -487,6 +488,229 @@ RSpec.describe TransactionChains::Vps::Replace::Os do
     expect(confirmations).to include(
       ['DatasetInPoolPlan', anything, hash_including('dataset_in_pool_id' => dst_root.id), 'edit_after_type']
     )
+  end
+
+  it 'moves only the replaced group-snapshot membership between shared pool actions' do
+    fixture = create_replace_fixture(same_node: true)
+    backup_pool = create_pool!(
+      node: SpecSeed.other_node,
+      role: :backup,
+      filesystem: "spec_backup_#{SecureRandom.hex(4)}"
+    )
+    create_port_reservations!(node: backup_pool.node)
+    src_dataset, src_dip = create_dataset_with_pool!(
+      user: user,
+      pool: fixture.fetch(:src_pool),
+      name: "replace-src-member-#{SecureRandom.hex(4)}"
+    )
+    dst_dataset, dst_dip = create_dataset_with_pool!(
+      user: user,
+      pool: fixture.fetch(:dst_pool),
+      name: "replace-dst-member-#{SecureRandom.hex(4)}"
+    )
+
+    [fixture.fetch(:root_dataset), src_dataset, dst_dataset].each do |dataset|
+      attach_dataset_to_pool!(dataset: dataset, pool: backup_pool)
+    end
+    [fixture.fetch(:root_dip), src_dip, dst_dip].each do |dip|
+      register_daily_backup_plan!(dip)
+    end
+
+    plan = DatasetPlan.find_by!(name: 'daily_backup')
+    src_action = DatasetAction.find_by!(
+      pool: fixture.fetch(:src_pool),
+      dataset_plan: plan,
+      action: :group_snapshot
+    )
+    dst_action = DatasetAction.find_by!(
+      pool: fixture.fetch(:dst_pool),
+      dataset_plan: plan,
+      action: :group_snapshot
+    )
+    moved_group = GroupSnapshot.find_by!(
+      dataset_action: src_action,
+      dataset_in_pool: fixture.fetch(:root_dip)
+    )
+    unrelated_groups = [
+      GroupSnapshot.find_by!(dataset_action: src_action, dataset_in_pool: src_dip),
+      GroupSnapshot.find_by!(dataset_action: dst_action, dataset_in_pool: dst_dip)
+    ]
+    protected_records = [
+      ['DatasetAction', src_action.id],
+      ['DatasetAction', dst_action.id],
+      ['RepeatableTask', RepeatableTask.find_for!(src_action).id],
+      ['RepeatableTask', RepeatableTask.find_for!(dst_action).id],
+      *unrelated_groups.map { |group| ['GroupSnapshot', group.id] }
+    ]
+
+    chain, dst_vps = described_class.fire(
+      fixture.fetch(:vps),
+      fixture.fetch(:dst_node),
+      start: false,
+      expiration_date: nil,
+      reason: 'shared group snapshot actions'
+    )
+    confirmations = confirmations_for(chain).to_a
+    group_move = confirmations.find do |row|
+      row.class_name == 'GroupSnapshot' &&
+        row.row_pks == { 'id' => moved_group.id } &&
+        row.confirm_type == 'edit_after_type'
+    end
+    destroyed_records = confirmations.filter_map do |row|
+      next unless row.confirm_type == 'just_destroy_type'
+      next unless %w[DatasetAction GroupSnapshot RepeatableTask].include?(row.class_name)
+
+      [row.class_name, row.row_pks.fetch('id')]
+    end
+
+    expect(dst_vps.dataset_in_pool.pool).to eq(fixture.fetch(:dst_pool))
+    expect(group_move.attr_changes).to include(
+      'dataset_in_pool_id' => dst_vps.dataset_in_pool.id,
+      'dataset_action_id' => dst_action.id
+    )
+    expect(confirmations).not_to include(
+      have_attributes(
+        class_name: 'DatasetAction',
+        row_pks: { 'id' => src_action.id },
+        attr_changes: hash_including('pool_id')
+      )
+    )
+    expect(destroyed_records & protected_records).to be_empty
+  end
+
+  it 'creates a destination group action and removes an orphaned source action' do
+    fixture = create_replace_fixture(same_node: true)
+    backup_pool = create_pool!(
+      node: SpecSeed.other_node,
+      role: :backup,
+      filesystem: "spec_backup_#{SecureRandom.hex(4)}"
+    )
+    create_port_reservations!(node: backup_pool.node)
+    attach_dataset_to_pool!(dataset: fixture.fetch(:root_dataset), pool: backup_pool)
+    register_daily_backup_plan!(fixture.fetch(:root_dip))
+
+    plan = DatasetPlan.find_by!(name: 'daily_backup')
+    src_action = DatasetAction.find_by!(
+      pool: fixture.fetch(:src_pool),
+      dataset_plan: plan,
+      action: :group_snapshot
+    )
+    src_task = RepeatableTask.find_for!(src_action)
+
+    chain, dst_vps = described_class.fire(
+      fixture.fetch(:vps),
+      fixture.fetch(:dst_node),
+      start: false,
+      expiration_date: nil,
+      reason: 'new group snapshot action'
+    )
+    dst_action = DatasetAction.find_by!(
+      pool: fixture.fetch(:dst_pool),
+      dataset_plan: plan,
+      action: :group_snapshot
+    )
+    dst_task = RepeatableTask.find_for!(dst_action)
+    confirmations = confirmations_for(chain).to_a
+
+    expect(dst_vps.dataset_in_pool.pool).to eq(fixture.fetch(:dst_pool))
+    expect(dst_task.attributes.slice('minute', 'hour', 'day_of_month', 'month', 'day_of_week')).to eq(
+      src_task.attributes.slice('minute', 'hour', 'day_of_month', 'month', 'day_of_week')
+    )
+    expect(confirmations).to include(
+      have_attributes(
+        class_name: 'DatasetAction',
+        row_pks: { 'id' => dst_action.id },
+        confirm_type: 'just_create_type'
+      ),
+      have_attributes(
+        class_name: 'RepeatableTask',
+        row_pks: { 'id' => dst_task.id },
+        confirm_type: 'just_create_type'
+      ),
+      have_attributes(
+        class_name: 'DatasetAction',
+        row_pks: { 'id' => src_action.id },
+        confirm_type: 'just_destroy_type'
+      ),
+      have_attributes(
+        class_name: 'RepeatableTask',
+        row_pks: { 'id' => src_task.id },
+        confirm_type: 'just_destroy_type'
+      )
+    )
+  end
+
+  it 'removes a group membership when the plan is unavailable in the destination environment' do
+    fixture = create_replace_fixture(same_location: false)
+    backup_pool = create_pool!(
+      node: SpecSeed.other_node,
+      role: :backup,
+      filesystem: "spec_backup_#{SecureRandom.hex(4)}"
+    )
+    create_port_reservations!(node: backup_pool.node)
+    attach_dataset_to_pool!(dataset: fixture.fetch(:root_dataset), pool: backup_pool)
+    register_daily_backup_plan!(fixture.fetch(:root_dip))
+
+    plan = DatasetPlan.find_by!(name: 'daily_backup')
+    EnvironmentDatasetPlan.where(
+      environment: fixture.fetch(:dst_node).location.environment,
+      dataset_plan: plan
+    ).delete_all
+    src_plan = DatasetInPoolPlan.find_by!(
+      dataset_in_pool: fixture.fetch(:root_dip),
+      environment_dataset_plan: EnvironmentDatasetPlan.find_by!(
+        environment: fixture.fetch(:src_node).location.environment,
+        dataset_plan: plan
+      )
+    )
+    src_action = DatasetAction.find_by!(
+      pool: fixture.fetch(:src_pool),
+      dataset_plan: plan,
+      action: :group_snapshot
+    )
+    src_group = GroupSnapshot.find_by!(
+      dataset_action: src_action,
+      dataset_in_pool: fixture.fetch(:root_dip)
+    )
+    src_task = RepeatableTask.find_for!(src_action)
+
+    chain, dst_vps = described_class.fire(
+      fixture.fetch(:vps),
+      fixture.fetch(:dst_node),
+      start: false,
+      expiration_date: nil,
+      reason: 'unavailable destination plan'
+    )
+    confirmations = confirmations_for(chain).to_a
+
+    expect(dst_vps.dataset_in_pool.pool).to eq(fixture.fetch(:dst_pool))
+    expect(confirmations).to include(
+      have_attributes(
+        class_name: 'DatasetInPoolPlan',
+        row_pks: { 'id' => src_plan.id },
+        confirm_type: 'just_destroy_type'
+      ),
+      have_attributes(
+        class_name: 'GroupSnapshot',
+        row_pks: { 'id' => src_group.id },
+        confirm_type: 'just_destroy_type'
+      ),
+      have_attributes(
+        class_name: 'DatasetAction',
+        row_pks: { 'id' => src_action.id },
+        confirm_type: 'just_destroy_type'
+      ),
+      have_attributes(
+        class_name: 'RepeatableTask',
+        row_pks: { 'id' => src_task.id },
+        confirm_type: 'just_destroy_type'
+      )
+    )
+    expect(DatasetAction.where(
+             pool: fixture.fetch(:dst_pool),
+             dataset_plan: plan,
+             action: :group_snapshot
+           )).not_to exist
   end
 
   it 'marks replacement dataset create hooks when existing backup paths will be preserved' do
