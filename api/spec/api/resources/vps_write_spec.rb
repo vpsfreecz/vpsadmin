@@ -1372,6 +1372,29 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
       expect_status(200)
       expect(json['status']).to be(true)
     end
+
+    it 'logs record lookup failures and keeps the existing response' do
+      exception = ActiveRecord::RecordNotFound.new('synthetic migration lookup failed')
+      exception.set_backtrace([
+                                'spec/migration_dependency.rb:12:in `find`',
+                                'spec/migrate.rb:34:in `run`'
+                              ])
+      allow(VpsAdmin::API::Operations::Vps::Migrate).to receive(:run).and_raise(exception)
+
+      expect do
+        as(SpecSeed.admin) { json_post migrate_path(vps.id), vps: { node: target_node.id } }
+      end.to output(
+        a_string_including(
+          '[vpsAdmin API] Action failed: ActiveRecord::RecordNotFound: synthetic migration lookup failed',
+          "\tspec/migration_dependency.rb:12:in `find`",
+          "\tspec/migrate.rb:34:in `run`"
+        )
+      ).to_stderr
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+      expect(response_message).to eq('object not found')
+    end
   end
 
   describe 'Clone' do

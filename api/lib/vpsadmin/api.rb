@@ -213,6 +213,9 @@ module VpsAdmin
       e = HaveAPI::Extensions::ActionExceptions
 
       e.rescue(::ActiveRecord::RecordNotFound) do |ret, exception|
+        warn "[vpsAdmin API] Action failed: #{exception.class}: #{exception.message}"
+        exception.backtrace&.each { |line| warn "\t#{line}" }
+
         ret[:status] = false
         ret[:http_status] = 404
 
