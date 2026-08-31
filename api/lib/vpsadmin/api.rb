@@ -210,12 +210,22 @@ module VpsAdmin
         ret
       end
 
+      HaveAPI::Action.connect_hook(:exec_exception) do |ret, context, exception|
+        show_action = context.action <= HaveAPI::Actions::Default::Show
+
+        if ENV['RACK_ENV'] != 'test' &&
+           exception.is_a?(::ActiveRecord::RecordNotFound) &&
+           !show_action
+          warn "[vpsAdmin API] Action failed: #{exception.class}: #{exception.message}"
+          exception.backtrace&.each { |line| warn "\t#{line}" }
+        end
+
+        ret
+      end
+
       e = HaveAPI::Extensions::ActionExceptions
 
       e.rescue(::ActiveRecord::RecordNotFound) do |ret, exception|
-        warn "[vpsAdmin API] Action failed: #{exception.class}: #{exception.message}"
-        exception.backtrace&.each { |line| warn "\t#{line}" }
-
         ret[:status] = false
         ret[:http_status] = 404
 

@@ -1284,6 +1284,14 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
 
   describe 'Migrate' do
     let!(:vps) { create_vps!(user: SpecSeed.user, node: SpecSeed.node) }
+    let(:record_not_found) do
+      exception = ActiveRecord::RecordNotFound.new('synthetic migration lookup failed')
+      exception.set_backtrace([
+                                'spec/migration_dependency.rb:12:in `find`',
+                                'spec/migrate.rb:34:in `run`'
+                              ])
+      exception
+    end
     let(:target_node) do
       create_node!(
         name_prefix: 'spec-migrate',
@@ -1373,16 +1381,13 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
       expect(json['status']).to be(true)
     end
 
-    it 'logs record lookup failures and keeps the existing response' do
-      exception = ActiveRecord::RecordNotFound.new('synthetic migration lookup failed')
-      exception.set_backtrace([
-                                'spec/migration_dependency.rb:12:in `find`',
-                                'spec/migrate.rb:34:in `run`'
-                              ])
-      allow(VpsAdmin::API::Operations::Vps::Migrate).to receive(:run).and_raise(exception)
+    it 'logs record lookup failures outside the test environment' do
+      allow(VpsAdmin::API::Operations::Vps::Migrate).to receive(:run).and_raise(record_not_found)
 
       expect do
-        as(SpecSeed.admin) { json_post migrate_path(vps.id), vps: { node: target_node.id } }
+        with_env(RACK_ENV: 'production') do
+          as(SpecSeed.admin) { json_post migrate_path(vps.id), vps: { node: target_node.id } }
+        end
       end.to output(
         a_string_including(
           '[vpsAdmin API] Action failed: ActiveRecord::RecordNotFound: synthetic migration lookup failed',
@@ -1390,6 +1395,18 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
           "\tspec/migrate.rb:34:in `run`"
         )
       ).to_stderr
+
+      expect_status(404)
+      expect(json['status']).to be(false)
+      expect(response_message).to eq('object not found')
+    end
+
+    it 'does not log record lookup failures in the test environment' do
+      allow(VpsAdmin::API::Operations::Vps::Migrate).to receive(:run).and_raise(record_not_found)
+
+      expect do
+        as(SpecSeed.admin) { json_post migrate_path(vps.id), vps: { node: target_node.id } }
+      end.not_to output.to_stderr
 
       expect_status(404)
       expect(json['status']).to be(false)

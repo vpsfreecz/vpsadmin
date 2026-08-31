@@ -201,8 +201,14 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS' do
       )
     end
 
-    it 'hides other users VPSes' do
-      as(SpecSeed.other_user) { json_get show_path(user_vps.id) }
+    it 'hides other users VPSes without logging the expected lookup failure' do
+      expect do
+        with_env(RACK_ENV: 'production') do
+          as(SpecSeed.other_user) { json_get show_path(user_vps.id) }
+        end
+      end.not_to output(
+        a_string_including('[vpsAdmin API] Action failed: ActiveRecord::RecordNotFound')
+      ).to_stderr
 
       expect_status(404)
       expect(json['status']).to be(false)
