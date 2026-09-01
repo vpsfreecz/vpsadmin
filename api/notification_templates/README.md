@@ -39,7 +39,6 @@ text. Other existing database content is left unchanged. E-mail variants use
 `core.support_mail` as their default sender and reply address when it is
 configured.
 
-When
-`vpsadmin.api.notificationTemplates.source` is set, vpsAdmin overlays it on the
-built-in templates. A dedicated service then keeps matching database rows in
-sync.
+When `vpsadmin.api.notificationTemplates.source` is set, vpsAdmin overlays it
+on the built-in templates. A dedicated service then keeps matching database
+rows in sync.

@@ -858,8 +858,8 @@ cs:
             label: Uživatelská data VPS odstraněna
           vps_user_data_updated:
             label: Uživatelská data VPS aktualizována
-        description: Porovnat s jedním přesným typem události; ponechte prázdné pro
-          všechny typy nebo použijte vzor typu události
+        description: Porovnat s jedním přesným typem události; ponech prázdné pro
+          všechny typy nebo použij vzor typu události
       event_type_pattern:
         description: Vzor ve stylu shellu, například monitoring.*; nelze kombinovat
           s přesným typem události
@@ -2806,8 +2806,7 @@ cs:
         choices:
           system:
             label: systém
-        description: Vyberte, které subjekty událostí jsou vlastníkovi této routy
-          viditelné
+        description: Vyber, které subjekty událostí jsou vlastníkovi této routy viditelné
       subtree_check:
         description: Viz man exports(5).
         label: Subtree check

@@ -2520,7 +2520,7 @@ msgstr "Neplatné datum a čas"
 
 #: forms/notifications.forms.php
 msgid "Enter a custom expiration time"
-msgstr "Zadejte vlastní čas vypršení"
+msgstr "Zadej vlastní čas vypršení"
 
 #: forms/notifications.forms.php
 msgid "Invalid custom expiration time"
@@ -2544,7 +2544,7 @@ msgstr "Najednou lze zkontrolovat nejvýše 30 OOM reportů"
 
 #: forms/notifications.forms.php
 msgid "Select an OOM report"
-msgstr "Vyberte OOM report"
+msgstr "Vyber OOM report"
 
 #: forms/notifications.forms.php
 msgid "No incident report was selected"
@@ -2617,8 +2617,8 @@ msgid ""
 "None of the selected OOM reports are available to your account. Create a "
 "route manually if needed."
 msgstr ""
-"Žádný z vybraných OOM reportů není pro váš účet dostupný. V případě potřeby "
-"vytvořte routu ručně."
+"Žádný z vybraných OOM reportů není pro tvůj účet dostupný. V případě potřeby "
+"vytvoř routu ručně."
 
 #: forms/notifications.forms.php
 #, php-format
@@ -2642,7 +2642,7 @@ msgid ""
 "Every selected condition has to match. You can tune the matchers after "
 "creating the route."
 msgstr ""
-"Musí platit všechny vybrané podmínky. Matchery můžete upravit po vytvoření "
+"Musí platit všechny vybrané podmínky. Matchery můžeš upravit po vytvoření "
 "routy."
 
 #: forms/notifications.forms.php forms/oom_reports.forms.php
@@ -2670,8 +2670,8 @@ msgid ""
 "The selected incident report is not available to your account. Create a "
 "route manually if needed."
 msgstr ""
-"Vybrané hlášení incidentu není pro váš účet dostupné. V případě potřeby "
-"vytvořte routu ručně."
+"Vybrané hlášení incidentu není pro tvůj účet dostupné. V případě potřeby "
+"vytvoř routu ručně."
 
 #: forms/notifications.forms.php
 msgid "Composite ID attributes"
@@ -2918,7 +2918,7 @@ msgstr "Seskupeno"
 
 #: forms/notifications.forms.php
 msgid "Do you really wish to delete this notification route?"
-msgstr "Opravdu si přejete smazat tuto notifikační routu?"
+msgstr "Opravdu chceš smazat tuto notifikační routu?"
 
 #: forms/notifications.forms.php
 msgid "muted"
@@ -2935,7 +2935,7 @@ msgstr "Interval ztišení"
 #: forms/notifications.forms.php
 #, php-format
 msgid "Invalid time range \"%s\". Use HH:MM-HH:MM."
-msgstr "Neplatný časový rozsah „%s“. Použijte HH:MM-HH:MM."
+msgstr "Neplatný časový rozsah „%s“. Použij HH:MM-HH:MM."
 
 #: forms/notifications.forms.php
 #, php-format
@@ -2955,11 +2955,11 @@ msgstr "Rozsah dnů týdne „%s“ nesmí přecházet přes konec týdne."
 #: forms/notifications.forms.php
 #, php-format
 msgid "Invalid %s range \"%s\". Use start:end."
-msgstr "Neplatný rozsah pro %s „%s“. Použijte začátek:konec."
+msgstr "Neplatný rozsah pro %s „%s“. Použij začátek:konec."
 
 #: forms/notifications.forms.php
 msgid "Add at least one time specification."
-msgstr "Přidejte alespoň jednu časovou specifikaci."
+msgstr "Přidej alespoň jednu časovou specifikaci."
 
 #: forms/notifications.forms.php
 msgid "day-of-month"
@@ -2999,7 +2999,7 @@ msgstr "Dny v měsíci"
 
 #: forms/notifications.forms.php
 msgid "Use start:end; negative days count from the end of the month."
-msgstr "Použijte začátek:konec; záporné dny se počítají od konce měsíce."
+msgstr "Použij začátek:konec; záporné dny se počítají od konce měsíce."
 
 #: forms/notifications.forms.php
 msgid "Months"
@@ -3007,11 +3007,11 @@ msgstr "Měsíce"
 
 #: forms/notifications.forms.php
 msgid "Use month numbers and start:end ranges."
-msgstr "Použijte čísla měsíců a rozsahy začátek:konec."
+msgstr "Použij čísla měsíců a rozsahy začátek:konec."
 
 #: forms/notifications.forms.php
 msgid "Use full years and start:end ranges."
-msgstr "Použijte celé roky a rozsahy začátek:konec."
+msgstr "Použij celé roky a rozsahy začátek:konec."
 
 #: forms/notifications.forms.php
 msgid "Years"
@@ -3075,7 +3075,7 @@ msgstr "Platí nyní"
 
 #: forms/notifications.forms.php
 msgid "Do you really wish to delete this time interval?"
-msgstr "Opravdu si přejete smazat tento časový interval?"
+msgstr "Opravdu chceš smazat tento časový interval?"
 
 #: forms/notifications.forms.php
 msgid "No time intervals configured."
@@ -3103,7 +3103,7 @@ msgstr "Režim"
 
 #: forms/notifications.forms.php
 msgid "Do you really wish to unassign this time interval?"
-msgstr "Opravdu si přejete zrušit přiřazení tohoto časového intervalu?"
+msgstr "Opravdu chceš zrušit přiřazení tohoto časového intervalu?"
 
 #: forms/notifications.forms.php
 msgid "Assign interval"
@@ -3192,8 +3192,8 @@ msgid ""
 "separated event fields, or leave the field list empty to group all matching "
 "events. Muted and skipped events are excluded."
 msgstr ""
-"Seskupování platí pouze pro tuto routu a nedědí se. Zadejte čárkami oddělená "
-"pole události, nebo ponechte seznam polí prázdný pro seskupení všech "
+"Seskupování platí pouze pro tuto routu a nedědí se. Zadej čárkami oddělená "
+"pole události, nebo ponech seznam polí prázdný pro seskupení všech "
 "odpovídajících událostí. Ztlumené a přeskočené události jsou vynechány."
 
 #: forms/notifications.forms.php
@@ -3246,7 +3246,7 @@ msgstr "Vybrat typ události"
 
 #: forms/notifications.forms.php
 msgid "Choose the event type whose fields should be offered."
-msgstr "Vyberte typ události, jehož pole se mají nabízet."
+msgstr "Vyber typ události, jehož pole se mají nabízet."
 
 #: forms/notifications.forms.php
 msgid "Back to route"
@@ -3275,7 +3275,7 @@ msgstr "Otevřít Telegram bota"
 #: forms/notifications.forms.php
 msgid "Automatic pairing link is not available. Use manual pairing below."
 msgstr ""
-"Odkaz pro automatické spárování není k dispozici. Použijte ruční spárování "
+"Odkaz pro automatické spárování není k dispozici. Použij ruční spárování "
 "níže."
 
 #: forms/notifications.forms.php
@@ -3283,20 +3283,20 @@ msgid ""
 "The link includes the pairing command. Press Start in Telegram to finish "
 "pairing."
 msgstr ""
-"Odkaz obsahuje párovací příkaz. Stiskněte Start v Telegramu pro dokončení "
+"Odkaz obsahuje párovací příkaz. Stiskni Start v Telegramu pro dokončení "
 "spárování."
 
 #: forms/notifications.forms.php
 #, php-format
 msgid "Create a new pairing command and use it in a private chat with @%s."
-msgstr "Vytvořte nový párovací příkaz a použijte jej v soukromém chatu s @%s."
+msgstr "Vytvoř nový párovací příkaz a použij jej v soukromém chatu s @%s."
 
 #: forms/notifications.forms.php
 msgid ""
 "Create a new pairing command and use it in a private chat with the Telegram "
 "bot."
 msgstr ""
-"Vytvořte nový párovací příkaz a použijte jej v soukromém chatu s Telegram "
+"Vytvoř nový párovací příkaz a použij jej v soukromém chatu s Telegram "
 "botem."
 
 #: forms/notifications.forms.php
@@ -3407,7 +3407,7 @@ msgid ""
 "Do you really wish to delete this notification target? Receiver links using "
 "it will be removed."
 msgstr ""
-"Opravdu si přejete smazat tento notifikační cíl? Vazby příjemců, které jej "
+"Opravdu chceš smazat tento notifikační cíl? Vazby příjemců, které ho "
 "používají, budou odebrány."
 
 #: forms/notifications.forms.php
@@ -3436,7 +3436,7 @@ msgstr "Zapnout příjemce"
 
 #: forms/notifications.forms.php
 msgid "Do you really wish to delete this notification receiver?"
-msgstr "Opravdu si přejete smazat tohoto příjemce notifikací?"
+msgstr "Opravdu chceš smazat tohoto příjemce notifikací?"
 
 #: forms/notifications.forms.php
 msgid "No receivers configured."
@@ -3476,7 +3476,7 @@ msgstr "Příjemce"
 
 #: forms/notifications.forms.php
 msgid "Use the account e-mail or provide one custom address."
-msgstr "Použijte e-mail účtu nebo zadejte jednu vlastní adresu."
+msgstr "Použij e-mail účtu nebo zadej jednu vlastní adresu."
 
 #: forms/notifications.forms.php
 msgid "Custom e-mail address"
@@ -3508,7 +3508,7 @@ msgstr "HTTP nebo HTTPS endpoint, který přijímá JSON payload události."
 
 #: forms/notifications.forms.php
 msgid "leave empty to keep"
-msgstr "ponechte prázdné pro zachování"
+msgstr "ponech prázdné pro zachování"
 
 #: forms/notifications.forms.php
 msgid "Optional HMAC secret sent as X-VpsAdmin-Signature-256."
@@ -3573,7 +3573,7 @@ msgstr "Telefonní číslo"
 
 #: forms/notifications.forms.php
 msgid "Use international E.164 format, e.g. +420123456789."
-msgstr "Použijte mezinárodní formát E.164, např. +420123456789."
+msgstr "Použij mezinárodní formát E.164, např. +420123456789."
 
 #: forms/notifications.forms.php
 msgid "Instructions"
@@ -3584,7 +3584,7 @@ msgid ""
 "Save the phone number, send a verification SMS, then enter the code from the "
 "message."
 msgstr ""
-"Uložte telefonní číslo, odešlete ověřovací SMS a poté zadejte kód ze zprávy."
+"Ulož telefonní číslo, odešli ověřovací SMS a poté zadej kód ze zprávy."
 
 #: forms/notifications.forms.php
 msgid "SMS verification"
@@ -3612,7 +3612,7 @@ msgstr "Ověřovací kód"
 
 #: forms/notifications.forms.php
 msgid "Enter the 6-digit code from the SMS."
-msgstr "Zadejte šestimístný kód ze SMS."
+msgstr "Zadej šestimístný kód ze SMS."
 
 #: forms/notifications.forms.php
 msgid "Confirm code"
@@ -3636,7 +3636,7 @@ msgstr "Odeslat ověřovací e-mail"
 
 #: forms/notifications.forms.php
 msgid "Open the link from the message to verify this target."
-msgstr "Otevřete odkaz ze zprávy pro ověření tohoto cíle."
+msgstr "Otevři odkaz ze zprávy pro ověření tohoto cíle."
 
 #: forms/notifications.forms.php
 msgid "Add notification target"
@@ -3668,7 +3668,7 @@ msgstr "Typ cíle"
 
 #: forms/notifications.forms.php
 msgid "Choose how matching events will be delivered."
-msgstr "Vyberte, jak budou doručovány odpovídající události."
+msgstr "Vyber, jak se mají doručovat odpovídající události."
 
 #: forms/notifications.forms.php
 msgid "Notification target"
@@ -3697,7 +3697,7 @@ msgstr "Upravit cíl"
 #: forms/notifications.forms.php
 msgid ""
 "Do you really wish to unlink this notification target from the receiver?"
-msgstr "Opravdu si přejete odpojit tento notifikační cíl od příjemce?"
+msgstr "Opravdu chceš odpojit tento notifikační cíl od příjemce?"
 
 #: forms/notifications.forms.php
 msgid "No targets linked."
@@ -3713,7 +3713,7 @@ msgstr "Připojit existující cíl"
 
 #: forms/notifications.forms.php
 msgid "Select an existing reusable target."
-msgstr "Vyberte existující znovupoužitelný cíl."
+msgstr "Vyber existující znovupoužitelný cíl."
 
 #: forms/notifications.forms.php
 msgid "Link target"
