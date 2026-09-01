@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'notification_templates'
+
 module VpsAdmin::API
   module MailTemplates
     DEFAULT_FROM = 'noreply@vpsadmin.invalid'
@@ -7,7 +9,6 @@ module VpsAdmin::API
       'en' => 'English',
       'cs' => 'Česky'
     }.freeze
-
     CONCRETE_DEFAULTS = {
       expiration_user_active: :expiration_warning,
       expiration_vps_active: :expiration_warning,
@@ -43,141 +44,6 @@ module VpsAdmin::API
       alert_vps_dataset_over_quota: :alert_vps_dataset_over_quota
     }.freeze
 
-    class Meta
-      OPTS = %i[label from reply_to return_path subject user_visibility].freeze
-
-      OPTS.each do |name|
-        define_method(name) do |value|
-          @opts[name] = value
-        end
-      end
-
-      attr_reader :opts
-
-      def initialize(id)
-        @opts = { id: }
-        @translations = {}
-      end
-
-      def lang(code, &)
-        meta = self.class.new(@opts[:id])
-        meta.instance_exec(&)
-        @translations[code.to_s] = meta.opts
-      end
-
-      def [](key)
-        @opts[key]
-      end
-
-      def lang_opts(lang)
-        opts = @opts.except(:id)
-        opts.merge(@translations.fetch(lang, {}))
-      end
-    end
-
-    class MetaContext
-      attr_reader :meta
-
-      def template(id = nil, &)
-        @meta = Meta.new(id)
-        @meta.instance_exec(&)
-      end
-    end
-
-    class DirectoryTemplate
-      attr_reader :name, :id, :translations
-
-      def initialize(path)
-        @path = path
-        @name = File.basename(path)
-        @translations = []
-
-        meta_path = File.join(path, 'meta.rb')
-        raise "#{meta_path} does not exist" unless File.exist?(meta_path)
-
-        context = MetaContext.new
-        context.instance_eval(File.read(meta_path), meta_path)
-
-        @meta = context.meta || raise("#{meta_path} did not define template")
-        @id = @meta[:id] || @name
-
-        translation_files.group_by { |file| File.basename(file).split('.').first }.each do |lang, files|
-          @translations << DirectoryTranslation.new(self, lang, files)
-        end
-      end
-
-      def params
-        {
-          name:,
-          label: @meta[:label] || humanize(name),
-          template_id: id.to_s,
-          user_visibility: visibility(@meta[:user_visibility])
-        }
-      end
-
-      def translation_defaults(lang)
-        @meta.lang_opts(lang)
-      end
-
-      private
-
-      def translation_files
-        Dir.glob(File.join(@path, '*.erb'))
-      end
-
-      def visibility(value)
-        if value.nil?
-          'default'
-        elsif value
-          'visible'
-        else
-          'invisible'
-        end
-      end
-
-      def humanize(str)
-        str.tr('_', ' ').split.map(&:capitalize).join(' ')
-      end
-    end
-
-    class DirectoryTranslation
-      attr_reader :lang
-
-      def initialize(template, lang, files)
-        @template = template
-        @lang = lang
-        @plain = nil
-        @html = nil
-
-        files.each do |file|
-          case File.basename(file).split('.')[1]
-          when 'plain'
-            @plain = File.read(file)
-          when 'html'
-            @html = File.read(file)
-          end
-        end
-      end
-
-      def params
-        defaults = @template.translation_defaults(lang)
-        {
-          from: defaults.fetch(:from, MailTemplates.default_from),
-          reply_to: defaults.fetch(:reply_to, MailTemplates.default_reply_to),
-          return_path: defaults.fetch(:return_path, MailTemplates.default_return_path),
-          subject: defaults[:subject] || default_subject,
-          text_plain: @plain,
-          text_html: @html
-        }
-      end
-
-      private
-
-      def default_subject
-        "[vpsAdmin] #{@template.name.tr('_', ' ')}"
-      end
-    end
-
     def self.install_defaults!(paths: default_template_paths)
       result = {
         templates_created: 0,
@@ -191,17 +57,17 @@ module VpsAdmin::API
           record = ::MailTemplate.find_or_initialize_by(name: template.name)
 
           if record.new_record?
-            record.assign_attributes(template.params)
+            record.assign_attributes(template_params(template))
             record.save!
             result[:templates_created] += 1
           end
 
-          template.translations.each do |translation|
-            language = ensure_language!(translation.lang)
+          template.variants.each do |variant|
+            language = ensure_language!(variant.language)
             next if record.mail_template_translations.where(language:).exists?
 
             record.mail_template_translations.create!(
-              translation.params.merge(language:)
+              translation_params(template, variant).merge(language:)
             )
             result[:translations_created] += 1
           end
@@ -224,12 +90,12 @@ module VpsAdmin::API
     end
 
     def self.default_template_paths
-      paths = [File.join(VpsAdmin::API.root, 'mail_templates')]
+      paths = [File.join(VpsAdmin::API.root, 'notification_templates', 'templates')]
 
       VpsAdmin::API::Plugin.registered.each_value do |plugin|
         next unless plugin.directory
 
-        paths << File.join(plugin.directory, 'mail_templates')
+        paths << File.join(plugin.directory, 'notification_templates', 'templates')
       end
 
       paths
@@ -239,14 +105,50 @@ module VpsAdmin::API
       paths.flat_map do |path|
         next [] unless Dir.exist?(path)
 
-        Dir.children(path).sort.filter_map do |entry|
-          template_path = File.join(path, entry)
-          next unless Dir.exist?(template_path)
-          next unless File.exist?(File.join(template_path, 'meta.rb'))
-
-          DirectoryTemplate.new(template_path)
-        end
+        NotificationTemplates::Directory.new(path).templates
       end
+    end
+
+    def self.template_params(template)
+      options = template.template_options
+
+      {
+        name: template.name,
+        label: options[:label] || humanize(template.name),
+        template_id: template.id.to_s,
+        user_visibility: visibility(options[:user_visibility])
+      }
+    end
+
+    def self.translation_params(template, variant)
+      options = variant.options
+
+      {
+        from: options.fetch(:from, default_from),
+        reply_to: options.fetch(:reply_to, default_reply_to),
+        return_path: options.fetch(:return_path, default_return_path),
+        subject: variant.content(:subject) || options[:subject] || default_subject(template),
+        text_plain: variant.content(:text),
+        text_html: variant.content(:html)
+      }
+    end
+
+    def self.default_subject(template)
+      "[vpsAdmin] #{template.name.tr('_', ' ')}"
+    end
+
+    def self.visibility(value)
+      if value.nil?
+        'default'
+      elsif value
+        'visible'
+      else
+        'invisible'
+      end
+    end
+
+    def self.humanize(str)
+      str.tr('_', ' ').split.map(&:capitalize).join(' ')
     end
 
     def self.required_default_templates
@@ -299,6 +201,11 @@ module VpsAdmin::API
     private_class_method :configured_support_mail,
                          :ensure_language!,
                          :unique_templates,
-                         :registered_templates
+                         :registered_templates,
+                         :template_params,
+                         :translation_params,
+                         :default_subject,
+                         :visibility,
+                         :humanize
   end
 end

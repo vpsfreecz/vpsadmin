@@ -11,10 +11,9 @@ setup the database:
 
     $ rake vpsadmin:plugins:migrate PLUGIN=requests
 
-This plugin requires some mail templates to be installed in order to work.
-Examples of such templates are in subdirectory `mail_templates/`. Use
-[vpsadmin-mail-templates](https://github.com/vpsfreecz/vpsadmin-mail-templates)
-to install them.
+This plugin includes the notification templates it needs under
+`notification_templates/templates/`. vpsAdmin installs them with its bundled
+templates during database setup.
 
 ## Changes
 This plugin defines two new API resources: `UserRequest.Registration` and

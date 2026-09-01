@@ -7,19 +7,17 @@ require 'erb'
 RSpec.describe VpsAdmin::API::MailTemplates do
   def write_template(dir, name, meta:, plain:)
     path = File.join(dir, name)
-    FileUtils.mkdir_p(path)
+    FileUtils.mkdir_p(File.join(path, 'email'))
     File.write(File.join(path, 'meta.rb'), meta)
-    File.write(File.join(path, 'en.plain.erb'), plain)
+    File.write(File.join(path, 'email', 'en.text.erb'), plain)
   end
 
   def compile_erb(source)
     RubyVM::InstructionSequence.compile(ERB.new(source, trim_mode: '-').src)
   end
 
-  it 'loads template directories in vpsadmin-mail-templates format' do
+  it 'loads email templates from notification template directories' do
     Dir.mktmpdir do |dir|
-      FileUtils.mkdir_p(File.join(dir, '.gems'))
-
       write_template(
         dir,
         'spec_directory_template',
@@ -37,14 +35,15 @@ RSpec.describe VpsAdmin::API::MailTemplates do
       )
 
       template = described_class.find_templates([dir]).first
+      variant = template.variants.first
 
-      expect(template.params).to include(
+      expect(described_class.send(:template_params, template)).to include(
         name: 'spec_directory_template',
         label: 'Directory template',
         template_id: 'user_create',
         user_visibility: 'default'
       )
-      expect(template.translations.first.params).to include(
+      expect(described_class.send(:translation_params, template, variant)).to include(
         from: 'from@example.test',
         subject: 'Directory subject',
         text_plain: 'Directory body'
@@ -145,9 +144,10 @@ RSpec.describe VpsAdmin::API::MailTemplates do
         plain: 'Default sender body'
       )
 
-      translation = described_class.find_templates([dir]).first.translations.first
+      template = described_class.find_templates([dir]).first
+      variant = template.variants.first
 
-      expect(translation.params).to include(
+      expect(described_class.send(:translation_params, template, variant)).to include(
         from: 'support@example.test',
         reply_to: 'support@example.test',
         return_path: 'support@example.test'
@@ -219,7 +219,7 @@ RSpec.describe VpsAdmin::API::MailTemplates do
 
       expect(template).to be_present, "#{name} is missing"
       expect(template.id.to_s).to eq(template_id)
-      expect(template.translations.map(&:lang)).to include('en')
+      expect(template.variants.map(&:language)).to include('en')
     end
   end
 
@@ -228,10 +228,10 @@ RSpec.describe VpsAdmin::API::MailTemplates do
     expect(templates).not_to be_empty
 
     templates.each do |template|
-      translation = template.translations.detect { |tr| tr.lang == 'en' }
-      expect(translation).to be_present, "#{template.name} is missing English"
+      variant = template.variants.detect { |item| item.language == 'en' }
+      expect(variant).to be_present, "#{template.name} is missing English"
 
-      params = translation.params
+      params = described_class.send(:translation_params, template, variant)
       expect(params[:subject]).to be_present
       expect(params[:text_plain]).to be_present
 
@@ -241,7 +241,7 @@ RSpec.describe VpsAdmin::API::MailTemplates do
 
       content = [
         template.name,
-        template.params[:label],
+        described_class.send(:template_params, template)[:label],
         params[:subject],
         params[:text_plain],
         params[:text_html]
