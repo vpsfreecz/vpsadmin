@@ -299,6 +299,37 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       expect(ids).to include(draft.id, published.id)
     end
 
+    it 'orders drafts and published advisories by their effective dates' do
+      published = build_advisory({
+        created_at: Time.utc(2026, 1, 4),
+        published_at: Time.utc(2026, 1, 1)
+      })
+      make_publishable!(published)
+      published.publish!(
+        expected_content_revision: published.content_revision,
+        published_by: SpecSeed.admin
+      )
+      draft = build_advisory({ created_at: Time.utc(2026, 1, 2) })
+
+      as(SpecSeed.admin) do
+        json_get index_path, security_advisory: { order: 'newest' }
+      end
+
+      expect_status(200)
+      expect(security_advisories.map { |row| row['id'] }).to eq(
+        [draft.id, published.id]
+      )
+
+      as(SpecSeed.admin) do
+        json_get index_path, security_advisory: { order: 'oldest' }
+      end
+
+      expect_status(200)
+      expect(security_advisories.map { |row| row['id'] }).to eq(
+        [published.id, draft.id]
+      )
+    end
+
     it 'hides administrative counters from public output' do
       advisory = build_published_advisory
 

@@ -8,6 +8,8 @@ module VpsAdmin::API::Resources
       'Date and time shown as the advisory publication time.'.freeze
     SEND_MAIL_DESCRIPTION =
       'When enabled, affected users are emailed after the action completes.'.freeze
+    EFFECTIVE_DATE_SQL =
+      'COALESCE(security_advisories.published_at, security_advisories.created_at)'.freeze
     TEXT_DESCRIPTIONS = {
       summary: 'Short vulnerability-class title shown in advisory lists, ' \
                'status output, IRC announcements, and emails.',
@@ -203,9 +205,18 @@ module VpsAdmin::API::Resources
 
         case input[:order]
         when 'oldest'
-          with_asc_pagination(q).order('published_at, created_at')
+          with_asc_pagination(q).order(
+            Arel.sql(
+              "#{EFFECTIVE_DATE_SQL}, security_advisories.created_at, security_advisories.id"
+            )
+          )
         else
-          with_desc_pagination(q).order('published_at DESC, created_at DESC')
+          with_desc_pagination(q).order(
+            Arel.sql(
+              "#{EFFECTIVE_DATE_SQL} DESC, " \
+              'security_advisories.created_at DESC, security_advisories.id DESC'
+            )
+          )
         end
       end
     end
