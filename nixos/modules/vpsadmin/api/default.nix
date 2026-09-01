@@ -30,6 +30,7 @@ let
         vpsadminPackage = cfg.package;
         plugins = vpsadminCfg.plugins;
         source = cfg.notificationTemplates.source;
+        mode = cfg.notificationTemplates.mode;
       }
     else
       null;
@@ -149,14 +150,32 @@ in
         '';
       };
 
-      notificationTemplates.source = mkOption {
-        type = types.nullOr (types.either types.path types.package);
-        default = null;
-        description = ''
-          Notification template source to overlay on the templates bundled
-          with vpsAdmin. The source can contain `templates/` or be that
-          directory itself.
-        '';
+      notificationTemplates = {
+        mode = mkOption {
+          type = types.enum [
+            "overlay"
+            "replace"
+          ];
+          default = "overlay";
+          description = ''
+            How to combine the configured notification template source with
+            templates bundled with vpsAdmin and its enabled plugins. Overlay
+            mode adds bundled templates before applying the configured source.
+            Replace mode uses only the configured source, so an omitted
+            optional template remains unavailable and its notification is not
+            sent.
+          '';
+        };
+
+        source = mkOption {
+          type = types.nullOr (types.either types.path types.package);
+          default = null;
+          description = ''
+            Notification template source. The source can contain `templates/`
+            or be that directory itself. See `mode` for how it is combined
+            with bundled templates.
+          '';
+        };
       };
     };
   };

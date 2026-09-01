@@ -56,7 +56,12 @@ let
       vpsadminPackage,
       plugins ? [ ],
       source,
+      mode ? "overlay",
     }:
+    assert lib.assertMsg (builtins.elem mode [
+      "overlay"
+      "replace"
+    ]) "notification template mode must be either overlay or replace";
     stdenvNoCC.mkDerivation {
       pname = "vpsadmin-effective-notification-templates";
       version = "1";
@@ -68,25 +73,27 @@ let
         ${resolveSource}
         mkdir -p "$out/templates"
 
-        cp -a ${vpsadminPackage}/api/notification_templates/templates/. "$out/templates/"
-        chmod -R u+w "$out/templates"
-
-        for plugin_path in ${
-          lib.escapeShellArgs (
-            map (plugin: "${vpsadminPackage}/plugins/${plugin}/notification_templates/templates") plugins
-          )
-        }; do
-          [ -d "$plugin_path" ] || continue
-
-          for template_path in "$plugin_path"/*; do
-            [ -d "$template_path" ] || continue
-            template_name="$(basename "$template_path")"
-            [ -e "$out/templates/$template_name" ] || \
-              cp -a "$template_path" "$out/templates/"
-          done
-
+        ${lib.optionalString (mode == "overlay") ''
+          cp -a ${vpsadminPackage}/api/notification_templates/templates/. "$out/templates/"
           chmod -R u+w "$out/templates"
-        done
+
+          for plugin_path in ${
+            lib.escapeShellArgs (
+              map (plugin: "${vpsadminPackage}/plugins/${plugin}/notification_templates/templates") plugins
+            )
+          }; do
+            [ -d "$plugin_path" ] || continue
+
+            for template_path in "$plugin_path"/*; do
+              [ -d "$template_path" ] || continue
+              template_name="$(basename "$template_path")"
+              [ -e "$out/templates/$template_name" ] || \
+                cp -a "$template_path" "$out/templates/"
+            done
+
+            chmod -R u+w "$out/templates"
+          done
+        ''}
 
         source_path="$(resolve_source ${lib.escapeShellArg (toString source)})"
         cp -a "$source_path"/. "$out/templates/"

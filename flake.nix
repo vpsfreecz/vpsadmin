@@ -200,6 +200,46 @@
             plugins = [ "outage_reports" ];
             source = notificationTemplateOverride;
           };
+          replacementNotificationTemplates = notificationTemplateTools.mkEffectivePackage {
+            vpsadminPackage = vpsadminPkgs.vpsadmin-api;
+            plugins = [ "outage_reports" ];
+            source = notificationTemplateOverride;
+            mode = "replace";
+          };
+          replacementDatabaseModule = {
+            system.stateVersion = "24.11";
+            vpsadmin.api = {
+              enable = true;
+              notificationTemplates = {
+                mode = "replace";
+                source = notificationTemplateOverride;
+              };
+            };
+          };
+          replacementDatabaseConfiguration = nixpkgs.lib.nixosSystem {
+            inherit system;
+            modules = [
+              self.nixosModules.nixos-modules
+              replacementDatabaseModule
+            ];
+          };
+          invalidReplacementDatabaseConfiguration = nixpkgs.lib.nixosSystem {
+            inherit system;
+            modules = [
+              self.nixosModules.nixos-modules
+              replacementDatabaseModule
+              {
+                vpsadmin.databaseSetup.installDefaultNotificationTemplates = true;
+              }
+            ];
+          };
+          findNotificationTemplateDatabaseAssertion =
+            configuration:
+            nixpkgs.lib.findFirst (
+              assertion: nixpkgs.lib.hasInfix "installDefaultNotificationTemplates cannot be" assertion.message
+            ) null configuration.config.assertions;
+          replacementDatabaseAssertion = findNotificationTemplateDatabaseAssertion replacementDatabaseConfiguration;
+          invalidReplacementDatabaseAssertion = findNotificationTemplateDatabaseAssertion invalidReplacementDatabaseConfiguration;
           systemConfigurationUrl = "https://github.com/example/configuration/commit/";
           webuiConfiguration = nixpkgs.lib.nixosSystem {
             inherit system;
@@ -235,6 +275,47 @@
               ${effectiveNotificationTemplates}/templates/payments_overview
             touch "$out"
           '';
+
+          replacement-notification-templates = pkgs.runCommand "replacement-notification-templates" { } ''
+            grep -Fx 'Overridden daily report' \
+              ${replacementNotificationTemplates}/templates/daily_report/email/en.subject.erb
+            test ! -e \
+              ${replacementNotificationTemplates}/templates/outage_report_generic
+            test ! -e \
+              ${replacementNotificationTemplates}/templates/request_update_user
+            test "$(find ${replacementNotificationTemplates}/templates \
+              -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 1
+            touch "$out"
+          '';
+
+          replacement-notification-templates-module =
+            assert nixpkgs.lib.assertMsg (replacementDatabaseAssertion != null) ''
+              The replacement notification template database assertion must be
+              present in the test configuration
+            '';
+            assert nixpkgs.lib.assertMsg
+              (
+                !replacementDatabaseConfiguration.config.vpsadmin.databaseSetup.installDefaultNotificationTemplates
+              )
+              ''
+                Replacement notification templates must disable built-in template
+                installation by default
+              '';
+            assert nixpkgs.lib.assertMsg replacementDatabaseAssertion.assertion ''
+              Replacement notification templates must permit the default
+              built-in template installation setting
+            '';
+            assert nixpkgs.lib.assertMsg (invalidReplacementDatabaseAssertion != null) ''
+              The contradictory replacement notification template database
+              assertion must be present in the test configuration
+            '';
+            assert nixpkgs.lib.assertMsg (!invalidReplacementDatabaseAssertion.assertion) ''
+              Replacement notification templates must reject explicitly enabling
+              built-in template installation
+            '';
+            pkgs.runCommand "replacement-notification-templates-module" { } ''
+              touch "$out"
+            '';
 
           notification-templates = notificationTemplateTools.mkPackage {
             pname = "vpsadmin-default-notification-templates";

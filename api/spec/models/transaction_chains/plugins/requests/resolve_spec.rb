@@ -77,4 +77,43 @@ RSpec.describe 'requests plugin resolve chain', requires_plugins: :requests do #
     expect(attempts.none? { |_name, opts| opts[:user] == request.user }).to be(true)
     expect(attempts.any? { |_name, opts| opts[:user] == SpecSeed.admin }).to be(true)
   end
+
+  it 'does not send user mail when registration approval templates are missing' do
+    request = build_registration_request!(last_mail_id: 2)
+    attempts = []
+    deliveries = []
+    action_called = false
+
+    request.define_singleton_method(:approve) do |_chain, _params|
+      action_called = true
+    end
+
+    allow(MailTemplate).to receive(:send_mail!) do |name, opts|
+      concrete_name = MailTemplate.resolve_name(name, opts[:params])
+      attempts << [concrete_name, opts]
+
+      unless concrete_name == 'request_resolve_admin'
+        raise VpsAdmin::API::Exceptions::MailTemplateDoesNotExist, concrete_name
+      end
+
+      deliveries << [concrete_name, opts]
+      build_mail_log_double
+    end
+
+    chain_class.fire2(args: [request, :approved, :approve, 'Looks good', {}])
+
+    user_attempts = attempts.select { |_name, opts| opts[:user] == request.user }
+    expect(user_attempts.map(&:first)).to eq(
+      %w[
+        request_resolve_user_registration_approved
+        request_resolve_user_registration
+        request_resolve_user_approved
+        request_resolve_user
+      ]
+    )
+    expect(deliveries.none? { |_name, opts| opts[:user] == request.user }).to be(true)
+    expect(deliveries).not_to be_empty
+    expect(deliveries.map(&:first)).to all(eq('request_resolve_admin'))
+    expect(action_called).to be(true)
+  end
 end

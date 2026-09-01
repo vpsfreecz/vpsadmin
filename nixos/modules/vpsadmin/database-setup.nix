@@ -94,10 +94,11 @@ in
 
       installDefaultNotificationTemplates = lib.mkOption {
         type = lib.types.bool;
-        default = true;
+        default = vpsadminCfg.api.notificationTemplates.mode != "replace";
         description = ''
           Install built-in mail templates after migrations. Existing templates
-          and translations are left unchanged.
+          and translations are left unchanged. This defaults to false when the
+          API uses a replacement notification template source.
         '';
       };
 
@@ -116,6 +117,17 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion =
+          vpsadminCfg.api.notificationTemplates.mode != "replace" || !cfg.installDefaultNotificationTemplates;
+        message = ''
+          vpsadmin.databaseSetup.installDefaultNotificationTemplates cannot be
+          enabled when vpsadmin.api.notificationTemplates.mode is "replace"
+        '';
+      }
+    ];
+
     systemd.tmpfiles.rules = apiApp.tmpfilesRules ++ [
       "d '${cfg.stateDirectory}/cache' 0750 ${cfg.user} ${cfg.group} - -"
     ];
