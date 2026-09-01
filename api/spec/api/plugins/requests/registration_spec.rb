@@ -723,12 +723,6 @@ RSpec.describe 'VpsAdmin::API::Resources::UserRequest::Registration', requires_p
       user = ::User.find_by(login: login)
       expect(user).not_to be_nil
       expect(user.time_zone).to eq('Europe/Prague')
-      expect(
-        ::MailLog.joins(:mail_template).exists?(
-          user:,
-          mail_templates: { name: 'user_create' }
-        )
-      ).to be(true)
     end
 
     it 'rejects VPS creation when the requested OS template became unavailable' do

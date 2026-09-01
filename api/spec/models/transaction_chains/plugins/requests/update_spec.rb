@@ -72,32 +72,32 @@ RSpec.describe 'requests plugin update chain', requires_plugins: :requests do # 
     end
   end
 
-  it 'does not send user mail when registration update templates are missing' do
+  it 'records a failed user delivery when registration update templates are missing' do
+    NotificationTemplate.where(name: %w[
+                                 request_update_user_registration
+                                 request_update_user
+                               ]).destroy_all
+    ensure_request_notification_template!(
+      'request_update_admin_registration',
+      'request_update_admin_registration'
+    )
     request = build_registration_request!(state: :pending_correction)
-    attempts = []
-    deliveries = []
-
-    allow(MailTemplate).to receive(:send_mail!) do |name, opts|
-      concrete_name = MailTemplate.resolve_name(name, opts[:params])
-      attempts << [concrete_name, opts]
-
-      unless concrete_name == 'request_update_admin_registration'
-        raise VpsAdmin::API::Exceptions::MailTemplateDoesNotExist, concrete_name
-      end
-
-      deliveries << [concrete_name, opts]
-      build_mail_log_double
-    end
 
     chain_class.fire2(args: [request, { full_name: 'Corrected Name' }])
+    event = request_events('request.update_submitted', request).sole
+    user_delivery = event.event_deliveries.detect do |delivery|
+      delivery.target_value == request.user_mail
+    end
+    admin_delivery = event.event_deliveries.detect do |delivery|
+      delivery.event_routing_context&.user_id == SpecSeed.admin.id
+    end
 
-    user_attempts = attempts.select { |_name, opts| opts[:user] == request.user }
-    expect(user_attempts.map(&:first)).to eq(
-      %w[request_update_user_registration request_update_user]
+    expect(user_delivery).to be_failed_state
+    expect(user_delivery.error_summary).to include('NotificationTemplateDoesNotExist')
+    expect(admin_delivery).to be_prepared_state
+    expect(admin_delivery.mail_log.notification_template.name).to eq(
+      'request_update_admin_registration'
     )
-    expect(deliveries.none? { |_name, opts| opts[:user] == request.user }).to be(true)
-    expect(deliveries).not_to be_empty
-    expect(deliveries.map(&:first)).to all(eq('request_update_admin_registration'))
   end
 
   it 'routes public registration correction mail without a request user' do
