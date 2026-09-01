@@ -61,6 +61,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::DatasetExpansions do
     it 'processes the event and schedules notification mail for active VPSes' do
       fixture = build_active_dataset_expansion_fixture(enable_notifications: true)
       expansion = fixture.fetch(:expansion)
+      expansion.dataset_expansion_histories.order(id: :desc).take!.update!(new_refquota: 99_999)
       allow(operation).to receive(:run).and_return(expansion)
 
       supervisor.send(:process_event, expansion_event(fixture))
@@ -69,7 +70,10 @@ RSpec.describe VpsAdmin::Supervisor::Node::DatasetExpansions do
         instance_of(DatasetExpansionEvent),
         max_over_refquota_seconds: VpsAdmin::API::Tasks::DatasetExpansion::MAX_OVER_REFQUOTA_SECONDS
       )
-      expect(TransactionChains::Mail::VpsDatasetExpanded).to have_received(:fire).with(expansion)
+      expect(TransactionChains::Mail::VpsDatasetExpanded).to have_received(:fire).with(
+        expansion,
+        new_refquota: 12_288
+      )
       expect(DatasetExpansionEvent.where(dataset: fixture.fetch(:dataset))).to be_empty
     end
 

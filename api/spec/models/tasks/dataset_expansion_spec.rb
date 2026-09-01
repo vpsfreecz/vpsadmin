@@ -83,7 +83,7 @@ RSpec.describe VpsAdmin::API::Tasks::DatasetExpansion do
 
     it 'notifies each returned expansion only once' do
       fixture = active_expansion_fixture
-      2.times { create_expansion_event!(dataset: fixture.fetch(:dataset)) }
+      events = 2.times.map { create_expansion_event!(dataset: fixture.fetch(:dataset)) }
       allow(VpsAdmin::API::Operations::DatasetExpansion::ProcessEvent).to receive(:run).and_return(
         fixture.fetch(:expansion)
       )
@@ -91,7 +91,29 @@ RSpec.describe VpsAdmin::API::Tasks::DatasetExpansion do
       task.process_events
 
       expect(TransactionChains::Mail::VpsDatasetExpanded).to have_received(:fire).once.with(
-        fixture.fetch(:expansion)
+        fixture.fetch(:expansion),
+        new_refquota: events.last.new_refquota
+      )
+    end
+
+    it 'uses the latest processed event target for one expansion' do
+      fixture = active_expansion_fixture
+      expansion = fixture.fetch(:expansion)
+      events = [
+        create_expansion_event!(dataset: fixture.fetch(:dataset), added_space: 1_024),
+        create_expansion_event!(dataset: fixture.fetch(:dataset), added_space: 2_048)
+      ]
+      targets = [13_312, 15_360]
+      events.zip(targets).each { |event, target| event.update!(new_refquota: target) }
+
+      allow(VpsAdmin::API::Operations::DatasetExpansion::ProcessEvent).to receive(:run)
+        .and_return(expansion)
+
+      task.process_events
+
+      expect(TransactionChains::Mail::VpsDatasetExpanded).to have_received(:fire).once.with(
+        expansion,
+        new_refquota: targets.last
       )
     end
 
@@ -121,7 +143,8 @@ RSpec.describe VpsAdmin::API::Tasks::DatasetExpansion do
 
       expect { task.process_events }.to output(/Dataset id=#{locked_event.dataset_id} .* locked/).to_stderr
       expect(TransactionChains::Mail::VpsDatasetExpanded).to have_received(:fire).once.with(
-        ok_fixture.fetch(:expansion)
+        ok_fixture.fetch(:expansion),
+        new_refquota: ok_event.new_refquota
       )
     end
   end

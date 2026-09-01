@@ -21,7 +21,7 @@ module VpsAdmin::API::Tasks
     # Accepts the following environment variables:
     # [MAX_OVER_REFQUOTA_SECONDS]: Number of seconds within which the user should free space
     def process_events
-      expansions = []
+      expansions = {}
 
       ::DatasetExpansionEvent.all.each do |event|
         begin
@@ -36,11 +36,11 @@ module VpsAdmin::API::Tasks
 
         next if exp.nil?
 
-        expansions << exp if exp.enable_notifications && exp.vps.active? && !expansions.detect { |v| v.id == exp.id }
+        expansions[exp.id] = [exp, event.new_refquota] if exp.enable_notifications && exp.vps.active?
       end
 
-      expansions.each do |exp|
-        TransactionChains::Mail::VpsDatasetExpanded.fire(exp)
+      expansions.each_value do |exp, new_refquota|
+        TransactionChains::Mail::VpsDatasetExpanded.fire(exp, new_refquota:)
       end
     end
 
@@ -92,24 +92,22 @@ module VpsAdmin::API::Tasks
           next
         end
 
-        # rubocop:disable Style/Next
-        if exp.dataset.referenced - OVERQUOTA_MB > exp.original_refquota \
-           && (exp.last_vps_stop.nil? || exp.last_vps_stop + COOLDOWN < now) \
-           && exp.vps.active? \
-           && exp.vps.is_running? \
-           && exp.vps.uptime \
-           && exp.vps.uptime >= COOLDOWN \
-           && (exp_cnt > MAX_EXPANSIONS || exp.over_refquota_seconds > exp.max_over_refquota_seconds)
-          begin
-            TransactionChains::Vps::StopOverQuota.fire(exp)
-            puts "Stopped VPS #{exp.vps.id}"
-            exp.update!(last_vps_stop: now)
-          rescue ResourceLocked
-            warn "VPS #{exp.vps.id} is locked, unable to stop at this time"
-            next
-          end
+        next unless exp.dataset.referenced - OVERQUOTA_MB > exp.original_refquota \
+                    && (exp.last_vps_stop.nil? || exp.last_vps_stop + COOLDOWN < now) \
+                    && exp.vps.active? \
+                    && exp.vps.is_running? \
+                    && exp.vps.uptime \
+                    && exp.vps.uptime >= COOLDOWN \
+                    && (exp_cnt > MAX_EXPANSIONS || exp.over_refquota_seconds > exp.max_over_refquota_seconds)
+
+        begin
+          TransactionChains::Vps::StopOverQuota.fire(exp)
+          puts "Stopped VPS #{exp.vps.id}"
+          exp.update!(last_vps_stop: now)
+        rescue ResourceLocked
+          warn "VPS #{exp.vps.id} is locked, unable to stop at this time"
+          next
         end
-        # rubocop:enable Style/Next
       end
     end
 

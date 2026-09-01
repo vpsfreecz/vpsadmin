@@ -378,7 +378,11 @@ class MailTemplate < ApplicationRecord
     base_url: [String, 'URL to the web UI'],
     vps: ::Vps,
     expansion: ::DatasetExpansion,
-    dataset: ::Dataset
+    dataset: ::Dataset,
+    original_refquota: [Integer, 'original reference quota in MiB'],
+    new_refquota: [Integer, 'new reference quota in MiB'],
+    added_space: [Integer, 'cumulative added space in MiB'],
+    referenced: [Integer, 'referenced space in MiB']
   }, roles: %i[admin], public: true
 
   register :vps_dataset_shrunk, vars: {

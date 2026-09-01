@@ -18,8 +18,9 @@ RSpec.describe TransactionChains::Mail::VpsDatasetExpanded do
     fixture = build_active_dataset_expansion_fixture(user: SpecSeed.user)
     expansion = fixture.fetch(:expansion)
     vps = fixture.fetch(:vps)
+    new_refquota = fixture.fetch(:current_refquota)
 
-    chain, = described_class.fire2(args: [expansion])
+    chain, = described_class.fire(expansion, new_refquota:)
 
     expect(chain).to be_present
     expect(tx_classes(chain)).to include(Transactions::Mail::Send)
@@ -31,9 +32,20 @@ RSpec.describe TransactionChains::Mail::VpsDatasetExpanded do
         vars: hash_including(
           vps:,
           expansion:,
-          dataset: fixture.fetch(:dataset)
+          dataset: fixture.fetch(:dataset),
+          original_refquota: expansion.original_refquota,
+          new_refquota:,
+          added_space: expansion.added_space,
+          referenced: fixture.fetch(:dataset_in_pool).referenced
         )
       )
     )
+  end
+
+  it 'requires the exact new refquota' do
+    fixture = build_active_dataset_expansion_fixture(user: SpecSeed.user)
+
+    expect { described_class.fire(fixture.fetch(:expansion)) }
+      .to raise_error(ArgumentError, /new_refquota/)
   end
 end

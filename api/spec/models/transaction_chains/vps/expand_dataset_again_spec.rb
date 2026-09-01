@@ -41,6 +41,17 @@ RSpec.describe TransactionChains::Vps::ExpandDatasetAgain do
     expect(history.new_refquota).to eq(fixture.fetch(:current_refquota) + 1_024)
     expect(history.admin).to eq(user)
     expect(expansion.dataset_expansion_histories.count).to eq(2)
+    expect(MailTemplate).to have_received(:send_mail!).with(
+      :vps_dataset_expanded,
+      hash_including(
+        vars: hash_including(
+          original_refquota: expansion.original_refquota,
+          new_refquota: fixture.fetch(:current_refquota) + 1_024,
+          added_space: 3_072,
+          referenced: dip.referenced
+        )
+      )
+    )
     expect(confirmations_for(chain).any? do |row|
       row.class_name == 'DatasetExpansion' &&
         row.row_pks == { 'id' => expansion.id } &&

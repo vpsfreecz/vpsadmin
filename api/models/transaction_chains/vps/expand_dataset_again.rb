@@ -31,7 +31,16 @@ module TransactionChains
                   }
                 ])
 
-      use_chain(Mail::VpsDatasetExpanded, args: [exp]) if exp.enable_notifications
+      if exp.enable_notifications
+        use_chain(
+          Mail::VpsDatasetExpanded,
+          args: [exp],
+          kwargs: {
+            new_refquota:,
+            added_space: exp.added_space + dataset_expansion_history.added_space
+          }
+        )
+      end
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
         t.just_create(dataset_expansion_history)
