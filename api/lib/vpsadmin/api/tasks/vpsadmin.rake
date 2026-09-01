@@ -48,13 +48,27 @@ namespace :vpsadmin do
     end
   end
 
-  namespace :mail_templates do
-    desc 'Install built-in mail templates'
+  namespace :notification_templates do
+    desc 'Install built-in notification templates'
     task :install_defaults do
-      puts 'Install built-in mail templates'
+      puts 'Install built-in notification templates'
       result = VpsAdmin::API::MailTemplates.install_defaults!
       puts "Created #{result[:templates_created]} templates and " \
            "#{result[:translations_created]} translations"
+    end
+
+    desc 'Reconcile configured notification templates'
+    task :reconcile, %i[path source_id] do |_task, args|
+      puts "Reconcile notification templates from #{args.fetch(:source_id)}"
+      result = VpsAdmin::API::MailTemplates.reconcile!(
+        path: args.fetch(:path),
+        source_id: args.fetch(:source_id)
+      )
+
+      puts "Created #{result[:templates_created]} templates, " \
+           "updated #{result[:templates_updated]} templates"
+      puts "Created #{result[:translations_created]} translations, " \
+           "updated #{result[:translations_updated]} translations"
     end
   end
 

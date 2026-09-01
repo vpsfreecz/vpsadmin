@@ -26,6 +26,13 @@ let
   schemaFile = "${cfg.stateDirectory}/cache/schema.rb";
 in
 {
+  imports = [
+    (lib.mkRenamedOptionModule
+      [ "vpsadmin" "databaseSetup" "installDefaultMailTemplates" ]
+      [ "vpsadmin" "databaseSetup" "installDefaultNotificationTemplates" ]
+    )
+  ];
+
   options = {
     vpsadmin.databaseSetup = {
       enable = lib.mkOption {
@@ -85,7 +92,7 @@ in
         '';
       };
 
-      installDefaultMailTemplates = lib.mkOption {
+      installDefaultNotificationTemplates = lib.mkOption {
         type = lib.types.bool;
         default = true;
         description = ''
@@ -168,9 +175,9 @@ in
                 '') cfg.seedFiles}
               fi
 
-              ${lib.optionalString cfg.installDefaultMailTemplates ''
-                echo "Installing built-in mail templates"
-                ${apiApp.bundle} exec rake vpsadmin:mail_templates:install_defaults
+              ${lib.optionalString cfg.installDefaultNotificationTemplates ''
+                echo "Installing built-in notification templates"
+                ${apiApp.bundle} exec rake vpsadmin:notification_templates:install_defaults
               ''}
             ''
           else

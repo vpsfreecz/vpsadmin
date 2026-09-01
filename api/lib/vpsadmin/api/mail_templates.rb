@@ -9,6 +9,9 @@ module VpsAdmin::API
       'en' => 'English',
       'cs' => 'Česky'
     }.freeze
+    SOURCE_CATEGORY = 'notifications'
+    SOURCE_NAME = 'template_source'
+
     CONCRETE_DEFAULTS = {
       expiration_user_active: :expiration_warning,
       expiration_vps_active: :expiration_warning,
@@ -77,6 +80,31 @@ module VpsAdmin::API
       result
     end
 
+    def self.reconcile!(path:, source_id:)
+      source_id = source_id.to_s.strip
+      raise ArgumentError, 'source_id is required' if source_id.empty?
+
+      templates = NotificationTemplates::Directory.new(path).templates
+
+      result = {
+        source_id:,
+        templates_created: 0,
+        templates_updated: 0,
+        translations_created: 0,
+        translations_updated: 0
+      }
+
+      with_reconciliation_lock do |marker|
+        templates.each do |template|
+          reconcile_template!(template, result)
+        end
+
+        marker.update!(value: source_id) if marker.value.to_s != source_id
+      end
+
+      result
+    end
+
     def self.default_from
       configured_support_mail || DEFAULT_FROM
     end
@@ -106,6 +134,53 @@ module VpsAdmin::API
         next [] unless Dir.exist?(path)
 
         NotificationTemplates::Directory.new(path).templates
+      end
+    end
+
+    def self.with_reconciliation_lock
+      ActiveRecord::Base.transaction(requires_new: true) do
+        marker = source_marker!
+        marker.lock!
+        yield marker
+      end
+    end
+
+    def self.source_marker!
+      ::SysConfig.find_or_create_by!(
+        category: SOURCE_CATEGORY,
+        name: SOURCE_NAME
+      )
+    rescue ActiveRecord::RecordNotUnique
+      ::SysConfig.find_by!(
+        category: SOURCE_CATEGORY,
+        name: SOURCE_NAME
+      )
+    end
+
+    def self.reconcile_template!(template, result)
+      record = ::MailTemplate.lock.find_or_initialize_by(name: template.name)
+      record.assign_attributes(template_params(template))
+
+      if record.new_record?
+        record.save!
+        result[:templates_created] += 1
+      elsif record.changed?
+        record.save!
+        result[:templates_updated] += 1
+      end
+
+      template.variants.each do |variant|
+        language = ensure_language!(variant.language)
+        existing = record.mail_template_translations.lock.find_or_initialize_by(language:)
+        existing.assign_attributes(translation_params(template, variant).merge(language:))
+
+        if existing.new_record?
+          existing.save!
+          result[:translations_created] += 1
+        elsif existing.changed?
+          existing.save!
+          result[:translations_updated] += 1
+        end
       end
     end
 
@@ -202,6 +277,9 @@ module VpsAdmin::API
                          :ensure_language!,
                          :unique_templates,
                          :registered_templates,
+                         :with_reconciliation_lock,
+                         :source_marker!,
+                         :reconcile_template!,
                          :template_params,
                          :translation_params,
                          :default_subject,

@@ -23,6 +23,17 @@ let
     databaseConfig = cfg.database;
   };
 
+  notificationTemplatesEnabled = cfg.notificationTemplates.source != null;
+  effectiveNotificationTemplates =
+    if notificationTemplatesEnabled then
+      pkgs.vpsadmin-notification-template-tools.mkEffectivePackage {
+        vpsadminPackage = cfg.package;
+        plugins = vpsadminCfg.plugins;
+        source = cfg.notificationTemplates.source;
+      }
+    else
+      null;
+
   pumaConfig = pkgs.writeText "puma.rb" ''
     bind 'tcp://${cfg.address}:${toString cfg.port}'
     rackup '${cfg.package}/api/config.ru'
@@ -137,6 +148,16 @@ in
           Database configuration
         '';
       };
+
+      notificationTemplates.source = mkOption {
+        type = types.nullOr (types.either types.path types.package);
+        default = null;
+        description = ''
+          Notification template source to overlay on the templates bundled
+          with vpsAdmin. The source can contain `templates/` or be that
+          directory itself.
+        '';
+      };
     };
   };
 
@@ -189,8 +210,12 @@ in
       after = [
         "network.target"
         "vpsadmin-database-setup.service"
-      ];
-      requires = [ "vpsadmin-database-setup.service" ];
+      ]
+      ++ optional notificationTemplatesEnabled "vpsadmin-notification-templates.service";
+      requires = [
+        "vpsadmin-database-setup.service"
+      ]
+      ++ optional notificationTemplatesEnabled "vpsadmin-notification-templates.service";
       wantedBy = [ "multi-user.target" ];
       environment.RACK_ENV = "production";
       environment.SCHEMA = "${cfg.stateDirectory}/cache/schema.rb";
@@ -199,7 +224,9 @@ in
       ];
       startLimitIntervalSec = 180;
       startLimitBurst = 5;
-      preStart = apiApp.setup;
+      preStart = ''
+        ${apiApp.setup}
+      '';
 
       serviceConfig = {
         Type = "notify";
@@ -214,6 +241,40 @@ in
         WatchdogSec = 10;
       };
     };
+
+    systemd.services.vpsadmin-notification-templates = mkIf notificationTemplatesEnabled {
+      description = "Reconcile vpsAdmin notification templates";
+      after = [ "vpsadmin-database-setup.service" ];
+      requires = [ "vpsadmin-database-setup.service" ];
+      before = [
+        "vpsadmin-api.service"
+        "vpsadmin-supervisor.service"
+      ];
+      wantedBy = [ "multi-user.target" ];
+      environment.RACK_ENV = "production";
+      environment.SCHEMA = "${cfg.stateDirectory}/cache/schema.rb";
+      path = with pkgs; [ mariadb ];
+      serviceConfig = {
+        Type = "oneshot";
+        User = cfg.user;
+        Group = cfg.group;
+        WorkingDirectory = "${cfg.package}/api";
+        RemainAfterExit = true;
+        TimeoutStartSec = "infinity";
+      };
+      script = ''
+        ${apiApp.setup}
+
+        ${apiApp.bundle} exec rake ${escapeShellArg "vpsadmin:notification_templates:reconcile[${effectiveNotificationTemplates},${effectiveNotificationTemplates}]"}
+      '';
+    };
+
+    systemd.services.vpsadmin-supervisor =
+      mkIf (notificationTemplatesEnabled && vpsadminCfg.supervisor.enable)
+        {
+          after = [ "vpsadmin-notification-templates.service" ];
+          requires = [ "vpsadmin-notification-templates.service" ];
+        };
 
     users.users = optionalAttrs (cfg.user == "vpsadmin-api") {
       ${cfg.user} = {
