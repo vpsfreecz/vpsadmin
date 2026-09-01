@@ -2,7 +2,7 @@
 
 require_relative '../migration_helper'
 
-MigrationSpecSupport.require_migration('20260722120900_add_event_time_intervals')
+MigrationSpecSupport.require_migration('20260901121000_add_event_time_intervals')
 
 RSpec.describe AddEventTimeIntervals do
   def define_previous_schema

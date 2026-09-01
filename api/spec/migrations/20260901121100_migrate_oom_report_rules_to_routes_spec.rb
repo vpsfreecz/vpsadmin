@@ -2,7 +2,7 @@
 
 require_relative '../migration_helper'
 
-MigrationSpecSupport.require_migration('20260722121000_migrate_oom_report_rules_to_routes')
+MigrationSpecSupport.require_migration('20260901121100_migrate_oom_report_rules_to_routes')
 
 RSpec.describe MigrateOomReportRulesToRoutes do
   def define_legacy_schema
