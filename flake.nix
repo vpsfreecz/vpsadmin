@@ -43,8 +43,78 @@
       composeManyExtensions = overlays: builtins.foldl' composeExtensions (final: prev: { }) overlays;
 
       composedOverlay = composeManyExtensions ([ vpsadminosRubyOverlay ] ++ overlayList);
+
+      notificationTemplateToolsFor =
+        system: nixpkgs.legacyPackages.${system}.callPackage ./packages/notification-templates { };
+
+      notificationTemplatesLib = {
+        mkPackage =
+          {
+            system,
+            src,
+            pname ? "vpsadmin-notification-templates",
+          }:
+          (notificationTemplateToolsFor system).mkPackage { inherit pname src; };
+
+        mkFlake =
+          {
+            src,
+            pname ? "vpsadmin-notification-templates",
+          }:
+          let
+            templatePackages = forAllSystems (
+              system:
+              (notificationTemplateToolsFor system).mkPackage {
+                inherit pname src;
+              }
+            );
+          in
+          {
+            packages = forAllSystems (system: {
+              default = templatePackages.${system};
+            });
+
+            checks = forAllSystems (system: {
+              default = templatePackages.${system};
+            });
+
+            apps = forAllSystems (
+              system:
+              let
+                pkgs = nixpkgs.legacyPackages.${system};
+                check = pkgs.writeShellApplication {
+                  name = "check-notification-templates";
+                  text = ''
+                    exec ${(notificationTemplateToolsFor system).checker}/bin/notification-template-check ${nixpkgs.lib.escapeShellArg (toString src)}
+                  '';
+                };
+              in
+              {
+                check = {
+                  type = "app";
+                  program = "${check}/bin/check-notification-templates";
+                  meta.description = "Check vpsAdmin notification templates";
+                };
+              }
+            );
+
+            devShells = forAllSystems (
+              system:
+              let
+                pkgs = nixpkgs.legacyPackages.${system};
+              in
+              {
+                default = pkgs.mkShell {
+                  packages = [ (notificationTemplateToolsFor system).checker ];
+                };
+              }
+            );
+          };
+      };
     in
     {
+      lib.notificationTemplates = notificationTemplatesLib;
+
       nixosModules = {
         nixos-modules =
           { ... }:
@@ -92,6 +162,11 @@
       );
 
       apps = forAllSystems (system: {
+        notification-template-check = {
+          type = "app";
+          program = "${(notificationTemplateToolsFor system).checker}/bin/notification-template-check";
+          meta.description = "Check vpsAdmin notification templates";
+        };
         test-runner = {
           type = "app";
           program = "${vpsadminos.packages.${system}.test-runner}/bin/test-runner";
@@ -99,6 +174,7 @@
       });
 
       packages = forAllSystems (system: {
+        notification-template-check = (notificationTemplateToolsFor system).checker;
         test-runner = vpsadminos.packages.${system}.test-runner;
       });
 
@@ -106,6 +182,24 @@
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
+          vpsadminPkgs = import nixpkgs {
+            inherit system;
+            overlays = [ composedOverlay ];
+          };
+          notificationTemplateTools = notificationTemplateToolsFor system;
+          notificationTemplateOverride = pkgs.runCommand "notification-template-override" { } ''
+            mkdir -p "$out/templates/daily_report"
+            cp -a ${./api/notification_templates/templates/daily_report}/. \
+              "$out/templates/daily_report/"
+            chmod -R u+w "$out/templates"
+            printf '%s\n' 'Overridden daily report' \
+              > "$out/templates/daily_report/email/en.subject.erb"
+          '';
+          effectiveNotificationTemplates = notificationTemplateTools.mkEffectivePackage {
+            vpsadminPackage = vpsadminPkgs.vpsadmin-api;
+            plugins = [ "outage_reports" ];
+            source = notificationTemplateOverride;
+          };
           systemConfigurationUrl = "https://github.com/example/configuration/commit/";
           webuiConfiguration = nixpkgs.lib.nixosSystem {
             inherit system;
@@ -132,6 +226,21 @@
           };
         in
         {
+          effective-notification-templates = pkgs.runCommand "effective-notification-templates" { } ''
+            grep -Fx 'Overridden daily report' \
+              ${effectiveNotificationTemplates}/templates/daily_report/email/en.subject.erb
+            test -e \
+              ${effectiveNotificationTemplates}/templates/outage_report_generic/email/en.text.erb
+            test ! -e \
+              ${effectiveNotificationTemplates}/templates/payments_overview
+            touch "$out"
+          '';
+
+          notification-templates = notificationTemplateTools.mkPackage {
+            pname = "vpsadmin-default-notification-templates";
+            src = ./api/notification_templates/templates;
+          };
+
           webui-software-revision-links =
             assert nixpkgs.lib.assertMsg (actual == expected) ''
               Extending vpsadmin.webui.softwareRevisionLinks must preserve the

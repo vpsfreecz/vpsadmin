@@ -91,6 +91,7 @@
       };
       nodeGemConfig = rubyGemConfig.mergeGemConfig super.defaultGemConfig nodeMysql2GemConfig;
       nodeRubyGemConfig = rubyGemConfig.mergeGemConfig nodeGemConfig nodeSourceGemConfig;
+      notificationTemplateTools = super.callPackage ../../packages/notification-templates { };
     in
     {
       vpsadmin-database = super.callPackage ../../packages/api/database.nix { inherit ruby; };
@@ -102,6 +103,8 @@
         vpsadminPath = ../../.;
         inherit vpsadminRev;
       };
+      vpsadmin-notification-template-check = notificationTemplateTools.checker;
+      vpsadmin-notification-template-tools = notificationTemplateTools;
       vpsadmin-supervisor = super.callPackage ../../packages/api/supervisor.nix { inherit ruby; };
       vpsadmin-webui = super.callPackage ../../packages/webui { };
       libnodectld = super.callPackage ../../packages/libnodectld {
