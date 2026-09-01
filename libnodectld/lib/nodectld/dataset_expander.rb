@@ -135,6 +135,8 @@ module NodeCtld
         return false
       end
 
+      ds.properties.fetch('refquota').value = new_refquota_bytes
+
       @submit_queue << Event.new(
         dataset: ds,
         original_refquota: (refquota_bytes / 1024.0 / 1024).round,

@@ -36,6 +36,9 @@ RSpec.describe NodeCtld::DatasetExpander do
     allow(NodeCtld::NodeBunny).to receive(:exchange_name).and_return('node:spec')
     # rubocop:enable RSpec/ReceiveMessages
     $CFG = NodeCtldSpec::FakeCfg.new(
+      storage: {
+        batch_size: 100
+      },
       dataset_expander: {
         enable: true,
         min_avail_bytes: 2 * one_gib,
@@ -59,16 +62,49 @@ RSpec.describe NodeCtld::DatasetExpander do
     expect(expander).not_to have_received(:zfs)
   end
 
-  it 'updates in-memory pool usage after a successful expansion' do
+  it 'updates the status snapshot and pool usage after a successful expansion' do
     expander = described_class.new
     pool = build_pool(used_bytes: 80 * one_gib, available_bytes: 20 * one_gib)
+    dataset = pool.datasets.values.fetch(0)
+    status = NodeCtld::StorageStatus.new(expander)
 
     allow(expander).to receive(:zfs).and_return(command_result)
+    allow(NodeCtld::NodeBunny).to receive(:publish_wait)
 
     expander.check(pool)
+    status.send(:save, 1 => pool)
 
     expect(pool.used_bytes).to eq(84 * one_gib)
     expect(pool.available_bytes).to eq(16 * one_gib)
+    expect(dataset.properties.fetch('refquota').value).to eq(24 * one_gib)
+    expect(NodeCtld::NodeBunny).to have_received(:publish_wait) do |_exchange, payload, **opts|
+      next unless opts[:routing_key] == 'storage_statuses'
+
+      expect(JSON.parse(payload).fetch('properties')).to include(
+        hash_including('id' => 2, 'name' => 'refquota', 'value' => 24 * one_gib)
+      )
+    end
+  end
+
+  it 'leaves the status snapshot and pool usage unchanged when expansion fails' do
+    expander = described_class.new
+    pool = build_pool(used_bytes: 80 * one_gib, available_bytes: 20 * one_gib)
+    dataset = pool.datasets.values.fetch(0)
+    failed_result = DatasetExpanderSpecCommandResult.new(
+      error: true,
+      exitstatus: 1,
+      output: 'refquota rejected'
+    )
+
+    allow(expander).to receive(:zfs).and_return(failed_result)
+    allow(expander).to receive(:log)
+
+    expander.check(pool)
+
+    expect(pool.used_bytes).to eq(80 * one_gib)
+    expect(pool.available_bytes).to eq(20 * one_gib)
+    expect(dataset.properties.fetch('refquota').value).to eq(20 * one_gib)
+    expect(expander.instance_variable_get(:@submit_queue).length).to eq(0)
   end
 
   def build_pool(used_bytes:, available_bytes:)
