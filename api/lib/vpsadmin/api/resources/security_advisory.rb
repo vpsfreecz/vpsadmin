@@ -200,18 +200,40 @@ module VpsAdmin::API::Resources
         query.count
       end
 
+      def with_effective_date_pagination(q, direction:)
+        ar_with_pagination(q, check: true) do |scope, from_id|
+          cursor = ::SecurityAdvisory.visible_to(current_user).find_by(id: from_id)
+          next scope.none unless cursor
+
+          operator = direction == :asc ? '>' : '<'
+          effective_date = cursor.published_at || cursor.created_at
+
+          scope.where(
+            "(#{EFFECTIVE_DATE_SQL} #{operator} :effective_date) OR " \
+            "(#{EFFECTIVE_DATE_SQL} = :effective_date AND " \
+            "security_advisories.created_at #{operator} :created_at) OR " \
+            "(#{EFFECTIVE_DATE_SQL} = :effective_date AND " \
+            'security_advisories.created_at = :created_at AND ' \
+            "security_advisories.id #{operator} :id)",
+            effective_date:,
+            created_at: cursor.created_at,
+            id: cursor.id
+          )
+        end
+      end
+
       def exec
         q = with_includes(query)
 
         case input[:order]
         when 'oldest'
-          with_asc_pagination(q).order(
+          with_effective_date_pagination(q, direction: :asc).order(
             Arel.sql(
               "#{EFFECTIVE_DATE_SQL}, security_advisories.created_at, security_advisories.id"
             )
           )
         else
-          with_desc_pagination(q).order(
+          with_effective_date_pagination(q, direction: :desc).order(
             Arel.sql(
               "#{EFFECTIVE_DATE_SQL} DESC, " \
               'security_advisories.created_at DESC, security_advisories.id DESC'

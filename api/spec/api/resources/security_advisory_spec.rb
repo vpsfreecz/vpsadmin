@@ -330,6 +330,51 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       )
     end
 
+    it 'paginates effective-date ordering in both directions' do
+      day_two = build_advisory({ created_at: Time.utc(2026, 1, 2) })
+      day_four = build_advisory({ created_at: Time.utc(2026, 1, 4) })
+      day_one = build_advisory({ created_at: Time.utc(2026, 1, 1) })
+      day_three = build_advisory({ created_at: Time.utc(2026, 1, 3) })
+
+      as(SpecSeed.admin) do
+        json_get index_path, security_advisory: { order: 'newest', limit: 2 }
+      end
+
+      expect_status(200)
+      expect(security_advisories.map { |row| row['id'] }).to eq([day_four.id, day_three.id])
+
+      as(SpecSeed.admin) do
+        json_get index_path,
+                 security_advisory: {
+                   order: 'newest',
+                   limit: 2,
+                   from_id: day_three.id
+                 }
+      end
+
+      expect_status(200)
+      expect(security_advisories.map { |row| row['id'] }).to eq([day_two.id, day_one.id])
+
+      as(SpecSeed.admin) do
+        json_get index_path, security_advisory: { order: 'oldest', limit: 2 }
+      end
+
+      expect_status(200)
+      expect(security_advisories.map { |row| row['id'] }).to eq([day_one.id, day_two.id])
+
+      as(SpecSeed.admin) do
+        json_get index_path,
+                 security_advisory: {
+                   order: 'oldest',
+                   limit: 2,
+                   from_id: day_two.id
+                 }
+      end
+
+      expect_status(200)
+      expect(security_advisories.map { |row| row['id'] }).to eq([day_three.id, day_four.id])
+    end
+
     it 'hides administrative counters from public output' do
       advisory = build_published_advisory
 
