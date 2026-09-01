@@ -3053,6 +3053,10 @@ msgstr ""
 msgid "Published"
 msgstr ""
 
+#: forms/security_advisory.forms.php pages/page_index.php
+msgid "View all"
+msgstr ""
+
 #: forms/security_advisory.forms.php
 msgid "No security advisories found."
 msgstr ""
@@ -7555,10 +7559,6 @@ msgstr ""
 
 #: pages/page_index.php
 msgid "Event Log"
-msgstr ""
-
-#: pages/page_index.php
-msgid "View all"
 msgstr ""
 
 #: pages/page_index.php

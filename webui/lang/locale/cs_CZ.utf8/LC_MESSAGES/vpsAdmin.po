@@ -3083,6 +3083,10 @@ msgstr "Nedávná bezpečnostní upozornění"
 msgid "Published"
 msgstr "Publikováno"
 
+#: forms/security_advisory.forms.php pages/page_index.php
+msgid "View all"
+msgstr "Zobrazit vše"
+
 #: forms/security_advisory.forms.php
 msgid "No security advisories found."
 msgstr "Nebyla nalezena žádná bezpečnostní upozornění."
@@ -7684,10 +7688,6 @@ msgstr "Události <a href=\"?page=cluster&action=sysconfig\">[upravit]</a>"
 #: pages/page_index.php
 msgid "Event Log"
 msgstr "Události"
-
-#: pages/page_index.php
-msgid "View all"
-msgstr "Zobrazit vše"
 
 #: pages/page_index.php
 msgid "Cluster statistics"

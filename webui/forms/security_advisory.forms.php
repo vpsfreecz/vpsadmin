@@ -646,6 +646,17 @@ function security_advisory_list($recent = false)
         $xtpl->table_tr();
     }
 
+    if ($recent) {
+        $cols = 5 + (isAdmin() ? 2 : (isLoggedIn() ? 1 : 0));
+        $xtpl->table_td(
+            '<a href="?page=security_advisory&action=list">' . _('View all') . '</a>',
+            false,
+            false,
+            $cols
+        );
+        $xtpl->table_tr();
+    }
+
     if ($advisories->count() == 0) {
         $cols = 5 + (isAdmin() ? 2 : (isLoggedIn() ? 1 : 0));
         if (!$recent) {

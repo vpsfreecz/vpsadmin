@@ -97,6 +97,12 @@ test.describe('security advisory public browser coverage', () => {
     await expect(content(page)).toContainText(s.publishedAffected.summary);
     await expect(content(page)).toContainText(s.publishedNotAffected.summary);
     await expectAdvisoryAbsent(page, s.draftHidden);
+    await expect(
+      content(page).locator(
+        'a[href="?page=security_advisory&action=list"]',
+        { hasText: 'View all' },
+      ),
+    ).toBeVisible();
 
     await gotoAdvisory(page, 'list');
     await expect(content(page)).toContainText('Security advisories');
@@ -174,6 +180,24 @@ test.describe('security advisory admin browser workflow', () => {
 
   test.afterEach(async ({ page }) => {
     await logout(page, fixtures.admin.username);
+  });
+
+  test('lists current drafts among published advisories', async ({ page }) => {
+    const s = requireSecurityAdvisoryFixtures();
+
+    await gotoAdvisory(page, 'list');
+    await expectAdvisoryRow(page, s.draftHidden);
+    await expectAdvisoryRow(page, s.publishedNotAffected);
+
+    const rowTexts = await content(page).locator('tr').allTextContents();
+    const draftIndex = rowTexts.findIndex((text) => text.includes(s.draftHidden.summary));
+    const publishedIndex = rowTexts.findIndex(
+      (text) => text.includes(s.publishedNotAffected.summary),
+    );
+
+    expect(draftIndex).toBeGreaterThanOrEqual(0);
+    expect(publishedIndex).toBeGreaterThanOrEqual(0);
+    expect(draftIndex).toBeLessThan(publishedIndex);
   });
 
   test('creates a draft advisory with CVEs and node status defaults', async ({ page }) => {
