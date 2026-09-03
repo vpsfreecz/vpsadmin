@@ -201,6 +201,20 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS' do
       )
     end
 
+    it 'includes the location IPv6 capability for owners' do
+      as(SpecSeed.user) do
+        json_get show_path(user_vps.id), _meta: { includes: 'node__location__environment' }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(vps_obj.dig('node', 'location')).to include(
+        'id' => user_vps.node.location_id,
+        'has_ipv6' => true
+      )
+      expect(vps_obj.dig('node', 'location')).not_to have_key('domain')
+    end
+
     it 'hides other users VPSes without logging the expected lookup failure' do
       expect do
         with_env(RACK_ENV: 'production') do

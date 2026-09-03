@@ -797,7 +797,9 @@ async function addAndRemoveRoutedIpAndHostAddress(page, vpsId) {
   await gotoVpsDetail(page, vpsId);
 
   const routeSelectForm = formByAction(page, 'action=iproute_select');
-  await selectFirstUsableOption(routeSelectForm.locator('select[name="iproute_type"]'), {
+  const routeTypeSelect = routeSelectForm.locator('select[name="iproute_type"]');
+  await expect(routeTypeSelect.locator('option[value="ipv6"]')).toHaveCount(0);
+  await selectFirstUsableOption(routeTypeSelect, {
     preferredValue: 'ipv4',
   });
   await submitForm(routeSelectForm, 'Continue');
@@ -813,6 +815,7 @@ async function addAndRemoveRoutedIpAndHostAddress(page, vpsId) {
   await expect(page.locator('#content-in')).toContainText(route.label.split(/\s+/)[0].replace(/\/.+$/, ''));
 
   const hostAddressForm = formByAction(page, 'action=hostaddr_add');
+  await expect(hostAddressForm.locator('select[name="hostaddr_public_v6"]')).toHaveCount(0);
   await selectFirstUsableOption(hostAddressForm.locator('select[name="hostaddr_public_v4"]'));
   await submitForm(hostAddressForm);
 

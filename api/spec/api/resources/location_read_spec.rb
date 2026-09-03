@@ -79,10 +79,12 @@ RSpec.describe 'VpsAdmin::API::Resources::Location' do
       expect(json['status']).to be(true)
 
       row = locations.find { |item| item['id'] == location.id }
-      expect(row).to include('id', 'label', 'description', 'environment')
+      expect(row).to include(
+        'id', 'label', 'description', 'environment',
+        'has_ipv6' => true
+      )
       expect(row).not_to have_key('remote_console_server')
       expect(row).not_to have_key('domain')
-      expect(row).not_to have_key('has_ipv6')
     end
 
     it 'allows users to list locations with limited output' do
@@ -96,11 +98,16 @@ RSpec.describe 'VpsAdmin::API::Resources::Location' do
       expect(ids).to include(location.id, other_location.id)
 
       row = locations.find { |item| item['id'] == location.id }
-      expect(row).to include('id', 'label', 'description', 'environment')
+      expect(row).to include(
+        'id', 'label', 'description', 'environment',
+        'has_ipv6' => true
+      )
       expect(row['label']).to eq(location.label)
       expect(resource_id(row['environment'])).to eq(location.environment_id)
       expect(row).not_to have_key('domain')
-      expect(row).not_to have_key('has_ipv6')
+
+      other_row = locations.find { |item| item['id'] == other_location.id }
+      expect(other_row['has_ipv6']).to be(false)
     end
 
     it 'allows support to list locations with limited output' do
@@ -109,7 +116,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Location' do
       expect_status(200)
       row = locations.find { |item| item['id'] == location.id }
       expect(row).not_to have_key('domain')
-      expect(row).not_to have_key('has_ipv6')
+      expect(row['has_ipv6']).to be(true)
     end
 
     it 'allows admins to list locations with full output' do
@@ -178,10 +185,12 @@ RSpec.describe 'VpsAdmin::API::Resources::Location' do
       expect_status(200)
       expect(json['status']).to be(true)
       expect(location_obj['id']).to eq(location.id)
-      expect(location_obj).to include('id', 'label', 'description', 'environment')
+      expect(location_obj).to include(
+        'id', 'label', 'description', 'environment',
+        'has_ipv6' => true
+      )
       expect(location_obj).not_to have_key('remote_console_server')
       expect(location_obj).not_to have_key('domain')
-      expect(location_obj).not_to have_key('has_ipv6')
     end
 
     it 'allows users to show locations with limited output' do
@@ -194,7 +203,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Location' do
       expect(location_obj).to have_key('description')
       expect(resource_id(location_obj['environment'])).to eq(location.environment_id)
       expect(location_obj).not_to have_key('domain')
-      expect(location_obj).not_to have_key('has_ipv6')
+      expect(location_obj['has_ipv6']).to be(true)
     end
 
     it 'allows support to show locations with limited output' do
@@ -202,7 +211,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Location' do
 
       expect_status(200)
       expect(location_obj).not_to have_key('domain')
-      expect(location_obj).not_to have_key('has_ipv6')
+      expect(location_obj['has_ipv6']).to be(true)
     end
 
     it 'allows admins to show locations with full output' do

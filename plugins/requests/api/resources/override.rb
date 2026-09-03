@@ -4,9 +4,9 @@ module VpsAdmin::API::Resources
     allow if u && u.role == :admin
 
     if u
-      output whitelist: %i[id label description environment remote_console_server]
+      output whitelist: Location::AUTHENTICATED_OUTPUT_PARAMS
     else
-      output whitelist: %i[id label description environment]
+      output whitelist: Location::ANONYMOUS_OUTPUT_PARAMS
     end
 
     allow
@@ -17,9 +17,9 @@ module VpsAdmin::API::Resources
     allow if u && u.role == :admin
 
     if u
-      output whitelist: %i[id label description environment remote_console_server]
+      output whitelist: Location::AUTHENTICATED_OUTPUT_PARAMS
     else
-      output whitelist: %i[id label description environment]
+      output whitelist: Location::ANONYMOUS_OUTPUT_PARAMS
     end
 
     allow

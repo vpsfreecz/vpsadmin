@@ -1,4 +1,9 @@
 class VpsAdmin::API::Resources::Location < HaveAPI::Resource
+  # Location capabilities are used by API clients to determine which features
+  # to offer, e.g. the WebUI uses has_ipv6 for address management controls.
+  ANONYMOUS_OUTPUT_PARAMS = %i[id label description environment has_ipv6].freeze
+  AUTHENTICATED_OUTPUT_PARAMS = (ANONYMOUS_OUTPUT_PARAMS + %i[remote_console_server]).freeze
+
   model ::Location
   desc 'Manage locations'
 
@@ -54,7 +59,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
     authorize do |u|
       allow if u && u.role == :admin
-      output whitelist: %i[id label description environment remote_console_server]
+      output whitelist: AUTHENTICATED_OUTPUT_PARAMS
       allow
     end
 
@@ -231,7 +236,7 @@ class VpsAdmin::API::Resources::Location < HaveAPI::Resource
 
     authorize do |u|
       allow if u && u.role == :admin
-      output whitelist: %i[id label description environment remote_console_server]
+      output whitelist: AUTHENTICATED_OUTPUT_PARAMS
       allow
     end
 
