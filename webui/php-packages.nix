@@ -234,10 +234,10 @@ let
     "phpunit/php-code-coverage" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "phpunit-php-code-coverage-6ce313bb110384148d1dc7695a99175f59529069";
+        name = "phpunit-php-code-coverage-93d62632fb675b76c9b941fdcfcfa10ffb9dea75";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/6ce313bb110384148d1dc7695a99175f59529069";
-          sha256 = "17viq976bf6hh60vmrmdh2ii39zgklp37hawv8n2a9x1crpc0zxf";
+          url = "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/93d62632fb675b76c9b941fdcfcfa10ffb9dea75";
+          sha256 = "0gp2jimkpc6n518sm2mak6svj2ckj5wzv72685vzms8gd7bfv675";
         };
       };
     };
