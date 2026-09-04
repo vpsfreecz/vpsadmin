@@ -546,7 +546,7 @@ function route_edit_form($id)
     }
 
     $xtpl->table_td(
-        '<a href="?page=networking&action=hostaddr_new&ip=' . $ip->id . '&returl_url=' . $return_url . '">' . _('Add host addresses') . '</a>',
+        '<a data-vpsadmin-doc-id="networking.add-host-addresses" href="?page=networking&action=hostaddr_new&ip=' . $ip->id . '&returl_url=' . $return_url . '">' . _('Add host addresses') . '</a>',
         false,
         true,
         7

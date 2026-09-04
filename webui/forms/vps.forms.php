@@ -2116,7 +2116,7 @@ function vps_netif_iproutes_form($vps, $netif)
         }
 
         $xtpl->table_td(
-            '<a href="?page=networking&action=route_edit&id=' . $ip->id . '&return=' . $return_url . '" title="' . _('Manage host addresses') . '">'
+            '<a data-vpsadmin-doc-id="networking.manage-host-addresses" href="?page=networking&action=route_edit&id=' . $ip->id . '&return=' . $return_url . '" title="' . _('Manage host addresses') . '">'
             . '<img src="template/icons/m_edit.png" alt="' . _("Manage host addresses") . '">'
             . '</a>'
         );
