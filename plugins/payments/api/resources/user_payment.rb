@@ -24,6 +24,12 @@ module VpsAdmin::API::Resources
       input do
         resource VpsAdmin::API::Resources::User
         resource VpsAdmin::API::Resources::User, name: :accounted_by
+        datetime :created_from,
+                 label: 'Created from',
+                 desc: 'Include payments created at or after this timestamp'
+        datetime :created_to,
+                 label: 'Created to',
+                 desc: 'Include payments created at or before this timestamp'
       end
 
       output(:object_list) do
@@ -44,6 +50,14 @@ module VpsAdmin::API::Resources
           q = q.where(v => input[v]) if input[v]
         end
 
+        if input[:created_from]
+          q = q.where('user_payments.created_at >= ?', input[:created_from])
+        end
+
+        if input[:created_to]
+          q = q.where('user_payments.created_at <= ?', input[:created_to])
+        end
+
         q
       end
 
@@ -52,7 +66,22 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_desc_pagination(with_includes(query)).order(
+        q = query
+
+        q = ar_with_pagination(with_includes(q), check: true) do |scope, from_id|
+          cursor_created_at = q.where(id: from_id).pick(:created_at)
+          next scope.none unless cursor_created_at
+
+          scope.where(
+            'user_payments.created_at < ? OR ' \
+            '(user_payments.created_at = ? AND user_payments.id < ?)',
+            cursor_created_at,
+            cursor_created_at,
+            from_id
+          )
+        end
+
+        q.order(
           'user_payments.created_at DESC, user_payments.id DESC'
         )
       end

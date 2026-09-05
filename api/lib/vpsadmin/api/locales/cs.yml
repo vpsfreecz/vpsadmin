@@ -420,6 +420,12 @@ cs:
         label: Vytvořit VPS
       created_by:
         label: Vytvořil
+      created_from:
+        description: Zahrnout platby vytvořené v tomto čase nebo později
+        label: Vytvořeno od
+      created_to:
+        description: Zahrnout platby vytvořené v tomto čase nebo dříve
+        label: Vytvořeno do
       cs_description:
         description: Uživatelské vysvětlení zranitelnosti, dotčených systémů, dopadu
           a podmínek.
