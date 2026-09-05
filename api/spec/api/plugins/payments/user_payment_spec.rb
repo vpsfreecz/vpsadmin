@@ -64,7 +64,15 @@ RSpec.describe 'VpsAdmin::API::Resources::UserPayment', requires_plugins: :payme
     expect(last_response.status).to eq(code), message
   end
 
-  def build_user_payment(user:, accounted_by:, amount:, from_date:, to_date:, incoming_payment: nil)
+  def build_user_payment(
+    user:,
+    accounted_by:,
+    amount:,
+    from_date:,
+    to_date:,
+    incoming_payment: nil,
+    created_at: from_date
+  )
     payment = ::UserPayment.new(
       user: user,
       accounted_by: accounted_by,
@@ -72,15 +80,37 @@ RSpec.describe 'VpsAdmin::API::Resources::UserPayment', requires_plugins: :payme
       from_date: from_date,
       to_date: to_date,
       incoming_payment: incoming_payment,
-      created_at: from_date
+      created_at: created_at
     )
     payment.save!
     payment
   end
 
+  def build_user_payment_at(user:, created_at:)
+    build_user_payment(
+      user:,
+      accounted_by: admin,
+      amount: 100,
+      from_date: created_at,
+      to_date: created_at + 30.days,
+      created_at:
+    )
+  end
+
   let(:admin) { SpecSeed.admin }
   let(:user) { SpecSeed.user }
   let(:other_user) { SpecSeed.other_user }
+
+  describe 'API description' do
+    it 'exposes the created_at period filters' do
+      as(admin) { options "#{index_path}?method=GET" }
+
+      expect_status(200)
+
+      parameters = json.dig('response', 'input', 'parameters')
+      expect(parameters).to include('created_from', 'created_to')
+    end
+  end
 
   describe 'Index' do
     let!(:user_payment_row) do
@@ -130,6 +160,32 @@ RSpec.describe 'VpsAdmin::API::Resources::UserPayment', requires_plugins: :payme
       expect(ids).to contain_exactly(user_payment_row.id)
     end
 
+    it 'applies created_at filters without weakening the normal user scope' do
+      selected = build_user_payment_at(
+        user:,
+        created_at: Time.utc(2026, 1, 15, 10, 30)
+      )
+
+      build_user_payment_at(
+        user: other_user,
+        created_at: Time.utc(2026, 1, 15, 10, 30)
+      )
+
+      as(user) do
+        json_get index_path, user_payment: {
+          user: other_user.id,
+          created_from: '2026-01-15T10:30:00Z',
+          created_to: '2026-01-15T10:30:00Z'
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      ids = user_payments.map { |row| row['id'].to_i }
+      expect(ids).to eq([selected.id])
+    end
+
     it 'lists all payments for admin' do
       as(admin) { json_get index_path }
 
@@ -148,6 +204,98 @@ RSpec.describe 'VpsAdmin::API::Resources::UserPayment', requires_plugins: :payme
 
       ids = user_payments.map { |row| row['id'].to_i }
       expect(ids).to contain_exactly(user_payment_row.id)
+    end
+
+    it 'filters by an inclusive created_at period' do
+      build_user_payment_at(
+        user:,
+        created_at: Time.utc(2025, 12, 31, 23, 59, 59)
+      )
+      middle = build_user_payment_at(
+        user:,
+        created_at: Time.utc(2026, 1, 15, 10, 30)
+      )
+      build_user_payment_at(
+        user:,
+        created_at: Time.utc(2026, 1, 15, 10, 30, 1)
+      )
+
+      as(admin) do
+        json_get index_path, user_payment: {
+          created_from: '2026-01-01T00:00:00Z',
+          created_to: '2026-01-15T10:30:00Z'
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      ids = user_payments.map { |row| row['id'].to_i }
+      expect(ids).to eq([middle.id, other_payment_row.id, user_payment_row.id])
+    end
+
+    it 'applies created_at period filters together with the user filter' do
+      selected = build_user_payment_at(
+        user:,
+        created_at: Time.utc(2026, 1, 15, 10, 30)
+      )
+
+      build_user_payment_at(
+        user: other_user,
+        created_at: Time.utc(2026, 1, 15, 10, 30)
+      )
+
+      as(admin) do
+        json_get index_path, user_payment: {
+          user: user.id,
+          created_from: '2026-01-15T10:30:00Z',
+          created_to: '2026-01-15T10:30:00Z'
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+
+      ids = user_payments.map { |row| row['id'].to_i }
+      expect(ids).to eq([selected.id])
+    end
+
+    it 'paginates the created_at order without skipping out-of-order ids' do
+      payment_a = build_user_payment_at(
+        user:,
+        created_at: Time.utc(2026, 1, 10)
+      )
+      payment_b = build_user_payment_at(
+        user:,
+        created_at: Time.utc(2026, 1, 30)
+      )
+      payment_c = build_user_payment_at(
+        user:,
+        created_at: Time.utc(2026, 1, 20)
+      )
+      payment_d = build_user_payment_at(
+        user:,
+        created_at: Time.utc(2026, 1, 5)
+      )
+      period = {
+        created_from: '2026-01-05T00:00:00Z',
+        created_to: '2026-01-30T00:00:00Z',
+        limit: 2
+      }
+
+      as(admin) { json_get index_path, user_payment: period }
+
+      expect_status(200)
+      first_page_ids = user_payments.map { |row| row['id'].to_i }
+      expect(first_page_ids).to eq([payment_b.id, payment_c.id])
+
+      as(admin) do
+        json_get index_path, user_payment: period.merge(from_id: first_page_ids.last)
+      end
+
+      expect_status(200)
+      second_page_ids = user_payments.map { |row| row['id'].to_i }
+      expect(second_page_ids).to eq([payment_a.id, payment_d.id])
     end
   end
 
