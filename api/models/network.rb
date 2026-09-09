@@ -21,6 +21,7 @@ class Network < ApplicationRecord
     messave: '%{value} is not a valid IP version'
   }
   validate :check_ip_integrity
+  validate :preserve_allocation_resource
 
   # @param attrs [Hash]
   # @param opts [Hash]
@@ -102,6 +103,17 @@ class Network < ApplicationRecord
     ).count
   end
 
+  # Changing quota semantics requires an explicit conversion of existing IPs.
+  # Registration takes this same SQL row lock before adding the first address.
+  def preserve_allocation_resource
+    return unless persisted? && (will_save_change_to_role? || will_save_change_to_ip_version?)
+
+    self.class.where(id:).lock.pick(:id)
+    return unless ip_addresses.lock.exists?
+
+    errors.add(:base, 'cannot change IP version or role while the network has allocations')
+  end
+
   # Name of cluster resource appropriate for this network
   def cluster_resource
     return :ipv6 if ip_version == 6
@@ -118,6 +130,19 @@ class Network < ApplicationRecord
   def add_ips(n, opts = {})
     acquire_lock(self) if opts[:lock].nil? || opts[:lock]
 
+    if opts[:environment] && !opts[:user]
+      raise ArgumentError, 'provide user together with environment'
+    end
+
+    if opts[:user]
+      raise ArgumentError, 'provide environment together with user' unless opts[:environment]
+
+      unless is_in_environment?(opts[:environment])
+        raise ArgumentError, "network #{self} (##{id}) not available in environment " \
+                             "#{opts[:environment].label} (##{opts[:environment].id})"
+      end
+    end
+
     ips = []
     net = net_addr
     last_ip = ip_addresses.order("#{ip_order('ip_addr')} DESC").take
@@ -131,6 +156,7 @@ class Network < ApplicationRecord
           size: subsize,
           network: self,
           user: opts[:user],
+          environment: opts[:environment],
           allocate: false
         )
 
@@ -138,18 +164,13 @@ class Network < ApplicationRecord
       end
 
       if opts[:user] && opts[:environment]
-        unless is_in_environment?(opts[:environment])
-          raise "network #{self} (##{id}) not available in environment " \
-                "#{opts[:environment].label} (##{opts[:environment].id})"
-        end
-
         user_env = opts[:user].environment_user_configs.find_by!(
           environment: opts[:environment]
         )
 
         user_env.reallocate_resource!(
           cluster_resource,
-          user_env.send(cluster_resource) + (ips.count * subsize),
+          delta: ips.count * subsize,
           user: opts[:user],
           save: true,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed)
@@ -186,6 +207,10 @@ class Network < ApplicationRecord
     return if address.blank? || prefix.blank?
 
     net_addr(true) do |n|
+      if ip_version != (n.ipv4? ? 4 : 6)
+        errors.add(:ip_version, 'does not match the network address')
+      end
+
       ip_addresses.each do |ip|
         errors.add(:address, "IP #{ip.addr} does not belong to this network") unless n.include?(ip.to_ip)
       end

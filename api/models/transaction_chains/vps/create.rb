@@ -227,7 +227,7 @@ module TransactionChains
         )
         ip_resources << user_env.reallocate_resource!(
           v,
-          user_env.send(v) + n,
+          delta: n,
           user: vps.user,
           chain: self
         )

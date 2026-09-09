@@ -80,6 +80,8 @@ RSpec.describe TransactionChains::Vps::Migrate do
 
   it 'queues the core os-to-os migration subsequence' do
     _dataset, _dip, vps, dst_node = create_vps_migration_fixture
+    netif = create_network_interface!(vps, name: 'eth0')
+    ip = create_ip_address!(network_interface: netif)
     set_vps_running!(vps)
 
     chain, = described_class.chain_for(vps, dst_node).fire(
@@ -107,6 +109,14 @@ RSpec.describe TransactionChains::Vps::Migrate do
     expect(classes.index(Transactions::Vps::SendRootfs)).to be < classes.index(Transactions::Vps::SendState)
     expect(classes.index(Transactions::Vps::SendState)).to be < classes.index(Transactions::Vps::SendCleanup)
     expect(classes.rindex(Transactions::Queue::Release)).to be < classes.index(Transactions::Vps::SendCleanup)
+
+    # A detach confirmation must not expose an address to a competing chain
+    # before the migration (or its rollback) finishes.
+    ip.update!(network_interface: nil)
+    expect do
+      TransactionChains::Ip::Update.fire(ip, user: nil)
+    end.to raise_error(ResourceLocked)
+    expect(ip.host_ip_addresses.first.get_current_lock.locked_by_id).to eq(chain.id)
   end
 
   it 'omits destination start when no_start is true' do

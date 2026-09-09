@@ -66,23 +66,7 @@ class NetworkInterface < ApplicationRecord
     ::IpAddress.transaction do
       ip = ::IpAddress.find(ip.id) unless safe
 
-      locnet = ip.network.location_networks.where(
-        location_id: vps.node.location_id
-      ).take
-
-      raise VpsAdmin::API::Exceptions::IpAddressInvalidLocation if locnet.nil?
-
-      raise VpsAdmin::API::Exceptions::IpAddressInUse if !ip.free? || (ip.user_id && ip.user_id != vps.user_id)
-
-      unless %w[any vps].include?(ip.network.purpose)
-        raise VpsAdmin::API::Exceptions::IpAddressInvalid,
-              "#{ip} cannot be assigned to a VPS"
-      end
-
-      if is_user && !ip.user_id && !locnet.userpick
-        raise VpsAdmin::API::Exceptions::IpAddressInvalid,
-              "#{ip} cannot be freely assigned to a VPS"
-      end
+      validate_route_assignment!(ip, is_user:)
 
       if via
         if !via.assigned?
@@ -102,7 +86,8 @@ class NetworkInterface < ApplicationRecord
         args: [self, [ip]],
         kwargs: {
           host_addrs:,
-          via:
+          via:,
+          actor: ::User.current
         }
       )
     end
@@ -120,23 +105,57 @@ class NetworkInterface < ApplicationRecord
     ::IpAddress.transaction do
       ip = ::IpAddress.find(ip.id) unless safe
 
-      raise VpsAdmin::API::Exceptions::IpAddressNotAssigned if ip.network_interface_id != id
+      validate_route_removal!(ip)
 
-      routed_addrs = ::IpAddress.where(route_via: ip.host_ip_addresses)
-
-      if routed_addrs.any?
-        raise VpsAdmin::API::Exceptions::IpAddressInUse,
-              "The following addresses are routed via host addresses from #{ip}:\n" +
-              routed_addrs.map { |v| "#{v} via #{v.route_via.ip_addr}" }.join(", \n")
-      end
-
-      TransactionChains::NetworkInterface::DelRoute.fire(self, [ip])
+      TransactionChains::NetworkInterface::DelRoute.fire(self, [ip], actor: ::User.current)
     end
+  end
+
+  # Public assignment calls repeat their policy checks after the chain locks.
+  def ensure_actor!(actor)
+    reload(lock: true)
+    vps.reload(lock: true)
+    return if actor.role == :admin || vps.user_id == actor.id
+
+    raise VpsAdmin::API::Exceptions::IpAddressNotOwned,
+          'Network interface is no longer owned by this user'
+  end
+
+  def validate_route_assignment!(ip, is_user:)
+    locnet = ip.network.location_networks.where(
+      location_id: vps.node.location_id
+    ).take
+
+    raise VpsAdmin::API::Exceptions::IpAddressInvalidLocation if locnet.nil?
+
+    raise VpsAdmin::API::Exceptions::IpAddressInUse if !ip.free? || (ip.user_id && ip.user_id != vps.user_id)
+
+    unless %w[any vps].include?(ip.network.purpose)
+      raise VpsAdmin::API::Exceptions::IpAddressInvalid,
+            "#{ip} cannot be assigned to a VPS"
+    end
+
+    return unless is_user && !ip.user_id && !locnet.userpick
+
+    raise VpsAdmin::API::Exceptions::IpAddressInvalid,
+          "#{ip} cannot be freely assigned to a VPS"
+  end
+
+  def validate_route_removal!(ip)
+    raise VpsAdmin::API::Exceptions::IpAddressNotAssigned if ip.network_interface_id != id
+
+    routed_addrs = ::IpAddress.where(route_via: ip.host_ip_addresses).lock
+
+    return unless routed_addrs.any?
+
+    raise VpsAdmin::API::Exceptions::IpAddressInUse,
+          "The following addresses are routed via host addresses from #{ip}:\n" +
+          routed_addrs.map { |v| "#{v} via #{v.route_via.ip_addr}" }.join(", \n")
   end
 
   # @param addr [HostIpAddress]
   def add_host_address(addr)
-    TransactionChains::NetworkInterface::AddHostIp.fire(self, [addr])
+    TransactionChains::NetworkInterface::AddHostIp.fire(self, [addr], actor: ::User.current)
   end
 
   # Remove host address `addr` from this interface
@@ -152,7 +171,7 @@ class NetworkInterface < ApplicationRecord
 
       raise VpsAdmin::API::Exceptions::IpAddressNotAssigned unless addr.assigned?
 
-      TransactionChains::NetworkInterface::DelHostIp.fire(self, [addr])
+      TransactionChains::NetworkInterface::DelHostIp.fire(self, [addr], actor: ::User.current)
     end
   end
 end

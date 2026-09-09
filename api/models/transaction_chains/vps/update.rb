@@ -218,6 +218,12 @@ module TransactionChains
     def chown_vps(vps, orig_user)
       db_changes = { vps => { user_id: vps.user_id } }
 
+      vps.ip_addresses.order(:id).each do |ip|
+        lock(ip)
+        ip.lock!
+        ip.host_ip_addresses.order(:id).lock.each { |addr| lock(addr) }
+      end
+
       # VPS and all related objects must be given to the target user:
       #   - dataset and all subdatasets
       #   - IP addresses (resource allocation)
@@ -294,11 +300,7 @@ module TransactionChains
 
       # Remove DNS zone transfers from chowned IPs
       vps.ip_addresses.each do |ip|
-        ip.host_ip_addresses.each do |host_ip|
-          host_ip.dns_zone_transfers.each do |zone_transfer|
-            use_chain(DnsZoneTransfer::Destroy, args: [zone_transfer])
-          end
-        end
+        ip.host_ip_addresses.lock.each { |host_ip| host_ip.remove_dns_transfers!(self) }
       end
 
       # Transfer exports of the VPS's own datasets / snapshots
@@ -348,14 +350,17 @@ module TransactionChains
       ).to_a
 
       add_hosts = ips.map do |ip|
-        ::ExportHost.create!(
+        ::ExportHost.new(
           export:,
           ip_address: ip,
           rw: export.rw,
           sync: export.sync,
           subtree_check: export.subtree_check,
           root_squash: export.root_squash
-        )
+        ).tap do |host|
+          host.lock_ip!(self)
+          host.save!
+        end
       rescue ActiveRecord::RecordNotUnique
         nil
       end.compact
@@ -403,6 +408,7 @@ module TransactionChains
       dst_env = vps.user.environment_user_configs.find_by!(
         environment: vps.node.location.environment
       )
+      [src_env, dst_env].uniq(&:id).sort_by(&:id).each(&:lock!)
 
       %i[ipv4 ipv4_private ipv6].each do |r|
         st_cnt, st_changes, st_ips = standalone_ips(vps, r)
@@ -415,14 +421,14 @@ module TransactionChains
 
         src_use = src_env.reallocate_resource!(
           r,
-          src_env.send(r) - cnt,
+          delta: -cnt,
           user: src_env.user,
           chain: self
         )
 
         dst_use = dst_env.reallocate_resource!(
           r,
-          dst_env.send(r) + cnt,
+          delta: cnt,
           user: dst_env.user,
           chain: self
         )

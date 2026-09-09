@@ -42,6 +42,18 @@ RSpec.describe TransactionChains::Ip::Free do
     [ip, host_ip]
   end
 
+  it 'retains addresses charged elsewhere or lacking verified charge provenance' do
+    ip, = create_owned_ip_fixture
+    ip.update!(charged_environment: SpecSeed.other_environment)
+    legacy, = create_owned_ip_fixture
+    legacy.update!(charged_environment: nil)
+    user_env = user.environment_user_configs.find_by!(environment: SpecSeed.environment)
+    chain, = use_chain_method_in_root!(described_class, method: :free_from_environment_user_config,
+                                                        args: [resource, user_env])
+    expect(confirmations_for(chain).select { |row| row.class_name == 'IpAddress' }).to be_empty
+    expect([ip.reload.user_id, legacy.reload.user_id]).to eq([user.id, user.id])
+  end
+
   it 'clears ownership and deletes user-created host addresses through confirmations' do
     ensure_available_node_status!(SpecSeed.node)
     ip, host_ip = create_owned_ip_fixture

@@ -16,6 +16,7 @@ module TransactionChains
 
       lock(netif)
       lock(netif.vps)
+      netif.ensure_actor!(opts[:actor]) if opts[:actor]
       concerns(:affect, [netif.vps.class.name, netif.vps.id])
 
       uses = []
@@ -24,6 +25,22 @@ module TransactionChains
       )
       ownership = netif.vps.node.location.environment.user_ip_ownership
       ips_arr = ips.to_a
+      ips_arr.sort_by(&:id).each do |ip|
+        lock(ip)
+        ip.reload(lock: true)
+        ip.ensure_charge_environment!
+        netif.validate_route_assignment!(ip, is_user: opts[:actor].role != :admin) if opts[:actor]
+        unless ip.free? && (!ip.user_id || ip.user_id == netif.vps.user_id)
+          raise VpsAdmin::API::Exceptions::IpAddressInUse, 'IP address is already in use'
+        end
+      end
+
+      if opts[:via]
+        opts[:via].lock_with_ip!(self)
+        unless opts[:via].assigned? && opts[:via].ip_address.network_interface_id == netif.id
+          raise VpsAdmin::API::Exceptions::IpAddressInUse, 'Route gateway is no longer assigned to this interface'
+        end
+      end
 
       if opts[:reallocate]
         uses = reallocate_resources(
@@ -118,6 +135,8 @@ module TransactionChains
         environment_id: target_env.id
       )
 
+      user_envs.values.sort_by(&:id).each(&:lock!)
+
       %i[ipv4 ipv4_private ipv6].each do |r|
         changes = {}
         user_envs.each_key do |env_id|
@@ -155,13 +174,13 @@ module TransactionChains
 
         changes.each do |env_id, n|
           user_env = user_envs[env_id]
-          cur = user_env.send(r)
 
           next unless n[:add] > 0 || n[:drop] > 0
 
           uses << user_env.reallocate_resource!(
             r,
-            cur + n[:add] - n[:drop],
+            delta: n[:add] - n[:drop],
+            chain: self,
             user:
           )
         end

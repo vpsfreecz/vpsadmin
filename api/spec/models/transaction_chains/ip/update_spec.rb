@@ -56,7 +56,7 @@ RSpec.describe TransactionChains::Ip::Update do
     )
   end
 
-  it 'clears ownership and chains host address cleanup' do
+  it 'defers ownership and accounting until host cleanup succeeds' do
     ensure_available_node_status!(SpecSeed.node)
     ip = create_owned_ip
     host_ip = ip.host_ip_addresses.take!
@@ -65,12 +65,12 @@ RSpec.describe TransactionChains::Ip::Update do
 
     chain, = described_class.fire(ip, user: nil)
 
-    expect(ip.reload.user_id).to be_nil
-    expect(ip.charged_environment_id).to be_nil
+    expect(ip.reload.user_id).to eq(SpecSeed.user.id)
+    expect(ip.charged_environment_id).to eq(SpecSeed.environment.id)
     expect(resource_use_value(user: SpecSeed.user, environment: SpecSeed.environment, resource: :ipv4)).to eq(
-      before_old - 1
+      before_old
     )
-    expect(tx_classes(chain)).to eq([Transactions::Utils::NoOp])
+    expect(tx_classes(chain)).to eq([Transactions::Utils::NoOp, Transactions::Utils::NoOp])
     expect(
       confirmations_for(chain).find { |row| row.class_name == 'HostIpAddress' && row.row_pks == { 'id' => host_ip.id } }
         .confirm_type

@@ -257,46 +257,70 @@ module VpsAdmin::API
         ret
       end
 
-      def reallocate_resource!(resource, value, user: nil, save: false, confirmed: nil,
-                               chain: nil, override: nil, lock_type: nil)
+      def reallocate_resource!(resource, value = nil, user: nil, save: false, confirmed: nil,
+                               chain: nil, override: nil, lock_type: nil, delta: nil)
+        if value.nil? == delta.nil?
+          raise ArgumentError, 'provide either an absolute value or a relative delta'
+        end
+
         user ||= ::User.current
 
-        use = ::ClusterResourceUse.joins(:user_cluster_resource).find_by(
-          user_cluster_resources: {
-            user_id: user.id,
-            environment_id: Private.environment(self).id,
-            cluster_resource_id: ::ClusterResource.find_by!(name: resource).id
-          },
-          class_name: self.class.name,
-          table_name: self.class.table_name,
-          row_id: id
-        )
-
-        unless use
-          return allocate_resource!(
-            resource,
-            value,
-            user:,
-            confirmed:,
-            chain:
+        # Relative changes need a current, locked read even under REPEATABLE READ.
+        # Lock the owner too so concurrent first allocations cannot create duplicates.
+        lock! unless delta.nil?
+        apply_change = proc do
+          scope = ::ClusterResourceUse.joins(:user_cluster_resource)
+          scope = scope.lock unless delta.nil?
+          use = scope.find_by(
+            user_cluster_resources: {
+              user_id: user.id,
+              environment_id: Private.environment(self).id,
+              cluster_resource_id: ::ClusterResource.find_by!(name: resource).id
+            },
+            class_name: self.class.name,
+            table_name: self.class.table_name,
+            row_id: id
           )
+
+          value = (use&.value || 0) + delta unless delta.nil?
+
+          unless use
+            next allocate_resource!(
+              resource,
+              value,
+              user:,
+              confirmed:,
+              chain:
+            )
+          end
+
+          chain.lock(use.user_cluster_resource) if chain
+
+          use.value = value
+          use.admin_override = override
+          use.admin_lock_type = lock_type unless lock_type.nil?
+
+          if save
+            use.save!
+
+          elsif !use.valid?
+            raise Exceptions::ClusterResourceAllocationError, use
+
+          else
+            use
+          end
         end
 
-        chain.lock(use.user_cluster_resource) if chain
+        return apply_change.call if delta.nil? || chain
 
-        use.value = value
-        use.admin_override = override
-        use.admin_lock_type = lock_type unless lock_type.nil?
-
-        if save
-          use.save!
-
-        elsif !use.valid?
-          raise Exceptions::ClusterResourceAllocationError, use
-
-        else
-          use
-        end
+        # Synchronous relative changes must also respect quota edits deferred
+        # by another chain. The lock lives through this database transaction.
+        user_resource = ::UserClusterResource.joins(:cluster_resource).find_by!(
+          user:, environment: Private.environment(self), cluster_resources: { name: resource }
+        )
+        result = nil
+        user_resource.acquire_lock { result = apply_change.call }
+        result
       end
 
       def free_resource!(resource, destroy: false, chain: nil,

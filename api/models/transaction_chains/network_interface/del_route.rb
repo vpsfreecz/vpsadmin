@@ -12,6 +12,7 @@ module TransactionChains
     def link_chain(netif, ips, **opts)
       lock(netif)
       lock(netif.vps)
+      netif.ensure_actor!(opts[:actor]) if opts[:actor]
       concerns(:affect, [netif.vps.class.name, netif.vps.id])
 
       opts[:unregister] = true unless opts.has_key?(:unregister)
@@ -20,13 +21,22 @@ module TransactionChains
       lock(netif.vps)
       concerns(:affect, [netif.vps.class.name, netif.vps.id])
 
+      ips_arr = ips.to_a
+      if opts[:actor]
+        ips_arr.sort_by(&:id).each do |ip|
+          lock(ip)
+          ip.reload(lock: true)
+          ip.ensure_owner!(opts[:actor])
+          netif.validate_route_removal!(ip)
+        end
+      end
+
       env = opts[:environment] || netif.vps.node.location.environment
 
       uses = []
       user_env = netif.vps.user.environment_user_configs.find_by!(
         environment: env
       )
-      ips_arr = ips.to_a
 
       if opts[:reallocate] && !env.user_ip_ownership
         %i[ipv4 ipv4_private ipv6].each do |r|
@@ -66,8 +76,9 @@ module TransactionChains
 
           uses << user_env.reallocate_resource!(
             r,
-            user_env.send(r) - cnt,
-            user: netif.vps.user
+            delta: -cnt,
+            user: netif.vps.user,
+            chain: self
           )
         end
       end
@@ -109,10 +120,9 @@ module TransactionChains
       end
 
       ips_arr.each do |ip|
-        ip.host_ip_addresses.each do |host_ip|
-          host_ip.dns_zone_transfers.each do |zone_transfer|
-            use_chain(DnsZoneTransfer::Destroy, args: [zone_transfer])
-          end
+        ip.host_ip_addresses.order(:id).lock.each do |host_ip|
+          host_ip.lock_with_ip!(self)
+          host_ip.remove_dns_transfers!(self)
         end
       end
 

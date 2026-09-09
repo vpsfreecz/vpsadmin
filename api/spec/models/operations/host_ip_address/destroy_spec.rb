@@ -43,7 +43,7 @@ RSpec.describe VpsAdmin::API::Operations::HostIpAddress::Destroy do
 
     allow(TransactionChains::HostIpAddress::Destroy).to receive(:fire).and_return([chain, host_ip])
 
-    expect(described_class.run(host_ip)).to eq([chain, host_ip])
-    expect(TransactionChains::HostIpAddress::Destroy).to have_received(:fire).with(host_ip)
+    expect(described_class.run(host_ip, actor: SpecSeed.user)).to eq([chain, host_ip])
+    expect(TransactionChains::HostIpAddress::Destroy).to have_received(:fire).with(host_ip, actor: SpecSeed.user)
   end
 end

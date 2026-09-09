@@ -103,14 +103,17 @@ module TransactionChains
         ).to_a
 
         hosts = ips.map do |ip|
-          ::ExportHost.create!(
+          ::ExportHost.new(
             export:,
             ip_address: ip,
             rw: export.rw,
             sync: export.sync,
             subtree_check: export.subtree_check,
             root_squash: export.root_squash
-          )
+          ).tap do |host|
+            host.lock_ip!(self)
+            host.save!
+          end
         end
 
         append_t(Transactions::Export::AddHosts, args: [export, hosts]) do |t|

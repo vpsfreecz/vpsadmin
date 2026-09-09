@@ -42,6 +42,8 @@ RSpec.describe TransactionChains::Export::DelHosts do
     chain, = described_class.fire(export, [host1, host2.ip_address])
 
     expect(tx_classes(chain)).to eq([Transactions::Export::DelHosts])
+    expect(chain.locks.map { |row| [row.resource, row.row_id] })
+      .to include(['IpAddress', host1.ip_address_id], ['IpAddress', host2.ip_address_id])
     expect(tx_payload(chain, Transactions::Export::DelHosts).fetch('hosts').map { |host| host.fetch('address') }).to eq(
       [host1.ip_address.to_s, host2.ip_address.to_s]
     )

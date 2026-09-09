@@ -42,9 +42,11 @@ RSpec.describe TransactionChains::NetworkInterface::AddRoute do
 
     via_parent_ip = create_ipv4_address_in_network!(
       network: route_network,
-      location: fixture[:pool].node.location
+      location: fixture[:pool].node.location,
+      network_interface: fixture[:netif]
     )
     via_addr = via_parent_ip.host_ip_addresses.take!
+    via_addr.update!(order: 0)
 
     routed_ip = create_ipv4_address_in_network!(
       network: route_network,
@@ -90,8 +92,19 @@ RSpec.describe TransactionChains::NetworkInterface::AddRoute do
       'charged_environment_id' => env.id,
       'user_id' => user.id
     )
-    expect(host_addr.reload.order).to eq(0)
+    expect(host_addr.reload.order).to eq(1)
     expect(confirmations_for(chain).map(&:class_name)).to include('ClusterResourceUse')
     expect(export.reload.export_hosts.pluck(:ip_address_id)).to eq([routed_ip.id])
+  end
+
+  it 'rejects owned legacy addresses without guessing their charge environment' do
+    fixture = create_netif_vps_fixture!(user: user)
+    ip = create_ip_address!(user: user)
+    ip.update!(charged_environment: nil)
+    expect { described_class.fire(fixture[:netif], [ip]) }
+      .to raise_error(VpsAdmin::API::Exceptions::IpAddressInvalidLocation, /reconcile its accounting/)
+    expect(ip.reload.user_id).to eq(user.id)
+    expect(ip.charged_environment_id).to be_nil
+    expect(ip.network_interface_id).to be_nil
   end
 end

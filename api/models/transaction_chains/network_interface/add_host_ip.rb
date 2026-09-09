@@ -5,10 +5,18 @@ module TransactionChains
     # @param netif [::NetworkInterface]
     # @param addrs [Array<::HostIpAddress>]
     # @param check_addrs [Boolean]
-    def link_chain(netif, addrs, check_addrs: true)
+    def link_chain(netif, addrs, check_addrs: true, actor: nil)
       lock(netif)
       lock(netif.vps)
+      netif.ensure_actor!(actor) if actor
       concerns(:affect, [netif.vps.class.name, netif.vps.id])
+
+      addrs.sort_by { |addr| [addr.ip_address_id, addr.id] }.each do |addr|
+        addr.lock_with_ip!(self, actor:)
+        if actor && addr.assigned?
+          raise VpsAdmin::API::Exceptions::IpAddressInUse, 'Host address is already assigned'
+        end
+      end
 
       # Ensure all addresses are added to the same interface
       if check_addrs

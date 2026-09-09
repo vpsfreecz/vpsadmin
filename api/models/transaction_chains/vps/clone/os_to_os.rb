@@ -467,7 +467,7 @@ module TransactionChains
 
         user_env.reallocate_resource!(
           r,
-          user_env.send(r) + sum,
+          delta: sum,
           user: dst_vps.user,
           chain: self,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed)

@@ -12,6 +12,9 @@ module TransactionChains
       lock(export.network_interface)
       lock(export)
 
+      hosts = export.export_hosts.order(:ip_address_id).lock.to_a
+      hosts.each { |host| host.lock_ip!(self) }
+
       export.update!(confirmed: ::Export.confirmed(:confirm_destroy))
 
       append_t(Transactions::Export::Disable, args: [export]) do |t|
@@ -21,7 +24,7 @@ module TransactionChains
       append_t(Transactions::Export::Destroy, args: [export, host_addr]) do |t|
         t.edit(host_addr.ip_address, network_interface_id: nil)
         t.just_destroy(export.network_interface)
-        export.export_hosts.each { |host| t.just_destroy(host) }
+        hosts.each { |host| t.just_destroy(host) }
         export.export_mounts.each { |ex_mnt| t.just_destroy(ex_mnt) }
         t.destroy(export)
       end

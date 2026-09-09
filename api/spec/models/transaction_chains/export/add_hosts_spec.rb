@@ -32,6 +32,7 @@ RSpec.describe TransactionChains::Export::AddHosts do
 
     expect(tx_classes(chain)).to eq([Transactions::Export::AddHosts])
     expect(created_hosts.map(&:ip_address_id)).to eq([ipv4.id])
+    expect(chain.locks.map { |row| [row.resource, row.row_id] }).to include(['IpAddress', ipv4.id])
     expect(tx_payload(chain, Transactions::Export::AddHosts).fetch('hosts').map { |host| host.fetch('address') }).to eq(
       [ipv4.to_s]
     )

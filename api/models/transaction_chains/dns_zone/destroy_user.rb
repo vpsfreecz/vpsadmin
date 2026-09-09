@@ -5,7 +5,15 @@ module TransactionChains
 
     # @param dns_zone [::DnsZone]
     def link_chain(dns_zone)
+      hosts = ::HostIpAddress.where(id: dns_zone.dns_zone_transfers.select(:host_ip_address_id))
+                             .order(:ip_address_id, :id).to_a
+      hosts.each { |host| host.lock_with_ip!(self) }
       lock(dns_zone)
+      transfers = dns_zone.dns_zone_transfers.order(:id).lock.to_a
+      unless (transfers.map(&:host_ip_address_id) - hosts.map(&:id)).empty?
+        raise ResourceLocked.new(dns_zone, 'DNS zone transfers changed; retry zone removal')
+      end
+
       concerns(:affect, [dns_zone.class.name, dns_zone.id])
 
       dns_zone.dns_server_zones.each do |dns_server_zone|
@@ -23,7 +31,7 @@ module TransactionChains
       end
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
-        dns_zone.dns_zone_transfers.each do |zone_transfer|
+        transfers.each do |zone_transfer|
           zone_transfer.update!(confirmed: ::DnsZoneTransfer.confirmed(:confirm_destroy))
           t.destroy(zone_transfer)
         end

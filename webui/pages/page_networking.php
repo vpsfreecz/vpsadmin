@@ -142,11 +142,19 @@ if (isLoggedIn()) {
             try {
                 $ip = $api->ip_address->show($_GET['id']);
 
-                if (isAdmin() && $_POST['disown']) {
-                    $ip->update(['user' => null]);
+                $result = route_unassign_address($api, $ip, isAdmin() && !empty($_POST['disown']));
+                if ($result['state'] !== 'removed') {
+                    $xtpl->perex(
+                        _('IP removal'),
+                        $result['state'] === 'pending'
+                            ? _('Disowning the IP is still in progress. Wait for the transaction to finish, then submit the removal again.')
+                            : _('Disowning the IP failed. The route was kept. Inspect the transaction before trying again.')
+                    );
+                    $xtpl->perex(_('Transaction chain'), '<a href="?page=transactions&chain='
+                        . (int) $result['chain'] . '">' . _('Transaction chain') . '</a>');
+                    route_unassign_form($_GET['id']);
+                    break;
                 }
-
-                $ip->free();
 
                 notify_user(_('IP removed'), '');
                 redirect($_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses');

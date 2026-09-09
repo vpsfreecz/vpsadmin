@@ -8,6 +8,7 @@ class IpAddress < ApplicationRecord
   belongs_to :charged_environment, class_name: 'Environment'
   belongs_to :reverse_dns_zone, class_name: 'DnsZone'
   has_many :host_ip_addresses
+  has_many :export_hosts
   has_many :ip_address_assignments
 
   has_paper_trail
@@ -25,22 +26,27 @@ class IpAddress < ApplicationRecord
   # @option params [Network] network
   # @option params [User] user
   # @option params [Location] location
+  # @option params [Environment] environment explicit charge environment
   # @option params [Integer] prefix
   # @option params [Integer] size
   # @option params [Boolean] allocate (true)
   def self.register(addr, params)
     ip = nil
+    charged_environment = params[:user] && (params[:environment] || params[:location]&.environment)
+
+    raise ArgumentError, 'owned IP addresses require a charge environment' if params[:user] && !charged_environment
 
     transaction do
+      params[:network].reload(lock: true)
       if params[:user] && (params[:allocate].nil? || params[:allocate])
         user_env = params[:user].environment_user_configs.find_by!(
-          environment: params[:location].environment
+          environment: charged_environment
         )
         resource = params[:network].cluster_resource
 
         user_env.reallocate_resource!(
           resource,
-          user_env.send(resource) + params[:size],
+          delta: params[:size],
           user: params[:user],
           save: true,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed)
@@ -57,6 +63,7 @@ class IpAddress < ApplicationRecord
         size: params[:size],
         network: params[:network],
         user: params[:user],
+        charged_environment:,
         reverse_dns_zone:
       )
 
@@ -72,6 +79,21 @@ class IpAddress < ApplicationRecord
 
   def version
     network.ip_version
+  end
+
+  # Recheck the actor after taking the IP lock and reloading ownership.
+  def ensure_owner!(actor)
+    return if actor.role == :admin || current_owner == actor
+
+    raise VpsAdmin::API::Exceptions::OperationError,
+          VpsAdmin::API::I18n.t('errors.access_denied_lower')
+  end
+
+  def ensure_charge_environment!
+    return unless user_id && !charged_environment_id
+
+    raise VpsAdmin::API::Exceptions::IpAddressInvalidLocation,
+          'IP address has no recorded charge environment; reconcile its accounting before changing ownership or assignment'
   end
 
   def free?

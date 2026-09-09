@@ -12,9 +12,11 @@ module TransactionChains
         if host_or_ip.is_a?(::ExportHost)
           host_or_ip
         else
-          export.export_hosts.where(ip_address: host_or_ip).take
+          export.export_hosts.where(ip_address: host_or_ip).lock.take
         end
       end.compact
+
+      hosts.sort_by(&:ip_address_id).each { |host| host.lock_ip!(self) }
 
       return unless hosts.any?
 

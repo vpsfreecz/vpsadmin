@@ -60,6 +60,19 @@ RSpec.describe TransactionChains::Ip::Allocate do
     expect(fixture[:ip_addresses].map { |ip| ip.reload.charged_environment_id }).to all(eq(fixture[:environment].id))
   end
 
+  it 'rejects legacy owned addresses with no charge provenance' do
+    fixture = create_allocation_fixture(ip_count: 1, ownership: true)
+    ip = fixture[:ip_addresses].first
+    ip.update!(user: user, charged_environment: nil)
+    expect do
+      use_chain_method_in_root!(described_class, method: :allocate_to_netif,
+                                                 args: [resource, fixture[:netif], 1])
+    end.to raise_error(VpsAdmin::API::Exceptions::IpAddressInvalidLocation, /reconcile its accounting/)
+    expect(ip.reload.user_id).to eq(user.id)
+    expect(ip.charged_environment_id).to be_nil
+    expect(ip.network_interface_id).to be_nil
+  end
+
   it 'sets ownership when location IP ownership is enabled' do
     fixture = create_allocation_fixture(ip_count: 1, ownership: true)
 

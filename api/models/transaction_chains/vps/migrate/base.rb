@@ -61,6 +61,13 @@ module TransactionChains
                             })
 
       lock(vps)
+      # Keep addresses reserved through temporary detach confirmations and
+      # rollback. Swap includes this setup for both VPSes in its outer chain.
+      vps.ip_addresses.order(:id).each do |ip|
+        lock(ip)
+        ip.lock!
+        ip.host_ip_addresses.order(:id).lock.each { |addr| lock(addr) }
+      end
       lock(vps.dataset_in_pool)
       concerns(:affect, [vps.class.name, vps.id])
 
@@ -392,19 +399,11 @@ module TransactionChains
           'networks.ip_version, ip_addresses.order'
         ).each do |ip|
           begin
-            replacement = ::IpAddress.pick_addr!(
-              user: dst_vps.user,
-              location: dst_vps.node.location,
-              ip_v: ip.network.ip_version,
-              role: ip.network.role.to_sym,
-              purpose: ip.network.purpose.to_sym
-            )
+            replacement = pick_replacement_ip(ip)
           rescue ActiveRecord::RecordNotFound
             dst_ip_addresses << [ip, nil]
             next
           end
-
-          lock(replacement)
 
           dst_ip_addresses << [ip, replacement]
         end
@@ -574,6 +573,25 @@ module TransactionChains
       end
     end
 
+    def pick_replacement_ip(source_ip)
+      replacement = ::IpAddress.pick_addr!(
+        user: dst_vps.user,
+        location: dst_vps.node.location,
+        ip_v: source_ip.network.ip_version,
+        role: source_ip.network.role.to_sym,
+        purpose: source_ip.network.purpose.to_sym
+      )
+      lock(replacement)
+      replacement.lock!
+      replacement.ensure_charge_environment!
+      unless replacement.free? && [nil, dst_vps.user_id].include?(replacement.user_id)
+        raise VpsAdmin::API::Exceptions::IpAddressInUse, 'Replacement IP address is no longer available'
+      end
+
+      replacement.host_ip_addresses.order(:id).lock.each { |addr| lock(addr) }
+      replacement
+    end
+
     # Transfer number of `ips` belonging to `user` from `src_env` to `dst_env`.
     #
     # TODO: this method will not properly work when the VPS has multiple
@@ -588,6 +606,7 @@ module TransactionChains
       dst_user_env = user.environment_user_configs.find_by!(
         environment: dst_env
       )
+      [src_user_env, dst_user_env].uniq(&:id).sort_by(&:id).each(&:lock!)
 
       new_ips = ips.reject { |_, ip| ip.user_id }.map { |v| v[1] }
 
@@ -597,7 +616,8 @@ module TransactionChains
 
         src_use = src_user_env.reallocate_resource!(
           r,
-          src_user_env.send(r) - filter_sum_ip_addresses(standalone_ips, r),
+          delta: -filter_sum_ip_addresses(standalone_ips, r),
+          chain: self,
           user:,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed)
         )
@@ -605,7 +625,8 @@ module TransactionChains
         # Allocate all _new_ IP addresses
         dst_use = dst_user_env.reallocate_resource!(
           r,
-          dst_user_env.send(r) + filter_sum_ip_addresses(new_ips, r),
+          delta: filter_sum_ip_addresses(new_ips, r),
+          chain: self,
           user:,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed)
         )
@@ -637,12 +658,14 @@ module TransactionChains
 
       src_user_env = user.environment_user_configs.find_by!(environment: src_env)
       dst_user_env = user.environment_user_configs.find_by!(environment: dst_env)
+      [src_user_env, dst_user_env].uniq(&:id).sort_by(&:id).each(&:lock!)
 
       %i[ipv4 ipv4_private ipv6].each do |r|
         # Free addresses from src env
         src_use = src_user_env.reallocate_resource!(
           r,
-          src_user_env.send(r) - filter_sum_ip_addresses(ips, r),
+          delta: -filter_sum_ip_addresses(ips, r),
+          chain: self,
           user:,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed)
         )
@@ -650,7 +673,8 @@ module TransactionChains
         # Allocate in dst env
         dst_use = dst_user_env.reallocate_resource!(
           r,
-          dst_user_env.send(r) + filter_sum_ip_addresses(ips, r),
+          delta: filter_sum_ip_addresses(ips, r),
+          chain: self,
           user:,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed)
         )

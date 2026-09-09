@@ -26,6 +26,11 @@ module TransactionChains
               address_location:
             )
             lock(ip)
+            ip.reload(lock: true)
+            ip.ensure_charge_environment!
+            unless ip.free? && (!ip.user_id || ip.user_id == netif.vps.user_id)
+              raise ResourceLocked.new(ip, 'IP address changed during allocation')
+            end
 
             ips << ip
           end
