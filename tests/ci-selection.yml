@@ -155,6 +155,11 @@ select:
       - "webui/pages/page_networking.php"
       - "webui/pages/page_dns.php"
       - "webui/forms/networking.forms.php"
+      - "webui/forms/ip_release.forms.php"
+      - "webui/pages/page_ip_release.php"
+      - "api/models/ip_release*.rb"
+      - "api/models/transaction_chains/ip_release/**"
+      - "api/lib/vpsadmin/api/resources/ip_release*.rb"
       - "webui/forms/dns.forms.php"
     tags: ["webui-networking-dns", "network", "dns"]
 

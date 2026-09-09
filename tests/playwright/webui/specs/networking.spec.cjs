@@ -1,11 +1,15 @@
 const { test, expect } = require('@playwright/test');
 
 const { readFixtures } = require('../lib/fixtures.cjs');
-const { login, logout } = require('../lib/pages/auth.cjs');
+const { login, logout, loginButton, submitCredentials } = require('../lib/pages/auth.cjs');
 const {
   formByAction,
+  submitForm,
+  runVpsadminctl,
+  waitForVpsTransactionsSettled,
 } = require('../lib/pages/webui.cjs');
 const {
+  expectNetworkingNotification,
   expectRouteAssignForm,
   rowWithText,
 } = require('../lib/pages/networking.cjs');
@@ -279,4 +283,99 @@ test.describe('networking browser coverage', () => {
 
     await logout(page, fixtures.admin.username);
   });
+});
+
+
+test('IP release campaign: notices, user retention, assignment and forced manual release', async ({ page }) => {
+  const n = requireNetworkingFixtures();
+  const ips = [n.ipAddresses.release_reason, n.ipAddresses.release_assigned, n.ipAddresses.release_exempt];
+  await login(page, fixtures.admin);
+  await page.goto(`/?page=ip_release&action=new&preview=1&version=4&user=${fixtures.user.id}`);
+  const create = page.locator('form[name="ip-release-create"]');
+  await expect(create.locator('input[name="allow_keep"]')).toBeChecked();
+  await create.locator('input[name="label"]').fill('Browser IP release campaign');
+  const incomplete = await page.request.post('/?page=ip_release&action=create', {
+    form: {
+      csrf_token: await create.locator('input[name="csrf_token"]').inputValue(),
+      label: 'Incomplete selection',
+      deadline: await create.locator('input[name="deadline"]').inputValue(),
+      'addresses[]': String(ips[0].id),
+    },
+  });
+  expect(await incomplete.text()).toContain('The address selection was incomplete.');
+  for (const checkbox of await create.locator('input[name="addresses[]"]').all()) {
+    await checkbox.uncheck();
+  }
+  for (const ip of ips) {
+    await create.locator(`input[name="addresses[]"][value="${ip.id}"]`).check();
+  }
+  await submitForm(create, 'Create campaign');
+  const campaignUrl = page.url();
+  await expect(page.locator('#content')).toContainText('The planned release date has not arrived.');
+  for (const ip of ips) {
+    await expect(rowWithText(page, ip.addr)).toBeVisible();
+  }
+  await page.getByRole('button', { name: 'Send initial notices', exact: true }).click();
+  await expect(page.locator('#content')).not.toContainText('Action failed');
+  const exemption = rowWithText(page, ips[2].addr).locator('form');
+  const requestId = new URL(await exemption.getAttribute('action'), campaignUrl).searchParams.get('id');
+  const requestUrl = `/?page=ip_release&action=request&id=${requestId}`;
+  const initialRequest = runVpsadminctl(['ip_release_request', 'show', requestId]).response.ip_release_request;
+  const initialMail = runVpsadminctl(['mail_log', 'show', String(initialRequest.mail_log.id)]).response.mail_log;
+  expect(initialMail.text_html).toContain('Open in vpsAdmin');
+  await exemption.locator('textarea[name="reason"]').fill('Approved reservation');
+  await exemption.getByRole('button', { name: 'Set exemption', exact: true }).click();
+  await expect(rowWithText(page, ips[2].addr)).toContainText('Exempted by an admin');
+  await logout(page, fixtures.admin.username);
+
+  // Follow the actual HTML email button through the login redirect.
+  await page.setContent(initialMail.text_html);
+  await page.getByRole('link', { name: 'Open in vpsAdmin', exact: true }).click();
+  await expect(page.locator('#content')).toContainText('Sign in to view your IP release request.');
+  await loginButton(page).click({ noWaitAfter: true });
+  await submitCredentials(page, fixtures.user.username, fixtures.user.password);
+  await expect(page).toHaveURL(new RegExp(`page=ip_release.*id=${requestId}`));
+  await expect(rowWithText(page, ips[0].addr)).toContainText('Eligible for release');
+  const keep = page.locator('form[name="ip-release-keep"]');
+  await rowWithText(keep, ips[0].addr).locator('input[type="checkbox"]').check();
+  await keep.locator('textarea[name="reason"]').fill('Migration <script>window.unexpected = true</script>');
+  await submitForm(keep, 'Keep selected IPs');
+  await expect(rowWithText(page, ips[0].addr)).toContainText('Kept with a reason');
+  expect(await page.evaluate(() => window.unexpected)).toBeUndefined();
+  await expect(rowWithText(page, ips[1].addr).getByRole('link', { name: 'Assign to a VPS' })).toBeVisible();
+  const assign = await expectRouteAssignForm(page, ips[1], n.vps.ip_release);
+  await submitForm(assign, 'Add only route');
+  await expectNetworkingNotification(page, 'IP assigned');
+  await waitForVpsTransactionsSettled(page, n.vps.ip_release.id);
+  await page.goto(requestUrl);
+  await expect(rowWithText(page, ips[1].addr)).toContainText('Assigned to an interface');
+  await logout(page, fixtures.user.username);
+
+  await login(page, fixtures.admin);
+  await page.goto(campaignUrl);
+  const edit = page.locator('form[name="ip-release-edit"]');
+  await edit.locator('input[name="allow_keep"]').uncheck();
+  await submitForm(edit, 'Save changes');
+  await page.getByRole('button', { name: 'Send reminders', exact: true }).click();
+  const remindedRequest = runVpsadminctl(['ip_release_request', 'show', requestId]).response.ip_release_request;
+  const reminder = runVpsadminctl(['mail_log', 'show', String(remindedRequest.mail_log.id)]).response.mail_log;
+  expect(reminder.text_plain).toContain(ips[0].addr);
+  expect(reminder.text_plain).not.toContain(ips[1].addr);
+  expect(reminder.text_plain).not.toContain(ips[2].addr);
+  await page.getByRole('button', { name: 'Release eligible addresses', exact: true }).click();
+  await expect(rowWithText(page, ips[0].addr)).toContainText('Released');
+  await expect(rowWithText(page, ips[1].addr)).toContainText('Assigned to an interface');
+  await expect(rowWithText(page, ips[2].addr)).toContainText('Exempted by an admin');
+  // Repeating the action keeps the released record and the two protections.
+  await page.getByRole('button', { name: 'Release eligible addresses', exact: true }).click();
+  await expect(rowWithText(page, ips[0].addr)).toContainText('Released');
+  await logout(page, fixtures.admin.username);
+  await login(page, fixtures.user);
+  await page.goto(requestUrl);
+  await expect(page.locator('form[name="ip-release-keep"]')).toHaveCount(0);
+  await expect(page.locator('#content')).toContainText('user reasons do not prevent release');
+  await page.getByRole('link', { name: 'Browser IP release campaign: Notice history', exact: true }).click();
+  await expect(page.locator('#content-in')).toContainText('Initial notice');
+  await expect(page.locator('#content-in')).toContainText('Reminder');
+  await logout(page, fixtures.user.username);
 });

@@ -2674,6 +2674,7 @@ import ../make-test.nix (
         size: 1,
         network: fixture_network,
         user: user,
+        charged_environment: env,
         network_interface: nil
       )
       fixture_free_ip.save! if fixture_free_ip.changed? || fixture_free_ip.new_record?
@@ -2884,6 +2885,7 @@ import ../make-test.nix (
 
       networking_vps = {
         list: make_networking_vps.call('list'),
+        ip_release: make_networking_vps.call('ip-release'),
         user_route_assign: make_networking_vps.call('user-route-assign'),
         user_route_unassign: make_networking_vps.call('user-route-unassign'),
         user_host_assign: make_networking_vps.call('user-host-assign'),
@@ -2900,6 +2902,9 @@ import ../make-test.nix (
 
       networking_ip_specs = {
         list_free: ['203.0.113.161', user, nil, nil],
+        release_reason: ['203.0.113.175', user, nil, nil],
+        release_assigned: ['203.0.113.176', user, nil, nil],
+        release_exempt: ['203.0.113.177', user, nil, nil],
         user_route_assign: ['203.0.113.162', user, nil, nil],
         admin_route_only: ['203.0.113.163', nil, nil, nil],
         admin_route_host: ['203.0.113.164', nil, nil, nil],
@@ -4327,7 +4332,13 @@ import ../make-test.nix (
               'id' => vps.id,
               'hostname' => vps.hostname,
               'networkInterfaceId' => netif.id,
-              'networkInterfaceName' => netif.name
+              'networkInterfaceName' => netif.name,
+              'userNamespaceMapId' => vps.user_namespace_map_id,
+              'uidMap' => vps.user_namespace_map.build_map(:uid),
+              'gidMap' => vps.user_namespace_map.build_map(:gid),
+              'datasetId' => vps.dataset_in_pool.dataset_id,
+              'datasetFullName' => vps.dataset_in_pool.dataset.full_name,
+              'datasetPoolFilesystem' => vps.dataset_in_pool.pool.filesystem
             }
           end,
           'ipAddresses' => {
@@ -4848,9 +4859,67 @@ import ../make-test.nix (
           Run networking and DNS browser tests for user and admin roles.
         '';
         script = webuiTestScriptCommon + ''
+          def prepare_webui_runtime(fixtures)
+            vps = fixtures.fetch('networking').fetch('vps').fetch('ip_release')
+            prepare_webui_storage_runtime('vps' => { 'ip_release' => vps })
+
+            # Replace the database-only interface through the normal chain so
+            # both nodectld's VPS configuration and osctld have the interface.
+            created = services.api_ruby_json(code: <<~RUBY)
+              #{api_session_prelude(admin_user_id)}
+              netif = NetworkInterface.find(#{Integer(vps.fetch('networkInterfaceId'))})
+              vps = netif.vps
+              name = netif.name
+              netif.delete
+              chain, netif = TransactionChains::NetworkInterface::VethRouted::Create.fire(vps, name)
+
+              fixtures = JSON.parse(File.read(#{WEBUI_FIXTURES.inspect}))
+              fixtures.fetch('networking').fetch('vps').fetch('ip_release')['networkInterfaceId'] = netif.id
+              File.write(#{WEBUI_FIXTURES.inspect}, JSON.generate(fixtures))
+              puts JSON.dump(chain_id: chain.id, netif_id: netif.id)
+            RUBY
+
+            vps['networkInterfaceId'] = created.fetch('netif_id')
+            services.wait_for_chain_state(created.fetch('chain_id'), state: :done, timeout: 180)
+          end
+
           describe 'webui networking and DNS browser flow' do
             it 'passes Playwright networking and DNS tests' do
+              preferences = services.api_ruby_json(code: <<~RUBY)
+                #{api_session_prelude(admin_user_id)}
+
+                user = User.find_by!(login: 'webui-user')
+                previous_mailer_enabled = user.mailer_enabled
+                user.update!(mailer_enabled: true)
+
+                # The browser fixtures insert owned addresses directly. Match
+                # their accounting before exercising ordinary release chains.
+                env = Environment.find(${toString seed.environment.id})
+                config = user.environment_user_configs.find_by!(environment: env)
+                usage = IpAddress.joins(:network).where(
+                  user: user,
+                  charged_environment: env,
+                  networks: { ip_version: 4, role: Network.roles[:public_access] }
+                ).sum(:size)
+                config.reallocate_resource!(
+                  :ipv4, usage, user: user, save: true,
+                  confirmed: ClusterResourceUse.confirmed(:confirmed)
+                )
+
+                puts JSON.dump(mailer_enabled: previous_mailer_enabled)
+              RUBY
+
               run_playwright('networking-dns', 'specs/networking.spec.cjs', 'specs/dns.spec.cjs')
+            ensure
+              if preferences
+                services.api_ruby_json(code: <<~RUBY)
+                  #{api_session_prelude(admin_user_id)}
+                  User.find_by!(login: 'webui-user').update!(
+                    mailer_enabled: #{preferences.fetch('mailer_enabled')}
+                  )
+                  puts JSON.dump(ok: true)
+                RUBY
+              end
             end
           end
         '';

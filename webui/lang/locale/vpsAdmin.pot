@@ -27,12 +27,12 @@ msgid "Downloads"
 msgstr ""
 
 #: forms/backup.forms.php forms/dns.forms.php forms/export.forms.php
-#: forms/incidents.forms.php forms/monitoring.forms.php
-#: forms/networking.forms.php forms/object_history.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php forms/userdata.forms.php
-#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
-#: pages/page_transactions.php
+#: forms/incidents.forms.php forms/ip_release.forms.php
+#: forms/monitoring.forms.php forms/networking.forms.php
+#: forms/object_history.forms.php forms/oom_reports.forms.php
+#: forms/outage.forms.php forms/userdata.forms.php forms/userns.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
+#: pages/page_nas.php pages/page_networking.php pages/page_transactions.php
 msgid "Filters"
 msgstr ""
 
@@ -175,6 +175,11 @@ msgstr ""
 
 #: forms/cluster.forms.php
 msgid "Manage routable addresses"
+msgstr ""
+
+#: forms/cluster.forms.php forms/ip_release.forms.php
+#: forms/networking.forms.php
+msgid "IP release campaigns"
 msgstr ""
 
 #: forms/cluster.forms.php forms/vps.forms.php
@@ -393,9 +398,10 @@ msgstr ""
 msgid "Location"
 msgstr ""
 
-#: forms/cluster.forms.php forms/dataset.forms.php forms/monitoring.forms.php
-#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
-#: pages/page_adminm.php pages/page_backup.php pages/page_cluster.php
+#: forms/cluster.forms.php forms/dataset.forms.php forms/ip_release.forms.php
+#: forms/monitoring.forms.php forms/userdata.forms.php forms/userns.forms.php
+#: forms/users.forms.php pages/page_adminm.php pages/page_backup.php
+#: pages/page_cluster.php
 msgid "Label"
 msgstr ""
 
@@ -523,7 +529,8 @@ msgstr ""
 msgid "Back"
 msgstr ""
 
-#: forms/cluster.forms.php forms/dns.forms.php forms/vps.forms.php
+#: forms/cluster.forms.php forms/dns.forms.php forms/ip_release.forms.php
+#: forms/vps.forms.php
 msgid "IP addresses"
 msgstr ""
 
@@ -535,7 +542,7 @@ msgstr ""
 msgid "Edit template"
 msgstr ""
 
-#: forms/cluster.forms.php pages/page_cluster.php
+#: forms/cluster.forms.php forms/ip_release.forms.php pages/page_cluster.php
 msgid "Save changes"
 msgstr ""
 
@@ -851,8 +858,8 @@ msgstr ""
 msgid "On mount fail"
 msgstr ""
 
-#: forms/dataset.forms.php forms/lifetimes.forms.php forms/monitoring.forms.php
-#: forms/node.forms.php forms/outage.forms.php
+#: forms/dataset.forms.php forms/ip_release.forms.php forms/lifetimes.forms.php
+#: forms/monitoring.forms.php forms/node.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/users.forms.php
 #: pages/page_adminm.php pages/page_adminvps.php pages/page_lifetimes.php
 #: pages/page_transactions.php
@@ -1216,8 +1223,8 @@ msgstr ""
 msgid "Interface"
 msgstr ""
 
-#: forms/dns.forms.php forms/incidents.forms.php forms/networking.forms.php
-#: forms/users.forms.php
+#: forms/dns.forms.php forms/incidents.forms.php forms/ip_release.forms.php
+#: forms/networking.forms.php forms/users.forms.php
 msgid "IP address"
 msgstr ""
 
@@ -1254,9 +1261,10 @@ msgid "Create a new secondary DNS zone"
 msgstr ""
 
 #: forms/dns.forms.php forms/export.forms.php forms/incidents.forms.php
-#: forms/monitoring.forms.php forms/networking.forms.php forms/outage.forms.php
-#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
-#: forms/vps.forms.php pages/page_networking.php pages/page_transactions.php
+#: forms/ip_release.forms.php forms/monitoring.forms.php
+#: forms/networking.forms.php forms/outage.forms.php forms/userdata.forms.php
+#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
+#: pages/page_networking.php pages/page_transactions.php
 msgid "User ID"
 msgstr ""
 
@@ -1453,7 +1461,8 @@ msgstr ""
 msgid "Change type"
 msgstr ""
 
-#: forms/dns.forms.php pages/page_networking.php pages/page_transactions.php
+#: forms/dns.forms.php forms/ip_release.forms.php pages/page_networking.php
+#: pages/page_transactions.php
 msgid "Transaction chain"
 msgstr ""
 
@@ -1677,7 +1686,7 @@ msgstr ""
 msgid "Detected at"
 msgstr ""
 
-#: forms/incidents.forms.php
+#: forms/incidents.forms.php forms/ip_release.forms.php
 msgid "Subject"
 msgstr ""
 
@@ -1731,6 +1740,290 @@ msgstr ""
 
 #: forms/incidents.forms.php
 msgid "Report"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Eligible for release"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Assigned to an interface"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Used by an export"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Kept with a reason"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Exempted by an admin"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Excluded: owner or allocation changed"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Released"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Release in progress"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Release failed"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "The original user was deleted."
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "The original IP allocation no longer exists."
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "The IP address no longer belongs to the original user."
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "The original IP allocation changed."
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Create campaign"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Campaign"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Planned release date"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "User opt-outs"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Allowed"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Disabled"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Closed"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Open"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Allow user opt-outs"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Create IP release campaign"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "IP version"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Location ID"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Network ID"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Preview addresses"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid ""
+"Each campaign can contain up to 100 allocations. Select addresses from this "
+"page; use another campaign for additional pages."
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Selection"
+msgstr ""
+
+#: forms/ip_release.forms.php
+#, php-format
+msgid "Allocations: %d; users: %d; IPv4 addresses: %s"
+msgstr ""
+
+#: forms/ip_release.forms.php forms/vps.forms.php
+msgid "Preview"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Campaign settings"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Notifications"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid ""
+"Saving changes does not send email. Policy changes apply to future release "
+"attempts."
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Send initial notices"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Send reminders"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid ""
+"The planned release date has not arrived. You can still release eligible "
+"addresses now."
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Release campaign"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid ""
+"This action checks all addresses using the current policy. Assigned and "
+"admin-exempt addresses are retained."
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid ""
+"Addresses being released cannot be retained. If cleanup fails, ownership is "
+"kept and an admin can try again."
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Release eligible addresses"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Close campaign"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Requests"
+msgstr ""
+
+#: forms/ip_release.forms.php
+#, php-format
+msgid "Deleted user #%d"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Last notice queued"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Keeping IP addresses"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid ""
+"Assign an address to a VPS or select it below and enter a reason to keep it."
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid ""
+"Assign an address to a VPS to keep it. Keeping an unassigned address "
+"requires an admin exemption; user reasons do not prevent release under the "
+"current policy."
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Admin exemption"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Current status"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Last release result"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "User reason"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Assign to a VPS"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Admin exemption reason"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Set exemption"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Remove exemption"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Cleanup"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Reason for keeping the selected IPs"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Keep selected IPs"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Notice history"
+msgstr ""
+
+#: forms/ip_release.forms.php pages/page_ip_release.php
+msgid "IP release request"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Notice type"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Queued at"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Queued by"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Initial notice"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Reminder"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "Deleted user"
 msgstr ""
 
 #: forms/lifetimes.forms.php
@@ -1860,10 +2153,6 @@ msgstr ""
 
 #: forms/networking.forms.php
 msgid "Routable IP Addresses"
-msgstr ""
-
-#: forms/networking.forms.php
-msgid "IP release campaigns"
 msgstr ""
 
 #: forms/networking.forms.php forms/users.forms.php
@@ -4554,10 +4843,6 @@ msgstr ""
 
 #: forms/vps.forms.php
 msgid "Back to location"
-msgstr ""
-
-#: forms/vps.forms.php
-msgid "Preview"
 msgstr ""
 
 #: forms/vps.forms.php pages/page_adminvps.php pages/page_index.php
@@ -7617,6 +7902,42 @@ msgstr ""
 msgid "Heatmap"
 msgstr ""
 
+#: pages/page_ip_release.php
+msgid "Sign in to view your IP release request."
+msgstr ""
+
+#: pages/page_ip_release.php
+msgid "Access denied"
+msgstr ""
+
+#: pages/page_ip_release.php
+msgid "This action is available only to administrators."
+msgstr ""
+
+#: pages/page_ip_release.php pages/page_login.php
+msgid "Invalid request"
+msgstr ""
+
+#: pages/page_ip_release.php
+msgid "Submit this action using its form."
+msgstr ""
+
+#: pages/page_ip_release.php
+msgid "The address selection was incomplete. Reload the form and try again."
+msgstr ""
+
+#: pages/page_ip_release.php
+msgid "Enter the deadline as YYYY-MM-DD HH:MM."
+msgstr ""
+
+#: pages/page_ip_release.php
+msgid "IP release request updated"
+msgstr ""
+
+#: pages/page_ip_release.php pages/page_networking.php public/index.php
+msgid "Action failed"
+msgstr ""
+
 #: pages/page_jumpto.php
 msgid "Found these bros"
 msgstr ""
@@ -7679,10 +8000,6 @@ msgstr ""
 msgid "Context switch must use POST."
 msgstr ""
 
-#: pages/page_login.php
-msgid "Invalid request"
-msgstr ""
-
 #: pages/page_monitoring.php
 msgid "Event acknowledged"
 msgstr ""
@@ -7735,10 +8052,6 @@ msgstr ""
 
 #: pages/page_networking.php
 msgid "Try again or contact support"
-msgstr ""
-
-#: pages/page_networking.php public/index.php
-msgid "Action failed"
 msgstr ""
 
 #: pages/page_networking.php

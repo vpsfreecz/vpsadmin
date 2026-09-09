@@ -26,12 +26,12 @@ msgid "Downloads"
 msgstr "Stahování"
 
 #: forms/backup.forms.php forms/dns.forms.php forms/export.forms.php
-#: forms/incidents.forms.php forms/monitoring.forms.php
-#: forms/networking.forms.php forms/object_history.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php forms/userdata.forms.php
-#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
-#: pages/page_transactions.php
+#: forms/incidents.forms.php forms/ip_release.forms.php
+#: forms/monitoring.forms.php forms/networking.forms.php
+#: forms/object_history.forms.php forms/oom_reports.forms.php
+#: forms/outage.forms.php forms/userdata.forms.php forms/userns.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
+#: pages/page_nas.php pages/page_networking.php pages/page_transactions.php
 msgid "Filters"
 msgstr "Filtry"
 
@@ -175,6 +175,11 @@ msgstr "Spravovat sítě"
 #: forms/cluster.forms.php
 msgid "Manage routable addresses"
 msgstr "Spravovat routované adresy"
+
+#: forms/cluster.forms.php forms/ip_release.forms.php
+#: forms/networking.forms.php
+msgid "IP release campaigns"
+msgstr "Kampaně pro uvolnění IP adres"
 
 #: forms/cluster.forms.php forms/vps.forms.php
 msgid "Manage host addresses"
@@ -392,9 +397,10 @@ msgstr "Síť"
 msgid "Location"
 msgstr "Lokace"
 
-#: forms/cluster.forms.php forms/dataset.forms.php forms/monitoring.forms.php
-#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
-#: pages/page_adminm.php pages/page_backup.php pages/page_cluster.php
+#: forms/cluster.forms.php forms/dataset.forms.php forms/ip_release.forms.php
+#: forms/monitoring.forms.php forms/userdata.forms.php forms/userns.forms.php
+#: forms/users.forms.php pages/page_adminm.php pages/page_backup.php
+#: pages/page_cluster.php
 msgid "Label"
 msgstr "Označení"
 
@@ -522,7 +528,8 @@ msgstr "Přidat IP adresy"
 msgid "Back"
 msgstr "Zpět"
 
-#: forms/cluster.forms.php forms/dns.forms.php forms/vps.forms.php
+#: forms/cluster.forms.php forms/dns.forms.php forms/ip_release.forms.php
+#: forms/vps.forms.php
 msgid "IP addresses"
 msgstr "IP adresy"
 
@@ -534,7 +541,7 @@ msgstr "Smazat DNS resolver"
 msgid "Edit template"
 msgstr "Upravit šablonu"
 
-#: forms/cluster.forms.php pages/page_cluster.php
+#: forms/cluster.forms.php forms/ip_release.forms.php pages/page_cluster.php
 msgid "Save changes"
 msgstr "Uložit změny"
 
@@ -856,8 +863,8 @@ msgstr "Mountpoint"
 msgid "On mount fail"
 msgstr "Selhání při mountu"
 
-#: forms/dataset.forms.php forms/lifetimes.forms.php forms/monitoring.forms.php
-#: forms/node.forms.php forms/outage.forms.php
+#: forms/dataset.forms.php forms/ip_release.forms.php forms/lifetimes.forms.php
+#: forms/monitoring.forms.php forms/node.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/users.forms.php
 #: pages/page_adminm.php pages/page_adminvps.php pages/page_lifetimes.php
 #: pages/page_transactions.php
@@ -1222,8 +1229,8 @@ msgstr "Hostname"
 msgid "Interface"
 msgstr "Rozhraní"
 
-#: forms/dns.forms.php forms/incidents.forms.php forms/networking.forms.php
-#: forms/users.forms.php
+#: forms/dns.forms.php forms/incidents.forms.php forms/ip_release.forms.php
+#: forms/networking.forms.php forms/users.forms.php
 msgid "IP address"
 msgstr "IP adresa"
 
@@ -1260,9 +1267,10 @@ msgid "Create a new secondary DNS zone"
 msgstr "Vytvořit novou sekundární zónu DNS"
 
 #: forms/dns.forms.php forms/export.forms.php forms/incidents.forms.php
-#: forms/monitoring.forms.php forms/networking.forms.php forms/outage.forms.php
-#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
-#: forms/vps.forms.php pages/page_networking.php pages/page_transactions.php
+#: forms/ip_release.forms.php forms/monitoring.forms.php
+#: forms/networking.forms.php forms/outage.forms.php forms/userdata.forms.php
+#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
+#: pages/page_networking.php pages/page_transactions.php
 msgid "User ID"
 msgstr "ID uživatele"
 
@@ -1459,7 +1467,8 @@ msgstr "Majitel"
 msgid "Change type"
 msgstr "Změnit typ"
 
-#: forms/dns.forms.php pages/page_networking.php pages/page_transactions.php
+#: forms/dns.forms.php forms/ip_release.forms.php pages/page_networking.php
+#: pages/page_transactions.php
 msgid "Transaction chain"
 msgstr "Řetězec transakcí"
 
@@ -1685,7 +1694,7 @@ msgstr "ID"
 msgid "Detected at"
 msgstr "Detekováno"
 
-#: forms/incidents.forms.php
+#: forms/incidents.forms.php forms/ip_release.forms.php
 msgid "Subject"
 msgstr "Předmět"
 
@@ -1740,6 +1749,306 @@ msgstr "Nová zpráva o incidentu"
 #: forms/incidents.forms.php
 msgid "Report"
 msgstr "Zpráva"
+
+#: forms/ip_release.forms.php
+msgid "Eligible for release"
+msgstr "k uvolnění"
+
+#: forms/ip_release.forms.php
+msgid "Assigned to an interface"
+msgstr "přiřazeno k rozhraní"
+
+#: forms/ip_release.forms.php
+msgid "Used by an export"
+msgstr "používáno exportem"
+
+#: forms/ip_release.forms.php
+msgid "Kept with a reason"
+msgstr "ponecháno s odůvodněním"
+
+#: forms/ip_release.forms.php
+msgid "Exempted by an admin"
+msgstr "výjimka administrátora"
+
+#: forms/ip_release.forms.php
+msgid "Excluded: owner or allocation changed"
+msgstr "Vyloučeno: změnil se vlastník nebo přidělení adresy"
+
+#: forms/ip_release.forms.php
+msgid "Released"
+msgstr "uvolněno"
+
+#: forms/ip_release.forms.php
+msgid "Release in progress"
+msgstr "probíhá uvolňování"
+
+#: forms/ip_release.forms.php
+msgid "Release failed"
+msgstr "uvolnění selhalo"
+
+#: forms/ip_release.forms.php
+msgid "The original user was deleted."
+msgstr "Původní uživatel byl smazán."
+
+#: forms/ip_release.forms.php
+msgid "The original IP allocation no longer exists."
+msgstr "Původní přidělení IP adresy už neexistuje."
+
+#: forms/ip_release.forms.php
+msgid "The IP address no longer belongs to the original user."
+msgstr "IP adresa už nepatří původnímu uživateli."
+
+#: forms/ip_release.forms.php
+msgid "The original IP allocation changed."
+msgstr "Původní přidělení IP adresy se změnilo."
+
+#: forms/ip_release.forms.php
+msgid "Create campaign"
+msgstr "Vytvořit kampaň"
+
+#: forms/ip_release.forms.php
+msgid "Campaign"
+msgstr "Kampaň"
+
+#: forms/ip_release.forms.php
+msgid "Planned release date"
+msgstr "Plánované datum uvolnění"
+
+#: forms/ip_release.forms.php
+msgid "User opt-outs"
+msgstr "Odůvodněné ponechání adres"
+
+#: forms/ip_release.forms.php
+msgid "Allowed"
+msgstr "povoleno"
+
+#: forms/ip_release.forms.php
+msgid "Disabled"
+msgstr "Zakázáno"
+
+#: forms/ip_release.forms.php
+msgid "Closed"
+msgstr "uzavřeno"
+
+#: forms/ip_release.forms.php
+msgid "Open"
+msgstr "otevřeno"
+
+#: forms/ip_release.forms.php
+msgid "Allow user opt-outs"
+msgstr "Povolit uživatelům ponechání adres s odůvodněním"
+
+#: forms/ip_release.forms.php
+msgid "Create IP release campaign"
+msgstr "Vytvořit kampaň pro uvolnění IP adres"
+
+#: forms/ip_release.forms.php
+msgid "IP version"
+msgstr "Verze IP"
+
+#: forms/ip_release.forms.php
+msgid "Location ID"
+msgstr "ID lokality"
+
+#: forms/ip_release.forms.php
+msgid "Network ID"
+msgstr "ID sítě"
+
+#: forms/ip_release.forms.php
+msgid "Preview addresses"
+msgstr "Zobrazit náhled adres"
+
+#: forms/ip_release.forms.php
+msgid ""
+"Each campaign can contain up to 100 allocations. Select addresses from this "
+"page; use another campaign for additional pages."
+msgstr ""
+"Každá kampaň může obsahovat nejvýše 100 přidělení adres. Vyber adresy z této "
+"stránky; pro další stránky vytvoř další kampaň."
+
+#: forms/ip_release.forms.php
+msgid "Selection"
+msgstr "Výběr"
+
+#: forms/ip_release.forms.php
+#, php-format
+msgid "Allocations: %d; users: %d; IPv4 addresses: %s"
+msgstr "Přidělení: %d; uživatelů: %d; IPv4 adres: %s"
+
+#: forms/ip_release.forms.php forms/vps.forms.php
+msgid "Preview"
+msgstr "Náhled"
+
+#: forms/ip_release.forms.php
+msgid "Campaign settings"
+msgstr "Nastavení kampaně"
+
+#: forms/ip_release.forms.php
+msgid "Notifications"
+msgstr "Oznámení"
+
+#: forms/ip_release.forms.php
+msgid ""
+"Saving changes does not send email. Policy changes apply to future release "
+"attempts."
+msgstr ""
+"Uložením změn se neodešle e-mail. Změny pravidel se použijí při dalších "
+"pokusech o uvolnění adres."
+
+#: forms/ip_release.forms.php
+msgid "Send initial notices"
+msgstr "Odeslat výzvy"
+
+#: forms/ip_release.forms.php
+msgid "Send reminders"
+msgstr "Odeslat připomenutí"
+
+#: forms/ip_release.forms.php
+msgid ""
+"The planned release date has not arrived. You can still release eligible "
+"addresses now."
+msgstr ""
+"Plánované datum uvolnění ještě nenastalo. Způsobilé adresy můžeš uvolnit už "
+"nyní."
+
+#: forms/ip_release.forms.php
+msgid "Release campaign"
+msgstr "Uvolnění adres v kampani"
+
+#: forms/ip_release.forms.php
+msgid ""
+"This action checks all addresses using the current policy. Assigned and "
+"admin-exempt addresses are retained."
+msgstr ""
+"Tato akce zkontroluje všechny adresy podle současných pravidel. Přiřazené "
+"adresy a adresy s výjimkou administrátora zůstanou uživatelům."
+
+#: forms/ip_release.forms.php
+msgid ""
+"Addresses being released cannot be retained. If cleanup fails, ownership is "
+"kept and an admin can try again."
+msgstr ""
+"Adresy, které se právě uvolňují, už nelze ponechat. Pokud odstranění "
+"související konfigurace selže, adresy zůstanou uživateli a administrátor "
+"může uvolnění spustit znovu."
+
+#: forms/ip_release.forms.php
+msgid "Release eligible addresses"
+msgstr "Uvolnit vyhovující adresy"
+
+#: forms/ip_release.forms.php
+msgid "Close campaign"
+msgstr "Uzavřít kampaň"
+
+#: forms/ip_release.forms.php
+msgid "Requests"
+msgstr "Výzvy"
+
+#: forms/ip_release.forms.php
+#, php-format
+msgid "Deleted user #%d"
+msgstr "Smazaný uživatel #%d"
+
+#: forms/ip_release.forms.php
+msgid "Last notice queued"
+msgstr "Poslední výzva zařazená k odeslání"
+
+#: forms/ip_release.forms.php
+msgid "Keeping IP addresses"
+msgstr "Ponechání IP adres"
+
+#: forms/ip_release.forms.php
+msgid ""
+"Assign an address to a VPS or select it below and enter a reason to keep it."
+msgstr ""
+"Přiřaď adresu k VPS, nebo ji vyber níže a napiš důvod, proč si ji chceš "
+"ponechat."
+
+#: forms/ip_release.forms.php
+msgid ""
+"Assign an address to a VPS to keep it. Keeping an unassigned address "
+"requires an admin exemption; user reasons do not prevent release under the "
+"current policy."
+msgstr ""
+"Pokud si chceš adresu ponechat, přiřaď ji k VPS. Pro ponechání nepřiřazené "
+"adresy potřebuješ výjimku od administrátora. Podle současných pravidel "
+"důvody od uživatelů nebrání uvolnění adres."
+
+#: forms/ip_release.forms.php
+msgid "Admin exemption"
+msgstr "Výjimka administrátora"
+
+#: forms/ip_release.forms.php
+msgid "Current status"
+msgstr "Současný stav"
+
+#: forms/ip_release.forms.php
+msgid "Last release result"
+msgstr "Výsledek posledního pokusu o uvolnění"
+
+#: forms/ip_release.forms.php
+msgid "User reason"
+msgstr "Důvod uživatele"
+
+#: forms/ip_release.forms.php
+msgid "Assign to a VPS"
+msgstr "Přiřadit k VPS"
+
+#: forms/ip_release.forms.php
+msgid "Admin exemption reason"
+msgstr "Důvod výjimky administrátora"
+
+#: forms/ip_release.forms.php
+msgid "Set exemption"
+msgstr "Nastavit výjimku"
+
+#: forms/ip_release.forms.php
+msgid "Remove exemption"
+msgstr "Zrušit výjimku"
+
+#: forms/ip_release.forms.php
+msgid "Cleanup"
+msgstr "Vyčištění"
+
+#: forms/ip_release.forms.php
+msgid "Reason for keeping the selected IPs"
+msgstr "Důvod pro ponechání vybraných IP adres"
+
+#: forms/ip_release.forms.php
+msgid "Keep selected IPs"
+msgstr "Ponechat vybrané IP adresy"
+
+#: forms/ip_release.forms.php
+msgid "Notice history"
+msgstr "Historie výzev"
+
+#: forms/ip_release.forms.php pages/page_ip_release.php
+msgid "IP release request"
+msgstr "Výzva k uvolnění IP adres"
+
+#: forms/ip_release.forms.php
+msgid "Notice type"
+msgstr "Typ výzvy"
+
+#: forms/ip_release.forms.php
+msgid "Queued at"
+msgstr "Zařazeno k odeslání"
+
+#: forms/ip_release.forms.php
+msgid "Queued by"
+msgstr "Odeslání zadal"
+
+#: forms/ip_release.forms.php
+msgid "Initial notice"
+msgstr "První výzva"
+
+#: forms/ip_release.forms.php
+msgid "Reminder"
+msgstr "Připomenutí"
+
+#: forms/ip_release.forms.php
+msgid "Deleted user"
+msgstr "Smazaný uživatel"
 
 #: forms/lifetimes.forms.php
 msgid "Object state"
@@ -1875,10 +2184,6 @@ msgstr "Ignorovat"
 #: forms/networking.forms.php
 msgid "Routable IP Addresses"
 msgstr "Routované IP adresy"
-
-#: forms/networking.forms.php
-msgid "IP release campaigns"
-msgstr "Kampaně pro uvolnění IP adres"
 
 #: forms/networking.forms.php forms/users.forms.php
 msgid "Prefix"
@@ -4602,10 +4907,6 @@ msgstr "Klonovat VPS: Poslední úpravy (2/2)"
 #: forms/vps.forms.php
 msgid "Back to location"
 msgstr "Zpět k lokaci"
-
-#: forms/vps.forms.php
-msgid "Preview"
-msgstr "Náhled"
 
 #: forms/vps.forms.php pages/page_adminvps.php pages/page_index.php
 msgid "CPU"
@@ -7745,6 +8046,42 @@ msgstr "resilver,"
 msgid "Heatmap"
 msgstr "Teplotní mapa"
 
+#: pages/page_ip_release.php
+msgid "Sign in to view your IP release request."
+msgstr "Pro zobrazení výzvy k uvolnění IP adres se přihlas."
+
+#: pages/page_ip_release.php
+msgid "Access denied"
+msgstr "Přístup odepřen"
+
+#: pages/page_ip_release.php
+msgid "This action is available only to administrators."
+msgstr "Tato akce je dostupná pouze administrátorům."
+
+#: pages/page_ip_release.php pages/page_login.php
+msgid "Invalid request"
+msgstr "Neplatný požadavek"
+
+#: pages/page_ip_release.php
+msgid "Submit this action using its form."
+msgstr "Pro provedení této akce odešli příslušný formulář."
+
+#: pages/page_ip_release.php
+msgid "The address selection was incomplete. Reload the form and try again."
+msgstr "Výběr adres nebyl úplný. Načti formulář znovu a zkus to ještě jednou."
+
+#: pages/page_ip_release.php
+msgid "Enter the deadline as YYYY-MM-DD HH:MM."
+msgstr "Zadej termín ve formátu RRRR-MM-DD HH:MM."
+
+#: pages/page_ip_release.php
+msgid "IP release request updated"
+msgstr "Výzva k uvolnění IP adres byla aktualizována"
+
+#: pages/page_ip_release.php pages/page_networking.php public/index.php
+msgid "Action failed"
+msgstr "Akce se nezdařila"
+
 #: pages/page_jumpto.php
 msgid "Found these bros"
 msgstr "Nalezené položky"
@@ -7811,10 +8148,6 @@ msgstr "Odebrána oprávnění správce"
 msgid "Context switch must use POST."
 msgstr "Přepínač kontextu musí používat POST."
 
-#: pages/page_login.php
-msgid "Invalid request"
-msgstr "Neplatný požadavek"
-
 #: pages/page_monitoring.php
 msgid "Event acknowledged"
 msgstr "Událost potvrzena"
@@ -7870,10 +8203,6 @@ msgstr "Něco se pokazilo"
 #: pages/page_networking.php
 msgid "Try again or contact support"
 msgstr "Zkuste to znovu nebo kontaktujte podporu"
-
-#: pages/page_networking.php public/index.php
-msgid "Action failed"
-msgstr "Akce se nezdařila"
 
 #: pages/page_networking.php
 msgid "IP removal"
@@ -8343,240 +8672,6 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
-
-#~ msgid "Eligible for release"
-#~ msgstr "k uvolnění"
-
-#~ msgid "Assigned to an interface"
-#~ msgstr "přiřazeno k rozhraní"
-
-#~ msgid "Used by an export"
-#~ msgstr "používáno exportem"
-
-#~ msgid "Kept with a reason"
-#~ msgstr "ponecháno s odůvodněním"
-
-#~ msgid "Exempted by an admin"
-#~ msgstr "výjimka administrátora"
-
-#~ msgid "Owner or allocation changed"
-#~ msgstr "změna vlastníka nebo přidělení"
-
-#~ msgid "Released"
-#~ msgstr "uvolněno"
-
-#~ msgid "Release in progress"
-#~ msgstr "probíhá uvolňování"
-
-#~ msgid "Release failed"
-#~ msgstr "uvolnění selhalo"
-
-#~ msgid "Create campaign"
-#~ msgstr "Vytvořit kampaň"
-
-#~ msgid "Campaign"
-#~ msgstr "Kampaň"
-
-#~ msgid "Response deadline"
-#~ msgstr "Termín pro vyjádření"
-
-#~ msgid "User opt-outs"
-#~ msgstr "Odůvodněné ponechání adres"
-
-#~ msgid "Allowed"
-#~ msgstr "povoleno"
-
-#~ msgid "Disabled"
-#~ msgstr "Zakázáno"
-
-#~ msgid "Closed"
-#~ msgstr "uzavřeno"
-
-#~ msgid "Open"
-#~ msgstr "otevřeno"
-
-#~ msgid "Allow user opt-outs"
-#~ msgstr "Povolit uživatelům ponechání adres s odůvodněním"
-
-#~ msgid "Create IP release campaign"
-#~ msgstr "Vytvořit kampaň pro uvolnění IP adres"
-
-#~ msgid "IP version"
-#~ msgstr "Verze IP"
-
-#~ msgid "Location ID"
-#~ msgstr "ID lokality"
-
-#~ msgid "Network ID"
-#~ msgstr "ID sítě"
-
-#~ msgid "Preview addresses"
-#~ msgstr "Zobrazit náhled adres"
-
-#~ msgid ""
-#~ "Each campaign can contain up to 100 allocations. Select addresses from "
-#~ "this page; use another campaign for additional pages."
-#~ msgstr ""
-#~ "Každá kampaň může obsahovat nejvýše 100 přidělení adres. Vyber adresy z "
-#~ "této stránky; pro další stránky vytvoř další kampaň."
-
-#~ msgid "Selection"
-#~ msgstr "Výběr"
-
-#, php-format
-#~ msgid "Allocations: %d; users: %d; IPv4 addresses: %s"
-#~ msgstr "Přidělení: %d; uživatelů: %d; IPv4 adres: %s"
-
-#~ msgid "Campaign settings"
-#~ msgstr "Nastavení kampaně"
-
-#~ msgid "Notifications"
-#~ msgstr "Oznámení"
-
-#~ msgid ""
-#~ "Saving changes does not send email. Policy changes apply to future "
-#~ "release attempts."
-#~ msgstr ""
-#~ "Uložením změn se neodešle e-mail. Změny pravidel se použijí při dalších "
-#~ "pokusech o uvolnění adres."
-
-#~ msgid "Send initial notices"
-#~ msgstr "Odeslat výzvy"
-
-#~ msgid "Send updated notices"
-#~ msgstr "Odeslat aktualizované výzvy"
-
-#~ msgid ""
-#~ "The response deadline has not passed. You can still release eligible "
-#~ "addresses now."
-#~ msgstr ""
-#~ "Termín pro vyjádření ještě neuplynul. Adresy určené k uvolnění můžeš "
-#~ "přesto uvolnit už teď."
-
-#~ msgid "Release campaign"
-#~ msgstr "Uvolnění adres v kampani"
-
-#~ msgid ""
-#~ "This action checks all addresses using the current policy. Assigned and "
-#~ "admin-exempt addresses are retained."
-#~ msgstr ""
-#~ "Tato akce zkontroluje všechny adresy podle současných pravidel. Přiřazené "
-#~ "adresy a adresy s výjimkou administrátora zůstanou uživatelům."
-
-#~ msgid ""
-#~ "Addresses being released cannot be retained. If cleanup fails, ownership "
-#~ "is kept and an admin can try again."
-#~ msgstr ""
-#~ "Adresy, které se právě uvolňují, už nelze ponechat. Pokud odstranění "
-#~ "související konfigurace selže, adresy zůstanou uživateli a administrátor "
-#~ "může uvolnění spustit znovu."
-
-#~ msgid "Release eligible addresses"
-#~ msgstr "Uvolnit vyhovující adresy"
-
-#~ msgid "Close campaign"
-#~ msgstr "Uzavřít kampaň"
-
-#~ msgid "Requests"
-#~ msgstr "Výzvy"
-
-#~ msgid "Last notice queued"
-#~ msgstr "Poslední výzva zařazená k odeslání"
-
-#~ msgid "Keeping IP addresses"
-#~ msgstr "Ponechání IP adres"
-
-#~ msgid ""
-#~ "Assign an address to a VPS or select it below and enter a reason to keep "
-#~ "it."
-#~ msgstr ""
-#~ "Přiřaď adresu k VPS, nebo ji vyber níže a napiš důvod, proč si ji chceš "
-#~ "ponechat."
-
-#~ msgid ""
-#~ "Assign an address to a VPS to keep it. Keeping an unassigned address "
-#~ "requires an admin exemption; user reasons do not prevent release under "
-#~ "the current policy."
-#~ msgstr ""
-#~ "Pokud si chceš adresu ponechat, přiřaď ji k VPS. Pro ponechání "
-#~ "nepřiřazené adresy potřebuješ výjimku od administrátora. Podle současných "
-#~ "pravidel důvody od uživatelů nebrání uvolnění adres."
-
-#~ msgid "Admin exemption"
-#~ msgstr "Výjimka administrátora"
-
-#~ msgid "Current status"
-#~ msgstr "Současný stav"
-
-#~ msgid "Last release result"
-#~ msgstr "Výsledek posledního pokusu o uvolnění"
-
-#~ msgid "User reason"
-#~ msgstr "Důvod uživatele"
-
-#~ msgid "Assign to a VPS"
-#~ msgstr "Přiřadit k VPS"
-
-#~ msgid "Admin exemption reason"
-#~ msgstr "Důvod výjimky administrátora"
-
-#~ msgid "Set exemption"
-#~ msgstr "Nastavit výjimku"
-
-#~ msgid "Remove exemption"
-#~ msgstr "Zrušit výjimku"
-
-#~ msgid "Cleanup"
-#~ msgstr "Vyčištění"
-
-#~ msgid "Reason for keeping the selected IPs"
-#~ msgstr "Důvod pro ponechání vybraných IP adres"
-
-#~ msgid "Keep selected IPs"
-#~ msgstr "Ponechat vybrané IP adresy"
-
-#~ msgid "Notice history"
-#~ msgstr "Historie výzev"
-
-#~ msgid "IP release request"
-#~ msgstr "Výzva k uvolnění IP adres"
-
-#~ msgid "Notice type"
-#~ msgstr "Typ výzvy"
-
-#~ msgid "Queued at"
-#~ msgstr "Zařazeno k odeslání"
-
-#~ msgid "Queued by"
-#~ msgstr "Odeslání zadal"
-
-#~ msgid "Initial notice"
-#~ msgstr "První výzva"
-
-#~ msgid "Updated notice"
-#~ msgstr "Aktualizovaná výzva"
-
-#~ msgid "Sign in to view your IP release request."
-#~ msgstr "Pro zobrazení výzvy k uvolnění IP adres se přihlas."
-
-#~ msgid "Access denied"
-#~ msgstr "Přístup odepřen"
-
-#~ msgid "This action is available only to administrators."
-#~ msgstr "Tato akce je dostupná pouze administrátorům."
-
-#~ msgid "Submit this action using its form."
-#~ msgstr "Pro provedení této akce odešli příslušný formulář."
-
-#~ msgid "The address selection was incomplete. Reload the form and try again."
-#~ msgstr ""
-#~ "Výběr adres nebyl úplný. Načti formulář znovu a zkus to ještě jednou."
-
-#~ msgid "Enter the deadline as YYYY-MM-DD HH:MM."
-#~ msgstr "Zadej termín ve formátu RRRR-MM-DD HH:MM."
-
-#~ msgid "IP release request updated"
-#~ msgstr "Výzva k uvolnění IP adres byla aktualizována"
 
 #~ msgid "Saving changes does not send email."
 #~ msgstr "Uložení změn neodesílá e-mail."
