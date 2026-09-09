@@ -78,11 +78,11 @@ en:
         label: Added space
       addr:
         description: Address itself
-      address:
-        label: Address
       address_location:
         description: Location to select IP addresses from
         label: Address location
+      addresses:
+        label: IP addresses
       admin:
         description: Filter users with administrator privileges
         label: Admin
@@ -165,6 +165,14 @@ en:
         label: Allocation chain
       allow_admin_modifications:
         label: Allow admin modifications
+      allow_keep:
+        choices:
+          'false':
+            label: 'false'
+          'true':
+            label: 'true'
+        description: Honor user reasons when deciding which IPs to release
+        label: Allow user opt-outs
       allow_single_sign_on:
         label: Allow_single_sign_on
       amount:
@@ -324,6 +332,8 @@ en:
         label: Checked_at
       class_name:
         description: Search by concerned class name
+      cleanup_state:
+        label: Cleanup state
       client_id:
         label: Client_id
       client_ip_ptr:
@@ -334,6 +344,8 @@ en:
         label: Client version
       closed_at:
         label: Closed at
+      closed_by:
+        label: Closed by
       closes_at:
         label: Closes_at
       cluster_resource:
@@ -419,8 +431,8 @@ en:
         label: Cpus
       create_vps:
         label: Create VPS
-      created_by:
-        label: Created_by
+      created_by_login:
+        label: Queued by login
       created_from:
         description: Include payments created at or after this timestamp
         label: Created from
@@ -485,6 +497,9 @@ en:
         label: Dataset plans
       date:
         label: Date
+      deadline:
+        description: Advisory date for releasing unused IP addresses
+        label: Planned release date
       default:
         description: If true, the user config is inherited from the environment config
         label: Default
@@ -628,6 +643,13 @@ en:
         label: Environment_dataset_plan
       estimated_income:
         label: Estimated_income
+      event:
+        choices:
+          reminder:
+            label: reminder
+          requested:
+            label: requested
+        label: Notice type
       event_at:
         label: Event_at
       event_data:
@@ -664,6 +686,14 @@ en:
         label: Event_type
       evidence_revision:
         label: Evidence_revision
+      excluded_at:
+        label: Excluded at
+      exclusion_reason:
+        label: Exclusion reason
+      exempted_at:
+        label: Exempted at
+      exemption_reason:
+        label: Admin exemption reason
       expected_content_revision:
         label: Expected_content_revision
       expiration:
@@ -846,8 +876,6 @@ en:
         label: Invoked_by_name
       invoked_by_pid:
         label: Invoked_by_pid
-      ip_address:
-        label: IpAddress
       ip_address_assignment:
         label: IP address assignment
       ip_checked:
@@ -866,6 +894,8 @@ en:
         label: Ip_proxy
       ip_recent_abuse:
         label: Ip_recent_abuse
+      ip_release_campaign:
+        label: IP release campaign
       ip_request_id:
         label: Ip_request_id
       ip_success:
@@ -908,9 +938,13 @@ en:
         label: Issue
       issue_refresh_token:
         label: Issue_refresh_token
+      keep_reason:
+        label: User reason
       keep_snapshots:
         description: Keep snapshots created during the cloning process
         label: Keep snapshots
+      kept_at:
+        label: Reason submitted at
       kernel:
         label: Kernel
       kernel_command_line:
@@ -946,12 +980,16 @@ en:
         label: Last activity
       last_check_at:
         label: Last_check_at
+      last_error:
+        label: Last error
       last_observed_at:
         label: Last observed at
       last_report:
         label: Last report
       last_request_at:
         label: Last request at
+      last_result:
+        label: Last release result
       last_seen_at:
         label: Last_seen_at
       last_transfer_at:
@@ -1221,6 +1259,8 @@ en:
         label: Node_state
       nodes_online:
         label: Nodes_online
+      notified_at:
+        label: Last notice queued
       ns_id:
         description: Beginning of the ID range within the user namespace
         label: Ns_id
@@ -1269,6 +1309,8 @@ en:
         label: OomReportRule
       oom_score_adj:
         label: Oom_score_adj
+      open:
+        label: Open
       opens_at:
         label: Opens_at
       optional_maintenance_window:
@@ -1306,6 +1348,8 @@ en:
         label: Organization ID
       org_name:
         label: Organization name
+      original_user_id:
+        label: Original user ID
       os_family:
         label: OS family
       outage:
@@ -1435,6 +1479,8 @@ en:
         description: Name of property to inherit from parent, multiple properties
           may be separated by a comma
         label: Property
+      protection:
+        label: Current status
       provisioning_uri:
         label: Provisioning_uri
       public_key:
@@ -1507,6 +1553,10 @@ en:
           than the current modify or change time or if the existing access time hasn't
           been updated within the past 24 hours
         label: Relative access time
+      release_chain:
+        label: Release transaction chain
+      released_at:
+        label: Released at
       remind_after:
         label: Remind_after
       remind_after_date:
@@ -1669,8 +1719,6 @@ en:
         label: Since
       since_kernel:
         label: Since_kernel
-      size:
-        label: Size
       skip_multi_factor_auth_until:
         label: Skip_multi_factor_auth_until
       skip_start:
@@ -2045,6 +2093,8 @@ en:
         label: User_ident
       user_ip_ownership:
         label: User owns IP addresses
+      user_login:
+        label: User login
       user_message:
         label: User_message
       user_namespace:
@@ -2074,6 +2124,11 @@ en:
       verified_at:
         label: Verified_at
       version:
+        choices:
+          '4':
+            label: '4'
+          '6':
+            label: '6'
         description: 4 or 6
       version_source:
         choices:
@@ -2186,6 +2241,18 @@ en:
       access_denied_to_seed_vps: access to this VPS is denied
       access_denied_to_vps_user_data: Access denied to VPS user data
       access_token_in_url: access_token must not be sent in URL
+      ip_release:
+        access_denied: This IP release request belongs to another user.
+        already_released: A selected IP is being released or has already been released.
+        closed: This IP release campaign is closed.
+        duplicate_addresses: Some selected IPs already belong to an open release campaign.
+        ineligible_addresses: Some selected IPs are no longer owned and unassigned.
+          Refresh the preview.
+        invalid_addresses: Select valid IP addresses from this request.
+        invalid_record: Check the campaign settings or retention reason.
+        keep_disabled: The current policy does not allow keeping IPs with a user reason.
+        owner_changed: The owner or allocation of a selected IP has changed.
+        too_many_addresses: Select no more than 100 IP allocations per campaign.
       object_not_found: Object not found
       object_not_found_lower: object not found
       object_with_attribute_not_found: object %{resource} = %{id} not found
@@ -2338,6 +2405,10 @@ en:
         attributes:
           id:
             label: ID
+      debug:
+        attributes:
+          size:
+            label: Size
       default_object_cluster_resource:
         attributes:
           class_name:
@@ -2500,6 +2571,8 @@ en:
             label: Expiration date
           id:
             label: Export ID
+          ip_address:
+            label: IpAddress
           sync:
             description: Determines whether the server replies to requests only after
               the changes have been committed to stable storage.
@@ -2509,6 +2582,8 @@ en:
           attributes:
             id:
               label: Id
+            ip_address:
+              label: IpAddress
             sync:
               description: Determines whether the server replies to requests only
                 after the changes have been committed to stable storage.
@@ -2540,8 +2615,12 @@ en:
           id:
             description: IP address ID
             label: ID
+          ip_address:
+            label: IpAddress
           location:
             description: Location this IP address is available in
+          size:
+            label: Size
           user:
             description: Filter by owner
           version:
@@ -2577,6 +2656,8 @@ en:
             label: ID
           location:
             description: Location this IP address is available in
+          size:
+            label: Size
           user:
             description: Filter by owner
           version:
@@ -2592,10 +2673,58 @@ en:
             label: ID
           ip_addr:
             label: Ip_addr
+          ip_address:
+            label: IpAddress
           updated_at:
             label: Updated_at
           vps:
             label: VPS
+      ip_release_campaign:
+        attributes:
+          addr:
+            label: IP address
+          address:
+            label: IP address
+          addresses:
+            description: Array of up to 100 IP address IDs from the preview
+          created_at:
+            label: Created at
+          created_by:
+            label: Created by
+          id:
+            label: ID
+          size:
+            label: Allocation size
+          version:
+            label: IP version
+      ip_release_request:
+        address:
+          attributes:
+            address:
+              label: IP address
+            id:
+              label: ID
+            ip_address:
+              label: IP address
+            size:
+              label: Allocation size
+        attributes:
+          addresses:
+            description: Array of request address IDs
+          id:
+            label: ID
+          mail_log:
+            label: Last notice
+        notice:
+          attributes:
+            created_at:
+              label: Queued at
+            created_by:
+              label: Queued by
+            id:
+              label: ID
+            mail_log:
+              label: Mail log
       language:
         attributes:
           code:
@@ -2745,6 +2874,8 @@ en:
               label: Id
       network:
         attributes:
+          address:
+            label: Address
           count:
             description: Number of added IP addresses
           environment:
@@ -2753,6 +2884,7 @@ en:
             label: Id
           size:
             description: Number of possible host IP addresses
+            label: Size
           used:
             description: Number of IP addresses present in vpsAdmin
             label: Used
@@ -3223,6 +3355,8 @@ en:
             description: True if the current user is affected by the advisory
           created_at:
             label: Created_at
+          created_by:
+            label: Created_by
           cs_summary:
             description: Short vulnerability-class title shown in advisory lists,
               status output, IRC announcements, and emails.
@@ -3332,6 +3466,7 @@ en:
             label: Send_mail
           size:
             description: Size of the archive in MiB
+            label: Size
           url:
             label: Url
       system_config:
@@ -3375,6 +3510,7 @@ en:
             label: Name
           size:
             description: Number of transactions in the chain
+            label: Size
           user_session:
             label: User session
       user:
@@ -3424,6 +3560,8 @@ en:
               password:
                 label: Current password
         attributes:
+          address:
+            label: Address
           change_reason:
             description: Reason for the state change. May be mailed to the user.
             label: Reason
@@ -3555,6 +3693,8 @@ en:
         attributes:
           id:
             label: ID
+          size:
+            label: Size
       user_namespace_map:
         attributes:
           id:
@@ -3580,6 +3720,8 @@ en:
       user_request:
         change:
           attributes:
+            address:
+              label: Address
             api_ip_addr:
               label: API IP address
             api_ip_ptr:
@@ -3597,6 +3739,8 @@ en:
               label: Updated at
         registration:
           attributes:
+            address:
+              label: Address
             api_ip_addr:
               label: API IP address
             api_ip_ptr:
@@ -3988,6 +4132,9 @@ en:
           allocate: Allocate IP to object
           free: Free IP from object
           update: IP*
+        ip_release:
+          notify: IP release notice
+          release: Release IP
         lifetimes:
           expiration_warning: Expiration
           wrapper: State change

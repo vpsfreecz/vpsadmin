@@ -80,6 +80,7 @@ jobs:
               spec/api/resources/network_*_spec.rb
               spec/api/resources/network_interface*_spec.rb
               spec/api/resources/ip_address*_spec.rb
+              spec/api/resources/ip_release*_spec.rb
               spec/api/resources/host_ip_address_spec.rb
               spec/api/resources/location_network_spec.rb
 

@@ -1,0 +1,36 @@
+Hi <%= @user.login %>,
+
+This is a reminder about the IP addresses below, which are still unassigned
+and planned for release.
+<% if @addresses.any?(&:public_ipv4?) -%>
+
+Public IPv4 addresses are a scarce resource. Releasing addresses you no longer
+need helps make room for other VPSes.
+<% end -%>
+
+<% @addresses.each do |item| -%>
+  - <%= item.address %>/<%= item.prefix %> (<%= item.location_label || 'location unavailable' %>)
+<% end -%>
+
+Planned release date: <%= local_time(@campaign.deadline, '%Y-%m-%d %H:%M %Z') %>
+
+If you no longer need these addresses, you do not need to reply or do
+anything.
+
+If you still need an address, you can keep it by assigning it to a VPS.
+<% if @campaign.allow_keep -%>
+You can also keep an address unassigned: select it in vpsAdmin and enter a
+reason why you need it.
+<% else -%>
+Keeping an unassigned address requires an administrator's exemption.
+Previously submitted reasons do not prevent release under the current policy.
+<% end -%>
+
+You can see the current address status and options for keeping them in
+vpsAdmin:
+<%= @webui_url %>/?page=ip_release&action=request&id=<%= @request.id %>
+
+Thank you for helping make unused addresses available to other users.
+
+Best regards,
+vpsAdmin

@@ -418,6 +418,16 @@ class MailTemplate < ApplicationRecord
     incident: ::IncidentReport
   }, roles: %i[admin], public: true
 
+  %i[ip_release_requested ip_release_reminder].each do |event|
+    register event, vars: {
+      user: ::User,
+      request: '::IpReleaseRequest',
+      campaign: '::IpReleaseCampaign',
+      addresses: 'Array<IpReleaseRequestAddress>',
+      webui_url: String
+    }, roles: %i[admin], public: true
+  end
+
   register :security_advisory_user_announce, vars: {
     advisory: '::SecurityAdvisory',
     a: '::SecurityAdvisory',

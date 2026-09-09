@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_09_170000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -580,6 +580,66 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.index ["reverse_dns_zone_id"], name: "index_ip_addresses_on_reverse_dns_zone_id"
     t.index ["route_via_id"], name: "index_ip_addresses_on_route_via_id"
     t.index ["user_id"], name: "index_ip_addresses_on_user_id"
+  end
+
+  create_table "ip_release_campaigns", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.boolean "allow_keep", default: true, null: false
+    t.datetime "closed_at"
+    t.bigint "closed_by_id"
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id", null: false
+    t.datetime "deadline", null: false
+    t.string "label", limit: 200, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "updated_by_id", null: false
+  end
+
+  create_table "ip_release_request_addresses", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.bigint "active_ip_address_id"
+    t.string "address", limit: 43, null: false
+    t.datetime "created_at", null: false
+    t.datetime "excluded_at"
+    t.string "exclusion_reason"
+    t.datetime "exempted_at"
+    t.bigint "exempted_by_id"
+    t.text "exemption_reason"
+    t.bigint "ip_address_id", null: false
+    t.bigint "ip_release_request_id", null: false
+    t.text "keep_reason"
+    t.datetime "kept_at"
+    t.bigint "kept_by_id"
+    t.datetime "last_attempt_at"
+    t.text "last_error"
+    t.string "last_result"
+    t.bigint "network_id", null: false
+    t.integer "prefix", null: false
+    t.bigint "release_chain_id"
+    t.datetime "released_at"
+    t.bigint "released_by_id"
+    t.decimal "size", precision: 40, null: false
+    t.datetime "updated_at", null: false
+    t.index ["active_ip_address_id"], name: "ip_release_active_address", unique: true
+    t.index ["ip_address_id"], name: "index_ip_release_request_addresses_on_ip_address_id"
+    t.index ["ip_release_request_id"], name: "ip_release_address_request"
+  end
+
+  create_table "ip_release_request_notices", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id", null: false
+    t.string "event", limit: 16, null: false
+    t.bigint "ip_release_request_id", null: false
+    t.bigint "mail_log_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ip_release_request_id"], name: "ip_release_notice_request"
+  end
+
+  create_table "ip_release_requests", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "ip_release_campaign_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["ip_release_campaign_id", "user_id"], name: "ip_release_request_user", unique: true
+    t.index ["user_id"], name: "index_ip_release_requests_on_user_id"
   end
 
   create_table "ip_traffic_monthly_summaries", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
