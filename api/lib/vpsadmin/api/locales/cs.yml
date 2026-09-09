@@ -743,6 +743,11 @@ cs:
       from_duration:
         description: Stránkovat podle trvání
         label: Od trvání
+      from_id:
+        description: Pokračovat za platbou se zadaným ID v pořadí od nejnovějších
+          podle času vytvoření. Použij ID poslední platby z předchozí stránky a zachovej
+          stejné filtry. Pokud platba není dostupná nebo neodpovídá filtrům, vrátí
+          se prázdný seznam.
       from_personal:
         description: Odečíst přidané zdroje z osobního balíčku
         label: Z osobního balíčku

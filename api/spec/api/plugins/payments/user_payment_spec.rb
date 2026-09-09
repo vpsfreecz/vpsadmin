@@ -102,6 +102,10 @@ RSpec.describe 'VpsAdmin::API::Resources::UserPayment', requires_plugins: :payme
   let(:other_user) { SpecSeed.other_user }
 
   describe 'API description' do
+    after do
+      header 'Accept-Language', nil
+    end
+
     it 'exposes the created_at period filters' do
       as(admin) { options "#{index_path}?method=GET" }
 
@@ -109,6 +113,42 @@ RSpec.describe 'VpsAdmin::API::Resources::UserPayment', requires_plugins: :payme
 
       parameters = json.dig('response', 'input', 'parameters')
       expect(parameters).to include('created_from', 'created_to')
+    end
+
+    {
+      'en' => {
+        label: 'From ID',
+        desc: 'Continue after this payment, ordered by creation time from newest to oldest. ' \
+              'Use the last payment ID from the previous page and keep the same filters. ' \
+              'Returns an empty list if the payment is unavailable or does not match the filters.',
+        inherited_desc: 'List objects with IDs greater or lower than this value'
+      },
+      'cs' => {
+        label: 'Od ID',
+        desc: 'Pokračovat za platbou se zadaným ID v pořadí od nejnovějších podle času vytvoření. ' \
+              'Použij ID poslední platby z předchozí stránky a zachovej stejné filtry. ' \
+              'Pokud platba není dostupná nebo neodpovídá filtrům, vrátí se prázdný seznam.',
+        inherited_desc: 'Vypsat objekty s ID větším/menším než zadaná hodnota'
+      }
+    }.each do |locale, metadata|
+      it "describes the payment cursor in #{locale} without changing other actions" do
+        header 'Accept-Language', locale
+        as(admin) { options "#{index_path}?method=GET" }
+
+        expect_status(200)
+        cursor = json.dig('response', 'input', 'parameters', 'from_id')
+        expect(cursor).to include('label' => metadata[:label], 'description' => metadata[:desc])
+
+        as(admin) { options "#{vpath('/users')}?method=GET" }
+
+        expect_status(200)
+        inherited_cursor = json.dig('response', 'input', 'parameters', 'from_id')
+        expect(inherited_cursor).to include(
+          'label' => metadata[:label],
+          'description' => metadata[:inherited_desc]
+        )
+        expect(cursor.except('description')).to eq(inherited_cursor.except('description'))
+      end
     end
   end
 
@@ -258,6 +298,37 @@ RSpec.describe 'VpsAdmin::API::Resources::UserPayment', requires_plugins: :payme
 
       ids = user_payments.map { |row| row['id'].to_i }
       expect(ids).to eq([selected.id])
+    end
+
+    it 'returns an empty page for a nonexistent cursor' do
+      as(user) { json_get index_path, user_payment: { from_id: ::UserPayment.maximum(:id) + 1 } }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(user_payments).to be_empty
+    end
+
+    it 'returns an empty page for another user\'s cursor' do
+      as(user) { json_get index_path, user_payment: { from_id: other_payment_row.id } }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(user_payments).to be_empty
+    end
+
+    it 'returns an empty page when the cursor does not match the period' do
+      cursor = build_user_payment_at(user:, created_at: Time.utc(2026, 1, 15))
+
+      as(user) do
+        json_get index_path, user_payment: {
+          created_to: '2026-01-01T00:00:00Z',
+          from_id: cursor.id
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(user_payments).to be_empty
     end
 
     it 'paginates the created_at order without skipping out-of-order ids' do

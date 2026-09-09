@@ -744,6 +744,11 @@ en:
       from_duration:
         description: Paginate by duration
         label: From_duration
+      from_id:
+        description: Continue after this payment, ordered by creation time from newest
+          to oldest. Use the last payment ID from the previous page and keep the same
+          filters. Returns an empty list if the payment is unavailable or does not
+          match the filters.
       from_personal:
         description: Substract the added resources from the personal package
         label: From personal package

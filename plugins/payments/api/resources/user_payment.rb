@@ -22,6 +22,10 @@ module VpsAdmin::API::Resources
       desc 'List user payments'
 
       input do
+        patch :from_id,
+              desc: 'Continue after this payment, ordered by creation time from newest to oldest. ' \
+                    'Use the last payment ID from the previous page and keep the same filters. ' \
+                    'Returns an empty list if the payment is unavailable or does not match the filters.'
         resource VpsAdmin::API::Resources::User
         resource VpsAdmin::API::Resources::User, name: :accounted_by
         datetime :created_from,
