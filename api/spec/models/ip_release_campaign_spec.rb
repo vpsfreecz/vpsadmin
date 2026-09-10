@@ -435,7 +435,7 @@ RSpec.describe IpReleaseCampaign do
     expect { c.edit!({ allow_keep: false }, actor: SpecSeed.admin) }.not_to change(MailLog, :count)
     c.notify!(event: 'reminder', actor: SpecSeed.admin)
     expect(request.reload.mail_log_id).not_to eq(first_log.id)
-    expect(request.mail_log.text_plain).to include('Previously submitted reasons do not prevent release')
+    expect(request.mail_log.text_plain).not_to include('select it in vpsAdmin')
     expect(request.ip_release_request_notices.order(:id).pluck(:event)).to eq(%w[requested reminder])
     expect(request.ip_release_request_notices.first.mail_log).to eq(first_log)
     c.release!(actor: SpecSeed.admin)
