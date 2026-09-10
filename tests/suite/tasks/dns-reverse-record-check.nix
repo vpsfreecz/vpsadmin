@@ -168,7 +168,8 @@ import ../../make-test.nix (
           )
           expect_chain_done(services, record, label: 'create IP release PTR')
           set_host_ip_reverse_record(services, host_ip_id: allocation.fetch('host_id'), dns_record_id: record.fetch('id'))
-          expect(dns.succeeds('dig @127.0.0.1 -x 198.51.100.25 +short').last.strip).to eq('release.example.test.')
+          expect(dns_query_short(dns, server: '${dnsNode.ipAddr}', name: '25.100.51.198.in-addr.arpa.',
+                                 type: 'PTR')).to eq(['release.example.test.'])
           release = services.api_ruby_json(code: <<~RUBY)
             #{api_session_prelude(admin_user_id)}
             campaign = IpReleaseCampaign.find(#{allocation.fetch('campaign_id')})
@@ -179,7 +180,8 @@ import ../../make-test.nix (
           expect_chain_done(services, release, label: 'release IP and remove live PTR', expected_handles: [
             tx_types(services).fetch('dns_server_zone_delete_records'), tx_types(services).fetch('dns_server_reload')
           ])
-          expect(dns.succeeds('dig @127.0.0.1 -x 198.51.100.25 +short').last.strip).to eq("")
+          expect(dns_query_short(dns, server: '${dnsNode.ipAddr}', name: '25.100.51.198.in-addr.arpa.',
+                                 type: 'PTR')).to eq([])
           result = services.api_ruby_json(code: <<~RUBY)
             ip = IpAddress.find(#{allocation.fetch('id')})
             host = HostIpAddress.find(#{allocation.fetch('host_id')})
