@@ -263,10 +263,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1px886qvws5zvqphy5cysj8vg01lym0w7vs9wq1h41pk1pjlxaln";
+      sha256 = "0q1nq8mx22v9sn1296s45nm6dni42y3m3s1f4pg5dn3mx4xmgjdm";
       type = "gem";
     };
-    version = "0.6.6";
+    version = "0.6.7";
   };
   net-pop = {
     dependencies = [ "net-protocol" ];

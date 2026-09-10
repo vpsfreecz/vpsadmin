@@ -277,10 +277,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0hm08nyab376ix98d2mb6ka47q9qzzg4ylzn0bn8bp3p1a77zb2g";
+      sha256 = "00ybfbc12fzpx03nrh9k6nhzlcr8l3vc6cviq4gscr245kwaf5sm";
       type = "gem";
     };
-    version = "0.6.20260902";
+    version = "0.6.20260907";
   };
   drb = {
     groups = [ "default" ];
@@ -692,10 +692,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1px886qvws5zvqphy5cysj8vg01lym0w7vs9wq1h41pk1pjlxaln";
+      sha256 = "0q1nq8mx22v9sn1296s45nm6dni42y3m3s1f4pg5dn3mx4xmgjdm";
       type = "gem";
     };
-    version = "0.6.6";
+    version = "0.6.7";
   };
   net-pop = {
     dependencies = [ "net-protocol" ];
