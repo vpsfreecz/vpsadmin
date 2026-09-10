@@ -286,6 +286,11 @@ test.describe('networking browser coverage', () => {
 });
 
 
+function showApiResource(name, id) {
+  const response = runVpsadminctl([name, 'show', String(id)]);
+  return (response.response || response)[name];
+}
+
 test('IP release campaign: notices, user retention, assignment and forced manual release', async ({ page }) => {
   const n = requireNetworkingFixtures();
   const ips = [n.ipAddresses.release_reason, n.ipAddresses.release_assigned, n.ipAddresses.release_exempt];
@@ -320,8 +325,8 @@ test('IP release campaign: notices, user retention, assignment and forced manual
   const exemption = rowWithText(page, ips[2].addr).locator('form');
   const requestId = new URL(await exemption.getAttribute('action'), campaignUrl).searchParams.get('id');
   const requestUrl = `/?page=ip_release&action=request&id=${requestId}`;
-  const initialRequest = runVpsadminctl(['ip_release_request', 'show', requestId]).response.ip_release_request;
-  const initialMail = runVpsadminctl(['mail_log', 'show', String(initialRequest.mail_log.id)]).response.mail_log;
+  const initialRequest = showApiResource('ip_release_request', requestId);
+  const initialMail = showApiResource('mail_log', initialRequest.mail_log.id);
   expect(initialMail.text_html).toContain('Open in vpsAdmin');
   await exemption.locator('textarea[name="reason"]').fill('Approved reservation');
   await exemption.getByRole('button', { name: 'Set exemption', exact: true }).click();
@@ -357,8 +362,8 @@ test('IP release campaign: notices, user retention, assignment and forced manual
   await edit.locator('input[name="allow_keep"]').uncheck();
   await submitForm(edit, 'Save changes');
   await page.getByRole('button', { name: 'Send reminders', exact: true }).click();
-  const remindedRequest = runVpsadminctl(['ip_release_request', 'show', requestId]).response.ip_release_request;
-  const reminder = runVpsadminctl(['mail_log', 'show', String(remindedRequest.mail_log.id)]).response.mail_log;
+  const remindedRequest = showApiResource('ip_release_request', requestId);
+  const reminder = showApiResource('mail_log', remindedRequest.mail_log.id);
   expect(reminder.text_plain).toContain(ips[0].addr);
   expect(reminder.text_plain).not.toContain(ips[1].addr);
   expect(reminder.text_plain).not.toContain(ips[2].addr);
