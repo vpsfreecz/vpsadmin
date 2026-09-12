@@ -501,10 +501,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1mqps8z4ly74hpksfajcfamqk1wb79biy187pn10knmi6zzb26al";
+      sha256 = "0ip59r7z8mjwy1rq0pp53kxhvkjb5d942rpn7hiliha1qgxk9k24";
       type = "gem";
     };
-    version = "3.2.0";
+    version = "3.3.0";
   };
   language_server-protocol = {
     groups = [
