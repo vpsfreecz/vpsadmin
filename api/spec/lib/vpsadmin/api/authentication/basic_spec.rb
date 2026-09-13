@@ -20,6 +20,29 @@ RSpec.describe VpsAdmin::API::Authentication::Basic do
     allow(Resolv).to receive(:new).and_return(resolver)
   end
 
+  it 'records client metadata when upgrading a password hash before creating the session' do
+    request.env['HTTP_X_REAL_IP'] = '192.0.2.43'
+    request.env['HTTP_CLIENT_IP'] = '203.0.113.43'
+    user.update_columns(
+      password_version: 'md5',
+      password: VpsAdmin::API::CryptoProviders::Md5.encrypt(user.login, 'secret')
+    )
+
+    expect do
+      expect(provider.send(:find_user, request, user.login, 'secret')).to eq(user)
+    end.to change(PasswordChangeLog, :count).by(1)
+
+    event = PasswordChangeLog.order(:id).last
+    expect(user.reload.password_version).to eq('bcrypt')
+    expect(event).to have_attributes(
+      source: 'other',
+      user_session_id: nil,
+      client_ip_addr: '192.0.2.43',
+      client_ip_ptr: 'ptr.example.test'
+    )
+    expect(event.user_agent.agent).to eq('RSpec/Basic')
+  end
+
   it 'returns nil for an invalid password and records a failed login' do
     expect do
       expect(provider.send(:find_user, request, user.login, 'wrong')).to be_nil
