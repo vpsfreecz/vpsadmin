@@ -5,7 +5,7 @@ module VpsAdmin::API::Resources
 
     params(:all) do
       id :id
-      resource User, value_label: :login
+      resource User, value_label: :login, nullable: true
       string :to
       string :cc
       string :bcc

@@ -118,6 +118,11 @@ RSpec.describe 'VpsAdmin::API::Resources::MailLog' do
     )
   end
 
+  it 'describes the account-neutral user reference as nullable in both responses' do
+    expect(VpsAdmin::API::Resources::MailLog::Index.output[:user]).to be_nullable
+    expect(VpsAdmin::API::Resources::MailLog::Show.output[:user]).to be_nullable
+  end
+
   describe 'Index' do
     it 'rejects unauthenticated access' do
       json_get index_path
