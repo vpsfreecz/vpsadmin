@@ -24,10 +24,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1g9zi8c4i7g8zz0c3hxrw6mblrjvgn7akys60clb9si7c1k1gljk";
+      sha256 = "0rng45p4vc3f6nac44cnylwch7rj4zsff3icdz6c7garwpjy3sv1";
       type = "gem";
     };
-    version = "4.1.2";
+    version = "4.1.3";
   };
   bunny = {
     dependencies = [
