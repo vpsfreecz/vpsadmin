@@ -61,6 +61,33 @@ RSpec.describe VpsAdmin::API::PasswordRecoveryWorker do
     expect(submission.identifier).to be_nil
   end
 
+  [false, true].each do |fails|
+    it "continues after a submission disappears during #{fails ? 'failed' : 'successful'} processing" do
+      vanished = enqueue_submission
+      following = PasswordRecoverySubmission.create!(
+        identifier: 'next@example.test',
+        identifier_digest: Digest::SHA256.hexdigest('next@example.test'),
+        locale: 'en'
+      )
+      allow(VpsAdmin::API::Operations::Authentication::RequestPasswordRecovery)
+        .to receive(:run) do |_, **kwargs|
+          next unless kwargs.fetch(:submission).id == vanished.id
+
+          PasswordRecoverySubmission.where(id: vanished.id).delete_all
+          raise 'processing failed after retention' if fails
+        end
+
+      if fails
+        expect { expect(worker.process_next).to eq(:error) }
+          .to output(/processing failed after retention/).to_stderr
+      else
+        expect(worker.process_next).to eq(:processed)
+      end
+      expect(worker.process_next).to eq(:processed)
+      expect(following.reload.finished_at).to be_present
+    end
+  end
+
   it 'reports an empty queue without doing work' do
     expect(worker.process_next).to eq(:idle)
   end

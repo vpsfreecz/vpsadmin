@@ -101,15 +101,21 @@ class PasswordRecoverySubmission < ApplicationRecord
 
   def retry_or_finish!
     self.class.with_queue_lock do
-      lock!
-      finish_record! if attempts >= MAX_ATTEMPTS
+      submission = self.class.where(id:).lock.take
+      next unless submission
+
+      submission.finish_record! if submission.attempts >= MAX_ATTEMPTS
+      reload
     end
   end
 
   def finish!
     self.class.with_queue_lock do
-      lock!
-      finish_record!
+      submission = self.class.where(id:).lock.take
+      next unless submission
+
+      submission.finish_record!
+      reload
     end
   end
 
@@ -133,7 +139,9 @@ class PasswordRecoverySubmission < ApplicationRecord
     where.not(finished_at: nil).where('created_at < ?', before).find_each(&:destroy!)
 
     with_queue_lock do
-      pending.where('created_at < ?', before).lock.find_each(&:destroy!)
+      pending.where('created_at < ?', before)
+             .where('processing_started_at IS NULL OR processing_started_at < ?', CLAIM_TIMEOUT.ago)
+             .lock.find_each(&:destroy!)
     end
   end
 

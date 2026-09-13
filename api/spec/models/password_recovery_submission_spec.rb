@@ -184,6 +184,51 @@ RSpec.describe PasswordRecoverySubmission do
     expect(submission.client_ip_addr).to eq('203.0.113.1')
   end
 
+  it 'retains an old pending submission while its worker claim is current' do
+    submission = described_class.enqueue!(
+      identifier: 'claimed@example.test', locale: :en, oauth2_client: nil,
+      request: request(ip: '192.0.2.1')
+    ).submission
+    submission.update!(created_at: described_class::RECORD_RETENTION.ago - 1.minute)
+    claimed = described_class.claim_next
+
+    described_class.destroy_stale!(before: described_class::RECORD_RETENTION.ago)
+    expect(described_class.exists?(submission.id)).to be(true)
+
+    claimed.finish!
+    described_class.destroy_stale!(before: described_class::RECORD_RETENTION.ago)
+    expect(described_class.exists?(submission.id)).to be(false)
+  end
+
+  it 'removes an expired old claim and tolerates its late completion or retry' do
+    submission = described_class.enqueue!(
+      identifier: 'expired@example.test', locale: :en, oauth2_client: nil,
+      request: request(ip: '192.0.2.1')
+    ).submission
+    submission.update!(
+      created_at: described_class::RECORD_RETENTION.ago - 1.minute,
+      processing_started_at: described_class::CLAIM_TIMEOUT.ago - 1.second
+    )
+
+    described_class.destroy_stale!(before: described_class::RECORD_RETENTION.ago)
+
+    expect(described_class.exists?(submission.id)).to be(false)
+    expect { submission.finish! }.not_to raise_error
+    expect { submission.retry_or_finish! }.not_to raise_error
+  end
+
+  it 'does not claim a submission removed by retention cleanup first' do
+    submission = described_class.enqueue!(
+      identifier: 'unclaimed@example.test', locale: :en, oauth2_client: nil,
+      request: request(ip: '192.0.2.1')
+    ).submission
+    submission.update!(created_at: described_class::RECORD_RETENTION.ago - 1.minute)
+
+    described_class.destroy_stale!(before: described_class::RECORD_RETENTION.ago)
+
+    expect(described_class.claim_next).to be_nil
+  end
+
   it 'uses a queue capacity of one hundred unfinished submissions' do
     expect(described_class::MAX_PENDING).to eq(100)
   end
