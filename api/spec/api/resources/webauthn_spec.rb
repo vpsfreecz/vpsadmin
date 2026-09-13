@@ -59,12 +59,6 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
     WebauthnChallenge.joins(:token).where(tokens: { token: token_value }).take
   end
 
-  def create_auth_token(target_user)
-    Token.for_new_record!(Time.now + 300) do |token|
-      AuthToken.create!(user: target_user, token: token, purpose: :mfa)
-    end
-  end
-
   def create_password_recovery(target_user)
     recovery_request = PasswordRecoveryRequest.create!(
       recipient_email: target_user.email,
@@ -276,7 +270,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
     end
 
     it 'rejects an expired auth_token without creating a challenge' do
-      auth_token = create_auth_token(user)
+      auth_token = create_auth_token!(user: user, purpose: 'mfa')
       auth_token.token.update!(valid_to: 1.minute.ago)
 
       expect do
@@ -289,7 +283,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
     end
 
     it 'rejects a token after a destructive lifecycle state is requested' do
-      auth_token = create_auth_token(user)
+      auth_token = create_auth_token!(user: user, purpose: 'mfa')
       record_requested_user_state!(user, :soft_delete)
 
       expect do
@@ -303,7 +297,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
     end
 
     it 'returns options and stores a challenge' do
-      auth_token = create_auth_token(user)
+      auth_token = create_auth_token!(user: user, purpose: 'mfa')
 
       json_post authentication_begin_path, authentication: { auth_token: auth_token.token.to_s }
 
@@ -334,8 +328,8 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
     end
 
     it 'returns 404 when auth_token does not match the challenge user' do
-      auth_token = create_auth_token(user)
-      other_token = create_auth_token(other_user)
+      auth_token = create_auth_token!(user: user, purpose: 'mfa')
+      other_token = create_auth_token!(user: other_user, purpose: 'mfa')
 
       json_post authentication_begin_path, authentication: { auth_token: auth_token.token.to_s }
       response = authentication_response
@@ -352,7 +346,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
     end
 
     it 'does not accept password recovery challenges in regular authentication' do
-      auth_token = create_auth_token(user)
+      auth_token = create_auth_token!(user: user, purpose: 'mfa')
 
       json_post authentication_begin_path, authentication: { auth_token: auth_token.token.to_s }
       response = authentication_response
@@ -372,7 +366,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
 
     it 'fails with invalid credential data' do
       register_credential_for(user, label: 'Spec Key', client: fake_client)
-      auth_token = create_auth_token(user)
+      auth_token = create_auth_token!(user: user, purpose: 'mfa')
 
       json_post authentication_begin_path, authentication: { auth_token: auth_token.token.to_s }
       response = authentication_response
@@ -397,7 +391,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
 
     it 'authenticates using a fake client' do
       credential = register_credential_for(user, label: 'Spec Key', client: fake_client)
-      auth_token = create_auth_token(user)
+      auth_token = create_auth_token!(user: user, purpose: 'mfa')
 
       json_post authentication_begin_path, authentication: { auth_token: auth_token.token.to_s }
       response = authentication_response
@@ -433,7 +427,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
 
     it 'does not consume a challenge after a destructive lifecycle state is requested' do
       credential = register_credential_for(user, label: 'Spec Key', client: fake_client)
-      auth_token = create_auth_token(user)
+      auth_token = create_auth_token!(user: user, purpose: 'mfa')
 
       json_post authentication_begin_path, authentication: { auth_token: auth_token.token.to_s }
       response = authentication_response

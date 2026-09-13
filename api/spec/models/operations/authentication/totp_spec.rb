@@ -30,6 +30,20 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::Totp do
     end.to raise_error(VpsAdmin::API::Exceptions::AuthenticationError, 'invalid token')
   end
 
+  it 'rejects a pre-generation continuation without consuming its TOTP code' do
+    user.update_columns(authentication_generation: 0)
+    auth_token = create_auth_token!(user:, purpose: 'mfa')
+    auth_token.update!(opts: {})
+    code = code_at(Time.at(1_700_000_000))
+
+    expect do
+      described_class.run(auth_token.token.to_s, code)
+    end.to raise_error(VpsAdmin::API::Exceptions::AuthenticationError, 'invalid token')
+
+    expect(device.reload.last_use_at).to be_nil
+    expect(AuthToken.exists?(auth_token.id)).to be(true)
+  end
+
   it 'authenticates a valid TOTP code and destroys the MFA token' do
     auth_token = create_auth_token!(user:, purpose: 'mfa')
     code = code_at(Time.at(1_700_000_000))

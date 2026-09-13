@@ -60,6 +60,42 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::ResetPassword do
     expect(result.password_change_log.user_agent.agent).to eq('Forced reset spec')
   end
 
+  [nil, {}, { 'authentication_generation' => nil }, { 'authentication_generation' => '0' }].each do |opts|
+    it "rejects unstamped or malformed continuation options #{opts.inspect} after an old-writer change" do
+      user.update_columns(authentication_generation: 0)
+      token = auth_token
+      token.update!(opts:)
+      session = create_open_session!(user:, auth_type: 'token')
+
+      # The preceding API updates these columns without changing the generation.
+      user.update_columns(
+        password: VpsAdmin::API::CryptoProviders::Bcrypt.encrypt(user.login, 'intervening-password'),
+        password_version: 'bcrypt',
+        password_reset: false
+      )
+
+      expect do
+        op.run(token, 'replacement-password', request:)
+      end.to raise_error(VpsAdmin::API::Exceptions::AuthenticationError, 'invalid token')
+
+      expect(
+        VpsAdmin::API::CryptoProviders::Bcrypt.matches?(
+          user.reload.password, user.login, 'intervening-password'
+        )
+      ).to be(true)
+      expect(session.reload.closed_at).to be_nil
+      expect(PasswordChangeLog.where(user:)).to be_empty
+    end
+  end
+
+  it 'accepts an explicitly stamped zero generation' do
+    user.update_columns(authentication_generation: 0)
+    token = auth_token
+
+    expect(token.opts.fetch('authentication_generation')).to eq(0)
+    expect(op.run(token, 'new-password', request:).user).to eq(user)
+  end
+
   it 'rejects a token from an older password generation' do
     stale_token = auth_token
     user.set_password('intervening-password')

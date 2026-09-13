@@ -18,7 +18,8 @@ class AuthToken < ApplicationRecord
   end
 
   def authentication_generation
-    (opts || {}).fetch('authentication_generation', 0).to_i
+    generation = (opts || {})['authentication_generation']
+    generation if generation.is_a?(Integer)
   end
 
   def authentication_current?
