@@ -1188,7 +1188,6 @@ en:
       network_interface:
         label: NetworkInterface
       new_password:
-        description: The password must be at least 8 characters long
         label: Password
       new_refquota:
         label: New refquota
@@ -1347,6 +1346,8 @@ en:
         label: Passed
       passphrase:
         label: Passphrase
+      password:
+        description: Auto-generated password
       password_reset:
         label: Password reset
       patch_version:
@@ -2163,7 +2164,7 @@ en:
           invalid_user_or_password: invalid user or password
           oauth2_disabled: OAuth2 authentication is disabled on this account
           password_reset_required: password reset required
-          password_too_short: password should have at least 8 characters
+          password_too_short: password should have at least %{minimum} characters
           passwords_do_not_match: passwords do not match
         failed_to_authenticate: 'Failed to authenticate: %{message}'
         forgot_password: Forgot your password?
@@ -2226,7 +2227,7 @@ en:
         passkey_failed: Passkey verification failed. You can try again.
         passkey_start_failed: Passkey verification could not start.
         password_heading: Choose a new password
-        password_too_short: The password must be at least 8 characters long.
+        password_too_short: The password must be at least %{minimum} characters long.
         passwords_do_not_match: The passwords do not match.
         recovery_unavailable: Password recovery could not continue.
         repeat_new_password: Repeat new password
@@ -2269,6 +2270,9 @@ en:
       snapshot_download_no_common_source: snapshots do not have a common available
         source for incremental download
       snapshot_download_unavailable: snapshot is not available for download
+    password_changes:
+      minimum_length_description: The password must be at least %{minimum} characters
+        long
     resources:
       action_state:
         attributes:
@@ -3554,8 +3558,6 @@ en:
             label: OS template
           paid_until:
             label: Paid until
-          password:
-            description: The password must be at least 8 characters long
           vps:
             label: Create a VPS
         cluster_resource:
@@ -3883,7 +3885,6 @@ en:
           os_template:
             label: OS template
           password:
-            description: Auto-generated password
             label: Password
           send_mail:
             description: Inform the VPS owner about migration progress

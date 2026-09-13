@@ -580,6 +580,29 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(recovery.reload.invalidated_at).to be_present
   end
 
+  it 'uses the shared password minimum in recovery validation, forms and translated errors' do
+    stub_const('VpsAdmin::API::PasswordChanges::MINIMUM_LENGTH', 9)
+    user = create_user_with_totp
+    recovery, raw_token = create_recovery(user:, locale: 'cs')
+    exchange_email_token(raw_token)
+    mark_recovery_mfa_verified(recovery)
+    get '/oauth2/password-reset/password?ui_locales=cs'
+    expect(last_response.body.scan('minlength="9"').length).to eq(2)
+
+    post '/oauth2/password-reset/password?ui_locales=cs',
+         csrf_token: csrf_from_body, new_password: 'x' * 8, repeat_new_password: 'x' * 8
+
+    expect(last_response.status).to eq(422)
+    expect(last_response.body).to include('Heslo musí mít alespoň 9 znaků.')
+    expect(recovery.reload.completed_at).to be_nil
+
+    post '/oauth2/password-reset/password?ui_locales=cs',
+         csrf_token: csrf_from_body, new_password: 'x' * 9, repeat_new_password: 'x' * 9
+
+    expect(last_response.status).to eq(303)
+    expect(recovery.reload.completed_at).to be_present
+  end
+
   it 'keeps password errors in the password stage and completes the reset after TOTP' do
     header 'User-Agent', 'Recovery route spec'
     header 'X-Real-IP', '198.51.100.81'

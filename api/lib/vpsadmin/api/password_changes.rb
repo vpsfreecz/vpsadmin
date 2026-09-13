@@ -2,6 +2,16 @@ require 'resolv'
 
 module VpsAdmin::API
   module PasswordChanges
+    MINIMUM_LENGTH = 8
+
+    def self.valid_length?(password)
+      password && password.length >= MINIMUM_LENGTH
+    end
+
+    def self.minimum_length_description
+      VpsAdmin::API::I18n.message('password_changes.minimum_length_description', minimum: MINIMUM_LENGTH)
+    end
+
     SOURCES = %i[
       authenticated
       forced_reset

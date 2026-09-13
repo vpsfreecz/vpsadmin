@@ -57,8 +57,7 @@ module OAuth2ConfigSpecFixtures
   end
 end
 
-# rubocop:disable RSpec/MultipleMemoizedHelpers
-RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
+RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do # rubocop:disable RSpec/MultipleMemoizedHelpers
   let(:provider) { OAuth2ConfigSpecFixtures::Provider.new }
   let(:config) { described_class.new(provider, nil, nil) }
   let(:user) { SpecSeed.user }
@@ -726,6 +725,33 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(response.body.scan('onclick="togglePasswords();"').length).to eq(2)
   end
 
+  it 'uses the shared password minimum in OAuth reset validation, forms and errors' do
+    stub_const('VpsAdmin::API::PasswordChanges::MINIMUM_LENGTH', 9)
+    user.update!(password_reset: true)
+    allow(TransactionChains::User::PasswordChanged).to receive(:fire)
+    auth_token = create_auth_token!(user:, purpose: 'reset_password')
+    params = {
+      login_reset_password: '1', auth_token: auth_token.to_s,
+      new_password1: 'x' * 8, new_password2: 'x' * 8, ui_locales: 'cs'
+    }
+    result = config.handle_post_authorize(
+      sinatra_handler: handler, sinatra_request: request, sinatra_params: params,
+      oauth2_request:, oauth2_response: response, client:
+    )
+
+    expect(result.errors).to include(:password_too_short)
+    expect(response.body).to include('heslo musí mít alespoň 9 znaků')
+    expect(response.body.scan('minlength="9"').length).to eq(2)
+
+    result = config.handle_post_authorize(
+      sinatra_handler: handler, sinatra_request: request,
+      sinatra_params: params.merge(new_password1: 'x' * 9, new_password2: 'x' * 9),
+      oauth2_request:, oauth2_response: response, client:
+    )
+    expect(result.complete).to be(true)
+    expect(user.reload.password_reset).to be(false)
+  end
+
   it 'localizes the labelled reset-password branch in Czech' do
     auth_token = create_auth_token!(user:, purpose: 'reset_password')
 
@@ -1346,4 +1372,3 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do
     expect(auth_result.authorization).to be_nil
   end
 end
-# rubocop:enable RSpec/MultipleMemoizedHelpers

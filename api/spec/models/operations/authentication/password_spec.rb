@@ -286,4 +286,21 @@ RSpec.describe VpsAdmin::API::Operations::Authentication::Password do
     )
     expect(PasswordChangeLog.find_by!(user:).user_agent.agent).to eq('RSpec/Password')
   end
+
+  describe 'public password length' do
+    it 'accepts eight-character public passwords and rejects shorter or missing values' do
+      expect(VpsAdmin::API::PasswordChanges).not_to be_valid_length(nil)
+      expect(VpsAdmin::API::PasswordChanges.valid_length?('x' * 7)).to be(false)
+      expect(VpsAdmin::API::PasswordChanges.valid_length?('x' * 8)).to be(true)
+    end
+
+    it 'interpolates the shared minimum in both parameter-description translations' do
+      stub_const('VpsAdmin::API::PasswordChanges::MINIMUM_LENGTH', 12)
+      { en: 'The password must be at least 12 characters long', cs: 'Heslo musí mít alespoň 12 znaků' }.each do |locale, description|
+        ::I18n.with_locale(locale) do
+          expect(HaveAPI.localize(VpsAdmin::API::PasswordChanges.minimum_length_description)).to eq(description)
+        end
+      end
+    end
+  end
 end

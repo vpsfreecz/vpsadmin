@@ -232,6 +232,22 @@ RSpec.describe VpsAdmin::API::Authentication::TokenConfig do
     expect(TransactionChains::User::TotpRecoveryCodeUsed).not_to have_received(:fire)
   end
 
+  it 'uses the shared password minimum in token reset validation and errors' do
+    stub_const('VpsAdmin::API::PasswordChanges::MINIMUM_LENGTH', 9)
+    user.update!(password_reset: true)
+    allow(TransactionChains::User::PasswordChanged).to receive(:fire)
+    auth_token = create_auth_token!(user:, purpose: 'reset_password')
+
+    result = reset_password(auth_token.to_s, new_password1: 'x' * 8, new_password2: 'x' * 8)
+    expect(result.error).to eq('password should have at least 9 characters')
+    expect(user.reload.password_reset).to be(true)
+
+    result = reset_password(auth_token.to_s, new_password1: 'x' * 9, new_password2: 'x' * 9)
+    expect(result).to be_ok
+    expect(result).to be_complete
+    expect(user.reload.password_reset).to be(false)
+  end
+
   it 'can complete the reset-password continuation and create a token session' do
     user.update!(password_reset: true, lockout: true)
     allow(TransactionChains::User::PasswordChanged).to receive(:fire)

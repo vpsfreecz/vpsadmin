@@ -277,6 +277,31 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       clear_login
     end
 
+    it 'uses the shared password minimum for supplied initial passwords' do
+      stub_const('VpsAdmin::API::PasswordChanges::MINIMUM_LENGTH', 9)
+      as(SpecSeed.admin) do
+        json_post index_path, user: payload[:user].merge(password: 'x' * 8)
+      end
+
+      expect(json['status']).to be(false)
+      expect(errors.fetch('password')).to include('password must be at least 9 characters long')
+      expect(User.find_by(login:)).to be_nil
+
+      as(SpecSeed.admin) do
+        json_post index_path, user: payload[:user].merge(password: 'x' * 9)
+      end
+
+      expect(json['status']).to be(true), last_response.body
+      expect(User.find_by(login:)).to be_present
+    end
+
+    it 'still leaves password login disabled when no initial password is supplied' do
+      as(SpecSeed.admin) { json_post index_path, user: payload[:user].except(:password) }
+
+      expect(json['status']).to be(true), last_response.body
+      expect(User.find_by!(login:).password).to eq('!')
+    end
+
     it 'returns validation errors for missing login' do
       as(SpecSeed.admin) { json_post index_path, user: payload[:user].except(:login) }
 
@@ -475,6 +500,20 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect(json['status']).to be(false)
       expect(errors.keys.map(&:to_s)).to include('new_password')
     end
+  end
+
+  it 'uses the shared password minimum in user updates and their validation errors' do
+    stub_const('VpsAdmin::API::PasswordChanges::MINIMUM_LENGTH', 9)
+    as(SpecSeed.admin) do
+      json_put show_path(SpecSeed.other_user.id), user: { new_password: 'x' * 8 }
+    end
+    expect(json['status']).to be(false)
+    expect(errors.fetch('new_password')).to include('password must be at least 9 characters long')
+
+    as(SpecSeed.admin) do
+      json_put show_path(SpecSeed.other_user.id), user: { new_password: 'x' * 9 }
+    end
+    expect(json['status']).to be(true)
   end
 
   describe 'Password change' do

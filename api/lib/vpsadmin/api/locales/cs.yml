@@ -1183,7 +1183,6 @@ cs:
       network_interface:
         label: Síťové rozhraní
       new_password:
-        description: Heslo musí mít alespoň 8 znaků
         label: Heslo
       new_refquota:
         label: Nová kvóta datasetu (refquota)
@@ -1342,6 +1341,8 @@ cs:
         label: Prošlo
       passphrase:
         label: Heslová fráze
+      password:
+        description: Automaticky vygenerované heslo
       password_reset:
         label: Reset hesla
       patch_version:
@@ -2159,7 +2160,7 @@ cs:
           invalid_user_or_password: neplatný uživatel nebo heslo
           oauth2_disabled: OAuth2 autentizace je na tomto účtu vypnutá
           password_reset_required: je vyžadována změna hesla
-          password_too_short: heslo musí mít alespoň 8 znaků
+          password_too_short: heslo musí mít alespoň %{minimum} znaků
           passwords_do_not_match: hesla se neshodují
         failed_to_authenticate: 'Ověření se nezdařilo: %{message}'
         forgot_password: Obnovit heslo
@@ -2222,7 +2223,7 @@ cs:
         passkey_failed: Ověření přístupovým klíčem se nezdařilo. Můžeš to zkusit znovu.
         passkey_start_failed: Ověření přístupovým klíčem se nepodařilo spustit.
         password_heading: Zvol si nové heslo
-        password_too_short: Heslo musí mít alespoň 8 znaků.
+        password_too_short: Heslo musí mít alespoň %{minimum} znaků.
         passwords_do_not_match: Hesla se neshodují.
         recovery_unavailable: V obnovení hesla nejde pokračovat.
         repeat_new_password: Zopakuj nové heslo
@@ -2263,6 +2264,8 @@ cs:
       snapshot_download_no_common_source: snapshoty nemají společný dostupný zdroj
         pro inkrementální stažení
       snapshot_download_unavailable: snapshot není dostupný ke stažení
+    password_changes:
+      minimum_length_description: Heslo musí mít alespoň %{minimum} znaků
     resources:
       action_state:
         attributes:
@@ -3550,8 +3553,6 @@ cs:
             label: OS šablona
           paid_until:
             label: Zaplaceno do
-          password:
-            description: Heslo musí mít alespoň 8 znaků
           vps:
             label: Vytvořit VPS
         cluster_resource:
@@ -3879,7 +3880,6 @@ cs:
           os_template:
             label: OS šablona
           password:
-            description: Automaticky vygenerované heslo
             label: Heslo
           send_mail:
             description: Informovat vlastníka VPS o průběhu migrace

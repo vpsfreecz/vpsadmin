@@ -552,7 +552,11 @@ module VpsAdmin::API
       default = code.tr('_', ' ')
       return default unless code.match?(/\A[a-z0-9_]+\z/)
 
-      VpsAdmin::API::I18n.t("auth.oauth2.errors.#{code}", default:)
+      VpsAdmin::API::I18n.t(
+        "auth.oauth2.errors.#{code}",
+        default:,
+        minimum: PasswordChanges::MINIMUM_LENGTH
+      )
     end
 
     def auth_credentials(sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:, devices:)
@@ -741,7 +745,7 @@ module VpsAdmin::API
       if sinatra_params[:new_password1] != sinatra_params[:new_password2]
         ret.add_error(:passwords_do_not_match)
         return ret
-      elsif sinatra_params[:new_password1].length < 8
+      elsif !PasswordChanges.valid_length?(sinatra_params[:new_password1])
         ret.add_error(:password_too_short)
         return ret
       end

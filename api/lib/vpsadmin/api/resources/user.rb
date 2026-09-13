@@ -31,7 +31,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   params(:password) do
     string :password, label: 'Password',
-                      desc: 'The password must be at least 8 characters long'
+                      desc: VpsAdmin::API::PasswordChanges.minimum_length_description
   end
 
   params(:vps) do
@@ -141,6 +141,13 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
       vps_params = %i[vps node environment location os_template]
 
       passwd = input.delete(:password)
+      if passwd && !VpsAdmin::API::PasswordChanges.valid_length?(passwd)
+        error!(
+          'create failed',
+          password: ["password must be at least #{VpsAdmin::API::PasswordChanges::MINIMUM_LENGTH} characters long"]
+        )
+      end
+
       user = ::User.new(to_db_names(input.except(*vps_params)))
       user.set_password(passwd) if passwd
 
@@ -339,9 +346,9 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     input do
       use :writable
       string :password, label: 'Current password', protected: true,
-                        desc: 'The password must be at least 8 characters long'
+                        desc: VpsAdmin::API::PasswordChanges.minimum_length_description
       string :new_password, label: 'Password', protected: true,
-                            desc: 'The password must be at least 8 characters long'
+                            desc: VpsAdmin::API::PasswordChanges.minimum_length_description
       bool :logout_sessions, label: 'Logout sessions',
                              desc: 'Logout all sessions except the current one when password is changed',
                              default: true
@@ -384,10 +391,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
           )
         end
 
-        if input[:new_password].nil? || input[:new_password].length < 8
+        unless VpsAdmin::API::PasswordChanges.valid_length?(input[:new_password])
           error!(
             'update failed',
-            new_password: ['password must be at least 8 characters long']
+            new_password: ["password must be at least #{VpsAdmin::API::PasswordChanges::MINIMUM_LENGTH} characters long"]
           )
         end
 

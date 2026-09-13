@@ -348,8 +348,8 @@ module VpsAdmin::API
       error =
         if password != confirmation
           text(:passwords_do_not_match)
-        elsif password.length < 8
-          text(:password_too_short)
+        elsif !PasswordChanges.valid_length?(password)
+          text(:password_too_short, minimum: PasswordChanges::MINIMUM_LENGTH)
         end
       return render(:password, recovery:, error:, status: 422) if error
 

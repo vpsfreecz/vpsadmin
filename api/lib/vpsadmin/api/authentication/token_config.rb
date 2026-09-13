@@ -160,8 +160,8 @@ module VpsAdmin::API
           res.error = 'passwords do not match'
           next res
 
-        elsif req.input[:new_password1].length < 8
-          res.error = 'password should have at least 8 characters'
+        elsif !PasswordChanges.valid_length?(req.input[:new_password1])
+          res.error = "password should have at least #{PasswordChanges::MINIMUM_LENGTH} characters"
           next res
         end
 
