@@ -270,10 +270,16 @@ module VpsAdmin::API
         credentials = user.webauthn_credentials.where(enabled: true).order(:id).lock
         next unless credentials.exists?
 
-        options = WebAuthn::Credential.options_for_get(
-          allow: credentials.pluck(:external_id),
-          user_verification: 'discouraged'
-        )
+        credential_ids = credentials.pluck(:external_id)
+        begin
+          options = WebAuthn::Credential.options_for_get(
+            allow: credential_ids,
+            user_verification: 'discouraged'
+          )
+        rescue WebAuthn::Error => e
+          warn "[vpsAdmin API] Password recovery WebAuthn start failed: #{e.class}: #{e.message}"
+          next
+        end
         recovery.webauthn_challenges.order(:id).lock.each(&:destroy!)
         challenge = create_webauthn_challenge!(
           recovery,
@@ -287,9 +293,6 @@ module VpsAdmin::API
         challenge_token: challenge.token.token,
         options: options.as_json
       )
-    rescue StandardError => e
-      warn "[vpsAdmin API] Password recovery WebAuthn start failed: #{e.class}: #{e.message}"
-      json_error(text(:passkey_start_failed), 422)
     end
 
     def webauthn_finish
@@ -497,7 +500,7 @@ module VpsAdmin::API
         client_ip_addr:,
         client_ip_ptr:,
         user_agent: ::UserAgent.find_or_create!('Password recovery WebAuthn'),
-        client_version: @request.user_agent.to_s
+        client_version: ::WebauthnChallenge.normalize_client_version(@request.user_agent)
       }
     end
 

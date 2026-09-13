@@ -17,6 +17,8 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
       client_ip_addr = request.env['HTTP_X_REAL_IP'].presence || api_ip_addr
       client_ip_ptr = client_ip_addr == api_ip_addr ? api_ip_ptr : get_ptr(client_ip_addr)
 
+      client_version = ::WebauthnChallenge.normalize_client_version(request.user_agent)
+
       ::Token.for_new_record!(Time.now + 120) do |token|
         user.webauthn_challenges.create!(
           user:,
@@ -27,8 +29,8 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
           api_ip_ptr:,
           client_ip_addr:,
           client_ip_ptr:,
-          user_agent: ::UserAgent.find_or_create!(request.user_agent || ''),
-          client_version: request.user_agent || ''
+          user_agent: ::UserAgent.find_or_create!(client_version),
+          client_version:
         )
       end
     end

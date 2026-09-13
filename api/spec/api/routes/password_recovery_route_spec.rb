@@ -955,6 +955,61 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(UserAgent.find_by(agent: 'Untrusted recovery browser')).to be_nil
   end
 
+  describe 'passkey start metadata and failures' do
+    let(:passkey_recovery) do
+      user = create_user_with_totp
+      user.webauthn_credentials.create!(
+        label: 'Spec passkey',
+        external_id: Base64.strict_encode64('credential-id'),
+        public_key: 'not-a-real-public-key',
+        sign_count: 0
+      )
+      recovery, raw_token = create_recovery(user:)
+      csrf = exchange_email_token(raw_token)
+      header 'X-CSRF-Token', csrf
+      header 'Content-Type', 'application/json'
+      recovery
+    end
+
+    [
+      ['A' * 255, 'A' * 255],
+      ['A' * 256, 'A' * 255],
+      ['ž' * 256, 'ž' * 255],
+      ["Browser \u{1f511} \xff", 'Browser ? ?']
+    ].each_with_index do |(browser, normalized), index|
+      it "stores bounded database-compatible browser metadata for case #{index + 1}" do
+        recovery = passkey_recovery
+        header 'User-Agent', browser
+
+        post '/oauth2/password-reset/verify/webauthn/begin', '{}'
+
+        expect(last_response.status).to eq(200)
+        challenge = recovery.webauthn_challenges.take!
+        expect(challenge.client_version).to eq(normalized)
+        expect(challenge.user_agent.agent).to eq('Password recovery WebAuthn')
+      end
+    end
+
+    it 'reports an expected WebAuthn option error without creating a challenge' do
+      recovery = passkey_recovery
+      allow(WebAuthn::Credential).to receive(:options_for_get).and_raise(WebAuthn::Error, 'invalid options')
+
+      expect { post '/oauth2/password-reset/verify/webauthn/begin', '{}' }
+        .to output(/WebAuthn start failed/).to_stderr
+
+      expect(last_response.status).to eq(422)
+      expect(recovery.webauthn_challenges).to be_empty
+    end
+
+    it 'does not classify persistence failures as ordinary passkey errors' do
+      passkey_recovery
+      allow(Token).to receive(:for_new_record!).and_raise(ActiveRecord::StatementInvalid, 'storage failure')
+
+      expect { post '/oauth2/password-reset/verify/webauthn/begin', '{}' }
+        .to raise_error(ActiveRecord::StatementInvalid, 'storage failure')
+    end
+  end
+
   it 'does not replace an ordinary authentication challenge' do
     user = create_user_with_totp
     user.webauthn_credentials.create!(

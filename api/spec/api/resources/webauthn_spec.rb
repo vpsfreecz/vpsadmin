@@ -131,6 +131,25 @@ RSpec.describe 'VpsAdmin::API::Resources::Webauthn' do
       expect(json['status']).to be(false)
     end
 
+    [
+      ['A' * 255, 'A' * 255],
+      ['A' * 256, 'A' * 255],
+      ['ž' * 256, 'ž' * 255],
+      ["Browser \u{1f511} \xff", 'Browser ? ?']
+    ].each_with_index do |(browser, normalized), index|
+      it "normalizes ordinary passkey client metadata for case #{index + 1}" do
+        auth_token = create_auth_token!(user: user, purpose: 'mfa')
+        header 'User-Agent', browser
+
+        json_post authentication_begin_path, authentication: { auth_token: auth_token.token.to_s }
+
+        expect(json['status']).to be(true), last_response.body
+        challenge = find_challenge(authentication_response.fetch('challenge_token'))
+        expect(challenge.client_version).to eq(normalized)
+        expect(challenge.user_agent.agent).to eq(normalized)
+      end
+    end
+
     it 'returns options and stores a challenge' do
       user.update!(webauthn_id: nil)
       response = begin_registration_for(user)
