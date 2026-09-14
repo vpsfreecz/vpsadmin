@@ -4890,11 +4890,11 @@ msgstr "odvozené"
 msgid "incomplete"
 msgstr "neúplné"
 
-#: lib/functions.lib.php
+#: lib/functions.lib.php pages/page_adminm.php
 msgid "Off"
 msgstr "Vypnuto"
 
-#: lib/functions.lib.php
+#: lib/functions.lib.php pages/page_adminm.php
 msgid "On"
 msgstr "Zapnuto"
 
@@ -5303,6 +5303,36 @@ msgid "Manage passkeys"
 msgstr "Spravovat přístupové klíče"
 
 #: pages/page_adminm.php
+msgid "Email verification"
+msgstr "Ověřování e-mailem"
+
+#: pages/page_adminm.php
+msgid "Verify new devices by email"
+msgstr "Ověřovat nová zařízení e-mailem"
+
+#: pages/page_adminm.php
+msgid ""
+"When two-factor authentication is off, signing in from an unknown device "
+"also requires an email code. This applies after your first successful device "
+"login, even if previous devices expire or are removed."
+msgstr ""
+"Pokud je dvoufaktorová autentizace vypnutá, přihlášení z neznámého zařízení "
+"vyžaduje také kód z e-mailu. Ověřování se začne používat po prvním úspěšném "
+"přihlášení ze zařízení a platí i po vypršení nebo odebrání předchozích zařízení."
+
+#: pages/page_adminm.php
+msgid "Primary email address"
+msgstr "Hlavní e-mailová adresa"
+
+#: pages/page_adminm.php
+msgid "TOTP or passkeys take precedence"
+msgstr "Přednost má TOTP nebo přístupový klíč"
+
+#: pages/page_adminm.php
+msgid "Known login devices"
+msgstr "Známá přihlašovací zařízení"
+
+#: pages/page_adminm.php
 msgid "Personal information"
 msgstr "Osobní údaje"
 
@@ -5353,10 +5383,6 @@ msgstr "Pokročilá konfigurace pošty"
 #: pages/page_adminm.php
 msgid "Public keys"
 msgstr "Veřejné klíče"
-
-#: pages/page_adminm.php
-msgid "Known login devices"
-msgstr "Známá přihlašovací zařízení"
 
 #: pages/page_adminm.php
 msgid "Sessions"
@@ -5629,6 +5655,10 @@ msgstr "Nastavení relací aktualizováno"
 #: pages/page_adminm.php
 msgid "Session control was successfully updated."
 msgstr "Nastavení relací bylo úspěšně aktualizováno."
+
+#: pages/page_adminm.php
+msgid "Email verification settings updated"
+msgstr "Nastavení ověřování e-mailem aktualizováno"
 
 #: pages/page_adminm.php
 msgid "Multi-factor authentication enabled"

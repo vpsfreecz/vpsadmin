@@ -4837,11 +4837,11 @@ msgstr ""
 msgid "incomplete"
 msgstr ""
 
-#: lib/functions.lib.php
+#: lib/functions.lib.php pages/page_adminm.php
 msgid "Off"
 msgstr ""
 
-#: lib/functions.lib.php
+#: lib/functions.lib.php pages/page_adminm.php
 msgid "On"
 msgstr ""
 
@@ -5236,6 +5236,33 @@ msgid "Manage passkeys"
 msgstr ""
 
 #: pages/page_adminm.php
+msgid "Email verification"
+msgstr ""
+
+#: pages/page_adminm.php
+msgid "Verify new devices by email"
+msgstr ""
+
+#: pages/page_adminm.php
+msgid ""
+"When two-factor authentication is off, signing in from an unknown device "
+"also requires an email code. This applies after your first successful device "
+"login, even if previous devices expire or are removed."
+msgstr ""
+
+#: pages/page_adminm.php
+msgid "Primary email address"
+msgstr ""
+
+#: pages/page_adminm.php
+msgid "TOTP or passkeys take precedence"
+msgstr ""
+
+#: pages/page_adminm.php
+msgid "Known login devices"
+msgstr ""
+
+#: pages/page_adminm.php
 msgid "Personal information"
 msgstr ""
 
@@ -5281,10 +5308,6 @@ msgstr ""
 
 #: pages/page_adminm.php
 msgid "Public keys"
-msgstr ""
-
-#: pages/page_adminm.php
-msgid "Known login devices"
 msgstr ""
 
 #: pages/page_adminm.php
@@ -5557,6 +5580,10 @@ msgstr ""
 
 #: pages/page_adminm.php
 msgid "Session control was successfully updated."
+msgstr ""
+
+#: pages/page_adminm.php
+msgid "Email verification settings updated"
 msgstr ""
 
 #: pages/page_adminm.php

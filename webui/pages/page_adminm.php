@@ -315,6 +315,36 @@ function print_editm($u)
 
     $xtpl->form_out(_('Save'));
 
+    if (($u->new_device_email_verification_available ?? false) || ($u->enable_new_device_email_verification ?? false)) {
+        $xtpl->table_add_category('<span data-vpsadmin-doc-id="member.email-verification">' . _('Email verification') . '</span>');
+        $xtpl->table_add_category('&nbsp;');
+        $xtpl->form_create('?page=adminm&action=edit_email_verification&id=' . $u->id, 'post');
+        $xtpl->form_add_checkbox(
+            _('Verify new devices by email') . ':',
+            'enable_new_device_email_verification',
+            '1',
+            post_val_issetto('enable_new_device_email_verification', '1', $u->enable_new_device_email_verification),
+            _('When two-factor authentication is off, signing in from an unknown device also requires an email code. This applies after your first successful device login, even if previous devices expire or are removed.')
+        );
+        $emailParts = explode('@', $u->email, 2);
+        $maskedEmail = mb_substr($emailParts[0], 0, 1) . '***@' . ($emailParts[1] ?? '');
+        $xtpl->table_td(_('Primary email address') . ':');
+        $xtpl->table_td(h($maskedEmail));
+        $xtpl->table_tr();
+        $xtpl->table_td(_('Status') . ':');
+        $emailStatus = !$u->enable_new_device_email_verification ? _('Off')
+            : (($u->enable_multi_factor_auth && ($hasTotp || $hasWebAuthn))
+                ? _('TOTP or passkeys take precedence') : _('On'));
+        $xtpl->table_td(h($emailStatus));
+        $xtpl->table_tr();
+        if ($_SESSION['user']['id'] == $u->id) {
+            $xtpl->form_add_input(_('Current password') . ':', 'password', '30', 'password');
+        }
+        $xtpl->table_td('<a href="?page=adminm&action=known_devices&id=' . $u->id . '">' . _('Known login devices') . '</a>');
+        $xtpl->table_tr();
+        $xtpl->form_out(_('Save'));
+    }
+
     $xtpl->table_add_category(_("Personal information"));
     $xtpl->table_add_category('&nbsp;');
     $xtpl->table_add_category('&nbsp;');
@@ -1267,6 +1297,23 @@ if (isLoggedIn()) {
             }
 
             break;
+        case 'edit_email_verification':
+            csrf_check();
+            try {
+                $user = $api->user->show($_GET['id']);
+                $params = ['enable_new_device_email_verification' => isset($_POST['enable_new_device_email_verification'])];
+                if ($_SESSION['user']['id'] == $user->id) {
+                    $params['password'] = $_POST['password'] ?? '';
+                }
+                $user->update($params);
+                notify_user(_('Email verification settings updated'), '');
+                redirect('?page=adminm&action=edit&id=' . $user->id);
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('User update failed'), $e->getResponse());
+                print_editm($api->user->find($_GET['id']));
+            }
+            break;
+
         case 'edit_mfa':
             csrf_check();
 

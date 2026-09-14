@@ -15,6 +15,19 @@ import ../make-test.nix (
       manageCluster = false;
     };
 
+    authTestCertificate =
+      pkgs.runCommand "webui-auth-test-certificate"
+        {
+          nativeBuildInputs = [ pkgs.openssl ];
+        }
+        ''
+          mkdir -p "$out"
+          openssl req -x509 -newkey rsa:2048 -nodes -days 36500 \
+            -subj '/CN=auth.vpsadmin.test' \
+            -addext 'subjectAltName=DNS:auth.vpsadmin.test' \
+            -keyout "$out/key.pem" -out "$out/cert.pem"
+        '';
+
     playwrightBrowsers = pkgs.playwright-driver.browsers-chromium;
     playwrightNodeModules = pkgs.runCommand "vpsadmin-webui-playwright-node-modules" { } ''
       mkdir -p "$out/lib"
@@ -1552,6 +1565,17 @@ import ../make-test.nix (
         language: language
       )
       required_password_reset_user.update!(password_reset: true)
+      email_verification_user = ensure_webui_user(
+        login: 'webui-email-verification',
+        full_name: 'Webui Email Verification User',
+        email: 'webui-email-verification@example.test',
+        password: 'webuiEmailVerificationPassword',
+        env: env,
+        language: language
+      )
+      email_verification_user.update!(enable_new_device_email_verification: false)
+      SysConfig.find_or_create_by!(category: 'core', name: 'new_device_email_verification_available')
+               .update!(value: true)
       hard_deleted_request_user = User.unscoped.find_by(
         login: 'webui-hard-deleted-request-user'
       )
@@ -3933,6 +3957,12 @@ import ../make-test.nix (
           'completionToken' => password_recovery_completion_token,
           'formToken' => password_recovery_form_token
         },
+        'emailVerification' => {
+          'id' => email_verification_user.id,
+          'username' => email_verification_user.login,
+          'email' => email_verification_user.email,
+          'password' => 'webuiEmailVerificationPassword'
+        },
         'requiredPasswordReset' => {
           'id' => required_password_reset_user.id,
           'username' => required_password_reset_user.login,
@@ -4803,6 +4833,13 @@ import ../make-test.nix (
           environment.systemPackages = [
             playwrightRunner
           ];
+
+          # Cookie-dependent browser tests use HTTPS on the auth origin.
+          services.nginx.virtualHosts."auth.vpsadmin.test" = {
+            addSSL = true;
+            sslCertificate = "${authTestCertificate}/cert.pem";
+            sslCertificateKey = "${authTestCertificate}/key.pem";
+          };
 
           system.extraDependencies = [
             fixtureScript
