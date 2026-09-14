@@ -6,7 +6,10 @@ RSpec.describe EmailLoginRateLimit do
   let(:request) { build_request(ip: '198.51.100.199') }
   let(:now) { Time.utc(2026, 9, 14, 12) }
 
-  before { allow(Time).to receive(:now).and_return(now) }
+  before do
+    described_class.delete_all
+    allow(Time).to receive(:now).and_return(now)
+  end
 
   def consume(target = user, kind = :send, source = request)
     target.with_lock { described_class.with_limits(target, source, kind) { |allowed| allowed } }

@@ -287,7 +287,7 @@ class User < ApplicationRecord
   end
 
   def invalidate_auth_tokens
-    auth_tokens.destroy_all
+    auth_tokens.reload.destroy_all
     oauth2_authorizations.where(user_session_id: nil).find_each do |authorization|
       sso = authorization.single_sign_on
       authorization.destroy!

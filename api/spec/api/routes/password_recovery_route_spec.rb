@@ -776,7 +776,7 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(last_response.body).not_to include('class="button"')
   end
 
-  it 'preserves existing sessions when the checkbox is not submitted' do
+  it 'preserves completed sessions but invalidates pending logins when the checkbox is not submitted' do
     user = create_user_with_totp
     client = create_oauth2_client!
     sso = create_single_sign_on!(user:)
@@ -788,6 +788,10 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     code_id = authorization.code.id
     recovery, raw_token = create_recovery(user:)
     old_session = create_open_session!(user:, auth_type: 'token')
+    oauth_session = create_open_session!(user:, auth_type: 'oauth2')
+    completed = create_oauth2_authorization!(user:, client:, sso:, user_session: oauth_session)
+    completed.code.destroy!
+    completed.update!(code: nil)
     mfa_token = create_auth_token!(user:, purpose: 'mfa')
     password_token = create_auth_token!(user:, purpose: 'reset_password')
     token_ids = [mfa_token.token_id, password_token.token_id]
@@ -804,8 +808,10 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(old_session.reload.closed_at).to be_nil
     expect(AuthToken.where(id: [mfa_token.id, password_token.id])).to be_empty
     expect(Token.where(id: token_ids)).to be_empty
-    expect(authorization.reload.code.id).to eq(code_id)
-    expect(authorization).to be_active
+    expect(Oauth2Authorization.exists?(authorization.id)).to be(false)
+    expect(Token.exists?(code_id)).to be(false)
+    expect(completed.reload).to be_active
+    expect(oauth_session.reload.closed_at).to be_nil
     expect(sso.reload.token).to be_present
 
     expect(last_response.headers['Location']).to end_with(
@@ -865,9 +871,8 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
          sign_out_all: '1'
 
     expect(last_response.status).to eq(303)
-    expect(authorization.reload.code).to be_nil
+    expect(Oauth2Authorization.exists?(authorization.id)).to be(false)
     expect(Token.exists?(code_id)).to be(false)
-    expect(authorization).not_to be_active
     expect(sso.reload.token).to be_nil
   end
 
