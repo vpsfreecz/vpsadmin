@@ -159,13 +159,14 @@ RSpec.describe TransactionChains::Mail::DailyReport do
       }.merge(attrs))
     end
 
-    def report_password_change(source, at: report_time - 10.minutes)
-      PasswordChangeLog.create!(user: SpecSeed.user, source:, created_at: at)
+    def report_password_change(source, user: SpecSeed.user, at: report_time - 10.minutes, client_ip_addr: nil)
+      PasswordChangeLog.create!(user:, source:, created_at: at, client_ip_addr:)
     end
 
-    def report_failed_login(user: SpecSeed.user, auth_type: 'password', reason: 'invalid password', at: report_time - 10.minutes)
+    def report_failed_login(user: SpecSeed.user, auth_type: 'password', reason: 'invalid password', at: report_time - 10.minutes,
+                            client_ip_addr: nil)
       UserFailedLogin.create!(
-        user:, auth_type:, reason:, created_at: at,
+        user:, auth_type:, reason:, created_at: at, client_ip_addr:,
         api_ip_addr: '127.0.0.1', api_ip_ptr: 'localhost', client_version: 'RSpec'
       )
     end
@@ -177,12 +178,13 @@ RSpec.describe TransactionChains::Mail::DailyReport do
       )
       expect(statistics[:user_sessions][:active][:total]).to eq(0)
       expect(statistics[:password_changes][:total]).to eq(0)
+      expect(statistics[:password_changes][:events]).to eq([])
       expect(statistics[:password_recoveries]).to eq(
         requests: 0, started: 0, completed: 0, unfulfilled: 0, expired: 0,
         invalidated: 0, no_mfa: 0, unavailable: 0,
         pending: { total: 0, email: 0, session: 0 }
       )
-      expect(statistics[:failed_logins]).to eq(total: 0, users: 0, by_reason: [])
+      expect(statistics[:failed_logins]).to eq(total: 0, users: 0, by_reason: [], events: [])
     end
 
     it 'counts creations by type with independent user totals and half-open boundaries' do
@@ -272,15 +274,16 @@ RSpec.describe TransactionChains::Mail::DailyReport do
     end
 
     it 'counts password changes by source and reuses the recovery count' do
-      VpsAdmin::API::PasswordChanges::SOURCES.each { |source| report_password_change(source) }
-      report_password_change(:recovery, at: report_start)
+      changes = VpsAdmin::API::PasswordChanges::SOURCES.map { |source| report_password_change(source) }
+      first = report_password_change(:recovery, at: report_start)
       report_password_change(:recovery, at: report_start - 1.second)
       report_password_change(:recovery, at: report_time)
 
-      expect(statistics[:password_changes]).to eq(
+      expect(statistics[:password_changes].except(:events)).to eq(
         total: 6,
         by_source: { 'authenticated' => 1, 'forced_reset' => 1, 'recovery' => 2, 'administrator' => 1, 'other' => 1 }
       )
+      expect(statistics[:password_changes][:events].pluck(:id)).to eq([first.id] + changes.map(&:id))
       expect(statistics[:password_recoveries][:completed]).to eq(2)
     end
 
@@ -335,15 +338,17 @@ RSpec.describe TransactionChains::Mail::DailyReport do
     end
 
     it 'groups recorded failures by mechanism and reason while deduplicating users' do
-      report_failed_login(at: report_start)
-      report_failed_login
-      report_failed_login(user: SpecSeed.other_user)
-      report_failed_login(auth_type: 'totp', reason: 'invalid totp code during password recovery')
-      report_failed_login(auth_type: 'webauthn', reason: 'authentication challenge expired')
+      failures = [
+        report_failed_login(at: report_start),
+        report_failed_login,
+        report_failed_login(user: SpecSeed.other_user),
+        report_failed_login(auth_type: 'totp', reason: 'invalid totp code during password recovery'),
+        report_failed_login(auth_type: 'webauthn', reason: 'authentication challenge expired')
+      ]
       report_failed_login(at: report_start - 1.second)
       report_failed_login(at: report_time)
 
-      expect(statistics[:failed_logins]).to eq(
+      expect(statistics[:failed_logins].except(:events)).to eq(
         total: 5, users: 2,
         by_reason: [
           { auth_type: 'password', reason: 'invalid password', total: 3, users: 2 },
@@ -351,13 +356,55 @@ RSpec.describe TransactionChains::Mail::DailyReport do
           { auth_type: 'webauthn', reason: 'authentication challenge expired', total: 1, users: 1 }
         ]
       )
+      expect(statistics[:failed_logins][:events].pluck(:id)).to eq(failures.map(&:id))
+    end
+
+    it 'lists individual actions with only recorded client IPs and user identities' do
+      change = report_password_change(:authenticated, client_ip_addr: '192.0.2.10')
+      repeated_change = report_password_change(:authenticated, client_ip_addr: '192.0.2.10')
+      failure = report_failed_login(client_ip_addr: '198.51.100.20')
+      repeated_failure = report_failed_login
+
+      common = { created_at: report_time - 10.minutes, user_id: SpecSeed.user.id, user_login: SpecSeed.user.login }
+      expect(statistics[:password_changes][:events]).to eq(
+        [change, repeated_change].map do |record|
+          common.merge(id: record.id, source: 'authenticated', client_ip_addr: '192.0.2.10')
+        end
+      )
+      expect(statistics[:failed_logins][:events]).to eq(
+        [
+          common.merge(id: failure.id, auth_type: 'password', reason: 'invalid password', client_ip_addr: '198.51.100.20'),
+          common.merge(id: repeated_failure.id, auth_type: 'password', reason: 'invalid password', client_ip_addr: nil)
+        ]
+      )
+      %i[password_changes failed_logins].each do |section|
+        expect(statistics[section][:events].length).to eq(statistics[section][:total])
+      end
+    end
+
+    it 'retains actions for users hidden by the default scope and missing user records' do
+      change = report_password_change(:administrator, user: SpecSeed.other_user)
+      failure = report_failed_login(user: SpecSeed.other_user)
+      missing_user_id = User.unscoped.maximum(:id) + 1_000_000
+      missing_change = report_password_change(:other).tap { |record| record.update_columns(user_id: missing_user_id) }
+      missing_failure = report_failed_login.tap { |record| record.update_columns(user_id: missing_user_id) }
+      SpecSeed.other_user.update_columns(object_state: 'hard_delete')
+
+      expect(statistics[:password_changes][:events]).to contain_exactly(
+        hash_including(id: change.id, user_id: SpecSeed.other_user.id, user_login: SpecSeed.other_user.login),
+        hash_including(id: missing_change.id, user_id: missing_user_id, user_login: nil)
+      )
+      expect(statistics[:failed_logins][:events]).to contain_exactly(
+        hash_including(id: failure.id, user_id: SpecSeed.other_user.id, user_login: SpecSeed.other_user.login),
+        hash_including(id: missing_failure.id, user_id: missing_user_id, user_login: nil)
+      )
     end
 
     it 'renders the report aggregates and accepts payloads from an older generator' do
       empty_statistics = VpsAdmin::API::DailyReportAuthentication.new(from: report_start, to: report_time).vars
       report_session(token_lifetime: 'permanent', admin: SpecSeed.admin)
-      report_password_change(:authenticated)
-      report_failed_login(reason: '<script>example</script>')
+      report_password_change(:authenticated, client_ip_addr: '192.0.2.10')
+      report_failed_login(reason: '<script>example</script>', client_ip_addr: '198.51.100.20')
       report_recovery
       chain = described_class.new
       vars = chain.call_hooks_for(
@@ -374,17 +421,45 @@ RSpec.describe TransactionChains::Mail::DailyReport do
         expect(rendered).to include(
           'User sessions', 'HTTP Basic', 'OAuth2', 'Permanent credentials: 1',
           'Administrator-created sessions: 1', 'Manual password changes',
-          'Password recovery activity', 'Recorded failed login attempts during period'
+          'Password recovery activity', 'Recorded failed login attempts during period',
+          'Password change details', 'Failed login details', '192.0.2.10', '198.51.100.20',
+          "#{SpecSeed.user.login} (##{SpecSeed.user.id})", ':50:00'
         )
         if format == :html
           expect(rendered).to include('&lt;script&gt;example&lt;/script&gt;')
           expect(rendered).not_to include('<script>example</script>')
+          expect(rendered).to include("href=\"https://webui.example.test/?page=adminm&amp;action=edit&amp;id=#{SpecSeed.user.id}\"")
+
+          hostile_vars = vars.deep_dup
+          hostile_vars[:password_changes][:events].first.merge!(
+            user_login: '<action-user>', source: '<source>', client_ip_addr: '<ip"address>'
+          )
+          hostile_vars[:failed_logins][:events].first[:auth_type] = '<mechanism>'
+          hostile_report = MailTemplateTranslation::TemplateBuilder.new(hostile_vars).build(source)
+          expect(hostile_report).to include('&lt;action-user&gt;', '&lt;source&gt;', '&lt;ip&quot;address&gt;', '&lt;mechanism&gt;')
+          expect(hostile_report).not_to include('<action-user>', '<source>', '<ip"address>', '<mechanism>')
         end
         visible = rendered.gsub(/<[^>]*>/, ' ').gsub(/\s+/, ' ')
         expect(visible).to match(/Manual password changes:? 1/)
 
         empty_report = MailTemplateTranslation::TemplateBuilder.new(vars.merge(empty_statistics)).build(source)
         expect(empty_report).to include('Permanent credentials: 0', 'Administrator-created sessions: 0')
+        expect(empty_report).not_to include('Password change details', 'Failed login details')
+
+        aggregate_vars = vars.merge(
+          password_changes: vars[:password_changes].except(:events), failed_logins: vars[:failed_logins].except(:events)
+        )
+        aggregate_report = MailTemplateTranslation::TemplateBuilder.new(aggregate_vars).build(source)
+        expect(aggregate_report).to include('Password changes during period', 'Recorded failed login attempts during period')
+        expect(aggregate_report).not_to include('Password change details', 'Failed login details')
+
+        missing_vars = vars.deep_dup
+        %i[password_changes failed_logins].each do |section|
+          missing_vars[section][:events].first.merge!(user_id: 987_654, user_login: nil, client_ip_addr: nil)
+        end
+        missing_report = MailTemplateTranslation::TemplateBuilder.new(missing_vars).build(source)
+        expect(missing_report).to include('User #987654', '—')
+        expect(missing_report).not_to include('action=edit&amp;id=987654', '192.0.2.10', '198.51.100.20')
 
         older_vars = vars.except(:user_sessions, :password_changes, :password_recoveries, :failed_logins)
         older_report = MailTemplateTranslation::TemplateBuilder.new(older_vars).build(source)
@@ -397,6 +472,7 @@ RSpec.describe TransactionChains::Mail::DailyReport do
         File.write(File.join(directory, "daily-report.#{format == :text ? 'txt' : 'html'}"), rendered)
         File.write(File.join(directory, "daily-report-older-payload.#{format == :text ? 'txt' : 'html'}"), older_report)
         File.write(File.join(directory, "daily-report-empty.#{format == :text ? 'txt' : 'html'}"), empty_report)
+        File.write(File.join(directory, "daily-report-aggregate-only.#{format == :text ? 'txt' : 'html'}"), aggregate_report)
       end
     end
   end

@@ -26,10 +26,18 @@ Distinct users may appear under more than one authentication type.
 
 <% end -%>
 <% if @password_changes -%>
+<% source_labels = { 'recovery' => 'Successful recoveries', 'authenticated' => 'Manual password changes', 'forced_reset' => 'Required password changes', 'administrator' => 'Administrator password changes', 'other' => 'Other password changes' } -%>
 Password changes during period:
 - Total: <%= @password_changes[:total] %>
 <% @password_changes[:by_source].each do |source, count| -%>
-- <%= { 'recovery' => 'Successful recoveries', 'authenticated' => 'Manual password changes', 'forced_reset' => 'Required password changes', 'administrator' => 'Administrator password changes', 'other' => 'Other password changes' }.fetch(source, source) %>: <%= count %>
+- <%= source_labels.fetch(source, source) %>: <%= count %>
+<% end -%>
+<% if @password_changes[:events]&.any? -%>
+
+Password change details:
+<% @password_changes[:events].each do |event| -%>
+- <%= local_time(event[:created_at], '%Y-%m-%d %H:%M:%S %Z') %> | <%= event[:user_login] ? "#{event[:user_login]} (##{event[:user_id]})" : "User ##{event[:user_id]}" %> | <%= source_labels.fetch(event[:source], event[:source]) %> | Client IP: <%= event[:client_ip_addr].presence || '—' %>
+<% end -%>
 <% end -%>
 
 <% end -%>
@@ -52,6 +60,13 @@ Recorded failed login attempts during period:
 - Total: <%= @failed_logins[:total] %> (affected users: <%= @failed_logins[:users] %>)
 <% @failed_logins[:by_reason].each do |row| -%>
 - <%= row[:auth_type] %> / <%= row[:reason] %>: <%= row[:total] %> (affected users: <%= row[:users] %>)
+<% end -%>
+<% if @failed_logins[:events]&.any? -%>
+
+Failed login details:
+<% @failed_logins[:events].each do |event| -%>
+- <%= local_time(event[:created_at], '%Y-%m-%d %H:%M:%S %Z') %> | <%= event[:user_login] ? "#{event[:user_login]} (##{event[:user_id]})" : "User ##{event[:user_id]}" %> | <%= event[:auth_type] %> / <%= event[:reason] %> | Client IP: <%= event[:client_ip_addr].presence || '—' %>
+<% end -%>
 <% end -%>
 These records cover known accounts and include incomplete authentication flows
 and recorded password recovery failures. Unknown-account attempts are excluded.

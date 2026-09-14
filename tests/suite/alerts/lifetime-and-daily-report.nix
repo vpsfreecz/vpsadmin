@@ -68,6 +68,15 @@ import ../../make-test.nix (
           )
 
           services.clear_mailpit
+          services.api_ruby_json(code: <<~RUBY)
+            user = User.find(${toString adminUser.id})
+            PasswordChangeLog.create!(user:, source: :authenticated, client_ip_addr: '192.0.2.10')
+            UserFailedLogin.create!(
+              user:, auth_type: 'password', reason: 'daily report test failure',
+              api_ip_addr: '192.0.2.20', client_ip_addr: '198.51.100.20', client_version: 'daily-report-test'
+            )
+            puts JSON.dump(ok: true)
+          RUBY
           daily_response = run_api_task(
             services,
             klass: 'VpsAdmin::API::Tasks::Mail',
@@ -94,7 +103,11 @@ import ../../make-test.nix (
               'Successful recoveries:',
               'Password recovery activity:',
               'Pending now:',
-              'Recorded failed login attempts during period:'
+              'Recorded failed login attempts during period:',
+              'Password change details:',
+              'Failed login details:',
+              '${adminUser.login} (#${toString adminUser.id}) | Manual password changes | Client IP: 192.0.2.10',
+              '${adminUser.login} (#${toString adminUser.id}) | password / daily report test failure | Client IP: 198.51.100.20'
             ]
           )
         end

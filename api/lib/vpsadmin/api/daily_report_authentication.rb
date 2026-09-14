@@ -1,5 +1,5 @@
 module VpsAdmin::API
-  # Aggregate the current daily report without retaining credential or client data.
+  # Build authentication statistics and recorded action details for the daily report.
   class DailyReportAuthentication
     AUTH_TYPES = %w[basic token oauth2].freeze
 
@@ -82,9 +82,10 @@ module VpsAdmin::API
     end
 
     def password_changes
-      grouped = during(::PasswordChangeLog.all).group(:source).count
+      relation = during(::PasswordChangeLog.all)
+      grouped = relation.group(:source).count
       by_source = PasswordChanges::SOURCES.to_h { |source| [source.to_s, 0] }.merge(grouped)
-      { total: by_source.values.sum, by_source: }
+      { total: by_source.values.sum, by_source:, events: event_details(relation, :source) }
     end
 
     def password_recoveries(completed)
@@ -129,10 +130,19 @@ module VpsAdmin::API
         :auth_type, :reason, Arel.sql('COUNT(*)'), Arel.sql('COUNT(DISTINCT user_id)')
       )
       counts(relation).merge(
+        events: event_details(relation, :auth_type, :reason),
         by_reason: rows.map do |type, reason, total, users|
           { auth_type: type, reason:, total: total.to_i, users: users.to_i }
         end
       )
+    end
+
+    def event_details(relation, *columns)
+      fields = %i[id created_at user_id client_ip_addr] + columns
+      events = relation.order(:created_at, :id).pluck(*fields).map { |row| fields.zip(row).to_h }
+      logins = ::User.unscoped.where(id: events.map { |event| event[:user_id] }.uniq).pluck(:id, :login).to_h
+
+      events.each { |event| event[:user_login] = logins[event[:user_id]] }
     end
   end
 end
