@@ -409,6 +409,7 @@ select:
       - "api/lib/vpsadmin/supervisor/**"
       - "api/lib/vpsadmin/api/kernel_evidence/**"
       - "api/lib/vpsadmin/api/operations/node/record_kernel_evidence.rb"
+      - "api/models/node_kernel_evidence_checkpoint.rb"
     tags: ["supervisor"]
 
   - paths:

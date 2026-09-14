@@ -939,4 +939,204 @@ RSpec.describe VpsAdmin::Supervisor::Node::Status do
       expect(node.node_kernel_events).to be_empty
     end
   end
+
+  describe 'valid evidence recovery' do
+    def audit_ingest(value, at, consumer: supervisor, overrides: {})
+      consumer.send(:update_status, NodeCurrentStatus.find_or_initialize_by(node:),
+                    payload(overrides.merge('security_evidence' => value, 'time' => at.to_i)))
+    end
+
+    def audit_changed(kind)
+      value = evidence
+      case kind
+      when :software
+        item = value.fetch('software_versions').find do |v|
+          v['generation'] == 'current' && v['component'] == 'vpsadmin'
+        end
+        item['revision'] = 'f' * 40
+      when :deployment
+        value['deployment']['current_system'] = '/nix/store/changed-system'
+      when :sysctl
+        value['sysctls']['kernel.dmesg_restrict']['effective'] = '0'
+      when :module
+        value['loaded_modules'] = ['kvm']
+      when :livepatch_application
+        value['kernel']['reported_release'] = '6.8.1'
+        value['livepatches'] = [{
+          'id' => 'audit_patch', 'kernel_version' => '6.8.0', 'patch_version' => 1,
+          'loaded' => true, 'enabled' => true, 'transition' => false,
+          'applied_at' => nil, 'verified_at' => nil, 'patches' => []
+        }]
+      when :ebpf
+        value['ebpf_programs'] = [{
+          'name' => 'audit', 'description' => nil, 'sinceKernel' => nil,
+          'untilKernel' => nil, 'revision' => 'audit-revision', 'digest' => 'audit-digest',
+          'active' => false, 'attached_at' => nil, 'verified_at' => nil,
+          'bpfPrograms' => [], 'links' => {}
+        }]
+      end
+      parsed = VpsAdmin::API::KernelEvidence::PayloadParser.call(value)
+      expect(parsed.record_events).to be(true), parsed.report.errors.map(&:reason).inspect
+      value
+    end
+
+    { software: :deployment_change, deployment: :deployment_change,
+      sysctl: :sysctl_change, module: :module_change, ebpf: :ebpf_change,
+      livepatch_application: :livepatch_change }.each do |kind, type|
+      it "uses the latest unchanged report for #{kind} after restart" do
+        recent = timestamp + 20.days
+        audit_ingest(evidence, timestamp)
+        audit_ingest(evidence, recent)
+        restarted = described_class.new(nil, Node.find(node.id))
+        audit_ingest(audit_changed(kind), recent + 120, consumer: restarted)
+        event = node.node_kernel_events.where(event_type: type).sole
+        expect(event.observed_after).to eq(recent)
+        expect(event.observed_before).to eq(recent + 120)
+      end
+
+      it "retains recent #{kind} confirmation across invalid evidence and restart" do
+        recent = timestamp + 20.days
+        audit_ingest(evidence, timestamp)
+        audit_ingest(evidence, recent)
+        audit_ingest({ 'schema_version' => 999 }, recent + 30)
+        restarted = described_class.new(nil, Node.find(node.id))
+        audit_ingest(audit_changed(kind), recent + 120, consumer: restarted)
+        event = node.node_kernel_events.where(event_type: type).sole
+        expect(event.observed_after).to eq(recent)
+        expect(event.observed_before).to eq(recent + 120)
+        kernel_confirmation = kind == :livepatch_application ? recent : recent + 120
+        expect(node.node_kernel_events.boot.sole.last_confirmed_at).to eq(kernel_confirmation)
+      end
+    end
+
+    it 'retains one private checkpoint through repeated invalid, missing and stale reports' do
+      recent = timestamp + 20.days
+      audit_ingest(evidence, timestamp)
+      audit_ingest(evidence, recent)
+      baseline = node.node_kernel_events.boot.sole
+      original = baseline.attributes
+      snapshot = baseline.kernel_evidence.attributes
+      revision = VpsAdmin::API::KernelEvidence::Revision.event(baseline)
+      evidence_count = NodeKernelEvidence.where(node:).count
+      audit_ingest({ 'schema_version' => 999 }, recent + 30)
+      checkpoint = NodeKernelEvidenceCheckpoint.find_by!(node:)
+      saved = checkpoint.attributes
+      expect(checkpoint.comparison_report.to_h).to eq(parse_evidence(evidence).report.to_h)
+      expect(checkpoint.observed_at).to eq(recent)
+      audit_ingest({ 'schema_version' => 999 }, recent + 60)
+      supervisor.send(:update_status, NodeCurrentStatus.find_by!(node:), payload('time' => (recent + 75).to_i))
+      audit_ingest(audit_changed(:software), recent + 10)
+      expect(checkpoint.reload.attributes).to eq(saved)
+      expect(NodeKernelEvidenceCheckpoint.where(node:).count).to eq(1)
+      expect(NodeKernelEvidence.where(node:).count).to eq(evidence_count)
+      expect(stored_report(NodeCurrentStatus.find_by!(node:)).dig('errors', 0, 'reason')).to start_with('invalid:')
+      expect(baseline.reload.attributes).to eq(original)
+      expect(baseline.kernel_evidence.reload.attributes).to eq(snapshot)
+      expect(VpsAdmin::API::KernelEvidence::Revision.event(baseline)).to eq(revision)
+      audit_ingest(audit_changed(:software), recent + 120, consumer: described_class.new(nil, Node.find(node.id)))
+      expect(node.node_kernel_events.deployment_change.sole.observed_after).to eq(recent)
+      expect(NodeKernelEvidenceCheckpoint.where(node:)).not_to exist
+    end
+
+    it 'recovers after active eBPF links have no readable attachment timestamp' do
+      recent = timestamp + 20.days
+      audit_ingest(evidence, timestamp)
+      audit_ingest(evidence, recent)
+      invalid = audit_changed(:ebpf)
+      invalid['ebpf_programs'].first.merge!(
+        'active' => true, 'attached_at' => nil, 'verified_at' => (recent + 30).iso8601,
+        'bpfPrograms' => ['test'], 'links' => { 'test' => true }
+      )
+      expect(parse_evidence(invalid).record_events).to be(false)
+      audit_ingest(invalid, recent + 30)
+      audit_ingest(audit_changed(:sysctl), recent + 60)
+      expect(node.node_kernel_events.sysctl_change.sole.observed_after).to eq(recent)
+    end
+
+    it 'preserves incomplete but comparable evidence without confirming kernel state' do
+      recent = timestamp + 20.days
+      audit_ingest(evidence, timestamp)
+      incomplete = evidence
+      incomplete['errors'] << { 'component' => 'livepatches', 'reason' => 'unreadable' }
+      audit_ingest(incomplete, recent)
+      audit_ingest({ 'schema_version' => 999 }, recent + 30)
+      expect(node.node_kernel_events.boot.sole.last_confirmed_at).to eq(timestamp)
+      expect(NodeKernelEvidenceCheckpoint.find_by!(node:).observed_at).to eq(recent)
+      audit_ingest(audit_changed(:software), recent + 60)
+      expect(node.node_kernel_events.deployment_change.sole.observed_after).to eq(recent)
+    end
+
+    it 'records a new boot after an invalid gap instead of comparing across boots' do
+      audit_ingest(evidence, timestamp)
+      audit_ingest(evidence, timestamp + 60)
+      audit_ingest({ 'schema_version' => 999 }, timestamp + 90)
+      rebooted = audit_changed(:software)
+      rebooted['kernel']['boot_id'] = 'new-boot'
+      rebooted['kernel']['booted_at'] = (timestamp + 100).iso8601
+      audit_ingest(rebooted, timestamp + 120)
+      expect(node.node_kernel_events.boot.count).to eq(2)
+      expect(node.node_kernel_events.deployment_change).to be_empty
+      expect(NodeKernelEvidenceCheckpoint.where(node:)).not_to exist
+    end
+
+    it 'retains the checkpoint and invalid current evidence if recovery fails' do
+      audit_ingest(evidence, timestamp)
+      audit_ingest({ 'schema_version' => 999 }, timestamp + 30)
+      before = NodeKernelEvidenceCheckpoint.find_by!(node:).attributes
+      allow(VpsAdmin::API::KernelEvidence::SnapshotWriter).to receive(:call).and_raise('write failed')
+      expect { audit_ingest(evidence, timestamp + 60) }.to raise_error('write failed')
+      expect(NodeKernelEvidenceCheckpoint.find_by!(node:).attributes).to eq(before)
+      expect(stored_report(NodeCurrentStatus.find_by!(node:)).dig('errors', 0, 'reason')).to start_with('invalid:')
+      expect(NodeCurrentStatus.find_by!(node:).updated_at).to eq(timestamp + 30)
+    end
+
+    it 'clears the private checkpoint when a node becomes a service-only host' do
+      audit_ingest(evidence, timestamp)
+      audit_ingest({ 'schema_version' => 999 }, timestamp + 30)
+      node.update!(role: :mailer)
+      audit_ingest(evidence, timestamp + 60)
+      expect(NodeKernelEvidenceCheckpoint.where(node:)).not_to exist
+      expect(NodeCurrentStatus.find_by!(node:).kernel_evidence).to be_nil
+    end
+
+    it 'keeps newer kernel confirmation when upgrading with already invalid current evidence' do
+      recent = timestamp + 20.days
+      audit_ingest(evidence, timestamp)
+      audit_ingest(evidence, recent)
+      audit_ingest({ 'schema_version' => 999 }, recent + 30)
+      NodeKernelEvidenceCheckpoint.where(node:).delete_all
+      audit_ingest(audit_changed(:livepatch_application), recent + 60)
+      expect(node.node_kernel_events.livepatch_change.sole.observed_after).to eq(recent)
+    end
+
+    it 'prefers a newer immutable event over a checkpoint left by older writers' do
+      recent = timestamp + 20.days
+      audit_ingest(evidence, timestamp)
+      audit_ingest(evidence, recent)
+      audit_ingest({ 'schema_version' => 999 }, recent + 30)
+      retained = NodeKernelEvidenceCheckpoint.find_by!(node:).attributes.except('id')
+      audit_ingest(audit_changed(:software), recent + 60)
+      audit_ingest({ 'schema_version' => 999 }, recent + 90)
+      NodeKernelEvidenceCheckpoint.find_by!(node:).update!(retained)
+      recovered = audit_changed(:software)
+      recovered['loaded_modules'] = ['kvm']
+      audit_ingest(recovered, recent + 120)
+      expect(node.node_kernel_events.module_change.sole.observed_after).to eq(recent + 60)
+      expect(node.node_kernel_events.deployment_change.count).to eq(1)
+    end
+
+    it 'retains system-state confirmations through restart and malformed security evidence' do
+      recent = timestamp + 20.days
+      audit_ingest(evidence, timestamp)
+      audit_ingest(evidence, recent)
+      audit_ingest({ 'schema_version' => 999 }, recent + 30)
+      state = node.node_system_states.current.sole
+      expect(state.first_observed_at).to eq(timestamp)
+      expect(state.last_observed_at).to eq(recent + 30)
+      restarted = described_class.new(nil, Node.find(node.id))
+      audit_ingest(evidence, recent + 120, consumer: restarted, overrides: { 'cpus' => 16 })
+      expect(state.reload.last_observed_at).to eq(recent + 30)
+      expect(node.node_system_states.current.sole.first_observed_at).to eq(recent + 120)
+    end
+  end
 end

@@ -126,6 +126,7 @@ module VpsAdmin::Supervisor
             received_at: now
           )
         end
+        store_evidence_checkpoint(current_status, parsed_evidence)
         store_current_evidence(current_status, kernel_evidence, check_time, now)
 
         # Active Record timestamping saves at receipt time. The status
@@ -196,6 +197,26 @@ module VpsAdmin::Supervisor
         previous_report:,
         previous_observed_at:
       )
+    end
+
+    def store_evidence_checkpoint(current_status, parsed_evidence)
+      if !kernel_host? || parsed_evidence&.record_events
+        ::NodeKernelEvidenceCheckpoint.where(node:).delete_all
+        return
+      end
+      return unless parsed_evidence
+
+      # The rejected report must remain visible as current evidence. Retain the
+      # comparison separately before SnapshotWriter replaces its normalized rows.
+      snapshot = current_status.kernel_evidence
+      reader = VpsAdmin::API::KernelEvidence::SnapshotReader
+      report = reader.call(snapshot)
+      return unless reader.comparable?(report)
+
+      checkpoint = ::NodeKernelEvidenceCheckpoint.find_or_initialize_by(node:)
+      return if checkpoint.persisted? && checkpoint.observed_at >= snapshot.observed_at
+
+      checkpoint.update!(report: report.to_h, observed_at: snapshot.observed_at)
     end
 
     def store_current_evidence(current_status, report, observed_at, received_at)

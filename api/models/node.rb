@@ -11,6 +11,7 @@ class Node < ApplicationRecord
   has_many :node_system_states, dependent: :destroy
   has_many :node_kernel_events, dependent: :destroy
   has_many :node_kernel_evidences, dependent: :destroy
+  has_one :node_kernel_evidence_checkpoint, dependent: :destroy
   has_one :node_kernel_history_state, dependent: :destroy
   has_one :node_system_history_state, dependent: :destroy
   has_one :node_current_status

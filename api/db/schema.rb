@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_14_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_14_190000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -1014,6 +1014,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_180000) do
     t.index ["node_id", "source_status_id", "event_type"], name: "idx_node_kernel_events_source_status", unique: true
     t.index ["node_id"], name: "index_node_kernel_events_on_node_id"
     t.index ["node_kernel_evidence_id"], name: "index_node_kernel_events_on_node_kernel_evidence_id"
+  end
+
+  create_table "node_kernel_evidence_checkpoints", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.integer "node_id", null: false, unsigned: true
+    t.datetime "observed_at", null: false
+    t.text "report", size: :long, null: false
+    t.index ["node_id"], name: "index_node_kernel_evidence_checkpoints_on_node_id", unique: true
   end
 
   create_table "node_kernel_evidence_errors", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
@@ -2315,6 +2322,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_180000) do
   add_foreign_key "node_ebpf_programs", "node_kernel_evidences", on_delete: :cascade
   add_foreign_key "node_kernel_configuration_options", "node_kernel_configurations", on_delete: :cascade
   add_foreign_key "node_kernel_events", "node_kernel_evidences", on_delete: :nullify
+  add_foreign_key "node_kernel_evidence_checkpoints", "nodes", on_delete: :cascade
   add_foreign_key "node_kernel_evidence_errors", "node_kernel_evidences", on_delete: :cascade
   add_foreign_key "node_kernel_history_gaps", "node_kernel_history_states", on_delete: :cascade
   add_foreign_key "node_kernel_livepatch_patches", "node_kernel_livepatches", on_delete: :cascade

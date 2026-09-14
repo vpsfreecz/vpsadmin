@@ -151,7 +151,7 @@ import ../../make-test.nix (
           end
         end
 
-        it 'retains stable kernel confirmations across supervisor restart' do
+        it 'retains stable and valid evidence confirmations across supervisor restarts' do
           begin
             node.succeeds('sv -w 90 stop nodectld', timeout: 120)
             current = node_current_status_row(services, node_id: node1_id)
@@ -238,6 +238,49 @@ import ../../make-test.nix (
             expect(target.fetch('after')).to eq((t + 90).to_i)
             expect(target.fetch('before')).to eq((t + 180).to_i)
 
+            publish.call(t + 210, removed)
+            before_invalid = history.call.last
+            publish.call(t + 240, { 'schema_version' => 999 })
+            expect(history.call.last).to eq(before_invalid)
+            checkpoint = services.api_ruby_json(code: <<~RUBY)
+              checkpoint = NodeKernelEvidenceCheckpoint.find_by!(node_id: #{node1_id})
+              current = NodeCurrentStatus.find_by!(node_id: #{node1_id}).kernel_evidence
+              puts JSON.dump(observed_at: checkpoint.observed_at.to_i,
+                             invalid: current.kernel_evidence_errors.where(component: 'security_evidence').exists?)
+            RUBY
+            expect(checkpoint).to eq('observed_at' => (t + 210).to_i, 'invalid' => true)
+            services.succeeds('systemctl restart vpsadmin-supervisor.service', timeout: 60)
+            services.wait_for_service('vpsadmin-supervisor.service')
+
+            recovered = Marshal.load(Marshal.dump(evidence))
+            recovered['loaded_modules'] = ['synthetic_recovery']
+            recovered['deployment']['current_system'] = '/nix/store/synthetic-recovery'
+            software = recovered['software_versions'].find do |item|
+              item['generation'] == 'current' && item['component'] == 'vpsadmin'
+            end
+            software['revision'] = 'f' * 40
+            software['revision_source'] = 'native'
+            recovered['sysctls']['kernel.dmesg_restrict'] = {
+              'available' => true, 'configured' => nil, 'effective' => '1'
+            }
+            recovered['ebpf_programs'] = [{
+              'name' => 'synthetic_recovery', 'revision' => 'revision', 'digest' => 'digest',
+              'active' => false, 'attached_at' => nil, 'verified_at' => nil,
+              'bpfPrograms' => [], 'links' => {}
+            }]
+            publish.call(t + 270, recovered)
+            changes = services.api_ruby_json(code: <<~RUBY)
+              events = Node.find(#{node1_id}).node_kernel_events.where(observed_before: Time.at(#{(t + 270).to_i}))
+              puts JSON.dump(
+                bounds: events.to_h { |event| [event.event_type, event.observed_after&.to_i] },
+                checkpoints: NodeKernelEvidenceCheckpoint.where(node_id: #{node1_id}).count
+              )
+            RUBY
+            expect(changes.fetch('bounds')).to eq(
+              %w[livepatch_change deployment_change sysctl_change module_change ebpf_change]
+                .to_h { |type| [type, (t + 210).to_i] }
+            )
+            expect(changes.fetch('checkpoints')).to eq(0)
           ensure
             node.succeeds('sv -w 90 start nodectld', timeout: 120)
             wait_for_supervisor_node_process(node)

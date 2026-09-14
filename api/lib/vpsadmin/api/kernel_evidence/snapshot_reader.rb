@@ -17,6 +17,11 @@ module VpsAdmin::API::KernelEvidence
                   .where.not(node_kernel_evidence_id: nil)
                   .order(observed_before: :desc, id: :desc)
                   .first
+      checkpoint = ::NodeKernelEvidenceCheckpoint.find_by(node:)
+      if checkpoint && (!event || checkpoint.observed_at > event.observed_before)
+        return Comparison.new(report: checkpoint.comparison_report, observed_at: checkpoint.observed_at)
+      end
+
       Comparison.new(
         report: call(event&.kernel_evidence),
         observed_at: event&.observed_before
@@ -28,8 +33,6 @@ module VpsAdmin::API::KernelEvidence
         report.kernel.booted_release.is_a?(String) &&
         report.kernel.reported_release.is_a?(String)
     end
-
-    private_class_method :comparable?
 
     def initialize(snapshot)
       @snapshot = snapshot

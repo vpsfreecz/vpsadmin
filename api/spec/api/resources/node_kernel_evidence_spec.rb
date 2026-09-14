@@ -238,6 +238,24 @@ RSpec.describe VpsAdmin::API::Resources::NodeKernelEvidence do
     expect(row['evidence_revision']).to match(/\A[0-9a-f]{64}\z/)
   end
 
+  it 'keeps recovery checkpoints outside public evidence and component resources' do
+    resources = %w[node_kernel_evidences node_kernel_modules node_sysctls
+                   node_software_versions node_kernel_livepatches node_ebpf_programs]
+    before = resources.to_h do |resource|
+      admin_get(resource, node: node.id)
+      expect(last_response.status).to eq(200)
+      [resource, rows(resource)]
+    end
+    report = VpsAdmin::API::KernelEvidence::SnapshotReader.call(node.node_current_status.kernel_evidence)
+    NodeKernelEvidenceCheckpoint.create!(node:, report: report.to_h, observed_at: observed_at - 60)
+
+    resources.each do |resource|
+      admin_get(resource, node: node.id)
+      expect(rows(resource)).to eq(before.fetch(resource))
+    end
+    expect(EndpointInventory.scopes_for_version(self, api_version).grep(/kernel_evidence_checkpoint/)).to be_empty
+  end
+
   it 'shows every evidence resource used as an association target' do
     current = node.node_current_status.kernel_evidence
     event = node.node_kernel_events.reload.first

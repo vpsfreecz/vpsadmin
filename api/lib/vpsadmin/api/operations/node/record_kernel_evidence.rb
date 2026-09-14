@@ -105,7 +105,7 @@ module VpsAdmin::API
       if lifecycle
         lifecycle_observed_after = stable_observed_at
         if lifecycle == :applied && livepatch_observation_complete?(previous_report)
-          lifecycle_observed_after = previous_observed_at
+          lifecycle_observed_after = [stable_observed_at, previous_observed_at].compact.max
         end
         create_event!(
           node:,
