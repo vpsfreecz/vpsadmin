@@ -1,5 +1,6 @@
 require 'time'
 require 'vpsadmin/api/kernel_evidence/boot_time_confidence'
+require 'vpsadmin/api/kernel_evidence/stable_state'
 require 'vpsadmin/api/operations/base'
 
 module VpsAdmin::API
@@ -87,14 +88,17 @@ module VpsAdmin::API
       observed_at:,
       previous_observed_at:
     )
-      return unless livepatch_observation_complete?(report)
-
       livepatch_changed = report.livepatches != previous_report.livepatches
       stable_event = stable_kernel_event(node)
       stable_report = VpsAdmin::API::KernelEvidence::SnapshotReader.call(
         stable_event&.kernel_evidence
       ) || previous_report
-      stable_observed_at = stable_event&.observed_before || previous_observed_at
+      confirm_stable_event(stable_event, stable_report, previous_report, previous_observed_at, observed_at)
+      confirm_stable_event(stable_event, stable_report, report, observed_at, observed_at)
+      return unless livepatch_observation_complete?(report)
+
+      stable_observed_at = stable_event&.last_confirmed_at ||
+                           stable_event&.observed_before || previous_observed_at
       release_changed = report.kernel.reported_release != stable_report.kernel.reported_release
       lifecycle = livepatch_lifecycle(stable_report, report)
 
@@ -287,16 +291,27 @@ module VpsAdmin::API
           .first
     end
 
+    def confirm_stable_event(event, baseline, observation, confirmed_at, observed_at)
+      return unless event && confirmed_at && confirmed_at <= observed_at
+      return if confirmed_at < event.observed_before
+      return if event.last_confirmed_at && confirmed_at <= event.last_confirmed_at
+      return unless VpsAdmin::API::KernelEvidence::StableState.confirms?(baseline, observation)
+
+      # This is internal observation metadata. Touching updated_at would change
+      # public event revisions despite unchanged event bounds and evidence.
+      event.update_columns(last_confirmed_at: confirmed_at)
+    end
+
     def livepatch_lifecycle(previous_report, current_report)
       current = current_report.livepatches
       return unless livepatch_observation_complete?(previous_report)
       return unless livepatch_observation_complete?(current_report)
       return if livepatch_transitioning?(current)
 
-      previous_effective = effective_livepatches(previous_report.livepatches)
-      current_effective = effective_livepatches(current)
-      added_ids = current_effective.keys - previous_effective.keys
-      removed_ids = previous_effective.keys - current_effective.keys
+      previous_effective = VpsAdmin::API::KernelEvidence::StableState.effective_ids(previous_report.livepatches)
+      current_effective = VpsAdmin::API::KernelEvidence::StableState.effective_ids(current)
+      added_ids = current_effective - previous_effective
+      removed_ids = previous_effective - current_effective
 
       return :applied if added_ids.any?
       return :removed if removal_observed?(
@@ -317,27 +332,12 @@ module VpsAdmin::API
       removed_ids.any? { |id| current_ids.include?(id) }
     end
 
-    def effective_livepatches(livepatches)
-      livepatches.select do |livepatch|
-        livepatch.loaded &&
-          livepatch.enabled &&
-          livepatch.transition == false
-      end.to_h { |livepatch| [livepatch.id, livepatch] }
-    end
-
     def livepatch_transitioning?(livepatches)
-      livepatches.any?(&:transition)
+      VpsAdmin::API::KernelEvidence::StableState.transitioning?(livepatches)
     end
 
     def livepatch_observation_complete?(report)
-      return false if report.livepatches.any? do |livepatch|
-        [livepatch.loaded, livepatch.enabled, livepatch.transition].any?(&:nil?)
-      end
-
-      report.errors.none? do |error|
-        error.component == 'livepatches' ||
-          error.component.match?(/\Alivepatch\..+\.(?:enabled|transition)\z/)
-      end
+      VpsAdmin::API::KernelEvidence::StableState.complete?(report)
     end
 
     def delete_reconstructed_boot_duplicate!(node, reported_event)
@@ -398,6 +398,7 @@ module VpsAdmin::API
         effective_at:,
         observed_after: previous_observed_at,
         observed_before: observed_at,
+        last_confirmed_at: VpsAdmin::API::KernelEvidence::StableState.stable?(report) ? observed_at : nil,
         current: public_event,
         kernel_evidence: event_snapshot(node, report, observed_at)
       )

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_14_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_14_180000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -989,44 +989,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_120000) do
     t.index ["digest"], name: "index_node_kernel_configurations_on_digest", unique: true
   end
 
-  create_table "node_kernel_livepatch_patches", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
-    t.string "name", null: false
-    t.bigint "node_kernel_livepatch_id", null: false
-    t.string "version", limit: 128
-    t.index ["name", "node_kernel_livepatch_id"], name: "idx_node_kernel_livepatch_patches_lookup"
-    t.index ["node_kernel_livepatch_id", "name"], name: "idx_node_kernel_livepatch_patches_unique", unique: true
-  end
-
-  create_table "node_kernel_livepatches", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
-    t.datetime "applied_at"
-    t.boolean "enabled"
-    t.string "kernel_version", limit: 128
-    t.string "livepatch_id", null: false
-    t.boolean "loaded"
-    t.bigint "node_kernel_evidence_id", null: false
-    t.string "patch_version", limit: 128
-    t.boolean "transition"
-    t.datetime "verified_at"
-    t.index ["livepatch_id", "node_kernel_evidence_id"], name: "idx_node_kernel_livepatch_lookup"
-    t.index ["node_kernel_evidence_id", "livepatch_id"], name: "idx_node_kernel_livepatch_unique", unique: true
-  end
-
-  create_table "node_kernel_modules", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
-    t.string "name", null: false
-    t.bigint "node_kernel_evidence_id", null: false
-    t.index ["name", "node_kernel_evidence_id"], name: "idx_node_kernel_module_lookup"
-    t.index ["node_kernel_evidence_id", "name"], name: "idx_node_kernel_module_unique", unique: true
-  end
-
-  create_table "node_kernel_parameters", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
-    t.string "name", null: false
-    t.bigint "node_kernel_evidence_id", null: false
-    t.integer "position", null: false
-    t.text "value"
-    t.index ["name", "node_kernel_evidence_id"], name: "idx_node_kernel_parameters_lookup"
-    t.index ["node_kernel_evidence_id", "position"], name: "idx_node_kernel_parameters_position", unique: true
-  end
-
   create_table "node_kernel_events", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "boot_id", limit: 64
     t.datetime "booted_at"
@@ -1036,6 +998,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_120000) do
     t.boolean "current", default: false, null: false
     t.datetime "effective_at"
     t.integer "event_type", null: false
+    t.datetime "last_confirmed_at"
     t.integer "livepatch_action"
     t.bigint "node_id", null: false
     t.bigint "node_kernel_evidence_id"
@@ -1107,6 +1070,44 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_120000) do
     t.index ["node_id"], name: "index_node_kernel_history_states_on_node_id", unique: true
   end
 
+  create_table "node_kernel_livepatch_patches", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "node_kernel_livepatch_id", null: false
+    t.string "version", limit: 128
+    t.index ["name", "node_kernel_livepatch_id"], name: "idx_node_kernel_livepatch_patches_lookup"
+    t.index ["node_kernel_livepatch_id", "name"], name: "idx_node_kernel_livepatch_patches_unique", unique: true
+  end
+
+  create_table "node_kernel_livepatches", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.datetime "applied_at"
+    t.boolean "enabled"
+    t.string "kernel_version", limit: 128
+    t.string "livepatch_id", null: false
+    t.boolean "loaded"
+    t.bigint "node_kernel_evidence_id", null: false
+    t.string "patch_version", limit: 128
+    t.boolean "transition"
+    t.datetime "verified_at"
+    t.index ["livepatch_id", "node_kernel_evidence_id"], name: "idx_node_kernel_livepatch_lookup"
+    t.index ["node_kernel_evidence_id", "livepatch_id"], name: "idx_node_kernel_livepatch_unique", unique: true
+  end
+
+  create_table "node_kernel_modules", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "node_kernel_evidence_id", null: false
+    t.index ["name", "node_kernel_evidence_id"], name: "idx_node_kernel_module_lookup"
+    t.index ["node_kernel_evidence_id", "name"], name: "idx_node_kernel_module_unique", unique: true
+  end
+
+  create_table "node_kernel_parameters", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "node_kernel_evidence_id", null: false
+    t.integer "position", null: false
+    t.text "value"
+    t.index ["name", "node_kernel_evidence_id"], name: "idx_node_kernel_parameters_lookup"
+    t.index ["node_kernel_evidence_id", "position"], name: "idx_node_kernel_parameters_position", unique: true
+  end
+
   create_table "node_software_changes", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
     t.string "after_revision", limit: 128
     t.boolean "after_revision_dirty", default: false, null: false
@@ -1136,29 +1137,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_120000) do
     t.integer "version_source"
     t.index ["component", "generation", "node_kernel_evidence_id"], name: "idx_node_software_versions_lookup"
     t.index ["node_kernel_evidence_id", "generation", "component"], name: "idx_node_software_versions_unique", unique: true
-  end
-
-  create_table "node_sysctl_changes", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
-    t.boolean "after_available"
-    t.text "after_configured_value"
-    t.text "after_effective_value"
-    t.boolean "before_available"
-    t.text "before_configured_value"
-    t.text "before_effective_value"
-    t.string "name", null: false
-    t.bigint "node_kernel_event_id", null: false
-    t.index ["name", "node_kernel_event_id"], name: "idx_node_sysctl_changes_lookup"
-    t.index ["node_kernel_event_id", "name"], name: "idx_node_sysctl_changes_unique", unique: true
-  end
-
-  create_table "node_sysctls", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
-    t.boolean "available", null: false
-    t.text "configured_value"
-    t.text "effective_value"
-    t.string "name", null: false
-    t.bigint "node_kernel_evidence_id", null: false
-    t.index ["name", "node_kernel_evidence_id"], name: "idx_node_sysctl_lookup"
-    t.index ["node_kernel_evidence_id", "name"], name: "idx_node_sysctl_unique", unique: true
   end
 
   create_table "node_statuses", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -1191,6 +1169,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_120000) do
     t.integer "used_swap"
     t.string "vpsadmin_version", limit: 25, null: false
     t.index ["node_id"], name: "index_node_statuses_on_node_id"
+  end
+
+  create_table "node_sysctl_changes", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.boolean "after_available"
+    t.text "after_configured_value"
+    t.text "after_effective_value"
+    t.boolean "before_available"
+    t.text "before_configured_value"
+    t.text "before_effective_value"
+    t.string "name", null: false
+    t.bigint "node_kernel_event_id", null: false
+    t.index ["name", "node_kernel_event_id"], name: "idx_node_sysctl_changes_lookup"
+    t.index ["node_kernel_event_id", "name"], name: "idx_node_sysctl_changes_unique", unique: true
+  end
+
+  create_table "node_sysctls", charset: "utf8mb3", collation: "utf8mb3_bin", force: :cascade do |t|
+    t.boolean "available", null: false
+    t.text "configured_value"
+    t.text "effective_value"
+    t.string "name", null: false
+    t.bigint "node_kernel_evidence_id", null: false
+    t.index ["name", "node_kernel_evidence_id"], name: "idx_node_sysctl_lookup"
+    t.index ["node_kernel_evidence_id", "name"], name: "idx_node_sysctl_unique", unique: true
   end
 
   create_table "node_system_history_states", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -1290,100 +1291,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_120000) do
     t.string "client_id", null: false
     t.string "client_secret_hash", null: false
     t.datetime "created_at", null: false
-    t.boolean "issue_refresh_token", default: false, null: false
     t.boolean "is_default"
+    t.boolean "issue_refresh_token", default: false, null: false
     t.string "name", null: false
     t.string "redirect_uri", null: false
     t.integer "refresh_token_seconds", default: 3600, null: false
     t.datetime "updated_at", null: false
     t.index ["client_id"], name: "index_oauth2_clients_on_client_id", unique: true
     t.index ["is_default"], name: "index_oauth2_clients_on_is_default", unique: true
-  end
-
-  create_table "password_change_logs", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.string "client_ip_addr", limit: 46
-    t.string "client_ip_ptr"
-    t.datetime "created_at", null: false
-    t.string "source", limit: 32, null: false
-    t.integer "user_agent_id"
-    t.integer "user_id", null: false, unsigned: true
-    t.integer "user_session_id", unsigned: true
-    t.index ["created_at"], name: "index_password_change_logs_on_created_at"
-    t.index ["user_agent_id"], name: "index_password_change_logs_on_user_agent_id"
-    t.index ["user_id", "id"], name: "password_change_logs_user"
-    t.index ["user_id", "source", "id"], name: "password_change_logs_user_source"
-    t.index ["user_session_id"], name: "index_password_change_logs_on_user_session_id"
-  end
-
-  create_table "password_event_counters", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "event_count", default: 0, null: false, unsigned: true
-    t.datetime "last_occurred_at"
-    t.string "name", limit: 64, null: false
-    t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_password_event_counters_on_name", unique: true
-  end
-
-  create_table "password_recoveries", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.datetime "completed_at"
-    t.datetime "created_at", null: false
-    t.datetime "email_consumed_at"
-    t.datetime "email_expires_at"
-    t.string "email_snapshot", limit: 127, null: false
-    t.string "email_token_digest", limit: 64
-    t.datetime "invalidated_at"
-    t.datetime "mfa_verified_at"
-    t.integer "outcome", null: false
-    t.bigint "password_recovery_request_id", null: false
-    t.datetime "session_expires_at"
-    t.string "session_token_digest", limit: 64
-    t.integer "totp_failed_attempts", default: 0, null: false
-    t.datetime "updated_at", null: false
-    t.integer "user_id", null: false, unsigned: true
-    t.integer "verified_totp_device_id", unsigned: true
-    t.bigint "verified_webauthn_credential_id"
-    t.index ["email_token_digest"], name: "index_password_recoveries_on_email_token_digest", unique: true
-    t.index ["password_recovery_request_id"], name: "password_recoveries_request"
-    t.index ["session_token_digest"], name: "index_password_recoveries_on_session_token_digest", unique: true
-    t.index ["user_id", "completed_at", "invalidated_at"], name: "password_recoveries_active_user"
-    t.index ["user_id"], name: "index_password_recoveries_on_user_id"
-    t.index ["verified_totp_device_id"], name: "index_password_recoveries_on_verified_totp_device_id"
-    t.index ["verified_webauthn_credential_id"], name: "index_password_recoveries_on_verified_webauthn_credential_id"
-  end
-
-  create_table "password_recovery_requests", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.string "client_ip_addr", limit: 46
-    t.datetime "created_at", null: false
-    t.string "locale", limit: 16, null: false
-    t.integer "mail_log_id", unsigned: true
-    t.bigint "oauth2_client_id"
-    t.bigint "password_recovery_submission_id"
-    t.string "recipient_email", limit: 127, null: false
-    t.datetime "updated_at", null: false
-    t.text "user_agent"
-    t.index ["created_at"], name: "index_password_recovery_requests_on_created_at"
-    t.index ["mail_log_id"], name: "index_password_recovery_requests_on_mail_log_id", unique: true
-    t.index ["oauth2_client_id"], name: "index_password_recovery_requests_on_oauth2_client_id"
-    t.index ["password_recovery_submission_id"], name: "password_recovery_requests_submission", unique: true
-  end
-
-  create_table "password_recovery_submissions", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.integer "attempts", default: 0, null: false
-    t.string "client_ip_addr", limit: 46
-    t.datetime "created_at", null: false
-    t.datetime "finished_at"
-    t.string "identifier", limit: 127
-    t.string "identifier_digest", limit: 64, null: false
-    t.string "locale", limit: 16, null: false
-    t.bigint "oauth2_client_id"
-    t.datetime "processing_started_at"
-    t.datetime "updated_at", null: false
-    t.text "user_agent"
-    t.index ["created_at"], name: "index_password_recovery_submissions_on_created_at"
-    t.index ["client_ip_addr", "created_at"], name: "password_recovery_submissions_source"
-    t.index ["finished_at", "processing_started_at", "attempts", "created_at"], name: "password_recovery_submissions_pending"
-    t.index ["identifier_digest", "created_at"], name: "password_recovery_submissions_identifier"
-    t.index ["oauth2_client_id"], name: "index_password_recovery_submissions_on_oauth2_client_id"
   end
 
   create_table "object_histories", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -1526,6 +1441,92 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_120000) do
     t.index ["os_family_id"], name: "index_os_templates_on_os_family_id"
   end
 
+  create_table "password_change_logs", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.string "client_ip_addr", limit: 46
+    t.string "client_ip_ptr"
+    t.datetime "created_at", null: false
+    t.string "source", limit: 32, null: false
+    t.integer "user_agent_id"
+    t.integer "user_id", null: false, unsigned: true
+    t.integer "user_session_id", unsigned: true
+    t.index ["created_at"], name: "index_password_change_logs_on_created_at"
+    t.index ["user_agent_id"], name: "index_password_change_logs_on_user_agent_id"
+    t.index ["user_id", "id"], name: "password_change_logs_user"
+    t.index ["user_id", "source", "id"], name: "password_change_logs_user_source"
+    t.index ["user_session_id"], name: "index_password_change_logs_on_user_session_id"
+  end
+
+  create_table "password_event_counters", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "event_count", default: 0, null: false, unsigned: true
+    t.datetime "last_occurred_at"
+    t.string "name", limit: 64, null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_password_event_counters_on_name", unique: true
+  end
+
+  create_table "password_recoveries", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "email_consumed_at"
+    t.datetime "email_expires_at"
+    t.string "email_snapshot", limit: 127, null: false
+    t.string "email_token_digest", limit: 64
+    t.datetime "invalidated_at"
+    t.datetime "mfa_verified_at"
+    t.integer "outcome", null: false
+    t.bigint "password_recovery_request_id", null: false
+    t.datetime "session_expires_at"
+    t.string "session_token_digest", limit: 64
+    t.integer "totp_failed_attempts", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false, unsigned: true
+    t.integer "verified_totp_device_id", unsigned: true
+    t.bigint "verified_webauthn_credential_id"
+    t.index ["email_token_digest"], name: "index_password_recoveries_on_email_token_digest", unique: true
+    t.index ["password_recovery_request_id"], name: "password_recoveries_request"
+    t.index ["session_token_digest"], name: "index_password_recoveries_on_session_token_digest", unique: true
+    t.index ["user_id", "completed_at", "invalidated_at"], name: "password_recoveries_active_user"
+    t.index ["user_id"], name: "index_password_recoveries_on_user_id"
+    t.index ["verified_totp_device_id"], name: "index_password_recoveries_on_verified_totp_device_id"
+    t.index ["verified_webauthn_credential_id"], name: "index_password_recoveries_on_verified_webauthn_credential_id"
+  end
+
+  create_table "password_recovery_requests", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.string "client_ip_addr", limit: 46
+    t.datetime "created_at", null: false
+    t.string "locale", limit: 16, null: false
+    t.integer "mail_log_id", unsigned: true
+    t.bigint "oauth2_client_id"
+    t.bigint "password_recovery_submission_id"
+    t.string "recipient_email", limit: 127, null: false
+    t.datetime "updated_at", null: false
+    t.text "user_agent"
+    t.index ["created_at"], name: "index_password_recovery_requests_on_created_at"
+    t.index ["mail_log_id"], name: "index_password_recovery_requests_on_mail_log_id", unique: true
+    t.index ["oauth2_client_id"], name: "index_password_recovery_requests_on_oauth2_client_id"
+    t.index ["password_recovery_submission_id"], name: "password_recovery_requests_submission", unique: true
+  end
+
+  create_table "password_recovery_submissions", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.integer "attempts", default: 0, null: false
+    t.string "client_ip_addr", limit: 46
+    t.datetime "created_at", null: false
+    t.datetime "finished_at"
+    t.string "identifier", limit: 127
+    t.string "identifier_digest", limit: 64, null: false
+    t.string "locale", limit: 16, null: false
+    t.bigint "oauth2_client_id"
+    t.datetime "processing_started_at"
+    t.datetime "updated_at", null: false
+    t.text "user_agent"
+    t.index ["client_ip_addr", "created_at"], name: "password_recovery_submissions_source"
+    t.index ["created_at"], name: "index_password_recovery_submissions_on_created_at"
+    t.index ["finished_at", "processing_started_at", "attempts", "created_at"], name: "password_recovery_submissions_pending"
+    t.index ["identifier_digest", "created_at"], name: "password_recovery_submissions_identifier"
+    t.index ["oauth2_client_id"], name: "index_password_recovery_submissions_on_oauth2_client_id"
+  end
+
   create_table "pools", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.bigint "available_space"
     t.datetime "checked_at", precision: nil
@@ -1606,6 +1607,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_120000) do
     t.index ["security_advisory_id", "cve_id"], name: "index_security_advisory_cves_unique", unique: true
   end
 
+  create_table "security_advisory_node_status_translations", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
+    t.bigint "language_id", null: false
+    t.text "note"
+    t.bigint "security_advisory_node_status_id", null: false
+    t.index ["language_id"], name: "index_sanst_on_language"
+    t.index ["security_advisory_node_status_id", "language_id"], name: "index_sanst_on_status_language", unique: true
+  end
+
   create_table "security_advisory_node_statuses", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.datetime "mitigated_since"
     t.bigint "node_id", null: false
@@ -1615,14 +1624,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_120000) do
     t.index ["node_id"], name: "index_security_advisory_node_statuses_on_node_id"
     t.index ["security_advisory_id", "node_id"], name: "index_sans_on_advisory_node", unique: true
     t.index ["state"], name: "index_security_advisory_node_statuses_on_state"
-  end
-
-  create_table "security_advisory_node_status_translations", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
-    t.bigint "language_id", null: false
-    t.text "note"
-    t.bigint "security_advisory_node_status_id", null: false
-    t.index ["language_id"], name: "index_sanst_on_language"
-    t.index ["security_advisory_node_status_id", "language_id"], name: "index_sanst_on_status_language", unique: true
   end
 
   create_table "security_advisory_translations", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -2060,8 +2061,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_120000) do
     t.string "time_zone"
     t.datetime "updated_at", precision: nil
     t.string "webauthn_id"
-    t.index ["login"], name: "index_users_on_login", unique: true
     t.index ["email"], name: "index_users_on_email"
+    t.index ["login"], name: "index_users_on_login", unique: true
     t.index ["object_state"], name: "index_users_on_object_state"
   end
 
@@ -2288,8 +2289,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_120000) do
     t.datetime "updated_at", null: false
     t.integer "user_agent_id", null: false
     t.bigint "user_id", null: false
-    t.index ["token_id"], name: "index_webauthn_challenges_on_token_id"
     t.index ["password_recovery_id"], name: "index_webauthn_challenges_on_password_recovery_id"
+    t.index ["token_id"], name: "index_webauthn_challenges_on_token_id"
     t.index ["user_id"], name: "index_webauthn_challenges_on_user_id"
   end
 
@@ -2313,13 +2314,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_120000) do
   add_foreign_key "node_ebpf_program_objects", "node_ebpf_programs", on_delete: :cascade
   add_foreign_key "node_ebpf_programs", "node_kernel_evidences", on_delete: :cascade
   add_foreign_key "node_kernel_configuration_options", "node_kernel_configurations", on_delete: :cascade
+  add_foreign_key "node_kernel_events", "node_kernel_evidences", on_delete: :nullify
+  add_foreign_key "node_kernel_evidence_errors", "node_kernel_evidences", on_delete: :cascade
+  add_foreign_key "node_kernel_history_gaps", "node_kernel_history_states", on_delete: :cascade
   add_foreign_key "node_kernel_livepatch_patches", "node_kernel_livepatches", on_delete: :cascade
   add_foreign_key "node_kernel_livepatches", "node_kernel_evidences", on_delete: :cascade
   add_foreign_key "node_kernel_modules", "node_kernel_evidences", on_delete: :cascade
   add_foreign_key "node_kernel_parameters", "node_kernel_evidences", on_delete: :cascade
-  add_foreign_key "node_kernel_events", "node_kernel_evidences", on_delete: :nullify
-  add_foreign_key "node_kernel_evidence_errors", "node_kernel_evidences", on_delete: :cascade
-  add_foreign_key "node_kernel_history_gaps", "node_kernel_history_states", on_delete: :cascade
   add_foreign_key "node_software_changes", "node_kernel_events", on_delete: :cascade
   add_foreign_key "node_software_versions", "node_kernel_evidences", on_delete: :cascade
   add_foreign_key "node_sysctl_changes", "node_kernel_events", on_delete: :cascade

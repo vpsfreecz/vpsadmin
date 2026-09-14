@@ -597,7 +597,8 @@ RSpec.describe VpsAdmin::API::Operations::Node::RecordKernelEvidence do
 
     event = node.node_kernel_events.livepatch_change.sole
     expect(event.id).to eq(event_id)
-    expect(event.attributes).to eq(event_before)
+    expect(event.attributes.except('last_confirmed_at')).to eq(event_before.except('last_confirmed_at'))
+    expect(event.last_confirmed_at).to eq(t0 + 120)
     expect(node.node_kernel_events.livepatch_inventory_change.count).to eq(1)
   end
 
@@ -882,5 +883,142 @@ RSpec.describe VpsAdmin::API::Operations::Node::RecordKernelEvidence do
       reported,
       reconstructed.last
     )
+  end
+
+  describe 'stable confirmation timestamps' do
+    def observe(value, at, previous = nil, previous_at = nil)
+      described_class.run(node:, report: report(value), observed_at: at,
+                          previous_report: previous && report(previous), previous_observed_at: previous_at)
+    end
+
+    let(:patched) { evidence(release: '6.12.93.1', livepatches: [{ 'id' => 'patch', 'enabled' => true }]) }
+    let(:later) { t0 + 40.days }
+
+    it 'uses the latest confirmation after a long unchanged period for direct removal' do
+      observe(patched, t0)
+      event = node.node_kernel_events.boot.sole
+      original = event.attributes
+      snapshot = stored_report(event.kernel_evidence).to_h
+      revision = VpsAdmin::API::KernelEvidence::Revision.event(event)
+      [t0 + 1.day, t0 + 20.days, later].each { |at| observe(patched, at, patched, t0) }
+
+      expect(event.reload.last_confirmed_at).to eq(later)
+      expect(event.attributes.except('last_confirmed_at')).to eq(original.except('last_confirmed_at'))
+      expect(stored_report(event.kernel_evidence).to_h).to eq(snapshot)
+      expect(VpsAdmin::API::KernelEvidence::Revision.event(event)).to eq(revision)
+      observe(evidence, later + 60, patched, later)
+      expect(node.node_kernel_events.livepatch_change.sole.observed_after).to eq(later)
+    end
+
+    it 'retains an upgrade-time confirmation from the supplied previous report' do
+      observe(patched, t0)
+      event = node.node_kernel_events.boot.sole
+      event.update_columns(last_confirmed_at: nil)
+      observe(evidence, later + 60, patched, later)
+
+      expect(event.reload.last_confirmed_at).to eq(later)
+      expect(node.node_kernel_events.livepatch_change.sole.observed_after).to eq(later)
+    end
+
+    it 'retains confirmation through multiple transitions and a release already changed in transition' do
+      observe(patched, t0)
+      observe(patched, later, patched, t0)
+      transition = evidence(livepatches: [{ 'id' => 'patch', 'enabled' => false, 'transition' => true }])
+      observe(transition, later + 30, patched, later)
+      observe(transition, later + 60, transition, later + 30)
+      observe(transition, later + 90, transition, later + 60)
+      observe(evidence, later + 120, transition, later + 90)
+
+      expect(node.node_kernel_events.livepatch_change.sole).to have_attributes(
+        observed_after: later, observed_before: later + 120, last_confirmed_at: later + 120
+      )
+    end
+
+    it 'bounds a release-only change before the first transitioning report with that release' do
+      initial = evidence
+      observe(initial, t0)
+      observe(initial, later, initial, t0)
+      transition = evidence(release: '6.12.93.1', livepatches: [{
+        'id' => 'patch', 'enabled' => false, 'transition' => true
+      }])
+      observe(transition, later + 30, initial, later)
+      observe(transition, later + 60, transition, later + 30)
+      observe(evidence(release: '6.12.93.1'), later + 90, transition, later + 60)
+
+      expect(node.node_kernel_events.reported_release_change.sole.observed_after).to eq(later)
+    end
+
+    it 'preserves confirmation through unreadable and legacy inventories without confirming a hidden patch' do
+      observe(patched, t0)
+      observe(patched, later, patched, t0)
+      unreadable = evidence(errors: [{ 'component' => 'livepatches', 'reason' => 'unavailable' }])
+      legacy = evidence(release: '6.12.93.1', livepatches: [{ 'id' => 'other', 'loaded' => false }])
+      observe(unreadable, later + 30, patched, later)
+      observe(legacy, later + 60, unreadable, later + 30)
+      expect(node.node_kernel_events.boot.sole.last_confirmed_at).to eq(later)
+      observe(evidence, later + 90, legacy, later + 60)
+      expect(node.node_kernel_events.livepatch_change.sole.observed_after).to eq(later)
+    end
+
+    it 'compares runtime semantics while inventory, verification, and deployment change' do
+      observe(patched, t0)
+      changed = Marshal.load(Marshal.dump(patched))
+      changed['livepatches'].first['verified_at'] = later.iso8601
+      changed['loaded_modules'] = ['new_module']
+      changed['deployment']['current_system'] = '/nix/store/system-b'
+      observe(changed, later, patched, t0)
+      expect(node.node_kernel_events.boot.sole.last_confirmed_at).to eq(later)
+      expect(node.node_kernel_events.kernel_history.count).to eq(1)
+    end
+
+    it 'does not confirm an unreadable bootstrap or infer its patch baseline later' do
+      unknown = evidence(errors: [{ 'component' => 'livepatches', 'reason' => 'unavailable' }])
+      observe(unknown, t0)
+      observe(patched, later, unknown, t0)
+      observe(patched, later + 60, patched, later)
+      expect(node.node_kernel_events.boot.sole.last_confirmed_at).to be_nil
+      expect(node.node_kernel_events.livepatch_change).to be_empty
+    end
+
+    it 'does not move confirmations backward or use a previous observation from the future' do
+      observe(patched, t0)
+      observe(patched, later, patched, t0)
+      observe(patched, later - 60, patched, later + 60)
+      expect(node.node_kernel_events.boot.sole.last_confirmed_at).to eq(later)
+    end
+
+    it 'keeps confirmation on its original boot' do
+      observe(patched, t0)
+      observe(patched, later, patched, t0)
+      rebooted = evidence(boot_id: 'boot-b', booted_at: (later + 30).iso8601)
+      observe(rebooted, later + 60, patched, later)
+      expect(node.node_kernel_events.boot.order(:id).pluck(:last_confirmed_at)).to eq([later, later + 60])
+    end
+
+    it 'uses the reported boot timestamp when boot IDs are unavailable' do
+      initial = evidence(boot_id: nil)
+      observe(initial, t0)
+      observe(initial, later, initial, t0)
+      expect(node.node_kernel_events.boot.sole.last_confirmed_at).to eq(later)
+    end
+
+    it 'does not confirm a state without any boot identity' do
+      initial = evidence(boot_id: nil, booted_at: nil)
+      observe(initial, t0)
+      observe(initial, later, initial, t0)
+      expect(node.node_kernel_events.boot.sole.last_confirmed_at).to be_nil
+    end
+
+    it 'still uses a complete preceding non-effective report for application completion' do
+      initial = evidence
+      observe(initial, t0)
+      observe(initial, later, initial, t0)
+      transition = evidence(release: '6.12.93.1', livepatches: [{
+        'id' => 'patch', 'enabled' => true, 'transition' => true
+      }])
+      observe(transition, later + 30, initial, later)
+      observe(patched, later + 60, transition, later + 30)
+      expect(node.node_kernel_events.livepatch_change.sole.observed_after).to eq(later + 30)
+    end
   end
 end

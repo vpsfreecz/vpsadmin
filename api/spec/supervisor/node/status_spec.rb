@@ -109,6 +109,62 @@ RSpec.describe VpsAdmin::Supervisor::Node::Status do
     VpsAdmin::API::KernelEvidence::PayloadParser.call(value)
   end
 
+  describe 'persisted kernel confirmations' do
+    def ingest(report, at, consumer: supervisor)
+      consumer.send(:update_status, NodeCurrentStatus.find_or_initialize_by(node:),
+                    payload('security_evidence' => report, 'time' => at.to_i))
+    end
+
+    it 'keeps original bounds, evidence, and public revisions stable during unchanged reports' do
+      ingest(evidence, timestamp)
+      event = node.node_kernel_events.boot.sole
+      before = event.attributes
+      snapshot = event.kernel_evidence.attributes
+      report = VpsAdmin::API::KernelEvidence::SnapshotReader.call(event.kernel_evidence).to_h
+      revision = VpsAdmin::API::KernelEvidence::Revision.event(event)
+      collection = VpsAdmin::API::KernelEvidence::Revision.collection(node, nil)
+      ingest(evidence, timestamp + 20.days)
+
+      expect(event.reload.last_confirmed_at).to eq(timestamp + 20.days)
+      expect(event.attributes.except('last_confirmed_at')).to eq(before.except('last_confirmed_at'))
+      expect(event.kernel_evidence.reload.attributes).to eq(snapshot)
+      expect(VpsAdmin::API::KernelEvidence::SnapshotReader.call(event.kernel_evidence).to_h).to eq(report)
+      expect(VpsAdmin::API::KernelEvidence::Revision.event(event)).to eq(revision)
+      expect(VpsAdmin::API::KernelEvidence::Revision.collection(node, nil)).to eq(collection)
+    end
+
+    it 'retains confirmation across invalid, stale, transitioning reports and a supervisor restart' do
+      initial = evidence
+      initial['livepatches'] = [{
+        'id' => 'patch', 'kernel_version' => '6.8.0', 'patch_version' => 1,
+        'loaded' => true, 'enabled' => true, 'transition' => false,
+        'applied_at' => nil, 'verified_at' => nil, 'patches' => []
+      }]
+      ingest(initial, timestamp)
+      latest = timestamp + 20.days
+      ingest(initial, latest)
+      baseline = node.node_kernel_events.boot.sole
+      ingest({ 'schema_version' => 999 }, latest + 30)
+      ingest(initial, latest - 60)
+      transition = initial.deep_dup
+      transition['livepatches'].first.merge!('enabled' => false, 'transition' => true)
+      transition['kernel']['reported_release'] = '6.8.1'
+      ingest(transition, latest + 60)
+      restarted = described_class.new(nil, Node.find(node.id))
+      ingest(transition, latest + 90, consumer: restarted)
+      expect(baseline.reload.last_confirmed_at).to eq(latest)
+      removed = evidence
+      removed['kernel']['reported_release'] = '6.8.1'
+      ingest(removed, latest + 120, consumer: restarted)
+
+      expect(node.node_kernel_events.livepatch_change.sole).to have_attributes(
+        livepatch_action: 'removed', observed_after: latest, observed_before: latest + 120,
+        last_confirmed_at: latest + 120
+      )
+      expect(baseline.reload.last_confirmed_at).to eq(latest)
+    end
+  end
+
   describe '#start' do
     it 'ignores payloads for other nodes' do
       channel = SupervisorConsumerHelpers::FakeSupervisorChannel.new

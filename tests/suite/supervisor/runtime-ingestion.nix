@@ -83,9 +83,9 @@ import ../../make-test.nix (
 
       describe 'supervisor status ingestion' do
         it 'accepts a legacy node status without security evidence' do
-          node.succeeds('sv stop nodectld', timeout: 30)
-
           begin
+            node.succeeds('sv -w 90 stop nodectld', timeout: 120)
+
             current = node_current_status_row(services, node_id: node1_id)
             t = Time.at([
               Time.now.to_i,
@@ -146,7 +146,100 @@ import ../../make-test.nix (
             expect(row.fetch('pool_state')).to eq(1)
             expect(row.fetch('pool_scan')).to eq(1)
           ensure
-            node.succeeds('sv start nodectld', timeout: 30)
+            node.succeeds('sv -w 90 start nodectld', timeout: 120)
+            wait_for_supervisor_node_process(node)
+          end
+        end
+
+        it 'retains stable kernel confirmations across supervisor restart' do
+          begin
+            node.succeeds('sv -w 90 stop nodectld', timeout: 120)
+            current = node_current_status_row(services, node_id: node1_id)
+            t = Time.at([Time.now.to_i, current.fetch('updated_at').to_i + 1].max).utc
+            evidence = {
+              'schema_version' => 1,
+              'kernel' => {
+                'boot_id' => 'synthetic-kernel-history',
+                'booted_at' => (t - 3600).iso8601,
+                'booted_release' => '6.12.93', 'reported_release' => '6.12.93.1',
+                'kernel_source_revision' => nil, 'config_digest' => nil,
+                'booted_params' => [], 'command_line' => ""
+              },
+              'livepatches' => [{
+                'id' => 'synthetic_patch', 'kernel_version' => '6.12.93', 'patch_version' => '1',
+                'loaded' => true, 'enabled' => true, 'transition' => false,
+                'applied_at' => nil, 'verified_at' => nil, 'patches' => []
+              }],
+              'ebpf_programs' => [], 'loaded_modules' => [], 'sysctls' => {}, 'errors' => [],
+              'deployment' => { 'booted_system' => nil, 'current_system' => nil },
+              'software_versions' => %w[booted current].product(%w[vpsadminos vpsadmin nixpkgs]).map do |generation, component|
+                { 'generation' => generation, 'component' => component,
+                  'version' => nil, 'version_source' => nil,
+                  'revision' => nil, 'revision_source' => nil, 'revision_dirty' => false }
+              end
+            }
+            publish = lambda do |at, report|
+              publish_supervisor_payload(
+                services, routing_key: 'statuses', payload: {
+                  id: node1_id, time: at.to_i, uptime: 3600, nproc: 55,
+                  loadavg: { '1' => 0.7, '5' => 0.4, '15' => 0.2 },
+                  vpsadmin_version: 'kernel-history-test', kernel: '6.12.93.1',
+                  cgroup_version: 2, cpus: 4,
+                  cpu: { user: 11.0, nice: 0.0, system: 6.0, idle: 80.0,
+                         iowait: 1.0, irq: 1.0, softirq: 1.0, guest: 0.0 },
+                  memory: { total: 8 * 1024 * 1024, used: 3 * 1024 * 1024 },
+                  swap: { total: 1024 * 1024, used: 128 * 1024 },
+                  storage: { state: 'online', scan: 'none', scan_percent: nil, checked_at: at.to_i },
+                  security_evidence: report
+                }
+              )
+              wait_for_row('synthetic kernel evidence') do
+                row = node_current_status_row(services, node_id: node1_id)
+                row if row.fetch('updated_at').to_i == at.to_i
+              end
+            end
+            history = lambda do
+              services.api_ruby_json(code: <<~RUBY)
+                events = Node.find(#{node1_id}).node_kernel_events.kernel_history
+                             .where(boot_id: 'synthetic-kernel-history').order(:id)
+                puts JSON.dump(events.map do |event|
+                  { id: event.id, action: event.livepatch_action,
+                    after: event.observed_after&.to_i, before: event.observed_before.to_i,
+                    confirmed: event.last_confirmed_at&.to_i,
+                    updated: event.updated_at.to_f,
+                    revision: VpsAdmin::API::KernelEvidence::Revision.event(event),
+                    evidence: event.kernel_evidence.snapshot_revision }
+                end)
+              RUBY
+            end
+
+            publish.call(t, evidence)
+            original = history.call.first
+            publish.call(t + 60, evidence)
+            inventory = Marshal.load(Marshal.dump(evidence))
+            inventory['loaded_modules'] << 'synthetic_inventory'
+            publish.call(t + 90, inventory)
+            confirmed = history.call.first
+            expect(confirmed.fetch('confirmed')).to eq((t + 90).to_i)
+            expect(confirmed.reject { |key, _| key == 'confirmed' })
+              .to eq(original.reject { |key, _| key == 'confirmed' })
+            transition = Marshal.load(Marshal.dump(inventory))
+            transition['kernel']['reported_release'] = '6.12.93'
+            transition['livepatches'].first.merge!('enabled' => false, 'transition' => true)
+            publish.call(t + 120, transition)
+            services.succeeds('systemctl restart vpsadmin-supervisor.service', timeout: 60)
+            services.wait_for_service('vpsadmin-supervisor.service')
+            publish.call(t + 150, transition)
+            removed = Marshal.load(Marshal.dump(transition))
+            removed['livepatches'] = []
+            publish.call(t + 180, removed)
+            target = history.call.last
+            expect(target.fetch('action')).to eq('removed')
+            expect(target.fetch('after')).to eq((t + 90).to_i)
+            expect(target.fetch('before')).to eq((t + 180).to_i)
+
+          ensure
+            node.succeeds('sv -w 90 start nodectld', timeout: 120)
             wait_for_supervisor_node_process(node)
           end
         end

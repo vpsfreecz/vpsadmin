@@ -407,6 +407,8 @@ select:
   - paths:
       - "tests/suite/supervisor/*.nix"
       - "api/lib/vpsadmin/supervisor/**"
+      - "api/lib/vpsadmin/api/kernel_evidence/**"
+      - "api/lib/vpsadmin/api/operations/node/record_kernel_evidence.rb"
     tags: ["supervisor"]
 
   - paths:
