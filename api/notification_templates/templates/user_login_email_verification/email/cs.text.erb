@@ -1,19 +1,20 @@
 Ahoj <%= @user.login %>,
 
-pro dokončení přihlášení do vpsAdminu z neznámého zařízení prosím zadej tento
-kód na přihlašovací stránce:
+pro dokončení přihlášení do vpsAdminu z neznámého zařízení prosím použij
+tento ověřovací kód:
 
 <%= @code %>
 
 Kód vyprší <%= local_time(@expires_at) %>. Platí 30 minut od prvního požadavku.
-Vyžádáním dalšího kódu přestane původní kód platit, doba platnosti se ale
-neprodlouží.
 
-IP adresa: <%= @ip_address %>
-Prohlížeč nebo klient: <%= @user_agent %>
+  Služba:          <%= @service_name %>
+  Datum a čas:     <%= local_time(@requested_at, '%Y-%m-%d %H:%M:%S %Z') %>
+  Zařízení:        <%= @device %>
+  IP adresa:       <%= @ip_address %>
+  Reverzní záznam: <%= @ip_ptr %>
 
-Pokud ses nepokoušel přihlásit, může někdo znát tvoje heslo. Prosím změň ho
-ze známého zařízení nebo kontaktuj <%= @support_mail %>.
+Pokud ses o přihlášení nepokoušel ty, je možné, že tvoje heslo zná někdo jiný.
+Změň si ho prosím ze známého zařízení nebo kontaktuj <%= @support_mail %>.
 
 S pozdravem
 

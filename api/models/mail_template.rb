@@ -316,7 +316,11 @@ class MailTemplate < ApplicationRecord
     user: ::User,
     code: String,
     expires_at: Time,
+    service_name: String,
+    requested_at: Time,
+    device: String,
     ip_address: String,
+    ip_ptr: String,
     user_agent: String,
     support_mail: String
   }

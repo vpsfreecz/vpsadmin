@@ -11,6 +11,10 @@ preferences, contact roles, or template recipient overrides. Login codes and
 rendered messages use the normal administrator-only mail history and transaction
 inspection. Challenge options contain a bcrypt hash, not a plaintext code.
 
+Verification messages have plain-text and HTML versions. Both use the service,
+request time, readable device description, IP address and reverse DNS record
+from the initiating login attempt, including when resending the code.
+
 Challenges last 30 minutes. Resend replaces the code without extending that
 deadline or resetting failed attempts. Each challenge permits five wrong codes,
 three sends with a 60-second cooldown, and there may be three pending challenges
@@ -43,6 +47,11 @@ enrollment must not imply that this helper supports email verification.
    Built-in templates use `rake vpsadmin:notification_templates:install_defaults`.
    Managed installations reconcile the updated notification-template package;
    vpsFree.cz provides it in `vpsfree-notification-templates`.
+   When updating an installation that already sends verification mail, update
+   all API workers before installing templates that use the additional login
+   details. New workers continue to support the earlier text-only templates.
+   To roll back that update, restore the earlier templates first, then roll back
+   the API workers. Older workers cannot render the additional login details.
 3. Update every API worker handling OAuth2, token issuance, and HTTP Basic, then
    update WebUI. Older workers ignore the preference and must not handle logins
    for opted-in users.

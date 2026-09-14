@@ -152,6 +152,7 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do # rubocop:disable 
       pending = email_credentials
       expect(pending.complete).to be(false)
       expect(pending.auth_token).to be_email_login
+      expect(pending.auth_token.opts['service_name']).to eq(client.name)
       expect(Oauth2Authorization.where(user:)).to be_empty
       expect(SingleSignOn.where(user:)).to be_empty
       expect(response.headers).to include('Cache-Control' => 'no-store', 'Referrer-Policy' => 'no-referrer')

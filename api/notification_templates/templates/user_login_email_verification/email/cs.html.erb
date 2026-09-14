@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body { color: #20252b; font-family: Arial, sans-serif; line-height: 1.5; }
+      p { margin: 12px 0; }
+      .code { font-family: monospace; font-size: 28px; font-weight: bold; margin: 20px 0; }
+      table { border-collapse: collapse; margin: 20px 0; }
+      th, td { padding: 4px 16px 4px 0; text-align: left; vertical-align: top; }
+      td { overflow-wrap: anywhere; }
+      .footer { color: #59636e; font-size: 13px; margin-top: 24px; }
+    </style>
+  </head>
+  <body>
+    <p>Ahoj <%= ERB::Util.html_escape(@user.login) %>,</p>
+    <p>pro dokončení přihlášení do vpsAdminu z neznámého zařízení prosím použij tento ověřovací kód:</p>
+    <p class="code"><%= ERB::Util.html_escape(@code) %></p>
+    <p>Kód vyprší <%= ERB::Util.html_escape(local_time(@expires_at)) %>. Platí 30 minut od prvního požadavku.</p>
+    <table>
+      <tr><th scope="row">Služba:</th><td><%= ERB::Util.html_escape(@service_name) %></td></tr>
+      <tr><th scope="row">Datum a čas:</th><td><%= ERB::Util.html_escape(local_time(@requested_at, '%Y-%m-%d %H:%M:%S %Z')) %></td></tr>
+      <tr><th scope="row">Zařízení:</th><td><%= ERB::Util.html_escape(@device) %></td></tr>
+      <tr><th scope="row">IP adresa:</th><td><%= ERB::Util.html_escape(@ip_address) %></td></tr>
+      <tr><th scope="row">Reverzní záznam:</th><td><%= ERB::Util.html_escape(@ip_ptr) %></td></tr>
+    </table>
+    <p>Pokud ses o přihlášení nepokoušel ty, je možné, že tvoje heslo zná někdo jiný. Změň si ho prosím ze známého zařízení nebo kontaktuj <%= ERB::Util.html_escape(@support_mail) %>.</p>
+    <p>S pozdravem<br>tým vpsAdminu</p>
+    <p class="footer">
+      (Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)
+    </p>
+  </body>
+</html>

@@ -2,10 +2,13 @@ require 'securerandom'
 require 'digest'
 require 'mail'
 require 'vpsadmin/api/exceptions'
+require 'vpsadmin/api/operations/utils/dns'
 
 module VpsAdmin::API
   # Email verification is a login step, independent of password reauthentication.
   module EmailLogin
+    extend Operations::Utils::Dns
+
     LIFETIME = 30.minutes
     MAX_ATTEMPTS = 5
     MAX_SENDS = 3
@@ -68,7 +71,11 @@ module VpsAdmin::API
       raise Error, 'email_login_required'
     end
 
-    def self.start(user, request:, context:, authentication_generation:, existing_token: nil)
+    def self.start(user, request:, context:, authentication_generation:, existing_token: nil, service_name: 'vpsAdmin API')
+      raise Error, 'email_login_limited' unless ::EmailLoginRateLimit.available?(user, request, :send)
+
+      client_ip_addr = request.env['HTTP_X_REAL_IP'].presence || request.ip
+      client_ip_ptr = get_ptr(client_ip_addr)
       user.with_lock do
         raise Error, 'email_login_expired' unless user.authentication_generation == authentication_generation
 
@@ -90,10 +97,10 @@ module VpsAdmin::API
               user_agent: ::UserAgent.find_or_create!(request.user_agent.to_s),
               client_version: request.user_agent.to_s,
               api_ip_addr: request.ip, api_ip_ptr: '',
-              client_ip_addr: request.env['HTTP_X_REAL_IP'].presence || request.ip,
-              client_ip_ptr: '',
+              client_ip_addr:,
+              client_ip_ptr:,
               opts: { 'authentication_generation' => user.authentication_generation,
-                      'email' => user.email, 'context' => context,
+                      'email' => user.email, 'context' => context, 'service_name' => service_name,
                       'code_hash' => CryptoProviders::Bcrypt.encrypt(nil, code),
                       'attempts' => 0, 'sends' => 1, 'last_sent_at' => Time.current.to_i }
             )

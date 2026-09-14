@@ -26,6 +26,58 @@ RSpec.describe VpsAdmin::API::EmailLogin do
     described_class.process(pending.to_s, request:, context: flow_context, code:)
   end
 
+  def exhaust_send_budget
+    user.with_lock do
+      5.times { EmailLoginRateLimit.with_limits(user, request, :send) { true } }
+    end
+  end
+
+  it 'skips reverse DNS when the account send budget is already exhausted' do
+    exhaust_send_budget
+    allow(described_class).to receive(:get_ptr)
+
+    expect { start_login }.to raise_error(described_class::Error, 'email_login_limited')
+
+    expect(described_class).not_to have_received(:get_ptr)
+    expect(described_class).not_to have_received(:deliver!)
+  end
+
+  it 'resolves reverse DNS before acquiring the user lock' do
+    allow(user).to receive(:with_lock).and_call_original
+    allow(described_class).to receive(:get_ptr) do
+      expect(user).not_to have_received(:with_lock)
+      'client.example.test'
+    end
+
+    expect(start_login.client_ip_ptr).to eq('client.example.test')
+    expect(user).to have_received(:with_lock)
+  end
+
+  it 'keeps the locked budget check authoritative after a stale preliminary result' do
+    exhaust_send_budget
+    allow(EmailLoginRateLimit).to receive(:available?).and_return(true)
+
+    expect { start_login }.to raise_error(described_class::Error, 'email_login_limited')
+
+    expect(described_class).not_to have_received(:deliver!)
+    expect(user.auth_tokens).to be_empty
+  end
+
+  it 'retains the initiating login details when a different client resends the code' do
+    allow(described_class).to receive(:get_ptr).with('192.0.2.90').and_return('client.example.test')
+    initial_request = build_request(ip: '192.0.2.1', user_agent: 'Original client',
+                                    extra_env: { 'HTTP_X_REAL_IP' => '192.0.2.90' })
+    pending = described_class.start(user, request: initial_request, context:,
+                                          authentication_generation: user.authentication_generation)
+    allow(Time).to receive(:now).and_return(now + 60)
+    expect(described_class.process(pending.to_s, request:, context:, resend: true)).to be_success
+    expect(pending.reload).to have_attributes(client_ip_addr: '192.0.2.90', client_ip_ptr: 'client.example.test')
+    expect(pending.user_agent.agent).to eq('Original client')
+    expect(pending.created_at).to eq(now)
+    expect(pending.opts['service_name']).to eq('vpsAdmin API')
+    expect(described_class).to have_received(:get_ptr).once
+  end
+
   it 'requires a usable known cookie and retains history after revocation' do
     device = user.user_devices.find_by!(known: true)
     expect(described_class.required?(user)).to be(true)

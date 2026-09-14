@@ -631,7 +631,7 @@ module VpsAdmin::API
         browser = SecureRandom.hex(32) unless browser.to_s.match?(/\A[0-9a-f]{64}\z/)
         ret.auth_token = EmailLogin.start(
           auth.user, request: sinatra_request, authentication_generation: auth.authentication_generation,
-                     existing_token: auth.token,
+                     existing_token: auth.token, service_name: client.name,
                      context: email_login_context(sinatra_request, oauth2_request, browser:)
         )
         ret.complete = false
