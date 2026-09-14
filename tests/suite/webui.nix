@@ -1573,7 +1573,11 @@ import ../make-test.nix (
         env: env,
         language: language
       )
-      email_verification_user.update!(enable_new_device_email_verification: false)
+      email_verification_user.update!(
+        enable_new_device_email_verification: false,
+        enable_new_login_notification: true,
+        mailer_enabled: true
+      )
       SysConfig.find_or_create_by!(category: 'core', name: 'new_device_email_verification_available')
                .update!(value: true)
       hard_deleted_request_user = User.unscoped.find_by(
@@ -3961,6 +3965,7 @@ import ../make-test.nix (
           'id' => email_verification_user.id,
           'username' => email_verification_user.login,
           'email' => email_verification_user.email,
+          'newLoginTemplateId' => MailTemplate.find_by!(name: 'user_new_login').id,
           'password' => 'webuiEmailVerificationPassword'
         },
         'requiredPasswordReset' => {

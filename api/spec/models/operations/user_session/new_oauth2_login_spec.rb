@@ -54,4 +54,32 @@ RSpec.describe VpsAdmin::API::Operations::UserSession::NewOAuth2Login do
 
     expect(TransactionChains::User::NewLogin).not_to have_received(:fire2)
   end
+
+  it 'marks an email-verified device known without sending a duplicate notification' do
+    user.update!(enable_new_login_notification: true)
+    user_device = create_user_device!(user:, known: false)
+    authorization = create_oauth2_authorization!(user:, client:, user_device:)
+    authorization.update!(login_authentication: VpsAdmin::API::EmailLogin.proof(user, 'email'))
+    allow(TransactionChains::User::NewLogin).to receive(:fire2)
+
+    session = op.run(authorization, request, 'fixed', 900, ['all'])
+
+    expect(session).to be_persisted
+    expect(user_device.reload).to be_known
+    expect(TransactionChains::User::NewLogin).not_to have_received(:fire2)
+  end
+
+  %w[device mfa].each do |method|
+    it "retains new-device notifications for #{method} authentication evidence" do
+      user.update!(enable_new_login_notification: true)
+      user_device = create_user_device!(user:, known: false)
+      authorization = create_oauth2_authorization!(user:, client:, user_device:)
+      authorization.update!(login_authentication: VpsAdmin::API::EmailLogin.proof(user, method))
+      allow(TransactionChains::User::NewLogin).to receive(:fire2)
+
+      op.run(authorization, request, 'fixed', 900, ['all'])
+
+      expect(TransactionChains::User::NewLogin).to have_received(:fire2)
+    end
+  end
 end

@@ -21,11 +21,26 @@ test('email verification protects a new browser and preserves known-device login
     await target.goto(target.url().replace(/^http:/, 'https:'));
     await submitCredentials(target, account.username, account.password);
   }
+  async function accountMails() {
+    const response = await request.get('http://api.vpsadmin.test/v7.0/mail_logs', {
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${fixtures.admin.username}:${fixtures.admin.password}`).toString('base64')}`,
+        Accept: 'application/json',
+      },
+      params: { 'mail_log[limit]': '1000' },
+    });
+    expect(response.ok()).toBe(true);
+    return (await response.json()).response.mail_logs.filter((mail) => mail.to === account.email);
+  }
+  function newLoginMails(mails) {
+    return mails.filter((mail) => Number(mail.mail_template.id) === account.newLoginTemplateId);
+  }
   await secureCredentials(page);
   await expect(logoutButton(page)).toHaveValue(
     new RegExp(`Logout \\(${account.username}\\)`),
     { timeout: 60000 },
   );
+  expect(newLoginMails(await accountMails())).toHaveLength(1);
   await page.goto(`/?page=adminm&action=edit&id=${account.id}`, { waitUntil: 'domcontentloaded' });
   const form = page.locator('form[action*="action=edit_email_verification"]');
   await expect(page.locator('[data-vpsadmin-doc-id="member.email-verification"]')).toBeVisible();
@@ -57,19 +72,12 @@ test('email verification protects a new browser and preserves known-device login
     await unknown.getByRole('button', { name: 'Send another code' }).click();
     await expect(unknown.locator('.alert-danger')).toContainText('wait at least a minute');
 
-    const mailResponse = await request.get('http://api.vpsadmin.test/v7.0/mail_logs', {
-      headers: {
-        Authorization: `Basic ${Buffer.from(`${fixtures.admin.username}:${fixtures.admin.password}`).toString('base64')}`,
-        Accept: 'application/json',
-      },
-      params: { 'mail_log[limit]': '1000' },
-    });
-    expect(mailResponse.ok()).toBe(true);
-    const mails = (await mailResponse.json()).response.mail_logs;
-    const mail = mails.filter((item) => item.to === account.email && /^\d{6}$/m.test(item.text_plain || ''))
+    const mails = await accountMails();
+    const mail = mails.filter((item) => /^\d{6}$/m.test(item.text_plain || ''))
       .sort((a, b) => b.id - a.id)[0];
     expect(mail).toBeTruthy();
     const code = mail.text_plain.match(/^\d{6}$/m)[0];
+    expect(mail.text_html).toContain(code);
     await codeField.fill(code === '000000' ? '000001' : '000000');
     await unknown.getByRole('button', { name: 'Verify and sign in' }).click();
     await expect(unknown.locator('.alert-danger')).toContainText('The email code is incorrect.');
@@ -79,6 +87,7 @@ test('email verification protects a new browser and preserves known-device login
       new RegExp(`Logout \\(${account.username}\\)`),
       { timeout: 60000 },
     );
+    expect(newLoginMails(await accountMails())).toHaveLength(1);
   } finally {
     await fresh.close();
     await known.close();

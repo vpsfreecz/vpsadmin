@@ -29,7 +29,7 @@ module VpsAdmin::API
 
       return session if authorization.user_device.known
 
-      if session.user.enable_new_login_notification
+      if session.user.enable_new_login_notification && authorization.login_authentication&.dig('method') != 'email'
         TransactionChains::User::NewLogin.fire2(args: [session, authorization])
       end
 

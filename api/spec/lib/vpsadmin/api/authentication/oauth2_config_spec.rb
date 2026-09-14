@@ -128,8 +128,10 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do # rubocop:disable 
   context 'with new-device email verification' do # rubocop:disable RSpec/MultipleMemoizedHelpers
     before do
       user.update!(enable_new_device_email_verification: true, email: 'member@example.test')
+      user.update!(enable_new_login_notification: true)
       create_user_device!(user:, known: true)
       allow(VpsAdmin::API::EmailLogin).to receive(:deliver!) { |_pending, code, _request| delivered_mail[:code] = code }
+      allow(TransactionChains::User::NewLogin).to receive(:fire2)
     end
 
     def email_login_post(params, browser_request: request, flow: oauth2_request)
@@ -170,6 +172,7 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do # rubocop:disable 
       tokens = config.get_tokens(result.authorization, request)
       expect(tokens.first).to be_present
       expect(result.authorization.reload.user_device).to be_known
+      expect(TransactionChains::User::NewLogin).not_to have_received(:fire2)
       expect(email_login_post(params, browser_request: bound_email_request).errors).to include(:email_login_expired)
     end
 
@@ -199,6 +202,9 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do # rubocop:disable 
       )
       expect(result.complete).to be(true)
       expect(result.authorization.login_authentication['method']).to eq('email')
+      expect(config.get_tokens(result.authorization, request).first).to be_present
+      expect(result.authorization.reload.user_device).to be_known
+      expect(TransactionChains::User::NewLogin).not_to have_received(:fire2)
     end
 
     it 'leaves logins from known devices unaffected' do

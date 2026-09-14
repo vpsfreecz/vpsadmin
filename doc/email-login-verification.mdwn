@@ -14,6 +14,9 @@ inspection. Challenge options contain a bcrypt hash, not a plaintext code.
 Verification messages have plain-text and HTML versions. Both use the service,
 request time, readable device description, IP address and reverse DNS record
 from the initiating login attempt, including when resending the code.
+After successful email verification, the completed browser login marks the
+device known without sending the separate new-device notification. Password-only,
+TOTP and passkey logins retain their existing notification behavior.
 
 Challenges last 30 minutes. Resend replaces the code without extending that
 deadline or resetting failed attempts. Each challenge permits five wrong codes,
