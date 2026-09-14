@@ -24,6 +24,10 @@ let
       "auth"
       "webui-auth"
     ];
+    auth-email = [
+      "auth"
+      "webui-auth"
+    ];
     userns = [
       "user"
       "userns"

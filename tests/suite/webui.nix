@@ -4864,6 +4864,19 @@ import ../make-test.nix (
         '';
       };
 
+      auth-email = {
+        description = ''
+          Run new-device email verification and enrollment browser tests.
+        '';
+        script = webuiTestScriptCommon + ''
+          describe 'webui email verification browser flow' do
+            it 'verifies new browsers and preserves known-device login' do
+              run_playwright('auth-email', 'specs/auth-email.spec.cjs')
+            end
+          end
+        '';
+      };
+
       userns = {
         description = ''
           Run user namespace browser tests for user and admin roles.

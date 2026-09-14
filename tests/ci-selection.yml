@@ -82,6 +82,7 @@ select:
 
   - paths:
       - "tests/playwright/webui/specs/auth.spec.cjs"
+      - "tests/playwright/webui/specs/auth-email.spec.cjs"
       - "webui/pages/page_login.php"
       - "webui/lib/login.lib.php"
       - "webui/lib/security.lib.php"
