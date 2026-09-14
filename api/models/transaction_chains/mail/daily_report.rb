@@ -37,6 +37,8 @@ module TransactionChains
       )
 
       {
+        **VpsAdmin::API::DailyReportAuthentication.new(from: now - (24 * 60 * 60), to: now).vars,
+
         date: {
           start: (now - (24 * 60 * 60)),
           end: now

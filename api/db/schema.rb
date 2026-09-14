@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_14_120000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -1308,6 +1308,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.integer "user_agent_id"
     t.integer "user_id", null: false, unsigned: true
     t.integer "user_session_id", unsigned: true
+    t.index ["created_at"], name: "index_password_change_logs_on_created_at"
     t.index ["user_agent_id"], name: "index_password_change_logs_on_user_agent_id"
     t.index ["user_id", "id"], name: "password_change_logs_user"
     t.index ["user_id", "source", "id"], name: "password_change_logs_user_source"
@@ -1902,6 +1903,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.integer "user_agent_id"
     t.integer "user_id", null: false
     t.index ["auth_type"], name: "index_user_failed_logins_on_auth_type"
+    t.index ["created_at"], name: "index_user_failed_logins_on_created_at"
     t.index ["user_agent_id"], name: "index_user_failed_logins_on_user_agent_id"
     t.index ["user_id"], name: "index_user_failed_logins_on_user_id"
   end
@@ -1997,6 +1999,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.string "token_str", limit: 100
     t.integer "user_agent_id"
     t.integer "user_id", null: false
+    t.index ["closed_at"], name: "index_user_sessions_on_closed_at"
+    t.index ["created_at"], name: "index_user_sessions_on_created_at"
     t.index ["token_id"], name: "index_user_sessions_on_token_id"
     t.index ["user_id"], name: "index_user_sessions_on_user_id"
   end

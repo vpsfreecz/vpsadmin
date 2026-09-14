@@ -8,6 +8,55 @@ Users:
 - suspended: <%= @users[:suspended][:all].count %> total, <%= @users[:suspended][:changed].count %> changed
 - soft deleted: <%= @users[:soft_deleted][:all].count %> total, <%= @users[:soft_deleted][:changed].count %> changed
 
+<% if @user_sessions -%>
+User sessions:
+Created during period / active now (distinct users in parentheses):
+<% created = @user_sessions[:created]; active = @user_sessions[:active] -%>
+- Total: <%= created[:total] %> (users: <%= created[:users] %>) / <%= active[:total] %> (users: <%= active[:users] %>)
+<% (created[:by_auth_type].keys | active[:by_auth_type].keys).each do |type| -%>
+<% added = created[:by_auth_type].fetch(type, { total: 0, users: 0 }); current = active[:by_auth_type].fetch(type, { total: 0, users: 0 }) -%>
+- <%= { 'basic' => 'HTTP Basic', 'token' => 'API token', 'oauth2' => 'OAuth2' }.fetch(type, type) %>: <%= added[:total] %> (users: <%= added[:users] %>) / <%= current[:total] %> (users: <%= current[:users] %>)
+<% end -%>
+Active subsets (already included above; may overlap):
+- Permanent credentials: <%= @user_sessions[:permanent][:total] %> (users: <%= @user_sessions[:permanent][:users] %>)
+- Administrator-created sessions: <%= @user_sessions[:administrator_created][:total] %> (users: <%= @user_sessions[:administrator_created][:users] %>)
+HTTP Basic creates one immediately closed session per authenticated request.
+Active sessions have usable credentials, including OAuth2 refresh tokens.
+Distinct users may appear under more than one authentication type.
+
+<% end -%>
+<% if @password_changes -%>
+Password changes during period:
+- Total: <%= @password_changes[:total] %>
+<% @password_changes[:by_source].each do |source, count| -%>
+- <%= { 'recovery' => 'Successful recoveries', 'authenticated' => 'Manual password changes', 'forced_reset' => 'Required password changes', 'administrator' => 'Administrator password changes', 'other' => 'Other password changes' }.fetch(source, source) %>: <%= count %>
+<% end -%>
+
+<% end -%>
+<% if @password_recoveries -%>
+Password recovery activity:
+- Processed requests during period: <%= @password_recoveries[:requests] %>
+- Recoverable account attempts started during period: <%= @password_recoveries[:started] %>
+- Successful recoveries during period: <%= @password_recoveries[:completed] %>
+- Unfulfilled attempts during period: <%= @password_recoveries[:unfulfilled] %> (<%= @password_recoveries[:expired] %> expired, <%= @password_recoveries[:invalidated] %> invalidated)
+- Unavailable accounts in requests during period: <%= @password_recoveries[:no_mfa] %> without MFA, <%= @password_recoveries[:unavailable] %> otherwise unavailable
+- Pending now: <%= @password_recoveries[:pending][:total] %> (<%= @password_recoveries[:pending][:email] %> awaiting the email link, <%= @password_recoveries[:pending][:session] %> in progress)
+One request can cover several accounts. Completions and unfulfilled attempts
+can come from earlier requests. Successful recoveries are also included in
+password changes above; pending attempts are excluded from unfulfilled attempts.
+Processed requests do not confirm email delivery.
+
+<% end -%>
+<% if @failed_logins -%>
+Recorded failed login attempts during period:
+- Total: <%= @failed_logins[:total] %> (affected users: <%= @failed_logins[:users] %>)
+<% @failed_logins[:by_reason].each do |row| -%>
+- <%= row[:auth_type] %> / <%= row[:reason] %>: <%= row[:total] %> (affected users: <%= row[:users] %>)
+<% end -%>
+These records cover known accounts and include incomplete authentication flows
+and recorded password recovery failures. Unknown-account attempts are excluded.
+
+<% end -%>
 VPS:
 - new: <%= @vps[:new][:changed].count %>
 - active: <%= @vps[:active][:all].count %> total, <%= @vps[:active][:changed].count %> changed

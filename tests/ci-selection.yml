@@ -386,6 +386,7 @@ select:
 
   - paths:
       - "tests/suite/alerts/*.nix"
+      - "api/lib/vpsadmin/api/daily_report_authentication.rb"
       - "api/lib/vpsadmin/api/incident_reports.rb"
       - "api/lib/vpsadmin/api/tasks/incident_report.rb"
       - "api/lib/vpsadmin/api/tasks/lifetimes.rb"

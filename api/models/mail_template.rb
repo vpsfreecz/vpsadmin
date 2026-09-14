@@ -244,6 +244,10 @@ class MailTemplate < ApplicationRecord
   register :daily_report, vars: {
     date: Hash,
     users: Hash,
+    user_sessions: Hash,
+    password_changes: Hash,
+    password_recoveries: Hash,
+    failed_logins: Hash,
     vps: Hash,
     datasets: Hash,
     snapshots: Hash,

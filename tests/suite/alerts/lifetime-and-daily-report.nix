@@ -81,7 +81,21 @@ import ../../make-test.nix (
             services,
             to: ${builtins.toJSON adminUser.email},
             subject_prefix: '[vpsAdmin] Daily report ',
-            text_includes: 'vpsAdmin daily report'
+            text_includes: [
+              'vpsAdmin daily report',
+              'User sessions:',
+              'HTTP Basic:',
+              'API token:',
+              'OAuth2:',
+              'Active subsets (already included above; may overlap):',
+              'Permanent credentials:',
+              'Administrator-created sessions:',
+              'Password changes during period:',
+              'Successful recoveries:',
+              'Password recovery activity:',
+              'Pending now:',
+              'Recorded failed login attempts during period:'
+            ]
           )
         end
       end
