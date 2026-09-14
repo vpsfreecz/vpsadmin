@@ -1574,12 +1574,16 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
   end
 
   describe 'DynamicUpdate' do
+    let(:dynamic_zone) { seed[:system_zone] }
+    let(:dynamic_type) { 'A' }
+    let(:dynamic_content) { '192.0.2.150' }
+
     let!(:dynamic_record) do
       record = create_record!(
-        zone: seed[:system_zone],
+        zone: dynamic_zone,
         name: 'dyn',
-        record_type: 'A',
-        content: '192.0.2.150'
+        record_type: dynamic_type,
+        content: dynamic_content
       )
       record.update!(update_token: Token.get!(owner: record))
       record
@@ -1606,6 +1610,73 @@ RSpec.describe 'VpsAdmin::API::Resources::DnsRecord' do
 
       expect(last_response.status).to be_in([200, 404])
       expect(json['status']).to be(false)
+    end
+
+    {
+      'A' => %w[192.0.2.150 192.0.2.199],
+      'AAAA' => %w[2001:db8::150 2001:db8::199]
+    }.each do |record_type, (original_address, updated_address)|
+      context "with a user-owned #{record_type} record" do
+        let(:dynamic_zone) { record_validation_zone }
+        let(:dynamic_type) { record_type }
+        let(:dynamic_content) { original_address }
+
+        before do
+          DnsServerZone.create!(
+            dns_zone: dynamic_zone,
+            dns_server: seed[:dns_server],
+            zone_type: :primary_type
+          )
+          ensure_signer_unlocked!
+        end
+
+        it 'updates the address without API authentication' do
+          expect do
+            json_get dynamic_update_path(dynamic_record.update_token.token), nil,
+                     'HTTP_X_REAL_IP' => updated_address
+          end.to change(TransactionChain, :count).by(1)
+
+          expect_status(200)
+          expect(json['status']).to be(true)
+          expect(record_obj['content']).to eq(updated_address)
+          expect(dynamic_record.reload.content).to eq(updated_address)
+          expect(action_state_id.to_i).to be > 0
+        end
+
+        it 'accepts an unchanged address without queuing an update' do
+          expect do
+            json_get dynamic_update_path(dynamic_record.update_token.token), nil,
+                     'HTTP_X_REAL_IP' => original_address
+          end.not_to change(TransactionChain, :count)
+
+          expect_status(200)
+          expect(json['status']).to be(true)
+          expect(record_obj['content']).to eq(original_address)
+          expect(dynamic_record.reload.content).to eq(original_address)
+          expect(action_state_id).to be_nil
+        end
+
+        %i[suspended soft_delete].each do |owner_state|
+          it "rejects updates when the owner is #{owner_state}" do
+            dynamic_zone.user.record_object_state_change(
+              owner_state,
+              reason: 'spec DDNS restriction',
+              user: SpecSeed.admin
+            )
+
+            expect do
+              json_get dynamic_update_path(dynamic_record.update_token.token), nil,
+                       'HTTP_X_REAL_IP' => updated_address
+            end.not_to change(TransactionChain, :count)
+
+            expect_status(200)
+            expect(json['status']).to be(false)
+            expect(msg).to eq('Access forbidden: spec DDNS restriction')
+            expect(dynamic_record.reload.content).to eq(original_address)
+            expect(action_state_id).to be_nil
+          end
+        end
+      end
     end
   end
 end

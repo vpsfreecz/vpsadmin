@@ -621,7 +621,7 @@ module VpsAdmin::API
         end
 
         action.send(:define_method, :object_state_check!) do |*objs|
-          next if current_user.role == :admin
+          next if current_user&.role == :admin
 
           forbidden = false
           reason = nil

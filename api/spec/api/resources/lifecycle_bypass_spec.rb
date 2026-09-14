@@ -458,6 +458,39 @@ RSpec.describe 'API lifecycle bypass regressions' do # rubocop:disable RSpec/Des
   end
 
   describe 'User-owned control plane records' do
+    context 'with a DNS record owned by a suspended user' do
+      let(:zone) { create_dns_zone!(user: SpecSeed.user) }
+      let!(:record) do
+        create_dns_record!(dns_zone: zone, record_type: 'A', content: '192.0.2.10')
+      end
+
+      before do
+        suspend_user!
+        ensure_signer_unlocked!
+      end
+
+      it 'blocks the authenticated owner from updating the record' do
+        expect do
+          as(SpecSeed.user) do
+            json_put vpath("/dns_records/#{record.id}"), dns_record: { content: '192.0.2.20' }
+          end
+        end.not_to change(TransactionChain, :count)
+
+        expect_lifecycle_denied
+        expect(record.reload.content).to eq('192.0.2.10')
+      end
+
+      it 'allows an authenticated administrator to update the record' do
+        as(SpecSeed.admin) do
+          json_put vpath("/dns_records/#{record.id}"), dns_record: { content: '192.0.2.20' }
+        end
+
+        expect_status(200)
+        expect(json['status']).to be(true)
+        expect(record.reload.content).to eq('192.0.2.20')
+      end
+    end
+
     it 'blocks suspended users from mutating SSH keys and mail recipients' do
       key = create_public_key!
       role = 'account'
