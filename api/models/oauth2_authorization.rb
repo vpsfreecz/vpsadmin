@@ -9,6 +9,7 @@ class Oauth2Authorization < ApplicationRecord
   belongs_to :user_device
   belongs_to :user_agent
   serialize :scope, coder: JSON
+  serialize :login_authentication, coder: JSON
 
   def check_code_validity(redirect_uri)
     code.valid_to > Time.now && oauth2_client.redirect_uri == redirect_uri

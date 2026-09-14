@@ -222,6 +222,23 @@
                     <input type="submit" class="btn btn-primary btn-block" name="login_credentials" id="login" value="<%= html_t.call(:login) %>">
                   </div>
 
+                <% elsif step == :email -%>
+                  <p><%= html_t.call(:email_sent, email: VpsAdmin::API::EmailLogin.masked_email(auth_token.opts['email'])) %></p>
+                  <p><%= html_t.call(:email_expiry, minutes: [((auth_token.valid_to - Time.current) / 60).ceil, 0].max) %></p>
+                  <div class="form-group">
+                    <label for="email-code"><%= html_t.call(:email_code) %></label>
+                    <input type="text" class="form-control" id="email-code" name="email_code"
+                           inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}"
+                           maxlength="6" required autofocus>
+                  </div>
+                  <div class="form-group">
+                    <button type="submit" class="btn btn-primary btn-block" id="login"
+                            name="login_email" value="1"><%= html_t.call(:email_verify) %></button>
+                    <button type="submit" class="btn btn-secondary btn-block" name="email_resend"
+                            value="1" formnovalidate><%= html_t.call(:email_resend) %></button>
+                  </div>
+                  <p class="text-muted"><%= html_t.call(:email_help) %></p>
+
                 <% elsif step == :mfa -%>
                   <div class="form-group">
                     <select class="form-control" name="next_multi_factor_auth">
@@ -291,7 +308,7 @@
                 <% end -%>
 
                 <div class="form-group text-center">
-                  <input type="submit" class="btn btn-outline-secondary btn-sm" name="cancel" value="<%= html_t.call(:cancel) %>">
+                  <input type="submit" class="btn btn-outline-secondary btn-sm" name="cancel" formnovalidate value="<%= html_t.call(:cancel) %>">
                 </div>
               </form>
               <% if step == :credentials || (step == :mfa && mfa_methods.include?(:totp)) -%>

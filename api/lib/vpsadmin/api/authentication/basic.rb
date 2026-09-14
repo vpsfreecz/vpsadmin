@@ -27,6 +27,10 @@ module VpsAdmin::API
         raise Exceptions::AuthenticationError,
               'multi-factor authentication required, use token auth instead'
 
+      elsif EmailLogin.required?(auth.user)
+        raise Exceptions::AuthenticationError,
+              'email verification required, use OAuth2 or token auth instead'
+
       elsif auth.reset_password?
         raise Exceptions::AuthenticationError,
               'password reset required'

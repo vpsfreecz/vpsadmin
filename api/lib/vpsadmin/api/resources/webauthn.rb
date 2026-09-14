@@ -133,6 +133,7 @@ class VpsAdmin::API::Resources::Webauthn < HaveAPI::Resource
             sign_count: webauthn_credential.sign_count
           )
 
+          current_user.invalidate_pending_email_logins! if current_user.enable_new_device_email_verification
           challenge.destroy!
         end
 

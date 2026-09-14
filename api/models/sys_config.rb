@@ -146,6 +146,7 @@ class SysConfig < ApplicationRecord
   register :core, :snapshot_download_base_url, String
   register :core, :totp_issuer, String, default: 'vpsAdmin', min_user_level: 99
   register :core, :webauthn_rp_name, String, default: 'vpsAdmin', min_user_level: 99
+  register :core, :new_device_email_verification_available, Boolean, default: false, min_user_level: 0
   register :core, :password_recovery_enabled, Boolean, default: false, min_user_level: 99
   register :core, :transaction_key, Text, min_user_level: 99
   register :core, :logo_url, String, min_user_level: 0

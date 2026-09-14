@@ -19,9 +19,13 @@ module VpsAdmin::API
       password_reset_required
       password_too_short
       passwords_do_not_match
+      email_login_expired email_login_required email_login_unavailable
+      email_login_limited email_login_invalid email_login_resend_limited
+      email_verification_unavailable email_verification_invalid_address
     ].freeze
 
-    STATIC_I18N_KEYS = %i[forgot_password password_changed].freeze
+    STATIC_I18N_KEYS = %i[forgot_password password_changed email_code email_sent email_expiry
+                          email_verify email_resend email_help].freeze
 
     def self.i18n_keys
       STATIC_I18N_KEYS.map { |key| "auth.oauth2.#{key}" } +
@@ -90,6 +94,8 @@ module VpsAdmin::API
       # @return [Integer, nil]
       attr_accessor :authentication_generation
 
+      attr_accessor :email_login_proof
+
       def initialize(authenticated: false, complete: false, auth_token: nil, user: nil, cancel: false, errors: [], reset_password: false, authentication_generation: nil)
         @authenticated = authenticated
         @complete = complete
@@ -154,8 +160,20 @@ module VpsAdmin::API
 
     # @return [AuthResult, nil]
     def handle_post_authorize(sinatra_handler:, sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:)
-      submits = %i[login_credentials login_totp login_webauthn login_reset_password]
+      submits = %i[login_credentials login_totp login_webauthn login_reset_password login_email email_resend]
 
+      if sinatra_params[:cancel] && sinatra_params[:auth_token]
+        pending = ::AuthToken.joins(:token).find_by(tokens: { token: sinatra_params[:auth_token] }, purpose: :email_login)
+        if pending
+          begin
+            EmailLogin.process(pending.to_s, request: sinatra_request,
+                                             context: email_login_context(sinatra_request, oauth2_request), cancel: true)
+          rescue EmailLogin::Error
+            # An unrelated or expired challenge does not prevent cancellation.
+          end
+        end
+        return AuthResult.new(cancel: true)
+      end
       if submits.none? { |v| sinatra_params[v] } && sinatra_params[:webauthn] != '1'
         return AuthResult.new(cancel: true)
       end
@@ -176,6 +194,9 @@ module VpsAdmin::API
           if sinatra_params[:user] && sinatra_params[:password]
             auth_credentials(**auth_args)
 
+          elsif sinatra_params[:auth_token] && (sinatra_params[:login_email] || sinatra_params[:email_resend])
+            auth_email(**auth_args)
+
           elsif sinatra_params[:auth_token] && sinatra_params[:webauthn] == '1'
             auth_webauthn(**auth_args)
 
@@ -187,6 +208,8 @@ module VpsAdmin::API
                 && sinatra_params[:new_password2]
             reset_password(**auth_args)
           end
+      rescue EmailLogin::Error => e
+        auth_result = AuthResult.new(errors: [e.message.to_sym])
       rescue Exceptions::AuthenticationError
         return AuthResult.new(cancel: true)
       end
@@ -220,6 +243,9 @@ module VpsAdmin::API
                oauth2_login_error(authorization.user, sinatra_request).nil?
           raise Exceptions::AuthenticationError, 'invalid authorization code'
         end
+
+        EmailLogin.check_authority!(authorization.user, authorization.login_authentication,
+                                    device: authorization.user_device)
 
         user_session = Operations::UserSession::NewOAuth2Login.run(
           authorization,
@@ -434,7 +460,9 @@ module VpsAdmin::API
       ui_locales = sinatra_params[UI_LOCALES_PARAM] || sinatra_params[UI_LOCALES_PARAM.to_s]
       next_multi_factor_auth = sinatra_params[:next_multi_factor_auth] || find_next_multi_factor_auth(devices)
       step =
-        if auth_token && !auth_result.reset_password
+        if auth_token&.email_login?
+          :email
+        elsif auth_token && !auth_result.reset_password
           :mfa
         elsif auth_token && auth_result.reset_password
           :reset_password
@@ -471,6 +499,8 @@ module VpsAdmin::API
       )
 
       oauth2_response.content_type = 'text/html'
+      oauth2_response.headers['Cache-Control'] = 'no-store'
+      oauth2_response.headers['Referrer-Policy'] = 'no-referrer'
       ::I18n.with_locale(locale) do
         auth_errors = translated_auth_errors(auth_result ? auth_result.errors : [])
         oauth2_response.write(@template.result(binding))
@@ -596,6 +626,25 @@ module VpsAdmin::API
       end
 
       device = devices.detect { |d| d.user == auth.user }
+      if EmailLogin.required?(auth.user, device:)
+        browser = sinatra_request.cookies[EmailLogin::BROWSER_COOKIE.to_s]
+        browser = SecureRandom.hex(32) unless browser.to_s.match?(/\A[0-9a-f]{64}\z/)
+        ret.auth_token = EmailLogin.start(
+          auth.user, request: sinatra_request, authentication_generation: auth.authentication_generation,
+                     existing_token: auth.token,
+                     context: email_login_context(sinatra_request, oauth2_request, browser:)
+        )
+        ret.complete = false
+        ret.reset_password = false
+        oauth2_response.set_cookie(EmailLogin::BROWSER_COOKIE,
+                                   value: browser, path: '/', max_age: EmailLogin::LIFETIME.to_i,
+                                   httponly: true, secure: true, same_site: :lax)
+        return ret
+      end
+      ret.email_login_proof = EmailLogin.proof(auth.user, 'device', device:)
+      if ret.auth_token&.reset_password?
+        ret.auth_token.update!(opts: ret.auth_token.opts.merge('email_login_proof' => ret.email_login_proof))
+      end
       skip_multi_factor_auth = device && device.known && device.skip_multi_factor_auth?
       skip_multi_factor_auth = false if auth.user.password_reset
 
@@ -620,6 +669,43 @@ module VpsAdmin::API
       ret
     end
 
+    def email_login_context(request, oauth2_request, browser: nil)
+      browser ||= request.cookies[EmailLogin::BROWSER_COOKIE.to_s]
+      raise EmailLogin::Error, 'email_login_expired' unless browser.to_s.match?(/\A[0-9a-f]{64}\z/)
+
+      { 'flow' => 'oauth2', 'browser' => Digest::SHA256.hexdigest(browser),
+        'oauth2' => oauth2_params(oauth2_request).transform_keys(&:to_s).transform_values(&:to_s) }
+    end
+
+    def auth_email(sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:, devices:)
+      ret = nil
+      result = EmailLogin.process(
+        sinatra_params[:auth_token], request: sinatra_request,
+                                     context: email_login_context(sinatra_request, oauth2_request),
+                                     code: sinatra_params[:email_code], resend: !sinatra_params[:email_resend].nil?
+      ) do |verified|
+        ret = AuthResult.new(authenticated: true, complete: !verified.user.password_reset,
+                             reset_password: verified.user.password_reset, user: verified.user,
+                             auth_token: verified.user.password_reset ? verified.auth_token : nil,
+                             authentication_generation: verified.user.authentication_generation)
+        ret.email_login_proof = verified.proof
+        if ret.reset_password
+          # Keep the browser binding through the fresh reset interval. Other
+          # pending email challenges retain their own fixed token deadlines.
+          oauth2_response.set_cookie(EmailLogin::BROWSER_COOKIE,
+                                     value: sinatra_request.cookies.fetch(EmailLogin::BROWSER_COOKIE.to_s),
+                                     path: '/', max_age: EmailLogin::LIFETIME.to_i,
+                                     secure: true, httponly: true, same_site: :lax)
+        end
+        unless ret.reset_password
+          create_authorization(auth_result: ret, sinatra_request:, oauth2_request:,
+                               oauth2_response:, client:, devices:)
+        end
+      end
+      ret || AuthResult.new(authenticated: true, complete: false, user: result.user,
+                            auth_token: result.auth_token, errors: result.error ? [result.error.to_sym] : [])
+    end
+
     def auth_totp(sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:, devices:)
       auth = Operations::Authentication::Totp.run(
         sinatra_params[:auth_token],
@@ -627,6 +713,7 @@ module VpsAdmin::API
       )
 
       ret = AuthResult.from_totp_result(auth)
+      ret.email_login_proof = EmailLogin.proof(auth.user, 'mfa') if auth.authenticated?
 
       if auth.authenticated?
         if auth.used_recovery_code?
@@ -693,7 +780,8 @@ module VpsAdmin::API
         reset_password = user.password_reset
 
         if reset_password
-          auth_token.update!(purpose: 'reset_password', fulfilled: false)
+          auth_token.update!(purpose: 'reset_password', fulfilled: false,
+                             opts: auth_token.opts.merge('email_login_proof' => EmailLogin.proof(user, 'mfa')))
         else
           auth_token.destroy!
         end
@@ -707,6 +795,8 @@ module VpsAdmin::API
         user:,
         authentication_generation: auth_token.authentication_generation
       )
+
+      ret.email_login_proof = EmailLogin.proof(user, 'mfa')
 
       unless reset_password
         skip_multi_factor_auth_until, last_next_multi_factor_auth = parse_next_multi_factor_auth(sinatra_params)
@@ -750,6 +840,13 @@ module VpsAdmin::API
         return ret
       end
 
+      email_proof = auth_token.opts['email_login_proof']
+      if auth_token.opts['context'] && auth_token.opts['context'] != email_login_context(sinatra_request, oauth2_request)
+        raise EmailLogin::Error, 'email_login_expired'
+      end
+
+      EmailLogin.check_authority!(auth_token.user, email_proof)
+
       password_reset = Operations::Authentication::ResetPassword.run(
         auth_token,
         sinatra_params[:new_password1],
@@ -761,6 +858,7 @@ module VpsAdmin::API
       ret.complete = true
       ret.reset_password = false
       ret.authentication_generation = ret.user.authentication_generation
+      ret.email_login_proof = email_proof&.merge('generation' => ret.user.authentication_generation)
 
       create_authorization(
         auth_result: ret,
@@ -901,6 +999,17 @@ module VpsAdmin::API
           next
         end
 
+        device = devices.detect { |d| d.user == auth_result.user }
+        evidence = auth_result.email_login_proof
+        evidence ||= EmailLogin.proof(auth_result.user, 'device', device:) if sso
+        begin
+          EmailLogin.check_authority!(auth_result.user, evidence, device:)
+        rescue EmailLogin::Error => e
+          reject_authorization(auth_result, e.message.to_sym)
+          next
+        end
+        evidence ||= EmailLogin.proof(auth_result.user, 'device', device:)
+
         # Refresh all devices and update user agent
         devices.each do |d|
           if sinatra_request.user_agent
@@ -999,7 +1108,8 @@ module VpsAdmin::API
           client_ip_addr:,
           client_ip_ptr:,
           user_agent: ::UserAgent.find_or_create!(sinatra_request.user_agent || ''),
-          user_device: device
+          user_device: device,
+          login_authentication: evidence
         )
 
         ::Token.for_new_record!(expires_at) do |token|

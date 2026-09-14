@@ -33,8 +33,11 @@ class UserDevice < ApplicationRecord
   end
 
   def close
-    token.destroy!
-    update!(token: nil)
+    user.with_lock do
+      reload
+      token&.destroy!
+      update!(token: nil)
+    end
   end
 
   def skip_multi_factor_auth?

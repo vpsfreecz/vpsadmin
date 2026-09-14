@@ -72,7 +72,7 @@ module VpsAdmin::API
             end
           end
 
-          require_mfa = require_mfa?(user)
+          require_mfa = user.effective_multi_factor_auth?
 
           ret = Result.new(
             user,
@@ -104,18 +104,6 @@ module VpsAdmin::API
     end
 
     protected
-
-    def require_mfa?(user)
-      user.enable_multi_factor_auth && (require_totp?(user) || require_webauthn?(user))
-    end
-
-    def require_totp?(user)
-      user.user_totp_devices.where(enabled: true).any?
-    end
-
-    def require_webauthn?(user)
-      user.webauthn_credentials.where(enabled: true).any?
-    end
 
     def create_auth_token(purpose, user, request)
       ::Token.for_new_record!(Time.now + (60 * 5)) do |token|

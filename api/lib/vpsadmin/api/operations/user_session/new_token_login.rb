@@ -12,12 +12,14 @@ module VpsAdmin::API
     # @param scope [Array<String>]
     # @param authentication_generation [Integer]
     # @return [::UserSession]
-    def run(user, request, token_lifetime, token_interval, scope, authentication_generation:, password_change_log: nil)
+    def run(user, request, token_lifetime, token_interval, scope, authentication_generation:, password_change_log: nil, email_login_proof: nil)
       ::UserSession.transaction(requires_new: true) do
         user.lock!
         if user.authentication_generation != authentication_generation
           raise Exceptions::OperationError, 'authentication expired'
         end
+
+        EmailLogin.check_authority!(user, email_login_proof)
 
         Operations::User::Login.run(user, request)
 

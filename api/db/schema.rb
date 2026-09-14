@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_14_120000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -410,6 +410,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.integer "keyid", null: false
     t.datetime "updated_at", null: false
     t.index ["dns_zone_id"], name: "index_dnssec_records_on_dns_zone_id"
+  end
+
+  create_table "email_login_rate_limits", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.string "bucket", limit: 100, null: false
+    t.integer "count", default: 0, null: false
+    t.datetime "expires_at", null: false
+    t.datetime "window_start", null: false
+    t.index ["bucket", "window_start"], name: "email_login_rate_limits_bucket", unique: true
+    t.index ["expires_at"], name: "index_email_login_rate_limits_on_expires_at"
   end
 
   create_table "environment_dataset_plans", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -1261,6 +1270,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.string "code_challenge_method", limit: 20
     t.bigint "code_id"
     t.datetime "created_at", null: false
+    t.text "login_authentication"
     t.bigint "oauth2_client_id", null: false
     t.bigint "password_change_log_id"
     t.bigint "refresh_token_id"
@@ -2027,6 +2037,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_220000) do
     t.string "email", limit: 127
     t.boolean "enable_basic_auth", default: false, null: false
     t.boolean "enable_multi_factor_auth", default: false, null: false
+    t.boolean "enable_new_device_email_verification", default: false, null: false
     t.boolean "enable_new_login_notification", default: true, null: false
     t.boolean "enable_oauth2_auth", default: true, null: false
     t.boolean "enable_single_sign_on", default: true

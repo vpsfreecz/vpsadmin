@@ -6,18 +6,19 @@ module VpsAdmin::API::Tasks
     # [EXECUTE]: The changes are applied only when set to 'yes'
     def close_expired
       reconcile_password_change_sessions
+      ::EmailLoginRateLimit.where('expires_at <= ?', Time.current).delete_all if ENV['EXECUTE'] == 'yes'
 
       ::AuthToken.joins(:token).includes(:token).where(
         'tokens.valid_to IS NOT NULL AND tokens.valid_to < ?',
         Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
       ).each do |t|
-        puts "Token ##{t.id} valid_to=#{t.valid_to} token=#{t}"
+        puts "Token ##{t.id} purpose=#{t.purpose} valid_to=#{t.valid_to}"
         next if ENV['EXECUTE'] != 'yes'
 
         ActiveRecord::Base.transaction do
           VpsAdmin::API::Operations::User::IncompleteLogin.run(
             t,
-            :totp,
+            t.email_login? ? :email : :totp,
             'authentication token expired'
           )
           t.destroy!

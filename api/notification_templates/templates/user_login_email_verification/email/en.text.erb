@@ -1,0 +1,22 @@
+Hi <%= @user.login %>,
+
+To finish signing in to vpsAdmin from an unknown device, please enter this code
+on the login page:
+
+<%= @code %>
+
+The code expires at <%= local_time(@expires_at) %>. It is valid for 30 minutes
+from the initial request. Requesting another code replaces the previous code
+without extending this deadline.
+
+IP address: <%= @ip_address %>
+Browser or client: <%= @user_agent %>
+
+If you did not try to sign in, someone may know your password. Please change it
+from a known device or contact <%= @support_mail %>.
+
+Best regards,
+
+vpsAdmin team
+
+(This is an automated mail from vpsAdmin, your reply will be sent to our support)

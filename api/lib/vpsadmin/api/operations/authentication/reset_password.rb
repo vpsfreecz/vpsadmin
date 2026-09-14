@@ -23,6 +23,8 @@ module VpsAdmin::API
           raise Exceptions::AuthenticationError, 'invalid token'
         end
 
+        EmailLogin.check_authority!(user, current_token.opts['email_login_proof'])
+
         user.set_password(
           new_password,
           source: :forced_reset,

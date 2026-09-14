@@ -353,6 +353,8 @@ select:
 
   - paths:
       - "api/lib/vpsadmin/api/authentication/**"
+      - "api/lib/vpsadmin/api/email_login.rb"
+      - "api/models/email_login_rate_limit.rb"
       - "api/lib/vpsadmin/api/operations/authentication/**"
       - "api/lib/vpsadmin/api/operations/totp_device/**"
       - "api/lib/vpsadmin/api/operations/user_session/**"

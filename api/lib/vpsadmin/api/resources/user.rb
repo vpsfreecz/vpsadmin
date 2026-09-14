@@ -25,6 +25,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     bool :enable_single_sign_on, label: 'Enable single sign-on'
     bool :enable_new_login_notification, label: 'Enable new login notification'
     bool :enable_multi_factor_auth, label: 'Enable multi-factor authentication'
+    bool :enable_new_device_email_verification, label: 'Verify new devices by email',
+                                                desc: 'Require an email code after the password on unknown devices once a successful device login exists. Active TOTP or passkeys take precedence; the preference remains saved.'
     integer :preferred_session_length, label: 'Preferred session length'
     bool :preferred_logout_all, label: 'Preferred logout all'
   end
@@ -47,6 +49,8 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
   params(:common) do
     use :writable
+    bool :new_device_email_verification_available, label: 'Email verification available',
+                                                   desc: 'Allow new opt-ins to email verification. Turning this off does not disable verification for users who already enabled it.'
     datetime :last_activity_at, label: 'Last activity'
     string :dokuwiki_groups, label: 'DokuWiki groups',
                              desc: 'Comma-separated list of DokuWiki groups'
@@ -124,7 +128,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
     blocking true
 
     input do
-      use :writable
+      use :writable, exclude: %i[enable_new_device_email_verification]
       use :password
       use :vps
     end
@@ -364,7 +368,7 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
         password new_password logout_sessions mailer_enabled language
         time_zone
         enable_basic_auth enable_token_auth enable_oauth2_auth enable_single_sign_on
-        enable_new_login_notification enable_multi_factor_auth
+        enable_new_login_notification enable_multi_factor_auth enable_new_device_email_verification
         preferred_session_length preferred_logout_all remind_after_date
       ]
       allow
@@ -379,6 +383,16 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       update_object_state!(u) if change_object_state?
       object_state_check!(u)
+
+      if input.has_key?(:enable_new_device_email_verification) && current_user.id == u.id
+        authentication = VpsAdmin::API::Operations::Authentication::Password.run(
+          u.login, input[:password].to_s, multi_factor: false
+        )
+        unless authentication&.authenticated?
+          error!('update failed', password: ['incorrect password'])
+        end
+        email_verification_generation = authentication.authentication_generation
+      end
 
       changing_password = input.has_key?(:new_password)
       authentication_generation = nil
@@ -422,6 +436,10 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
       if changing_password
         u.with_lock do
+          check_email_verification_enrollment!(u)
+          if email_verification_generation && email_verification_generation != u.authentication_generation
+            error!('update failed', password: ['incorrect password'])
+          end
           if authentication_generation &&
              authentication_generation != u.authentication_generation
             error!(
@@ -448,12 +466,33 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
           end
         end
       else
-        u.update!(to_db_names(input))
+        u.with_lock do
+          check_email_verification_enrollment!(u)
+          if email_verification_generation && email_verification_generation != u.authentication_generation
+            error!('update failed', password: ['incorrect password'])
+          end
+          u.update!(to_db_names(input))
+        end
       end
 
       u
     rescue ActiveRecord::RecordInvalid => e
       error!('update failed', to_param_names(e.record.errors.to_hash, :input))
+    end
+
+    def check_email_verification_enrollment!(user)
+      return unless input[:enable_new_device_email_verification] && !user.enable_new_device_email_verification
+
+      error_key = if !user.new_device_email_verification_available
+                    'email_verification_unavailable'
+                  elsif !VpsAdmin::API::EmailLogin.valid_email?(input.fetch(:email, user.email))
+                    'email_verification_invalid_address'
+                  end
+      return unless error_key
+
+      error!('update failed', enable_new_device_email_verification: [
+               VpsAdmin::API::I18n.t("auth.oauth2.errors.#{error_key}")
+             ])
     end
 
     def state_id

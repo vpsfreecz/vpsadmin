@@ -599,6 +599,11 @@ en:
         label: Enable multi-factor authentication
       enable_network:
         label: Enable network
+      enable_new_device_email_verification:
+        description: Require an email code after the password on unknown devices once
+          a successful device login exists. Active TOTP or passkeys take precedence;
+          the preference remains saved.
+        label: Verify new devices by email
       enable_new_login_notification:
         label: Enable new login notification
       enable_notifications:
@@ -1187,6 +1192,10 @@ en:
         label: Network
       network_interface:
         label: NetworkInterface
+      new_device_email_verification_available:
+        description: Allow new opt-ins to email verification. Turning this off does
+          not disable verification for users who already enabled it.
+        label: Email verification available
       new_password:
         label: Password
       new_refquota:
@@ -2157,9 +2166,27 @@ en:
         account_login: Login
         cancel: Cancel
         credentials_unavailable: Credentials are not available.
+        email_code: Email verification code
+        email_expiry: The code expires in %{minutes} minutes.
+        email_help: Delivery may take a few minutes. Check your junk folder too. A
+          new code replaces the previous one without extending its validity.
+        email_resend: Send another code
+        email_sent: We sent a code to %{email}.
+        email_verify: Verify and sign in
         error_prefix: 'Error:'
         errors:
           account_locked: account is locked out, contact support
+          email_login_expired: This login has expired or is no longer valid. Please
+            sign in again.
+          email_login_invalid: The email code is incorrect.
+          email_login_limited: Too many verification attempts. Please try again later.
+          email_login_required: Email verification is required. Please sign in again.
+          email_login_resend_limited: Please wait at least a minute before requesting
+            another code. You can request up to three codes per login.
+          email_login_unavailable: We could not send a verification email. Please
+            try again later.
+          email_verification_invalid_address: A valid primary email address is required.
+          email_verification_unavailable: Email verification is not available yet.
           invalid_totp_code: invalid TOTP code
           invalid_user_or_password: invalid user or password
           oauth2_disabled: OAuth2 authentication is disabled on this account
@@ -4157,6 +4184,7 @@ en:
           create: Create user
           destroy: Destroy user
           hard_delete: Hard delete user
+          login_email_verification: Login email verification
           new_login: New login
           new_token: New token
           password_changed: Password changed

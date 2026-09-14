@@ -5,6 +5,7 @@ require 'spec_helper'
 RSpec.describe VpsAdmin::API::Authentication::TokenConfig do
   let(:config) { described_class.new(nil, nil) }
   let(:user) { SpecSeed.user }
+  let(:delivered_mail) { {} }
   let(:request) { build_request(user_agent: 'RSpec/TokenConfig') }
 
   before do
@@ -68,6 +69,84 @@ RSpec.describe VpsAdmin::API::Authentication::TokenConfig do
       ),
       HaveAPI::Authentication::Token::ActionResult.new
     )
+  end
+
+  context 'with new-device email verification' do
+    before do
+      user.update!(enable_new_device_email_verification: true, email: 'member@example.test')
+      create_user_device!(user:, known: true)
+      allow(VpsAdmin::API::EmailLogin).to receive(:deliver!) { |_pending, code, _request| delivered_mail[:code] = code }
+    end
+
+    def email_action(token, action: :email_code, code: delivered_mail[:code])
+      described_class.actions.fetch(action).handle.call(
+        HaveAPI::Authentication::Token::ActionRequest.new(request:, input: { token:, code: }),
+        HaveAPI::Authentication::Token::ActionResult.new
+      )
+    end
+
+    it 'issues the requested scope only after a late email verification' do
+      now = Time.current.change(usec: 0)
+      allow(Time).to receive(:now).and_return(now)
+      pending = request_token(scope: 'user#show user#index')
+      expect(pending).to be_ok
+      expect(pending).not_to be_complete
+      expect(pending.next_action).to eq(:email_code)
+      expect(pending.valid_to).to eq(now + 30.minutes)
+      expect(UserSession.where(user:)).to be_empty
+      allow(Time).to receive(:now).and_return(now + 29.minutes)
+      result = email_action(pending.token)
+      expect(result).to be_ok
+      expect(result).to be_complete
+      session = UserSession.joins(:token).find_by!(tokens: { token: result.token })
+      expect(session.scope).to eq(%w[user#show user#index])
+      expect(session.token.valid_to).to eq(now + 29.minutes + 3600)
+      expect(email_action(pending.token)).not_to be_ok
+    end
+
+    it 'does not send a code for an incorrect password' do
+      expect(VpsAdmin::API::EmailLogin).not_to receive(:deliver!) # rubocop:disable RSpec/MessageSpies
+      expect(request_token(password: 'wrong')).not_to be_ok
+      expect(user.auth_tokens).to be_empty
+    end
+
+    it 'keeps resend pending before a forced reset and grants a fresh reset interval' do
+      user.update!(password_reset: true)
+      allow(TransactionChains::User::PasswordChanged).to receive(:fire)
+      now = Time.current.change(usec: 0)
+      allow(Time).to receive(:now).and_return(now)
+      pending = request_token
+      allow(Time).to receive(:now).and_return(now + 29.minutes)
+      resent = email_action(pending.token, action: :email_resend)
+      expect(resent.next_action).to eq(:email_code)
+      verified = email_action(pending.token)
+      expect(verified.next_action).to eq(:reset_password)
+      expect(verified.valid_to).to eq(now + 34.minutes)
+      allow(Time).to receive(:now).and_return(now + 31.minutes)
+      expect(reset_password(verified.token)).to be_complete
+    end
+
+    it 'accepts a TOTP recovery code without adding an email step' do
+      user.update!(enable_multi_factor_auth: true)
+      create_totp_device!(user:, recovery_code: 'recovery-code')
+      allow(TransactionChains::User::TotpRecoveryCodeUsed).to receive(:fire)
+      expect(VpsAdmin::API::EmailLogin).not_to receive(:deliver!) # rubocop:disable RSpec/MessageSpies
+      pending = request_token
+      expect(pending.next_action).to eq(:totp)
+      expect(complete_totp(pending.token, 'recovery-code')).to be_complete
+    end
+
+    it 'preserves MFA proof through a forced reset after a recovery code' do
+      user.update!(enable_multi_factor_auth: true, password_reset: true)
+      create_totp_device!(user:, recovery_code: 'recovery-code')
+      allow(TransactionChains::User::TotpRecoveryCodeUsed).to receive(:fire)
+      allow(TransactionChains::User::PasswordChanged).to receive(:fire)
+      expect(VpsAdmin::API::EmailLogin).not_to receive(:deliver!) # rubocop:disable RSpec/MessageSpies
+      pending = request_token
+      verified = complete_totp(pending.token, 'recovery-code')
+      expect(verified.next_action).to eq(:reset_password)
+      expect(reset_password(verified.token)).to be_complete
+    end
   end
 
   it 'finds a user only for a valid open token session with token auth enabled' do

@@ -47,8 +47,8 @@ class User < ApplicationRecord
 
   before_validation :set_no_password
   before_validation :normalize_time_zone
-  before_update :advance_authentication_generation, if: :will_save_change_to_password?
-  after_update :invalidate_auth_tokens, if: :saved_change_to_password?
+  before_update :advance_authentication_generation, if: :authentication_settings_changing?
+  after_update :invalidate_auth_tokens, if: :saved_change_to_authentication_generation?
   after_update :record_password_change, if: :saved_change_to_password?
   after_update :invalidate_password_recoveries_after_role_change,
                if: :saved_change_to_level?
@@ -60,7 +60,7 @@ class User < ApplicationRecord
   attr_reader :password_plain, :recorded_password_change
 
   has_paper_trail only: %i[login level full_name email address time_zone
-                           mailer_enabled object_state expiration_date]
+                           mailer_enabled object_state expiration_date enable_new_device_email_verification]
 
   validates :level, :login, :password, :language_id, presence: true
   validates :level, numericality: {
@@ -272,12 +272,43 @@ class User < ApplicationRecord
     end
   end
 
+  def effective_multi_factor_auth?
+    enable_multi_factor_auth &&
+      (user_totp_devices.where(enabled: true, confirmed: true).exists? ||
+       webauthn_credentials.where(enabled: true).exists?)
+  end
+
+  def new_device_email_verification_available
+    ::SysConfig.get(:core, :new_device_email_verification_available) == true
+  end
+
   def normalize_time_zone
     self.time_zone = nil if time_zone == ''
   end
 
   def invalidate_auth_tokens
     auth_tokens.destroy_all
+    oauth2_authorizations.where(user_session_id: nil).find_each do |authorization|
+      sso = authorization.single_sign_on
+      authorization.destroy!
+      sso.close if sso && !sso.any_active_authorizations?
+    end
+  end
+
+  def authentication_settings_changing?
+    will_save_change_to_password? ||
+      %w[email enable_new_device_email_verification enable_multi_factor_auth
+         enable_token_auth enable_basic_auth enable_oauth2_auth enable_single_sign_on
+         lockout object_state].any? do |attribute|
+        will_save_change_to_attribute?(attribute)
+      end
+  end
+
+  def invalidate_pending_email_logins!
+    with_lock do
+      increment!(:authentication_generation)
+      invalidate_auth_tokens
+    end
   end
 
   def advance_authentication_generation

@@ -76,7 +76,8 @@ module VpsAdmin::API
           reset_password = user.password_reset
 
           if reset_password
-            auth_token.update!(purpose: 'reset_password')
+            auth_token.update!(purpose: 'reset_password',
+                               opts: auth_token.opts.merge('email_login_proof' => EmailLogin.proof(user, 'mfa')))
           else
             auth_token.destroy!
           end

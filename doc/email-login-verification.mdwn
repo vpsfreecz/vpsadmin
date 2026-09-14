@@ -1,0 +1,69 @@
+# Email verification for new login devices
+
+Users can enable `User.enable_new_device_email_verification` in their profile.
+It defaults to false. A correct password then requires an email code when the
+account has a previous successful device login, the current device has no usable
+known-device cookie, and TOTP/passkey authentication is not active. Revoked or
+expired device records still count as successful login history.
+
+The email goes exclusively to `User.email`, regardless of optional notification
+preferences, contact roles, or template recipient overrides. Login codes and
+rendered messages use the normal administrator-only mail history and transaction
+inspection. Challenge options contain a bcrypt hash, not a plaintext code.
+
+Challenges last 30 minutes. Resend replaces the code without extending that
+deadline or resetting failed attempts. Each challenge permits five wrong codes,
+three sends with a 60-second cooldown, and there may be three pending challenges
+per account. Database buckets limit accounts to five sends and ten wrong guesses
+per 15 minutes, plus 20 sends per UTC day. Source IP buckets allow 60 sends and
+100 wrong guesses per 15 minutes. Buckets use fixed UTC intervals.
+
+Password-based token requests return `complete: false`, an opaque continuation
+`token`, `valid_to`, and `next_action: email_code`. Submit that token and the
+protected string `code` to the advertised `email_code` action. The `email_resend`
+action accepts the same token and returns a pending continuation. Requested
+scope, lifetime, and interval remain bound to the original request. A required
+password change follows successful email verification with a fresh five-minute
+`reset_password` continuation. HTTP Basic rejects these accounts when email
+verification applies and never sends mail. Existing supplied tokens, sessions,
+refresh tokens, and SSO retain their existing behavior.
+
+The Ruby HaveAPI CLI and PHP client support the advertised continuation actions.
+The Terraform provider itself uses a supplied token, but its separate `get-token`
+helper and current Go client only support TOTP and password-reset prompts. They
+fail with `Unsupported authentication action 'email_code'` when email verification
+is required. Use the HaveAPI CLI to obtain a token for these clients, or keep
+using an existing token. Updating the Go helper is separate client work; account
+enrollment must not imply that this helper supports email verification.
+
+## Rollout
+
+1. Apply the additive database migration. Keep the enrollment gate off.
+2. Install the `user_login_email_verification` template and both languages.
+   Built-in templates use `rake vpsadmin:notification_templates:install_defaults`.
+   Managed installations reconcile the updated notification-template package;
+   vpsFree.cz provides it in `vpsfree-notification-templates`.
+3. Update every API worker handling OAuth2, token issuance, and HTTP Basic, then
+   update WebUI. Older workers ignore the preference and must not handle logins
+   for opted-in users.
+4. Enable the core sysconfig key
+   `new_device_email_verification_available`. This exposes profile enrollment.
+   Turning the gate off prevents new opt-ins; it does not disable protection
+   for existing opted-in accounts.
+
+Self-service preference changes require the current password, including when an
+administrator edits their own account. An administrator can override the
+preference for another user; the change is recorded in the user audit history.
+Enabling does not send a mailbox-confirmation email. Missing or disabled mail
+templates prevent the email login from proceeding.
+
+Password, primary-email, MFA, login-method, and account-restriction changes
+invalidate pending authentication. OAuth challenges bind the original browser,
+client, redirect URI, scope, state, and PKCE parameters. Device trust and
+bootstrap exceptions are checked again before authority is issued.
+
+The existing authentication housekeeping task removes expired challenges and
+rate buckets. Keep the additive schema during application rollback. Older API
+versions can read existing ordinary state but cannot enforce this preference;
+a downgrade requires draining pending email logins and explicitly accepting the
+loss of enforcement. No node or vpsAdminOS update is needed.

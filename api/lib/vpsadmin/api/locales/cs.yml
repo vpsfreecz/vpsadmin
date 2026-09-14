@@ -599,6 +599,11 @@ cs:
         label: Povolit vícefaktorovou autentizaci
       enable_network:
         label: Povolit síť
+      enable_new_device_email_verification:
+        description: Vyžadovat po hesle kód z e-mailu na neznámých zařízeních, pokud
+          už existuje úspěšné přihlášení ze zařízení. Aktivní TOTP nebo přístupové
+          klíče mají přednost; nastavení zůstane uložené.
+        label: Ověřovat nová zařízení e-mailem
       enable_new_login_notification:
         label: Povolit oznámení o novém přihlášení
       enable_notifications:
@@ -1182,6 +1187,10 @@ cs:
         label: Síť
       network_interface:
         label: Síťové rozhraní
+      new_device_email_verification_available:
+        description: Povolit nové zapnutí ověřování e-mailem. Vypnutí této možnosti
+          nevypne ověřování uživatelům, kteří si ho už zapnuli.
+        label: Ověřování e-mailem je dostupné
       new_password:
         label: Heslo
       new_refquota:
@@ -2153,9 +2162,27 @@ cs:
         account_login: Login
         cancel: Zrušit
         credentials_unavailable: Přihlašovací údaje nejsou dostupné.
+        email_code: Ověřovací kód z e-mailu
+        email_expiry: Kód vyprší za %{minutes} minut.
+        email_help: Doručení může trvat několik minut. Zkontroluj i složku se spamem.
+          Další kód nahradí původní, ale dobu platnosti neprodlouží.
+        email_resend: Poslat další kód
+        email_sent: Kód jsme poslali na %{email}.
+        email_verify: Ověřit a přihlásit
         error_prefix: 'Chyba:'
         errors:
           account_locked: účet je uzamčen, kontaktujte podporu
+          email_login_expired: Přihlášení vypršelo nebo už není platné. Prosím přihlas
+            se znovu.
+          email_login_invalid: Kód z e-mailu není správný.
+          email_login_limited: Příliš mnoho pokusů o ověření. Prosím zkus to později.
+          email_login_required: Je potřeba ověření e-mailem. Prosím přihlas se znovu.
+          email_login_resend_limited: Před vyžádáním dalšího kódu prosím počkej alespoň
+            minutu. Pro jedno přihlášení si můžeš vyžádat nejvýše tři kódy.
+          email_login_unavailable: Ověřovací e-mail se nepodařilo odeslat. Prosím
+            zkus to později.
+          email_verification_invalid_address: Je potřeba platná hlavní e-mailová adresa.
+          email_verification_unavailable: Ověřování e-mailem zatím není dostupné.
           invalid_totp_code: neplatný TOTP kód
           invalid_user_or_password: neplatný uživatel nebo heslo
           oauth2_disabled: OAuth2 autentizace je na tomto účtu vypnutá
@@ -4152,6 +4179,7 @@ cs:
           create: Vytvoření uživatele
           destroy: Smazání uživatele
           hard_delete: Tvrdé smazání uživatele
+          login_email_verification: Ověření přihlášení e-mailem
           new_login: Nové přihlášení
           new_token: Nový token
           password_changed: Změna hesla

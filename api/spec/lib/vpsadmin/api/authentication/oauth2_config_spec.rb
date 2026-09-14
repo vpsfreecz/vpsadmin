@@ -20,10 +20,11 @@ module OAuth2ConfigSpecFixtures
   end
 
   class FakeOAuth2Response
-    attr_reader :body, :cookies, :deleted_cookies
+    attr_reader :body, :cookies, :deleted_cookies, :headers
     attr_accessor :content_type
 
     def initialize
+      @headers = {}
       @body = +''
       @cookies = {}
       @deleted_cookies = {}
@@ -61,6 +62,7 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do # rubocop:disable 
   let(:provider) { OAuth2ConfigSpecFixtures::Provider.new }
   let(:config) { described_class.new(provider, nil, nil) }
   let(:user) { SpecSeed.user }
+  let(:delivered_mail) { {} }
   let(:client) { create_oauth2_client!(issue_refresh_token: true, access_token_seconds: 900) }
   let(:request) { build_request(ip: '198.51.100.71', user_agent: 'RSpec/OAuth2') }
   let(:oauth2_request) do
@@ -121,6 +123,174 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do # rubocop:disable 
       completed_at:
     )
     token
+  end
+
+  context 'with new-device email verification' do # rubocop:disable RSpec/MultipleMemoizedHelpers
+    before do
+      user.update!(enable_new_device_email_verification: true, email: 'member@example.test')
+      create_user_device!(user:, known: true)
+      allow(VpsAdmin::API::EmailLogin).to receive(:deliver!) { |_pending, code, _request| delivered_mail[:code] = code }
+    end
+
+    def email_login_post(params, browser_request: request, flow: oauth2_request)
+      config.handle_post_authorize(
+        sinatra_handler: handler, sinatra_request: browser_request, sinatra_params: params,
+        oauth2_request: flow, oauth2_response: response, client:
+      )
+    end
+
+    def email_credentials
+      email_login_post({ login_credentials: '1', user: user.login, password: 'secret' })
+    end
+
+    def bound_email_request
+      cookie = response.cookies.fetch(VpsAdmin::API::EmailLogin::BROWSER_COOKIE).fetch(:value)
+      build_request(extra_env: { 'HTTP_COOKIE' => "vpsadmin_email_login=#{cookie}" })
+    end
+
+    it 'requires the original browser and OAuth context before authorizing' do
+      pending = email_credentials
+      expect(pending.complete).to be(false)
+      expect(pending.auth_token).to be_email_login
+      expect(Oauth2Authorization.where(user:)).to be_empty
+      expect(SingleSignOn.where(user:)).to be_empty
+      expect(response.headers).to include('Cache-Control' => 'no-store', 'Referrer-Policy' => 'no-referrer')
+      params = { login_email: '1', auth_token: pending.auth_token.to_s, email_code: delivered_mail[:code] }
+      expect(email_login_post(params).errors).to include(:email_login_expired)
+      altered = OAuth2ConfigSpecFixtures::FakeOAuth2Request.new(
+        client_id: client.client_id, response_type: 'code', redirect_uri: client.redirect_uri,
+        scope: ['all'], state: 'different-state'
+      )
+      expect(email_login_post(params, browser_request: bound_email_request, flow: altered).errors)
+        .to include(:email_login_expired)
+      result = email_login_post(params, browser_request: bound_email_request)
+      expect(result.complete).to be(true)
+      expect(result.authorization.login_authentication['method']).to eq('email')
+      tokens = config.get_tokens(result.authorization, request)
+      expect(tokens.first).to be_present
+      expect(result.authorization.reload.user_device).to be_known
+      expect(email_login_post(params, browser_request: bound_email_request).errors).to include(:email_login_expired)
+    end
+
+    it 'keeps a late email proof usable through the fresh password reset interval' do
+      user.update!(password_reset: true)
+      allow(TransactionChains::User::PasswordChanged).to receive(:fire)
+      now = Time.current.change(usec: 0)
+      allow(Time).to receive(:now).and_return(now)
+      pending = email_credentials
+      browser_request = bound_email_request
+      allow(Time).to receive(:now).and_return(now + 29.minutes)
+      allow(response).to receive(:set_cookie).and_call_original
+      expect(response).to receive(:set_cookie).with( # rubocop:disable RSpec/MessageSpies
+        VpsAdmin::API::EmailLogin::BROWSER_COOKIE,
+        hash_including(max_age: VpsAdmin::API::EmailLogin::LIFETIME.to_i)
+      ).and_call_original
+      verified = email_login_post(
+        { login_email: '1', auth_token: pending.auth_token.to_s, email_code: delivered_mail[:code] },
+        browser_request:
+      )
+      expect(verified.reset_password).to be(true)
+      expect(verified.auth_token.valid_to).to eq(now + 34.minutes)
+      allow(Time).to receive(:now).and_return(now + 31.minutes)
+      result = email_login_post(
+        { login_reset_password: '1', auth_token: verified.auth_token.to_s,
+          new_password1: 'new-secret', new_password2: 'new-secret' }, browser_request:
+      )
+      expect(result.complete).to be(true)
+      expect(result.authorization.login_authentication['method']).to eq('email')
+    end
+
+    it 'leaves logins from known devices unaffected' do
+      known = user.user_devices.find_by!(known: true)
+      handler.cookies[described_class::DEVICES_COOKIE] = known.token.token
+      expect(VpsAdmin::API::EmailLogin).not_to receive(:deliver!) # rubocop:disable RSpec/MessageSpies
+      expect(email_credentials.complete).to be(true)
+    end
+
+    it 'cancels only the challenge bound to this browser' do
+      pending = email_credentials
+      params = { cancel: '1', auth_token: pending.auth_token.to_s }
+      expect(email_login_post(params).cancel).to be(true)
+      expect(AuthToken.exists?(pending.auth_token.id)).to be(true)
+      expect(email_login_post(params, browser_request: bound_email_request).cancel).to be(true)
+      expect(AuthToken.exists?(pending.auth_token.id)).to be(false)
+    end
+
+    it 'rejects a known-device authorization revoked before code exchange' do
+      known = user.user_devices.find_by!(known: true)
+      handler.cookies[described_class::DEVICES_COOKIE] = known.token.token
+      result = email_credentials
+      known.close
+      expect { config.get_tokens(result.authorization, request) }
+        .to raise_error(VpsAdmin::API::EmailLogin::Error, 'email_login_required')
+      expect(UserSession.where(user:)).to be_empty
+    end
+
+    def sso_authorization(known)
+      client.update!(allow_single_sign_on: true)
+      sso = create_single_sign_on!(user:)
+      handler.cookies[described_class::DEVICES_COOKIE] = known.token.token
+      handler.cookies[described_class::SSO_COOKIE] = sso.token.token
+      config.handle_get_authorize(
+        sinatra_handler: handler, sinatra_request: request, sinatra_params: {},
+        oauth2_request:, oauth2_response: response, client:
+      ).authorization
+    end
+
+    it 'allows SSO backed by a usable known device without sending email' do
+      known = user.user_devices.find_by!(known: true)
+      expect(VpsAdmin::API::EmailLogin).not_to receive(:deliver!) # rubocop:disable RSpec/MessageSpies
+      authorization = sso_authorization(known)
+      expect(authorization.login_authentication).to include('method' => 'device', 'device_id' => known.id)
+      expect(config.get_tokens(authorization, request).first).to be_present
+    end
+
+    it 'invalidates an unexchanged SSO code when single sign-on is disabled' do
+      known = user.user_devices.find_by!(known: true)
+      authorization = sso_authorization(known)
+      code = authorization.code.token
+      user.update!(enable_single_sign_on: false)
+      expect(config.find_authorization_by_code(client, code)).to be_nil
+      expect(Oauth2Authorization.exists?(authorization.id)).to be(false)
+      expect(UserSession.where(user:)).to be_empty
+    end
+
+    %i[unknown revoked expired].each do |device_state|
+      it "returns to credentials when the SSO device is #{device_state} before authorization" do
+        device = create_user_device!(user:, known: device_state != :unknown)
+        client.update!(allow_single_sign_on: true)
+        handler.cookies[described_class::SSO_COOKIE] = create_single_sign_on!(user:).token.token
+        # Preserve the pre-lock lookup result to exercise concurrent revocation.
+        allow(config).to receive(:find_devices).and_return([device])
+        case device_state
+        when :revoked then device.close
+        when :expired then device.token.update!(valid_to: Time.current)
+        end
+        result = config.handle_get_authorize(
+          sinatra_handler: handler, sinatra_request: request, sinatra_params: {},
+          oauth2_request:, oauth2_response: response, client:
+        )
+        expect(result).to be_nil
+        expect(response.body).to include('name="password"')
+        expect(Oauth2Authorization.where(user:)).to be_empty
+        expect(UserSession.where(user:)).to be_empty
+      end
+    end
+
+    %i[revoked expired].each do |device_state|
+      it "rejects an SSO device #{device_state} before code exchange" do
+        known = user.user_devices.find_by!(known: true)
+        authorization = sso_authorization(known)
+        if device_state == :revoked
+          known.close
+        else
+          known.token.update!(valid_to: Time.current)
+        end
+        expect { config.get_tokens(authorization, request) }
+          .to raise_error(VpsAdmin::API::EmailLogin::Error, 'email_login_required')
+        expect(UserSession.where(user:)).to be_empty
+      end
+    end
   end
 
   it 'renders the authorize page for a valid client' do
@@ -1058,7 +1228,8 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do # rubocop:disable 
     auth_token = create_auth_token!(user:, purpose: 'mfa')
     t = Time.at(1_700_000_000)
     allow(Time).to receive(:now).and_return(t)
-    user.update!(lockout: true)
+    # Bypass token invalidation to exercise the final eligibility check.
+    user.update_columns(lockout: true)
 
     expect do
       result = config.handle_post_authorize(

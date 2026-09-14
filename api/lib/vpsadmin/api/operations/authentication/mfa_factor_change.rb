@@ -21,6 +21,7 @@ module VpsAdmin::API
         ).lock.take!
 
         result = yield(locked_factor, user)
+        user.invalidate_pending_email_logins! if user.enable_new_device_email_verification
         unless recoveries.empty?
           now = Time.current
           recoveries.each { |recovery| recovery.update!(invalidated_at: now) }

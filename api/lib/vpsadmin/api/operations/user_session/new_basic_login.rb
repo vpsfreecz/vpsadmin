@@ -16,6 +16,10 @@ module VpsAdmin::API
           raise Exceptions::OperationError, 'authentication expired'
         end
 
+        if EmailLogin.required?(user)
+          raise Exceptions::OperationError, 'email verification required, use OAuth2 or token auth instead'
+        end
+
         Operations::User::Login.run(user, request)
 
         session = open_session(

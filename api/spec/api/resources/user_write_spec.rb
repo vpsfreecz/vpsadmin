@@ -265,6 +265,7 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       created = User.find_by(login: login)
       expect(created).not_to be_nil
       expect(created.time_zone).to eq('Europe/Prague')
+      expect(created.enable_new_device_email_verification).to be(false)
 
       clear_login
       basic_authorize(login, password)
@@ -275,6 +276,18 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect(login_from(user_obj)).to eq(login)
     ensure
       clear_login
+    end
+
+    [false, true].each do |available|
+      it "does not enroll during creation when email verification availability is #{available}" do
+        SysConfig.find_or_create_by!(category: 'core', name: 'new_device_email_verification_available')
+                 .update!(value: available)
+        payload[:user][:enable_new_device_email_verification] = true
+        payload[:user][:email] = 'first@example.test,second@example.test' if available
+        as(SpecSeed.admin) { json_post index_path, payload }
+        expect_status(200)
+        expect(User.find_by!(login:).enable_new_device_email_verification).to be(false)
+      end
     end
 
     it 'uses the shared password minimum for supplied initial passwords' do
@@ -394,6 +407,68 @@ RSpec.describe 'VpsAdmin::API::Resources::User write actions' do # rubocop:disab
       expect(json['status']).to be(true)
       expect(user_obj['mailer_enabled']).to eq(new_value)
       expect(SpecSeed.user.reload.mailer_enabled).to eq(new_value)
+    end
+
+    context 'with email verification settings' do
+      before do
+        SysConfig.find_or_create_by!(category: 'core', name: 'new_device_email_verification_available')
+                 .update!(value: true)
+        SpecSeed.user.update!(email: 'member@example.test', enable_new_device_email_verification: false)
+        SpecSeed.user.user_devices.destroy_all
+      end
+
+      it 'requires the current password and sends no enrollment email' do
+        allow(VpsAdmin::API::EmailLogin).to receive(:deliver!)
+        as(SpecSeed.user) do
+          json_put show_path(SpecSeed.user.id), user: { enable_new_device_email_verification: true }
+          expect(json['status']).to be(false)
+          expect(errors).to have_key('password')
+          json_put show_path(SpecSeed.user.id), user: {
+            enable_new_device_email_verification: true, password: 'secret'
+          }
+        end
+        expect(json['status']).to be(true)
+        expect(SpecSeed.user.reload.enable_new_device_email_verification).to be(true)
+        expect(VpsAdmin::API::EmailLogin).not_to have_received(:deliver!)
+      end
+
+      it 'blocks enrollment while allowing an existing opt-in to be disabled' do
+        SysConfig.find_by!(category: 'core', name: 'new_device_email_verification_available').update!(value: false)
+        as(SpecSeed.user) do
+          json_put show_path(SpecSeed.user.id), user: {
+            enable_new_device_email_verification: true, password: 'secret'
+          }
+          expect(json['status']).to be(false)
+          expect(errors).to have_key('enable_new_device_email_verification')
+          SpecSeed.user.update!(enable_new_device_email_verification: true)
+          json_put show_path(SpecSeed.user.id), user: {
+            enable_new_device_email_verification: false, password: 'secret'
+          }
+        end
+        expect(json['status']).to be(true)
+        expect(SpecSeed.user.reload.enable_new_device_email_verification).to be(false)
+      end
+
+      it 'allows an administrator override only for another account' do
+        as(SpecSeed.admin) do
+          json_put show_path(SpecSeed.user.id), user: { enable_new_device_email_verification: true }
+          expect(json['status']).to be(true)
+          json_put show_path(SpecSeed.admin.id), user: { enable_new_device_email_verification: true }
+          expect(json['status']).to be(false)
+          expect(errors).to have_key('password')
+        end
+      end
+
+      it 'rejects a primary address containing several recipients' do
+        SpecSeed.user.update!(email: 'first@example.test,second@example.test')
+        as(SpecSeed.user) do
+          json_put show_path(SpecSeed.user.id), user: {
+            enable_new_device_email_verification: true, password: 'secret'
+          }
+        end
+        expect(json['status']).to be(false)
+        expect(errors).to have_key('enable_new_device_email_verification')
+      end
     end
 
     it 'allows users to update their time zone' do

@@ -26,6 +26,25 @@ module VpsAdmin::API
           next res
         end
 
+        if EmailLogin.required?(auth.user)
+          begin
+            pending = EmailLogin.start(
+              auth.user, request: req.request, authentication_generation: auth.authentication_generation,
+                         existing_token: auth.token,
+                         context: { 'flow' => 'token', 'lifetime' => req.input[:lifetime],
+                                    'interval' => req.input[:interval], 'scope' => req.input[:scope].split }
+            )
+          rescue EmailLogin::Error => e
+            res.error = VpsAdmin::API::I18n.t("auth.oauth2.errors.#{e.message}")
+            next res
+          end
+          res.complete = false
+          res.token = pending.to_s
+          res.valid_to = pending.valid_to
+          res.next_action = :email_code
+          next res.ok
+        end
+
         if auth.reset_password?
           auth.token.update!(opts: (auth.token.opts || {}).merge(
             lifetime: req.input[:lifetime],
@@ -113,7 +132,8 @@ module VpsAdmin::API
               auth.auth_token.opts['lifetime'],
               auth.auth_token.opts['interval'],
               auth.auth_token.opts['scope'],
-              authentication_generation: auth.authentication_generation
+              authentication_generation: auth.authentication_generation,
+              email_login_proof: EmailLogin.proof(auth.user, 'mfa')
             )
           rescue Exceptions::OperationError => e
             raise Exceptions::AuthenticationError, e.message
@@ -134,6 +154,52 @@ module VpsAdmin::API
           next res
         end
       end
+    end
+
+    action :email_code do
+      input do
+        string :code, label: 'Email verification code', required: true, protected: true
+      end
+
+      handle do |req, res|
+        VpsAdmin::API::Authentication::TokenConfig.process_email_login(req, res)
+      end
+    end
+
+    action :email_resend do
+      handle do |req, res|
+        VpsAdmin::API::Authentication::TokenConfig.process_email_login(req, res, resend: true)
+      end
+    end
+
+    def self.process_email_login(req, res, resend: false)
+      pending = ::AuthToken.joins(:token).find_by(tokens: { token: req.input[:token] }, purpose: :email_login)
+      raise EmailLogin::Error, 'email_login_expired' unless pending&.opts&.dig('context', 'flow') == 'token'
+
+      context = pending.opts.fetch('context')
+      session = nil
+      result = EmailLogin.process(req.input[:token], request: req.request, context:,
+                                                     code: req.input[:code], resend:) do |verified|
+        next if verified.user.password_reset
+
+        session = Operations::UserSession::NewTokenLogin.run(
+          verified.user, req.request, context.fetch('lifetime'), context.fetch('interval'),
+          context.fetch('scope'), authentication_generation: verified.user.authentication_generation,
+                                  email_login_proof: verified.proof
+        )
+      end
+      unless result.success?
+        res.error = VpsAdmin::API::I18n.t("auth.oauth2.errors.#{result.error}")
+        return res
+      end
+      res.complete = !session.nil?
+      res.token = session ? session.token.to_s : result.auth_token.to_s
+      res.valid_to = session ? session.token.valid_to : result.auth_token.valid_to
+      res.next_action = result.auth_token.reset_password? ? :reset_password : :email_code unless session
+      res.ok
+    rescue EmailLogin::Error => e
+      res.error = VpsAdmin::API::I18n.t("auth.oauth2.errors.#{e.message}")
+      res
     end
 
     action :reset_password do
@@ -166,6 +232,12 @@ module VpsAdmin::API
         end
 
         opts = auth_token.opts || {}
+        if opts['context'] && opts.dig('context', 'flow') != 'token'
+          res.error = 'invalid token'
+          next res
+        end
+        token_context = opts['context'] || opts
+        EmailLogin.check_authority!(auth_token.user, opts['email_login_proof'])
         password_reset = Operations::Authentication::ResetPassword.run(
           auth_token,
           req.input[:new_password1],
@@ -176,11 +248,12 @@ module VpsAdmin::API
           session = Operations::UserSession::NewTokenLogin.run(
             password_reset.user,
             req.request,
-            opts.fetch('lifetime', 'fixed'),
-            opts.fetch('interval', 5 * 60),
-            opts.fetch('scope', ['all']),
+            token_context.fetch('lifetime', 'fixed'),
+            token_context.fetch('interval', 5 * 60),
+            token_context.fetch('scope', ['all']),
             authentication_generation: password_reset.user.authentication_generation,
-            password_change_log: password_reset.password_change_log
+            password_change_log: password_reset.password_change_log,
+            email_login_proof: opts['email_login_proof']&.merge('generation' => password_reset.user.authentication_generation)
           )
         rescue Exceptions::OperationError => e
           raise Exceptions::AuthenticationError, e.message

@@ -74,6 +74,15 @@ RSpec.describe VpsAdmin::API::Authentication::Basic do
     )
   end
 
+  it 'rejects email-protected password authentication without sending mail' do
+    user.update!(enable_new_device_email_verification: true)
+    create_user_device!(user:, known: true)
+    expect(VpsAdmin::API::EmailLogin).not_to receive(:deliver!) # rubocop:disable RSpec/MessageSpies
+    expect { provider.send(:find_user, request, user.login, 'secret') }
+      .to raise_error(VpsAdmin::API::Exceptions::AuthenticationError, /email verification required/)
+    expect(UserSession.where(user:, auth_type: 'basic')).to be_empty
+  end
+
   it 'raises when password reset is required' do
     user.update!(password_reset: true)
 

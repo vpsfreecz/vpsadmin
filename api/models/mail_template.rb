@@ -312,6 +312,15 @@ class MailTemplate < ApplicationRecord
     support_mail: String
   }, roles: %i[account]
 
+  register :user_login_email_verification, vars: {
+    user: ::User,
+    code: String,
+    expires_at: Time,
+    ip_address: String,
+    user_agent: String,
+    support_mail: String
+  }
+
   register :password_recovery, vars: {
     accounts: Array,
     support_mail: String,
