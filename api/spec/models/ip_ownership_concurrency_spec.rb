@@ -232,4 +232,84 @@ RSpec.describe Network do
       end
     end.value
   end
+
+  it 'charges network additions against current usage after a concurrent disown' do
+    connection_thread do
+      expect(IpAddress.find(committed[:ip_id]).charged_environment_id).to eq(SpecSeed.environment.id)
+    end.value
+    snapshot = Queue.new
+    resume = Queue.new
+    worker = connection_thread do
+      described_class.transaction do
+        config = EnvironmentUserConfig.find(committed[:config_id])
+        config.ipv4 # Establish an older REPEATABLE READ snapshot.
+        snapshot << true
+        resume.pop
+        ips = described_class.find(committed[:network_id]).add_ips(1, user: SpecSeed.user, environment: SpecSeed.environment)
+        expect(ips.first.charged_environment_id).to eq(SpecSeed.environment.id)
+      end
+    end
+    Timeout.timeout(10) { snapshot.pop }
+    connection_thread do
+      TransactionChains::Ip::Update.fire(IpAddress.find(committed[:ip_id]), user: nil)
+    end.value
+    resume << true
+    Timeout.timeout(20) { worker.value }
+    connection_thread do
+      expect(EnvironmentUserConfig.find(committed[:config_id]).ipv4).to eq(committed[:usage])
+    end.value
+  ensure
+    resume << true if resume
+    worker&.join(25) || worker&.kill&.join
+  end
+
+  it 'serializes opposite ownership transfers before either takes a second quota row' do
+    connection_thread do
+      config = SpecSeed.other_user.environment_user_configs.find_by!(environment: SpecSeed.environment)
+      committed[:extra_config_id] = config.id
+      committed[:extra_uses] = ClusterResourceUse.where(class_name: 'EnvironmentUserConfig', row_id: config.id).map(&:attributes)
+      committed[:second_ip_id] = create_ip_address!(user: SpecSeed.other_user, addr: '192.0.2.247').id
+      committed[:extra_usage] = config.reload.ipv4
+    end.value
+    locked = Queue.new
+    attempted = Queue.new
+    resume = Queue.new
+    # Observe the real SQL lock boundaries on the separate database sessions.
+    allow_any_instance_of(EnvironmentUserConfig).to receive(:lock!).and_wrap_original do |original, *args, **kwargs| # rubocop:disable RSpec/AnyInstance
+      worker = Thread.current[:ownership_transfer_worker]
+      Thread.current[:ownership_transfer_worker] = nil if worker
+      attempted << true if worker == :second
+      result = original.call(*args, **kwargs)
+      if worker == :first
+        locked << true
+        resume.pop
+      end
+      result
+    end
+    workers = []
+    workers << connection_thread do
+      Thread.current[:ownership_transfer_worker] = :first
+      TransactionChains::Ip::Update.fire(IpAddress.find(committed[:ip_id]),
+                                         user: SpecSeed.other_user, environment: SpecSeed.environment)
+    end
+    Timeout.timeout(10) { locked.pop }
+    workers << connection_thread do
+      Thread.current[:ownership_transfer_worker] = :second
+      TransactionChains::Ip::Update.fire(IpAddress.find(committed[:second_ip_id]),
+                                         user: SpecSeed.user, environment: SpecSeed.environment)
+    end
+    Timeout.timeout(10) { attempted.pop }
+    expect(workers.last.join(0.1)).to be_nil
+    resume << true
+    Timeout.timeout(20) { workers.each(&:value) }
+    connection_thread do
+      expect(IpAddress.find(committed[:ip_id]).user_id).to eq(SpecSeed.other_user.id)
+      expect(IpAddress.find(committed[:second_ip_id]).user_id).to eq(SpecSeed.user.id)
+      expect(EnvironmentUserConfig.find(committed[:config_id]).ipv4).to eq(committed[:usage])
+      expect(EnvironmentUserConfig.find(committed[:extra_config_id]).ipv4).to eq(committed[:extra_usage])
+    end.value
+  ensure
+    resume << true if resume
+    workers&.each { |thread| thread.join(25) || thread.kill.join }
+  end
 end

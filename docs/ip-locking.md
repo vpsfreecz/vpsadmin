@@ -44,3 +44,17 @@ These helpers depend on every ownership/assignment writer participating in the
 IP reservation protocol. Roll out compatible API and supervisor writers and
 finish older in-flight chains before enabling release campaigns. This does not
 change the node protocol or the stored resource-lock format.
+
+IP accounting uses `adjust_resource!(resource, delta:, ...)`. It shares
+validation and allocation with the absolute setter; `reallocate_resource!`
+still takes an absolute value. Relative changes lock current owner, allowance
+and usage rows, and reserve the existing user resource for the chain lifetime.
+Transfers lock all affected accounting owners in ID order first. Synchronous
+changes release the reservation when their database transaction finishes.
+
+Deferred adjustments describe a final value; they do not update the stored
+value until confirmation. Callers therefore combine deltas per usage row
+before staging them. Interface clearing combines direct and routed addresses
+across a VPS, including soft and hard deletion. Clone already combines its
+interface allocations. Migration retains its existing rejection of multiple
+interfaces.

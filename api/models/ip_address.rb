@@ -78,9 +78,9 @@ class IpAddress < ApplicationRecord
         )
         resource = params[:network].cluster_resource
 
-        user_env.reallocate_resource!(
+        user_env.adjust_resource!(
           resource,
-          user_env.send(resource) + params[:size],
+          delta: params[:size],
           user: params[:user],
           save: true,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed)

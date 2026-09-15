@@ -23,8 +23,10 @@ module TransactionChains
       use_chain(Vps::Mounts, args: vps) if vps.mounts.any?
 
       # Remove network interfaces
-      vps.network_interfaces.each do |netif|
-        use_chain(NetworkInterface::Destroy, args: netif)
+      netifs = vps.network_interfaces.to_a
+      use_chain(NetworkInterface::Clear, args: [netifs])
+      netifs.each do |netif|
+        use_chain(NetworkInterface::Destroy, args: netif, kwargs: { clear: false })
       end
 
       # Destroy the underlying dataset, but only in database

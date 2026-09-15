@@ -134,6 +134,8 @@ module TransactionChains
         environment_id: target_env.id
       )
 
+      user_envs.values.sort_by(&:id).each(&:lock!)
+
       %i[ipv4 ipv4_private ipv6].each do |r|
         changes = {}
         user_envs.each_key do |env_id|
@@ -174,9 +176,10 @@ module TransactionChains
 
           next unless n[:add] > 0 || n[:drop] > 0
 
-          uses << user_env.reallocate_resource!(
+          uses << user_env.adjust_resource!(
             r,
-            user_env.send(r) + n[:add] - n[:drop],
+            delta: n[:add] - n[:drop],
+            chain: self,
             user:
           )
         end

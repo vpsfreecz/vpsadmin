@@ -654,6 +654,22 @@ RSpec.describe TransactionChains::Vps::Clone::OsToOs do
       addr: "2001:db8:1::#{120 + SecureRandom.random_number(20)}"
     )
 
+    other_netif = create_network_interface!(vps, name: 'eth1')
+    create_ip_address!(network: SpecSeed.network_v4, location: dst_location,
+                       network_interface: other_netif, addr: '192.0.2.241')
+    create_ip_address!(network: SpecSeed.network_v4, location: dst_location, addr: '192.0.2.242')
+    config = vps.user.environment_user_configs.find_by!(environment: dst_location.environment)
+    config.adjust_resource!(
+      :ipv4,
+      delta: 1,
+      user: vps.user,
+      save: true,
+      confirmed: ClusterResourceUse.confirmed(:confirmed)
+    )
+    before = config.ipv4
+    ipv4_use = ClusterResourceUse.for_obj(config).joins(user_cluster_resource: :cluster_resource)
+                                 .find_by!(cluster_resources: { name: 'ipv4' })
+
     seen_address_locations = []
     allow(TransactionChains::Ip::Allocate).to receive(:use_in).and_wrap_original do |original, root_chain, opts|
       seen_address_locations << opts.fetch(:kwargs).fetch(:address_location)
@@ -684,7 +700,12 @@ RSpec.describe TransactionChains::Vps::Clone::OsToOs do
       Transactions::NetworkInterface::CreateVethRouted,
       Transactions::NetworkInterface::AddRoute
     )
-    expect(dst_vps.network_interfaces.count).to eq(1)
+    expect(dst_vps.network_interfaces.count).to eq(2)
+    ipv4_edits = confirmations_for(chain).select do |row|
+      row.class_name == 'ClusterResourceUse' && row.row_pks == { 'id' => ipv4_use.id } &&
+        row.attr_changes.has_key?('value')
+    end
+    expect(ipv4_edits.map(&:attr_changes)).to eq([{ 'value' => before + 2 }])
     expect(seen_address_locations).to all(eq(SpecSeed.other_location))
     expect(resource_edits.count).to be >= 3
   end

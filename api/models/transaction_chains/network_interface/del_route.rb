@@ -32,54 +32,9 @@ module TransactionChains
 
       env = opts[:environment] || netif.vps.node.location.environment
 
-      uses = []
-      user_env = netif.vps.user.environment_user_configs.find_by!(
-        environment: env
-      )
-
-      if opts[:reallocate] && !env.user_ip_ownership
-        %i[ipv4 ipv4_private ipv6].each do |r|
-          cnt = case r
-                when :ipv4
-                  ips_arr.inject(0) do |sum, ip|
-                    if ip.network.role == 'public_access' && ip.network.ip_version == 4
-                      sum + ip.size
-
-                    else
-                      sum
-                    end
-                  end
-
-                when :ipv4_private
-                  ips_arr.inject(0) do |sum, ip|
-                    if ip.network.role == 'private_access' && ip.network.ip_version == 4
-                      sum + ip.size
-
-                    else
-                      sum
-                    end
-                  end
-
-                when :ipv6
-                  ips_arr.inject(0) do |sum, ip|
-                    if ip.network.ip_version == 6
-                      sum + ip.size
-
-                    else
-                      sum
-                    end
-                  end
-                end
-
-          next if cnt == 0
-
-          uses << user_env.reallocate_resource!(
-            r,
-            user_env.send(r) - cnt,
-            user: netif.vps.user
-          )
-        end
-      end
+      changes = Hash.new(0)
+      record_resource_changes(changes, netif, ips_arr, env) if opts[:reallocate]
+      uses = apply_resource_changes(changes)
 
       ips_arr.each do |ip|
         use_chain(
@@ -103,17 +58,7 @@ module TransactionChains
         end
       end
 
-      unless uses.empty?
-        append_t(Transactions::Utils::NoOp, args: netif.vps.node_id) do |t|
-          uses.each do |use|
-            if use.updating?
-              t.edit(use, value: use.value)
-            else
-              t.create(use)
-            end
-          end
-        end
-      end
+      confirm_resource_changes(uses, netif.vps.node_id)
 
       ips_arr.each do |ip|
         ip.host_ip_addresses.order(:id).lock.each do |host_ip|
@@ -130,7 +75,60 @@ module TransactionChains
       use_chain(Export::DelHostsFromAll, args: [netif.vps.user, ips_arr])
     end
 
+    # Clear groups/interfaces together so deferred totals cannot overwrite
+    # deductions staged by an earlier included DelRoute chain.
+    def remove_from_interfaces(routes)
+      ::IpAddress.lock_all_current!(self, routes.flat_map { |_netif, ips| ips })
+      changes = Hash.new(0)
+      routes.each do |netif, ips|
+        next if ips.empty?
+
+        use_chain(self.class, args: [netif, ips], kwargs: { reallocate: false })
+        record_resource_changes(changes, netif, ips, netif.vps.node.location.environment)
+      end
+      return if changes.empty?
+
+      confirm_resource_changes(apply_resource_changes(changes), routes.first.first.vps.node_id)
+    end
+
     protected
+
+    def record_resource_changes(changes, netif, ips, env)
+      return if env.user_ip_ownership || ips.empty?
+
+      config = netif.vps.user.environment_user_configs.find_by!(environment: env)
+      ips.each do |ip|
+        resource = if ip.version == 6
+                     :ipv6
+                   elsif ip.network.role == 'public_access'
+                     :ipv4
+                   elsif ip.network.role == 'private_access'
+                     :ipv4_private
+                   end
+        changes[[config, resource]] -= ip.size if resource
+      end
+    end
+
+    def apply_resource_changes(changes)
+      changes.keys.map(&:first).uniq(&:id).sort_by(&:id).each(&:lock!)
+      changes.map do |(config, resource), delta|
+        config.adjust_resource!(resource, delta:, user: config.user, chain: self)
+      end
+    end
+
+    def confirm_resource_changes(uses, node_id)
+      return if uses.empty?
+
+      append_t(Transactions::Utils::NoOp, args: node_id) do |t|
+        uses.each do |use|
+          if use.updating?
+            t.edit(use, value: use.value)
+          else
+            t.create(use)
+          end
+        end
+      end
+    end
 
     def ip_confirmation(t, netif, ip, env)
       changes = {

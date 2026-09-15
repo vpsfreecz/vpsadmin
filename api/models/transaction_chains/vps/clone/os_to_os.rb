@@ -465,9 +465,9 @@ module TransactionChains
       changes = sums.filter_map do |r, sum|
         next if sum == 0
 
-        user_env.reallocate_resource!(
+        user_env.adjust_resource!(
           r,
-          user_env.send(r) + sum,
+          delta: sum,
           user: dst_vps.user,
           chain: self,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed)
