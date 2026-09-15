@@ -211,7 +211,13 @@ module StorageChainSpecHelpers
   def create_ip_address!(network: SpecSeed.network_v4, location: SpecSeed.location, user: nil,
                          addr: nil, prefix: nil, size: 1, network_interface: nil)
     prefix ||= network.split_prefix
-    addr ||= "192.0.2.#{(IpAddress.maximum(:id).to_i % 200) + 20}"
+    unless addr
+      start = IpAddress.maximum(:id).to_i % 200
+      occupied = IpAddress.pluck(:ip_addr)
+      addr = (0...200).map { |offset| "192.0.2.#{((start + offset) % 200) + 20}" }
+                      .find { |candidate| !occupied.include?(candidate) }
+      raise ArgumentError, 'No unused default fixture IP address; pass addr explicitly' unless addr
+    end
 
     ip = IpAddress.register(
       IPAddress.parse("#{addr}/#{prefix}"),
