@@ -187,7 +187,9 @@ A closed campaign cannot be reopened.
 
 The campaign list, creation, address tables and Notice history use the usual
 WebUI sidebar and table structure. Action forms and confirmation messages explain
-the operation separately from the campaign data.
+the operation separately from the campaign data. The administrator campaign list
+has separate Total, Release and Keep columns with numeric counts and explanatory
+header tooltips.
 
 Campaign Index and Show expose administrator-only `total_ip_count`,
 `to_release_ip_count` and `kept_ip_count`. Each snapshot row counts once,

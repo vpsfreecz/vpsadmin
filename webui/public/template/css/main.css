@@ -492,3 +492,7 @@ td:has(.node-time-detail) {
 	visibility: visible;
 	opacity: 1;
 }
+
+/* Keep bulk-selection controls from sizing the address column. */
+form[name^="ip-release-"] table th:first-child:has(input[data-select-all]) {width:1%;}
+form[name^="ip-release-"] .ip-release-reason {width:100%; box-sizing:border-box;}

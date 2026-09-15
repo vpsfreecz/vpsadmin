@@ -25,6 +25,9 @@ function ip_address_list($page)
     $pagination = new \Pagination\System(null, $api->ip_address->list);
 
     $xtpl->title(_('Routable IP Addresses'));
+    if ($api->ip_release_request) {
+        $xtpl->sbar_add(_('IP release campaigns'), '?page=ip_release&action=list', 'networking.ip-release');
+    }
     $xtpl->table_title(_('Filters'));
     $xtpl->form_create('', 'get', 'ip-filter', false);
 

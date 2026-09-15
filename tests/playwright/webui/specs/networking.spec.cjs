@@ -1,11 +1,15 @@
 const { test, expect } = require('@playwright/test');
 
 const { readFixtures } = require('../lib/fixtures.cjs');
-const { login, logout } = require('../lib/pages/auth.cjs');
+const { login, logout, loginButton, submitCredentials } = require('../lib/pages/auth.cjs');
 const {
   formByAction,
+  submitForm,
+  runVpsadminctl,
+  waitForVpsTransactionsSettled,
 } = require('../lib/pages/webui.cjs');
 const {
+  expectNetworkingNotification,
   expectRouteAssignForm,
   rowWithText,
 } = require('../lib/pages/networking.cjs');
@@ -279,4 +283,224 @@ test.describe('networking browser coverage', () => {
 
     await logout(page, fixtures.admin.username);
   });
+});
+
+
+function showApiResource(name, id) {
+  const response = runVpsadminctl([name, 'show', String(id)]);
+  return (response.response || response)[name];
+}
+
+async function campaignAction(page, label) {
+  await page.locator('#aside').getByRole('link', { name: label, exact: true }).click();
+  await page.getByRole('button', { name: label, exact: true }).click();
+  await expect(page.locator('#content')).not.toContainText('Action failed');
+}
+
+test('IP release campaign: navigation, bulk exemptions, notices and manual release', async ({ page }) => {
+  const n = requireNetworkingFixtures();
+  const ips = [n.ipAddresses.release_reason, n.ipAddresses.release_assigned, n.ipAddresses.release_exempt];
+  const otherIp = n.ipAddresses.release_other_owner;
+  await login(page, fixtures.admin);
+  await page.goto('/?page=cluster');
+  await page.locator('#aside').getByRole('link', { name: 'IP release campaigns', exact: true }).click();
+  await expect(page.getByRole('columnheader', { name: 'Campaign', exact: true })).toBeVisible();
+  await expect(page.locator('#content-in')).toContainText('No IP release campaigns.');
+  await page.locator('#aside').getByRole('link', { name: 'Create campaign', exact: true }).click();
+  const filters = page.locator('form[name="ip-release-filter"]');
+  for (const name of ['ip_release_versions[]', 'ip_release_networks[]', 'ip_release_locations[]']) {
+    await expect(filters.locator(`select[name="${name}"]`)).toHaveAttribute('multiple', '');
+  }
+  await expect(filters.locator('tr[id="ip_release_versions[]"]')).toHaveCSS('float', 'none');
+  await filters.getByRole('button', { name: 'Preview addresses', exact: true }).click();
+  const create = page.locator('form[name="ip-release-create"]');
+  await expect(create).toHaveCount(1);
+  await expect(create.getByRole('columnheader', { name: 'IP address', exact: true })).toBeVisible();
+  await expect(create.locator('input[name="allow_keep"]')).toBeChecked();
+  await expect(create.locator('th input[data-select-all]')).toHaveAttribute('title', 'Select all addresses on this page');
+  await expect(create.locator('th:has(input[data-select-all])')).toHaveText('');
+  await expect(create.locator('td input[data-select-all]')).toHaveCount(0);
+  await create.getByRole('checkbox', { name: 'Select all addresses on this page', exact: true }).uncheck();
+  for (const ip of [...ips, otherIp]) {
+    await create.locator(`input[name="addresses[]"][value="${ip.id}"]`).check();
+  }
+  await expect(create.locator('input[name="label"]')).toHaveCount(0);
+  const deadline = await create.locator('input[name="deadline"]').inputValue();
+  await create.locator('input[name="deadline"]').fill('invalid date');
+  await create.getByRole('button', { name: 'Create campaign', exact: true }).click();
+  await expect(page.locator('#content')).toContainText('Enter the deadline as YYYY-MM-DD HH:MM.');
+  await expect(create.locator('input[name="deadline"]')).toHaveValue('invalid date');
+  for (const ip of [...ips, otherIp]) {
+    await expect(create.locator(`input[name="addresses[]"][value="${ip.id}"]`)).toBeChecked();
+  }
+  await expect(create.getByRole('checkbox', { name: 'Select all addresses on this page', exact: true })).toHaveJSProperty('indeterminate', true);
+  await create.locator('input[name="deadline"]').fill(deadline);
+  const incomplete = await page.request.post('/?page=ip_release&action=create', {
+    form: {
+      csrf_token: await create.locator('input[name="csrf_token"]').inputValue(),
+      deadline, 'addresses[]': String(ips[0].id),
+    },
+  });
+  expect(await incomplete.text()).toContain('The address selection was incomplete.');
+  await create.getByRole('button', { name: 'Create campaign', exact: true }).click();
+  const campaignUrl = page.url();
+  const campaignId = new URL(campaignUrl).searchParams.get('id');
+  await page.locator('#aside').getByRole('link', { name: 'IP release campaigns', exact: true }).click();
+  for (const name of ['Total', 'Release', 'Keep']) {
+    const header = page.getByRole('columnheader', { name, exact: true });
+    await expect(header).toBeVisible();
+    await expect(header.locator('span')).toHaveAttribute('title', /.+/);
+  }
+  const campaignRow = rowWithText(page, `IP release campaign #${campaignId}`);
+  for (const [index, value] of ['4', '4', '0'].entries()) {
+    const cell = campaignRow.getByRole('cell').nth(index + 4);
+    await expect(cell).toHaveText(value);
+    await expect(cell).toHaveCSS('text-align', 'right');
+  }
+  await page.getByRole('link', { name: `IP release campaign #${campaignId}`, exact: true }).click();
+  await expect(page.locator('#content-in')).toContainText('Total: 4');
+  await expect(page.locator('#content-in')).toContainText('To be released: 4');
+  await expect(page).toHaveURL(campaignUrl);
+  await expect(page.locator('form[name="ip-release-edit"]')).toHaveCount(0);
+  const bulk = page.locator('form[name="ip-release-exempt"]');
+  await expect(bulk).toHaveCount(1);
+  await expect(bulk.locator('form')).toHaveCount(0);
+  await expect(bulk.locator('th input[data-select-all]')).toBeVisible();
+  expect((await bulk.locator('th:has(input[data-select-all])').boundingBox()).width).toBeLessThan(70);
+  await expect(bulk.locator('td input[data-select-all]')).toHaveCount(0);
+  await expect(bulk.getByRole('columnheader', { name: 'Original owner', exact: true })).toBeVisible();
+  for (const ip of [...ips, otherIp]) {
+    await expect(rowWithText(bulk, ip.addr)).toBeVisible();
+  }
+  await bulk.getByRole('checkbox', { name: 'Select all addresses on this page', exact: true }).check();
+  await bulk.locator('textarea[name="reason"]').fill(' ');
+  await bulk.getByRole('button', { name: 'Set exemption', exact: true }).click();
+  await expect(page.locator('#content')).toContainText('Action failed');
+  await expect(bulk.getByRole('checkbox', { name: 'Select all addresses on this page', exact: true })).toBeChecked();
+  await bulk.locator('textarea[name="reason"]').fill('Batch reservation <script>window.unexpected = true</script>');
+  await bulk.getByRole('button', { name: 'Set exemption', exact: true }).click();
+  for (const ip of [...ips, otherIp]) {
+    await expect(rowWithText(bulk, ip.addr)).toContainText('Exempted by an admin');
+    await expect(rowWithText(bulk, ip.addr)).toContainText(fixtures.admin.username);
+  }
+  expect(await page.evaluate(() => window.unexpected)).toBeUndefined();
+  await expect(page.locator('#content-in')).toContainText('Kept: 4');
+  await expect(page.locator('#content-in')).toContainText('To be released: 0');
+  await bulk.getByRole('checkbox', { name: 'Select all addresses on this page', exact: true }).check();
+  await bulk.getByRole('button', { name: 'Remove exemption', exact: true }).click();
+  for (const ip of [...ips, otherIp]) {
+    await expect(rowWithText(bulk, ip.addr)).toContainText('Eligible for release');
+  }
+  await expect(page.locator('#aside').getByRole('link', { name: 'Send reminders', exact: true })).toHaveCount(0);
+  await campaignAction(page, 'Send initial notices');
+  await expect(page.locator('#aside').getByRole('link', { name: 'Send initial notices', exact: true })).toHaveCount(0);
+  await expect(page.locator('#aside').getByRole('link', { name: 'Send reminders', exact: true })).toBeVisible();
+  const response = runVpsadminctl(['ip_release_request', 'list']);
+  const requests = (response.response || response).ip_release_requests;
+  const requestId = requests.find(request => request.ip_release_campaign.id === Number(campaignId) && request.user.id === fixtures.user.id).id;
+  const requestUrl = `/?page=ip_release&action=request&id=${requestId}`;
+  const initialRequest = showApiResource('ip_release_request', requestId);
+  const initialMail = showApiResource('mail_log', initialRequest.mail_log.id);
+  expect(initialMail.text_html).toContain('Open in vpsAdmin');
+  for (const ip of [ips[2], otherIp]) {
+    await rowWithText(bulk, ip.addr).locator('input[name="addresses[]"]').check();
+  }
+  await bulk.locator('textarea[name="reason"]').fill('Approved reservation');
+  await bulk.getByRole('button', { name: 'Set exemption', exact: true }).click();
+  await logout(page, fixtures.admin.username);
+
+  await login(page, fixtures.users.secondary);
+  await page.goto('/?page=ip_release&action=list');
+  await page.getByRole('link', { name: 'IP release request', exact: true }).click();
+  await expect(rowWithText(page, otherIp.addr)).toContainText('Approved reservation');
+  await expect(page.locator('#content-in')).not.toContainText(ips[0].addr);
+  await expect(page.locator('#content-in')).not.toContainText(fixtures.admin.username);
+  await logout(page, fixtures.users.secondary.username);
+
+  // Follow the actual email button through the login redirect.
+  await page.setContent(initialMail.text_html);
+  await page.getByRole('link', { name: 'Open in vpsAdmin', exact: true }).click();
+  await expect(page.locator('#content')).toContainText('Sign in to view your IP release request.');
+  await loginButton(page).click({ noWaitAfter: true });
+  await submitCredentials(page, fixtures.user.username, fixtures.user.password);
+  await expect(page).toHaveURL(new RegExp(`page=ip_release.*id=${requestId}`));
+  await page.locator('#aside').getByRole('link', { name: 'IP release requests', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'Create campaign', exact: true })).toHaveCount(0);
+  await page.getByRole('link', { name: 'IP release request', exact: true }).click();
+  await expect(page.locator('#content-in')).not.toContainText(otherIp.addr);
+  await expect(page.locator('#content-in')).not.toContainText(fixtures.admin.username);
+  await expect(page.getByRole('columnheader', { name: 'Last release result', exact: true })).toHaveCount(0);
+  await expect(page.locator('#content-in')).not.toContainText('Campaign settings');
+  await expect(page.locator('#aside').getByRole('link', { name: 'IP release request', exact: true })).toHaveCount(0);
+  await expect(page.locator('#aside').getByRole('link', { name: 'Notice history', exact: true })).toHaveCount(0);
+  await expect(page.locator('#content-in')).not.toContainText('To be released:');
+  const keep = page.locator('form[name="ip-release-keep"]');
+  await expect(keep.getByRole('columnheader', { name: 'User reason', exact: true })).toBeVisible();
+  await expect(keep.locator('th input[data-select-all]')).toBeVisible();
+  await rowWithText(keep, ips[0].addr).locator('input[name="addresses[]"]').check();
+  await keep.locator('textarea[name="reason"]').fill('Migration <script>window.unexpected = true</script>');
+  await submitForm(keep, 'Keep selected IPs');
+  await expect(rowWithText(page, ips[0].addr)).toContainText('Kept with a reason');
+  expect(await page.evaluate(() => window.unexpected)).toBeUndefined();
+  const assign = await expectRouteAssignForm(page, ips[1], n.vps.ip_release);
+  await submitForm(assign, 'Add only route');
+  await expectNetworkingNotification(page, 'IP assigned');
+  await waitForVpsTransactionsSettled(page, n.vps.ip_release.id);
+  await page.goto(requestUrl);
+  await expect(rowWithText(page, ips[1].addr)).toContainText('Assigned to an interface');
+  await logout(page, fixtures.user.username);
+
+  await login(page, fixtures.admin);
+  await page.goto(campaignUrl);
+  await expect(rowWithText(page, ips[0].addr)).toContainText(fixtures.user.username);
+  await expect(page.locator('#content-in')).toContainText('Kept: 4');
+  await expect(page.locator('#content-in')).toContainText('To be released: 0');
+  await page.locator('#aside').getByRole('link', { name: 'Edit campaign', exact: true }).click();
+  const edit = page.locator('form[name="ip-release-edit"]');
+  await edit.locator('input[name="allow_keep"]').uncheck();
+  await submitForm(edit, 'Save changes');
+  await campaignAction(page, 'Send reminders');
+  const remindedRequest = showApiResource('ip_release_request', requestId);
+  const reminder = showApiResource('mail_log', remindedRequest.mail_log.id);
+  expect(reminder.text_plain).toContain(ips[0].addr);
+  expect(reminder.subject).toBe('Reminder: unused IP address planned for release');
+  await expect(page.locator('#content-in')).toContainText('Kept: 3');
+  await expect(page.locator('#content-in')).toContainText('To be released: 1');
+  expect(reminder.text_plain).not.toContain(ips[1].addr);
+  expect(reminder.text_plain).not.toContain(ips[2].addr);
+  await page.locator('#aside').getByRole('link', { name: 'Release eligible addresses', exact: true }).click();
+  await expect(page.locator('#content-in')).toContainText('The planned release date has not arrived.');
+  await page.getByRole('button', { name: 'Release eligible addresses', exact: true }).click();
+  await expect.poll(async () => {
+    await page.reload();
+    return await rowWithText(page, ips[0].addr).innerText();
+  }, { timeout: 120000 }).toContain('Released');
+  await expect(page.locator('#content-in')).toContainText('All selected addresses released');
+  await expect(page.getByRole('link', { name: /^Transaction chain #[0-9]+$/ }).first()).toBeVisible();
+  await expect(rowWithText(page, ips[0].addr).getByRole('link', { name: /Transaction chain/ })).toHaveCount(0);
+  await expect(page.getByRole('columnheader', { name: 'Started at', exact: true })).toBeVisible();
+  await expect(rowWithText(page, ips[1].addr)).toContainText('Assigned to an interface');
+  await expect(rowWithText(page, ips[2].addr)).toContainText('Exempted by an admin');
+  await expect(page.locator('#aside').getByRole('link', { name: 'Release eligible addresses', exact: true })).toHaveCount(0);
+  await page.locator('#aside').getByRole('link', { name: 'Notice history', exact: true }).click();
+  await expect(page.getByRole('columnheader', { name: 'Recipient', exact: true })).toBeVisible();
+  await expect(page.locator('#content-in')).toContainText('Initial notice');
+  await expect(page.locator('#content-in')).toContainText('Reminder');
+  await page.locator('#aside').getByRole('link', { name: 'Close without releasing IPs', exact: true }).click();
+  await expect(page.locator('#content-in')).toContainText('Closing does not cancel a release already in progress');
+  await page.getByRole('button', { name: 'Close without releasing IPs', exact: true }).click();
+  await expect(page.locator('#aside').getByRole('link', { name: 'Edit campaign', exact: true })).toHaveCount(0);
+  await expect(page.locator('input[name="addresses[]"]')).toHaveCount(0);
+  expect(showApiResource('ip_address', otherIp.id).user.id).toBe(fixtures.users.secondary.id);
+  await logout(page, fixtures.admin.username);
+  await login(page, fixtures.user);
+  await page.goto(requestUrl);
+  await expect(page.locator('form[name="ip-release-keep"]')).toHaveCount(0);
+  await expect(page.locator('#aside').getByRole('link', { name: 'Notice history', exact: true })).toHaveCount(0);
+  await page.locator('#aside').getByRole('link', { name: 'IP release requests', exact: true }).click();
+  await page.getByRole('link', { name: 'IP release request', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`page=ip_release.*id=${requestId}`));
+  await page.goto(`/?page=ip_release&action=notices&id=${requestId}`);
+  await expect(page.locator('#content')).toContainText('This action is available only to administrators.');
+  await logout(page, fixtures.user.username);
 });
