@@ -21,6 +21,7 @@ class Network < ApplicationRecord
     messave: '%{value} is not a valid IP version'
   }
   validate :check_ip_integrity
+  validate :preserve_allocation_resource
 
   # @param attrs [Hash]
   # @param opts [Hash]
@@ -102,6 +103,23 @@ class Network < ApplicationRecord
     ).count
   end
 
+  # Changing quota semantics requires an explicit conversion of existing IPs.
+  # Registration takes this same SQL row lock before adding the first address.
+  def preserve_allocation_resource
+    return unless persisted? && (will_save_change_to_role? || will_save_change_to_ip_version?)
+
+    self.class.where(id:).lock.pick(:id)
+    return unless ip_addresses.lock.exists?
+
+    errors.add(:base, 'cannot change IP version or role while the network has allocations')
+  end
+
+  # Use current network metadata before choosing or registering an address.
+  def lock_for_registration!
+    reload(lock: true)
+    net_addr(true)
+  end
+
   # Name of cluster resource appropriate for this network
   def cluster_resource
     return :ipv6 if ip_version == 6
@@ -116,7 +134,7 @@ class Network < ApplicationRecord
   # @option opts [::Environment] environment where to charge the addresses
   # @option opts [Boolean] lock
   def add_ips(n, opts = {})
-    acquire_lock(self) if opts[:lock].nil? || opts[:lock]
+    acquired_lock = acquire_lock(self) if opts[:lock].nil? || opts[:lock]
 
     if opts[:environment] && !opts[:user]
       raise ArgumentError, 'provide user together with environment'
@@ -132,11 +150,11 @@ class Network < ApplicationRecord
     end
 
     ips = []
-    net = net_addr
-    last_ip = ip_addresses.order("#{ip_order('ip_addr')} DESC").take
-    subsize = subnet_size
-
     self.class.transaction do
+      lock_for_registration!
+      last_ip = ip_addresses.order("#{ip_order('ip_addr')} DESC").lock.take
+      subsize = subnet_size
+
       each_ip(last_ip && last_ip.to_ip) do |host|
         ips << ::IpAddress.register(
           host,
@@ -168,7 +186,7 @@ class Network < ApplicationRecord
 
     ips
   ensure
-    release_lock(self) if opts[:lock].nil? || opts[:lock]
+    acquired_lock&.release
   end
 
   # @param env [Environment]
@@ -195,6 +213,10 @@ class Network < ApplicationRecord
     return if address.blank? || prefix.blank?
 
     net_addr(true) do |n|
+      if ip_version != (n.ipv4? ? 4 : 6)
+        errors.add(:ip_version, 'does not match the network address')
+      end
+
       ip_addresses.each do |ip|
         errors.add(:address, "IP #{ip.addr} does not belong to this network") unless n.include?(ip.to_ip)
       end

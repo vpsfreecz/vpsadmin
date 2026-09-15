@@ -36,6 +36,7 @@ class IpAddress < ApplicationRecord
     raise ArgumentError, 'owned IP addresses require a charge environment' if params[:user] && !charged_environment
 
     transaction do
+      params[:network].lock_for_registration!
       if params[:user] && (params[:allocate].nil? || params[:allocate])
         user_env = params[:user].environment_user_configs.find_by!(
           environment: charged_environment
