@@ -5,7 +5,7 @@
 - `webui/`: PHP front end (Composer-managed); config samples near `config_cfg.php`.
 - `client/`, `nodectl*/`, `nodectld*/`, `libnodectld*/`: CLI tools and node daemons, each with its own `Gemfile`/`.rubocop.yml`.
 - `nixos/`, `packages/`: NixOS modules and Nix package definitions for deployments.
-- `doc/`: Architecture notes (`overview.mdwn`, `transactions.mdwn`) and operational docs.
+- `docs/`: Architecture notes (`overview.mdwn`, `transactions.mdwn`) and operational docs.
 
 ## Relationship With vpsAdminOS
 - vpsAdmin commonly drives vpsAdminOS feature needs, but vpsAdminOS remains an
@@ -54,7 +54,7 @@ commit there, run its documentation contract, and review every reported Czech
 and English page and screenshot concept. A green vpsAdmin test suite alone does
 not prove that external documentation remains current.
 
-- Czech translation guidelines are documented in `doc/i18n-cs.md`. Follow the
+- Czech translation guidelines are documented in `docs/i18n-cs.md`. Follow the
   terminology there when editing API or WebUI Czech translations.
 - API translations are maintained in `api/lib/vpsadmin/api/locales/*.yml` and
   normalized by `rake vpsadmin:i18n:update`.

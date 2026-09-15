@@ -4,6 +4,11 @@ Control panel for managing virtual servers on top of
 containing all of vpsAdmin's components: API server, web interface, node control
 daemon, NixOS configuration modules, etc.
 
+## Documentation
+
+See [docs/](docs/) for architecture notes, operational documentation, and
+documentation build instructions.
+
 ## Deployment
 vpsAdmin is deployed on vpsFree.cz infrastructure as a part of
 [vpsfree-cz-configuration](https://github.com/vpsfreecz/vpsfree-cz-configuration).

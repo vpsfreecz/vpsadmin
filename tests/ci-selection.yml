@@ -15,7 +15,7 @@ skip:
   - "**/*.md"
   - "*.mdwn"
   - "**/*.mdwn"
-  - "doc/**"
+  - "docs/**"
   - ".git-hooks/pre_commit/migration_specs.rb"
   - ".github/workflows/api-migration-specs.yml"
   - ".github/workflows/api-specs.yml"
