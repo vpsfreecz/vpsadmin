@@ -10,7 +10,7 @@ class ClusterResourceUse < ApplicationRecord
 
   validate :check_allocation
 
-  attr_accessor :resource_transfer, :admin_override, :attr_changes
+  attr_accessor :resource_transfer, :admin_override, :attr_changes, :allocation_read_lock
 
   def self.for_obj(obj)
     where(
@@ -35,12 +35,15 @@ class ClusterResourceUse < ApplicationRecord
       attr_changes[:admin_lock_type] = self.class.admin_lock_types[admin_lock_type]
     end
 
-    used = self.class.where(
+    usage = self.class.where(
       user_cluster_resource:,
       enabled: true
     ).where.not(
       confirmed: self.class.confirmed(:confirm_destroy)
-    ).sum(:value)
+    )
+    # Relative adjustments require a current read under REPEATABLE READ, also
+    # when another object consumes the same user's resource allowance.
+    used = allocation_read_lock ? usage.order(:id).lock.pluck(:value).sum : usage.sum(:value)
 
     total = if new_record? || resource_transfer
               used + value

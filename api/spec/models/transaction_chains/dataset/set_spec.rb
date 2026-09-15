@@ -63,6 +63,25 @@ RSpec.describe TransactionChains::Dataset::Set do
     ).to be(false)
   end
 
+  it 'validates refquota and stages an explicit administrative override without saving usage early' do
+    pool = create_pool!(node: SpecSeed.node, role: :primary)
+    pool.update!(refquota_check: true)
+    _dataset, dip = create_dataset_with_pool!(user: user, pool: pool, name: "refquota-#{SecureRandom.hex(4)}")
+    ensure_diskspace_resource!(user: user, environment: pool.node.location.environment, value: 4096)
+    use = dip.allocate_resource!(:diskspace, 4096, user: user, confirmed: ClusterResourceUse.confirmed(:confirmed))
+
+    expect { described_class.fire(dip, { refquota: 8192 }, {}) }
+      .to raise_error(VpsAdmin::API::Exceptions::ClusterResourceAllocationError)
+    expect(use.reload.value).to eq(4096)
+    expect(dip).not_to be_locked
+
+    chain, = described_class.fire(dip, { refquota: 8192 }, { admin_override: true })
+    expect(use.reload.value).to eq(4096)
+    expect(confirmation_rows(chain)).to include(
+      ['ClusterResourceUse', { 'id' => use.id }, { 'value' => 8192 }]
+    )
+  end
+
   it 'propagates inheritable property edits to inherited children' do
     pool = create_pool!(node: SpecSeed.node, role: :primary)
     parent, parent_dip = create_dataset_with_pool!(

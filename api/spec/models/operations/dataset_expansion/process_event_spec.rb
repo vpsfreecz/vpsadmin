@@ -111,6 +111,10 @@ RSpec.describe VpsAdmin::API::Operations::DatasetExpansion::ProcessEvent do
     expect(expansion).to be_active
     expect(expansion.max_over_refquota_seconds).to eq(7200)
     expect(fixture.fetch(:dataset).reload.dataset_expansion).to eq(expansion)
+    use = fixture.fetch(:dataset_in_pool).get_cluster_resources([:diskspace]).take!
+    expect(use).to have_attributes(value: 12_288, admin_lock_type: 'no_lock', admin_limit: nil)
+    expect(use.confirmed).to eq(:confirmed)
+    expect(diskspace_resource_for(SpecSeed.user, environment)).not_to be_locked
   end
 
   it 'bubbles ResourceLocked without deleting the event' do
