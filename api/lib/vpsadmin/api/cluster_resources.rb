@@ -67,6 +67,32 @@ module VpsAdmin::API
       def self.environment(obj)
         obj.instance_exec(&obj.class.cluster_resources[:environment])
       end
+
+      def self.user_resource(obj, resource, user, read_lock: false)
+        resource_obj = ::ClusterResource.find_by!(name: resource)
+        user_resource = ::UserClusterResource.lock(read_lock).find_by(
+          user:, environment: environment(obj), cluster_resource: resource_obj
+        )
+        unless user_resource
+          raise Exceptions::UserResourceMissing,
+                "user #{user.login} does not have resource #{resource}"
+        end
+
+        [resource_obj, user_resource]
+      end
+
+      def self.resource_use_scope(obj, resource, user)
+        ::ClusterResourceUse.joins(:user_cluster_resource).where(
+          user_cluster_resources: {
+            user_id: user.id,
+            environment_id: environment(obj).id,
+            cluster_resource_id: ::ClusterResource.find_by!(name: resource).id
+          },
+          class_name: obj.class.name,
+          table_name: obj.class.table_name,
+          row_id: obj.id
+        )
+      end
     end
 
     module ClassMethods
@@ -202,22 +228,10 @@ module VpsAdmin::API
       end
 
       def allocate_resource(resource, value, user: nil, confirmed: nil,
-                            chain: nil, admin_override: nil)
+                            chain: nil, admin_override: nil, read_lock: false)
         user ||= ::User.current
         confirmed ||= ::ClusterResourceUse.confirmed(:confirm_create)
-        env = Private.environment(self)
-
-        resource_obj = ::ClusterResource.find_by!(name: resource)
-        user_resource = ::UserClusterResource.find_by(
-          user:,
-          environment: env,
-          cluster_resource: resource_obj
-        )
-
-        unless user_resource
-          raise Exceptions::UserResourceMissing,
-                "user #{user.login} does not have resource #{resource}"
-        end
+        resource_obj, user_resource = Private.user_resource(self, resource, user, read_lock:)
 
         chain.lock(user_resource) if chain
 
@@ -231,6 +245,7 @@ module VpsAdmin::API
         )
 
         use.admin_override = true if admin_override
+        use.allocation_read_lock = read_lock
         return use unless use.valid?
 
         use.save
@@ -260,42 +275,42 @@ module VpsAdmin::API
       def reallocate_resource!(resource, value, user: nil, save: false, confirmed: nil,
                                chain: nil, override: nil, lock_type: nil)
         user ||= ::User.current
+        use = Private.resource_use_scope(self, resource, user).take
+        reallocate_resource_use!(resource, use, value, user:, save:, confirmed:, chain:, override:, lock_type:)
+      end
 
-        use = ::ClusterResourceUse.joins(:user_cluster_resource).find_by(
-          user_cluster_resources: {
-            user_id: user.id,
-            environment_id: Private.environment(self).id,
-            cluster_resource_id: ::ClusterResource.find_by!(name: resource).id
-          },
-          class_name: self.class.name,
-          table_name: self.class.table_name,
-          row_id: id
-        )
+      # Apply one relative change using current accounting data. Deferred callers
+      # must combine changes to the same usage row before staging confirmations.
+      # Returns the usage row in both synchronous and deferred modes.
+      def adjust_resource!(resource, delta:, user: nil, save: false, confirmed: nil,
+                           chain: nil, override: nil, lock_type: nil)
+        raise ArgumentError, 'delta must be an integer' unless delta.is_a?(Integer)
+        raise ArgumentError, 'relative changes require save: true or a chain' unless save || chain
 
-        unless use
-          return allocate_resource!(
-            resource,
-            value,
-            user:,
-            confirmed:,
-            chain:
-          )
-        end
+        user ||= ::User.current
+        self.class.transaction do
+          # Lock a separate instance: callers can carry unsaved object changes.
+          self.class.find(id).lock!
+          _, user_resource = Private.user_resource(self, resource, user)
+          change = proc do
+            user_resource.lock!
+            use = Private.resource_use_scope(self, resource, user).lock.take
+            use.user_cluster_resource = user_resource if use
+            result = reallocate_resource_use!(
+              resource, use, (use&.value || 0) + delta,
+              user:, save:, confirmed:, chain:, override:, lock_type:, read_lock: true
+            )
+            use || result
+          end
 
-        chain.lock(use.user_cluster_resource) if chain
-
-        use.value = value
-        use.admin_override = override
-        use.admin_lock_type = lock_type unless lock_type.nil?
-
-        if save
-          use.save!
-
-        elsif !use.valid?
-          raise Exceptions::ClusterResourceAllocationError, use
-
-        else
-          use
+          if chain
+            chain.lock(user_resource)
+            change.call
+          else
+            result = nil
+            user_resource.acquire_lock { result = change.call }
+            result
+          end
         end
       end
 
@@ -404,6 +419,39 @@ module VpsAdmin::API
         end
 
         ret
+      end
+
+      private
+
+      def reallocate_resource_use!(resource, use, value, user:, save:, confirmed:,
+                                   chain:, override:, lock_type:, read_lock: false)
+        unless use
+          return allocate_resource!(
+            resource,
+            value,
+            user:,
+            confirmed:,
+            chain:,
+            read_lock:
+          )
+        end
+
+        chain.lock(use.user_cluster_resource) if chain
+
+        use.value = value
+        use.admin_override = override
+        use.admin_lock_type = lock_type unless lock_type.nil?
+        use.allocation_read_lock = read_lock
+
+        if save
+          use.save!
+
+        elsif !use.valid?
+          raise Exceptions::ClusterResourceAllocationError, use
+
+        else
+          use
+        end
       end
     end
 
