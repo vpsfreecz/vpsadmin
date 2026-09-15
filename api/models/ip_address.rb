@@ -8,6 +8,7 @@ class IpAddress < ApplicationRecord
   belongs_to :charged_environment, class_name: 'Environment'
   belongs_to :reverse_dns_zone, class_name: 'DnsZone'
   has_many :host_ip_addresses
+  has_many :export_hosts
   has_many :ip_address_assignments
 
   has_paper_trail
