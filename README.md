@@ -6,8 +6,9 @@ daemon, NixOS configuration modules, etc.
 
 ## Documentation
 
-See [docs/](docs/) for architecture notes, operational documentation, and
-documentation build instructions.
+See the [documentation index](docs/README.md) for architecture notes,
+storage concepts, and development guidance. The docs are ordinary Markdown
+files and can be read directly in the repository.
 
 ## Deployment
 vpsAdmin is deployed on vpsFree.cz infrastructure as a part of

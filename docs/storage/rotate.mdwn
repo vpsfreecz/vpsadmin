@@ -1,2 +1,0 @@
-Dataset in pool has some limits as to how many snapshots should be kept.
-Rotate removes those old snapshots.

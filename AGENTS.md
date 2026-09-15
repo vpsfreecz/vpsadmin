@@ -5,7 +5,9 @@
 - `webui/`: PHP front end (Composer-managed); config samples near `config_cfg.php`.
 - `client/`, `nodectl*/`, `nodectld*/`, `libnodectld*/`: CLI tools and node daemons, each with its own `Gemfile`/`.rubocop.yml`.
 - `nixos/`, `packages/`: NixOS modules and Nix package definitions for deployments.
-- `docs/`: Architecture notes (`overview.mdwn`, `transactions.mdwn`) and operational docs.
+- `docs/`: Markdown documentation for developers and operators. Start with
+  [docs/README.md](docs/README.md); update the relevant pages with code changes
+  and follow the writing conventions in that index.
 
 ## Relationship With vpsAdminOS
 - vpsAdmin commonly drives vpsAdminOS feature needs, but vpsAdminOS remains an
