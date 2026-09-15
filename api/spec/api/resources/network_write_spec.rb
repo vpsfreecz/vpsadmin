@@ -104,6 +104,35 @@ RSpec.describe 'VpsAdmin::API::Resources::Network write actions' do # rubocop:di
     }.merge(overrides))
   end
 
+  it 'rejects owned additions without a charge environment atomically' do
+    basic_authorize SpecSeed.admin.login, SpecSeed::PASSWORD
+    count = IpAddress.count
+    json_post(add_addresses_path(ipv4_network.id), network: { count: 2, user: SpecSeed.user.id })
+    expect(json['status']).to be(false)
+    expect(response_message).to include('provide environment')
+    expect(IpAddress.count).to eq(count)
+  end
+
+  it 'rejects a charge environment without an owner atomically' do
+    basic_authorize SpecSeed.admin.login, SpecSeed::PASSWORD
+    count = IpAddress.count
+    json_post(add_addresses_path(ipv4_network.id), network: { count: 2, environment: SpecSeed.environment.id })
+    expect(json['status']).to be(false)
+    expect(response_message).to include('provide user')
+    expect(IpAddress.count).to eq(count)
+  end
+
+  it 'rejects owned additions in an unavailable charge environment atomically' do
+    basic_authorize SpecSeed.admin.login, SpecSeed::PASSWORD
+    count = IpAddress.count
+    json_post(add_addresses_path(ipv4_network.id), network: {
+                count: 2, user: SpecSeed.user.id, environment: SpecSeed.other_environment.id
+              })
+    expect(json['status']).to be(false)
+    expect(response_message).to include('not available in environment')
+    expect(IpAddress.count).to eq(count)
+  end
+
   describe 'API description' do
     it 'includes network write endpoints' do
       scopes = EndpointInventory.scopes_for_version(self, api_version)

@@ -199,6 +199,8 @@ module VpsAdmin::API::Resources
         }
       rescue ActiveRecord::RecordInvalid => e
         error!('add failed', e.record.errors.to_hash)
+      rescue ArgumentError => e
+        error!(e.message)
       end
     end
   end
