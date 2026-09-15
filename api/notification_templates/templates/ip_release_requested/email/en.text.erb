@@ -1,0 +1,61 @@
+Hi <%= @user.login %>,
+
+<% if @addresses.one? -%>
+An IP address on your account is not assigned to a VPS. We plan to release
+it so other users can use it.
+<% else -%>
+Some IP addresses on your account are not assigned to a VPS. We plan to
+release them so other users can use them.
+<% end -%>
+<% if @addresses.any?(&:public_ipv4?) -%>
+
+<% if @addresses.one? -%>
+Public IPv4 addresses are a scarce resource. Releasing an address you no
+longer need helps make room for other VPSes.
+<% else -%>
+Public IPv4 addresses are a scarce resource. Releasing addresses you no longer
+need helps make room for other VPSes.
+<% end -%>
+<% end -%>
+
+<% @addresses.each do |item| -%>
+  - <%= item.address %>/<%= item.prefix %> (<%= item.location_label || 'location unavailable' %>)
+<% end -%>
+
+Planned release date: <%= local_time(@campaign.deadline, '%Y-%m-%d %H:%M %Z') %>
+
+<% if @addresses.one? -%>
+If you no longer need this address, you do not need to reply or do anything.
+<% else -%>
+If you no longer need these addresses, you do not need to reply or do
+anything.
+<% end -%>
+
+<% if @addresses.one? -%>
+If you still need this address, you can keep it by assigning it to a VPS.
+<% else -%>
+If you still need an address, you can keep it by assigning it to a VPS.
+<% end -%>
+<% if @campaign.allow_keep -%>
+<% if @addresses.one? -%>
+You can also keep this address unassigned: select it in vpsAdmin and enter a
+reason why you need it.
+<% else -%>
+You can also keep an address unassigned: select it in vpsAdmin and enter a
+reason why you need it.
+<% end -%>
+<% end -%>
+
+<% if @addresses.one? -%>
+You can see the current address status and options for keeping it in
+vpsAdmin:
+<% else -%>
+You can see the current address status and options for keeping them in
+vpsAdmin:
+<% end -%>
+<%= @webui_url %>/?page=ip_release&action=request&id=<%= @request.id %>
+
+Thank you for your time.
+
+Best regards,
+vpsAdmin

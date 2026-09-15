@@ -23,6 +23,7 @@ import ../../make-test.nix (
       "ci"
       "vpsadmin"
       "tasks"
+      "dns"
     ];
 
     machines = import ../../machines/dns-server-node.nix args;
@@ -133,6 +134,74 @@ import ../../make-test.nix (
             expect_success: false,
             timeout: 300
           )
+        end
+        it 'releases a batch with shared ownership and quota after removing its live PTR' do
+          dns_server = services.api_ruby_json(code: "puts JSON.dump(id: DnsServer.find_by!(name: 'ns-reverse.dns.test').id)")
+          zone = create_reverse_dns_zone_runtime(
+            services, name: '100.51.198.in-addr.arpa.', network_address: '198.51.100.0', network_prefix: 24
+          )
+          server_zone = create_dns_server_zone_runtime(
+            services, admin_user_id: admin_user_id, dns_zone_id: zone.fetch('id'),
+            dns_server_id: dns_server.fetch('id'), zone_type: 'primary_type'
+          )
+          expect_chain_done(services, server_zone, label: 'create IP release reverse zone')
+          allocation = services.api_ruby_json(code: <<~RUBY)
+            #{api_session_prelude(admin_user_id)}
+            owner = User.find(#{admin_user_id})
+            location = Node.find(#{node1_id}).location
+            network = Network.create!(
+              label: 'IP release PTR', address: '198.51.100.0', prefix: 24, ip_version: 4,
+              role: :public_access, managed: true, split_access: :no_access,
+              split_prefix: 32, purpose: :vps, primary_location: location
+            )
+            LocationNetwork.create!(network: network, location: location, primary: true, autopick: true, userpick: true)
+            ip = IpAddress.register(IPAddress.parse('198.51.100.25/32'),
+                                    network: network, location: location, user: owner, prefix: 32, size: 1)
+            ip.update!(reverse_dns_zone_id: #{zone.fetch('id')})
+            plain = IpAddress.register(IPAddress.parse('198.51.100.26/32'),
+                                       network: network, location: location, user: owner, prefix: 32, size: 1)
+            campaign = IpReleaseCampaign.create_selected!(ids: [ip.id, plain.id], actor: owner,
+              deadline: Time.now + 604800)
+            config = owner.environment_user_configs.find_by!(environment: location.environment)
+            puts JSON.dump(id: ip.id, plain_id: plain.id, host_id: ip.host_ip_addresses.first.id,
+                           campaign_id: campaign.id, config_id: config.id, usage: config.ipv4)
+          RUBY
+          record = create_dns_record_runtime(
+            services, admin_user_id: admin_user_id, dns_zone_id: zone.fetch('id'),
+            attrs: { name: '25', record_type: 'PTR', content: 'release.example.test.', enabled: true }
+          )
+          expect_chain_done(services, record, label: 'create IP release PTR')
+          set_host_ip_reverse_record(services, host_ip_id: allocation.fetch('host_id'), dns_record_id: record.fetch('id'))
+          expect(dns_query_short(dns, server: '${dnsNode.ipAddr}', name: '25.100.51.198.in-addr.arpa.',
+                                 type: 'PTR')).to eq(['release.example.test.'])
+          release = services.api_ruby_json(code: <<~RUBY)
+            #{api_session_prelude(admin_user_id)}
+            campaign = IpReleaseCampaign.find(#{allocation.fetch('campaign_id')})
+            attempt = campaign.release!(actor: User.current)
+            raise "release failed: \#{attempt.error}" unless attempt.state == 'running'
+            raise 'wrong batch size' unless attempt.ip_count == 2
+            raise 'duplicate release attempt' unless campaign.release!(actor: User.current).id == attempt.id
+            ips = IpAddress.where(id: [#{allocation.fetch('id')}, #{allocation.fetch('plain_id')}])
+            raise 'ownership changed before cleanup' unless ips.pluck(:user_id).uniq == [User.current.id]
+            puts JSON.dump(chain_id: attempt.transaction_chain_id)
+          RUBY
+          expect_chain_done(services, release, label: 'release IP and remove live PTR', expected_handles: [
+            tx_types(services).fetch('dns_server_zone_delete_records'), tx_types(services).fetch('dns_server_reload')
+          ])
+          expect(dns_query_short(dns, server: '${dnsNode.ipAddr}', name: '25.100.51.198.in-addr.arpa.',
+                                 type: 'PTR')).to eq([])
+          result = services.api_ruby_json(code: <<~RUBY)
+            ip = IpAddress.find(#{allocation.fetch('id')})
+            host = HostIpAddress.find(#{allocation.fetch('host_id')})
+            item = IpReleaseCampaign.find(#{allocation.fetch('campaign_id')}).ip_release_request_addresses.first
+            puts JSON.dump(owner: ip.user_id, ptr: host.reverse_dns_record_id,
+                           record_exists: DnsRecord.exists?(#{record.fetch('id')}), released: !item.released_at.nil?,
+                           plain_owner: IpAddress.find(#{allocation.fetch('plain_id')}).user_id,
+                           usage: EnvironmentUserConfig.find(#{allocation.fetch('config_id')}).ipv4,
+                           attempt_state: item.ip_release_campaign.latest_release_attempt.state)
+          RUBY
+          expect(result).to eq('owner' => nil, 'ptr' => nil, 'record_exists' => false, 'released' => true,
+                               'plain_owner' => nil, 'usage' => allocation.fetch('usage') - 2, 'attempt_state' => 'released')
         end
       end
     '';

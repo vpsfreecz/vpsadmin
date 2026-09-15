@@ -56,6 +56,59 @@ RSpec.describe NodeCtld::Command do
     parts.each { |part| expect(log).to include(part) }
   end
 
+  %i[success rollback fatal].each do |outcome|
+    it "keeps batch ownership, accounting and release markers together on #{outcome}" do
+      chain_id = insert_chain(size: 3)
+      handles = NodeCtldSpec::TestHandles
+      first = insert_transaction(transaction_chain_id: chain_id,
+                                 handle: outcome == :fatal ? handles::FAIL_ROLLBACK : handles::OK)
+      cleanup = insert_transaction(transaction_chain_id: chain_id, depends_on_id: first,
+                                   handle: outcome == :success ? handles::OK : handles::FAIL_EXEC)
+      final = insert_transaction(transaction_chain_id: chain_id, depends_on_id: cleanup, handle: handles::OK)
+      quota_id = insert_cluster_resource_use(value: 9, confirmed: 1)
+      ips = 2.times.map do |i|
+        ip_id = sql_insert('ip_addresses', ip_addr: "192.0.2.#{210 + i}", prefix: 32, size: 1,
+                                           network_id: 1, user_id: 42, charged_environment_id: 7)
+        item_id = sql_insert('ip_release_request_addresses', {
+          ip_release_request_id: 1, ip_address_id: ip_id, active_ip_address_id: ip_id,
+          address: "192.0.2.#{210 + i}", prefix: 32, size: 1, network_id: 1,
+          last_result: 'releasing', release_chain_id: chain_id, created_at: Time.now, updated_at: Time.now
+        })
+        insert_confirmation(transaction_id: final, class_name: 'IpAddress', table_name: 'ip_addresses',
+                            row_pks: { 'id' => ip_id }, confirm_type: 3,
+                            attr_changes: { user_id: nil, charged_environment_id: nil })
+        insert_confirmation(transaction_id: final, class_name: 'IpReleaseRequestAddress',
+                            table_name: 'ip_release_request_addresses', row_pks: { 'id' => item_id }, confirm_type: 3,
+                            attr_changes: { released_at: Time.now, active_ip_address_id: nil, last_result: 'released' })
+        insert_resource_lock(chain_id:, resource: 'IpAddress', row_id: ip_id)
+        [ip_id, item_id]
+      end
+      insert_confirmation(transaction_id: final, class_name: 'ClusterResourceUse', table_name: 'cluster_resource_uses',
+                          row_pks: { 'id' => quota_id }, confirm_type: 3, attr_changes: { value: 7 })
+      insert_resource_lock(chain_id:, resource: 'User', row_id: 42)
+
+      execute_and_save(first)
+      execute_and_save(cleanup)
+      expect(sql_value('SELECT value FROM cluster_resource_uses WHERE id = ?', quota_id).to_i).to eq(9)
+      ips.each { |pair| expect(sql_value('SELECT user_id FROM ip_addresses WHERE id = ?', pair.first)).to eq(42) }
+      execute_and_save(outcome == :success ? final : first)
+
+      expect(sql_value('SELECT state FROM transaction_chains WHERE id = ?', chain_id)).to eq(
+        { success: 2, rollback: 4, fatal: 5 }.fetch(outcome)
+      )
+      expect(sql_value('SELECT value FROM cluster_resource_uses WHERE id = ?', quota_id).to_i)
+        .to eq(outcome == :success ? 7 : 9)
+      ips.each do |ip_id, item_id|
+        expect(sql_value('SELECT user_id FROM ip_addresses WHERE id = ?', ip_id)).to eq(outcome == :success ? nil : 42)
+        expect(sql_value('SELECT charged_environment_id FROM ip_addresses WHERE id = ?', ip_id)).to eq(outcome == :success ? nil : 7)
+        expect(sql_value('SELECT last_result FROM ip_release_request_addresses WHERE id = ?', item_id))
+          .to eq(outcome == :success ? 'released' : 'releasing')
+      end
+      expect(sql_value('SELECT COUNT(*) FROM resource_locks WHERE locked_by_type = ? AND locked_by_id = ?',
+                       'TransactionChain', chain_id)).to eq(outcome == :fatal ? 3 : 0)
+    end
+  end
+
   it 'persists an unsupported handle error' do
     chain_id = insert_chain
     tx_id = insert_transaction(transaction_chain_id: chain_id, handle: 123_456)

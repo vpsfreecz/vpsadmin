@@ -30,6 +30,15 @@ cs:
       wrong_length: nemá správnou délku (má mít %{count} znaků)
   vpsadmin:
     attributes:
+      access:
+        choices:
+          all:
+            label: Obojí
+          private_access:
+            label: Privátní
+          public_access:
+            label: Veřejný
+        label: Přístup
       access_token:
         label: Přístupový token
       access_token_lifetime:
@@ -78,11 +87,11 @@ cs:
         label: Přidané místo
       addr:
         description: Samotná adresa
-      address:
-        label: Adresa
       address_location:
         description: Lokace, ze které se vybírají IP adresy
         label: Lokace adresy
+      addresses:
+        label: IP adresy
       admin:
         description: Filtrovat uživatele s administrátorskými oprávněními
         label: Administrátor
@@ -164,6 +173,14 @@ cs:
         label: Alokační řetězec
       allow_admin_modifications:
         label: Povolit úpravy administrátorem
+      allow_keep:
+        choices:
+          'false':
+            label: zakázáno
+          'true':
+            label: povoleno
+        description: Při rozhodování o uvolnění IP adres respektovat důvody uživatelů
+        label: Povolit ponechání adres s odůvodněním
       allow_single_sign_on:
         label: Povolit jednotné přihlášení
       amount:
@@ -180,6 +197,8 @@ cs:
         label: Velikost ARC
       arch:
         label: Architektura
+      assign_ip_address_id:
+        label: Adresa dostupná pro přiřazení
       assigned:
         description: Počet IP adres přiřazených VPS
         label: Přiřazeno
@@ -274,6 +293,12 @@ cs:
         label: Bity
       block_count:
         label: Počet bloků
+      blocked_chain_id:
+        label: ID blokujícího transakčního řetězce
+      blocked_resource:
+        label: Zamčený prostředek
+      blocked_resource_id:
+        label: ID zamčeného prostředku
       boot_id:
         label: ID spuštění
       booted_at:
@@ -288,10 +313,20 @@ cs:
         label: Příchozí bajty
       bytes_out:
         label: Odchozí bajty
+      can_assign:
+        label: Lze přiřadit adresy
       can_create_vps:
         label: Může vytvořit VPS
       can_destroy_vps:
         label: Může zrušit VPS
+      can_keep:
+        label: Lze ponechat adresy s odůvodněním
+      can_release:
+        label: Lze uvolnit adresy
+      can_send_initial_notices:
+        label: Lze odeslat úvodní výzvy
+      can_send_reminders:
+        label: Lze odeslat připomínky
       category:
         label: Kategorie
       cc:
@@ -331,6 +366,8 @@ cs:
         label: Zkontrolováno
       class_name:
         description: Hledat podle názvu dotčené třídy
+      cleanup_state:
+        label: Stav vyčištění
       client_id:
         label: ID klienta
       client_ip_ptr:
@@ -341,6 +378,8 @@ cs:
         label: Verze klienta
       closed_at:
         label: Uzavřeno
+      closed_by:
+        label: Uzavřel
       closes_at:
         label: Uzavírá se
       cluster_resource:
@@ -426,8 +465,8 @@ cs:
         label: CPU
       create_vps:
         label: Vytvořit VPS
-      created_by:
-        label: Vytvořil
+      created_by_id:
+        label: ID autora pokusu
       created_from:
         description: Zahrnout platby vytvořené v tomto čase nebo později
         label: Vytvořeno od
@@ -492,6 +531,9 @@ cs:
         label: Plány datasetu
       date:
         label: Datum
+      deadline:
+        description: Orientační datum uvolnění nepoužívaných IP adres
+        label: Plánované datum uvolnění
       default:
         description: Pokud je true, uživatelská konfigurace se dědí z konfigurace
           prostředí
@@ -634,8 +676,17 @@ cs:
         label: Prostředí
       environment_dataset_plan:
         label: Plán datasetu prostředí
+      error:
+        label: Chyba při přípravě
       estimated_income:
         label: Odhadovaný příjem
+      event:
+        choices:
+          reminder:
+            label: Připomenutí
+          requested:
+            label: První výzva
+        label: Typ oznámení
       event_at:
         label: Čas události
       event_data:
@@ -672,6 +723,18 @@ cs:
         label: Typ události
       evidence_revision:
         label: Revize podkladů
+      excluded_at:
+        label: Vyloučeno
+      exclusion_reason:
+        label: Důvod vyloučení
+      exempted_at:
+        label: Výjimka udělena
+      exempted_by_id:
+        label: ID autora výjimky
+      exempted_by_login:
+        label: Autor výjimky
+      exemption_reason:
+        label: Důvod výjimky administrátora
       expected_content_revision:
         label: Očekávaná revize obsahu
       expiration:
@@ -852,12 +915,12 @@ cs:
         label: Název vyvolávajícího procesu
       invoked_by_pid:
         label: PID vyvolávajícího procesu
-      ip_address:
-        label: IP adresa
       ip_address_assignment:
         label: Přidělení IP adresy
       ip_checked:
         label: IP zkontrolováno
+      ip_count:
+        label: Počet IP adres
       ip_crawler:
         label: IP crawler
       ip_errors:
@@ -872,6 +935,8 @@ cs:
         label: IP proxy
       ip_recent_abuse:
         label: Nedávné zneužití IP
+      ip_release_campaign:
+        label: Kampaň pro uvolnění IP adres
       ip_request_id:
         label: ID požadavku IP kontroly
       ip_success:
@@ -917,9 +982,21 @@ cs:
         label: Vydání
       issue_refresh_token:
         label: Vydat obnovovací token
+      keep_reason:
+        label: Důvod uživatele
       keep_snapshots:
         description: Ponechat snapshoty vytvořené během klonování
         label: Ponechat snapshoty
+      kept_at:
+        label: Důvod odeslán
+      kept_by_id:
+        label: ID autora důvodu
+      kept_by_login:
+        label: Autor důvodu
+      kept_ip_count:
+        description: Alokace chráněné přiřazením, využitím službou, výjimkou nebo
+          důvodem platným podle aktuálních pravidel
+        label: Ponechané IP adresy
       kernel:
         label: Jádro
       kernel_command_line:
@@ -961,6 +1038,8 @@ cs:
         label: Poslední hlášení
       last_request_at:
         label: Poslední požadavek
+      last_result:
+        label: Výsledek posledního pokusu o uvolnění
       last_seen_at:
         label: Naposledy viděno
       last_transfer_at:
@@ -986,6 +1065,8 @@ cs:
         label: Poslední použití
       last_use_at:
         label: Poslední použití
+      latest_release_attempt:
+        label: Poslední pokus o uvolnění
       lazy:
         description: Pouze označit VPS jako smazanou
         label: Odložené smazání
@@ -1017,6 +1098,11 @@ cs:
       localized_value:
         label: Lokalizovaná hodnota
       location:
+        label: Lokace
+      location_label:
+        label: Lokace
+      locations:
+        description: ID lokací oddělená čárkami; prázdný seznam zahrnuje všechny lokace
         label: Lokace
       lock:
         label: Zámek
@@ -1182,6 +1268,9 @@ cs:
         label: Síť
       network_interface:
         label: Síťové rozhraní
+      networks:
+        description: ID sítí oddělená čárkami; prázdný seznam zahrnuje všechny sítě
+        label: Sítě
       new_password:
         label: Heslo
       new_refquota:
@@ -1226,6 +1315,8 @@ cs:
         label: Stav nodu
       nodes_online:
         label: Nody online
+      notified_at:
+        label: Poslední výzva zařazená k odeslání
       ns_id:
         description: Začátek rozsahu ID v uživatelském namespace
         label: ID namespace
@@ -1274,6 +1365,8 @@ cs:
         label: Pravidlo OOM reportu
       oom_score_adj:
         label: Úprava OOM skóre
+      open:
+        label: Otevřeno
       opens_at:
         label: Otevírá se
       optional_maintenance_window:
@@ -1311,6 +1404,8 @@ cs:
         label: ID organizace
       org_name:
         label: Název organizace
+      original_user_id:
+        label: ID původního uživatele
       os_family:
         label: Rodina OS
       outage:
@@ -1442,6 +1537,8 @@ cs:
         description: Název vlastnosti, která se má zdědit od rodiče; více vlastností
           lze oddělit čárkou
         label: Vlastnost
+      protection:
+        label: Současný stav
       provisioning_uri:
         label: URI provisioningu
       public_key:
@@ -1514,6 +1611,10 @@ cs:
           přístupu starší než aktuální čas změny nebo úpravy, případně když nebyl
           za posledních 24 hodin aktualizován.
         label: Relativní čas přístupu (relatime)
+      release_chain:
+        label: Transakční řetězec uvolnění
+      released_at:
+        label: Uvolněno
       remind_after:
         label: Připomenout po
       remind_after_date:
@@ -1522,6 +1623,8 @@ cs:
       remote_console_server:
         description: URL HTTP serveru vzdálené konzole
         label: Server vzdálené konzole
+      remove:
+        label: Odstranit výjimku
       replace_ip_addresses:
         description: Při migraci do jiné lokace se aktuální IP adresy nahradí adresami
           z nové lokace
@@ -1676,8 +1779,6 @@ cs:
         label: Od
       since_kernel:
         label: Od verze jádra
-      size:
-        label: Velikost
       skip_multi_factor_auth_until:
         label: Přeskočit vícefaktorovou autentizaci do
       skip_start:
@@ -1888,6 +1989,9 @@ cs:
       to_depth:
         description: Zobrazit pouze datasety do určité hloubky
         label: Do hloubky
+      to_release_ip_count:
+        description: Způsobilé alokace v otevřené výzvě a probíhající uvolňování
+        label: IP adresy k uvolnění
       token:
         description: Autentizační token
         label: Token
@@ -1910,6 +2014,9 @@ cs:
         label: Životnost tokenu
       total:
         label: Celkem
+      total_ip_count:
+        description: Všechny alokace zaznamenané ve výzvě včetně historických záznamů
+        label: IP adresy celkem
       total_memory:
         label: Paměť celkem
       total_space:
@@ -2052,6 +2159,8 @@ cs:
         label: Uživatel ident
       user_ip_ownership:
         label: Uživatel vlastní IP adresy
+      user_login:
+        label: Přezdívka uživatele
       user_message:
         label: Uživatel zpráva
       user_namespace:
@@ -2093,6 +2202,9 @@ cs:
           native:
             label: Nativní metadata
         label: Zdroj verze
+      versions:
+        description: Verze IP oddělené čárkami (4, 6 nebo obě hodnoty)
+        label: Verze IP
       view:
         description: Je-li povoleno, vypsat nápovědní boxy pro aktuálního uživatele
           včetně filtrů stránky/akce
@@ -2253,6 +2365,21 @@ cs:
       access_denied_to_seed_vps: přístup k této VPS odepřen
       access_denied_to_vps_user_data: Přístup k VPS User data odepřen
       access_token_in_url: access_token nesmí být poslán v URL
+      ip_release:
+        access_denied: Tato výzva k uvolnění IP adres patří jinému uživateli.
+        already_released: Některá z vybraných IP adres se právě uvolňuje nebo už byla
+          uvolněna.
+        closed: Tato kampaň pro uvolnění IP adres je uzavřená.
+        duplicate_addresses: Některé vybrané IP adresy už jsou součástí otevřené kampaně
+          pro uvolnění IP adres.
+        ineligible_addresses: Některé vybrané IP adresy už nejsou vhodné k uvolnění.
+          Obnov náhled.
+        invalid_addresses: Vyber platné IP adresy z této výzvy.
+        invalid_filters: Neplatné filtry IP adres k uvolnění.
+        invalid_record: Zkontroluj nastavení kampaně nebo důvod pro ponechání IP adres.
+        keep_disabled: Současná pravidla neumožňují ponechat IP adresy na základě
+          důvodu od uživatele.
+        owner_changed: U některé vybrané IP adresy se změnil vlastník nebo přidělení.
       object_not_found: Objekt nebyl nalezen
       object_not_found_lower: objekt nebyl nalezen
       object_with_attribute_not_found: objekt %{resource} = %{id} nebyl nalezen
@@ -2407,6 +2534,10 @@ cs:
         attributes:
           id:
             label: ID
+      debug:
+        attributes:
+          size:
+            label: Velikost
       default_object_cluster_resource:
         attributes:
           class_name:
@@ -2569,6 +2700,8 @@ cs:
             label: Datum expirace
           id:
             label: ID exportu
+          ip_address:
+            label: IP adresa
           sync:
             description: Určuje, zda server odpovídá na požadavky až po zapsání změn
               do stabilního úložiště.
@@ -2578,6 +2711,8 @@ cs:
           attributes:
             id:
               label: ID
+            ip_address:
+              label: IP adresa
             sync:
               description: Určuje, zda server odpovídá na požadavky až po zapsání
                 změn do stabilního úložiště.
@@ -2609,8 +2744,12 @@ cs:
           id:
             description: ID IP adresy
             label: ID
+          ip_address:
+            label: IP adresa
           location:
             description: Lokace, ve které je tato IP adresa dostupná
+          size:
+            label: Velikost
           user:
             description: Filtrovat podle vlastníka
           version:
@@ -2646,6 +2785,8 @@ cs:
             label: ID
           location:
             description: Lokace, ve které je tato IP adresa dostupná
+          size:
+            label: Velikost
           user:
             description: Filtrovat podle vlastníka
           version:
@@ -2661,10 +2802,99 @@ cs:
             label: ID
           ip_addr:
             label: IP adresa
+          ip_address:
+            label: IP adresa
           updated_at:
             label: Aktualizováno
           vps:
             label: VPS
+      ip_release_campaign:
+        actions:
+          create:
+            input:
+              addresses:
+                description: Pole ID IP adres z náhledu
+          exempt:
+            input:
+              addresses:
+                description: Pole ID adres ve výzvě
+        address:
+          attributes:
+            address:
+              label: IP adresa
+            id:
+              label: ID
+            ip_address:
+              label: IP adresa
+            size:
+              label: Velikost přidělení
+        attempt:
+          attributes:
+            created_at:
+              label: Vytvořeno
+            created_by_login:
+              label: Autor pokusu
+            id:
+              label: ID
+            transaction_chain:
+              label: Transakční řetězec
+        attributes:
+          addr:
+            label: IP adresa
+          created_at:
+            label: Vytvořeno
+          created_by:
+            label: Vytvořil
+          created_by_login:
+            label: Autor pokusu
+          id:
+            label: ID
+          size:
+            label: Velikost přidělení
+          transaction_chain:
+            label: Transakční řetězec
+        notice:
+          attributes:
+            created_at:
+              label: Zařazeno k odeslání
+            created_by:
+              label: Odeslání zadal
+            created_by_login:
+              label: Login odesílatele
+            id:
+              label: ID
+            mail_log:
+              label: Záznam e-mailu
+      ip_release_request:
+        address:
+          attributes:
+            address:
+              label: IP adresa
+            id:
+              label: ID
+            ip_address:
+              label: IP adresa
+            size:
+              label: Velikost přidělení
+        attributes:
+          addresses:
+            description: Pole ID adres ve výzvě
+          id:
+            label: ID
+          mail_log:
+            label: Poslední výzva
+        notice:
+          attributes:
+            created_at:
+              label: Zařazeno k odeslání
+            created_by:
+              label: Odeslání zadal
+            created_by_login:
+              label: Login odesílatele
+            id:
+              label: ID
+            mail_log:
+              label: Záznam e-mailu
       language:
         attributes:
           code:
@@ -2814,6 +3044,8 @@ cs:
               label: ID
       network:
         attributes:
+          address:
+            label: Adresa
           count:
             description: Počet přidaných IP adres
           environment:
@@ -2822,6 +3054,7 @@ cs:
             label: ID
           size:
             description: Počet možných host IP adres
+            label: Velikost
           used:
             description: Počet IP adres evidovaných ve vpsAdminu
             label: Použito
@@ -3330,6 +3563,8 @@ cs:
             description: True, pokud je aktuální uživatel dotčen tímto upozorněním
           created_at:
             label: Vytvořeno
+          created_by:
+            label: Vytvořil
           cs_summary:
             description: Krátký název typu zranitelnosti zobrazovaný v seznamech upozornění,
               statusovém výstupu, IRC oznámeních a e-mailech.
@@ -3439,6 +3674,7 @@ cs:
             label: Odeslat e-mail
           size:
             description: Velikost archivu v MiB
+            label: Velikost
           url:
             label: URL
       system_config:
@@ -3482,6 +3718,7 @@ cs:
             label: Název
           size:
             description: Počet transakcí v řetězci
+            label: Velikost
           user_session:
             label: Relace
       user:
@@ -3531,6 +3768,8 @@ cs:
               password:
                 label: Současné heslo
         attributes:
+          address:
+            label: Adresa
           change_reason:
             description: Důvod změny stavu. Může být odeslán uživateli e-mailem.
             label: Důvod
@@ -3660,6 +3899,8 @@ cs:
         attributes:
           id:
             label: ID
+          size:
+            label: Velikost
       user_namespace_map:
         attributes:
           id:
@@ -3685,6 +3926,8 @@ cs:
       user_request:
         change:
           attributes:
+            address:
+              label: Adresa
             api_ip_addr:
               label: IP adresa API
             api_ip_ptr:
@@ -3702,6 +3945,8 @@ cs:
               label: Aktualizováno
         registration:
           attributes:
+            address:
+              label: Adresa
             api_ip_addr:
               label: IP adresa API
             api_ip_ptr:
@@ -4093,6 +4338,9 @@ cs:
           disown: Uvolnění IP adres
           free: Uvolnění IP z objektu
           update: IP*
+        ip_release:
+          notify: Výzva k uvolnění IP adres
+          release: Uvolnění IP adresy
         lifetimes:
           expiration_warning: Expirace
           wrapper: Změna stavu
