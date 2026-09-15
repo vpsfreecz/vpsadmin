@@ -543,6 +543,7 @@ module.exports = {
   formByName,
   gotoVpsDetail,
   notification,
+  runVpsadminctl,
   submitForm,
   visibleTransactionChainIds,
   waitForDetailValue,
