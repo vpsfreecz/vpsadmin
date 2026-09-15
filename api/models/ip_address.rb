@@ -25,16 +25,20 @@ class IpAddress < ApplicationRecord
   # @option params [Network] network
   # @option params [User] user
   # @option params [Location] location
+  # @option params [Environment] environment explicit charge environment
   # @option params [Integer] prefix
   # @option params [Integer] size
   # @option params [Boolean] allocate (true)
   def self.register(addr, params)
     ip = nil
+    charged_environment = params[:user] && (params[:environment] || params[:location]&.environment)
+
+    raise ArgumentError, 'owned IP addresses require a charge environment' if params[:user] && !charged_environment
 
     transaction do
       if params[:user] && (params[:allocate].nil? || params[:allocate])
         user_env = params[:user].environment_user_configs.find_by!(
-          environment: params[:location].environment
+          environment: charged_environment
         )
         resource = params[:network].cluster_resource
 
@@ -57,6 +61,7 @@ class IpAddress < ApplicationRecord
         size: params[:size],
         network: params[:network],
         user: params[:user],
+        charged_environment:,
         reverse_dns_zone:
       )
 
@@ -72,6 +77,13 @@ class IpAddress < ApplicationRecord
 
   def version
     network.ip_version
+  end
+
+  def ensure_charge_environment!
+    return unless user_id && !charged_environment_id
+
+    raise VpsAdmin::API::Exceptions::IpAddressInvalidLocation,
+          'IP address has no recorded charge environment; reconcile its accounting before changing ownership or assignment'
   end
 
   def free?
