@@ -174,9 +174,9 @@ class Network < ApplicationRecord
           environment: opts[:environment]
         )
 
-        user_env.reallocate_resource!(
+        user_env.adjust_resource!(
           cluster_resource,
-          user_env.send(cluster_resource) + (ips.count * subsize),
+          delta: ips.count * subsize,
           user: opts[:user],
           save: true,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed)

@@ -12,9 +12,7 @@ module TransactionChains
 
       # Remove IP addresses
       if target
-        vps.network_interfaces.each do |netif|
-          use_chain(NetworkInterface::Clear, args: netif)
-        end
+        use_chain(NetworkInterface::Clear, args: [vps.network_interfaces.to_a])
       end
 
       append_t(Transactions::Utils::NoOp, args: vps.node_id) do |t|

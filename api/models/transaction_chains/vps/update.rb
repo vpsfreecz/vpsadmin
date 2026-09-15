@@ -407,6 +407,8 @@ module TransactionChains
         environment: vps.node.location.environment
       )
 
+      [src_env, dst_env].uniq(&:id).sort_by(&:id).each(&:lock!)
+
       %i[ipv4 ipv4_private ipv6].each do |r|
         st_cnt, st_changes, st_ips = standalone_ips(vps, r)
 
@@ -416,16 +418,16 @@ module TransactionChains
 
         next if cnt == 0
 
-        src_use = src_env.reallocate_resource!(
+        src_use = src_env.adjust_resource!(
           r,
-          src_env.send(r) - cnt,
+          delta: -cnt,
           user: src_env.user,
           chain: self
         )
 
-        dst_use = dst_env.reallocate_resource!(
+        dst_use = dst_env.adjust_resource!(
           r,
-          dst_env.send(r) + cnt,
+          delta: cnt,
           user: dst_env.user,
           chain: self
         )

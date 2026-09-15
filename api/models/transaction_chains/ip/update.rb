@@ -32,6 +32,10 @@ module TransactionChains
 
     def chown(user, env)
       @ip.ensure_charge_environment!
+      configs = [[@ip.user, @ip.charged_environment], [user, env]].filter_map do |owner, environment|
+        owner&.environment_user_configs&.find_by!(environment:)
+      end
+      configs.uniq(&:id).sort_by(&:id).each(&:lock!)
 
       reallocate_user(@ip.user, @ip.charged_environment, -1 * @ip.size) if @ip.user
       reallocate_user(user, env, @ip.size) if user
@@ -52,9 +56,9 @@ module TransactionChains
       user_env = u.environment_user_configs.find_by!(
         environment: e
       )
-      user_env.reallocate_resource!(
+      user_env.adjust_resource!(
         @ip.cluster_resource,
-        user_env.send(@ip.cluster_resource) + n,
+        delta: n,
         user: u,
         save: true,
         confirmed: ::ClusterResourceUse.confirmed(:confirmed)

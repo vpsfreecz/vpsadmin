@@ -51,4 +51,43 @@ RSpec.describe TransactionChains::NetworkInterface::Clear do
       [routed_via.addr, routed_direct.addr]
     )
   end
+
+  [described_class, TransactionChains::Vps::SoftDelete, TransactionChains::Vps::Destroy].each do |operation|
+    it "combines via/direct route deductions across interfaces in #{operation}" do
+      unlock_transaction_signer!
+      fixture = build_standalone_vps_fixture(user: user, hostname: 'clear-accounting')
+      vps = fixture.fetch(:vps)
+      env = vps.node.location.environment
+      env.update!(user_ip_ownership: false)
+      config = user.environment_user_configs.find_by!(environment: env)
+      before = config.ipv4
+      netifs = %w[eth0 eth1].map { |name| create_network_interface!(vps, name: name) }
+      gateway = create_ip_address!(addr: '192.0.2.230').host_ip_addresses.take!
+      ips = netifs.each_with_index.flat_map do |netif, index|
+        [false, true].map do |via|
+          ip = create_ip_address!(network_interface: netif, addr: "192.0.2.#{231 + (index * 2) + (via ? 1 : 0)}")
+          ip.update!(route_via_id: via ? gateway.id : nil)
+          ip
+        end
+      end
+      config.adjust_resource!(:ipv4, delta: ips.size, user: user, save: true,
+                                     confirmed: ClusterResourceUse.confirmed(:confirmed))
+      use = ClusterResourceUse.for_obj(config).joins(user_cluster_resource: :cluster_resource)
+                              .find_by!(cluster_resources: { name: 'ipv4' })
+
+      chain, = if operation == described_class
+                 operation.fire(netifs)
+               else
+                 operation.fire(vps, true, nil, nil)
+               end
+
+      deductions = confirmations_for(chain).select do |row|
+        row.class_name == 'ClusterResourceUse' && row.row_pks == { 'id' => use.id } &&
+          row.attr_changes.has_key?('value')
+      end
+      expect(deductions.map(&:attr_changes)).to eq([{ 'value' => before }])
+      expect(use.reload.value).to eq(before + ips.size)
+      expect(ips.map { |ip| ip.reload.network_interface_id }).to all(be_in(netifs.map(&:id)))
+    end
+  end
 end

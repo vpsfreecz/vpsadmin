@@ -225,9 +225,9 @@ module TransactionChains
           },
           method: :allocate_to_netif
         )
-        ip_resources << user_env.reallocate_resource!(
+        ip_resources << user_env.adjust_resource!(
           v,
-          user_env.send(v) + n,
+          delta: n,
           user: vps.user,
           chain: self
         )

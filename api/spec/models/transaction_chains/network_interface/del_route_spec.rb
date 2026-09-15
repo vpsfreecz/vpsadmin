@@ -56,7 +56,7 @@ RSpec.describe TransactionChains::NetworkInterface::DelRoute do
     allow(configs).to receive(:find_by!)
       .with(environment: vps.node.location.environment)
       .and_return(user_env)
-    allow(user_env).to receive(:reallocate_resource!)
+    allow(user_env).to receive(:adjust_resource!)
       .and_wrap_original do |orig, resource, *args, **kwargs|
         raise 'unexpected resource reallocation' \
           if %i[ipv4_private ipv6].include?(resource.to_sym)

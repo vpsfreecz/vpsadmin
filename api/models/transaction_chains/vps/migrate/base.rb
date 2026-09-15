@@ -602,23 +602,27 @@ module TransactionChains
         environment: dst_env
       )
 
+      [src_user_env, dst_user_env].uniq(&:id).sort_by(&:id).each(&:lock!)
+
       new_ips = ips.reject { |_, ip| ip.user_id }.map { |v| v[1] }
 
       %i[ipv4 ipv4_private ipv6].each do |r|
         # Free only standalone IP addresses
         standalone_ips = ips.map { |v| v[0] }
 
-        src_use = src_user_env.reallocate_resource!(
+        src_use = src_user_env.adjust_resource!(
           r,
-          src_user_env.send(r) - filter_sum_ip_addresses(standalone_ips, r),
+          delta: -filter_sum_ip_addresses(standalone_ips, r),
+          chain: self,
           user:,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed)
         )
 
         # Allocate all _new_ IP addresses
-        dst_use = dst_user_env.reallocate_resource!(
+        dst_use = dst_user_env.adjust_resource!(
           r,
-          dst_user_env.send(r) + filter_sum_ip_addresses(new_ips, r),
+          delta: filter_sum_ip_addresses(new_ips, r),
+          chain: self,
           user:,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed)
         )
@@ -650,20 +654,23 @@ module TransactionChains
 
       src_user_env = user.environment_user_configs.find_by!(environment: src_env)
       dst_user_env = user.environment_user_configs.find_by!(environment: dst_env)
+      [src_user_env, dst_user_env].uniq(&:id).sort_by(&:id).each(&:lock!)
 
       %i[ipv4 ipv4_private ipv6].each do |r|
         # Free addresses from src env
-        src_use = src_user_env.reallocate_resource!(
+        src_use = src_user_env.adjust_resource!(
           r,
-          src_user_env.send(r) - filter_sum_ip_addresses(ips, r),
+          delta: -filter_sum_ip_addresses(ips, r),
+          chain: self,
           user:,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed)
         )
 
         # Allocate in dst env
-        dst_use = dst_user_env.reallocate_resource!(
+        dst_use = dst_user_env.adjust_resource!(
           r,
-          dst_user_env.send(r) + filter_sum_ip_addresses(ips, r),
+          delta: filter_sum_ip_addresses(ips, r),
+          chain: self,
           user:,
           confirmed: ::ClusterResourceUse.confirmed(:confirmed)
         )
