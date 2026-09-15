@@ -77,13 +77,13 @@ module TransactionChains
       user.metrics_access_tokens.destroy_all
       ::PasswordChangeLog.where(user:).delete_all
 
+      # Link cleanup first so quota destruction depends on its completion.
+      resource_uses = user.environment_user_configs.flat_map do |cfg|
+        cfg.free_resources(chain: self, free_objects: true)
+      end
+
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
-        # Free all IP addresses
-        user.environment_user_configs.each do |cfg|
-          cfg.free_resources(chain: self, free_objects: true).each do |use|
-            t.destroy(use)
-          end
-        end
+        resource_uses.each { |use| t.destroy(use) }
 
         # TODO: what about owned networks?
 

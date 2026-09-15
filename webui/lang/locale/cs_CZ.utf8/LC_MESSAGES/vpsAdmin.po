@@ -1459,7 +1459,7 @@ msgstr "Majitel"
 msgid "Change type"
 msgstr "Typ změny"
 
-#: forms/dns.forms.php pages/page_transactions.php
+#: forms/dns.forms.php pages/page_networking.php pages/page_transactions.php
 msgid "Transaction chain"
 msgstr "Řetězec transakcí"
 
@@ -7891,6 +7891,26 @@ msgstr "Zkuste to znovu nebo kontaktujte podporu"
 #: pages/page_networking.php public/index.php
 msgid "Action failed"
 msgstr "Akce se nezdařila"
+
+#: pages/page_networking.php
+msgid "IP removal"
+msgstr "Odstranění IP adresy"
+
+#: pages/page_networking.php
+msgid ""
+"Disowning the IP is still in progress. Wait for the transaction to finish, "
+"then submit the removal again."
+msgstr ""
+"Odebrání vlastníka IP adresy ještě probíhá. Počkej na dokončení transakce a "
+"potom odešli požadavek na odstranění znovu."
+
+#: pages/page_networking.php
+msgid ""
+"Disowning the IP failed. The route was kept. Inspect the transaction before "
+"trying again."
+msgstr ""
+"Odebrání vlastníka IP adresy se nezdařilo. Směrování zůstalo zachováno. Před "
+"dalším pokusem zkontroluj transakci."
 
 #: pages/page_networking.php
 msgid "IP removed"

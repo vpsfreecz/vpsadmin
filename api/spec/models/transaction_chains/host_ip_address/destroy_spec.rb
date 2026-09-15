@@ -66,4 +66,21 @@ RSpec.describe TransactionChains::HostIpAddress::Destroy do
       chain.transaction_chain_concerns.map { |row| [row.class_name, row.row_id] }
     ).to include(['HostIpAddress', host_ip.id])
   end
+
+  it 'keeps a host without PTR until its DNS transfer removal is confirmed' do
+    host = create_host_ip
+    zone = create_dns_zone!(source: :internal_source)
+    server = create_dns_server!(node: SpecSeed.node)
+    create_dns_server_zone!(dns_zone: zone, dns_server: server, zone_type: :primary_type)
+    transfer = create_dns_zone_transfer!(dns_zone: zone, host_ip_address: host, peer_type: :secondary_type)
+
+    chain, = described_class.fire(host)
+
+    expect(host.reload).to be_persisted
+    rows = confirmations_for(chain)
+    grant = rows.find { |row| row.class_name == 'DnsZoneTransfer' && row.row_pks == { 'id' => transfer.id } }
+    deletion = rows.find { |row| row.class_name == 'HostIpAddress' && row.confirm_type == 'just_destroy_type' }
+    transactions = transactions_for(chain)
+    expect(transactions.index(grant.parent_transaction)).to be < transactions.index(deletion.parent_transaction)
+  end
 end

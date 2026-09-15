@@ -1,5 +1,23 @@
 <?php
 
+// Remove a route only after the optional disown has finished successfully.
+function route_unassign_address($api, $ip, $disown)
+{
+    if ($disown) {
+        $updated = $ip->update(['user' => null]);
+        $chainId = $updated->getApiResponse()->getMeta()->action_state_id ?? null;
+        if ($chainId) {
+            $state = $api->action_state($chainId)->poll(['timeout' => 15])->getResponse();
+            if (!$state->finished || !$state->status) {
+                return ['state' => $state->finished ? 'failed' : 'pending', 'chain' => $chainId];
+            }
+        }
+    }
+
+    $ip->free();
+    return ['state' => 'removed'];
+}
+
 function ip_address_list($page)
 {
     global $xtpl, $api;

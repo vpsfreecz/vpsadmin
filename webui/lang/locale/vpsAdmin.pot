@@ -1453,7 +1453,7 @@ msgstr ""
 msgid "Change type"
 msgstr ""
 
-#: forms/dns.forms.php pages/page_transactions.php
+#: forms/dns.forms.php pages/page_networking.php pages/page_transactions.php
 msgid "Transaction chain"
 msgstr ""
 
@@ -7756,6 +7756,22 @@ msgstr ""
 
 #: pages/page_networking.php public/index.php
 msgid "Action failed"
+msgstr ""
+
+#: pages/page_networking.php
+msgid "IP removal"
+msgstr ""
+
+#: pages/page_networking.php
+msgid ""
+"Disowning the IP is still in progress. Wait for the transaction to finish, "
+"then submit the removal again."
+msgstr ""
+
+#: pages/page_networking.php
+msgid ""
+"Disowning the IP failed. The route was kept. Inspect the transaction before "
+"trying again."
 msgstr ""
 
 #: pages/page_networking.php

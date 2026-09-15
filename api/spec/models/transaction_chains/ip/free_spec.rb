@@ -89,6 +89,12 @@ RSpec.describe TransactionChains::Ip::Free do
         row.class_name == 'HostIpAddress' && row.row_pks == { 'id' => host_ip.id }
       end.confirm_type
     ).to eq('just_destroy_type')
+
+    ownership = confirmations_for(chain).find { |row| row.class_name == 'IpAddress' }
+    cleanup = confirmations_for(chain).find { |row| row.class_name == 'HostIpAddress' }
+    transactions = transactions_for(chain)
+    expect(transactions.index(cleanup.parent_transaction)).to be < transactions.index(ownership.parent_transaction)
+    expect(ip.reload.user_id).to eq(user.id)
   end
 
   it 'destroys DNS zone transfers before freeing IP ownership' do
