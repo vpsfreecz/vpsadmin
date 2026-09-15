@@ -27,20 +27,13 @@ module TransactionChains
 
       return if ips.empty?
 
-      ips.each do |ip|
-        ip.host_ip_addresses.order(:id).lock.each do |host_ip|
-          host_ip.lock_with_ip!(self)
-          host_ip.remove_dns_transfers!(self)
-        end
-      end
+      use_chain(NetworkInterface::CleanupHostIpAddresses, kwargs: { ips:, delete: true })
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
         ips.each do |ip|
           t.edit(ip, user_id: nil, charged_environment_id: nil)
         end
       end
-
-      use_chain(NetworkInterface::CleanupHostIpAddresses, kwargs: { ips:, delete: true })
     end
   end
 end

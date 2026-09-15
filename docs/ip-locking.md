@@ -58,3 +58,16 @@ before staging them. Interface clearing combines direct and routed addresses
 across a VPS, including soft and hard deletion. Clone already combines its
 interface allocations. Migration retains its existing rejection of multiple
 interfaces.
+
+
+Disowning an IP keeps its owner and quota until asynchronous DNS transfer,
+PTR and user-created host cleanup has confirmed successfully. Failed cleanup
+or rollback retains ownership and accounting. With no asynchronous cleanup,
+disownership remains immediate. The existing API transaction-state metadata
+identifies pending work; callers must await success before relying on release.
+The WebUI's combined disown-and-remove action waits before removing the route
+and keeps it when disownership is pending or failed.
+
+Account teardown links IP cleanup before quota destruction. It refuses owned
+allocations with missing charge provenance so accounting evidence remains
+available for reconciliation.

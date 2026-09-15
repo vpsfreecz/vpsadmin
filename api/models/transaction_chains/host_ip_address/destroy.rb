@@ -15,12 +15,13 @@ module TransactionChains
         [host_ip_address.class.name, host_ip_address.id]
       )
 
-      if host_ip_address.reverse_dns_record.nil?
+      host_ip_address.remove_dns_transfers!(self)
+      use_chain(DnsZone::UnsetReverseRecord, args: [host_ip_address]) if host_ip_address.reverse_dns_record
+
+      if empty?
         host_ip_address.destroy!
         return
       end
-
-      use_chain(DnsZone::UnsetReverseRecord, args: [host_ip_address])
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
         t.just_destroy(host_ip_address)

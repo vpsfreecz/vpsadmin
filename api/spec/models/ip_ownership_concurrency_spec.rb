@@ -312,4 +312,27 @@ RSpec.describe Network do
     resume << true if resume
     workers&.each { |thread| thread.join(25) || thread.kill.join }
   end
+
+  it 'does not confirm ownership removal for an allocation transferred after the resource-free selection' do
+    connection_thread do
+      TransactionChain.transaction do
+        paused = false
+        allow_any_instance_of(TransactionChains::Ip::Free).to receive(:lock).and_wrap_original do |original, resource| # rubocop:disable RSpec/AnyInstance
+          if resource.is_a?(IpAddress) && resource.id == committed[:ip_id] && !paused
+            paused = true
+            connection_thread { IpAddress.find(resource.id).update!(user: SpecSeed.other_user) }.value
+          end
+          original.call(resource)
+        end
+        chain, = use_chain_method_in_root!(TransactionChains::Ip::Free,
+                                           method: :free_from_environment_user_config,
+                                           args: [ClusterResource.find_by!(name: 'ipv4'),
+                                                  EnvironmentUserConfig.find(committed[:config_id])])
+        expect(paused).to be(true), IpAddress.where(id: committed[:ip_id]).pluck(:user_id, :charged_environment_id, :network_id).inspect
+        expect(confirmations_for(chain).select { |row| row.class_name == 'IpAddress' }).to be_empty
+        expect(IpAddress.find(committed[:ip_id]).reload(lock: true).user_id).to eq(SpecSeed.other_user.id)
+        raise ActiveRecord::Rollback
+      end
+    end.value
+  end
 end

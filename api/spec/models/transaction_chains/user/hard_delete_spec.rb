@@ -191,4 +191,28 @@ RSpec.describe TransactionChains::User::HardDelete do
     expect(MetricsAccessToken.exists?(auth.fetch(:metrics_access_token).id)).to be(false)
     expect(PasswordChangeLog.exists?(fixture.fetch(:password_change_log).id)).to be(false)
   end
+
+  it 'makes quota destruction depend on IP cleanup and disownership' do
+    ensure_available_node_status!(SpecSeed.node)
+    owner = create_lifecycle_user!
+    config = EnvironmentUserConfig.create!(user: owner, environment: SpecSeed.environment)
+    resource = ClusterResource.find_by!(name: 'ipv4')
+    resource.update!(resource_type: :object, free_chain: 'Ip::Free')
+    UserClusterResource.create!(user: owner, environment: SpecSeed.environment,
+                                cluster_resource: resource, value: 10)
+    ip = create_ip_address!(user: owner, addr: '192.0.2.250')
+    host = ip.host_ip_addresses.take!
+    host.update!(user_created: true)
+    use = ClusterResourceUse.for_obj(config).sole
+
+    chain, = described_class.fire(owner, true, nil, ObjectState.new)
+    confirmations = confirmations_for(chain)
+    quota = confirmations.find { |row| row.class_name == 'ClusterResourceUse' && row.row_pks == { 'id' => use.id } }
+    ownership = confirmations.find { |row| row.class_name == 'IpAddress' && row.row_pks == { 'id' => ip.id } }
+    cleanup = confirmations.find { |row| row.class_name == 'HostIpAddress' && row.row_pks == { 'id' => host.id } }
+    expect(quota.parent_transaction.depends_on_id).to eq(ownership.transaction_id)
+    expect(ownership.parent_transaction.depends_on_id).to eq(cleanup.transaction_id)
+    expect(ip.reload.user_id).to eq(owner.id)
+    expect(use.reload.value).to eq(1)
+  end
 end
