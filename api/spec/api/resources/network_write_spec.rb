@@ -133,6 +133,19 @@ RSpec.describe 'VpsAdmin::API::Resources::Network write actions' do # rubocop:di
     expect(IpAddress.count).to eq(count)
   end
 
+  it 'rejects quota-semantic changes after addresses have been registered' do
+    basic_authorize SpecSeed.admin.login, SpecSeed::PASSWORD
+    json_post(add_addresses_path(ipv4_network.id), network: { count: 1 })
+    expect(json['status']).to be(true)
+    json_put(show_path(ipv4_network.id), network: { role: 'private_access' })
+    expect(json['status']).to be(false)
+    expect(ipv4_network.reload.role).to eq('public_access')
+    json_put(show_path(ipv4_network.id), network: { ip_version: 6, address: '2001:db8:abcd::', prefix: 48 })
+    expect(json['status']).to be(false)
+    expect(response_errors.fetch('base')).to include('cannot change IP version or role while the network has allocations')
+    expect(ipv4_network.reload.ip_version).to eq(4)
+  end
+
   describe 'API description' do
     it 'includes network write endpoints' do
       scopes = EndpointInventory.scopes_for_version(self, api_version)
@@ -247,6 +260,30 @@ RSpec.describe 'VpsAdmin::API::Resources::Network write actions' do # rubocop:di
   end
 
   describe 'Update' do
+    it 'rejects an IP family that does not match an empty network address' do
+      as(SpecSeed.admin) { json_put show_path(ipv4_network.id), network: { ip_version: 6 } }
+
+      expect(json['status']).to be(false)
+      expect(response_errors.fetch('ip_version')).to include('does not match the network address')
+      expect(ipv4_network.reload.ip_version).to eq(4)
+    end
+
+    it 'registers addresses after a coherent empty-network family change' do
+      as(SpecSeed.admin) do
+        json_put show_path(ipv4_network.id), network: {
+          ip_version: 6, address: '2001:db8:abcd::', prefix: 48, split_prefix: 64
+        }
+      end
+      expect(json['status']).to be(true)
+
+      as(SpecSeed.admin) { json_post add_addresses_path(ipv4_network.id), network: { count: 1 } }
+      expect(json['status']).to be(true)
+      ip = ipv4_network.reload.ip_addresses.first!
+      expect(ip.version).to eq(6)
+      expect(ip.to_ip).to be_ipv6
+      expect(ipv4_network.include?(ip)).to be(true)
+    end
+
     it 'rejects unauthenticated access' do
       json_put show_path(ipv4_network.id), network: { label: 'Spec Net Updated' }
 
