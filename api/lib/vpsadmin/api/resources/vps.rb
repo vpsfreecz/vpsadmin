@@ -381,7 +381,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       vps
     rescue ActiveRecord::RecordInvalid => e
       error!('save failed', to_param_names(e.record.errors.to_hash, :input))
-    rescue VpsAdmin::API::Exceptions::OperationError => e
+    rescue VpsAdmin::API::Exceptions::OperationError,
+           VpsAdmin::API::Exceptions::IpAddressInUse,
+           VpsAdmin::API::Exceptions::IpAddressInvalidLocation => e
       error!(e.message)
     end
 
@@ -879,7 +881,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       @chain = VpsAdmin::API::Operations::Vps::Migrate.run(vps, input)
       ok!
-    rescue VpsAdmin::API::Exceptions::VpsMigrationError => e
+    rescue VpsAdmin::API::Exceptions::VpsMigrationError,
+           VpsAdmin::API::Exceptions::IpAddressInUse,
+           VpsAdmin::API::Exceptions::IpAddressInvalidLocation => e
       error!(e.message)
     end
 
@@ -998,7 +1002,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       cloned_vps
     rescue ActiveRecord::RecordInvalid => e
       error!('clone failed', to_param_names(e.record.errors.to_hash))
-    rescue VpsAdmin::API::Exceptions::OsTemplateNotFound => e
+    rescue VpsAdmin::API::Exceptions::OsTemplateNotFound,
+           VpsAdmin::API::Exceptions::IpAddressInUse,
+           VpsAdmin::API::Exceptions::IpAddressInvalidLocation => e
       error!(e.message)
     end
 
@@ -1050,6 +1056,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       @chain, = TransactionChains::Vps::Swap.fire(vps, input[:vps], input)
       ok!
+    rescue VpsAdmin::API::Exceptions::IpAddressInUse,
+           VpsAdmin::API::Exceptions::IpAddressInvalidLocation => e
+      error!(e.message)
     end
 
     def state_id
@@ -1099,6 +1108,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       replaced_vps
     rescue ActiveRecord::RecordInvalid => e
       error!('replace failed', to_param_names(e.record.errors.to_hash))
+    rescue VpsAdmin::API::Exceptions::IpAddressInUse,
+           VpsAdmin::API::Exceptions::IpAddressInvalidLocation => e
+      error!(e.message)
     end
 
     def state_id

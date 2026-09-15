@@ -254,7 +254,7 @@ module VpsAdmin::API::Resources
         lifetime_objects = [ip.current_owner, ip.network_interface&.vps].compact
         object_state_check!(*lifetime_objects) if lifetime_objects.any?
 
-        VpsAdmin::API::Operations::HostIpAddress::Create.run(ip, input[:addr])
+        VpsAdmin::API::Operations::HostIpAddress::Create.run(ip, input[:addr], actor: current_user)
       rescue VpsAdmin::API::Exceptions::OperationError => e
         error!("create failed: #{e.message}")
       end
@@ -298,7 +298,8 @@ module VpsAdmin::API::Resources
 
         @chain, ret = VpsAdmin::API::Operations::HostIpAddress::Update.run(
           host,
-          { reverse_record_value: ptr_content }
+          { reverse_record_value: ptr_content },
+          actor: current_user
         )
         ret
       rescue VpsAdmin::API::Exceptions::OperationError => e
@@ -328,7 +329,7 @@ module VpsAdmin::API::Resources
         lifetime_objects = [host.current_owner, host.ip_address.network_interface&.vps].compact
         object_state_check!(*lifetime_objects) if lifetime_objects.any?
 
-        @chain, = VpsAdmin::API::Operations::HostIpAddress::Destroy.run(host)
+        @chain, = VpsAdmin::API::Operations::HostIpAddress::Destroy.run(host, actor: current_user)
         ok!
       rescue VpsAdmin::API::Exceptions::OperationError => e
         error!("delete failed: #{e.message}")
@@ -374,6 +375,9 @@ module VpsAdmin::API::Resources
 
         @chain, = netif.add_host_address(host)
         host
+      rescue VpsAdmin::API::Exceptions::IpAddressInUse,
+             VpsAdmin::API::Exceptions::IpAddressNotOwned => e
+        error!(e.message)
       end
 
       def state_id
@@ -418,6 +422,9 @@ module VpsAdmin::API::Resources
         host
       rescue VpsAdmin::API::Exceptions::IpAddressNotAssigned
         error!("#{host.ip_addr} is not assigned to any interface")
+      rescue VpsAdmin::API::Exceptions::IpAddressInUse,
+             VpsAdmin::API::Exceptions::IpAddressNotOwned => e
+        error!(e.message)
       end
 
       def state_id

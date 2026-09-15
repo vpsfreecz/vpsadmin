@@ -99,4 +99,27 @@ RSpec.describe TransactionChains::Export::Create do
       /cannot be exported/
     )
   end
+
+  %i[owner purpose location].each do |changed|
+    it "rechecks #{changed} after reserving a previously selected address" do
+      dataset, _dip, network = create_exportable_dataset
+      ip = network.ip_addresses.first!
+      case changed
+      when :owner
+        IpAddress.where(id: ip.id).update_all(user_id: SpecSeed.other_user.id,
+                                              charged_environment_id: SpecSeed.environment.id)
+      when :purpose
+        network.update!(purpose: :vps)
+      when :location
+        LocationNetwork.where(network_id: network.id).delete_all
+      end
+      allow(IpAddress).to receive(:pick_addr!).and_return(ip)
+
+      expect do
+        described_class.fire(dataset)
+      end.to raise_error(VpsAdmin::API::Exceptions::IpAddressInUse, /no longer available/)
+      expect(ip.reload.network_interface_id).to be_nil
+      expect(ip.user_id).to eq(SpecSeed.other_user.id) if changed == :owner
+    end
+  end
 end

@@ -86,14 +86,17 @@ module TransactionChains
       ).to_a
 
       ips.map do |ip|
-        ::ExportHost.create!(
+        ::ExportHost.new(
           export:,
           ip_address: ip,
           rw: export.rw,
           sync: export.sync,
           subtree_check: export.subtree_check,
           root_squash: export.root_squash
-        )
+        ).tap do |host|
+          host.lock_ip!(self)
+          host.save!
+        end
       rescue ActiveRecord::RecordNotUnique
         nil
       end.compact

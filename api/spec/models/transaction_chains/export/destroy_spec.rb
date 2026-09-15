@@ -99,4 +99,22 @@ RSpec.describe TransactionChains::Export::Destroy do
       'state' => SnapshotInPoolClone.states.fetch('inactive')
     )
   end
+
+  it 'rejects an export whose selected server address moved before reservation' do
+    export, = create_destroy_fixture
+    ip = export.ip_address
+    other = create_netif_vps_fixture!(user: SpecSeed.other_user)
+    # Preserve the selected association, as if the request loaded it before
+    # another completed operation changed the assignment.
+    hosts = export.host_ip_addresses
+    host = hosts.first!
+    allow(hosts).to receive(:first!).and_return(host)
+    allow(export).to receive(:host_ip_addresses).and_return(hosts)
+    IpAddress.where(id: ip.id).update_all(network_interface_id: other[:netif].id)
+
+    expect { described_class.fire(export) }
+      .to raise_error(ResourceLocked, /assignment changed/)
+    expect(ip.reload.network_interface_id).to eq(other[:netif].id)
+    expect(export.reload.confirmed).to eq(:confirmed)
+  end
 end

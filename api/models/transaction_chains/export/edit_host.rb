@@ -12,6 +12,8 @@ module TransactionChains
       concerns(:affect, [host.export.class.name, host.export.id])
       lock(host.export)
 
+      host.lock_ip!(self)
+      host.reload(lock: true)
       new_host = ::ExportHost.find(host.id)
       new_host.assign_attributes(opts)
 

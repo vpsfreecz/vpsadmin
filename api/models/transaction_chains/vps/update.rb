@@ -218,6 +218,10 @@ module TransactionChains
     def chown_vps(vps, orig_user)
       db_changes = { vps => { user_id: vps.user_id } }
 
+      reserved_ips = vps.ip_addresses.order(:id).to_a
+      ::IpAddress.lock_all_current!(self, reserved_ips)
+      ::HostIpAddress.lock_all_with_ips!(self, reserved_ips.flat_map { |ip| ip.host_ip_addresses.to_a })
+
       # VPS and all related objects must be given to the target user:
       #   - dataset and all subdatasets
       #   - IP addresses (resource allocation)
@@ -294,11 +298,7 @@ module TransactionChains
 
       # Remove DNS zone transfers from chowned IPs
       vps.ip_addresses.each do |ip|
-        ip.host_ip_addresses.each do |host_ip|
-          host_ip.dns_zone_transfers.each do |zone_transfer|
-            use_chain(DnsZoneTransfer::Destroy, args: [zone_transfer])
-          end
-        end
+        ip.host_ip_addresses.lock.each { |host_ip| host_ip.remove_dns_transfers!(self) }
       end
 
       # Transfer exports of the VPS's own datasets / snapshots
@@ -348,14 +348,17 @@ module TransactionChains
       ).to_a
 
       add_hosts = ips.map do |ip|
-        ::ExportHost.create!(
+        ::ExportHost.new(
           export:,
           ip_address: ip,
           rw: export.rw,
           sync: export.sync,
           subtree_check: export.subtree_check,
           root_squash: export.root_squash
-        )
+        ).tap do |host|
+          host.lock_ip!(self)
+          host.save!
+        end
       rescue ActiveRecord::RecordNotUnique
         nil
       end.compact

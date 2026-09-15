@@ -4,12 +4,14 @@ module TransactionChains
 
     # @param export [::Export]
     # @param hosts [Array<::ExportHost>]
-    def link_chain(export, hosts)
+    def link_chain(export, hosts, reserved_ips: false)
       concerns(:affect, [export.class.name, export.id])
       lock(export)
 
       ret = []
       ipv4_hosts = hosts.select { |h| h.ip_address.version == 4 }
+
+      ipv4_hosts.sort_by(&:ip_address_id).each { |host| host.lock_ip!(self, reserved: reserved_ips) }
 
       if ipv4_hosts.any?
         append_t(Transactions::Export::AddHosts, args: [export, ipv4_hosts]) do |t|

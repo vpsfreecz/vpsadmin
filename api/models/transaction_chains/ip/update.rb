@@ -8,9 +8,15 @@ module TransactionChains
     # @option opts [User] user
     # @option opts [Environment] environment
     def link_chain(ip, opts)
+      ip.lock_current!(self)
       @ip = ip
 
       return unless opts.has_key?(:user) && ip.user != opts[:user]
+
+      vps = ip.network_interface&.vps
+      if vps && vps.node.location.environment.user_ip_ownership
+        raise VpsAdmin::API::Exceptions::IpAddressInUse, 'cannot chown IP while it belongs to a VPS'
+      end
 
       if opts[:user]
         if opts[:environment].nil?
@@ -25,6 +31,8 @@ module TransactionChains
     end
 
     def chown(user, env)
+      @ip.ensure_charge_environment!
+
       reallocate_user(@ip.user, @ip.charged_environment, -1 * @ip.size) if @ip.user
       reallocate_user(user, env, @ip.size) if user
       @ip.update!(

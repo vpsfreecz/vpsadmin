@@ -87,6 +87,24 @@ RSpec.describe TransactionChains::User::HardDelete do
     )
   end
 
+  it 'preserves the account, ownership and quota until legacy IP charges are reconciled' do
+    owner = create_lifecycle_user!
+    config = EnvironmentUserConfig.create!(user: owner, environment: SpecSeed.environment)
+    resource = ClusterResource.find_by!(name: 'ipv4')
+    UserClusterResource.create!(user: owner, environment: SpecSeed.environment,
+                                cluster_resource: resource, value: 10)
+    ip = create_ip_address!(user: owner, addr: '192.0.2.250')
+    use = ClusterResourceUse.for_obj(config).sole
+    ip.update!(charged_environment: nil)
+
+    expect { described_class.fire(owner, true, nil, ObjectState.new) }
+      .to raise_error(VpsAdmin::API::Exceptions::IpAddressInvalidLocation, /reconcile its accounting/)
+    expect(ip.reload.user_id).to eq(owner.id)
+    expect(use.reload.value).to eq(1)
+    expect(use.confirmed).to eq(:confirmed)
+    expect(owner.reload.login).not_to be_nil
+  end
+
   it 'cascades through VPSes, exports, backups, downloads, DNS, namespaces, and local credentials' do
     fixture = create_hard_delete_fixture
     user = fixture.fetch(:user)

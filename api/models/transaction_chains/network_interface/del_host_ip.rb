@@ -9,7 +9,17 @@ module TransactionChains
     def link_chain(netif, addrs, **opts)
       lock(netif)
       lock(netif.vps)
+      netif.ensure_actor!(opts[:actor]) if opts[:actor]
       concerns(:affect, [netif.vps.class.name, netif.vps.id])
+
+      ::HostIpAddress.lock_all_with_ips!(self, addrs, actor: opts[:actor])
+      addrs.each do |addr|
+        next unless opts[:actor]
+        raise VpsAdmin::API::Exceptions::IpAddressNotAssigned unless addr.assigned?
+        if addr.routed_via_addresses.lock.exists?
+          raise VpsAdmin::API::Exceptions::IpAddressInUse, 'One or more networks are routed via this address'
+        end
+      end
 
       # Ensure all addresses are added to the same interface
       addrs.each do |addr|

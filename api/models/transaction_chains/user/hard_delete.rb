@@ -3,6 +3,9 @@ module TransactionChains
     label 'Hard delete user'
 
     def link_chain(user, _target, _state, _log)
+      # Keep ownership and its accounting evidence until legacy charges are reconciled.
+      ::IpAddress.where(user:, charged_environment_id: nil).lock.take&.ensure_charge_environment!
+
       # Destroy all exports
       user.exports.each do |ex|
         ex.set_object_state(

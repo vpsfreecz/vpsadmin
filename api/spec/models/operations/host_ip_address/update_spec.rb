@@ -24,9 +24,9 @@ RSpec.describe VpsAdmin::API::Operations::HostIpAddress::Update do
 
     allow(TransactionChains::DnsZone::SetReverseRecord).to receive(:fire2).and_return([chain, host_ip])
 
-    expect(described_class.run(host_ip, reverse_record_value: 'ptr.example.test.')).to eq([chain, host_ip])
+    expect(described_class.run(host_ip, { reverse_record_value: 'ptr.example.test.' }, actor: SpecSeed.user)).to eq([chain, host_ip])
     expect(TransactionChains::DnsZone::SetReverseRecord).to have_received(:fire2).with(
-      args: [host_ip, 'ptr.example.test.']
+      args: [host_ip, 'ptr.example.test.'], kwargs: { actor: SpecSeed.user }
     )
   end
 
@@ -35,7 +35,9 @@ RSpec.describe VpsAdmin::API::Operations::HostIpAddress::Update do
 
     allow(TransactionChains::DnsZone::UnsetReverseRecord).to receive(:fire2).and_return([chain, host_ip])
 
-    expect(described_class.run(host_ip, reverse_record_value: '')).to eq([chain, host_ip])
-    expect(TransactionChains::DnsZone::UnsetReverseRecord).to have_received(:fire2).with(args: [host_ip])
+    expect(described_class.run(host_ip, { reverse_record_value: '' }, actor: SpecSeed.user)).to eq([chain, host_ip])
+    expect(TransactionChains::DnsZone::UnsetReverseRecord).to have_received(:fire2).with(
+      args: [host_ip], kwargs: { actor: SpecSeed.user }
+    )
   end
 end

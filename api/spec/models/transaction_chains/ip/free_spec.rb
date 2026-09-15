@@ -42,6 +42,27 @@ RSpec.describe TransactionChains::Ip::Free do
     [ip, host_ip]
   end
 
+  it 'retains addresses charged elsewhere' do
+    ip, = create_owned_ip_fixture
+    ip.update!(charged_environment: SpecSeed.other_environment)
+    user_env = user.environment_user_configs.find_by!(environment: SpecSeed.environment)
+    chain, = use_chain_method_in_root!(described_class, method: :free_from_environment_user_config,
+                                                        args: [resource, user_env])
+    expect(confirmations_for(chain).select { |row| row.class_name == 'IpAddress' }).to be_empty
+    expect(ip.reload.user_id).to eq(user.id)
+  end
+
+  it 'rejects freeing quota when an owned address lacks verified charge provenance' do
+    ip, = create_owned_ip_fixture
+    ip.update!(charged_environment: nil)
+    user_env = user.environment_user_configs.find_by!(environment: SpecSeed.environment)
+    expect do
+      use_chain_method_in_root!(described_class, method: :free_from_environment_user_config,
+                                                 args: [resource, user_env])
+    end.to raise_error(VpsAdmin::API::Exceptions::IpAddressInvalidLocation, /reconcile its accounting/)
+    expect(ip.reload.user_id).to eq(user.id)
+  end
+
   it 'clears ownership and deletes user-created host addresses through confirmations' do
     ensure_available_node_status!(SpecSeed.node)
     ip, host_ip = create_owned_ip_fixture

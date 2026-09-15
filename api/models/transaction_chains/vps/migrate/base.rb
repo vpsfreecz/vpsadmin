@@ -61,6 +61,11 @@ module TransactionChains
                             })
 
       lock(vps)
+      # Keep addresses reserved through temporary detach confirmations and
+      # rollback. Swap includes this setup for both VPSes in its outer chain.
+      reserved_ips = vps.ip_addresses.order(:id).to_a
+      ::IpAddress.lock_all_current!(self, reserved_ips)
+      ::HostIpAddress.lock_all_with_ips!(self, reserved_ips.flat_map { |ip| ip.host_ip_addresses.to_a })
       lock(vps.dataset_in_pool)
       concerns(:affect, [vps.class.name, vps.id])
 
@@ -392,19 +397,11 @@ module TransactionChains
           'networks.ip_version, ip_addresses.order'
         ).each do |ip|
           begin
-            replacement = ::IpAddress.pick_addr!(
-              user: dst_vps.user,
-              location: dst_vps.node.location,
-              ip_v: ip.network.ip_version,
-              role: ip.network.role.to_sym,
-              purpose: ip.network.purpose.to_sym
-            )
+            replacement = pick_replacement_ip(ip)
           rescue ActiveRecord::RecordNotFound
             dst_ip_addresses << [ip, nil]
             next
           end
-
-          lock(replacement)
 
           dst_ip_addresses << [ip, replacement]
         end
@@ -572,6 +569,22 @@ module TransactionChains
           urgent: true
         )
       end
+    end
+
+    def pick_replacement_ip(source_ip)
+      selection = {
+        user: dst_vps.user,
+        location: dst_vps.node.location,
+        ip_v: source_ip.network.ip_version,
+        role: source_ip.network.role.to_sym,
+        purpose: source_ip.network.purpose.to_sym,
+        allocation_environment: dst_vps.node.location.environment
+      }
+      replacement = ::IpAddress.pick_addr!(selection)
+      replacement.lock_current!(self)
+      replacement.ensure_pickable!(selection)
+      ::HostIpAddress.lock_all_with_ips!(self, replacement.host_ip_addresses.to_a)
+      replacement
     end
 
     # Transfer number of `ips` belonging to `user` from `src_env` to `dst_env`.

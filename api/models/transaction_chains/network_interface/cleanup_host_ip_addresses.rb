@@ -10,10 +10,10 @@ module TransactionChains
 
       to_delete = []
 
+      ::IpAddress.lock_all_current!(self, ips)
       ips.each do |ip|
-        lock(ip)
-
-        ip.host_ip_addresses.each do |host|
+        ip.host_ip_addresses.order(:id).lock.each do |host|
+          host.lock_with_ip!(self)
           use_chain(DnsZone::UnsetReverseRecord, args: [host]) if host.reverse_dns_record
           to_delete << host if host.user_created
         end

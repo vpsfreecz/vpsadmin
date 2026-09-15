@@ -85,10 +85,10 @@ module TransactionChains
       )
 
       ip_addr = pick_ip_address(export.user, dip.pool.node.location)
-      lock(ip_addr)
       ip_addr.update!(network_interface: netif)
 
-      host_addr = ip_addr.host_ip_addresses.first
+      host_addr = ip_addr.host_ip_addresses.first!
+      host_addr.lock_with_ip!(self)
 
       append_t(Transactions::Export::Create, args: [export, host_addr]) do |t|
         t.create(export)
@@ -103,14 +103,17 @@ module TransactionChains
         ).to_a
 
         hosts = ips.map do |ip|
-          ::ExportHost.create!(
+          ::ExportHost.new(
             export:,
             ip_address: ip,
             rw: export.rw,
             sync: export.sync,
             subtree_check: export.subtree_check,
             root_squash: export.root_squash
-          )
+          ).tap do |host|
+            host.lock_ip!(self)
+            host.save!
+          end
         end
 
         append_t(Transactions::Export::AddHosts, args: [export, hosts]) do |t|
@@ -125,18 +128,15 @@ module TransactionChains
     protected
 
     def pick_ip_address(user, location)
+      selection = { user:, location:, ip_v: 4, role: :private_access, purpose: :export }
+
       loop do
         ip = nil
 
         ::IpAddress.transaction do
-          ip = ::IpAddress.pick_addr!(
-            user:,
-            location:,
-            ip_v: 4,
-            role: :private_access,
-            purpose: :export
-          )
-          lock(ip)
+          ip = ::IpAddress.pick_addr!(selection)
+          ip.lock_current!(self)
+          ip.ensure_pickable!(selection)
         end
 
         return ip

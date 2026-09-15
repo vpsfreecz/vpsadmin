@@ -4,8 +4,11 @@ module TransactionChains
     allow_empty
 
     # @param host_ip_address [::HostIpAddress]
-    def link_chain(host_ip_address)
-      lock(host_ip_address)
+    def link_chain(host_ip_address, actor: nil)
+      host_ip_address.lock_with_ip!(self, actor:)
+      if actor && (!host_ip_address.user_created || host_ip_address.assigned?)
+        raise VpsAdmin::API::Exceptions::OperationError, "#{host_ip_address.ip_addr} cannot be deleted"
+      end
 
       concerns(
         :affect,
