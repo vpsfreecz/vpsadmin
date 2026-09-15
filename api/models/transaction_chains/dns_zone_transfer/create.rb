@@ -11,6 +11,7 @@ module TransactionChains
         [zone_transfer.dns_zone.class.name, zone_transfer.dns_zone_id]
       )
 
+      zone_transfer.host_ip_address.lock_with_ip!(self)
       dns_zone = zone_transfer.dns_zone
       lock(dns_zone)
 

@@ -289,7 +289,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       ip
     rescue ActiveRecord::RecordInvalid => e
       error!('update failed', e.record.errors.to_hash)
-    rescue VpsAdmin::API::Exceptions::IpAddressInvalidLocation => e
+    rescue VpsAdmin::API::Exceptions::IpAddressInvalidLocation,
+           VpsAdmin::API::Exceptions::IpAddressInUse => e
       error!(e.message)
     end
 
@@ -403,7 +404,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       error!('IP address is already in use')
     rescue VpsAdmin::API::Exceptions::IpAddressInvalidLocation
       error!('IP address is from the wrong location')
-    rescue VpsAdmin::API::Exceptions::IpAddressNotOwned => e
+    rescue VpsAdmin::API::Exceptions::IpAddressNotOwned,
+           VpsAdmin::API::Exceptions::IpAddressInvalid => e
       error!(e.message)
     end
 
@@ -446,7 +448,9 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
       @chain, = netif.remove_route(ip)
       ip
-    rescue VpsAdmin::API::Exceptions::IpAddressInUse => e
+    rescue VpsAdmin::API::Exceptions::IpAddressInUse,
+           VpsAdmin::API::Exceptions::IpAddressNotOwned,
+           VpsAdmin::API::Exceptions::IpAddressNotAssigned => e
       error!(e.message)
     end
 

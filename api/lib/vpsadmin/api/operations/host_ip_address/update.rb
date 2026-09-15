@@ -6,13 +6,13 @@ module VpsAdmin::API
     # @param attrs [Hash]
     # @option attrs [String] :reverse_record_value
     # @return [Array(::TransactionChain, ::HostIpAddress)]
-    def run(host_ip_address, attrs)
+    def run(host_ip_address, attrs, actor: nil)
       ptr_content = attrs[:reverse_record_value].to_s
 
       if ptr_content.empty?
-        TransactionChains::DnsZone::UnsetReverseRecord.fire2(args: [host_ip_address])
+        TransactionChains::DnsZone::UnsetReverseRecord.fire2(args: [host_ip_address], kwargs: { actor: })
       else
-        TransactionChains::DnsZone::SetReverseRecord.fire2(args: [host_ip_address, ptr_content])
+        TransactionChains::DnsZone::SetReverseRecord.fire2(args: [host_ip_address, ptr_content], kwargs: { actor: })
       end
     end
   end

@@ -66,4 +66,18 @@ RSpec.describe TransactionChains::NetworkInterface::DelRoute do
 
     expect { described_class.fire(netif, [ip]) }.not_to raise_error
   end
+
+  it 'rejects an internal removal selected before the address moved to another interface' do
+    fixture = create_netif_vps_fixture!(user: user)
+    other = create_netif_vps_fixture!(user: SpecSeed.other_user)
+    ip = create_ip_address!(network_interface: fixture[:netif])
+    config = user.environment_user_configs.find_by!(environment: SpecSeed.environment)
+    before = config.ipv4
+    IpAddress.where(id: ip.id).update_all(network_interface_id: other[:netif].id)
+
+    expect { described_class.fire(fixture[:netif], [ip]) }
+      .to raise_error(VpsAdmin::API::Exceptions::IpAddressNotAssigned)
+    expect(config.reload.ipv4).to eq(before)
+    expect(ip.reload.network_interface_id).to eq(other[:netif].id)
+  end
 end

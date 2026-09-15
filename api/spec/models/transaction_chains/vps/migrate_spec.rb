@@ -80,6 +80,8 @@ RSpec.describe TransactionChains::Vps::Migrate do
 
   it 'queues the core os-to-os migration subsequence' do
     _dataset, _dip, vps, dst_node = create_vps_migration_fixture
+    netif = create_network_interface!(vps, name: 'eth0')
+    ip = create_ip_address!(network_interface: netif)
     set_vps_running!(vps)
 
     chain, = described_class.chain_for(vps, dst_node).fire(
@@ -107,6 +109,43 @@ RSpec.describe TransactionChains::Vps::Migrate do
     expect(classes.index(Transactions::Vps::SendRootfs)).to be < classes.index(Transactions::Vps::SendState)
     expect(classes.index(Transactions::Vps::SendState)).to be < classes.index(Transactions::Vps::SendCleanup)
     expect(classes.rindex(Transactions::Queue::Release)).to be < classes.index(Transactions::Vps::SendCleanup)
+
+    # A detach confirmation must not expose an address to a competing chain
+    # before the migration (or its rollback) finishes.
+    ip.update!(network_interface: nil)
+    expect do
+      TransactionChains::Ip::Update.fire(ip, user: nil)
+    end.to raise_error(ResourceLocked)
+    expect(ip.host_ip_addresses.first.get_current_lock.locked_by_id).to eq(chain.id)
+  end
+
+  it 'replaces an IP using a candidate whose charge is compatible with the destination' do
+    _dataset, dip, vps, dst_node = create_vps_migration_fixture
+    [SpecSeed.environment, SpecSeed.other_environment].each do |environment|
+      UserClusterResource.create!(user: user, environment: environment,
+                                  cluster_resource: ClusterResource.find_by!(name: 'diskspace'), value: 32_768)
+    end
+    dip.reallocate_resource!(:diskspace, 1024, user: user, save: true,
+                                               confirmed: ClusterResourceUse.confirmed(:confirmed))
+    dst_node.update!(location: SpecSeed.other_location)
+    SpecSeed.environment.update!(user_ip_ownership: true)
+    SpecSeed.other_environment.update!(user_ip_ownership: true)
+    netif = create_network_interface!(vps, name: 'eth0')
+    source = create_ip_address!(user: user, network_interface: netif)
+    network = create_private_network!(location: SpecSeed.other_location, role: :public_access, purpose: :any)
+    incompatible = create_ipv4_address_in_network!(network: network, location: SpecSeed.location, user: user)
+    replacement = create_ipv4_address_in_network!(network: network, location: SpecSeed.other_location)
+
+    chain, = described_class.chain_for(vps, dst_node).fire(
+      vps, dst_node, replace_ips: true, resources: {}, maintenance_window: false, send_mail: false
+    )
+    edits = confirmations_for(chain).select { |row| row.class_name == 'IpAddress' }
+    replacement_edit = edits.find { |row| row.row_pks == { 'id' => replacement.id } }
+    expect(replacement_edit.attr_changes).to include('charged_environment_id' => SpecSeed.other_environment.id)
+    expect(edits.map(&:row_pks)).to include('id' => source.id)
+    expect(edits.map(&:row_pks)).not_to include('id' => incompatible.id)
+    expect(incompatible.reload.charged_environment_id).to eq(SpecSeed.environment.id)
+    expect(incompatible.network_interface_id).to be_nil
   end
 
   it 'omits destination start when no_start is true' do

@@ -4,7 +4,7 @@ module TransactionChains
 
     # @param user [::User]
     # @param ip_addresses [Array<::IpAddress>]
-    def link_chain(user, ip_addresses)
+    def link_chain(user, ip_addresses, reserved_ips: false)
       ::Export.where(user:, all_vps: true).each do |export|
         hosts = ip_addresses.map do |ip|
           ::ExportHost.new(
@@ -17,7 +17,7 @@ module TransactionChains
           )
         end
 
-        use_chain(Export::AddHosts, args: [export, hosts])
+        use_chain(Export::AddHosts, args: [export, hosts], kwargs: { reserved_ips: })
       end
     end
   end

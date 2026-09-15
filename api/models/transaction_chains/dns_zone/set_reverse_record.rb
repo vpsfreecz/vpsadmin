@@ -6,8 +6,8 @@ module TransactionChains
     # @param host_ip_address [::HostIpAddress]
     # @param ptr_content [String]
     # @return [::HostIpAddress]
-    def link_chain(host_ip_address, ptr_content)
-      lock(host_ip_address)
+    def link_chain(host_ip_address, ptr_content, actor: nil)
+      host_ip_address.lock_with_ip!(self, actor:)
 
       dns_zone = host_ip_address.ip_address.reverse_dns_zone
 

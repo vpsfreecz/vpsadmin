@@ -209,6 +209,17 @@ RSpec.describe TransactionChains::Vps::Update do
       attr_changes: include('value' => 0)
     )
     expect(destination_confirmation).to have_attributes(confirm_type: 'create_type')
+
+    # The old owner remains in the database until confirmation, but the
+    # queued chown must already exclude new DNS grants on the transferred IP.
+    transfer = DnsZoneTransfer.new(
+      dns_zone: create_dns_zone!(user: user, source: :internal_source),
+      host_ip_address: ip.host_ip_addresses.first,
+      peer_type: :secondary_type
+    )
+    expect do
+      TransactionChains::DnsZoneTransfer::Create.fire(transfer)
+    end.to raise_error(ResourceLocked)
   end
 
   it 'delegates enable_network changes and map mode changes to the expected transactions' do

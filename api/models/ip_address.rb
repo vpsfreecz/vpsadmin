@@ -16,6 +16,41 @@ class IpAddress < ApplicationRecord
 
   include Lockable
 
+  # Reserve parents in a consistent order before reserving their host records.
+  def self.lock_all_current!(chain, ips)
+    ordered = ips.uniq(&:id).sort_by(&:id)
+    ordered.each { |ip| chain.lock(ip) }
+    ordered.each { |ip| ip.lock_current!(chain) }
+  end
+
+  # Public entry points must use current ownership after acquiring the resource
+  # reservation, even when this chain already reserved another instance.
+  def lock_current!(chain, actor: nil)
+    chain.lock(self)
+    reload(lock: true)
+    ensure_owner!(actor) if actor
+    self
+  end
+
+  # Included chains can explicitly retain an assignment pending confirmation.
+  def require_reservation!(chain)
+    return if (Array(chain.global_locks) + chain.locks).any? { |reservation| reservation.locks?(self) }
+
+    raise ResourceLocked.new(self, 'IP address is not reserved by this transaction chain')
+  end
+
+  def with_current_lock(actor: nil)
+    result = nil
+    self.class.transaction(requires_new: true) do
+      acquire_lock do
+        reload(lock: true)
+        ensure_owner!(actor) if actor
+        result = yield self
+      end
+    end
+    result
+  end
+
   validate :check_address
   validate :check_ownership
   validates :ip_addr, uniqueness: true
@@ -80,6 +115,25 @@ class IpAddress < ApplicationRecord
     network.ip_version
   end
 
+  # Recheck the actor after taking the IP lock and reloading ownership.
+  def ensure_owner!(actor)
+    return if actor.role == :admin
+
+    reload_current_assignment! unless user_id
+    return if current_owner == actor
+
+    raise VpsAdmin::API::Exceptions::OperationError,
+          VpsAdmin::API::I18n.t('errors.access_denied_lower')
+  end
+
+  # Assignment can stay unchanged while the VPS owner changes. Use current
+  # shared reads so authorization does not inherit an older transaction snapshot.
+  def reload_current_assignment!
+    network_interface&.reload(lock: 'LOCK IN SHARE MODE')
+    network_interface&.vps&.reload(lock: 'LOCK IN SHARE MODE')
+    self
+  end
+
   def ensure_charge_environment!
     return unless user_id && !charged_environment_id
 
@@ -108,13 +162,20 @@ class IpAddress < ApplicationRecord
   # @option opts [:any, :vps, :export] :purpose network purpose
   # @option opts [::Location, nil] :address_location
   # @option opts [Array<::Network>] :except_networks
+  # @option opts [Environment] :allocation_environment require compatible owned charges for automatic VPS allocation
   def self.pick_addr!(opts)
+    pick_scope(opts)
+      .joins("LEFT JOIN resource_locks rl ON rl.resource = 'IpAddress' AND rl.row_id = ip_addresses.id")
+      .where('rl.id IS NULL').take!
+  end
+
+  # Share selection criteria with the current check made after reservation.
+  def self.pick_scope(opts)
     opts[:role] ||= :public_access
     opts[:purpose] ||= :any
 
     q = self.select('ip_addresses.*')
             .joins(network: :location_networks)
-            .joins("LEFT JOIN resource_locks rl ON rl.resource = 'IpAddress' AND rl.row_id = ip_addresses.id")
             .where(
               networks: {
                 ip_version: opts[:ip_v],
@@ -123,30 +184,27 @@ class IpAddress < ApplicationRecord
             )
             .where('network_interface_id IS NULL')
             .where('(ip_addresses.user_id = ? OR ip_addresses.user_id IS NULL)', opts[:user].id)
-            .where('rl.id IS NULL')
+
+    if opts[:allocation_environment]
+      env = opts[:allocation_environment]
+      q = if env.user_ip_ownership
+            q.where('ip_addresses.user_id IS NULL OR charged_environment_id IS NULL OR charged_environment_id = ?', env.id)
+          else
+            q.where(user_id: nil)
+          end
+    end
 
     q = if opts[:address_location]
-          if ::User.current.role == :admin
-            q.where(
-              networks: {
-                id: opts[:location].any_shared_networks_with_primary(
-                  opts[:address_location]
-                ).map(&:id)
-              }
-            )
-          else
-            q.where(
-              networks: {
-                id: opts[:location].any_shared_networks_with_primary(
-                  opts[:address_location],
-                  userpick: true
-                ).map(&:id)
-              },
-              location_networks: {
-                userpick: true
-              }
-            )
+          # Keep both locations in the final query so the locking recheck also
+          # sees changes to the primary location's selection policy.
+          shared = q.joins('INNER JOIN location_networks primary_locnet ON primary_locnet.network_id = networks.id')
+                    .where(location_networks: { location_id: opts[:location].id })
+                    .where('primary_locnet.location_id = ? AND primary_locnet.primary = 1', opts[:address_location].id)
+                    .where('location_networks.location_id != primary_locnet.location_id')
+          if ::User.current.role != :admin
+            shared = shared.where(location_networks: { userpick: true }).where('primary_locnet.userpick = 1')
           end
+          shared
         else
           q.where(
             location_networks: {
@@ -169,7 +227,15 @@ class IpAddress < ApplicationRecord
 
     q = q.where.not(network: opts[:except_networks]) if opts[:except_networks]
 
-    q.order('ip_addresses.user_id DESC, location_networks.priority, ip_addresses.id').take!
+    q.order('ip_addresses.user_id DESC, location_networks.priority, ip_addresses.id')
+  end
+
+  def ensure_pickable!(opts)
+    ensure_charge_environment!
+    return if self.class.pick_scope(opts).where(id:).lock.exists?
+
+    raise VpsAdmin::API::Exceptions::IpAddressInUse,
+          'IP address is no longer available for this allocation'
   end
 
   def check_address

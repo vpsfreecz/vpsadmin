@@ -145,7 +145,9 @@ class VpsAdmin::API::Resources::Export < HaveAPI::Resource
       )
       export
     rescue VpsAdmin::API::Exceptions::DatasetAlreadyExported,
-           VpsAdmin::API::Exceptions::OperationNotSupported => e
+           VpsAdmin::API::Exceptions::OperationNotSupported,
+           VpsAdmin::API::Exceptions::IpAddressInUse,
+           VpsAdmin::API::Exceptions::IpAddressInvalidLocation => e
       error!(e.message)
     end
 

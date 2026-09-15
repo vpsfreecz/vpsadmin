@@ -10,6 +10,24 @@ class ExportHost < ApplicationRecord
     ip_address.network_interface&.vps&.user_id == export.user_id
   end
 
+  # Serialize grant changes with assignment and ownership changes, including
+  # confirmations which can recreate a deleted grant on rollback.
+  def lock_ip!(chain, reserved: false)
+    ip = ip_address
+    if reserved
+      ip.require_reservation!(chain)
+      return
+    end
+
+    identity = [ip.user_id, ip.network_interface_id, ip.network_interface&.vps&.user_id]
+    ip.lock_current!(chain)
+    ip.reload_current_assignment!
+    return if identity == [ip.user_id, ip.network_interface_id, ip.network_interface&.vps&.user_id]
+
+    errors.add(:ip_address, 'ownership or assignment changed; retry the operation')
+    raise ActiveRecord::RecordInvalid, self
+  end
+
   protected
 
   def check_ip_address

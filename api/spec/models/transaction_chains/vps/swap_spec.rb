@@ -11,9 +11,7 @@ RSpec.describe TransactionChains::Vps::Swap do
   let(:user) { SpecSeed.user }
 
   before do
-    # rubocop:disable RSpec/AnyInstance
-    allow_any_instance_of(Object).to receive(:get_vps_shaper_limit).and_return(nil)
-    # rubocop:enable RSpec/AnyInstance
+    allow_any_instance_of(Object).to receive(:get_vps_shaper_limit).and_return(nil) # rubocop:disable RSpec/AnyInstance
   end
 
   def create_swap_fixture(same_location: false, secondary_user: user, with_primary_netif: true, with_secondary_netif: true)
@@ -151,5 +149,15 @@ RSpec.describe TransactionChains::Vps::Swap do
     expect(stop_tx.id).to be < first_add_route.id
     expect(ObjectHistory.where(tracked_object: primary_vps, event_type: 'swap').count).to eq(1)
     expect(ObjectHistory.where(tracked_object: secondary_vps, event_type: 'swap').count).to eq(1)
+
+    [primary_vps, secondary_vps].each do |vps|
+      vps.ip_addresses.each do |ip|
+        ip.update!(network_interface: nil)
+        expect do
+          TransactionChains::Ip::Update.fire(ip, user: nil)
+        end.to raise_error(ResourceLocked)
+        expect(ip.host_ip_addresses.first.get_current_lock.locked_by_id).to eq(chain.id)
+      end
+    end
   end
 end

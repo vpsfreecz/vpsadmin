@@ -14,18 +14,22 @@ module TransactionChains
       ips = []
       v = r.name == 'ipv6' ? 6 : 4
 
+      selection = {
+        user: netif.vps.user,
+        location: netif.vps.node.location,
+        ip_v: v,
+        role: r.name.end_with?('_private') ? :private_access : :public_access,
+        purpose: :vps,
+        allocation_environment: netif.vps.node.location.environment,
+        address_location:
+      }
+
       loop do
         begin
           ::IpAddress.transaction do
-            ip = ::IpAddress.pick_addr!(
-              user: netif.vps.user,
-              location: netif.vps.node.location,
-              ip_v: v,
-              role: r.name.end_with?('_private') ? :private_access : :public_access,
-              purpose: :vps,
-              address_location:
-            )
-            lock(ip)
+            ip = ::IpAddress.pick_addr!(selection)
+            ip.lock_current!(self)
+            ip.ensure_pickable!(selection)
 
             ips << ip
           end
@@ -83,7 +87,7 @@ module TransactionChains
         order += 1
       end
 
-      use_chain(Export::AddHostsToAll, args: [netif.vps.user, ips])
+      use_chain(Export::AddHostsToAll, args: [netif.vps.user, ips], kwargs: { reserved_ips: true })
 
       chowned
     end

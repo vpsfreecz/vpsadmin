@@ -140,4 +140,96 @@ RSpec.describe Network do
     resume << true if resume
     workers&.each { |thread| thread.join(25) || thread.kill.join }
   end
+
+  it 'reloads a migration replacement selected before a concurrent disown' do
+    selected = Queue.new
+    resume = Queue.new
+    allow(IpAddress).to receive(:pick_addr!) do
+      ip = IpAddress.find(committed[:ip_id])
+      expect(ip.user_id).to eq(SpecSeed.user.id)
+      selected << true
+      resume.pop
+      ip
+    end
+
+    worker = connection_thread do
+      TransactionChain.transaction do
+        migration = TransactionChains::Vps::Migrate::Base.create!(
+          name: 'migration-replacement-spec', state: :staged, size: 0,
+          user: User.current, user_session: UserSession.current
+        )
+        migration.global_locks = []
+        allow(migration).to receive(:dst_vps).and_return(Vps.new(user: SpecSeed.user, node: SpecSeed.node))
+        replacement = migration.send(:pick_replacement_ip, IpAddress.find(committed[:ip_id]))
+        expect(replacement.user_id).to be_nil
+        expect(replacement.charged_environment_id).to be_nil
+        expect(replacement.get_current_lock.locked_by_id).to eq(migration.id)
+        raise ActiveRecord::Rollback
+      end
+    end
+    Timeout.timeout(10) { selected.pop }
+    connection_thread do
+      TransactionChains::Ip::Update.fire(IpAddress.find(committed[:ip_id]), user: nil)
+    end.value
+    resume << true
+    Timeout.timeout(20) { worker.value }
+  ensure
+    resume << true if resume
+    worker&.join(25) || worker&.kill&.join
+  end
+
+  it 'rejects an export grant selected before a concurrent release' do
+    connection_thread do
+      TransactionChain.transaction do
+        fixture = create_netif_vps_fixture!(user: SpecSeed.user)
+        ip = IpAddress.find(committed[:ip_id])
+        export, = create_export_for_dataset!(dataset_in_pool: fixture[:dataset_in_pool], host_ip: ip)
+        host = ExportHost.new(export:, ip_address: ip, rw: true, sync: true,
+                              subtree_check: false, root_squash: false)
+        allow(host).to receive(:lock_ip!).and_wrap_original do |original, chain|
+          connection_thread do
+            changed = IpAddress.find(ip.id)
+            changed.acquire_lock do
+              changed.update!(user: nil, charged_environment: nil)
+            end
+          end.value
+          original.call(chain)
+        end
+        expect { TransactionChains::Export::AddHosts.fire(export, [host]) }
+          .to raise_error(ActiveRecord::RecordInvalid, /ownership or assignment changed/)
+        expect(ExportHost.where(export:)).to be_empty
+        raise ActiveRecord::Rollback
+      end
+    end.value
+  end
+
+  it 'rechecks userpick after a concurrent release of a previously owned address' do
+    connection_thread do
+      TransactionChain.transaction do
+        with_current_context(user: SpecSeed.user) do
+          fixture = create_netif_vps_fixture!(user: SpecSeed.user)
+          LocationNetwork.where(network_id: SpecSeed.network_v4.id, location_id: SpecSeed.location.id)
+                         .update_all(userpick: false)
+          ip = IpAddress.find(committed[:ip_id])
+          paused = false
+          allow_any_instance_of(TransactionChains::NetworkInterface::AddRoute).to receive(:lock).and_wrap_original do |original, resource| # rubocop:disable RSpec/AnyInstance
+            if resource.is_a?(IpAddress) && resource.id == ip.id && !paused
+              paused = true
+              connection_thread do
+                changed = IpAddress.find(ip.id)
+                changed.acquire_lock do
+                  changed.update!(user: nil, charged_environment: nil)
+                end
+              end.value
+            end
+            original.call(resource)
+          end
+          expect { fixture[:netif].add_route(ip, safe: true) }
+            .to raise_error(VpsAdmin::API::Exceptions::IpAddressInvalid, /cannot be freely assigned/)
+          expect(ip.reload.network_interface_id).to be_nil
+        end
+        raise ActiveRecord::Rollback
+      end
+    end.value
+  end
 end
