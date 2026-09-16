@@ -872,14 +872,28 @@ import ../make-test.nix (
 
       def ensure_ip_fixture(network, addr, user: nil, network_interface: nil)
         ip = IpAddress.find_or_initialize_by(ip_addr: addr)
+        previous_owner = ip.user
+        previous_environment = ip.charged_environment
+        environment = user ? network.primary_location.environment : nil
+        ownership_changed = ip.new_record? || ip.user_id != user&.id || ip.charged_environment_id != environment&.id
+        if ownership_changed && previous_owner
+          previous_owner.environment_user_configs.find_by!(environment: previous_environment)
+                        .adjust_resource!(ip.cluster_resource, delta: -ip.size.to_i, user: previous_owner, save: true)
+        end
         ip.assign_attributes(
           prefix: network.split_prefix,
           size: 1,
           network: network,
           user: user,
+          charged_environment: environment,
           network_interface: network_interface
         )
         ip.save! if ip.changed? || ip.new_record?
+
+        if ownership_changed && user
+          user.environment_user_configs.find_by!(environment: environment)
+              .adjust_resource!(ip.cluster_resource, delta: ip.size.to_i, user: user, save: true)
+        end
 
         HostIpAddress.find_or_initialize_by(
           ip_address: ip,
@@ -1034,7 +1048,11 @@ import ../make-test.nix (
         )
         netif.save! if netif.changed? || netif.new_record?
 
-        server_ip.update!(network_interface: netif, user: nil)
+        if server_ip.user
+          server_ip.user.environment_user_configs.find_by!(environment: server_ip.charged_environment)
+                   .adjust_resource!(server_ip.cluster_resource, delta: -server_ip.size.to_i, user: server_ip.user, save: true)
+        end
+        server_ip.update!(network_interface: netif, user: nil, charged_environment: nil)
         server_host_ip = server_ip.host_ip_addresses.first || HostIpAddress.create!(
           ip_address: server_ip,
           ip_addr: server_ip.ip_addr
