@@ -4095,6 +4095,7 @@ en:
           node: Integrity check node
         ip:
           allocate: Allocate IP to object
+          disown: Disown IPs
           free: Free IP from object
           update: IP*
         lifetimes:

@@ -71,3 +71,16 @@ and keeps it when disownership is pending or failed.
 Account teardown links IP cleanup before quota destruction. It refuses owned
 allocations with missing charge provenance so accounting evidence remains
 available for reconciliation.
+
+## Batch disowning
+
+`TransactionChains::Ip::Disown` owns cleanup and disown accounting for both
+ordinary `Ip::Update` and campaign releases. It groups allocations by owner,
+recorded charge environment and resource and calls `adjust_resource!` once per
+group. Deferred confirmations contain absolute totals: calculating the same
+usage row separately for each IP would overwrite earlier deltas. The helper
+reserves current allocations and accounting rows in order and returns the final
+confirmation so a campaign can attach release markers to the same operation.
+Campaigns pass `defer: true`, retaining all ownership until the whole chain
+succeeds, including allocations without asynchronous cleanup. Ordinary single-IP
+updates preserve their immediate no-cleanup behavior.

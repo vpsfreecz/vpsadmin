@@ -4090,6 +4090,7 @@ cs:
           node: Kontrola integrity nodu
         ip:
           allocate: Přidělení IP objektu
+          disown: Uvolnění IP adres
           free: Uvolnění IP z objektu
           update: IP*
         lifetimes:

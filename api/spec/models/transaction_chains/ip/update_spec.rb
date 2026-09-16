@@ -77,6 +77,16 @@ RSpec.describe TransactionChains::Ip::Update do
     ).to eq('just_destroy_type')
   end
 
+  it 'disowns immediately when there is no asynchronous cleanup' do
+    ip = create_owned_ip
+    before = resource_use_value(user: SpecSeed.user, environment: SpecSeed.environment, resource: :ipv4)
+    chain, = described_class.fire(ip, user: nil)
+    expect(chain).to be_nil
+    expect(ip.reload.user_id).to be_nil
+    expect(ip.charged_environment_id).to be_nil
+    expect(resource_use_value(user: SpecSeed.user, environment: SpecSeed.environment, resource: :ipv4)).to eq(before - 1)
+  end
+
   it 'requires an environment when assigning an owner' do
     ip = create_owned_ip(user: nil)
 
