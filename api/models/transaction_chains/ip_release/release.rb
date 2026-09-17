@@ -50,6 +50,12 @@ module TransactionChains
           confirmation.edit(item, released_at: attempt.created_at, released_by_id: actor.id,
                                   active_ip_address_id: nil, last_result: 'released')
         end
+        # Retained allocations stay owned, but this campaign no longer claims
+        # them once the batch succeeds. Rollback leaves the campaign open.
+        (items - selected).each do |item|
+          confirmation.edit(item, active_ip_address_id: nil) if item.active_ip_address_id
+        end
+        confirmation.edit(campaign, closed_at: attempt.created_at, closed_by_id: actor.id)
       end
     end
   end

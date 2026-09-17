@@ -244,6 +244,22 @@ RSpec.describe VpsAdmin::API::Resources::IpReleaseCampaign do
     expect(campaign.reload.closed_at).not_to be_nil
     expect(item.reload.active_ip_address_id).to be_nil
     expect(ip.reload.user_id).to eq(SpecSeed.user.id)
+    as(SpecSeed.user) do
+      read("/ip_release_requests/#{request.id}")
+      expect_status(200)
+      response = JSON.parse(last_response.body).fetch('response').fetch('ip_release_request')
+      expect(response.values_at('can_keep', 'can_assign')).to eq([false, false])
+      write("/ip_release_requests/#{request.id}/keep", ip_release_request: { addresses: [item.id], reason: 'Too late' })
+      expect(JSON.parse(last_response.body).fetch('status')).to be(false)
+    end
+    expect(item.reload.kept_at).to be_nil
+    as(SpecSeed.admin) do
+      write("/ip_release_requests/#{request.id}/addresses/#{item.id}/exempt", address: { reason: nil })
+      expect(JSON.parse(last_response.body).fetch('status')).to be(false)
+      write("/ip_release_campaigns/#{campaign.id}/exempt", ip_release_campaign: { addresses: [item.id], reason: 'Too late' })
+      expect(JSON.parse(last_response.body).fetch('status')).to be(false)
+    end
+    expect(item.reload.exemption_reason).to eq('Reservation')
   end
 
   it 'denies campaign management to ordinary users and support staff' do

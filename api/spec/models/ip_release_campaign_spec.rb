@@ -15,6 +15,10 @@ RSpec.describe IpReleaseCampaign do
     expect(attempt.state).to eq('running'), attempt.error
     expect(attempt.ip_release_request_addresses.pluck(:ip_address_id)).to match_array(ips.map(&:id))
     changes = confirmations_for(attempt.transaction_chain)
+    closure = changes.find { |row| row.class_name == 'IpReleaseCampaign' && row.row_pks == { 'id' => c.id } }
+    expect(closure.confirm_type).to eq('edit_after_type')
+    expect(closure.attr_changes.symbolize_keys).to include(closed_by_id: attempt.created_by_id)
+    expect(Time.parse("#{closure.attr_changes.fetch('closed_at')} UTC")).to be_within(1).of(attempt.created_at)
     ips.each do |ip|
       expect(ip.reload.user_id).not_to be_nil
       edit = changes.find { |row| row.class_name == 'IpAddress' && row.row_pks == { 'id' => ip.id } }
@@ -786,11 +790,34 @@ RSpec.describe IpReleaseCampaign do
   it 'closes a campaign without restoring released IPs and frees pending claims' do
     ip = address
     c = campaign([ip])
-    c.close!(actor: SpecSeed.admin)
+    request = c.ip_release_requests.first
+    request.keep!(ids: [item(c).id], reason: 'Reservation', actor: SpecSeed.user)
+    request.ip_release_campaign # Cache the open campaign before another instance closes it.
+    described_class.find(c.id).close!(actor: SpecSeed.admin)
+    expect do
+      request.keep!(ids: [item(c).id], reason: 'Changed reason', actor: SpecSeed.user)
+    end.to raise_error(described_class::Error, 'closed')
+    expect(item(c).keep_reason).to eq('Reservation')
     expect(item(c).active_ip_address_id).to be_nil
     expect { c.release!(actor: SpecSeed.admin) }.to raise_error(described_class::Error, 'closed')
     expect { c.edit!({ allow_keep: false }, actor: SpecSeed.admin) }.to raise_error(described_class::Error, 'closed')
     expect(campaign([ip])).to be_persisted
+  end
+
+  it 'clears retained claims only with the successful release confirmation' do
+    ips = [address, address]
+    c = campaign(ips)
+    retained = c.ip_release_request_addresses.find_by!(ip_address: ips.last)
+    retained.exempt!(reason: 'Reservation', actor: SpecSeed.admin)
+    c.release!(actor: SpecSeed.admin)
+    expect_staged(c, [ips.first])
+    expect(c.reload.closed_at).to be_nil
+    expect(retained.reload.active_ip_address_id).to eq(ips.last.id)
+    change = confirmations_for(c.latest_release_attempt.transaction_chain).find do |row|
+      row.class_name == 'IpReleaseRequestAddress' && row.row_pks == { 'id' => retained.id }
+    end
+    expect(change.confirm_type).to eq('edit_after_type')
+    expect(change.attr_changes).to eq('active_ip_address_id' => nil)
   end
 
   it 'filters public and private families, owners and overlapping locations without duplicates' do

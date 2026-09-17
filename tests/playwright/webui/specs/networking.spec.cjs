@@ -517,6 +517,10 @@ test('IP release campaign: navigation, bulk exemptions, notices and manual relea
     return await rowWithText(page, ips[0].addr).innerText();
   }, { timeout: 120000 }).toContain('Released');
   await expect(page.locator('#content-in')).toContainText('All selected addresses released');
+  await expect(rowWithText(page, 'State')).toContainText('Closed');
+  await expect(page.locator('#aside').getByRole('link', { name: 'Close without releasing IPs', exact: true })).toHaveCount(0);
+  await expect(page.locator('#aside').getByRole('link', { name: 'Edit campaign', exact: true })).toHaveCount(0);
+  await expect(page.locator('input[name="addresses[]"]')).toHaveCount(0);
   await expect(page.getByRole('link', { name: /^Transaction chain #[0-9]+$/ }).first()).toBeVisible();
   await expect(rowWithText(page, ips[0].addr).getByRole('link', { name: /Transaction chain/ })).toHaveCount(0);
   await expect(page.getByRole('columnheader', { name: 'Started at', exact: true })).toBeVisible();
@@ -527,11 +531,6 @@ test('IP release campaign: navigation, bulk exemptions, notices and manual relea
   await expect(page.getByRole('columnheader', { name: 'Recipient', exact: true })).toBeVisible();
   await expect(page.locator('#content-in')).toContainText('Initial notice');
   await expect(page.locator('#content-in')).toContainText('Reminder');
-  await page.locator('#aside').getByRole('link', { name: 'Close without releasing IPs', exact: true }).click();
-  await expect(page.locator('#content-in')).toContainText('Closing does not cancel a release already in progress');
-  await page.getByRole('button', { name: 'Close without releasing IPs', exact: true }).click();
-  await expect(page.locator('#aside').getByRole('link', { name: 'Edit campaign', exact: true })).toHaveCount(0);
-  await expect(page.locator('input[name="addresses[]"]')).toHaveCount(0);
   expect(showApiResource('ip_address', otherIp.id).user.id).toBe(fixtures.users.secondary.id);
   await logout(page, fixtures.admin.username);
   await login(page, fixtures.user);

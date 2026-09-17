@@ -57,7 +57,7 @@ RSpec.describe NodeCtld::Command do
   end
 
   %i[success rollback fatal].each do |outcome|
-    it "keeps batch ownership, accounting and release markers together on #{outcome}" do
+    it "keeps batch ownership, accounting, release markers and campaign closure together on #{outcome}" do
       chain_id = insert_chain(size: 3)
       handles = NodeCtldSpec::TestHandles
       first = insert_transaction(transaction_chain_id: chain_id,
@@ -66,11 +66,15 @@ RSpec.describe NodeCtld::Command do
                                    handle: outcome == :success ? handles::OK : handles::FAIL_EXEC)
       final = insert_transaction(transaction_chain_id: chain_id, depends_on_id: cleanup, handle: handles::OK)
       quota_id = insert_cluster_resource_use(value: 9, confirmed: 1)
+      campaign_id = sql_insert('ip_release_campaigns', deadline: Time.now, created_by_id: 42, updated_by_id: 42,
+                                                       created_at: Time.now, updated_at: Time.now)
+      request_id = sql_insert('ip_release_requests', ip_release_campaign_id: campaign_id, user_id: 42,
+                                                     created_at: Time.now, updated_at: Time.now)
       ips = 2.times.map do |i|
         ip_id = sql_insert('ip_addresses', ip_addr: "192.0.2.#{210 + i}", prefix: 32, size: 1,
                                            network_id: 1, user_id: 42, charged_environment_id: 7)
         item_id = sql_insert('ip_release_request_addresses', {
-          ip_release_request_id: 1, ip_address_id: ip_id, active_ip_address_id: ip_id,
+          ip_release_request_id: request_id, ip_address_id: ip_id, active_ip_address_id: ip_id,
           address: "192.0.2.#{210 + i}", prefix: 32, size: 1, network_id: 1,
           last_result: 'releasing', release_chain_id: chain_id, created_at: Time.now, updated_at: Time.now
         })
@@ -85,11 +89,21 @@ RSpec.describe NodeCtld::Command do
       end
       insert_confirmation(transaction_id: final, class_name: 'ClusterResourceUse', table_name: 'cluster_resource_uses',
                           row_pks: { 'id' => quota_id }, confirm_type: 3, attr_changes: { value: 7 })
+      retained_id = sql_insert('ip_release_request_addresses', {
+        ip_release_request_id: request_id, ip_address_id: 999_999, active_ip_address_id: 999_999,
+        address: '192.0.2.212', prefix: 32, size: 1, network_id: 1, exemption_reason: 'Reservation',
+        exempted_at: Time.now, exempted_by_id: 42, created_at: Time.now, updated_at: Time.now
+      })
+      insert_confirmation(transaction_id: final, class_name: 'IpReleaseRequestAddress', table_name: 'ip_release_request_addresses',
+                          row_pks: { 'id' => retained_id }, confirm_type: 3, attr_changes: { active_ip_address_id: nil })
+      insert_confirmation(transaction_id: final, class_name: 'IpReleaseCampaign', table_name: 'ip_release_campaigns',
+                          row_pks: { 'id' => campaign_id }, confirm_type: 3, attr_changes: { closed_at: Time.now, closed_by_id: 42 })
       insert_resource_lock(chain_id:, resource: 'User', row_id: 42)
 
       execute_and_save(first)
       execute_and_save(cleanup)
       expect(sql_value('SELECT value FROM cluster_resource_uses WHERE id = ?', quota_id).to_i).to eq(9)
+      expect(sql_value('SELECT closed_at FROM ip_release_campaigns WHERE id = ?', campaign_id)).to be_nil
       ips.each { |pair| expect(sql_value('SELECT user_id FROM ip_addresses WHERE id = ?', pair.first)).to eq(42) }
       execute_and_save(outcome == :success ? final : first)
 
@@ -98,6 +112,13 @@ RSpec.describe NodeCtld::Command do
       )
       expect(sql_value('SELECT value FROM cluster_resource_uses WHERE id = ?', quota_id).to_i)
         .to eq(outcome == :success ? 7 : 9)
+      expect(sql_value('SELECT closed_at FROM ip_release_campaigns WHERE id = ?', campaign_id).nil?)
+        .to eq(outcome != :success)
+      expect(sql_value('SELECT closed_by_id FROM ip_release_campaigns WHERE id = ?', campaign_id))
+        .to eq(outcome == :success ? 42 : nil)
+      expect(sql_value('SELECT active_ip_address_id FROM ip_release_request_addresses WHERE id = ?', retained_id))
+        .to eq(outcome == :success ? nil : 999_999)
+      expect(sql_value('SELECT exemption_reason FROM ip_release_request_addresses WHERE id = ?', retained_id)).to eq('Reservation')
       ips.each do |ip_id, item_id|
         expect(sql_value('SELECT user_id FROM ip_addresses WHERE id = ?', ip_id)).to eq(outcome == :success ? nil : 42)
         expect(sql_value('SELECT charged_environment_id FROM ip_addresses WHERE id = ?', ip_id)).to eq(outcome == :success ? nil : 7)

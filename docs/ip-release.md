@@ -107,6 +107,12 @@ recorded charge environment and resource. Campaign releases always stage a final
 NoOp confirmation, even without DNS cleanup. Every selected IP remains owned
 and charged while the batch runs. Ownership, quota and release markers are
 applied together in the transaction engine's final database transaction.
+The same confirmation closes the campaign and clears its remaining address
+claims. Retained addresses stay owned and their reasons remain in the history.
+The closure records the release attempt's time and initiating administrator,
+including when an administrator explicitly closed the campaign during cleanup.
+Preparation failures, completed rollbacks and attempts with no eligible
+addresses leave an otherwise open campaign open.
 Ordinary single-IP `IpAddress.Update` still completes immediately when no
 asynchronous cleanup is needed; ownership transfers retain their existing
 behavior.
@@ -184,6 +190,8 @@ request list; it does not offer notice history or a link to the current request.
 ends further campaign operations without starting a release. Remaining addresses
 stay owned, already initiated releases continue, and history remains available.
 A closed campaign cannot be reopened.
+Successful release closes it automatically. Members cannot submit or change
+reasons in a closed campaign, and administrators cannot change its exemptions.
 
 The campaign list, creation, address tables and Notice history use the usual
 WebUI sidebar and table structure. Action forms and confirmation messages explain
