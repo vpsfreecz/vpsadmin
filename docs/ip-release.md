@@ -204,91 +204,14 @@ campaigns expanded through request associations. Counts use no persisted
 counters or new locks. They are a current summary, not a reservation;
 Release rechecks every allocation before changing ownership.
 
-## Deployment and rollback
+## Ownership prerequisites and operations
 
-This feature is still unmerged. Its migration no longer includes a campaign
-label and now includes attempt and membership tables; reset disposable databases created from earlier feature revisions rather
-than tolerating both schemas. Deploy the matching API and WebUI and refresh API
-discovery: the multi-value filters and reduced member output replace the earlier
-feature contract. Existing vpsAdmin releases do not expose these resources.
+Campaigns use the shared [IP ownership and accounting rules](ip-locking.md).
+These also govern ordinary IP registration, assignment, disownership and account
+teardown. The [ownership operations guide](ip-ownership-operations.md) covers
+legacy charge audits, reconciliation and pending-chain recovery.
 
-Deploy the API before the WebUI so campaign counts are available, then refresh
-API discovery.
-
-Apply the additive database migration before deploying the API and WebUI. Deploy
-the API changes to all writers before using campaigns: the assignment paths must
-use the updated IP locking and quota accounting. Host-address creation and
-assignment, PTR changes, DNS transfers and NFS export grants must share the parent
-IP lock. Wait for IP, host/DNS/export and quota transaction chains started by older API versions
-to finish before using campaigns; those chains lack the new locks. No new node
-transaction type or vpsAdminOS update is required.
-
-Before starting any API rollout, pause administrator changes to network role and
-IP version and new IP registration through Network.Create, Network.AddAddresses
-and IpAddress.Create. Keep these writes paused until every API writer is upgraded
-and registrations started by older writers have finished. Older writers do not enforce the new
-network invariant or take its registration lock. Keep the same administrative
-restriction during rollback. After all writers have been reverted and old work
-has drained, registrations may resume only while role/IP-version changes remain
-paused; populated-network conversions still require accounting reconciliation. This
-restriction applies to ordinary network and IP operations as well as campaigns.
-
-Before release or ownership transfers, audit populated networks' role and IP
-family against their allocation and accounting history, including addresses with
-a recorded charge environment. Older APIs allowed these fields to change on
-populated networks. A non-null charge environment therefore does not prove that
-the allocation was charged to the resource implied by its current network.
-Verify the network address family and the affected owners' environment usage for
-public IPv4, private IPv4 and IPv6. Use reliable operation or maintenance records
-to establish prior changes. If the history is ambiguous or the accounting does
-not agree, reconcile the affected allocations and quota before releasing or
-transferring them. The migration does not infer or repair historical resource
-types.
-
-Before enabling campaigns, audit owned addresses with missing charge identity:
-
-```sql
-SELECT ip.id, ip.ip_addr, ip.prefix, ip.user_id, ip.network_id,
-       GROUP_CONCAT(DISTINCT l.environment_id ORDER BY l.environment_id) AS available_environments
-FROM ip_addresses ip
-LEFT JOIN location_networks ln ON ln.network_id = ip.network_id
-LEFT JOIN locations l ON l.id = ln.location_id
-WHERE ip.user_id IS NOT NULL AND ip.charged_environment_id IS NULL
-GROUP BY ip.id, ip.ip_addr, ip.prefix, ip.user_id, ip.network_id;
-```
-
-Older registration paths and the original charge-environment migration left
-some free owned addresses without this identity. New registrations and managed
-network additions record it. Managed-network additions require the owner and
-charge environment together. Owned addresses with missing provenance cannot be
-assigned or released until it is reconciled. Existing rows are not guessed or backfilled: the
-current network locations do not prove where an old allocation was charged.
-For each legacy row, reconcile the owner's environment quota usage against
-allocation history, then explicitly set `charged_environment_id` to the verified
-environment using an audited administrator maintenance session. Preserve quota
-usage when correcting only this missing identity; reconcile any actual accounting
-discrepancy separately. Campaign release reports a preparation failure and leaves the entire selected
-batch owned and charged until reconciliation.
-Account deletion also waits for this reconciliation and retains the account's
-quota records while IP cleanup is pending.
-
-Network role and IP version cannot be changed while a network contains IP
-allocations. Converting a populated network requires a separate audited maintenance
-operation that also reconciles quota; ordinary Network.Update does not perform it.
-
-The built-in English templates are `ip_release_requested` and
-`ip_release_reminder`. Deploy the matching vpsFree.cz notification overlay after
-the API knows these events. Resource and node message formats stay compatible.
-Disowning through the existing `IpAddress.Update` action now retains ownership
-until asynchronous cleanup succeeds; callers must use its existing transaction
-state metadata before assuming completion. Disowning without asynchronous cleanup
-remains immediate. The WebUI's combined disown-and-remove action waits for the
-disown result before removing the route. If cleanup is still pending or fails,
-the route remains and the page links to its transaction. Submit removal again
-after resolving or completing that transaction. Using the new resources requires
-refreshed API discovery.
-
-Before a code rollback, stop campaign operations and reconcile active transaction
-chains. Keep the additive tables to preserve history. Remove the new notification
-overlays before reverting to an API registry that does not recognize them.
-Rolling back code or the migration cannot recover already redistributed IPs.
+For an installation transitioning from older ownership writers, follow the
+[ownership reservation upgrade guide](upgrade-ip-ownership-reservations.md)
+before using campaigns. It covers schema and writer ordering, API discovery,
+notification compatibility and software rollback restrictions.

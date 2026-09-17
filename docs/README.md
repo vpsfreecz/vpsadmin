@@ -8,7 +8,9 @@ These pages describe vpsAdmin for developers and operators. Start with the
 - [Transactions](transactions.md): node commands, chains, resource locks, and
   database confirmations.
 - [IP ownership, accounting and locking](ip-locking.md)
-- [IP release campaigns and rollout](ip-release.md)
+- [IP ownership operations](ip-ownership-operations.md)
+- [Upgrade to coordinated IP ownership reservations](upgrade-ip-ownership-reservations.md)
+- [IP release campaigns](ip-release.md)
 - [Object lifetimes](object-lifetimes.md): suspension, deletion, expiration,
   and state transitions.
 - [Plugins](plugins.md): API extensions, loading, and database migrations.
