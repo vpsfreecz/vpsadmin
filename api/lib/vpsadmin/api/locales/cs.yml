@@ -2105,6 +2105,15 @@ cs:
         label: Urgentní
       url:
         description: URL, na které lze archiv stáhnout
+      usable_for:
+        choices:
+          export:
+            label: Export
+          vps:
+            label: VPS
+        description: Filtrovat podle povoleného využití sítě, včetně sítí s účelem
+          any
+        label: Využití
       usage:
         label: Využití
       used_diskspace:

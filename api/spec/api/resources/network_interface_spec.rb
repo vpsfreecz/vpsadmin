@@ -354,6 +354,115 @@ RSpec.describe 'VpsAdmin::API::Resources::NetworkInterface' do
     end
   end
 
+  describe 'export interfaces' do
+    include CoreResourceSpecHelpers
+
+    let(:export) { create_export!(user: SpecSeed.user) }
+    let(:netif) { NetworkInterface.create!(export: export, name: 'eth0', kind: :veth_routed) }
+
+    it 'allows the export owner and admins to read interface details with no VPS' do
+      [SpecSeed.user, SpecSeed.admin].each do |actor|
+        as(actor) { json_get show_path(netif.id), _meta: { includes: 'vps' } }
+
+        expect_status(200)
+        expect(netif_obj).to include('id' => netif.id, 'name' => 'eth0', 'vps' => nil)
+      end
+    end
+
+    it 'hides export interfaces from other users and support' do
+      [SpecSeed.other_user, SpecSeed.support].each do |actor|
+        as(actor) { json_get show_path(netif.id) }
+
+        expect_status(404)
+      end
+    end
+
+    it 'keeps export interfaces out of the VPS interface index and update action' do
+      [SpecSeed.user, SpecSeed.admin].each do |actor|
+        as(actor) { json_get index_path }
+        expect_status(200)
+        expect(netifs.map { |row| row['id'] }).not_to include(netif.id)
+
+        as(actor) { json_put show_path(netif.id), network_interface: { name: 'eth1' } }
+        expect_status(404)
+        expect(netif.reload.name).to eq('eth0')
+      end
+    end
+
+    it 'expands host details for an export owner without widening direct IP access' do
+      network = SpecSeed.network_v4
+      own_ip = IpAddress.create!(network: network, network_interface: netif,
+                                 ip_addr: '192.0.2.231', prefix: 32, size: 1)
+      host = HostIpAddress.create!(ip_address: own_ip, ip_addr: own_ip.ip_addr)
+
+      as(SpecSeed.user) { json_get vpath("/ip_addresses/#{own_ip.id}") }
+      expect_status(404)
+      as(SpecSeed.user) { json_get vpath('/ip_addresses'), ip_address: { network: network.id } }
+      expect_status(200)
+      expect(json.dig('response', 'ip_addresses').map { |row| row['id'] }).not_to include(own_ip.id)
+
+      as(SpecSeed.user) do
+        json_get vpath('/host_ip_addresses'), host_ip_address: { network: network.id },
+                                              _meta: { includes: 'ip_address__network_interface__vps' }
+      end
+      expect_status(200)
+      row = json.dig('response', 'host_ip_addresses').find { |item| item['id'] == host.id }
+      expect(row.dig('ip_address', 'network_interface')).to include('id' => netif.id, 'vps' => nil)
+
+      [SpecSeed.user, SpecSeed.admin].each do |actor|
+        as(actor) do
+          json_get vpath("/host_ip_addresses/#{host.id}"),
+                   _meta: { includes: 'ip_address__network_interface__vps' }
+        end
+        expect_status(200)
+        expect(json.dig('response', 'host_ip_address', 'ip_address', 'network_interface'))
+          .to include('id' => netif.id, 'vps' => nil)
+      end
+
+      as(SpecSeed.other_user) { json_get vpath("/host_ip_addresses/#{host.id}") }
+      expect_status(404)
+
+      as(SpecSeed.other_user) do
+        json_get vpath('/host_ip_addresses'), host_ip_address: { network: network.id },
+                                              _meta: { includes: 'ip_address__network_interface__vps' }
+      end
+      expect_status(200)
+      expect(json.dig('response', 'host_ip_addresses').map { |item| item['id'] }).not_to include(host.id)
+    end
+
+    it 'expands export interfaces in compatible IP and host address lists' do
+      network = Network.create!(
+        label: 'Export on any-purpose network', address: '198.51.100.0', prefix: 24,
+        ip_version: 4, role: :public_access, purpose: :any, managed: false,
+        split_access: :no_access, split_prefix: 32, primary_location: SpecSeed.location
+      )
+      ip = IpAddress.create!(network: network, user: SpecSeed.user, network_interface: netif,
+                             ip_addr: '198.51.100.20', prefix: 32, size: 1,
+                             charged_environment: SpecSeed.environment)
+      host = HostIpAddress.create!(ip_address: ip, ip_addr: ip.ip_addr)
+
+      [SpecSeed.user, SpecSeed.admin].each do |actor|
+        as(actor) do
+          json_get vpath('/ip_addresses'),
+                   ip_address: { usable_for: 'vps', network: network.id },
+                   _meta: { includes: 'network_interface__vps' }
+        end
+        expect_status(200)
+        row = json.dig('response', 'ip_addresses').find { |item| item['id'] == ip.id }
+        expect(row.fetch('network_interface')).to include('id' => netif.id, 'vps' => nil)
+
+        as(actor) do
+          json_get vpath('/host_ip_addresses'),
+                   host_ip_address: { usable_for: 'vps', network: network.id },
+                   _meta: { includes: 'ip_address__network_interface__vps' }
+        end
+        expect_status(200)
+        row = json.dig('response', 'host_ip_addresses').find { |item| item['id'] == host.id }
+        expect(row.dig('ip_address', 'network_interface')).to include('id' => netif.id, 'vps' => nil)
+      end
+    end
+  end
+
   describe 'Update' do
     let(:update_data) do
       user_vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node, hostname: 'user-vps')

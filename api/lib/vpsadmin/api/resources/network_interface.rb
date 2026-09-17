@@ -73,16 +73,20 @@ module VpsAdmin::API::Resources
         use :all
       end
 
-      authorize do |u|
-        allow if u.role == :admin
-        restrict vpses: { user_id: u.id }
+      authorize do |_u|
         allow
       end
 
       def prepare
-        @netif = ::NetworkInterface.joins(:vps).find_by!(with_restricted(
-                                                           network_interfaces: { id: path_params['network_interface_id'] }
-                                                         ))
+        scope = ::NetworkInterface.all
+
+        if current_user.role != :admin
+          scope = scope.left_joins(:vps, :export).where(
+            'vpses.user_id = ? OR exports.user_id = ?', current_user.id, current_user.id
+          )
+        end
+
+        @netif = scope.find(path_params['network_interface_id'])
       end
 
       def exec

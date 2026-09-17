@@ -23,6 +23,11 @@ class Network < ApplicationRecord
   validate :check_ip_integrity
   validate :preserve_allocation_resource
 
+  # Network purpose compatibility does not establish allocation availability.
+  def self.purposes_for_use(purpose)
+    [purposes.fetch('any'), purposes.fetch(purpose)]
+  end
+
   # @param attrs [Hash]
   # @param opts [Hash]
   # @option opts [Boolean] add_ips

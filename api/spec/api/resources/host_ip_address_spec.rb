@@ -99,6 +99,19 @@ RSpec.describe 'VpsAdmin::API::Resources::HostIpAddress' do
   end
 
   describe 'Index' do
+    context 'with network purpose filters' do
+      let(:purpose_records) do
+        _vps, netif = create_vps_with_netif!(user: SpecSeed.user)
+        purpose_networks.transform_values do |network|
+          ip = create_ip_address!(network:, ip_addr: network.address, prefix: 32,
+                                  size: 1, netif:, user: SpecSeed.user)
+          create_host_ip!(ip_address: ip, ip_addr: network.address)
+        end
+      end
+
+      it_behaves_like 'network purpose filtering', :host_ip_address
+    end
+
     it 'rejects unauthenticated access' do
       json_get index_path
 
@@ -127,7 +140,7 @@ RSpec.describe 'VpsAdmin::API::Resources::HostIpAddress' do
       user_host = create_host_ip!(ip_address: user_ip, ip_addr: '198.51.100.1')
       other_host = create_host_ip!(ip_address: other_ip, ip_addr: '198.51.100.9')
 
-      as(SpecSeed.user) { json_get index_path }
+      as(SpecSeed.user) { json_get index_path, host_ip_address: { usable_for: 'vps' } }
 
       expect_status(200)
       expect(json['status']).to be(true)

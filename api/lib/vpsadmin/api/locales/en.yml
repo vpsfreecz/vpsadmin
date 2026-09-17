@@ -2111,6 +2111,15 @@ en:
         label: Urgent
       url:
         description: URL at which the archive can be downloaded
+      usable_for:
+        choices:
+          export:
+            label: export
+          vps:
+            label: vps
+        description: Filter by compatible network purpose, including networks with
+          purpose any
+        label: Usable for
       usage:
         label: Usage
       used_diskspace:

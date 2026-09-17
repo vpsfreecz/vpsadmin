@@ -22,6 +22,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     bool :assigned_to_interface, label: 'Assigned to interface'
     string :role, choices: ::Network.roles.keys
     string :purpose, choices: ::Network.purposes.keys
+    string :usable_for, choices: %w[vps export], label: 'Usable for',
+                        desc: 'Filter by compatible network purpose, including networks with purpose any'
     string :addr, label: 'Address', desc: 'Address itself', db_name: :ip_addr
     integer :prefix, label: 'Prefix'
     integer :size, label: 'Size'
@@ -68,6 +70,14 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     )
   end
 
+  def self.user_visible_as_association_scope(user)
+    visible_ids = user_visible_scope(user).select(:id)
+    export_ids = ::IpAddress.joins(network_interface: :export)
+                            .where(exports: { user_id: user.id }).select(:id)
+
+    ::IpAddress.where(id: visible_ids).or(::IpAddress.where(id: export_ids))
+  end
+
   class Index < HaveAPI::Actions::Default::Index
     desc 'List IP addresses'
 
@@ -83,9 +93,9 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
     authorize do |u|
       allow if u.role == :admin
-      input whitelist: %i[location network version role purpose addr prefix vps
+      input whitelist: %i[location network version role purpose usable_for addr prefix vps
                           network_interface assigned_to_interface order
-                          limit from_id]
+                          limit from_id includes]
       allow
     end
 
@@ -152,6 +162,10 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
       ips = ips.where(networks: { purpose: ::Network.purposes[input[:purpose]] }) if input[:purpose]
 
+      if input[:usable_for]
+        ips = ips.where(networks: { purpose: ::Network.purposes_for_use(input[:usable_for]) })
+      end
+
       unless input[:assigned_to_interface].nil?
         ips = if input[:assigned_to_interface]
                 ips.where.not(network_interface: nil)
@@ -207,9 +221,13 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
         if current_user.role == :admin
           ::IpAddress.find_by(id: path_params['ip_address_id'])
         else
-          self.class.resource.user_visible_scope(current_user)
-              .where(id: path_params['ip_address_id'])
-              .take
+          scope = if flags[:inner_assoc]
+                    self.class.resource.user_visible_as_association_scope(current_user)
+                  else
+                    self.class.resource.user_visible_scope(current_user)
+                  end
+
+          scope.where(id: path_params['ip_address_id']).take
         end
 
       error!('IP address not found', {}, http_status: 404) unless @ip

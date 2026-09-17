@@ -219,6 +219,16 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
       }
     end
 
+    context 'with network purpose filters' do
+      let(:purpose_records) do
+        purpose_networks.transform_values do |network|
+          create_ip!(addr: network.address, network:, user: SpecSeed.user)
+        end
+      end
+
+      it_behaves_like 'network purpose filtering', :ip_address
+    end
+
     it 'rejects unauthenticated access' do
       json_get index_path
 
@@ -228,7 +238,7 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
 
     it 'shows accessible addresses for normal users' do
       data = index_data
-      as(SpecSeed.user) { json_get index_path }
+      as(SpecSeed.user) { json_get index_path, ip_address: { usable_for: 'vps' } }
 
       expect_status(200)
       expect(json['status']).to be(true)
@@ -242,7 +252,7 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
       hidden_ip = create_ip!(addr: network.address.sub(/\.0\z/, '.20'), network: network)
 
       as(SpecSeed.user) do
-        json_get index_path, ip_address: { addr: hidden_ip.ip_addr }
+        json_get index_path, ip_address: { addr: hidden_ip.ip_addr, usable_for: 'vps' }
       end
 
       expect_status(200)

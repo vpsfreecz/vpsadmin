@@ -36,6 +36,8 @@ module VpsAdmin::API::Resources
       input do
         resource Location
         use :common, include: %i[purpose]
+        string :usable_for, choices: %w[vps export], label: 'Usable for',
+                            desc: 'Filter by compatible network purpose, including networks with purpose any'
       end
 
       output(:object_list) do
@@ -60,6 +62,7 @@ module VpsAdmin::API::Resources
         end
 
         q = q.where(purpose: ::Network.purposes[input[:purpose]]) if input[:purpose]
+        q = q.where(purpose: ::Network.purposes_for_use(input[:usable_for])) if input[:usable_for]
         q
       end
 
@@ -68,7 +71,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_pagination(with_includes(query))
+        with_pagination(with_includes(query).order(:id))
       end
     end
 

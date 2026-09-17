@@ -23,6 +23,8 @@ module VpsAdmin::API::Resources
                      nullable: true
       string :role, choices: ::Network.roles.keys
       string :purpose, choices: ::Network.purposes.keys
+      string :usable_for, choices: %w[vps export], label: 'Usable for',
+                          desc: 'Filter by compatible network purpose, including networks with purpose any'
       string :addr, label: 'Network address', db_name: :ip_addr
       integer :prefix, label: 'Prefix'
       integer :size, label: 'Size'
@@ -75,9 +77,9 @@ module VpsAdmin::API::Resources
 
       authorize do |u|
         allow if u.role == :admin
-        input whitelist: %i[location network version role purpose addr prefix vps
+        input whitelist: %i[location network version role purpose usable_for addr prefix vps
                             network_interface ip_address assigned routed order
-                            limit from_id]
+                            limit from_id includes]
         allow
       end
 
@@ -126,6 +128,10 @@ module VpsAdmin::API::Resources
         ips = ips.where(networks: { role: ::Network.roles[input[:role]] }) if input[:role]
 
         ips = ips.where(networks: { purpose: ::Network.purposes[input[:purpose]] }) if input[:purpose]
+
+        if input[:usable_for]
+          ips = ips.where(networks: { purpose: ::Network.purposes_for_use(input[:usable_for]) })
+        end
 
         ips = ips.where(host_ip_addresses: { ip_addr: input[:addr] }) if input[:addr]
 
@@ -204,18 +210,15 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @ip = if current_user.role == :admin
-                ::HostIpAddress.find_by(id: path_params['host_ip_address_id'])
+        scope = if current_user.role == :admin
+                  ::HostIpAddress.all
+                elsif flags[:inner_assoc]
+                  self.class.resource.user_visible_as_association_scope(current_user)
+                else
+                  self.class.resource.user_visible_scope(current_user)
+                end
 
-              else
-                scope = if flags[:inner_assoc]
-                          self.class.resource.user_visible_as_association_scope(current_user)
-                        else
-                          self.class.resource.user_visible_scope(current_user)
-                        end
-
-                scope.where(id: path_params['host_ip_address_id']).take
-              end
+        @ip = with_includes(scope).find_by(id: path_params['host_ip_address_id'])
 
         error!('host IP address not found', {}, http_status: 404) unless @ip
       end

@@ -46,6 +46,12 @@ RSpec.describe 'VpsAdmin::API::Resources::Network' do
   end
 
   describe 'Index' do
+    context 'with network purpose filters' do
+      let(:purpose_records) { purpose_networks }
+
+      it_behaves_like 'network purpose filtering', :network
+    end
+
     it 'rejects unauthenticated access' do
       json_get index_path
 
