@@ -19,7 +19,8 @@ For member guides, see the [Czech knowledge base](https://kb.vpsfree.cz/) or
 [English knowledge base](https://kb.vpsfree.org/). Deployment details specific
 to vpsFree.cz belong in
 [vpsfree-cz-configuration](https://github.com/vpsfreecz/vpsfree-cz-configuration).
-Development commands and repository conventions are in [AGENTS.md](../AGENTS.md).
+Development commands, verification and localization procedures are required by
+the routing table in [AGENTS.md](../AGENTS.md).
 
 ## Writing documentation
 

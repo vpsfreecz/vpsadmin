@@ -1,5 +1,30 @@
 # Repository Guidelines
 
+
+## Required procedures
+
+Before each activity below, read every applicable procedure in full. These are
+required instructions with repository scope, including outside this workspace.
+Resolve table links from this AGENTS.md, not the shell directory. Recheck routes
+when scope changes; pass applicable paths to authorized subagents before they
+act. Reuse unchanged procedures already read in the current context; otherwise
+reread them. Summaries do not replace reading. If a required file is unreadable,
+stop the affected action and report it.
+
+| Before this activity | Read |
+| --- | --- |
+| Selecting/running builds, tests, component shells, dependency setup or manual test-database operations | [Development commands](docs/agent-instructions/development.md) |
+| Changing visible WebUI behavior (including labels, navigation or screenshots), translations, localization behavior or member-facing mail templates | [Localization and KB impact](docs/agent-instructions/localization.md) |
+| Selecting/running tests or CI on existing changes; planning/implementing a change that needs verification; adding/moving runtime files or API specs; changing integration/Playwright tests, CI selection, gem packaging or VPS data-preservation operations | [Testing and CI](docs/agent-instructions/testing.md) |
+
+Visible WebUI changes require the external KB documentation workflow even if
+vpsAdmin tests pass; read the localization procedure before proceeding. Tests
+of the data-preserving VPS operations listed in the testing procedure must
+verify that data survives. Preserve CI runtime test selection and exact-once API
+spec topic coverage when files move or change.
+Do not create build IDs or upload first-party gems to a remote RubyGems repository.
+
+
 ## Project Structure & Module Organization
 - `api/`: Ruby 3.4 API with business logic, migrations in `db/migrate`, specs in `spec/`, plugins under `plugins/`.
 - `webui/`: PHP front end (Composer-managed); config samples near `config_cfg.php`.
@@ -19,22 +44,6 @@
   non-vpsAdmin users. If a vpsAdmin-specific contract is unavoidable, document
   the boundary and compatibility expectations in the change.
 
-## Build, Test, and Development Commands
-- Enter a dev shell with flakes: `nix develop` (or `nix develop .#vpsadmin`) for root actions, and `nix develop .#api` / `nix develop .#webui` / `nix develop .#client` / `nix develop .#console-router` / `nix develop .#nodectl` / `nix develop .#nodectld` / `nix develop .#libnodectld` for component scopes.
-- API: `cd api && bundle install && bundle exec rspec`; lint with `bundle exec rubocop`; local run via `bundle exec rackup -p 9292 config.ru`.
-- API and libnodectld RSpec suites need MariaDB. In local Nix dev shells,
-  `bundle exec rspec` starts an isolated temporary test database automatically
-  when neither `DATABASE_URL` nor `api/config/database.yml` is configured. Use
-  `VPSADMIN_TEST_DB_AUTO=0` to disable automatic startup.
-- For manual database debugging from `api/` or `libnodectld/`, use
-  `../tools/test-db start`, `eval "$(../tools/test-db env)"`,
-  `../tools/test-db status`, `../tools/test-db client`,
-  `../tools/test-db stop`, and `../tools/test-db prune`. The default URL is
-  `mysql2://root:root@127.0.0.1:13306/vpsadmin_test`; libnodectld specs append
-  `_libnodectld` through their shared DB setup.
-- Web UI: `composer install --working-dir=webui`; browser integration tests run with `./test-runner.sh test webui`.
-- Nix builds: `nix-build packages -A <attr>` or `nix-build nixos -A <module>` for module outputs.
-
 ## Coding Style & Naming Conventions
 - Ruby: target Ruby 3.4, 2-space indent, snake_case. Run `bundle exec rubocop` in the touched component.
 - PHP/JS in `webui`: mirror nearby code style; avoid sprawling scripts.
@@ -44,80 +53,6 @@
   from a core-only environment, e.g. with `VPSADMIN_PLUGINS=none`; plugin
   tables belong in `plugins/*/api/db/migrate` and must not be committed to the
   core schema file.
-
-## Localization
-
-### Knowledge-base documentation impact
-
-Any feature that changes something visible in the WebUI may affect localized
-KB navigation text or screenshots. Follow the canonical workflow in
-`vpsadmin-kb-captures/docs/webui-change-workflow.md`: pin the vpsAdmin feature
-commit there, run its documentation contract, and review every reported Czech
-and English page and screenshot concept. A green vpsAdmin test suite alone does
-not prove that external documentation remains current.
-
-- Czech translation guidelines are documented in `docs/i18n-cs.md`. Follow the
-  terminology there when editing API or WebUI Czech translations.
-- API translations are maintained in `api/lib/vpsadmin/api/locales/*.yml` and
-  normalized by `rake vpsadmin:i18n:update`.
-- vpsAdmin sets HaveAPI `parameter_i18n_scope` to the `vpsadmin` application
-  root. Parameter labels/descriptions are generated under
-  `vpsadmin.resources`, `vpsadmin.attributes`, and `vpsadmin.meta`; do not add a
-  separate `vpsadmin.parameters` tree.
-- The locale files include generated key structure from API source and HaveAPI
-  parameter metadata. Edit translations in the locale files, then regenerate.
-- WebUI runtime translations use gettext domain `vpsAdmin`. Source strings are
-  `_()` calls in PHP; the generated source catalog is
-  `webui/lang/locale/vpsAdmin.pot`.
-- WebUI translations are edited in
-  `webui/lang/locale/<locale>/LC_MESSAGES/vpsAdmin.po`; compiled
-  `vpsAdmin.mo` files are generated artifacts. Locale maintenance scripts live
-  in `webui/lang/scripts/`.
-- WebUI language selection uses the browser language for guests, then the
-  logged-in user's `User.language` preference. The top-right language switcher
-  updates that preference for normal sessions and remains session-only while an
-  admin is impersonating another user.
-- Keep the standard automated-mail notice uniform in member-facing templates.
-  When the notice is present, use these exact visible lines in plain and HTML
-  variants; do not paraphrase either language in an individual template:
-  - English: `(This is an automated mail from vpsAdmin, your reply will be sent to our support)`
-  - Czech: `(Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)`
-
-## Testing Guidelines
-- Integration tests live in `tests/` and reuse the vpsAdminOS test framework via the flake input, so no sibling `vpsadminos` checkout or `NIX_PATH` setup is required.
-- For local gem development of `libnodectld`, `nodectl`, or `nodectld` against a checkout, set `VPSADMINOS_PATH=/path/to/vpsadminos`.
-- Run `rake vpsadmin:gems` to refresh all packaged Ruby gem metadata. Use
-  `rake -T vpsadmin:gems` to list individual package tasks when only one
-  package has to be refreshed. Do not create build IDs or upload first-party
-  gems to a remote RubyGems repository.
-- Use `./test-runner.sh ls` to enumerate tests and `./test-runner.sh test <test>` (e.g. `services-up`).
-- Test definitions are in `tests/all-tests.nix` and `tests/suite/*`; machines compose `tests/machines/cluster/*.nix` plus seeds from `api/db/seeds/test*.nix` to spin up services and vpsAdminOS nodes on user+socket networks.
-- Tests that transfer, migrate, reinstall, replace, back up, or restore a VPS
-  dataset must verify data integrity when the operation is expected to preserve
-  data. Create a file at a known path with known contents, or an equivalent
-  payload checksum, before the operation and assert that it survives intact on
-  the destination or restored dataset.
-- Services VM config `tests/configs/nixos/vpsadmin-services.nix` seeds MariaDB/RabbitMQ/Redis credentials from `tests/configs/nixos/vpsadmin-credentials.nix`, enables API/webui/supervisor/console_router; adjust socket addresses via `vpsadmin.test.*`.
-- Scenarios include cluster smoke tests, node registration, VPS create/start, and VPS migrate between nodes; expect long-running Nix builds/VM boots rather than quick unit specs.
-- test-runner extension `tests/runner/extensions/vpsadmin_services.rb` adds a `vpsadminctl` helper and `wait_for_vpsadmin_api` for machines tagged `vpsadmin-services`.
-- Changes under `webui/` that affect user-visible behaviour should be covered
-  by relevant Playwright browser tests when practical. Run all webui scripts
-  with `./test-runner.sh test 'webui#*'`. List current scripts with
-  `./test-runner.sh ls 'webui#*'`, then target one with
-  `./test-runner.sh test 'webui#<script-name>'`.
-- CI (GitHub Actions) runs push integration tests selectively using
-  `.github/workflows/ci.yml`, `tools/select_ci_tests.rb`,
-  `tests/ci-selection.yml`, and derived metadata tags from `tests/ci-tags.nix`.
-  When adding, renaming, or moving runtime files, integration tests, or webui
-  Playwright scripts, update the selection rules/tags in the same change so
-  affected pushes continue to run the right `tag=ci && (...)` filter. Unknown
-  runtime paths intentionally fall back to the full `tag=ci` suite; prefer
-  broader tags over under-selecting tests. Validate selector changes with
-  `ruby tests/ci-selection-test.rb` and representative
-  `./test-runner.sh ls --filter 'tag=ci && (...)'` commands.
-- CI (GitHub Actions) runs `api/spec/**` in parallel **topic jobs** defined in `.github/workflows/api-specs.yml`.
-  When adding/renaming/moving API spec files, you **must** update the workflow's topic patterns so every spec is covered
-  exactly once. The CI job "API specs - topic coverage" will fail if any spec is missing or matches multiple topics.
 
 ## Commit & Pull Request Guidelines
 - Use short imperative subjects, often scoped (`api: add StoragePool resource`, `webui: fix payset form`); keep one logical change per commit.
