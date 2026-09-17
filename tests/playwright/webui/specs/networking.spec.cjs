@@ -11,6 +11,7 @@ const {
 const {
   expectNetworkingNotification,
   expectRouteAssignForm,
+  expectVpsNetworkOptions,
   rowWithText,
 } = require('../lib/pages/networking.cjs');
 
@@ -43,6 +44,7 @@ async function expectIpList(page, params, expectedAddr, options = {}) {
   await expect(page.locator('#content-in')).toContainText('Routable IP Addresses');
   const filterForm = page.locator('form[name="ip-filter"]').first();
   await expect(filterForm).toBeVisible();
+  await expectVpsNetworkOptions(page, fixtures);
   if (expectedAddr) {
     await expect(rowWithText(page, expectedAddr)).toBeVisible();
   }
@@ -75,6 +77,7 @@ async function expectHostIpList(page, params, expectedAddr, options = {}) {
   await expect(page.locator('#content-in')).toContainText('Host IP Addresses');
   const filterForm = page.locator('form[name="ip-filter"]').first();
   await expect(filterForm).toBeVisible();
+  await expectVpsNetworkOptions(page, fixtures);
   if (expectedAddr) {
     await expect(rowWithText(page, expectedAddr)).toBeVisible();
   }
@@ -100,12 +103,48 @@ async function expectHostAddressActionForm(page, action, hostAddress) {
 }
 
 test.describe('networking browser coverage', () => {
+  for (const role of ['user', 'admin']) {
+    test(`${role} can inspect exports on general-purpose networks without VPS actions`, async ({ page }) => {
+      await login(page, fixtures[role]);
+      const n = requireNetworkingFixtures();
+      const exportHost = n.hostAddresses.dns_export;
+      const options = { admin: role === 'admin' };
+      const params = { networkId: n.network.id };
+      await expectIpList(page, params, exportHost.addr, options);
+      await expect(rowWithText(page, exportHost.addr).locator('a[href*="action=route_assign"]')).toHaveCount(0);
+      await expectHostIpList(page, params, exportHost.addr, options);
+      await expect(rowWithText(page, n.hostAddresses.dns_export_unowned.addr)).toBeVisible();
+      const row = rowWithText(page, exportHost.addr);
+      await expect(row.locator('a[href*="page=adminvps"]')).toHaveCount(0);
+      await expect(row.locator('a[href*="action=hostaddr_unassign"]')).toHaveCount(0);
+      await expectHostAddressActionForm(page, 'hostaddr_ptr', exportHost);
+      await expectHostAddressActionForm(page, 'hostaddr_ptr', n.hostAddresses.dns_export_unowned);
+      await page.goto(`/?page=networking&action=route_edit&id=${exportHost.ipAddressId}`, {
+        waitUntil: 'domcontentloaded',
+      });
+      await expect(page.locator('#content-in')).toContainText(exportHost.addr);
+      await expect(page.locator('#aside a[href*="action=route_assign"]')).toHaveCount(0);
+      await logout(page, fixtures[role].username);
+    });
+
+    test(`${role} networking lists exclude export-purpose addresses`, async ({ page }) => {
+      await login(page, fixtures[role]);
+      const options = { admin: role === 'admin' };
+      const params = { networkId: fixtures.jumpto.network.id };
+      await expectIpList(page, params, undefined, options);
+      await expect(page.locator('#content-in')).not.toContainText(fixtures.jumpto.ipAddress.addr);
+      await expectHostIpList(page, params, undefined, options);
+      await expect(page.locator('#content-in')).not.toContainText(fixtures.jumpto.ipAddress.addr);
+      await logout(page, fixtures[role].username);
+    });
+  }
+
   test('user networking lists, filters, and forms are wired', async ({ page }) => {
     const n = requireNetworkingFixtures();
 
     await login(page, fixtures.user);
 
-    await expectIpList(page, { networkId: n.network.id });
+    await expectIpList(page, { networkId: n.network.id }, n.ipAddresses.list_free.addr);
     await expectHostIpList(
       page,
       {
@@ -113,6 +152,7 @@ test.describe('networking browser coverage', () => {
         assigned: 'y',
         vps: n.vps.user_host_unassign.id,
       },
+      n.hostAddresses.user_host_unassign.addr,
     );
 
     await page.goto(`/?page=networking&action=route_edit&id=${n.ipAddresses.user_route_unassign.id}`, {
@@ -164,6 +204,7 @@ test.describe('networking browser coverage', () => {
       { waitUntil: 'domcontentloaded' },
     );
     await expect(page.locator('#content-in')).toContainText('IP address assignments');
+    await expectVpsNetworkOptions(page, fixtures);
     await expect(rowWithText(page, n.ipAddresses.user_route_unassign.addr)).toBeVisible();
 
     await page.goto(
@@ -189,7 +230,7 @@ test.describe('networking browser coverage', () => {
 
     await login(page, fixtures.admin);
 
-    await expectIpList(page, { networkId: n.network.id }, undefined, {
+    await expectIpList(page, { networkId: n.network.id }, n.ipAddresses.list_free.addr, {
       admin: true,
     });
     await expectHostIpList(
@@ -199,7 +240,7 @@ test.describe('networking browser coverage', () => {
         assigned: 'y',
         vps: n.vps.admin_host_unassign.id,
       },
-      undefined,
+      n.hostAddresses.admin_host_unassign.addr,
       { admin: true },
     );
 

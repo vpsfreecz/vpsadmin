@@ -3040,7 +3040,9 @@ import ../make-test.nix (
         user_ptr: ['203.0.113.171', user, networking_vps.fetch(:user_ptr).fetch(:netif), 0],
         admin_ptr: ['203.0.113.172', user, networking_vps.fetch(:admin_ptr).fetch(:netif), 0],
         admin_owner_edit: ['203.0.113.173', nil, nil, nil],
-        dns_transfer: ['203.0.113.174', user, networking_vps.fetch(:dns_transfer).fetch(:netif), 0]
+        dns_transfer: ['203.0.113.174', user, networking_vps.fetch(:dns_transfer).fetch(:netif), 0],
+        dns_export: ['203.0.113.179', user, jumpto_export_netif, 0],
+        dns_export_unowned: ['203.0.113.180', nil, jumpto_export_netif, 0]
       }
 
       networking_ips = networking_ip_specs.to_h do |key, (addr, owner, netif, host_order)|

@@ -58,7 +58,7 @@ function ip_address_list($page)
         _("Network") . ':',
         'network',
         resource_list_to_options(
-            $api->network->list(['purpose' => 'vps']),
+            $api->network->list(['usable_for' => 'vps']),
             'id',
             'label',
             true,
@@ -82,7 +82,7 @@ function ip_address_list($page)
     $params = [
         'limit' => api_get_uint('limit', 25),
         'from_id' => api_get_uint('from_id', 0),
-        'purpose' => 'vps',
+        'usable_for' => 'vps',
         'meta' => ['includes' => 'user,vps,network'],
     ];
 
@@ -151,7 +151,7 @@ function ip_address_list($page)
 
     foreach ($ips as $ip) {
         $netif = $ip->network_interface_id ? $ip->network_interface : null;
-        $vps = $netif ? $netif->vps : null;
+        $vps = $netif && $netif->vps_id ? $netif->vps : null;
 
         $xtpl->table_td($ip->network->address . '/' . $ip->network->prefix);
         $xtpl->table_td($ip->addr . '/' . $ip->prefix);
@@ -190,12 +190,14 @@ function ip_address_list($page)
                 . '</a>'
             );
 
-        } else {
+        } elseif (!$netif) {
             $xtpl->table_td(
                 '<a href="?page=networking&action=route_assign&id=' . $ip->id . '&return=' . $return_url . '">'
                 . '<img src="template/icons/vps_add.png" alt="' . _('Add to a VPS') . '" title="' . _('Add to a VPS') . '">'
                 . '</a>'
             );
+        } else {
+            $xtpl->table_td('---');
         }
 
         // 		$xtpl->table_td('<a href="?page=cluster&action=ipaddr_delete&ip_id='.$ip->id.'"><img src="template/icons/m_delete.png"  title="'. _("Delete from cluster") .'" /></a>');
@@ -249,7 +251,7 @@ function host_ip_address_list($page)
         _("Network") . ':',
         'network',
         resource_list_to_options(
-            $api->network->list(['purpose' => 'vps']),
+            $api->network->list(['usable_for' => 'vps']),
             'id',
             'label',
             true,
@@ -273,7 +275,7 @@ function host_ip_address_list($page)
     $params = [
         'limit' => api_get_uint('limit', 25),
         'from_id' => api_get_uint('from_id', 0),
-        'purpose' => 'vps',
+        'usable_for' => 'vps',
         'meta' => [
             'includes' => 'ip_address__user,ip_address__network_interface__vps,'
                           . 'ip_address__network',
@@ -353,7 +355,7 @@ function host_ip_address_list($page)
     foreach ($host_addrs as $host_addr) {
         $ip = $host_addr->ip_address;
         $netif = $ip->network_interface_id ? $ip->network_interface : null;
-        $vps = $netif ? $netif->vps : null;
+        $vps = $netif && $netif->vps_id ? $netif->vps : null;
 
         $xtpl->table_td($ip->network->address . '/' . $ip->network->prefix);
         $xtpl->table_td($ip->addr . '/' . $ip->prefix);
@@ -388,14 +390,14 @@ function host_ip_address_list($page)
             . '</a>'
         );
 
-        if ($host_addr->assigned) {
+        if ($vps && $host_addr->assigned) {
             $xtpl->table_td(
                 '<a href="?page=networking&action=hostaddr_unassign&id=' . $host_addr->id . '&return=' . $return_url . '">'
                 . '<img src="template/icons/m_remove.png" alt="' . _('Remove from interface') . '" title="' . _('Remove from VPS') . '">'
                 . '</a>'
             );
 
-        } elseif ($netif) {
+        } elseif ($vps) {
             $xtpl->table_td(
                 '<a href="?page=networking&action=hostaddr_assign&id=' . $host_addr->id . '&return=' . $return_url . '">'
                 . '<img src="template/icons/vps_add.png" alt="' . _('Add to a VPS') . '" title="' . _('Add to a VPS') . '">'
@@ -419,7 +421,7 @@ function route_edit_form($id)
 
     $ip = $api->ip_address->show($id);
     $netif = $ip->network_interface_id ? $ip->network_interface : null;
-    $vps = $netif ? $netif->vps : null;
+    $vps = $netif && $netif->vps_id ? $netif->vps : null;
 
     $return_url = urlencode($_SERVER['REQUEST_URI']);
 
@@ -436,7 +438,7 @@ function route_edit_form($id)
     if ($vps) {
         $xtpl->sbar_add(_('Remove from VPS'), '?page=networking&action=route_unassign&id=' . $ip->id . '&return=' . $return_url);
 
-    } else {
+    } elseif (!$netif) {
         $xtpl->sbar_add(_('Add to a VPS'), '?page=networking&action=route_assign&id=' . $ip->id . '&return=' . $return_url);
     }
 
@@ -506,7 +508,7 @@ function route_edit_form($id)
     foreach ($host_addrs as $host_addr) {
         $ip = $host_addr->ip_address;
         $netif = $ip->network_interface_id ? $ip->network_interface : null;
-        $vps = $netif ? $netif->vps : null;
+        $vps = $netif && $netif->vps_id ? $netif->vps : null;
 
         $xtpl->table_td($host_addr->addr);
         $xtpl->table_td($host_addr->reverse_record_value ? h($host_addr->reverse_record_value) : '-');
@@ -529,14 +531,14 @@ function route_edit_form($id)
             . '</a>'
         );
 
-        if ($host_addr->assigned) {
+        if ($vps && $host_addr->assigned) {
             $xtpl->table_td(
                 '<a href="?page=networking&action=hostaddr_unassign&id=' . $host_addr->id . '&return=' . $return_url . '">'
                 . '<img src="template/icons/m_remove.png" alt="' . _('Remove from interface') . '" title="' . _('Remove from VPS') . '">'
                 . '</a>'
             );
 
-        } elseif ($netif) {
+        } elseif ($vps) {
             $xtpl->table_td(
                 '<a href="?page=networking&action=hostaddr_assign&id=' . $host_addr->id . '&return=' . $return_url . '">'
                 . '<img src="template/icons/vps_add.png" alt="' . _('Add to a VPS') . '" title="' . _('Add to a VPS') . '">'
@@ -896,7 +898,7 @@ function ip_address_assignment_list_form()
         _("Network") . ':',
         'network',
         resource_list_to_options(
-            $api->network->list(['purpose' => 'vps']),
+            $api->network->list(['usable_for' => 'vps']),
             'id',
             'label',
             true,
@@ -1023,14 +1025,17 @@ function hostaddr_reverse_record_form($id)
     );
 
     if ($addr->ip_address->network_interface_id) {
-        $vps = $addr->ip_address->network_interface->vps;
+        $netif = $addr->ip_address->network_interface;
 
-        $xtpl->table_td(_('VPS') . ':');
-        $xtpl->table_td(
-            '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . '</a>'
-            . ' ' . h($vps->hostname)
-        );
-        $xtpl->table_tr();
+        if ($netif->vps_id) {
+            $vps = $netif->vps;
+            $xtpl->table_td(_('VPS') . ':');
+            $xtpl->table_td(
+                '<a href="?page=adminvps&action=info&veid=' . $vps->id . '">#' . $vps->id . '</a>'
+                . ' ' . h($vps->hostname)
+            );
+            $xtpl->table_tr();
+        }
 
         $xtpl->table_td(_('Network interface') . ':');
         $xtpl->table_td($addr->ip_address->network_interface->name);

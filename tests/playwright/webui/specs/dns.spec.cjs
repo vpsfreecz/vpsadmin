@@ -13,6 +13,8 @@ const {
   toggleRecord,
 } = require('../lib/pages/dns.cjs');
 
+const { expectVpsNetworkOptions } = require('../lib/pages/networking.cjs');
+
 const fixtures = readFixtures();
 const dns = fixtures.dns;
 
@@ -208,6 +210,36 @@ async function setTsigAlgorithm(form, algorithm) {
 }
 
 test.describe('DNS browser coverage', () => {
+  for (const role of ['user', 'admin']) {
+    test(`${role} DNS address selectors include general-purpose networks`, async ({ page }) => {
+      await login(page, fixtures[role]);
+      const d = requireDnsFixtures();
+      await page.goto(`/?page=dns&action=zone_transfer_new&id=${d.zones.user_update.id}`, {
+        waitUntil: 'domcontentloaded',
+      });
+      await expect(page.locator(`input[name="host_ip_address"][value="${d.transfers.hostIpAddressId}"]`)).toBeVisible();
+      await expect(page.locator('#content-in')).not.toContainText(fixtures.jumpto.ipAddress.addr);
+      const exportHost = fixtures.networking.hostAddresses.dns_export;
+      const exportRow = rowWithText(page, exportHost.addr);
+      await expect(exportRow.locator(`input[name="host_ip_address"][value="${exportHost.id}"]`)).toBeVisible();
+      await expect(exportRow).toContainText('---');
+      await expect(exportRow.locator('a[href*="page=adminvps"]')).toHaveCount(0);
+
+      await page.goto(`/?page=dns&action=ptr_list&list=1&network=${fixtures.networking.network.id}`, {
+        waitUntil: 'domcontentloaded',
+      });
+      await expect(rowWithText(page, exportHost.addr)).toBeVisible();
+      await expect(rowWithText(page, exportHost.addr).locator('a[href*="page=adminvps"]')).toHaveCount(0);
+
+      await page.goto(`/?page=dns&action=ptr_list&list=1&network=${fixtures.jumpto.network.id}`, {
+        waitUntil: 'domcontentloaded',
+      });
+      await expectVpsNetworkOptions(page, fixtures);
+      await expect(page.locator('#content-in')).not.toContainText(fixtures.jumpto.ipAddress.addr);
+      await logout(page, fixtures[role].username);
+    });
+  }
+
   test('user DNS zones, records, logs, PTR, and resolver views are wired', async ({ page }) => {
     const d = requireDnsFixtures();
 
@@ -274,6 +306,8 @@ test.describe('DNS browser coverage', () => {
     await expect(page.locator('#content-in')).toContainText('Reverse records');
     let ptrFilterForm = page.locator('form[name="ip-filter"]').first();
     await expect(ptrFilterForm).toBeVisible();
+    await expectVpsNetworkOptions(page, fixtures);
+    await expect(rowWithText(page, fixtures.networking.hostAddresses.user_ptr.addr)).toBeVisible();
     await expect(ptrFilterForm.locator('input[name="vps"]')).toBeVisible();
     await expect(page.locator('#content-in')).toContainText('Host address');
     await expect(page.locator('#content-in')).toContainText('Reverse record');
@@ -410,6 +444,8 @@ test.describe('DNS browser coverage', () => {
     );
     const ptrFilterForm = page.locator('form[name="ip-filter"]').first();
     await expect(ptrFilterForm).toBeVisible();
+    await expectVpsNetworkOptions(page, fixtures);
+    await expect(rowWithText(page, fixtures.networking.hostAddresses.admin_ptr.addr)).toBeVisible();
     await expect(ptrFilterForm.locator('input[name="user"]')).toBeVisible();
     await expect(ptrFilterForm.locator('input[name="vps"]')).toBeVisible();
     await expect(page.locator('#content-in')).toContainText('Host address');

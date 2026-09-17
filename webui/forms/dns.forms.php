@@ -591,7 +591,7 @@ function dns_zone_transfer_new($id)
     $xtpl->title($titleText . ' ' . h($zone->name));
 
     $params = [
-        'purpose' => 'vps',
+        'usable_for' => 'vps',
         'routed' => true,
         'meta' => ['includes' => 'ip_address__network_interface__vps'],
     ];
@@ -624,10 +624,11 @@ function dns_zone_transfer_new($id)
 
     foreach ($array as $hostIp) {
         $netif = $hostIp->ip_address->network_interface;
+        $vps = $netif->vps_id ? $netif->vps : null;
 
         $xtpl->form_add_radio_pure('host_ip_address', $hostIp->id, $_POST['host_ip_address'] == $hostIp->id);
-        $xtpl->table_td(vps_link($netif->vps));
-        $xtpl->table_td(h($netif->vps->hostname));
+        $xtpl->table_td($vps ? vps_link($vps) : '---');
+        $xtpl->table_td($vps ? h($vps->hostname) : '---');
         $xtpl->table_td(h($netif->name));
         $xtpl->table_td(h($hostIp->addr));
         $xtpl->table_tr();
@@ -968,7 +969,7 @@ function dns_ptr_list()
     $params = [
         'limit' => api_get_uint('limit', 25),
         'from_id' => api_get_uint('from_id', 0),
-        'purpose' => 'vps',
+        'usable_for' => 'vps',
         'routed' => true,
         'meta' => [
             'includes' => 'ip_address__user,ip_address__network_interface__vps,'
@@ -1036,7 +1037,7 @@ function dns_ptr_list()
         _("Network") . ':',
         'network',
         resource_list_to_options(
-            $api->network->list(['purpose' => 'vps']),
+            $api->network->list(['usable_for' => 'vps']),
             'id',
             'label',
             true,
@@ -1072,7 +1073,7 @@ function dns_ptr_list()
     foreach ($host_addrs as $host_addr) {
         $ip = $host_addr->ip_address;
         $netif = $ip->network_interface_id ? $ip->network_interface : null;
-        $vps = $netif ? $netif->vps : null;
+        $vps = $netif && $netif->vps_id ? $netif->vps : null;
 
         if (isAdmin()) {
             if ($ip->user_id) {

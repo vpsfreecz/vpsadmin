@@ -15,6 +15,13 @@ function actionLink(scope, action, params = {}) {
   return scope.locator(selector).first();
 }
 
+async function expectVpsNetworkOptions(page, fixtures) {
+  const select = page.locator('select[name="network"]');
+  await expect(select.locator(`option[value="${fixtures.networking.network.id}"]`)).toHaveCount(1);
+  await expect(select.locator(`option[value="${fixtures.clusterAdmin.networks.networkToLocation.id}"]`)).toHaveCount(1);
+  await expect(select.locator(`option[value="${fixtures.jumpto.network.id}"]`)).toHaveCount(0);
+}
+
 function rowWithText(scope, text) {
   return scope.locator('table.table-style01 tr', { hasText: text }).first();
 }
@@ -91,6 +98,7 @@ module.exports = {
   continueRouteAssign,
   expectNetworkingNotification,
   expectRouteAssignForm,
+  expectVpsNetworkOptions,
   rowWithText,
   setCheckbox,
   submitConfirmForm,
