@@ -285,10 +285,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0wklahcafcib6jwrr3angj7zzcb9csq3c0xj3axldb8w9wyhqcds";
+      sha256 = "0ly8x39gr23blbmfwfyy14lb2v9kg8bj5x0b2r2llyb4dy60rygr";
       type = "gem";
     };
-    version = "0.3.0";
+    version = "0.4.0";
   };
   net-smtp = {
     dependencies = [ "net-protocol" ];
