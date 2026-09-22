@@ -185,7 +185,7 @@ GEM
     rake (13.4.2)
     rbtree (0.4.7)
     redcarpet (3.6.1)
-    regexp_parser (2.12.0)
+    regexp_parser (2.13.0)
     reline (0.7.0)
       io-console (~> 0.5)
     request_store (1.7.0)
