@@ -3,6 +3,31 @@ module VpsAdmin::API::Resources
     desc 'Manage datasets'
     model ::Dataset
 
+    # Keep each endpoint's visible order aligned with its scoped ID anchor.
+    # A renamed dataset or concurrent write requires a fresh traversal.
+    module OrderedCursor
+      protected
+
+      def with_ordered_cursor(query, column:, descending: false)
+        table = query.klass.arel_table
+        value = table[column]
+        id = table[:id]
+        comparison = descending ? :lt : :gt
+        direction = descending ? :desc : :asc
+
+        scope = ar_with_pagination(query, check: true) do |rows, from_id|
+          anchor = query.where(id.eq(from_id)).pick(value)
+          error!('Invalid pagination cursor', {}, http_status: 400) if anchor.nil?
+
+          rows.where(value.public_send(comparison, anchor).or(
+                       value.eq(anchor).and(id.public_send(comparison, from_id))
+                     ))
+        end
+
+        scope.reorder(value.public_send(direction), id.public_send(direction))
+      end
+    end
+
     params(:id) do
       id :id
     end
@@ -37,6 +62,8 @@ module VpsAdmin::API::Resources
     end
 
     class Index < HaveAPI::Actions::Default::Index
+      include OrderedCursor
+
       desc 'List datasets'
 
       input do
@@ -81,7 +108,7 @@ module VpsAdmin::API::Resources
         q = q.where(vps: input[:vps]) if input.has_key?(:vps)
         q = q.to_depth(input[:to_depth]) if input[:to_depth]
 
-        q
+        q.distinct
       end
 
       def count
@@ -91,10 +118,11 @@ module VpsAdmin::API::Resources
       def exec
         ret = []
 
-        with_pagination(query.includes(
+        q = query.includes(
           :dataset_properties,
           dataset_in_pools: [{ pool: [{ node: [{ location: [:environment] }] }] }]
-        ).order('full_name')).each do |ds|
+        )
+        with_ordered_cursor(q, column: :full_name).each do |ds|
           ret << ds
         end
 
@@ -489,6 +517,8 @@ module VpsAdmin::API::Resources
       end
 
       class Index < HaveAPI::Actions::Default::Index
+        include OrderedCursor
+
         desc 'List snapshots'
 
         input do
@@ -516,7 +546,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          with_pagination(query.order('created_at'))
+          with_ordered_cursor(query, column: :created_at)
         end
       end
 
@@ -850,6 +880,8 @@ module VpsAdmin::API::Resources
       end
 
       class Index < HaveAPI::Actions::Default::Index
+        include OrderedCursor
+
         input do
           datetime :from
           datetime :to
@@ -876,8 +908,9 @@ module VpsAdmin::API::Resources
           q = ::DatasetPropertyHistory.includes(:dataset_property).where(
             dataset_property_id: props.pluck(:id)
           )
-          q = q.where('created_at >= ?', input[:from]) if input[:from]
-          q = q.where('created_at <= ?', input[:to]) if input[:to]
+          created_at = ::DatasetPropertyHistory.arel_table[:created_at]
+          q = q.where(created_at.gteq(input[:from])) if input[:from]
+          q = q.where(created_at.lteq(input[:to])) if input[:to]
           q
         end
 
@@ -886,7 +919,7 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          with_pagination(query.order('created_at DESC'))
+          with_ordered_cursor(query, column: :created_at, descending: true)
         end
       end
 
