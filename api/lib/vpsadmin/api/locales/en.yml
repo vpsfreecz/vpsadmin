@@ -4411,6 +4411,8 @@ en:
         snapshot_in_pool:
           destroy: Destroy snapshot in pool
           purge_clones: Purge clones
+        storage:
+          inventory: Storage inventory
         user:
           create: Create user
           destroy: Destroy user
@@ -4545,6 +4547,7 @@ en:
         storage_download_snapshot: Download snapshot
         storage_ensure_ugid_offset: Ensure UGID offset
         storage_inherit_property: Inherit property
+        storage_inventory: Storage inventory
         storage_local_send: Local dataset transfer
         storage_prepare_rollback: Prepare rollback
         storage_recv: Receive dataset

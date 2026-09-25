@@ -15,7 +15,8 @@ module NodeCtldSpec
     :time_start,
     :step,
     :subtask,
-    :trans
+    :trans,
+    :type
   ) do
     def urgent?
       !!urgent

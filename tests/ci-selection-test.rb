@@ -140,4 +140,23 @@ class CiTestSelectionTest < Minitest::Test
     assert_match(/tag=vps-migrate/, selection.filter)
     assert_match(/ \|\| /, selection.filter)
   end
+
+  def test_storage_reconciler_runtime_paths_select_storage_tests
+    paths = %w[
+      api/bin/vpsadmin-storage-reconcile
+      api/lib/vpsadmin/storage_reconciler.rb
+      api/lib/vpsadmin/storage_reconciler/comparator.rb
+      api/models/transaction_chains/storage/inventory.rb
+      api/models/transactions/storage/inventory.rb
+      libnodectld/lib/nodectld/storage_inventory.rb
+      libnodectld/lib/nodectld/commands/storage/inventory.rb
+    ]
+
+    paths.each do |path|
+      selection = selector.select([path])
+
+      assert_equal 'selected', selection.mode, path
+      assert_includes selection.tags, 'storage', path
+    end
+  end
 end

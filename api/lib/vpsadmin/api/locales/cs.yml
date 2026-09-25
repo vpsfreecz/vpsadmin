@@ -4408,6 +4408,8 @@ cs:
         snapshot_in_pool:
           destroy: Smazání snapshotu v poolu
           purge_clones: Smazání klonů
+        storage:
+          inventory: Inventura úložiště
         user:
           create: Vytvoření uživatele
           destroy: Smazání uživatele
@@ -4542,6 +4544,7 @@ cs:
         storage_download_snapshot: Stažení snapshotu
         storage_ensure_ugid_offset: Zajištění UGID offsetu
         storage_inherit_property: Zdědění vlastnosti
+        storage_inventory: Inventura úložiště
         storage_local_send: Lokální přenos datasetu
         storage_prepare_rollback: Příprava rollbacku
         storage_recv: Příjem datasetu

@@ -9,7 +9,7 @@ RSpec.describe StorageEffectRegistry do
       klass.name.start_with?('Transactions::')
     end.map(&:t_type)
 
-    expect(handles).to match_array(described_class::ENTRIES.keys - [5290])
+    expect(handles).to match_array(described_class::ENTRIES.keys)
     expect(handles).to all(satisfy { |handle| described_class.fetch!(handle) })
     expect do
       described_class.fetch!(99_999)
