@@ -61,6 +61,7 @@ jobs:
               spec/api/resources/pool_*_spec.rb
               spec/api/resources/snapshot_download_spec.rb
               spec/api/resources/export_spec.rb
+              spec/api/resources/storage_freeze_spec.rb
 
           - topic: mail
             patterns: |

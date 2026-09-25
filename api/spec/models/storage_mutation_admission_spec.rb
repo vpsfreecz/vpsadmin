@@ -1,8 +1,13 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'timeout'
 
 RSpec.describe StorageMutationAdmission do
+  let(:freeze_session) do
+    create_open_session!(user: SpecSeed.admin, auth_type: 'basic')
+  end
+
   around do |example|
     with_current_context(user: SpecSeed.user) do |session|
       unlock_transaction_signer!
@@ -53,9 +58,10 @@ RSpec.describe StorageMutationAdmission do
   end
 
   def freeze_as_admin!(read_only: true, reason: 'spec freeze')
-    control = StorageFreezeControl.singleton!
-    control.update!(mode: read_only ? :read_only : :read_write,
-                    epoch: control.epoch + 1, reason:)
+    described_class.set_read_only_for_user!(
+      read_only:, expected_epoch: StorageFreezeControl.singleton!.epoch,
+      reason:, user: SpecSeed.admin, user_session: freeze_session
+    )
   end
 
   it 'rejects a read-only admission before staging snapshot rows' do
@@ -163,6 +169,55 @@ RSpec.describe StorageMutationAdmission do
     expect([Transaction.count, StorageMutationIntent.count,
             StorageMutationTarget.count, StorageMutationIntentScope.count,
             StorageIntegrityScope.count]).to eq(before)
+  end
+
+  it 'serializes a freeze switch behind an admitted writer', :no_transaction do
+    freeze_session = create_open_session!(user: SpecSeed.admin, auth_type: 'basic')
+    locked = Queue.new
+    release = Queue.new
+    switched = Queue.new
+    writer = Thread.new do
+      ActiveRecord::Base.connection_pool.with_connection do
+        ActiveRecord::Base.transaction do
+          described_class.check!
+          locked << true
+          release.pop
+        end
+      end
+    end
+    Timeout.timeout(5) { locked.pop }
+
+    switcher = Thread.new do
+      ActiveRecord::Base.connection_pool.with_connection do
+        switched << :started
+        described_class.set_read_only_for_user!(
+          read_only: true, expected_epoch: StorageFreezeControl.singleton!.epoch,
+          reason: 'freeze race spec', user: SpecSeed.admin,
+          user_session: freeze_session
+        )
+        switched << :done
+      end
+    end
+    expect(Timeout.timeout(5) { switched.pop }).to eq(:started)
+    expect { Timeout.timeout(0.2) { switched.pop } }.to raise_error(Timeout::Error)
+
+    release << true
+    writer.value
+    expect(Timeout.timeout(5) { switched.pop }).to eq(:done)
+    switcher.value
+    expect(StorageFreezeControl.singleton!).to be_read_only
+  ensure
+    release << true if release
+    writer&.join(5)
+    switcher&.join(5)
+    if StorageFreezeControl.exists?(id: 1) && StorageFreezeControl.singleton!.read_only?
+      described_class.set_read_only_for_user!(
+        read_only: false, expected_epoch: StorageFreezeControl.singleton!.epoch,
+        reason: 'reset freeze race spec', user: SpecSeed.admin,
+        user_session: freeze_session
+      )
+    end
+    freeze_session&.destroy!
   end
 
   it 'gates a VPS queue transaction before its params callback' do
