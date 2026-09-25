@@ -152,6 +152,25 @@ RSpec.describe NodeCtld::Command do
     )
   end
 
+  it 'fails an irreversible inventory command on a legacy storage queue without a handler' do
+    chain_id = insert_chain
+    tx_id = insert_transaction(
+      transaction_chain_id: chain_id, handle: 5290, queue: 'storage',
+      reversible: NodeCtldSpec::TxState::TX_NOT_REVERSIBLE
+    )
+    cmd = build_command(tx_id)
+    allow(cmd).to receive(:handler).and_return(nil)
+
+    expect(cmd.execute).to be(false)
+    cmd.save(shared_db)
+
+    expect(direction_output(tx_id, :execute)).to include(
+      'status' => 'failed', 'error' => 'Unsupported command'
+    )
+    expect(chain_state(chain_id)).to include('state' => NodeCtldSpec::TxState::CHAIN_FAILED)
+    expect(sql_value('SELECT COUNT(*) FROM storage_mutation_attempts')).to eq(0)
+  end
+
   it 'persists a bad input syntax error' do
     chain_id = insert_chain
     tx_id = insert_transaction(

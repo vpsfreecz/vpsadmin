@@ -10,14 +10,15 @@ RSpec.describe NodeCtld::Queues do
     described_class.new(instance_double(NodeCtldSpec::FakeDaemon, start_time: Time.now - 10))
   end
 
-  def fake_cmd(id, queue: :vps, direction: :execute, priority: 0)
+  def fake_cmd(id, queue: :vps, direction: :execute, priority: 0, type: 0)
     NodeCtldSpec::FakeCmd.new(
       id: id,
       chain_id: id + 100,
       queue: queue,
       urgent: false,
       priority: priority,
-      current_chain_direction: direction
+      current_chain_direction: direction,
+      type:
     )
   end
 
@@ -36,6 +37,27 @@ RSpec.describe NodeCtld::Queues do
     expect(queues.execute(cmd)).to be_truthy
     expect(queues[:rollback].busy?(cmd.chain_id)).to be(true)
     expect(queues[:vps].busy?(cmd.chain_id)).to be(false)
+  end
+
+  it 'uses the inventory worker for persisted storage handle 5290' do
+    queues = build_queues
+    cmd = fake_cmd(1, queue: :storage, type: 5290)
+
+    allow(queues[:inventory]).to receive(:free_slot?).and_return(false, true)
+    expect(queues.free_slot?(cmd)).to be(false)
+    expect(queues.free_slot?(cmd)).to be(true)
+    expect(queues.execute(cmd)).to be_truthy
+    expect(queues[:inventory].busy?(cmd.chain_id)).to be(true)
+    expect(queues[:storage].busy?(cmd.chain_id)).to be(false)
+  end
+
+  it 'keeps rollback routing ahead of the inventory alias' do
+    queues = build_queues
+    cmd = fake_cmd(2, queue: :storage, direction: :rollback, type: 5290)
+
+    expect(queues.execute(cmd)).to be_truthy
+    expect(queues[:rollback].busy?(cmd.chain_id)).to be(true)
+    expect(queues[:inventory].busy?(cmd.chain_id)).to be(false)
   end
 
   it 'reports busy chains, free slots, and executing transactions' do

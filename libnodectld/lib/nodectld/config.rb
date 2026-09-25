@@ -54,6 +54,11 @@ module NodeCtld
           urgent: 2,
           start_delay: 0
         },
+        inventory: {
+          threads: 1,
+          urgent: 0,
+          start_delay: 0
+        },
         network: {
           threads: 1,
           urgent: 0,
@@ -127,6 +132,7 @@ module NodeCtld
       ip6tables: 'ip6tables',
       git: 'git',
       zfs: 'zfs',
+      zpool: 'zpool',
       mount: 'mount',
       umount: 'umount',
       uptime: 'uptime',
