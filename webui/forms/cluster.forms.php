@@ -8,6 +8,9 @@ function cluster_header()
 
     $xtpl->sbar_add(_("VPS overview"), '?page=cluster&action=vps');
     $xtpl->sbar_add(_("System config"), '?page=cluster&action=sysconfig');
+    if (storage_freeze_ui_allowed() && storage_freeze_resource_available()) {
+        $xtpl->sbar_add(_("Storage freeze"), '?page=cluster&action=storage_freeze');
+    }
     $xtpl->sbar_add(_("Register new node"), '?page=cluster&action=newnode');
     $xtpl->sbar_add(_("Manage OS templates"), '?page=cluster&action=templates');
     $xtpl->sbar_add(_("Manage networks"), '?page=cluster&action=networks');
@@ -66,6 +69,177 @@ function cluster_header()
     $xtpl->table_tr();
 
     $xtpl->table_out();
+}
+
+function storage_freeze_ui_allowed()
+{
+    return !empty($_SESSION['is_superadmin'])
+        && empty($_SESSION['context_switch'])
+        && empty($_SESSION['borrowed_token']);
+}
+
+function storage_freeze_resource_available()
+{
+    global $api;
+
+    if ($api->storage_freeze) {
+        return true;
+    }
+
+    $last_check = $_SESSION['storage_freeze_description_checked_at'] ?? 0;
+    if (time() - $last_check < 60) {
+        return false;
+    }
+
+    $_SESSION['storage_freeze_description_checked_at'] = time();
+    $api->setup(true);
+
+    return (bool) $api->storage_freeze;
+}
+
+function storage_freeze_field($value, $key, $default = null)
+{
+    if (is_array($value)) {
+        return $value[$key] ?? $default;
+    }
+
+    return is_object($value) ? ($value->$key ?? $default) : $default;
+}
+
+function storage_freeze_status_page($status)
+{
+    global $xtpl;
+
+    $mode = storage_freeze_field($status, 'mode');
+    $epoch = storage_freeze_field($status, 'epoch');
+    $stable = storage_freeze_field($status, 'stable_epoch');
+    $drained = storage_freeze_field($status, 'db_drained');
+    $repair_ready = storage_freeze_field($status, 'repair_ready');
+    $transition = storage_freeze_field($status, 'transition');
+    $counts = storage_freeze_field($status, 'counts', []);
+    $capped = storage_freeze_field($status, 'count_capped', []);
+
+    $mode_label = _('Unknown');
+    if ($mode === 'read_only') {
+        $mode_label = _('Read only');
+    } elseif ($mode === 'read_write') {
+        $mode_label = _('Read and write');
+    }
+
+    $actor = storage_freeze_field($transition, 'actor_user_login');
+    $actor_id = storage_freeze_field($transition, 'actor_user_id');
+    $actor_label = $actor === null ? (string) $actor_id : $actor . ' (#' . $actor_id . ')';
+
+    $xtpl->title2(_("Storage freeze"));
+    $xtpl->perex(
+        _("Database drain only"),
+        _("A drained database does not prove that node workers have stopped or that storage is ready for repair.")
+    );
+    $xtpl->table_title(_("Current state"));
+
+    $rows = [
+        [_('Mode'), $mode_label],
+        [_('Epoch'), $epoch],
+        [_('Stable epoch'), $stable ? _('Yes') : _('No')],
+        [_('Database drained'), $drained ? _('Yes') : _('No')],
+        [_('Repair ready'), $repair_ready ? _('Yes') : _('No')],
+        [_('Observed at'), storage_freeze_field($status, 'observed_at')],
+        [_('Last reason'), storage_freeze_field($status, 'reason')],
+        [_('Last change'), storage_freeze_field($status, 'requested_at')],
+        [_('Changed by'), $actor_label],
+    ];
+
+    foreach ($rows as [$label, $value]) {
+        $xtpl->table_td(h($label) . ':');
+        $xtpl->table_td(h($value));
+        $xtpl->table_tr();
+    }
+    $xtpl->table_out();
+
+    $labels = [
+        'active_chains' => _('Active chains'),
+        'fatal_or_unreviewed_resolved_chains' => _('Fatal or unresolved chains'),
+        'waiting_transactions' => _('Waiting transactions'),
+        'pending_confirmations' => _('Pending confirmations'),
+        'prepared_intents' => _('Prepared intents'),
+        'executing_intents' => _('Executing intents'),
+        'needs_reconcile_intents' => _('Intents needing reconciliation'),
+        'started_attempts' => _('Started attempts'),
+        'uncertain_attempts' => _('Uncertain attempts'),
+        'retained_chain_locks' => _('Retained chain locks'),
+        'settled_unverified_intents' => _('Settled, unverified intents'),
+    ];
+    $xtpl->table_title(_("Drain progress"));
+    foreach ($labels as $key => $label) {
+        $count = storage_freeze_field($counts, $key);
+        $is_capped = in_array($key, (array) $capped, true);
+        $xtpl->table_td(h($label) . ':');
+        $xtpl->table_td($count === null ? _('Unknown') : h($count) . ($is_capped ? '+' : ''));
+        $xtpl->table_tr();
+    }
+    $xtpl->table_out();
+
+    $samples = [
+        'sample_chain_ids' => _('Active chain IDs'),
+        'sample_fatal_chain_ids' => _('Fatal or unresolved chain IDs'),
+        'sample_intent_ids' => _('Blocking intent IDs'),
+    ];
+    $xtpl->table_title(_("Sample blockers"));
+    foreach ($samples as $key => $label) {
+        $ids = (array) storage_freeze_field($status, $key, []);
+        $xtpl->table_td(h($label) . ':');
+        $xtpl->table_td($ids ? h(implode(', ', $ids)) : _('None'));
+        $xtpl->table_tr();
+    }
+    $xtpl->table_out();
+
+    $target = $mode === 'read_only' ? 'read_write' : 'read_only';
+    $label = $target === 'read_only' ? _('Set read only') : _('Resume writes');
+    $xtpl->sbar_add($label, '?page=cluster&action=storage_freeze_form&mode=' . $target);
+
+    $xtpl->assign('SCRIPT', '<script type="text/javascript">'
+        . 'setInterval(function () { if (document.visibilityState === "visible") window.location.reload(); }, 5000);'
+        . '</script>');
+}
+
+function storage_freeze_change_form($mode, $epoch, $reason = '')
+{
+    global $xtpl;
+
+    $label = $mode === 'read_only' ? _('Set read only') : _('Resume writes');
+    $xtpl->title2($label);
+    $xtpl->perex(
+        _("Storage mode change"),
+        _("This changes storage write admission. It does not prove that existing node work has stopped.")
+    );
+    $xtpl->table_add_category('');
+    $xtpl->table_add_category('');
+    $xtpl->form_create('?page=cluster&action=storage_freeze_confirm', 'post');
+    $xtpl->form_set_hidden_fields(['mode' => $mode, 'expected_epoch' => $epoch]);
+    $xtpl->form_add_input(_('Reason') . ':', 'text', '60', 'reason', $reason, '', 255);
+    $xtpl->form_out(_('Review change'));
+}
+
+function storage_freeze_confirm_form($mode, $epoch, $reason)
+{
+    global $xtpl;
+
+    $label = $mode === 'read_only' ? _('Set read only') : _('Resume writes');
+    $xtpl->title2(_('Confirm storage mode change'));
+    $xtpl->table_add_category('');
+    $xtpl->table_add_category('');
+    $xtpl->form_create('?page=cluster&action=storage_freeze_change', 'post');
+    $xtpl->form_set_hidden_fields(['mode' => $mode, 'expected_epoch' => $epoch, 'reason' => $reason]);
+    $xtpl->table_td(_('New mode') . ':');
+    $xtpl->table_td(h($label));
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Current epoch') . ':');
+    $xtpl->table_td(h($epoch));
+    $xtpl->table_tr();
+    $xtpl->table_td(_('Reason') . ':');
+    $xtpl->table_td(h($reason));
+    $xtpl->table_tr();
+    $xtpl->form_out(_('Confirm change'));
 }
 
 function node_overview()

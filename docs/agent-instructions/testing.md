@@ -62,7 +62,7 @@ its explicit patterns if needed.
 | `foundation` | `spec/smoke/**/*_spec.rb`, `spec/api/custom_routes_coverage_spec.rb`, `spec/api/endpoint_coverage_spec.rb`, `spec/api/generate_pending_endpoints_spec.rb`, `spec/api/routes/**/*_spec.rb`, `spec/models/**/*_spec.rb`, `spec/supervisor/**/*_spec.rb` |
 | `plugins` | `spec/api/plugins/**/*_spec.rb` |
 | `dns` | `dns*` |
-| `storage` | `dataset_*`, `environment_dataset_*`, `pool_*`, `snapshot_download`, `export` |
+| `storage` | `dataset_*`, `environment_dataset_*`, `pool_*`, `snapshot_download`, `export`, `storage_freeze` |
 | `mail` | `mail*`, `mailbox`, `user_mail_*` |
 | `vps` | `vps_*` |
 | `platform-infrastructure` | `node_*`, `os_*`, `migration_plan` |

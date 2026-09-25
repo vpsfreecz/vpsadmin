@@ -66,6 +66,96 @@ if (isAdmin()) {
             $xtpl->sbar_add(_("Back"), '?page=cluster');
             break;
 
+        case 'storage_freeze':
+        case 'storage_freeze_form':
+        case 'storage_freeze_confirm':
+        case 'storage_freeze_change':
+            if (!storage_freeze_ui_allowed() || !storage_freeze_resource_available()) {
+                $xtpl->perex(_('Storage freeze unavailable'), _('This action requires your own administrator session.'));
+                break;
+            }
+
+            $action = $_GET['action'];
+            $xtpl->sbar_add(_('Back'), '?page=cluster');
+
+            if ($action === 'storage_freeze') {
+                try {
+                    storage_freeze_status_page($api->storage_freeze->show());
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(_('Unable to load storage freeze status'), $e->getResponse());
+                }
+                break;
+            }
+
+            $mode = $action === 'storage_freeze_form'
+                ? ($_GET['mode'] ?? null)
+                : ($_POST['mode'] ?? null);
+            if (!in_array($mode, ['read_only', 'read_write'], true)) {
+                $xtpl->perex(_('Invalid request'), _('Choose a storage mode.'));
+                break;
+            }
+
+            if ($action === 'storage_freeze_form') {
+                try {
+                    $status = $api->storage_freeze->show();
+                    $current_mode = storage_freeze_field($status, 'mode');
+                    if ($current_mode === $mode) {
+                        $xtpl->perex(_('Storage mode unchanged'), _('The requested mode is already active.'));
+                        break;
+                    }
+                    storage_freeze_change_form($mode, storage_freeze_field($status, 'epoch'));
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(_('Unable to load storage freeze status'), $e->getResponse());
+                }
+                break;
+            }
+
+            if (($_SERVER['REQUEST_METHOD'] ?? null) !== 'POST') {
+                $xtpl->perex(_('Invalid request'), _('This action requires a form submission.'));
+                break;
+            }
+            csrf_check();
+
+            $reason = $_POST['reason'] ?? null;
+            $epoch_input = $_POST['expected_epoch'] ?? null;
+            $expected_epoch = is_string($epoch_input)
+                ? filter_var($epoch_input, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]])
+                : false;
+            if (!is_string($reason) || trim($reason) === '' || mb_strlen($reason, 'UTF-8') > 255
+                || preg_match('/[\x00-\x1f\x7f]/', $reason)
+                || $expected_epoch === false) {
+                $xtpl->perex(_('Invalid request'), _('Enter a reason and reload the current storage epoch.'));
+                break;
+            }
+            $reason = trim($reason);
+
+            if ($action === 'storage_freeze_confirm') {
+                try {
+                    $status = $api->storage_freeze->show();
+                    if (storage_freeze_field($status, 'epoch') != $expected_epoch) {
+                        $xtpl->perex(_('Storage epoch changed'), _('Reload storage freeze status before changing the mode.'));
+                        break;
+                    }
+                    storage_freeze_confirm_form($mode, $expected_epoch, $reason);
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(_('Unable to load storage freeze status'), $e->getResponse());
+                }
+                break;
+            }
+
+            try {
+                $api->storage_freeze->$mode([
+                    'reason' => $reason,
+                    'expected_epoch' => $expected_epoch,
+                ]);
+                notify_user(_('Storage mode changed'), _('Storage write admission was updated.'));
+                redirect('?page=cluster&action=storage_freeze');
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors(_('Storage mode change failed'), $e->getResponse());
+                $xtpl->sbar_add(_('Reload status'), '?page=cluster&action=storage_freeze');
+            }
+            break;
+
         case "sysconfig_save":
             csrf_check();
 

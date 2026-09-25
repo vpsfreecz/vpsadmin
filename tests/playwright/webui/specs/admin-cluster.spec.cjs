@@ -133,6 +133,32 @@ async function fillTemplateForm(form, template, osFamilyId) {
 }
 
 test.describe.serial('admin cluster browser coverage', () => {
+  test('storage freeze shows database status and reviews a mode change', async ({ page }) => {
+    await login(page, fixtures.admin);
+
+    await gotoCluster(page, 'storage_freeze');
+    await expect(page.locator('#perex')).toBeVisible();
+    await expect(page.locator('#perex')).toContainText('Database drain only');
+    await expect(page.locator('#perex')).toContainText('does not prove that node workers have stopped');
+    await expect(content(page)).toContainText('Repair ready');
+    await expect(content(page)).toContainText('Read and write');
+    await expect(actionLink(page, 'storage_freeze_form', { mode: 'read_only' })).toBeVisible();
+
+    await actionLink(page, 'storage_freeze_form', { mode: 'read_only' }).click();
+    const reviewForm = formByAction(page, 'storage_freeze_confirm');
+    await expect(reviewForm.locator('input[name="expected_epoch"]')).toHaveValue(/^[0-9]+$/);
+    await reviewForm.locator('input[name="reason"]').fill('Browser review only');
+    await submitForm(reviewForm, 'Review change');
+
+    const confirmForm = formByAction(page, 'storage_freeze_change');
+    await expect(confirmForm).toBeVisible();
+    await expect(confirmForm.locator('input[name="reason"]')).toHaveValue('Browser review only');
+
+    await gotoCluster(page, 'storage_freeze');
+    await expect(content(page)).toContainText('Read and write');
+    await logout(page, fixtures.admin.username);
+  });
+
   test('overview, environment, location, node, VPS, network, and IP lists render', async ({ page }) => {
     const c = requireClusterAdminFixtures();
 
