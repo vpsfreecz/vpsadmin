@@ -133,6 +133,9 @@ en:
         label: Affected VPSes
       after_available:
         label: After_available
+      after_chain_id:
+        description: Last chain ID from the previous page; use 0 for the first page
+        label: Continue after chain ID
       after_configured_value:
         label: After_configured_value
       after_effective_value:
@@ -220,6 +223,8 @@ en:
       attribute:
         description: Name of the attribute containing the searched value
         label: Attribute
+      audit_request_id:
+        label: Catch-up audit request ID
       auth_token:
         label: Auth_token
       auth_type:
@@ -296,6 +301,12 @@ en:
         label: Block count
       blocked_chain_id:
         label: Blocking transaction chain ID
+      blocked_chain_ids:
+        label: Blocked chain IDs
+      blocked_chains:
+        label: Blocked chains
+      blocked_reasons:
+        label: Reasons chains are blocked
       blocked_resource:
         label: Busy resource
       blocked_resource_id:
@@ -442,6 +453,10 @@ en:
         label: Continue
       count:
         label: Count
+      count_capped:
+        label: Counts at the reporting limit
+      counts:
+        label: Drain counts
       cpu:
         description: Minimally 1, maximally 1024, step size is 1
         label: CPU
@@ -532,6 +547,9 @@ en:
         label: Dataset plans
       date:
         label: Date
+      db_drained:
+        description: Database work has drained; this does not prove node quiescence
+        label: Database drained
       deadline:
         description: Advisory date for releasing unused IP addresses
         label: Planned release date
@@ -676,6 +694,8 @@ en:
         label: Environment
       environment_dataset_plan:
         label: Environment_dataset_plan
+      epoch:
+        label: Storage mode epoch
       error:
         label: Preparation error
       estimated_income:
@@ -737,6 +757,8 @@ en:
         label: Admin exemption reason
       expected_content_revision:
         label: Expected_content_revision
+      expected_epoch:
+        label: Expected storage mode epoch
       expiration:
         description: A date after which the token becomes invalid
       expirations:
@@ -852,6 +874,8 @@ en:
             label: 'true'
         description: True if location has IPv6 addresses
         label: Has IPv6
+      has_more:
+        label: More chains available
       has_storage:
         label: Has storage
       hidden:
@@ -1075,6 +1099,7 @@ en:
       level:
         label: Access level
       limit:
+        description: Maximum number of items to examine in one page
         label: Limit
       livepatch_action:
         choices:
@@ -1280,6 +1305,8 @@ en:
         label: Password
       new_refquota:
         label: New refquota
+      next_after_chain_id:
+        label: Next chain cursor
       no_start:
         description: Do not start the VPS on the target node
         label: No start
@@ -1630,6 +1657,8 @@ en:
         label: Remote console server
       remove:
         label: Remove exemption
+      repair_ready:
+        label: Repair ready
       replace_ip_addresses:
         description: When migrating to another location, current IP addresses are
           replaced by addresses from the new location
@@ -1644,6 +1673,10 @@ en:
         label: Reported_release
       request_count:
         label: Request count
+      requested_at:
+        label: Mode requested at
+      requested_by_user_id:
+        label: Requesting user ID
       resource:
         description: Resource name of the located object
         label: Resource
@@ -1725,6 +1758,12 @@ en:
         label: Read-write
       sample:
         label: Sample
+      sample_chain_ids:
+        label: Sample active chain IDs
+      sample_fatal_chain_ids:
+        label: Sample fatal chain IDs
+      sample_intent_ids:
+        label: Sample blocking intent IDs
       saved_until:
         label: Saved_until
       scan:
@@ -1742,6 +1781,8 @@ en:
         label: Scan
       scan_percent:
         label: Scan_percent
+      scanned_chains:
+        label: Examined chains
       scope:
         label: Scope
       secret:
@@ -1764,6 +1805,10 @@ en:
         label: Serial
       server:
         label: Server
+      settled_chain_ids:
+        label: Settled chain IDs
+      settled_intents:
+        label: Settled, unverified intents
       sha256sum:
         description: Control checksum
         label: Sha256sum
@@ -1833,6 +1878,8 @@ en:
         label: Src_node
       ss:
         label: Ss
+      stable_epoch:
+        label: Epoch stable during status scan
       start:
         description: Start thew new VPS
       start_menu_timeout:
@@ -2404,6 +2451,8 @@ en:
       snapshot_download_no_common_source: snapshots do not have a common available
         source for incremental download
       snapshot_download_unavailable: snapshot is not available for download
+      storage_freeze_conflict: Storage mode changed. Refresh the status and try again.
+      storage_freeze_invalid_request: Check the storage mode request.
       storage_read_only: Storage is temporarily read-only. Try again later.
       storage_signer_unavailable: Storage is temporarily unavailable. Try again later.
     password_changes:
@@ -3691,6 +3740,27 @@ en:
             label: Size
           url:
             label: Url
+      storage_freeze:
+        actions:
+          read_only:
+            input:
+              expected_epoch:
+                description: Epoch returned by show; the request fails if it has changed
+              reason:
+                description: Reason for the storage mode change
+          read_write:
+            input:
+              expected_epoch:
+                description: Epoch returned by show; the request fails if it has changed
+              reason:
+                description: Reason for the storage mode change
+          settle_observer:
+            input:
+              expected_epoch:
+                description: Frozen epoch returned by show; the request fails if it
+                  has changed
+              reason:
+                description: Reason for settling observer intents
       system_config:
         attributes:
           name:

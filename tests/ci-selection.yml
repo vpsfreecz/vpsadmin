@@ -206,6 +206,7 @@ select:
       - "webui/forms/cluster.forms.php"
       - "webui/forms/node.forms.php"
       - "webui/lib/cluster.lib.php"
+      - "api/lib/vpsadmin/api/resources/storage_freeze.rb"
     tags: ["webui-admin-cluster", "admin", "cluster"]
 
   - paths:

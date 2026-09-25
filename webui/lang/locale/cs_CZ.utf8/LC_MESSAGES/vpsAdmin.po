@@ -162,6 +162,10 @@ msgid "System config"
 msgstr "Konfigurace systému"
 
 #: forms/cluster.forms.php
+msgid "Storage freeze"
+msgstr "Zmrazení úložiště"
+
+#: forms/cluster.forms.php
 msgid "Register new node"
 msgstr "Registrovat nový node"
 
@@ -292,6 +296,195 @@ msgstr "IPv4 adresy"
 #: forms/cluster.forms.php
 msgid "used"
 msgstr "použito"
+
+#: forms/cluster.forms.php forms/dns.forms.php lib/functions.lib.php
+msgid "Unknown"
+msgstr "Neznámý"
+
+#: forms/cluster.forms.php
+msgid "Read only"
+msgstr "Pouze čtení"
+
+#: forms/cluster.forms.php
+msgid "Read and write"
+msgstr "Čtení a zápis"
+
+#: forms/cluster.forms.php
+msgid "Database drain only"
+msgstr "Pouze stav operací v databázi"
+
+#: forms/cluster.forms.php
+msgid ""
+"A drained database does not prove that node workers have stopped or that "
+"storage is ready for repair."
+msgstr ""
+"Dokončené operace v databázi neprokazují, že se zastavila práce na nodech "
+"nebo že je úložiště připravené k opravě."
+
+#: forms/cluster.forms.php
+msgid "Current state"
+msgstr "Aktuální stav"
+
+#: forms/cluster.forms.php
+msgid "Mode"
+msgstr "Režim"
+
+#: forms/cluster.forms.php
+msgid "Epoch"
+msgstr "Epocha"
+
+#: forms/cluster.forms.php forms/networking.forms.php forms/outage.forms.php
+#: pages/page_adminm.php
+msgid "No"
+msgstr "Ne"
+
+#: forms/cluster.forms.php
+msgid "Stable epoch"
+msgstr "Stabilní epocha"
+
+#: forms/cluster.forms.php forms/networking.forms.php forms/outage.forms.php
+#: pages/page_adminm.php
+msgid "Yes"
+msgstr "Ano"
+
+#: forms/cluster.forms.php
+msgid "Database drained"
+msgstr "Operace v databázi dokončeny"
+
+#: forms/cluster.forms.php
+msgid "Repair ready"
+msgstr "Připraveno k opravě"
+
+#: forms/cluster.forms.php
+msgid "Observed at"
+msgstr "Zjištěno v"
+
+#: forms/cluster.forms.php
+msgid "Last reason"
+msgstr "Poslední důvod"
+
+#: forms/cluster.forms.php
+msgid "Last change"
+msgstr "Poslední změna"
+
+#: forms/cluster.forms.php
+msgid "Changed by"
+msgstr "Změnil(a)"
+
+#: forms/cluster.forms.php
+msgid "Active chains"
+msgstr "Aktivní transakce"
+
+#: forms/cluster.forms.php
+msgid "Fatal or unresolved chains"
+msgstr "Chybné nebo nevyřešené transakce"
+
+#: forms/cluster.forms.php
+msgid "Waiting transactions"
+msgstr "Čekající transakce"
+
+#: forms/cluster.forms.php
+msgid "Pending confirmations"
+msgstr "Čekající potvrzení"
+
+#: forms/cluster.forms.php
+msgid "Prepared intents"
+msgstr "Připravené záměry"
+
+#: forms/cluster.forms.php
+msgid "Executing intents"
+msgstr "Prováděné záměry"
+
+#: forms/cluster.forms.php
+msgid "Intents needing reconciliation"
+msgstr "Záměry vyžadující kontrolu"
+
+#: forms/cluster.forms.php
+msgid "Started attempts"
+msgstr "Zahájené pokusy"
+
+#: forms/cluster.forms.php
+msgid "Uncertain attempts"
+msgstr "Nejisté pokusy"
+
+#: forms/cluster.forms.php
+msgid "Retained chain locks"
+msgstr "Zadržené zámky transakcí"
+
+#: forms/cluster.forms.php
+msgid "Settled, unverified intents"
+msgstr "Dokončené, neověřené záměry"
+
+#: forms/cluster.forms.php
+msgid "Drain progress"
+msgstr "Průběh dokončování operací"
+
+#: forms/cluster.forms.php
+msgid "Active chain IDs"
+msgstr "ID aktivních transakcí"
+
+#: forms/cluster.forms.php
+msgid "Fatal or unresolved chain IDs"
+msgstr "ID chybných nebo nevyřešených transakcí"
+
+#: forms/cluster.forms.php
+msgid "Blocking intent IDs"
+msgstr "ID blokujících záměrů"
+
+#: forms/cluster.forms.php
+msgid "Sample blockers"
+msgstr "Příklady blokujících záznamů"
+
+#: forms/cluster.forms.php
+msgid "None"
+msgstr "Žádné"
+
+#: forms/cluster.forms.php
+msgid "Resume writes"
+msgstr "Obnovit zápis"
+
+#: forms/cluster.forms.php
+msgid "Set read only"
+msgstr "Přepnout na pouze čtení"
+
+#: forms/cluster.forms.php
+msgid "Storage mode change"
+msgstr "Změna režimu úložiště"
+
+#: forms/cluster.forms.php
+msgid ""
+"This changes storage write admission. It does not prove that existing node "
+"work has stopped."
+msgstr ""
+"Tím se změní povolování zápisů na úložiště. Neprokazuje to zastavení "
+"probíhající práce na nodech."
+
+#: forms/cluster.forms.php forms/dns.forms.php forms/ip_release.forms.php
+#: forms/node.forms.php forms/outage.forms.php forms/users.forms.php
+#: forms/vps.forms.php pages/page_adminvps.php pages/page_cluster.php
+#: pages/page_lifetimes.php public/index.php
+msgid "Reason"
+msgstr "Důvod"
+
+#: forms/cluster.forms.php
+msgid "Review change"
+msgstr "Zkontrolovat změnu"
+
+#: forms/cluster.forms.php
+msgid "Confirm storage mode change"
+msgstr "Potvrdit změnu režimu úložiště"
+
+#: forms/cluster.forms.php
+msgid "New mode"
+msgstr "Nový režim"
+
+#: forms/cluster.forms.php
+msgid "Current epoch"
+msgstr "Aktuální epocha"
+
+#: forms/cluster.forms.php
+msgid "Confirm change"
+msgstr "Potvrdit změnu"
 
 #: forms/cluster.forms.php
 msgid "Node list"
@@ -1190,13 +1383,6 @@ msgstr "Status"
 msgid "Reason code"
 msgstr "Kód důvodu"
 
-#: forms/dns.forms.php forms/ip_release.forms.php forms/node.forms.php
-#: forms/outage.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminvps.php pages/page_cluster.php pages/page_lifetimes.php
-#: public/index.php
-msgid "Reason"
-msgstr "Důvod"
-
 #: forms/dns.forms.php
 msgid "Add zone"
 msgstr "Přidat zónu"
@@ -1493,10 +1679,6 @@ msgstr "Dopředná zóna"
 #: forms/dns.forms.php
 msgid "Reverse zone"
 msgstr "Reverzní zóna"
-
-#: forms/dns.forms.php lib/functions.lib.php
-msgid "Unknown"
-msgstr "Neznámý"
 
 #: forms/dns.forms.php
 msgid "Internal zone"
@@ -2120,7 +2302,10 @@ msgid ""
 "All selected addresses remain owned until the whole release succeeds. If it "
 "rolls back, none are released. Addresses in a running release cannot be "
 "retained."
-msgstr "Všechny vybrané adresy zůstávají vlastníkům až do úspěšného dokončení celého uvolnění. Při vrácení změn se neuvolní žádná adresa. Adresy, které se právě uvolňují, už nelze zachovat."
+msgstr ""
+"Všechny vybrané adresy zůstávají vlastníkům až do úspěšného dokončení celého "
+"uvolnění. Při vrácení změn se neuvolní žádná adresa. Adresy, které se právě "
+"uvolňují, už nelze zachovat."
 
 #: forms/ip_release.forms.php
 msgid "Cleanup"
@@ -2148,7 +2333,7 @@ msgstr "Výjimka administrátora"
 
 #: forms/ip_release.forms.php
 msgid "Current status"
-msgstr "Současný stav"
+msgstr "Aktuální stav"
 
 #: forms/ip_release.forms.php
 msgid "User reason"
@@ -2187,12 +2372,10 @@ msgid "Rolling back; ownership is retained"
 msgstr "Probíhá vrácení změn; adresy zůstávají vlastníkům"
 
 #: forms/ip_release.forms.php
-#| msgid "Host addresses added"
 msgid "All selected addresses released"
 msgstr "Všechny vybrané adresy byly uvolněny"
 
 #: forms/ip_release.forms.php
-#| msgid "Release eligible addresses"
 msgid "Release rolled back; no addresses released"
 msgstr "Změny byly vráceny; žádné adresy nebyly uvolněny"
 
@@ -2201,7 +2384,6 @@ msgid "Release could not start; no addresses released"
 msgstr "Uvolnění se nepodařilo zahájit; žádné adresy nebyly uvolněny"
 
 #: forms/ip_release.forms.php
-#| msgid "Release eligible addresses"
 msgid "No eligible addresses"
 msgstr "Žádné adresy k uvolnění"
 
@@ -2211,21 +2393,20 @@ msgstr "Transakční řetězec vyžaduje zásah administrátora"
 
 #: forms/ip_release.forms.php
 #, php-format
-#| msgid "Transaction chain"
 msgid "Transaction chain #%d"
 msgstr "Transakční řetězec č. %d"
 
 #: forms/ip_release.forms.php
 #, php-format
 msgid "Resource %s #%d is busy. Try again after its transaction finishes."
-msgstr "Prostředek %s č. %d je zamčený. Zkus to znovu po dokončení jeho transakce."
+msgstr ""
+"Prostředek %s č. %d je zamčený. Zkus to znovu po dokončení jeho transakce."
 
 #: forms/ip_release.forms.php
 msgid "The database was busy. Try releasing the addresses again."
 msgstr "Databáze byla zaneprázdněná. Zkus adresy uvolnit znovu."
 
 #: forms/ip_release.forms.php
-#| msgid "Last release result"
 msgid "Latest release attempt"
 msgstr "Poslední pokus o uvolnění"
 
@@ -2243,12 +2424,10 @@ msgid ""
 msgstr "Před dalším pokusem o uvolnění zkontroluj a oprav transakční řetězec."
 
 #: forms/ip_release.forms.php
-#| msgid "Recovery code"
 msgid "Recovery"
 msgstr "Obnova"
 
 #: forms/ip_release.forms.php
-#| msgid "Release campaign"
 msgid "Release attempts"
 msgstr "Pokusy o uvolnění"
 
@@ -2469,14 +2648,6 @@ msgstr "Přidat do VPS"
 #: forms/networking.forms.php
 msgid "Host IP Addresses"
 msgstr "Hostitelské IP adresy"
-
-#: forms/networking.forms.php forms/outage.forms.php pages/page_adminm.php
-msgid "Yes"
-msgstr "Ano"
-
-#: forms/networking.forms.php forms/outage.forms.php pages/page_adminm.php
-msgid "No"
-msgstr "Žádný"
 
 #: forms/networking.forms.php
 msgid "Routed address"
@@ -7509,6 +7680,66 @@ msgid "Manage Cluster"
 msgstr "Správa clusteru"
 
 #: pages/page_cluster.php
+msgid "Storage freeze unavailable"
+msgstr "Zmrazení úložiště není dostupné"
+
+#: pages/page_cluster.php
+msgid "This action requires your own administrator session."
+msgstr "Tato akce vyžaduje vlastní relaci administrátora."
+
+#: pages/page_cluster.php
+msgid "Unable to load storage freeze status"
+msgstr "Stav zmrazení úložiště se nepodařilo načíst"
+
+#: pages/page_cluster.php
+msgid "Choose a storage mode."
+msgstr "Vyber režim úložiště."
+
+#: pages/page_cluster.php pages/page_ip_release.php pages/page_login.php
+msgid "Invalid request"
+msgstr "Neplatný požadavek"
+
+#: pages/page_cluster.php
+msgid "Storage mode unchanged"
+msgstr "Režim úložiště se nezměnil"
+
+#: pages/page_cluster.php
+msgid "The requested mode is already active."
+msgstr "Požadovaný režim je už aktivní."
+
+#: pages/page_cluster.php
+msgid "This action requires a form submission."
+msgstr "Tuto akci je nutné odeslat formulářem."
+
+#: pages/page_cluster.php
+msgid "Enter a reason and reload the current storage epoch."
+msgstr "Zadej důvod a načti aktuální epochu úložiště."
+
+#: pages/page_cluster.php
+msgid "Reload storage freeze status before changing the mode."
+msgstr "Před změnou režimu znovu načti stav úložiště."
+
+#: pages/page_cluster.php
+msgid "Storage epoch changed"
+msgstr "Epocha úložiště se změnila"
+
+#: pages/page_cluster.php
+msgid "Storage mode changed"
+msgstr "Režim úložiště se změnil"
+
+#: pages/page_cluster.php
+msgid "Storage write admission was updated."
+msgstr "Povolování zápisů na úložiště bylo změněno."
+
+#: pages/page_cluster.php
+msgid "Storage mode change failed"
+msgstr "Změna režimu úložiště se nezdařila"
+
+#: pages/page_cluster.php
+msgid "Reload status"
+msgstr "Načíst stav znovu"
+
+#: pages/page_cluster.php
 msgid "Some changes were saved"
 msgstr "Některé změny byly uloženy"
 
@@ -8376,10 +8607,6 @@ msgstr "Pro provedení této akce odešli příslušný formulář."
 msgid "Action failed"
 msgstr "Akce se nezdařila"
 
-#: pages/page_ip_release.php pages/page_login.php
-msgid "Invalid request"
-msgstr "Neplatný požadavek"
-
 #: pages/page_ip_release.php
 msgid "Campaign closed"
 msgstr "Kampaň uzavřena"
@@ -9140,9 +9367,6 @@ msgstr "Pomoc"
 #~ msgid "configured only"
 #~ msgstr "pouze v konfiguraci"
 
-#~ msgid "Current version"
-#~ msgstr "Aktuální verze"
-
 #~ msgid "booted"
 #~ msgstr "při spuštění"
 
@@ -9220,9 +9444,6 @@ msgstr "Pomoc"
 
 #~ msgid "awaiting"
 #~ msgstr "čekání"
-
-#~ msgid "pending correction"
-#~ msgstr "čekající na opravu"
 
 #~ msgid "approved"
 #~ msgstr "schválený"

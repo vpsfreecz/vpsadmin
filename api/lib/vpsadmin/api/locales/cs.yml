@@ -132,6 +132,9 @@ cs:
         label: Dotčené VPS
       after_available:
         label: Nová dostupnost
+      after_chain_id:
+        description: Poslední prověřené ID řetězce; pro první stránku použij 0
+        label: Začít za ID transakčního řetězce
       after_configured_value:
         label: Nová nakonfigurovaná hodnota
       after_effective_value:
@@ -218,6 +221,8 @@ cs:
       attribute:
         description: Název atributu obsahujícího hledanou hodnotu
         label: Atribut
+      audit_request_id:
+        label: ID auditního požadavku
       auth_token:
         label: Autentizační token
       auth_type:
@@ -295,6 +300,12 @@ cs:
         label: Počet bloků
       blocked_chain_id:
         label: ID blokujícího transakčního řetězce
+      blocked_chain_ids:
+        label: ID blokovaných transakčních řetězců
+      blocked_chains:
+        label: Blokované transakční řetězce
+      blocked_reasons:
+        label: Důvody zablokování řetězců
       blocked_resource:
         label: Zamčený prostředek
       blocked_resource_id:
@@ -441,6 +452,10 @@ cs:
         label: Pokračovat
       count:
         label: Počet
+      count_capped:
+        label: Počty omezené limitem
+      counts:
+        label: Počty
       cpu:
         description: Minimálně 1, maximálně 1024, krok je 1
         label: CPU
@@ -531,6 +546,10 @@ cs:
         label: Plány datasetu
       date:
         label: Datum
+      db_drained:
+        description: Databázová práce je dokončená; neprokazuje zastavení procesů
+          na nodech
+        label: Databázové operace dokončeny
       deadline:
         description: Orientační datum uvolnění nepoužívaných IP adres
         label: Plánované datum uvolnění
@@ -676,6 +695,8 @@ cs:
         label: Prostředí
       environment_dataset_plan:
         label: Plán datasetu prostředí
+      epoch:
+        label: Epocha režimu úložiště
       error:
         label: Chyba při přípravě
       estimated_income:
@@ -737,6 +758,8 @@ cs:
         label: Důvod výjimky administrátora
       expected_content_revision:
         label: Očekávaná revize obsahu
+      expected_epoch:
+        label: Očekávaná epocha režimu úložiště
       expiration:
         description: Datum, po kterém token přestane být platný
       expirations:
@@ -851,6 +874,8 @@ cs:
             label: ano
         description: True, pokud lokace má IPv6 adresy
         label: Má IPv6
+      has_more:
+        label: K dispozici jsou další řetězce
       has_storage:
         label: Má úložiště
       hidden:
@@ -1073,6 +1098,7 @@ cs:
       level:
         label: Úroveň přístupu
       limit:
+        description: Maximální počet položek na jedné stránce
         label: Limit
       livepatch_action:
         choices:
@@ -1275,6 +1301,8 @@ cs:
         label: Heslo
       new_refquota:
         label: Nová kvóta datasetu (refquota)
+      next_after_chain_id:
+        label: ID řetězce pro další stránku
       no_start:
         description: Nespouštět VPS na cílovém nodu
         label: Nespouštět
@@ -1625,6 +1653,8 @@ cs:
         label: Server vzdálené konzole
       remove:
         label: Odstranit výjimku
+      repair_ready:
+        label: Připraveno k opravě
       replace_ip_addresses:
         description: Při migraci do jiné lokace se aktuální IP adresy nahradí adresami
           z nové lokace
@@ -1639,6 +1669,10 @@ cs:
         label: Hlášená verze jádra
       request_count:
         label: Počet požadavků
+      requested_at:
+        label: Čas požadavku
+      requested_by_user_id:
+        label: ID žádajícího uživatele
       resource:
         description: Název zdroje nalezeného objektu
         label: Zdroj
@@ -1720,6 +1754,12 @@ cs:
         label: Čtení i zápis
       sample:
         label: Vzorek
+      sample_chain_ids:
+        label: Příklady ID transakčních řetězců
+      sample_fatal_chain_ids:
+        label: Příklady ID řetězců ve fatálním stavu
+      sample_intent_ids:
+        label: Příklady ID záměrů změn úložiště
       saved_until:
         label: Uloženo do
       scan:
@@ -1737,6 +1777,8 @@ cs:
         label: Scan
       scan_percent:
         label: Scan percent
+      scanned_chains:
+        label: Prověřené transakční řetězce
       scope:
         label: Scope
       secret:
@@ -1759,6 +1801,10 @@ cs:
         label: Sériové číslo
       server:
         label: Server
+      settled_chain_ids:
+        label: ID řetězců s uzavřenými záměry
+      settled_intents:
+        label: Uzavřené pozorovací záměry
       sha256sum:
         description: Kontrolní součet
         label: SHA256 suma
@@ -1828,6 +1874,8 @@ cs:
         label: Zdrojový node
       ss:
         label: Ss
+      stable_epoch:
+        label: Epocha se během kontroly nezměnila
       start:
         description: Spustit novou VPS
       start_menu_timeout:
@@ -2400,6 +2448,8 @@ cs:
       snapshot_download_no_common_source: snapshoty nemají společný dostupný zdroj
         pro inkrementální stažení
       snapshot_download_unavailable: snapshot není dostupný ke stažení
+      storage_freeze_conflict: Režim úložiště se změnil. Obnov stav a zkus to znovu.
+      storage_freeze_invalid_request: Zkontroluj požadavek na změnu režimu úložiště.
       storage_read_only: Úložiště je dočasně jen pro čtení. Zkus to prosím později.
       storage_signer_unavailable: Úložiště je dočasně nedostupné. Zkus to prosím později.
     password_changes:
@@ -3688,6 +3738,29 @@ cs:
             label: Velikost
           url:
             label: URL
+      storage_freeze:
+        actions:
+          read_only:
+            input:
+              expected_epoch:
+                description: Epocha ze stavu; pokud se mezitím změní, požadavek se
+                  zamítne
+              reason:
+                description: Důvod změny režimu úložiště
+          read_write:
+            input:
+              expected_epoch:
+                description: Epocha ze stavu; pokud se mezitím změní, požadavek se
+                  zamítne
+              reason:
+                description: Důvod změny režimu úložiště
+          settle_observer:
+            input:
+              expected_epoch:
+                description: Epocha režimu jen pro čtení ze stavu; pokud se změní,
+                  požadavek se zamítne
+              reason:
+                description: Důvod uzavření pozorovacích záměrů
       system_config:
         attributes:
           name:
