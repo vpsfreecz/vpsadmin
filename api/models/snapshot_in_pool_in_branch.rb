@@ -1,5 +1,6 @@
 require_relative 'confirmable'
 require_relative 'lockable'
+require_relative 'storage_snapshot_identity'
 
 class SnapshotInPoolInBranch < ApplicationRecord
   belongs_to :snapshot_in_pool
@@ -8,6 +9,14 @@ class SnapshotInPoolInBranch < ApplicationRecord
 
   include Confirmable
   include Lockable
+  include StorageSnapshotIdentity
+
+  private
+
+  def physical_identity_pool_supported?
+    dip = snapshot_in_pool&.dataset_in_pool
+    dip&.pool&.backup? && branch&.dataset_tree&.dataset_in_pool_id == dip.id
+  end
 
   class << self
     def live
