@@ -1,0 +1,93 @@
+name: Storage group snapshot v4 contract
+
+on:
+  push:
+    paths: &contract_paths
+      - ".github/workflows/storage-group-snapshot-contract.yml"
+      - "tests/contracts/storage_group_snapshot_v4/**"
+      - "tools/test-db"
+      - "tools/test_db.rb"
+      - "api/Gemfile"
+      - "api/Gemfile.lock"
+      - "api/db/**"
+      - "api/spec/spec_helper.rb"
+      - "api/spec/support/app_helper.rb"
+      - "api/spec/support/db_setup.rb"
+      - "api/spec/support/dataset_spec_helpers.rb"
+      - "api/spec/support/spec_plugins.rb"
+      - "api/spec/support/spec_seed.rb"
+      - "api/spec/support/storage_chain_spec_helpers.rb"
+      - "api/spec/support/transaction_engine_spec_helpers.rb"
+      - "api/spec/support/transaction_key_helpers.rb"
+      - "api/models/storage_effect_registry.rb"
+      - "api/models/storage_mutation_journal.rb"
+      - "api/models/storage_filesystem_identity.rb"
+      - "api/models/storage_mutation_target.rb"
+      - "api/models/transaction.rb"
+      - "api/models/transaction_chain.rb"
+      - "api/models/transaction_chains/dataset/group_snapshot.rb"
+      - "api/models/transactions/storage/create_snapshots.rb"
+      - "api/lib/vpsadmin/api/transaction_signer.rb"
+      - "libnodectld/Gemfile"
+      - "libnodectld/Gemfile.lock"
+      - "libnodectld/lib/nodectld/command.rb"
+      - "libnodectld/lib/nodectld/confirmations.rb"
+      - "libnodectld/lib/nodectld/db.rb"
+      - "libnodectld/lib/nodectld/storage_effect_registry.rb"
+      - "libnodectld/lib/nodectld/storage_group_snapshot_receipt.rb"
+      - "libnodectld/lib/nodectld/storage_mutation_receipt.rb"
+      - "libnodectld/lib/nodectld/storage_strict_dispatch.rb"
+      - "libnodectld/lib/nodectld/transaction_verifier.rb"
+      - "libnodectld/lib/nodectld/commands/dataset/group_snapshot.rb"
+      - "libnodectld/spec/support/cfg_helpers.rb"
+      - "flake.nix"
+      - "flake.lock"
+  pull_request:
+    paths: *contract_paths
+  workflow_dispatch:
+
+concurrency:
+  group: storage-group-v4-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            extra-substituters = https://cache.vpsadminos.org
+            extra-trusted-public-keys = cache.vpsadminos.org:wpIJlNZQIhS+0gFf1U3MC9sLZdLW3sh5qakOWGDoDrE=
+            fallback = true
+            connect-timeout = 15
+
+      - name: Prepare libosctl native extension
+        run: |
+          set -euo pipefail
+          os_source="$(nix flake archive --json . | jq -r .inputs.vpsadminos.path)"
+          os_dir="$(mktemp -d)"
+          cp -a "$os_source/." "$os_dir"
+          chmod -R u+w "$os_dir"
+          env VPSADMINOS_PATH="$os_dir" nix develop .#libnodectld -c bash -c '
+            set -euo pipefail
+            cd "$VPSADMINOS_PATH/libosctl/ext/libosctl"
+            ruby extconf.rb
+            make
+            cp native.so "$VPSADMINOS_PATH/libosctl/lib/libosctl/native.so"
+          '
+          printf 'VPSADMINOS_PATH=%s\n' "$os_dir" >> "$GITHUB_ENV"
+
+      - name: Check private database teardown failure
+        run: tests/contracts/storage_group_snapshot_v4/cleanup_test.sh
+
+      - name: Run isolated API to NodeCtld contract
+        run: tests/contracts/storage_group_snapshot_v4/run.sh
