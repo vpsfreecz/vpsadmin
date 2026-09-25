@@ -17,13 +17,14 @@ module NodeCtld
       rollback
     ].freeze
 
-    def initialize(daemon)
+    def initialize(daemon, activity: nil)
       @daemon = daemon
+      @activity = activity
       @mutex = Mutex.new
       @queues = {}
 
       QUEUES.each do |q|
-        @queues[q] = TransactionQueue.new(q, @daemon.start_time)
+        @queues[q] = TransactionQueue.new(q, @daemon.start_time, activity:)
       end
     end
 
@@ -54,7 +55,7 @@ module NodeCtld
 
       sync do
         queues.each do |q|
-          @queues[q].reserve(chain_id, priority:)
+          @queues[q].reserve(chain_id, priority:, command: cmd)
         end
       end
     end
@@ -143,6 +144,29 @@ module NodeCtld
     def total_limit
       sync do
         @queues.values.inject(0) { |sum, q| sum + q.total_size }
+      end
+    end
+
+    # A reservation may hold @mutex while waiting on a semaphore. Never wait
+    # indefinitely to sample it: nil means the caller must report unknown.
+    def activity_counts(deadline:)
+      until @mutex.try_lock
+        return nil if Process.clock_gettime(Process::CLOCK_MONOTONIC) >= deadline
+
+        sleep 0.001
+      end
+      begin
+        return nil unless QUEUES.uniq.length == QUEUES.length &&
+                          @queues.keys.sort == QUEUES.sort
+
+        @queues.each_with_object({}) do |(name, queue), counts|
+          sample = queue.activity_counts(deadline:)
+          return nil unless sample
+
+          counts[name] = sample
+        end
+      ensure
+        @mutex.unlock
       end
     end
 

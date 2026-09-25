@@ -1,9 +1,11 @@
 module NodeCtld
   class Worker
-    attr_reader :cmd
+    attr_reader :cmd, :activity_token
 
-    def initialize(cmd)
+    def initialize(cmd, activity: nil, activity_token: nil)
       @cmd = cmd
+      @activity = activity
+      @activity_token = activity_token
       @killing = false
       work
     end
@@ -17,6 +19,7 @@ module NodeCtld
     end
 
     def kill(set_status = true)
+      @activity&.worker_killed(@activity_token)
       @killing = true
 
       @thread.kill
