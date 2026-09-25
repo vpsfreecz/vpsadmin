@@ -39,6 +39,15 @@ class CiTestSelectionTest < Minitest::Test
     assert_equal 'skip', selection.mode
   end
 
+  def test_storage_group_contract_uses_its_direct_workflow
+    selection = selector.select([
+                                  '.github/workflows/storage-group-snapshot-contract.yml',
+                                  'tests/contracts/storage_group_snapshot_v4/node_consumer_spec.rb'
+                                ])
+
+    assert_equal 'skip', selection.mode
+  end
+
   def test_mixed_skip_and_runtime_changes_select_runtime_tags
     selection = selector.select(['tests/README.md', 'webui/pages/page_login.php'])
 

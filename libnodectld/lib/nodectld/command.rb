@@ -3,6 +3,8 @@ require 'libosctl'
 require 'nodectld/exceptions'
 require 'nodectld/utils'
 require 'nodectld/storage_mutation_receipt'
+require 'nodectld/storage_group_snapshot_receipt'
+require 'nodectld/storage_strict_dispatch'
 require 'nodectld/storage_observer_settlement'
 
 module NodeCtld
@@ -12,11 +14,11 @@ module NodeCtld
 
     FAILURE_LOG_ERROR_BYTES = 4096
 
-    attr_reader :trans
+    attr_reader :trans, :strict_group_snapshot_receipt
 
     @@handlers = {}
 
-    def initialize(trans)
+    def initialize(trans, strict_storage_dispatch: false)
       @chain = {
         id: trans['transaction_chain_id'].to_i,
         state: trans['chain_state'].to_i,
@@ -30,9 +32,12 @@ module NodeCtld
       @status = :failed
       @m_attr = Mutex.new
       @storage_attempts = []
+      @strict_storage_dispatch = strict_storage_dispatch
     end
 
     def execute
+      return false unless strict_dispatch_allowed?(original_chain_direction)
+
       klass = handler
 
       unless klass
@@ -56,7 +61,6 @@ module NodeCtld
         rollback_without_execute
         return false
       end
-
       unless param.is_a?(Hash)
         record_output(original_chain_direction, { error: 'Bad input syntax' })
         rollback_without_execute
@@ -106,6 +110,14 @@ module NodeCtld
     end
 
     def save(db)
+      if @strict_storage_refused
+        db.transaction do |t|
+          save_transaction(t, @storage_guard_uncertain ? 5 : nil)
+          close_chain(t, true)
+        end
+        return
+      end
+
       seal_interrupted_storage_attempt
       storage_phase = storage_receipt_phase
       @storage_guard_uncertain = true if storage_phase == 5
@@ -121,8 +133,7 @@ module NodeCtld
         if ((@status == :ok || @status == :warning) && !@rolledback) || keep_going?
           # Chain is finished, close up
           if chain_finished?
-            run_confirmations(t)
-            close_chain(t)
+            close_proved_chain(t, storage_phase)
 
           else # There are more transaction in this chain
             continue_chain(t)
@@ -140,8 +151,7 @@ module NodeCtld
             # Is it the last transaction to rollback?
             fail_followers(t) if @rolledback
 
-            run_confirmations(t)
-            close_chain(t)
+            close_proved_chain(t, storage_phase)
 
           elsif reversible?
             rollback_chain(t)
@@ -149,8 +159,7 @@ module NodeCtld
 
           else
             fail_followers(t)
-            run_confirmations(t)
-            close_chain(t)
+            close_proved_chain(t, storage_phase)
           end
         end
       end
@@ -162,12 +171,14 @@ module NodeCtld
       log(:debug, self, 'Saving transaction')
 
       if @cmd && current_chain_direction == :execute && @status != :failed &&
-         !@storage_guard_uncertain
+         !@storage_guard_uncertain && !strict_group_pending_save?
         @cmd.on_save(db)
         record_output(:execute, @cmd.output)
       end
 
-      done = if current_chain_direction == :execute
+      done = if @strict_storage_refused
+               @trans['done'].to_i
+             elsif current_chain_direction == :execute
                1
              else
                2 # rolled back
@@ -208,6 +219,34 @@ module NodeCtld
     def run_confirmations(t)
       c = Confirmations.new(chain_id)
       c.run(t, current_chain_direction)
+    end
+
+    def close_proved_chain(db, storage_phase)
+      if @strict_storage_dispatch
+        begin
+          StorageStrictDispatch.prove_chain!(
+            db, chain_id:, current_id: id
+          )
+        rescue StorageStrictDispatch::Refused => e
+          @strict_storage_refused = true
+          @status = :failed
+          record_output(original_chain_direction,
+                        { error: "Strict chain closure refused: #{e.message}" })
+          db.prepared(
+            'UPDATE transactions SET done = ?, status = 0, output = ?, ' \
+            'finished_at = UTC_TIMESTAMP() WHERE id = ?',
+            @trans['done'].to_i, output_json, id
+          )
+          StorageStrictDispatch.quarantine_started!(db, chain_id)
+          close_chain(db, true)
+          return
+        end
+      end
+
+      @cmd.on_save(db) if strict_group_pending_save?
+
+      run_confirmations(db)
+      close_chain(db)
     end
 
     def continue_chain(db)
@@ -251,11 +290,14 @@ module NodeCtld
         state, chain_id
       )
 
-      # remove signature from all transactions
-      db.prepared(
-        'UPDATE transactions SET signature = NULL WHERE transaction_chain_id = ?',
-        chain_id
-      )
+      # Keep signed evidence for a test-only strict fatal chain. Such a chain
+      # is no longer selected by the daemon and cannot be automatically retried.
+      unless fatal && @strict_storage_dispatch
+        db.prepared(
+          'UPDATE transactions SET signature = NULL WHERE transaction_chain_id = ?',
+          chain_id
+        )
+      end
 
       # release all locks
       return if fatal
@@ -305,6 +347,16 @@ module NodeCtld
     end
 
     def killed(hard)
+      if @strict_storage_dispatch && hard
+        @strict_storage_refused = true
+        @status = :failed
+        @time_end = Time.now.utc
+        @storage_guard_uncertain = true if @active_storage_attempt || @storage_guard
+        record_output(method_direction(@current_method) || original_chain_direction,
+                      { error: 'Interrupted strict command; outcome requires inspection' })
+        return
+      end
+
       if type.to_i == 5204 && @storage_guard.is_a?(Hash)
         @status = :failed
         @interrupted_storage_guard = true
@@ -431,7 +483,56 @@ module NodeCtld
       @@handlers.dup
     end
 
+    def strict_nested_command!(klass)
+      return unless @strict_storage_dispatch
+
+      handle = @@handlers.find { |_number, name| name == klass.to_s }&.first
+      raise StorageStrictDispatch::Refused, 'unregistered nested command' unless handle
+
+      entry = StorageEffectRegistry.fetch!(handle)
+      return if entry.execute_strict_support == :proved_no_storage_effect
+
+      raise StorageStrictDispatch::Refused, "unsupported nested storage effect #{handle}"
+    rescue StorageEffectRegistry::Unclassified => e
+      raise StorageStrictDispatch::Refused, e.message
+    end
+
     private
+
+    def strict_dispatch_allowed?(direction)
+      return true unless @strict_storage_dispatch
+
+      prior_execute = @storage_attempts.find do |attempt, _status, _before, _after|
+        attempt.is_a?(StorageGroupSnapshotReceipt) && attempt.direction == :execute
+      end
+      proof = StorageStrictDispatch.check!(
+        @trans, direction, handler: handler, prior_execute:
+      ) do |guard, group_receipt|
+        @storage_guard = guard
+        @strict_group_snapshot_receipt = group_receipt if group_receipt
+      end
+      if type.to_i == 5204
+        @strict_guarded_snapshot = true
+        @strict_signed_input_digest = proof
+      elsif type.to_i == 5215
+        @strict_signed_input_digest = proof
+      end
+      true
+    rescue StorageStrictDispatch::Uncertain => e
+      @storage_guard_uncertain = true
+      strict_refuse!(direction, e.message)
+      false
+    rescue StorageStrictDispatch::Refused => e
+      strict_refuse!(direction, e.message)
+      false
+    end
+
+    def strict_refuse!(direction, reason)
+      @strict_storage_refused = true
+      @status = :failed
+      @time_end = Time.now.utc
+      record_output(direction, { error: "Strict storage dispatch refused: #{reason}" })
+    end
 
     def load_outputs
       raw = trans['output']
@@ -571,17 +672,35 @@ module NodeCtld
       @current_klass = klass
       @current_method = m
       direction = method_direction(m)
+      return unless strict_dispatch_allowed?(direction)
+
       handler_output_before = @cmd.output.clone
 
       seal_interrupted_storage_attempt if m == :rollback
       return if @storage_guard_uncertain
 
-      if type.to_i == 5204 && @storage_guard
+      if [5204, 5215].include?(type.to_i) && @storage_guard
         begin
-          @active_storage_attempt = StorageMutationReceipt.new(
-            @storage_guard, @trans,
-            JSON.parse(@trans['input']).fetch('input'), direction
-          ).start!
+          @active_storage_attempt = if type.to_i == 5215
+                                      @strict_group_snapshot_receipt.start!
+                                    else
+                                      StorageMutationReceipt.new(
+                                        @storage_guard, @trans,
+                                        JSON.parse(@trans['input']).fetch('input'), direction,
+                                        strict: @strict_storage_dispatch,
+                                        strict_signed_input_digest: @strict_signed_input_digest
+                                      ).start!
+                                    end
+        rescue StorageMutationReceipt::BindingRefused,
+               StorageGroupSnapshotReceipt::BindingRefused => e
+          if @strict_storage_dispatch
+            strict_refuse!(direction, e.message)
+          else
+            @status = :failed
+            @storage_guard_uncertain = true
+            record_output(direction, { error: e.message })
+          end
+          return
         rescue StandardError => e
           @status = :failed
           @storage_guard_uncertain = true
@@ -629,6 +748,9 @@ module NodeCtld
         record_output(direction, @output)
         record_storage_attempt(direction)
         rollback_without_execute if m == :exec
+      rescue StorageStrictDispatch::Refused => e
+        strict_refuse!(direction, e.message)
+        @storage_guard_uncertain = true if @active_storage_attempt
       rescue StandardError => e
         @status = :failed
         @output = {
@@ -651,6 +773,11 @@ module NodeCtld
       return unless @active_storage_attempt
 
       before, after = @cmd.storage_observation(direction)
+      if @active_storage_attempt.is_a?(StorageGroupSnapshotReceipt) &&
+         (!before.is_a?(Array) || !after.is_a?(Array))
+        raise 'group snapshot postflight is unavailable'
+      end
+
       @storage_attempts << [@active_storage_attempt, @status, before, after]
       @active_storage_attempt = nil
     rescue StandardError
@@ -682,6 +809,9 @@ module NodeCtld
       return 5 if @storage_guard_uncertain && @storage_guard
       return if @storage_attempts.empty?
       return 5 if @active_storage_attempt
+      if @storage_attempts.any? { |attempt, _status, _before, _after| attempt.is_a?(StorageGroupSnapshotReceipt) }
+        return group_snapshot_receipt_phase
+      end
 
       execute = @storage_attempts.find do |attempt, _status, _before, _after|
         attempt.direction == :execute
@@ -720,6 +850,55 @@ module NodeCtld
                   missing_after_same_owner?(before, after)
 
       5
+    end
+
+    def group_snapshot_receipt_phase
+      execute = @storage_attempts.find { |attempt, _status, _before, _after| attempt.direction == :execute }
+      rollback = @storage_attempts.find { |attempt, _status, _before, _after| attempt.direction == :rollback }
+      if execute
+        _attempt, status, before, after = execute
+        return 5 unless before.length == after.length && before.length.between?(1, 32)
+
+        created = before.zip(after).map do |prior, current|
+          StorageGroupSnapshotReceipt.created?(prior, current)
+        end
+        unchanged = before.zip(after).map do |prior, current|
+          StorageGroupSnapshotReceipt.same?(prior, current)
+        end
+        return 2 if !rollback && status == :ok && created.all?
+        return 4 if !rollback && status == :failed && unchanged.all?
+        return 5 unless rollback
+
+        _rollback_attempt, rollback_status, rollback_before, rollback_after = rollback
+        return 5 unless rollback_status == :ok && rollback_before == after &&
+                        rollback_after.length == before.length
+        return 4 if unchanged.all? && rollback_after == before
+
+        return 3 if created.zip(unchanged, rollback_before, rollback_after).all? do |made, same, prior, current|
+          (made && StorageGroupSnapshotReceipt.compensated?(prior, current)) ||
+          (same && prior == current && prior[:presence] == :missing)
+        end
+
+        return 5
+      end
+
+      return 5 unless rollback
+
+      attempt, status, before, after = rollback
+      return 5 unless status == :ok && before.length == attempt.targets.length &&
+                      after.length == before.length
+
+      return 3 if before.zip(after, attempt.created_guids).all? do |prior, current, guid|
+        guid && prior[:guid] == guid && StorageGroupSnapshotReceipt.compensated?(prior, current)
+      end
+
+      5
+    end
+
+    def strict_group_pending_save?
+      @strict_storage_dispatch && type.to_i == 5215 && @cmd &&
+        current_chain_direction == :execute && @status == :ok &&
+        !@rolledback && !@storage_guard_uncertain
     end
 
     def created_snapshot_evidence?(before, after)

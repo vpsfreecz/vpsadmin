@@ -68,7 +68,11 @@ RSpec.describe TransactionChains::DatasetInPool::DetachBackupHeads do
     _, primary = create_dataset_with_pool!(
       user: user, pool: primary_pool, name: "detach-frozen-#{SecureRandom.hex(4)}"
     )
-    StorageFreezeControl.singleton!.update!(mode: :read_only)
+    StorageMutationAdmission.set_read_only_for_user!(
+      read_only: true, expected_epoch: StorageFreezeControl.singleton!.epoch,
+      reason: 'nested admission spec', user: SpecSeed.admin,
+      user_session: create_open_session!(user: SpecSeed.admin, auth_type: 'basic')
+    )
     before_chains = TransactionChain.count
 
     expect do
