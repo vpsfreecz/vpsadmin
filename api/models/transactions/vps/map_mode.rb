@@ -2,6 +2,7 @@ module Transactions::Vps
   class MapMode < ::Transaction
     t_name :vps_map_mode
     t_type 2034
+    storage_effect :osctl_storage_property
     queue :vps
 
     def params(vps, original_map_mode)

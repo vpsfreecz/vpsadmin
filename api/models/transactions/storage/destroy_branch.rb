@@ -2,6 +2,7 @@ module Transactions::Storage
   class DestroyBranch < ::Transaction
     t_name :storage_destroy_branch
     t_type 5207
+    storage_effect :branch_destroy
     queue :storage
     irreversible
 

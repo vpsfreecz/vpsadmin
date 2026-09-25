@@ -17,6 +17,18 @@ RSpec.describe NodeCtld::RemoteCommands::Chain do
     BigDecimal(sql_value('SELECT value FROM cluster_resource_uses WHERE id = ?', row_id).to_s)
   end
 
+  def insert_observer_intent(chain_id, tx_id, phase: 6)
+    sql_insert('storage_mutation_intents', {
+      token: SecureRandom.hex(24), transaction_chain_id: chain_id,
+      transaction_id: tx_id,
+      node_id: NodeCtldSpec::BaselineSeed.ids.fetch(:node_id),
+      node_catalog_id: NodeCtldSpec::BaselineSeed.ids.fetch(:node_id),
+      kind: 'observer_dependency', phase:, protocol_version: 1,
+      manifest_digest: Digest::SHA256.hexdigest("#{chain_id}:#{tx_id}"),
+      created_at: Time.now.utc, updated_at: Time.now.utc
+    })
+  end
+
   it 'returns grouped confirmation metadata by transaction id' do
     row1 = insert_cluster_resource_use(value: 10)
     row2 = insert_cluster_resource_use(value: 20)
@@ -242,6 +254,23 @@ RSpec.describe NodeCtld::RemoteCommands::Chain do
     )
   end
 
+  it 'refuses lock release and resolution while read-only' do
+    chain_id = insert_chain(state: NodeCtldSpec::TxState::CHAIN_FATAL)
+    lock_id = insert_resource_lock(chain_id: chain_id)
+    sql_update('storage_freeze_controls', { mode: 1 }, 'id = ?', 1)
+
+    release = described_class.new({ command: 'release', chain: chain_id, release: ['locks'] }, nil)
+    resolve = described_class.new({ command: 'resolve', chain: chain_id }, nil)
+    [release, resolve].each do |command|
+      expect { with_db_stub { command.exec } }
+        .to raise_error(NodeCtld::RemoteCommandError, /Storage is read-only/)
+    end
+
+    expect(sql_row('SELECT id FROM resource_locks WHERE id = ?', lock_id)).not_to be_nil
+    expect(sql_value('SELECT state FROM transaction_chains WHERE id = ?', chain_id))
+      .to eq(NodeCtldSpec::TxState::CHAIN_FATAL)
+  end
+
   it 'retries a full chain' do
     chain_id = insert_chain(
       state: NodeCtldSpec::TxState::CHAIN_FAILED,
@@ -272,6 +301,36 @@ RSpec.describe NodeCtld::RemoteCommands::Chain do
       NodeCtldSpec::TxState::CHAIN_QUEUED
     )
     expect(sql_value('SELECT progress FROM transaction_chains WHERE id = ?', chain_id)).to eq(0)
+  end
+
+  it 'refuses to reopen a settled observer chain under read-write' do
+    chain_id = insert_chain(state: NodeCtldSpec::TxState::CHAIN_FAILED)
+    tx_id = insert_transaction(transaction_chain_id: chain_id, handle: 5216,
+                               done: NodeCtldSpec::TxState::TX_DONE_DONE)
+    intent_id = insert_observer_intent(chain_id, tx_id)
+    cmd = described_class.new({ command: 'retry', chain: chain_id }, nil)
+
+    expect { with_db_stub { cmd.exec } }
+      .to raise_error(NodeCtld::RemoteCommandError, /requires new API admission/)
+    expect(sql_value('SELECT state FROM transaction_chains WHERE id = ?', chain_id))
+      .to eq(NodeCtldSpec::TxState::CHAIN_FAILED)
+    expect(sql_value('SELECT done FROM transactions WHERE id = ?', tx_id))
+      .to eq(NodeCtldSpec::TxState::TX_DONE_DONE)
+    expect(sql_value('SELECT phase FROM storage_mutation_intents WHERE id = ?', intent_id)).to eq(6)
+  end
+
+  it 'refuses to reopen an old unjournaled classified storage chain' do
+    chain_id = insert_chain(state: NodeCtldSpec::TxState::CHAIN_FAILED)
+    tx_id = insert_transaction(transaction_chain_id: chain_id, handle: 1001,
+                               done: NodeCtldSpec::TxState::TX_DONE_DONE)
+    cmd = described_class.new({ command: 'retry', chain: chain_id }, nil)
+
+    expect { with_db_stub { cmd.exec } }
+      .to raise_error(NodeCtld::RemoteCommandError, /requires new API admission/)
+    expect(sql_value('SELECT state FROM transaction_chains WHERE id = ?', chain_id))
+      .to eq(NodeCtldSpec::TxState::CHAIN_FAILED)
+    expect(sql_value('SELECT done FROM transactions WHERE id = ?', tx_id))
+      .to eq(NodeCtldSpec::TxState::TX_DONE_DONE)
   end
 
   it 'reopens the chain and resets transactions from the requested point' do
@@ -331,5 +390,40 @@ RSpec.describe NodeCtld::RemoteCommands::Chain do
       NodeCtld::RemoteCommandError,
       /Transaction 999999 not found in chain #{chain_id}/
     )
+  end
+
+  it 'refuses chain retry while storage is read-only without reopening the chain' do
+    chain_id = insert_chain(state: NodeCtldSpec::TxState::CHAIN_FAILED)
+    tx_id = insert_transaction(transaction_chain_id: chain_id, handle: 5204,
+                               done: NodeCtldSpec::TxState::TX_DONE_DONE)
+    sql_update('storage_freeze_controls', { mode: 1 }, 'id = ?', 1)
+    cmd = described_class.new({ command: 'retry', chain: chain_id }, nil)
+
+    expect { with_db_stub { cmd.exec } }
+      .to raise_error(NodeCtld::RemoteCommandError, /Storage is read-only/)
+    expect(sql_value('SELECT state FROM transaction_chains WHERE id = ?', chain_id))
+      .to eq(NodeCtldSpec::TxState::CHAIN_FAILED)
+    expect(sql_value('SELECT done FROM transactions WHERE id = ?', tx_id))
+      .to eq(NodeCtldSpec::TxState::TX_DONE_DONE)
+  end
+
+  it 'refuses manual confirmation while storage is read-only' do
+    resource_id = insert_cluster_resource_use(value: 10, confirmed: 0)
+    chain_id = insert_chain
+    tx_id = insert_transaction(transaction_chain_id: chain_id,
+                               handle: NodeCtldSpec::TestHandles::OK)
+    insert_confirmation(transaction_id: tx_id, class_name: 'ClusterResourceUse',
+                        table_name: 'cluster_resource_uses', row_pks: { 'id' => resource_id },
+                        confirm_type: 0)
+    sql_update('storage_freeze_controls', { mode: 1 }, 'id = ?', 1)
+    cmd = described_class.new({ command: 'confirm', chain: chain_id,
+                                direction: 'execute', success: true }, nil)
+
+    expect { with_db_stub { cmd.exec } }
+      .to raise_error(NodeCtld::RemoteCommandError, /Storage is read-only/)
+    expect(sql_value('SELECT confirmed FROM cluster_resource_uses WHERE id = ?', resource_id))
+      .to eq(0)
+    expect(sql_value('SELECT done FROM transaction_confirmations WHERE transaction_id = ?', tx_id))
+      .to eq(0)
   end
 end

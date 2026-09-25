@@ -2,6 +2,7 @@ module Transactions::Storage
   class DestroySnapshot < ::Transaction
     t_name :storage_destroy_snapshot
     t_type 5212
+    storage_effect :snapshot_destroy
     queue :storage
     irreversible
 

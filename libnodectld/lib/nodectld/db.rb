@@ -8,7 +8,8 @@ module NodeCtld
     def self.open
       db = Db.new
       yield(db)
-      db.close
+    ensure
+      db&.close
     end
 
     def initialize(db = nil)

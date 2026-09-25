@@ -80,6 +80,8 @@ class TransactionChain < ApplicationRecord
     chain = nil
 
     TransactionChain.transaction(requires_new: true) do
+      StorageMutationAdmission.check! if StorageEffectRegistry.chain_admission_required?(self)
+
       chain = new
       chain.name = chain_name
       chain.state = :staged
@@ -136,6 +138,8 @@ class TransactionChain < ApplicationRecord
   # @option opts [Symbol] method (:link_chain)
   # @option opts [Hash] hooks ({})
   def self.use_in(chain, opts = {})
+    StorageMutationAdmission.check! if StorageEffectRegistry.chain_admission_required?(self)
+
     opts[:args] ||= []
     opts[:kwargs] ||= {}
     opts[:urgent] = false if opts[:urgent].nil?
@@ -247,6 +251,11 @@ class TransactionChain < ApplicationRecord
 
   def self.allow_empty?
     @allow_empty
+  end
+
+  def self.storage_effect(effect = nil)
+    @storage_effect = effect if effect
+    @storage_effect
   end
 
   def initialize(*_, **_)
@@ -494,6 +503,9 @@ class TransactionChain < ApplicationRecord
   # @option opts [Symbol] queue
   # @param retain_context [Boolean]
   def do_append(dep, klass, opts, block, retain_context = false)
+    StorageMutationAdmission.check! if
+      StorageEffectRegistry.fetch!(klass.t_type).admission_required
+
     t_opts = {
       args: opts[:args] && (opts[:args].is_a?(Array) ? opts[:args] : [opts[:args]]),
       kwargs: opts[:kwargs],

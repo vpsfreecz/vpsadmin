@@ -1,3 +1,5 @@
+require 'nodectld/storage_effect_registry'
+
 module NodeCtld::RemoteCommands
   class Chain < Base
     handle :chain
@@ -34,6 +36,7 @@ module NodeCtld::RemoteCommands
 
       when 'confirm'
         db.transaction do |t|
+          require_storage_write_admission!(t)
           c = NodeCtld::Confirmations.new(@chain)
           transactions = @transactions
 
@@ -59,6 +62,7 @@ module NodeCtld::RemoteCommands
 
       when 'release'
         db.transaction do |t|
+          require_storage_write_admission!(t)
           @release.each do |r|
             case r
             when 'locks'
@@ -71,17 +75,22 @@ module NodeCtld::RemoteCommands
         end
 
       when 'resolve'
-        db.prepared('UPDATE transaction_chains SET state = 6 WHERE id = ?', @chain)
+        db.transaction do |t|
+          require_storage_write_admission!(t)
+          t.prepared('UPDATE transaction_chains SET state = 6 WHERE id = ?', @chain)
+        end
 
       when 'retry'
         db.transaction do |t|
+          require_storage_write_admission!(t)
+          refuse_storage_chain_retry!(t)
           retry_chain(t, @chain, @transactions && @transactions.first)
         end
       end
 
-      db.close
-
       ok.update({ output: out })
+    ensure
+      db&.close
     end
 
     def release_locks(t)
@@ -189,6 +198,39 @@ module NodeCtld::RemoteCommands
         progress,
         chain_id
       )
+    end
+
+    def refuse_storage_chain_retry!(db)
+      if db.prepared(
+        'SELECT id FROM storage_mutation_intents WHERE transaction_chain_id = ? LIMIT 1',
+        @chain
+      ).get
+        raise NodeCtld::RemoteCommandError, 'Storage chain retry requires new API admission'
+      end
+
+      handles = NodeCtld::StorageEffectRegistry::ENTRIES.filter_map do |handle, entry|
+        handle if entry.admission_required
+      end
+      handles << 5225 # API-only storage handle; old node registration is absent.
+      handle_sql = handles.map(&:to_i).join(',')
+      return unless db.prepared(
+        "SELECT id FROM transactions WHERE transaction_chain_id = ? AND handle IN (#{handle_sql}) LIMIT 1",
+        @chain
+      ).get
+
+      raise NodeCtld::RemoteCommandError, 'Storage chain retry requires new API admission'
+    end
+
+    # These admin routes can reopen physical work or force catalog changes.
+    # Refuse all such admin actions during a freeze; in-flight command rollback
+    # and normal confirmation use Command.save and remain available.
+    def require_storage_write_admission!(db)
+      row = db.prepared(
+        'SELECT mode FROM storage_freeze_controls WHERE id = 1 FOR UPDATE'
+      ).get
+      return if row && row['mode'].to_i == 0
+
+      raise NodeCtld::RemoteCommandError, 'Storage is read-only; chain admin writes are unavailable'
     end
 
     protected

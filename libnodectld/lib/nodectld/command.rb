@@ -2,6 +2,8 @@ require 'json'
 require 'libosctl'
 require 'nodectld/exceptions'
 require 'nodectld/utils'
+require 'nodectld/storage_mutation_receipt'
+require 'nodectld/storage_observer_settlement'
 
 module NodeCtld
   class Command
@@ -27,6 +29,7 @@ module NodeCtld
       @output = {}
       @status = :failed
       @m_attr = Mutex.new
+      @storage_attempts = []
     end
 
     def execute
@@ -54,6 +57,12 @@ module NodeCtld
         return false
       end
 
+      unless param.is_a?(Hash)
+        record_output(original_chain_direction, { error: 'Bad input syntax' })
+        rollback_without_execute
+        return false
+      end
+
       unless check_signed_opts(input)
         record_output(
           original_chain_direction,
@@ -63,6 +72,12 @@ module NodeCtld
         return false
       end
 
+      @storage_guard = param['storage_guard']
+      if param.has_key?('storage_guard') && !@storage_guard.is_a?(Hash)
+        record_output(original_chain_direction, { error: 'Malformed storage guard' })
+        rollback_without_execute
+        return false
+      end
       param[:vps_id] = @trans['vps_id'].to_i
 
       @cmd = class_from_name(klass).new(self, param)
@@ -79,7 +94,7 @@ module NodeCtld
         @status = :failed
       end
 
-      @time_end = Time.new.utc
+      @time_end = Time.now.utc
     end
 
     def bad_value(klass)
@@ -91,8 +106,17 @@ module NodeCtld
     end
 
     def save(db)
+      seal_interrupted_storage_attempt
+      storage_phase = storage_receipt_phase
+      @storage_guard_uncertain = true if storage_phase == 5
+
       db.transaction do |t|
-        save_transaction(t)
+        save_transaction(t, storage_phase)
+
+        if @storage_guard_uncertain
+          close_chain(t, true)
+          next
+        end
 
         if ((@status == :ok || @status == :warning) && !@rolledback) || keep_going?
           # Chain is finished, close up
@@ -134,10 +158,11 @@ module NodeCtld
       post_save_transaction
     end
 
-    def save_transaction(db)
+    def save_transaction(db, storage_phase = nil)
       log(:debug, self, 'Saving transaction')
 
-      if @cmd && current_chain_direction == :execute && @status != :failed
+      if @cmd && current_chain_direction == :execute && @status != :failed &&
+         !@storage_guard_uncertain
         @cmd.on_save(db)
         record_output(:execute, @cmd.output)
       end
@@ -162,10 +187,20 @@ module NodeCtld
         @time_end && @time_end.strftime('%Y-%m-%d %H:%M:%S'),
         @trans['id']
       )
+
+      @storage_attempts.each do |attempt, status, before, after|
+        attempt.finish!(db, status, before, after)
+      end
+      settlement = @unsettled_storage_attempt || @storage_attempts.last&.first
+      settlement&.settle!(db, storage_phase) if storage_phase
+      return unless storage_phase == 5 && !settlement && @storage_guard
+
+      StorageMutationReceipt.quarantine_guard!(db, @storage_guard, @trans)
     end
 
     def post_save_transaction
-      return unless @cmd && current_chain_direction == :execute && @status != :failed
+      return unless @cmd && current_chain_direction == :execute && @status != :failed &&
+                    !@storage_guard_uncertain
 
       @cmd.post_save
     end
@@ -239,17 +274,19 @@ module NodeCtld
           WHERE transaction_chain_id = ?',
         chain_id
       )
+
+      StorageObserverSettlement.settle_chain!(db, chain_id)
     end
 
     def fail_followers(db)
       log(:debug, self, 'Fail followers')
       db.prepared(
         'UPDATE transactions
-        SET done = 1, status = 0, output = ?
+        SET done = 1, status = 0, output = ?, finished_at = UTC_TIMESTAMP()
         WHERE
           transaction_chain_id = ?
           AND id > ?',
-        output_json(:execute, { error: 'Dependency failed' }),
+        output_json(:execute, { error: 'Dependency failed', skipped: true }),
         chain_id,
         id
       )
@@ -259,15 +296,26 @@ module NodeCtld
       log(:debug, self, 'Fail all')
       db.prepared(
         'UPDATE transactions
-        SET done = 1, status = 0, output = ?
+        SET done = 1, status = 0, output = ?, finished_at = UTC_TIMESTAMP()
         WHERE
           transaction_chain_id = ?',
-        output_json(:execute, { error: 'Chain failed' }),
+        output_json(:execute, { error: 'Chain failed', skipped: true }),
         chain_id
       )
     end
 
     def killed(hard)
+      if type.to_i == 5204 && @storage_guard.is_a?(Hash)
+        @status = :failed
+        @interrupted_storage_guard = true
+        @storage_guard_uncertain = true
+        record_output(
+          method_direction(@current_method) || current_chain_direction,
+          { error: 'Interrupted; storage needs reconciliation' }
+        )
+        return
+      end
+
       return unless hard
 
       @status = :failed
@@ -303,6 +351,14 @@ module NodeCtld
 
     def type
       @trans['handle']
+    end
+
+    def successful_snapshot_execute_identity
+      @active_storage_attempt&.successful_execute_identity
+    end
+
+    def storage_snapshot_target
+      @active_storage_attempt
     end
 
     def queue
@@ -363,7 +419,16 @@ module NodeCtld
     end
 
     def self.register(klass, type)
+      previous = @@handlers[type]
+      if previous && previous != klass
+        raise "duplicate command handle #{type}: #{previous} and #{klass}"
+      end
+
       @@handlers[type] = klass
+    end
+
+    def self.registered_handlers
+      @@handlers.dup
     end
 
     private
@@ -508,6 +573,23 @@ module NodeCtld
       direction = method_direction(m)
       handler_output_before = @cmd.output.clone
 
+      seal_interrupted_storage_attempt if m == :rollback
+      return if @storage_guard_uncertain
+
+      if type.to_i == 5204 && @storage_guard
+        begin
+          @active_storage_attempt = StorageMutationReceipt.new(
+            @storage_guard, @trans,
+            JSON.parse(@trans['input']).fetch('input'), direction
+          ).start!
+        rescue StandardError => e
+          @status = :failed
+          @storage_guard_uncertain = true
+          record_output(direction, { error: e.message })
+          return
+        end
+      end
+
       begin
         ret = @cmd.send(m)
 
@@ -524,6 +606,7 @@ module NodeCtld
           direction,
           output_delta(handler_output_before, @cmd.output)
         )
+        record_storage_attempt(direction)
       rescue SystemCommandFailed => e
         @status = :failed
         @output = {
@@ -535,6 +618,7 @@ module NodeCtld
           direction,
           @output.merge(output_delta(handler_output_before, @cmd.output))
         )
+        record_storage_attempt(direction)
 
         if m == :exec
           handle_exec_failure(klass)
@@ -543,6 +627,7 @@ module NodeCtld
         @status = :failed
         @output = { error: 'Command not implemented' }
         record_output(direction, @output)
+        record_storage_attempt(direction)
         rollback_without_execute if m == :exec
       rescue StandardError => e
         @status = :failed
@@ -554,11 +639,105 @@ module NodeCtld
           direction,
           @output.merge(output_delta(handler_output_before, @cmd.output))
         )
+        record_storage_attempt(direction)
 
         if m == :exec
           handle_exec_failure(klass)
         end
       end
+    end
+
+    def record_storage_attempt(direction)
+      return unless @active_storage_attempt
+
+      before, after = @cmd.storage_observation(direction)
+      @storage_attempts << [@active_storage_attempt, @status, before, after]
+      @active_storage_attempt = nil
+    rescue StandardError
+      @storage_guard_uncertain = true
+      @unsettled_storage_attempt = @active_storage_attempt
+      @active_storage_attempt = nil
+    end
+
+    def seal_interrupted_storage_attempt
+      return unless @active_storage_attempt
+
+      if @interrupted_storage_guard
+        @unsettled_storage_attempt = @active_storage_attempt
+        @active_storage_attempt = nil
+        return
+      end
+
+      @cmd.capture_interrupted_execute_observation
+      record_storage_attempt(:execute)
+    rescue StandardError
+      @storage_guard_uncertain = true
+      @unsettled_storage_attempt = @active_storage_attempt
+      @active_storage_attempt = nil
+    end
+
+    def storage_receipt_phase
+      return 5 if @interrupted_storage_guard
+      return 5 if @unsettled_storage_attempt
+      return 5 if @storage_guard_uncertain && @storage_guard
+      return if @storage_attempts.empty?
+      return 5 if @active_storage_attempt
+
+      execute = @storage_attempts.find do |attempt, _status, _before, _after|
+        attempt.direction == :execute
+      end
+      rollback = @storage_attempts.find do |attempt, _status, _before, _after|
+        attempt.direction == :rollback
+      end
+      if execute
+        _attempt, status, before, after = execute
+        created = created_snapshot_evidence?(before, after)
+        no_effect = before && %i[present missing].include?(before[:presence]) &&
+                    before == after
+        if rollback
+          _rollback_attempt, rollback_status, rollback_before, rollback_after = rollback
+          compensated = created && rollback_status == :ok && rollback_before == after &&
+                        missing_after_same_owner?(rollback_before, rollback_after)
+          unchanged = no_effect && rollback_status == :ok &&
+                      rollback_before == before && rollback_after == before
+          return 3 if compensated
+          return 4 if unchanged
+
+          return 5
+        end
+        return 2 if status == :ok && created
+        return 4 if status == :failed && no_effect
+
+        return 5
+      end
+
+      return 5 unless rollback
+
+      rollback_attempt, status, before, after = rollback
+      expected = rollback_attempt.successful_execute_identity
+      return 3 if status == :ok && expected &&
+                  snapshot_identity(before) == expected &&
+                  missing_after_same_owner?(before, after)
+
+      5
+    end
+
+    def created_snapshot_evidence?(before, after)
+      before && after && before[:presence] == :missing && after[:presence] == :present &&
+        before[:path] == after[:path] && before[:owner_guid] == after[:owner_guid] &&
+        after[:guid]
+    end
+
+    def missing_after_same_owner?(before, after)
+      before && after && after[:presence] == :missing &&
+        before[:path] == after[:path] && before[:owner_guid] == after[:owner_guid]
+    end
+
+    def snapshot_identity(observation)
+      return unless observation && observation[:presence] == :present
+
+      { guid: observation[:guid], owner_guid: observation[:owner_guid],
+        path_digest: Digest::SHA256.hexdigest(observation[:path]) }
     end
 
     def handle_exec_failure(klass)

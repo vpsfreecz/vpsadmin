@@ -2,6 +2,7 @@ module Transactions::Vps
   class Chown < ::Transaction
     t_name :vps_chown
     t_type 3041
+    storage_effect :filesystem_data
     queue :vps
 
     # @param vps [::Vps]

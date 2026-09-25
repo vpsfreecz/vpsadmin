@@ -2,6 +2,7 @@ module Transactions::Storage
   class RemoveClone < ::Transaction
     t_name :storage_remove_clone
     t_type 5218
+    storage_effect :clone_destroy
     queue :storage
     irreversible
 

@@ -2400,6 +2400,8 @@ cs:
       snapshot_download_no_common_source: snapshoty nemají společný dostupný zdroj
         pro inkrementální stažení
       snapshot_download_unavailable: snapshot není dostupný ke stažení
+      storage_read_only: Úložiště je dočasně jen pro čtení. Zkus to prosím později.
+      storage_signer_unavailable: Úložiště je dočasně nedostupné. Zkus to prosím později.
     password_changes:
       minimum_length_description: Heslo musí mít alespoň %{minimum} znaků
     resources:

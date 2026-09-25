@@ -2,6 +2,7 @@ module Transactions::Vps
   class Features < ::Transaction
     t_name :vps_features
     t_type 8001
+    storage_effect :osctl_storage_property
     queue :vps
 
     def params(vps, features)

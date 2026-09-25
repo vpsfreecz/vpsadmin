@@ -2,6 +2,7 @@ module Transactions::Vps
   class Create < ::Transaction
     t_name :vps_create
     t_type 3001
+    storage_effect :osctl_topology
     queue :vps
 
     # @param vps [::Vps]

@@ -2,6 +2,7 @@ module Transactions::Storage
   class CreateTree < ::Transaction
     t_name :storage_create_dataset_tree
     t_type 5213
+    storage_effect :tree_create
     queue :storage
 
     def params(tree)

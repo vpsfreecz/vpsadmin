@@ -293,6 +293,22 @@ module VpsAdmin
         HaveAPI::Hooks.stop(ret)
       end
 
+      e.rescue(VpsAdmin::API::Exceptions::StorageReadOnly) do |ret, _exception|
+        ret[:status] = false
+        ret[:http_status] = 423
+        ret[:message] = VpsAdmin::API::I18n.message('errors.storage_read_only')
+
+        HaveAPI::Hooks.stop(ret)
+      end
+
+      e.rescue(VpsAdmin::API::Exceptions::StorageSignerUnavailable) do |ret, _exception|
+        ret[:status] = false
+        ret[:http_status] = 503
+        ret[:message] = VpsAdmin::API::I18n.message('errors.storage_signer_unavailable')
+
+        HaveAPI::Hooks.stop(ret)
+      end
+
       e.rescue(VpsAdmin::API::Exceptions::ClusterResourceAllocationError) do |ret, exception|
         ret[:status] = false
         ret[:http_status] = 400

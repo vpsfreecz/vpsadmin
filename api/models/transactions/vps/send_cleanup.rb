@@ -2,6 +2,7 @@ module Transactions::Vps
   class SendCleanup < ::Transaction
     t_name :vps_send_cleanup
     t_type 3034
+    storage_effect :osctl_send_cleanup
     queue :vps
     irreversible
 

@@ -2,6 +2,7 @@ module Transactions::Storage
   class RsyncDataset < ::Transaction
     t_name :storage_rsync_dataset
     t_type 5229
+    storage_effect :filesystem_data
     queue :zfs_recv
 
     def params(src, dst, allow_partial: false)

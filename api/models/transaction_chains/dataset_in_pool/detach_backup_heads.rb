@@ -2,6 +2,7 @@ module TransactionChains
   class DatasetInPool::DetachBackupHeads < ::TransactionChain
     label 'Detach backups'
     allow_empty
+    storage_effect :catalog_topology
 
     # @param dataset_in_pool [::DatasetInPool]
     def link_chain(dataset_in_pool)
@@ -13,11 +14,13 @@ module TransactionChains
                ])
 
       changes = {}
+      affected_dips = []
 
       dataset_in_pool.dataset.dataset_in_pools.joins(:pool).where(
         pools: { role: ::Pool.roles[:backup] }
       ).each do |backup|
         lock(backup)
+        affected_dips << backup
 
         backup.dataset_trees.all.each do |tree|
           changes[tree] = { head: false }
@@ -29,6 +32,8 @@ module TransactionChains
       end
 
       return unless changes.any?
+
+      ::StorageMutationJournal.mark_catalog_topology!(affected_dips)
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
         changes.each { |obj, v| t.edit(obj, v) }
