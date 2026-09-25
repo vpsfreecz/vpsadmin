@@ -9,7 +9,7 @@ RSpec.describe NodeCtld::StorageEffectRegistry do
       klass.start_with?('NodeCtld::Commands::')
     end
 
-    expect(production.keys).to match_array(described_class::ENTRIES.keys - [5290])
+    expect(production.keys).to match_array(described_class::ENTRIES.keys)
     expect do
       described_class.fetch!(5225)
     end.to raise_error(described_class::Unclassified)
