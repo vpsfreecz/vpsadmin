@@ -17,6 +17,9 @@ These pages describe vpsAdmin for developers and operators. Start with the
 - [Storage](storage/README.md): datasets, pools, snapshots, and operations.
   - [Backup branching](storage/branching.md)
   - [Snapshot downloads and local backups](storage/download.md)
+  - [Storage integrity model](storage/integrity-model.md)
+  - [Storage integrity schema](storage/integrity-foundation.md)
+  - [Storage reconciler](storage/integrity-reconciler.md)
 - [Czech translation conventions](i18n-cs.md)
 
 For member guides, see the [Czech knowledge base](https://kb.vpsfree.cz/) or
