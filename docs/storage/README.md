@@ -1,5 +1,11 @@
 # Storage
 
+For the writer, freeze and evidence flow, read
+[how storage integrity is tracked](integrity-model.md). The
+[storage integrity schema](integrity-foundation.md) records its database
+constraints. The [reconciler](integrity-reconciler.md) describes the supported
+private capture, comparison and dry-run interface.
+
 vpsAdmin manages ZFS datasets for VPS disks, shared storage, and backups. The
 API records the logical dataset separately from its copies on individual
 storage pools, so one dataset can have a primary copy and several backups.

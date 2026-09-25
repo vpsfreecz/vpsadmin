@@ -34,6 +34,16 @@ Do not create build IDs or upload first-party gems to a remote RubyGems reposito
   [docs/README.md](docs/README.md); update the relevant pages with code changes
   and follow the writing conventions in that index.
 
+Keep the current storage model and supported behavior in reference pages.
+Put exact branch revisions, migration order, rollout commands, verification
+results and rollback decisions in a separate upgrade or site rollout record.
+Do not leave removed controls or superseded implementation stages in the
+reference guide. Before treating an unmerged branch as ready, inspect its
+complete commit series and final diff; squash obsolete follow-up commits and
+consolidate unapplied transitional migrations when the final schema permits it.
+Have the dedicated independent reviewer assess that final branch history and
+schema, even if individual commits were reviewed earlier.
+
 ## Relationship With vpsAdminOS
 - vpsAdmin commonly drives vpsAdminOS feature needs, but vpsAdminOS remains an
   independent general-purpose container host platform.
