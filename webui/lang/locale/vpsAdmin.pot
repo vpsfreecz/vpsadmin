@@ -163,6 +163,10 @@ msgid "System config"
 msgstr ""
 
 #: forms/cluster.forms.php
+msgid "Storage freeze"
+msgstr ""
+
+#: forms/cluster.forms.php
 msgid "Register new node"
 msgstr ""
 
@@ -292,6 +296,191 @@ msgstr ""
 
 #: forms/cluster.forms.php
 msgid "used"
+msgstr ""
+
+#: forms/cluster.forms.php forms/dns.forms.php lib/functions.lib.php
+msgid "Unknown"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Read only"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Read and write"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Database drain only"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid ""
+"A drained database does not prove that node workers have stopped or that "
+"storage is ready for repair."
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Current state"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Mode"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Epoch"
+msgstr ""
+
+#: forms/cluster.forms.php forms/networking.forms.php forms/outage.forms.php
+#: pages/page_adminm.php
+msgid "No"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Stable epoch"
+msgstr ""
+
+#: forms/cluster.forms.php forms/networking.forms.php forms/outage.forms.php
+#: pages/page_adminm.php
+msgid "Yes"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Database drained"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Repair ready"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Observed at"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Last reason"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Last change"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Changed by"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Active chains"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Fatal or unresolved chains"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Waiting transactions"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Pending confirmations"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Prepared intents"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Executing intents"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Intents needing reconciliation"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Started attempts"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Uncertain attempts"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Retained chain locks"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Settled, unverified intents"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Drain progress"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Active chain IDs"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Fatal or unresolved chain IDs"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Blocking intent IDs"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Sample blockers"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "None"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Resume writes"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Set read only"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Storage mode change"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid ""
+"This changes storage write admission. It does not prove that existing node "
+"work has stopped."
+msgstr ""
+
+#: forms/cluster.forms.php forms/dns.forms.php forms/ip_release.forms.php
+#: forms/node.forms.php forms/outage.forms.php forms/users.forms.php
+#: forms/vps.forms.php pages/page_adminvps.php pages/page_cluster.php
+#: pages/page_lifetimes.php public/index.php
+msgid "Reason"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Review change"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Confirm storage mode change"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "New mode"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Current epoch"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Confirm change"
 msgstr ""
 
 #: forms/cluster.forms.php
@@ -1184,13 +1373,6 @@ msgstr ""
 msgid "Reason code"
 msgstr ""
 
-#: forms/dns.forms.php forms/ip_release.forms.php forms/node.forms.php
-#: forms/outage.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminvps.php pages/page_cluster.php pages/page_lifetimes.php
-#: public/index.php
-msgid "Reason"
-msgstr ""
-
 #: forms/dns.forms.php
 msgid "Add zone"
 msgstr ""
@@ -1486,10 +1668,6 @@ msgstr ""
 
 #: forms/dns.forms.php
 msgid "Reverse zone"
-msgstr ""
-
-#: forms/dns.forms.php lib/functions.lib.php
-msgid "Unknown"
 msgstr ""
 
 #: forms/dns.forms.php
@@ -2416,14 +2594,6 @@ msgstr ""
 
 #: forms/networking.forms.php
 msgid "Host IP Addresses"
-msgstr ""
-
-#: forms/networking.forms.php forms/outage.forms.php pages/page_adminm.php
-msgid "Yes"
-msgstr ""
-
-#: forms/networking.forms.php forms/outage.forms.php pages/page_adminm.php
-msgid "No"
 msgstr ""
 
 #: forms/networking.forms.php
@@ -7345,6 +7515,66 @@ msgid "Manage Cluster"
 msgstr ""
 
 #: pages/page_cluster.php
+msgid "Storage freeze unavailable"
+msgstr ""
+
+#: pages/page_cluster.php
+msgid "This action requires your own administrator session."
+msgstr ""
+
+#: pages/page_cluster.php
+msgid "Unable to load storage freeze status"
+msgstr ""
+
+#: pages/page_cluster.php
+msgid "Choose a storage mode."
+msgstr ""
+
+#: pages/page_cluster.php pages/page_ip_release.php pages/page_login.php
+msgid "Invalid request"
+msgstr ""
+
+#: pages/page_cluster.php
+msgid "Storage mode unchanged"
+msgstr ""
+
+#: pages/page_cluster.php
+msgid "The requested mode is already active."
+msgstr ""
+
+#: pages/page_cluster.php
+msgid "This action requires a form submission."
+msgstr ""
+
+#: pages/page_cluster.php
+msgid "Enter a reason and reload the current storage epoch."
+msgstr ""
+
+#: pages/page_cluster.php
+msgid "Reload storage freeze status before changing the mode."
+msgstr ""
+
+#: pages/page_cluster.php
+msgid "Storage epoch changed"
+msgstr ""
+
+#: pages/page_cluster.php
+msgid "Storage mode changed"
+msgstr ""
+
+#: pages/page_cluster.php
+msgid "Storage write admission was updated."
+msgstr ""
+
+#: pages/page_cluster.php
+msgid "Storage mode change failed"
+msgstr ""
+
+#: pages/page_cluster.php
+msgid "Reload status"
+msgstr ""
+
+#: pages/page_cluster.php
 msgid "Some changes were saved"
 msgstr ""
 
@@ -8208,10 +8438,6 @@ msgstr ""
 
 #: pages/page_ip_release.php pages/page_networking.php public/index.php
 msgid "Action failed"
-msgstr ""
-
-#: pages/page_ip_release.php pages/page_login.php
-msgid "Invalid request"
 msgstr ""
 
 #: pages/page_ip_release.php
