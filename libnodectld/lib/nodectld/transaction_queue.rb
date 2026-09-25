@@ -123,10 +123,11 @@ module NodeCtld
 
     include OsCtl::Lib::Utils::Log
 
-    def initialize(name, start_time)
+    def initialize(name, start_time, activity: nil)
       @name = name
       @start_time = start_time
       @workers = {}
+      @activity = activity
 
       @open = true
 
@@ -139,6 +140,7 @@ module NodeCtld
       @sem.start
 
       @reserved = []
+      @reservation_effects = []
 
       $CFG.on_update("queue_#{name}") { update_config }
     end
@@ -155,21 +157,56 @@ module NodeCtld
         end
       end
 
-      @workers[cmd.chain_id] = Worker.new(cmd)
+      token = @activity&.worker_begin(@name, cmd)
+      registered = false
+      begin
+        worker = if @activity
+                   Worker.new(cmd, activity: @activity, activity_token: token)
+                 else
+                   Worker.new(cmd)
+                 end
+        @mon.synchronize { @workers[cmd.chain_id] = worker }
+        @activity&.worker_registered(token)
+        registered = true
+        worker
+      ensure
+        @activity&.worker_lost(token, 'worker_start_unproved') if token && !registered
+      end
     end
 
-    def reserve(chain_id, priority: 0)
-      @sem.down_block(priority:)
-      @mon.synchronize { @reserved << chain_id }
-      true
+    def reserve(chain_id, priority: 0, command: nil)
+      effectful = @activity ? @activity.reservation_effectful?(command) : true
+      @activity&.reservation_begin(effectful:)
+      completed = false
+      begin
+        @sem.down_block(priority:)
+        @mon.synchronize do
+          @reserved << chain_id
+          @reservation_effects << effectful
+        end
+        completed = true
+        true
+      ensure
+        @activity&.uncertain!('reservation_failed', effectful:) unless completed
+        @activity&.reservation_end(effectful:)
+      end
     end
 
     def release(chain_id)
       @mon.synchronize do
-        return false unless @reserved.delete(chain_id)
+        index = @reserved.index(chain_id)
+        return false unless index
 
-        @sem.up
-        true
+        effectful = @reservation_effects.fetch(index)
+        @activity&.reservation_begin(effectful:)
+        begin
+          @reserved.delete_at(index)
+          @reservation_effects.delete_at(index)
+          @sem.up
+          true
+        ensure
+          @activity&.reservation_end(effectful:)
+        end
       end
     end
 
@@ -193,7 +230,7 @@ module NodeCtld
     end
 
     def empty?
-      @workers.empty?
+      @mon.synchronize { @workers.empty? }
     end
 
     def full?
@@ -209,7 +246,7 @@ module NodeCtld
     end
 
     def busy?(chain_id)
-      @workers.has_key?(chain_id)
+      @mon.synchronize { @workers.has_key?(chain_id) }
     end
 
     def has_reservation?(chain_id)
@@ -225,15 +262,17 @@ module NodeCtld
     end
 
     def has_transaction?(t_id)
-      @workers.each_value do |w|
-        return true if w.cmd.id.to_i == t_id
+      @mon.synchronize do
+        @workers.each_value do |w|
+          return true if w.cmd.id.to_i == t_id
+        end
       end
 
       false
     end
 
     def used
-      @workers.size
+      @mon.synchronize { @workers.size }
     end
 
     attr_reader :size, :urgent_size, :start_delay
@@ -258,16 +297,46 @@ module NodeCtld
       @workers.each_value(&)
     end
 
-    def delete_if(&block)
-      @workers.delete_if do |wid, w|
-        ret = block.call(wid, w)
-        @sem.up if ret && !has_reservation?(w.cmd.chain_id) && !w.cmd.urgent?
-        ret
+    def delete_if(saved: false, &block)
+      @mon.synchronize { @workers.to_a }.each do |wid, w|
+        next unless block.call(wid, w)
+
+        @mon.synchronize do
+          next unless @workers[wid].equal?(w)
+
+          if @activity
+            if saved
+              @activity.worker_saved(w.activity_token)
+            else
+              @activity.worker_lost(w.activity_token)
+            end
+          end
+          @workers.delete(wid)
+          @sem.up if !has_reservation?(w.cmd.chain_id) && !w.cmd.urgent?
+        end
       end
     end
 
     def clear!
-      @workers.clear
+      @mon.synchronize do
+        @workers.each_value do |worker|
+          @activity&.worker_lost(worker.activity_token)
+        end
+        @workers.clear
+      end
+    end
+
+    def activity_counts(deadline:)
+      until @mon.try_enter
+        return nil if Process.clock_gettime(Process::CLOCK_MONOTONIC) >= deadline
+
+        sleep 0.001
+      end
+      begin
+        { workers: @workers.size, reservations: @reserved.size }
+      ensure
+        @mon.exit
+      end
     end
 
     def log_type
