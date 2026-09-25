@@ -4,6 +4,7 @@ module Transactions::Storage
   class Rollback < ::Transaction
     t_name :storage_rollback
     t_type 5208
+    storage_effect :rollback
     queue :storage
     irreversible
 

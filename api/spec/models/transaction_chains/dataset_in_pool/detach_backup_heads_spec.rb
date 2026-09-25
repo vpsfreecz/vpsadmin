@@ -55,6 +55,28 @@ RSpec.describe TransactionChains::DatasetInPool::DetachBackupHeads do
       ['Branch', { 'id' => branch_a1.id }, { 'head' => 0 }],
       ['Branch', { 'id' => branch_b0.id }, { 'head' => 0 }]
     )
+    [backup_a, backup_b].each do |backup|
+      scope = StorageIntegrityScope.find_by!(scope_key: "dip:#{backup.id}")
+      expect(scope.mutation_epoch).to eq(1)
+      expect(scope).to be_unverified
+    end
+    expect(StorageIntegrityScope.find_by(scope_key: "dip:#{primary.id}")).to be_nil
+  end
+
+  it 'refuses a nested catalog-only chain while storage is read-only' do
+    primary_pool = create_pool!(node: SpecSeed.node, role: :primary)
+    _, primary = create_dataset_with_pool!(
+      user: user, pool: primary_pool, name: "detach-frozen-#{SecureRandom.hex(4)}"
+    )
+    StorageFreezeControl.singleton!.update!(mode: :read_only)
+    before_chains = TransactionChain.count
+
+    expect do
+      TransactionChain.transaction(requires_new: true) do
+        use_chain_in_root!(described_class, args: [primary])
+      end
+    end.to raise_error(VpsAdmin::API::Exceptions::StorageReadOnly)
+    expect(TransactionChain.count).to eq(before_chains)
   end
 
   it 'allows an empty chain when there are no backup heads to detach' do

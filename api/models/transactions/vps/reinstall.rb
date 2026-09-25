@@ -2,6 +2,7 @@ module Transactions::Vps
   class Reinstall < ::Transaction
     t_name :vps_reinstall
     t_type 3003
+    storage_effect :osctl_topology
     queue :vps
 
     def params(vps, template)

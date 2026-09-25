@@ -39,9 +39,9 @@ module NodeCtld
       end
     end
 
-    def snapshot(pool_fs, dataset_name)
+    def snapshot(pool_fs, dataset_name, name: nil)
       t = Time.now.utc
-      snap = t.strftime('%Y-%m-%dT%H:%M:%S')
+      snap = name || t.strftime('%Y-%m-%dT%H:%M:%S')
       zfs(:snapshot, nil, "#{pool_fs}/#{dataset_name}@#{snap}")
       [snap, t]
     end

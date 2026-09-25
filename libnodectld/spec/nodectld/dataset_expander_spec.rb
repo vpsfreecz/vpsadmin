@@ -35,6 +35,7 @@ RSpec.describe NodeCtld::DatasetExpander do
     allow(NodeCtld::NodeBunny).to receive(:create_channel).and_return(channel)
     allow(NodeCtld::NodeBunny).to receive(:exchange_name).and_return('node:spec')
     # rubocop:enable RSpec/ReceiveMessages
+    allow(NodeCtld::Db).to receive(:open).and_yield(shared_db)
     $CFG = NodeCtldSpec::FakeCfg.new(
       storage: {
         batch_size: 100
@@ -84,6 +85,22 @@ RSpec.describe NodeCtld::DatasetExpander do
         hash_including('id' => 2, 'name' => 'refquota', 'value' => 24 * one_gib)
       )
     end
+  end
+
+  it 'leaves quota and pool usage unchanged while storage is read-only' do
+    sql_update('storage_freeze_controls', { mode: 1 }, 'id = ?', 1)
+    expander = described_class.new
+    pool = build_pool(used_bytes: 80 * one_gib, available_bytes: 20 * one_gib)
+    dataset = pool.datasets.values.fetch(0)
+
+    allow(expander).to receive(:zfs)
+    expander.check(pool)
+
+    expect(expander).not_to have_received(:zfs)
+    expect(pool.used_bytes).to eq(80 * one_gib)
+    expect(pool.available_bytes).to eq(20 * one_gib)
+    expect(dataset.properties.fetch('refquota').value).to eq(20 * one_gib)
+    expect(expander.instance_variable_get(:@submit_queue).length).to eq(0)
   end
 
   it 'leaves the status snapshot and pool usage unchanged when expansion fails' do

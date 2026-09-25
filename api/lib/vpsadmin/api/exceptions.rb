@@ -181,4 +181,10 @@ module VpsAdmin::API::Exceptions
 
   class ConfigurationError < ::StandardError
   end
+
+  class StorageReadOnly < ::StandardError
+  end
+
+  class StorageSignerUnavailable < ::StandardError
+  end
 end

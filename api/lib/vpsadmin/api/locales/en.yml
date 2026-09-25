@@ -2404,6 +2404,8 @@ en:
       snapshot_download_no_common_source: snapshots do not have a common available
         source for incremental download
       snapshot_download_unavailable: snapshot is not available for download
+      storage_read_only: Storage is temporarily read-only. Try again later.
+      storage_signer_unavailable: Storage is temporarily unavailable. Try again later.
     password_changes:
       minimum_length_description: The password must be at least %{minimum} characters
         long
