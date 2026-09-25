@@ -1,6 +1,7 @@
 require 'libosctl'
 require 'nodectld/db'
 require 'nodectld/command'
+require 'nodectld/node_activity'
 require 'nodectld/queues'
 require 'nodectld/mount_reporter'
 require 'nodectld/remote_control'
@@ -41,18 +42,20 @@ module NodeCtld
 
     attr_reader :start_time, :ct_top, :node, :console, :queues,
                 :last_transaction_check, :last_transaction_check_monotonic,
-                :start_monotonic, :transaction_thread, :vps_status
+                :start_monotonic, :transaction_thread, :vps_status,
+                :node_activity
 
     def initialize
       self.class.instance = self
       @init = false
-      @start_time = Time.new
+      @start_time = Time.now
       @start_monotonic = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       @cmd_counter = 0
       @threads = {}
       @blockers_mutex = Mutex.new
       @chain_blockers = {}
-      @queues = Queues.new(self)
+      @node_activity = NodeActivity.new
+      @queues = Queues.new(self, activity: @node_activity)
       @mount_reporter = MountReporter.new
       @remote_control = RemoteControl.new(self)
       NodeBunny.connect
@@ -126,7 +129,7 @@ module NodeCtld
 
     def work
       @queues.each_value do |queue|
-        queue.delete_if do |_wid, w|
+        queue.delete_if(saved: true) do |_wid, w|
           unless w.working?
             c = w.cmd
             Db.open { |db| c.save(db) }
@@ -441,16 +444,42 @@ module NodeCtld
       end
     end
 
-    def block_chain(chain_id, pid)
-      @blockers_mutex.synchronize do
-        @chain_blockers[chain_id] ||= []
-        @chain_blockers[chain_id] << pid
+    def node_activity_snapshot(timeout: NodeActivity::DEFAULT_TIMEOUT)
+      @node_activity.snapshot(
+        queues: @queues, blockers: method(:activity_blocker_count), timeout:
+      )
+    end
 
-        Thread.new do
-          log(:debug, :daemon, "Chain #{chain_id} is waiting for subprocess #{pid} to finish")
-          Process.wait(pid)
-          subprocess_finished(chain_id, pid)
+    def activity_blocker_count(deadline:)
+      NodeActivity.with_mutex(@blockers_mutex, deadline:) do
+        @chain_blockers.values.sum(&:length)
+      end
+    end
+
+    def block_chain(chain_id, pid)
+      token = @node_activity&.child_begin
+      watcher_started = false
+      begin
+        @blockers_mutex.synchronize do
+          @chain_blockers[chain_id] ||= []
+          @chain_blockers[chain_id] << pid
+
+          Thread.new do
+            finished = false
+            begin
+              log(:debug, :daemon, "Chain #{chain_id} is waiting for subprocess #{pid} to finish")
+              Process.wait(pid)
+              subprocess_finished(chain_id, pid)
+              @node_activity&.child_finished(token)
+              finished = true
+            ensure
+              @node_activity&.child_lost(token) unless finished
+            end
+          end
         end
+        watcher_started = true
+      ensure
+        @node_activity&.child_lost(token) if token && !watcher_started
       end
     end
 
