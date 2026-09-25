@@ -47,6 +47,18 @@ class Transaction < ApplicationRecord
       end
     end
 
+    # Explicit classification of commands with physical storage effects.
+    # The effect is independent of the queue used to execute a command.
+    def storage_effect(effect = nil)
+      @storage_effect = effect if effect
+      @storage_effect
+    end
+
+    def requires_signature(value = nil)
+      @requires_signature = value unless value.nil?
+      @requires_signature
+    end
+
     def irreversible
       @reversible = :not_reversible
     end
@@ -60,6 +72,11 @@ class Transaction < ApplicationRecord
     end
 
     def register_type(t, klass)
+      previous = type_registry[t]
+      if previous && previous != klass
+        raise "duplicate transaction handle #{t}: #{previous} and #{klass}"
+      end
+
       type_registry[t] = klass
     end
 
@@ -130,6 +147,13 @@ class Transaction < ApplicationRecord
   # @option opts [Symbol] reversible one of :is_reversible, :not_reversible, :keep_going
   # @option opts [Symbol] queue
   def self.fire_chained(chain, dep, opts, &block)
+    effect = StorageEffectRegistry.fetch!(t_type)
+    if effect.support == :api_only_unsupported
+      raise VpsAdmin::API::Exceptions::OperationNotSupported,
+            'This storage operation is not supported.'
+    end
+    StorageMutationAdmission.check! if effect.admission_required
+
     t = new
 
     t.transaction_chain = chain
@@ -162,6 +186,13 @@ class Transaction < ApplicationRecord
     )
     cmd_input ||= {}
 
+    if StorageEffectRegistry.journal_impact(effect) != :none
+      t.done = :staged
+      t.save!
+      guard = StorageMutationJournal.stage!(t, cmd_input, effect_entry: effect)
+      cmd_input = cmd_input.merge(storage_guard: guard) if guard
+    end
+
     t.input = {
       transaction_chain: t.transaction_chain_id,
       depends_on: t.depends_on_id,
@@ -171,6 +202,14 @@ class Transaction < ApplicationRecord
       input: cmd_input
     }.to_json
     t.signature = VpsAdmin::API::TransactionSigner.sign_base64(t.input)
+    requires_signed_guard = guard && (
+      StorageMutationJournal.strict_mode? ||
+      (t.handle == 5215 && t.test_only_strict_group_snapshot?)
+    )
+    if (requires_signed_guard || t.class.requires_signature) && t.signature.to_s.empty?
+      raise VpsAdmin::API::Exceptions::StorageSignerUnavailable
+    end
+
     t.done = :waiting
 
     t.save!
@@ -187,6 +226,10 @@ class Transaction < ApplicationRecord
   # Returns hash of parameters for single transaction.
   def params(*args, **kwargs)
     raise NotImplementedError
+  end
+
+  def storage_mutation_subject
+    nil
   end
 
   def name

@@ -119,6 +119,15 @@ RSpec.describe TransactionChain do
     end
   end
 
+  before do
+    test_effect = StorageEffectRegistry::Entry.new(
+      :no_storage, :no_storage, :none, :none, false, :none, nil, :test_only,
+      :proved_no_storage_effect, :proved_no_storage_effect
+    )
+    allow(StorageEffectRegistry).to receive(:fetch!).and_call_original
+    allow(StorageEffectRegistry).to receive(:fetch!).with(990_010).and_return(test_effect)
+  end
+
   it 'builds the chain while staged and queues it afterwards' do
     chain, seen_state = SpecChains::Linear.fire2(args: [node], kwargs: {})
 

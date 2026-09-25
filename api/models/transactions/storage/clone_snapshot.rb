@@ -4,6 +4,7 @@ module Transactions::Storage
   class CloneSnapshot < ::Transaction
     t_name :storage_clone_snapshot
     t_type 5217
+    storage_effect :clone_create
     queue :storage
 
     include Transactions::Utils::UserNamespaces

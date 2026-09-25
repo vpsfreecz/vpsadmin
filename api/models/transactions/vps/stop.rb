@@ -2,6 +2,7 @@ module Transactions::Vps
   class Stop < ::Transaction
     t_name :vps_stop
     t_type 1002
+    storage_effect :osctl_runtime_topology
     queue :vps
 
     def params(vps, start_timeout: 'infinity', rollback_stop: true, kill: false)

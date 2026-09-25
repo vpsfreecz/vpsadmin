@@ -2,6 +2,7 @@ module Transactions::Storage
   class BranchDataset < ::Transaction
     t_name :storage_create_branch_dataset
     t_type 5206
+    storage_effect :branch_create
     queue :storage
 
     def params(branch, src_snapshot_in_branch = nil)

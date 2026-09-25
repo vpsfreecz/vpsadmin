@@ -2,6 +2,7 @@ module Transactions::Vps
   class SendState < ::Transaction
     t_name :vps_send_state
     t_type 3033
+    storage_effect :osctl_send
     queue :zfs_send
 
     # @param vps [::Vps]

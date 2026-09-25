@@ -46,6 +46,12 @@ full:
   - "api/models/transaction_chain.rb"
   - "api/models/transaction_chain_concern.rb"
   - "api/models/transaction_confirmation.rb"
+  - "api/models/storage_mutation_admission.rb"
+  - "api/models/storage_mutation_journal.rb"
+  - "api/models/storage_effect_registry.rb"
+  - "libnodectld/lib/nodectld/command.rb"
+  - "libnodectld/lib/nodectld/storage_effect_registry.rb"
+  - "libnodectld/lib/nodectld/storage_mutation_receipt.rb"
   - "plugins/**"
   - "tests/all-tests.nix"
   - "tests/make-test.nix"
@@ -279,6 +285,12 @@ select:
       - "api/models/transaction_chains/snapshot_in_pool/**"
       - "api/models/transactions/pool/**"
       - "api/models/transactions/storage/**"
+      - "api/models/storage_freeze_status.rb"
+      - "api/models/storage_freeze_transition.rb"
+      - "api/models/storage_observer_catch_up_audit.rb"
+      - "api/models/storage_observer_settlement.rb"
+      - "libnodectld/lib/nodectld/storage_observer_settlement.rb"
+      - "libnodectld/lib/nodectld/remote_commands/chain.rb"
     tags: ["storage", "webui-storage-backup-export"]
 
   - paths:

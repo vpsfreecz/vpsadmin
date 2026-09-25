@@ -2,6 +2,7 @@ module Transactions::Vps
   class Restart < ::Transaction
     t_name :vps_restart
     t_type 1003
+    storage_effect :osctl_runtime_topology
     queue :vps
 
     def params(vps, start_timeout: 'infinity', kill: false)

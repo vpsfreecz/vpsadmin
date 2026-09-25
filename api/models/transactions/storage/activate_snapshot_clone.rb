@@ -2,6 +2,7 @@ module Transactions::Storage
   class ActivateSnapshotClone < ::Transaction
     t_name :storage_activate_snapshot_clone
     t_type 5226
+    storage_effect :filesystem_property
     queue :storage
 
     # @param cl [::SnapshotInPoolClone]

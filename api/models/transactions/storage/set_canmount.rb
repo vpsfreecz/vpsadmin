@@ -2,6 +2,7 @@ module Transactions::Storage
   class SetCanmount < ::Transaction
     t_name :storage_set_canmount
     t_type 5228
+    storage_effect :filesystem_property
     queue :storage
 
     def params(dataset_in_pools, canmount: nil, mount: false)

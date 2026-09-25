@@ -2,6 +2,7 @@ module Transactions::Storage
   class CloneSnapshotName < ::Transaction
     t_name :storage_clone_snapshot_name
     t_type 5224
+    storage_effect :catalog_topology
     queue :storage
 
     def params(node, clones)

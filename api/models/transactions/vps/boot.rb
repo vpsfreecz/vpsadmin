@@ -2,6 +2,7 @@ module Transactions::Vps
   class Boot < ::Transaction
     t_name :vps_boot
     t_type 2029
+    storage_effect :osctl_rescue_rootfs
     queue :vps
 
     # @param vps [::Vps]

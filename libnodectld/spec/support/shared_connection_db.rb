@@ -46,7 +46,7 @@ module NodeCtldSpec
       stmt&.close
     end
 
-    def transaction
+    def transaction(**_kwargs)
       @savepoint_seq += 1
       savepoint = "libnodectld_spec_sp_#{@savepoint_seq}"
 

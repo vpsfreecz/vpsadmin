@@ -2,6 +2,7 @@ module Transactions::Vps
   class SendConfig < ::Transaction
     t_name :vps_send_config
     t_type 3030
+    storage_effect :osctl_send
     queue :vps
 
     # @param vps [::Vps]

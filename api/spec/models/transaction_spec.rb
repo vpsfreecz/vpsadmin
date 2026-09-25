@@ -75,6 +75,12 @@ RSpec.describe Transaction do
   describe '.fire_chained' do
     before do
       lock_transaction_signer!
+      test_effect = StorageEffectRegistry::Entry.new(
+        :no_storage, :no_storage, :none, :none, false, :none, nil, :test_only,
+        :proved_no_storage_effect, :proved_no_storage_effect
+      )
+      allow(StorageEffectRegistry).to receive(:fetch!).and_call_original
+      allow(StorageEffectRegistry).to receive(:fetch!).with(990_001).and_return(test_effect)
     end
 
     it 'sets relational metadata and the waiting state' do

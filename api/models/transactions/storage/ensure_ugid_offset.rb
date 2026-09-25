@@ -2,6 +2,7 @@ module Transactions::Storage
   class EnsureUgidOffset < ::Transaction
     t_name :storage_ensure_ugid_offset
     t_type 5225
+    storage_effect :filesystem_property
     queue :storage
 
     def params(dataset_in_pool)

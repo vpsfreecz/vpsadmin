@@ -2,6 +2,7 @@ module Transactions::Vps
   class Copy < ::Transaction
     t_name :vps_copy
     t_type 3040
+    storage_effect :osctl_topology
     queue :vps
 
     # @param vps [::Vps]

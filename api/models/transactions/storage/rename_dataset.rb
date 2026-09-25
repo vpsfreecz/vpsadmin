@@ -2,6 +2,7 @@ module Transactions::Storage
   class RenameDataset < ::Transaction
     t_name :storage_rename_dataset
     t_type 5230
+    storage_effect :filesystem_rename
     queue :storage
 
     def params(pool, old_name, new_name)
