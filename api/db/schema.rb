@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_14_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_24_210000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -1631,6 +1631,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_190000) do
     t.integer "state", default: 0, null: false
     t.bigint "total_space"
     t.bigint "used_space"
+    t.decimal "zpool_guid", precision: 20
     t.index ["is_open"], name: "index_pools_on_is_open"
   end
 
@@ -1806,8 +1807,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_190000) do
     t.integer "confirmed", default: 0, null: false
     t.integer "snapshot_in_pool_id", null: false
     t.integer "snapshot_in_pool_in_branch_id"
+    t.decimal "zfs_guid", precision: 20
+    t.decimal "zfs_owner_fs_guid", precision: 20
+    t.string "zfs_path", limit: 1024, collation: "utf8mb3_bin"
+    t.integer "physical_presence", default: 0, null: false
+    t.bigint "storage_observation_run_id"
     t.index ["snapshot_in_pool_id", "branch_id"], name: "unique_snapshot_in_pool_in_branches", unique: true
     t.index ["snapshot_in_pool_id"], name: "index_snapshot_in_pool_in_branches_on_snapshot_in_pool_id"
+    t.index ["storage_observation_run_id"], name: "idx_snapshot_in_pool_in_branches_storage_run"
+    t.check_constraint "`physical_presence` in (0,1,2) and (`physical_presence` <> 1 or `zfs_path` is not null and `zfs_guid` is not null and `zfs_owner_fs_guid` is not null)", name: "chk_snapshot_in_pool_in_branches_present_identity"
   end
 
   create_table "snapshot_in_pools", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -1816,9 +1824,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_190000) do
     t.integer "mount_id"
     t.integer "reference_count", default: 0, null: false
     t.integer "snapshot_id", null: false
+    t.decimal "zfs_guid", precision: 20
+    t.decimal "zfs_owner_fs_guid", precision: 20
+    t.string "zfs_path", limit: 1024, collation: "utf8mb3_bin"
+    t.integer "physical_presence", default: 0, null: false
+    t.bigint "storage_observation_run_id"
     t.index ["dataset_in_pool_id"], name: "index_snapshot_in_pools_on_dataset_in_pool_id"
     t.index ["snapshot_id", "dataset_in_pool_id"], name: "index_snapshot_in_pools_on_snapshot_id_and_dataset_in_pool_id", unique: true
     t.index ["snapshot_id"], name: "index_snapshot_in_pools_on_snapshot_id"
+    t.index ["storage_observation_run_id"], name: "idx_snapshot_in_pools_storage_run"
+    t.check_constraint "`physical_presence` in (0,1,2) and (`physical_presence` <> 1 or `zfs_path` is not null and `zfs_guid` is not null and `zfs_owner_fs_guid` is not null)", name: "chk_snapshot_in_pools_present_identity"
   end
 
   create_table "snapshots", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -1831,6 +1846,226 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_190000) do
     t.integer "snapshot_download_id"
     t.datetime "updated_at", precision: nil
     t.index ["dataset_id"], name: "index_snapshots_on_dataset_id"
+  end
+
+  create_table "storage_filesystem_identities", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.integer "node_id", null: false, unsigned: true
+    t.integer "pool_id", null: false, unsigned: true
+    t.integer "owner_pool_id", unsigned: true
+    t.integer "dataset_in_pool_id", unsigned: true
+    t.integer "dataset_tree_id", unsigned: true
+    t.integer "branch_id", unsigned: true
+    t.integer "snapshot_in_pool_clone_id", unsigned: true
+    t.integer "origin_snapshot_in_pool_id", unsigned: true
+    t.integer "origin_snapshot_in_pool_in_branch_id", unsigned: true
+    t.bigint "storage_observation_run_id"
+    t.decimal "zfs_guid", precision: 20
+    t.string "zfs_path", limit: 1024, collation: "utf8mb3_bin"
+    t.string "path_digest", limit: 64, collation: "utf8mb3_bin"
+    t.integer "origin_state", default: 0, null: false
+    t.integer "physical_presence", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["branch_id"], name: "idx_storage_fs_branch_id", unique: true
+    t.index ["dataset_in_pool_id"], name: "idx_storage_fs_dataset_in_pool_id", unique: true
+    t.index ["dataset_tree_id"], name: "idx_storage_fs_dataset_tree_id", unique: true
+    t.index ["node_id", "path_digest"], name: "idx_storage_fs_node_path_digest", unique: true
+    t.index ["origin_snapshot_in_pool_id"], name: "idx_storage_fs_origin_sip"
+    t.index ["origin_snapshot_in_pool_in_branch_id"], name: "idx_storage_fs_origin_sipb"
+    t.index ["owner_pool_id"], name: "idx_storage_fs_owner_pool_id", unique: true
+    t.index ["pool_id"], name: "index_storage_filesystem_identities_on_pool_id"
+    t.index ["snapshot_in_pool_clone_id"], name: "idx_storage_fs_snapshot_in_pool_clone_id", unique: true
+    t.index ["storage_observation_run_id"], name: "idx_storage_fs_run"
+    t.check_constraint "`physical_presence` in (0,1,2) and (`physical_presence` <> 1 or `zfs_path` is not null and `zfs_guid` is not null)", name: "chk_storage_fs_present_identity"
+    t.check_constraint "`zfs_path` is null and `path_digest` is null or `zfs_path` is not null and `path_digest` is not null", name: "chk_storage_fs_path_digest_pair"
+  end
+
+  create_table "storage_freeze_controls", id: :bigint, default: nil, charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.integer "mode", default: 0, null: false
+    t.bigint "epoch", default: 0, null: false, unsigned: true
+    t.integer "requested_by_user_id", unsigned: true
+    t.datetime "requested_at"
+    t.string "reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.check_constraint "`id` = 1", name: "chk_storage_freeze_singleton"
+  end
+
+  create_table "storage_freeze_transitions", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.bigint "storage_freeze_control_id", null: false
+    t.integer "prior_mode", null: false
+    t.integer "new_mode", null: false
+    t.bigint "prior_epoch", null: false, unsigned: true
+    t.bigint "new_epoch", null: false, unsigned: true
+    t.integer "actor_user_id", null: false, unsigned: true
+    t.integer "actor_user_session_id", null: false, unsigned: true
+    t.string "actor_user_login", limit: 128, null: false
+    t.string "reason", null: false
+    t.datetime "created_at", null: false
+    t.index ["actor_user_id"], name: "index_storage_freeze_transitions_on_actor_user_id"
+    t.index ["actor_user_session_id"], name: "index_storage_freeze_transitions_on_actor_user_session_id"
+    t.index ["new_epoch"], name: "index_storage_freeze_transitions_on_new_epoch", unique: true
+    t.index ["storage_freeze_control_id"], name: "index_storage_freeze_transitions_on_storage_freeze_control_id"
+    t.check_constraint "`actor_user_id` > 0 and `actor_user_session_id` > 0 and char_length(trim(`actor_user_login`)) between 1 and 128", name: "chk_storage_freeze_transition_actor"
+    t.check_constraint "`new_epoch` = `prior_epoch` + 1", name: "chk_storage_freeze_transition_epoch"
+    t.check_constraint "`prior_mode` in (0,1) and `new_mode` in (0,1) and `prior_mode` <> `new_mode`", name: "chk_storage_freeze_transition_modes"
+    t.check_constraint "char_length(trim(`reason`)) between 1 and 255", name: "chk_storage_freeze_transition_reason"
+  end
+
+  create_table "storage_integrity_scopes", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.integer "pool_id", unsigned: true
+    t.integer "pool_catalog_id", null: false, unsigned: true
+    t.integer "dataset_in_pool_id", unsigned: true
+    t.integer "dataset_in_pool_catalog_id", unsigned: true
+    t.string "scope_key", limit: 100, null: false, collation: "utf8mb3_bin"
+    t.integer "state", default: 0, null: false
+    t.bigint "mutation_epoch", default: 0, null: false, unsigned: true
+    t.integer "validator_version"
+    t.string "blocker_code", limit: 100
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["dataset_in_pool_id"], name: "idx_storage_scopes_dip"
+    t.index ["pool_id", "dataset_in_pool_id"], name: "idx_storage_scopes_pool_dip"
+    t.index ["scope_key"], name: "index_storage_integrity_scopes_on_scope_key", unique: true
+    t.check_constraint "`dataset_in_pool_catalog_id` is null and `scope_key` = concat('pool:',`pool_catalog_id`) or `dataset_in_pool_catalog_id` is not null and `scope_key` = concat('dip:',`dataset_in_pool_catalog_id`)", name: "chk_storage_scope_key"
+    t.check_constraint "`state` in (0,1,2)", name: "chk_storage_scope_state"
+  end
+
+  create_table "storage_mutation_attempts", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.bigint "storage_mutation_intent_id", null: false
+    t.string "command_key", limit: 80, null: false
+    t.integer "attempt_number", null: false
+    t.integer "direction", null: false
+    t.integer "state", default: 0, null: false
+    t.string "before_digest", limit: 64
+    t.string "after_digest", limit: 64
+    t.string "receipt_digest", limit: 64
+    t.string "failure_code", limit: 100
+    t.integer "strict_dispatch_registry_version"
+    t.string "strict_signed_input_digest", limit: 64
+    t.datetime "started_at"
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["state", "storage_mutation_intent_id"], name: "idx_storage_attempts_state_intent"
+    t.index ["storage_mutation_intent_id", "command_key", "direction", "attempt_number"], name: "idx_storage_attempts_identity", unique: true
+    t.check_constraint "`strict_dispatch_registry_version` is null and `strict_signed_input_digest` is null or `strict_dispatch_registry_version` is not null and `strict_signed_input_digest` is not null", name: "chk_storage_attempt_strict_provenance_pair"
+  end
+
+  create_table "storage_mutation_intent_scopes", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.bigint "storage_mutation_intent_id", null: false
+    t.bigint "storage_integrity_scope_id", null: false
+    t.bigint "expected_epoch", null: false, unsigned: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["storage_integrity_scope_id"], name: "idx_storage_intent_scopes_scope"
+    t.index ["storage_mutation_intent_id", "storage_integrity_scope_id"], name: "idx_storage_intent_scopes_unique", unique: true
+  end
+
+  create_table "storage_mutation_intents", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.string "token", limit: 64, null: false, collation: "utf8mb3_bin"
+    t.integer "transaction_chain_id", unsigned: true
+    t.integer "transaction_id", unsigned: true
+    t.integer "node_id", unsigned: true
+    t.integer "node_catalog_id", null: false, unsigned: true
+    t.string "kind", limit: 80, null: false
+    t.integer "phase", default: 0, null: false
+    t.integer "protocol_version", null: false
+    t.string "manifest_digest", limit: 64, null: false
+    t.datetime "settled_at"
+    t.string "failure_code", limit: 100
+    t.string "settlement_provenance", limit: 32
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["node_id", "phase"], name: "idx_storage_intents_node_phase"
+    t.index ["phase", "transaction_chain_id"], name: "idx_storage_intents_phase_chain"
+    t.index ["token"], name: "index_storage_mutation_intents_on_token", unique: true
+    t.index ["transaction_chain_id"], name: "idx_storage_intents_chain"
+    t.index ["transaction_id"], name: "index_storage_mutation_intents_on_transaction_id", unique: true
+  end
+
+  create_table "storage_mutation_target_observations", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.bigint "storage_mutation_attempt_id", null: false
+    t.bigint "storage_mutation_target_id", null: false
+    t.integer "before_presence", default: 0, null: false
+    t.integer "after_presence", default: 0, null: false
+    t.string "before_path_digest", limit: 64, collation: "utf8mb3_bin"
+    t.string "after_path_digest", limit: 64, collation: "utf8mb3_bin"
+    t.string "before_origin_path_digest", limit: 64, collation: "utf8mb3_bin"
+    t.string "after_origin_path_digest", limit: 64, collation: "utf8mb3_bin"
+    t.string "before_graph_digest", limit: 64, collation: "utf8mb3_bin"
+    t.string "after_graph_digest", limit: 64, collation: "utf8mb3_bin"
+    t.decimal "before_guid", precision: 20
+    t.decimal "after_guid", precision: 20
+    t.decimal "before_owner_fs_guid", precision: 20
+    t.decimal "after_owner_fs_guid", precision: 20
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["storage_mutation_attempt_id", "storage_mutation_target_id"], name: "idx_storage_target_obs_attempt_target", unique: true
+    t.index ["storage_mutation_target_id"], name: "idx_storage_target_obs_target"
+  end
+
+  create_table "storage_mutation_targets", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.bigint "storage_mutation_intent_id", null: false
+    t.bigint "storage_mutation_intent_scope_id", null: false
+    t.bigint "storage_filesystem_identity_id"
+    t.integer "snapshot_in_pool_id", unsigned: true
+    t.integer "snapshot_in_pool_in_branch_id", unsigned: true
+    t.string "catalog_kind", limit: 80
+    t.bigint "catalog_id"
+    t.string "command_key", limit: 80, null: false
+    t.integer "sequence", null: false
+    t.string "kind", limit: 80, null: false
+    t.string "expected_path", limit: 1024, collation: "utf8mb3_bin"
+    t.decimal "expected_guid", precision: 20
+    t.decimal "expected_owner_fs_guid", precision: 20
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["snapshot_in_pool_id"], name: "idx_storage_targets_sip"
+    t.index ["snapshot_in_pool_in_branch_id"], name: "idx_storage_targets_sipb"
+    t.index ["storage_filesystem_identity_id"], name: "idx_storage_targets_fs"
+    t.index ["storage_mutation_intent_id", "command_key", "sequence"], name: "idx_storage_targets_command_sequence", unique: true
+    t.index ["storage_mutation_intent_id"], name: "idx_storage_targets_intent"
+    t.index ["storage_mutation_intent_scope_id"], name: "idx_storage_targets_intent_scope"
+    t.check_constraint "`catalog_kind` is null and `catalog_id` is null or `catalog_kind` is not null and `catalog_id` is not null", name: "chk_storage_target_catalog_pair"
+  end
+
+  create_table "storage_observation_runs", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.bigint "storage_integrity_scope_id", null: false
+    t.integer "collector_version", null: false
+    t.bigint "mutation_epoch", null: false, unsigned: true
+    t.integer "state", default: 0, null: false
+    t.datetime "db_observed_from_at"
+    t.datetime "db_observed_until_at"
+    t.datetime "node_observed_from_at"
+    t.datetime "node_observed_until_at"
+    t.string "digest", limit: 64
+    t.text "counts_json"
+    t.string "failure_code", limit: 100
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["storage_integrity_scope_id", "id"], name: "idx_storage_runs_scope_id"
+  end
+
+  create_table "storage_observer_catch_up_audits", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.string "request_id", limit: 36, null: false, collation: "utf8mb3_bin"
+    t.integer "event_type", null: false
+    t.integer "actor_user_id", null: false, unsigned: true
+    t.integer "actor_user_session_id", null: false, unsigned: true
+    t.string "actor_user_login", limit: 128, null: false
+    t.string "reason", null: false
+    t.bigint "freeze_epoch", null: false, unsigned: true
+    t.bigint "after_chain_id", null: false, unsigned: true
+    t.integer "page_limit", null: false
+    t.text "result_json"
+    t.datetime "created_at", null: false
+    t.index ["actor_user_id"], name: "index_storage_observer_catch_up_audits_on_actor_user_id"
+    t.index ["actor_user_session_id"], name: "idx_on_actor_user_session_id_c7cf61b341"
+    t.index ["event_type", "created_at"], name: "idx_storage_catch_up_event_created"
+    t.index ["request_id", "event_type"], name: "idx_storage_catch_up_request_event", unique: true
+    t.check_constraint "`actor_user_id` > 0 and `actor_user_session_id` > 0 and char_length(trim(`actor_user_login`)) between 1 and 128 and `page_limit` between 1 and 100", name: "chk_storage_catch_up_actor_limit"
+    t.check_constraint "`event_type` = 0 and `result_json` is null or `event_type` = 1 and `result_json` is not null and octet_length(`result_json`) <= 32768", name: "chk_storage_catch_up_event"
+    t.check_constraint "char_length(trim(`reason`)) between 1 and 255", name: "chk_storage_catch_up_reason"
   end
 
   create_table "sysconfig", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -1897,6 +2132,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_190000) do
     t.string "table_name", null: false
     t.integer "transaction_id", null: false
     t.datetime "updated_at", precision: nil
+    t.index ["done", "transaction_id"], name: "idx_transaction_confirmations_done_transaction"
     t.index ["transaction_id"], name: "index_transaction_confirmations_on_transaction_id"
   end
 
@@ -2411,4 +2647,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_190000) do
   add_foreign_key "node_software_versions", "node_kernel_evidences", on_delete: :cascade
   add_foreign_key "node_sysctl_changes", "node_kernel_events", on_delete: :cascade
   add_foreign_key "node_sysctls", "node_kernel_evidences", on_delete: :cascade
+  add_foreign_key "snapshot_in_pool_in_branches", "storage_observation_runs"
+  add_foreign_key "snapshot_in_pools", "storage_observation_runs"
+  add_foreign_key "storage_filesystem_identities", "branches"
+  add_foreign_key "storage_filesystem_identities", "dataset_in_pools"
+  add_foreign_key "storage_filesystem_identities", "dataset_trees"
+  add_foreign_key "storage_filesystem_identities", "nodes"
+  add_foreign_key "storage_filesystem_identities", "pools"
+  add_foreign_key "storage_filesystem_identities", "pools", column: "owner_pool_id"
+  add_foreign_key "storage_filesystem_identities", "snapshot_in_pool_clones"
+  add_foreign_key "storage_filesystem_identities", "snapshot_in_pool_in_branches", column: "origin_snapshot_in_pool_in_branch_id"
+  add_foreign_key "storage_filesystem_identities", "snapshot_in_pools", column: "origin_snapshot_in_pool_id"
+  add_foreign_key "storage_filesystem_identities", "storage_observation_runs"
+  add_foreign_key "storage_freeze_transitions", "storage_freeze_controls"
+  add_foreign_key "storage_integrity_scopes", "dataset_in_pools", on_delete: :nullify
+  add_foreign_key "storage_integrity_scopes", "pools", on_delete: :nullify
+  add_foreign_key "storage_mutation_attempts", "storage_mutation_intents"
+  add_foreign_key "storage_mutation_intent_scopes", "storage_integrity_scopes"
+  add_foreign_key "storage_mutation_intent_scopes", "storage_mutation_intents"
+  add_foreign_key "storage_mutation_intents", "nodes", on_delete: :nullify
+  add_foreign_key "storage_mutation_intents", "transaction_chains", on_delete: :nullify
+  add_foreign_key "storage_mutation_intents", "transactions", on_delete: :nullify
+  add_foreign_key "storage_mutation_target_observations", "storage_mutation_attempts"
+  add_foreign_key "storage_mutation_target_observations", "storage_mutation_targets"
+  add_foreign_key "storage_mutation_targets", "snapshot_in_pool_in_branches", on_delete: :nullify
+  add_foreign_key "storage_mutation_targets", "snapshot_in_pools", on_delete: :nullify
+  add_foreign_key "storage_mutation_targets", "storage_filesystem_identities", on_delete: :nullify
+  add_foreign_key "storage_mutation_targets", "storage_mutation_intent_scopes"
+  add_foreign_key "storage_mutation_targets", "storage_mutation_intents"
+  add_foreign_key "storage_observation_runs", "storage_integrity_scopes"
 end
