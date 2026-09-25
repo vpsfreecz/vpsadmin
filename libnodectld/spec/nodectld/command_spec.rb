@@ -5,6 +5,7 @@ require 'stringio'
 require 'nodectld/transaction_verifier'
 require 'nodectld/confirmations'
 require 'nodectld/command'
+require 'nodectld/commands/dataset/snapshot'
 
 RSpec.describe NodeCtld::Command do
   def build_command(tx_id)
@@ -174,6 +175,26 @@ RSpec.describe NodeCtld::Command do
     expect(chain_state(chain_id)).to include(
       'state' => NodeCtldSpec::TxState::CHAIN_FAILED
     )
+  end
+
+  it 'rejects a signed malformed storage guard before constructing a snapshot handler' do
+    chain_id = insert_chain
+    payload, signature = NodeCtldSpec::SigningHelpers.signed_input(
+      chain_id:, depends_on_id: nil, handle: 5204,
+      node_id: NodeCtldSpec::BaselineSeed.ids.fetch(:node_id),
+      reversible: NodeCtldSpec::TxState::TX_REVERSIBLE,
+      input: { storage_guard: 'malformed' }
+    )
+    tx_id = insert_transaction(transaction_chain_id: chain_id, handle: 5204,
+                               input: payload, signature:)
+    cmd = build_command(tx_id)
+    allow(cmd).to receive(:class_from_name)
+
+    expect(cmd.execute).to be(false)
+    cmd.save(shared_db)
+    expect(cmd).not_to have_received(:class_from_name)
+    expect(direction_output(tx_id, :execute).fetch('error')).to eq('Malformed storage guard')
+    expect(sql_value('SELECT COUNT(*) FROM storage_mutation_attempts')).to eq(0)
   end
 
   it 'fails transactions whose handler returns an invalid value' do
@@ -557,9 +578,11 @@ RSpec.describe NodeCtld::Command do
     expect(transaction_output(tx3)).to eq(
       'execute' => {
         'status' => 'failed',
-        'error' => 'Dependency failed'
+        'error' => 'Dependency failed',
+        'skipped' => true
       }
     )
+    expect(sql_value('SELECT finished_at FROM transactions WHERE id = ?', tx3)).not_to be_nil
   end
 
   it 'fails followers when a non-reversible transaction fails' do
@@ -584,9 +607,11 @@ RSpec.describe NodeCtld::Command do
     expect(transaction_output(tx2)).to eq(
       'execute' => {
         'status' => 'failed',
-        'error' => 'Dependency failed'
+        'error' => 'Dependency failed',
+        'skipped' => true
       }
     )
+    expect(sql_value('SELECT finished_at FROM transactions WHERE id = ?', tx2)).not_to be_nil
     expect(sql_value('SELECT state FROM transaction_chains WHERE id = ?', chain_id)).to eq(
       NodeCtldSpec::TxState::CHAIN_FAILED
     )
@@ -661,9 +686,11 @@ RSpec.describe NodeCtld::Command do
     expect(transaction_output(tx3)).to eq(
       'execute' => {
         'status' => 'failed',
-        'error' => 'Dependency failed'
+        'error' => 'Dependency failed',
+        'skipped' => true
       }
     )
+    expect(sql_value('SELECT finished_at FROM transactions WHERE id = ?', tx3)).not_to be_nil
 
     execute_and_save(tx1)
 

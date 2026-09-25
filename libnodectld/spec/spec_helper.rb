@@ -52,6 +52,7 @@ RSpec.configure do |config|
   config.include NodeCtldSpec::RuntimeHelpers
 
   config.before(:suite) do
+    SpecDbSetup.seed_storage_freeze_control!
     NodeCtldSpec::BaselineSeed.bootstrap!
     NodeCtldSpec::SigningHelpers.install_suite_keypair!
   end

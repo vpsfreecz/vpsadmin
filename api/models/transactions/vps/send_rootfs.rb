@@ -2,6 +2,7 @@ module Transactions::Vps
   class SendRootfs < ::Transaction
     t_name :vps_send_rootfs
     t_type 3031
+    storage_effect :osctl_send
     queue :zfs_send
 
     def params(vps)

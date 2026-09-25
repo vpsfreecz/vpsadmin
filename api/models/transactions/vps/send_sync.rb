@@ -2,6 +2,7 @@ module Transactions::Vps
   class SendSync < ::Transaction
     t_name :vps_send_sync
     t_type 3032
+    storage_effect :osctl_send
     queue :zfs_send
 
     def params(vps)

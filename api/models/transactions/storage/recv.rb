@@ -2,6 +2,7 @@ module Transactions::Storage
   class Recv < ::Transaction
     t_name :storage_recv
     t_type 5220
+    storage_effect :receive
     queue :zfs_recv
 
     def params(port, dst, snapshots, branch = nil, ds_suffix = nil)

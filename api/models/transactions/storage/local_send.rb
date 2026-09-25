@@ -2,6 +2,7 @@ module Transactions::Storage
   class LocalSend < ::Transaction
     t_name :storage_local_send
     t_type 5223
+    storage_effect :local_receive
     queue :zfs_send
 
     def params(src, dst, snapshots, src_branch = nil, dst_branch = nil, ds_suffix = nil)

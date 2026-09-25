@@ -128,7 +128,21 @@ module NodeCtld
         "#{humanize_data(new_refquota_bytes)} (+#{humanize_data(add_bytes)})"
       )
 
-      rs = zfs(:set, "refquota=#{new_refquota_bytes}", ds.name, valid_rcs: :all)
+      rs = nil
+      frozen = false
+      Db.open do |db|
+        db.transaction(restart: false) do |t|
+          row = t.prepared(
+            'SELECT mode FROM storage_freeze_controls WHERE id = 1 FOR UPDATE'
+          ).get!
+          if row['mode'].to_i == 1
+            frozen = true
+          else
+            rs = zfs(:set, "refquota=#{new_refquota_bytes}", ds.name, valid_rcs: :all)
+          end
+        end
+      end
+      return false if frozen
 
       if rs.error?
         log(:warn, "Failed to expand #{ds.name}, exit status #{rs.exitstatus}: #{rs.output}")

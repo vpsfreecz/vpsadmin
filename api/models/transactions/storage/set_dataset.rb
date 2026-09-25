@@ -2,6 +2,7 @@ module Transactions::Storage
   class SetDataset < ::Transaction
     t_name :storage_set_dataset
     t_type 5216
+    storage_effect :filesystem_property
     queue :storage
 
     def params(dataset_in_pool, changes)

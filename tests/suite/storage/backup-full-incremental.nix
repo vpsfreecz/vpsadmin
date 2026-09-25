@@ -157,7 +157,6 @@ import ../../make-test.nix (
         node.succeeds('nodectl set config vpsadmin.queues.zfs_send.start_delay=0')
         node.succeeds('nodectl set config vpsadmin.queues.zfs_recv.start_delay=0')
         node.succeeds('nodectl queue resume all')
-        services.unlock_transaction_signing_key(passphrase: 'test')
       end
 
       describe 'full and incremental backup', order: :defined do

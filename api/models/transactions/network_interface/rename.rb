@@ -2,6 +2,7 @@ module Transactions::NetworkInterface
   class Rename < ::Transaction
     t_name :netif_rename
     t_type 2020
+    storage_effect :osctl_runtime_topology
     queue :vps
 
     def params(netif, orig, new_name)

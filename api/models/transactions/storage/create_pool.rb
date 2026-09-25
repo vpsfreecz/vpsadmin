@@ -2,6 +2,7 @@ module Transactions::Storage
   class CreatePool < ::Transaction
     t_name :storage_create_pool
     t_type 5250
+    storage_effect :pool_create
     queue :storage
 
     def params(pool, properties)

@@ -4,6 +4,7 @@ require 'spec_helper'
 
 RSpec.describe TransactionChains::Dataset::Migrate do
   around do |example|
+    unlock_transaction_signer!
     with_current_context do
       example.run
     end
@@ -95,6 +96,35 @@ RSpec.describe TransactionChains::Dataset::Migrate do
     expect(classes).to include(
       Transactions::Storage::SetCanmount,
       Transactions::Storage::DestroyDataset
+    )
+  end
+
+  it 'allocates distinct timestamp names for repeated migration snapshots' do
+    src_pool, dst_pool = create_primary_pool_pair
+    root, root_dip, child, = create_dataset_subtree!(pool: src_pool)
+    fixed_time = Time.utc(2026, 9, 25, 23, 46, 59)
+    base_name = fixed_time.strftime('%Y-%m-%dT%H:%M:%S')
+
+    create_snapshot!(dataset: root, dip: root_dip, name: base_name)
+    create_snapshot!(dataset: root, dip: root_dip,
+                     name: "#{(fixed_time + 1).strftime('%Y-%m-%dT%H:%M:%S')} (unconfirmed)")
+    allow(Time).to receive(:now).and_return(fixed_time)
+
+    chain, = described_class.fire(root_dip, dst_pool, send_mail: false)
+    by_dataset = transactions_for(chain).filter_map do |transaction|
+      next unless transaction.handle == Transactions::Storage::CreateSnapshot.t_type
+
+      payload = JSON.parse(transaction.input).fetch('input')
+      snapshot = Snapshot.find(payload.fetch('snapshot_id'))
+      expect(snapshot.name).to eq("#{payload.fetch('planned_snapshot_name')} (unconfirmed)")
+      [snapshot.dataset_id, payload.fetch('planned_snapshot_name')]
+    end.group_by(&:first)
+
+    expect(by_dataset.fetch(root.id).map(&:last)).to eq(
+      [fixed_time + 2, fixed_time + 3].map { |time| time.strftime('%Y-%m-%dT%H:%M:%S') }
+    )
+    expect(by_dataset.fetch(child.id).map(&:last)).to eq(
+      [fixed_time, fixed_time + 1].map { |time| time.strftime('%Y-%m-%dT%H:%M:%S') }
     )
   end
 
