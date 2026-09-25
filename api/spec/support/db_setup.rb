@@ -151,6 +151,14 @@ module SpecDbSetup
     load schema_path
   end
 
+  def seed_storage_freeze_control!
+    ActiveRecord::Base.connection.execute(<<~SQL)
+      INSERT INTO storage_freeze_controls (id, mode, epoch, created_at, updated_at)
+      VALUES (1, 0, 0, UTC_TIMESTAMP(), UTC_TIMESTAMP())
+      ON DUPLICATE KEY UPDATE id = id
+    SQL
+  end
+
   def seed_minimal_sysconfig!
     seed_key('core', 'api_url', 'http://api.test')
     seed_key('core', 'webauthn_rp_name', 'vpsAdmin Test')

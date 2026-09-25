@@ -171,6 +171,7 @@ in
                 dbInitialized=no
                 echo "Loading database schema"
                 ${apiApp.bundle} exec rake db:schema:load
+                ${apiApp.bundle} exec rake db:bootstrap:storage_freeze_control || exit 1
                 date > "$dbStateFile"
               fi
 
