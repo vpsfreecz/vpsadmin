@@ -29,6 +29,7 @@ RSpec.configure do |config|
   end
 
   config.before(:suite) do
+    SpecDbSetup.seed_storage_freeze_control!
     SpecSeed.seed_language_if_needed!
     SpecDbSetup.seed_minimal_sysconfig!
     SpecDbSetup.seed_minimal_cluster_resources!
