@@ -105,6 +105,7 @@ module NodeCtld::Commands
   module Branch; end
   module Vps; end
   module Dataset; end
+  module Storage; end
   module Shaper; end
   module Utils; end
   module Mail; end

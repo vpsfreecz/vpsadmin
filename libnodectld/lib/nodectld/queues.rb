@@ -5,6 +5,7 @@ module NodeCtld
     QUEUES = %i[
       general
       storage
+      inventory
       network
       vps
       zfs_send
@@ -110,7 +111,7 @@ module NodeCtld
     end
 
     def free_slot?(cmd)
-      sync { @queues[cmd.queue].free_slot?(cmd) }
+      sync { @queues[queue_for(cmd)].free_slot?(cmd) }
     end
 
     def busy?(chain_id)
@@ -150,7 +151,8 @@ module NodeCtld
     def queue_for(cmd)
       if cmd.current_chain_direction == :rollback
         :rollback
-
+      elsif cmd.type.to_i == 5290
+        :inventory
       else
         cmd.queue
       end
