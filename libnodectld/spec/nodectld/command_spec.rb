@@ -6,10 +6,16 @@ require 'nodectld/transaction_verifier'
 require 'nodectld/confirmations'
 require 'nodectld/command'
 require 'nodectld/commands/dataset/snapshot'
+require 'nodectld/commands/dataset/destroy_snapshot'
+require 'nodectld/commands/utils/no_op'
 
 RSpec.describe NodeCtld::Command do
   def build_command(tx_id)
     described_class.new(joined_transaction_row(tx_id))
+  end
+
+  def build_strict_command(tx_id)
+    described_class.new(joined_transaction_row(tx_id), strict_storage_dispatch: true)
   end
 
   def execute_and_save(tx_id)
@@ -55,6 +61,208 @@ RSpec.describe NodeCtld::Command do
 
   def expect_log_to_include(log, *parts)
     parts.each { |part| expect(log).to include(part) }
+  end
+
+  it 'closes unsupported strict execute before a handler, retaining locks and confirmations' do
+    chain_id = insert_chain
+    tx_id = insert_transaction(transaction_chain_id: chain_id, handle: 5212)
+    insert_resource_lock(chain_id:)
+    insert_confirmation(transaction_id: tx_id, class_name: 'SpecRecord',
+                        table_name: 'spec_records', row_pks: [1], confirm_type: 0)
+    cmd = build_strict_command(tx_id)
+    allow(cmd).to receive(:class_from_name)
+
+    expect(cmd.execute).to be(false)
+    cmd.save(shared_db)
+    expect(cmd).not_to have_received(:class_from_name)
+    expect(chain_state(chain_id).fetch('state')).to eq(NodeCtldSpec::TxState::CHAIN_FATAL)
+    expect(tx_state(tx_id)).to eq('done' => 0, 'status' => 0)
+    expect(direction_output(tx_id, :execute).fetch('error')).to include('Strict storage dispatch refused')
+    expect(sql_value('SELECT finished_at FROM transactions WHERE id = ?', tx_id)).not_to be_nil
+    expect(sql_value('SELECT COUNT(*) FROM resource_locks WHERE locked_by_id = ?', chain_id)).to eq(1)
+    expect(sql_value('SELECT COUNT(*) FROM transaction_confirmations WHERE transaction_id = ? AND done = 0', tx_id)).to eq(1)
+  end
+
+  it 'refuses an unsupported strict rollback without claiming it finished' do
+    chain_id = insert_chain(state: NodeCtldSpec::TxState::CHAIN_ROLLBACKING)
+    tx_id = insert_transaction(transaction_chain_id: chain_id, handle: 5220,
+                               done: NodeCtldSpec::TxState::TX_DONE_DONE)
+    cmd = build_strict_command(tx_id)
+    allow(cmd).to receive(:class_from_name)
+
+    expect(cmd.execute).to be(false)
+    cmd.save(shared_db)
+    expect(cmd).not_to have_received(:class_from_name)
+    expect(tx_state(tx_id).fetch('done')).to eq(NodeCtldSpec::TxState::TX_DONE_DONE)
+    expect(direction_output(tx_id, :rollback).fetch('status')).to eq('failed')
+    expect(chain_state(chain_id).fetch('state')).to eq(NodeCtldSpec::TxState::CHAIN_FATAL)
+  end
+
+  it 'refuses an old signed strict snapshot guard before constructing its handler' do
+    chain_id = insert_chain
+    node_id = NodeCtldSpec::BaselineSeed.ids.fetch(:node_id)
+    payload, signature = NodeCtldSpec::SigningHelpers.signed_input(
+      chain_id:, depends_on_id: nil, handle: 5204, node_id:,
+      reversible: NodeCtldSpec::TxState::TX_REVERSIBLE,
+      input: { storage_guard: { token: 'old', protocol_version: 1,
+                                registry_version: 2 } }
+    )
+    tx_id = insert_transaction(transaction_chain_id: chain_id, handle: 5204,
+                               input: payload, signature:)
+    cmd = build_strict_command(tx_id)
+    allow(cmd).to receive(:class_from_name)
+
+    expect(cmd.execute).to be(false)
+    cmd.save(shared_db)
+    expect(cmd).not_to have_received(:class_from_name)
+    expect(direction_output(tx_id, :execute).fetch('error')).to include('version is unsupported')
+    expect(sql_value('SELECT COUNT(*) FROM storage_mutation_intents WHERE transaction_id = ?', tx_id)).to eq(0)
+    expect(sql_value('SELECT signature FROM transactions WHERE id = ?', tx_id)).to eq(signature)
+    expect(chain_state(chain_id).fetch('state')).to eq(NodeCtldSpec::TxState::CHAIN_FATAL)
+    expect(sql_value('SELECT COUNT(*) FROM transaction_chains WHERE id = ? AND state IN (1, 3)',
+                     chain_id)).to eq(0)
+  end
+
+  it 'quarantines a signed snapshot when receipt inspection is unavailable' do
+    chain_id = insert_chain
+    node_id = NodeCtldSpec::BaselineSeed.ids.fetch(:node_id)
+    pool = insert_pool!(filesystem: "tank/strict-#{SecureRandom.hex(3)}")
+    token = SecureRandom.hex(32)
+    digest = 'b' * 64
+    guard = { token:, manifest_digest: digest, protocol_version: 1,
+              registry_version: NodeCtld::StorageEffectRegistry::VERSION }
+    payload, signature = NodeCtldSpec::SigningHelpers.signed_input(
+      chain_id:, depends_on_id: nil, handle: 5204, node_id:,
+      reversible: NodeCtldSpec::TxState::TX_REVERSIBLE,
+      input: { storage_guard: guard, snapshot_id: 1, pool_fs: pool.fetch('filesystem'),
+               dataset_name: '101', planned_snapshot_name: '2026-09-24T12:00:00' }
+    )
+    tx_id = insert_transaction(transaction_chain_id: chain_id, handle: 5204,
+                               input: payload, signature:)
+    now = Time.now.utc
+    scope_id = sql_insert('storage_integrity_scopes', {
+      pool_id: pool.fetch('id'), pool_catalog_id: pool.fetch('id'),
+      scope_key: "pool:#{pool.fetch('id')}", mutation_epoch: 1, state: 0,
+      created_at: now, updated_at: now
+    })
+    intent_id = sql_insert('storage_mutation_intents', {
+      token:, transaction_chain_id: chain_id, transaction_id: tx_id,
+      node_id:, node_catalog_id: node_id, kind: 'snapshot_create', phase: 0,
+      protocol_version: 1, manifest_digest: digest, created_at: now, updated_at: now
+    })
+    sql_insert('storage_mutation_intent_scopes', {
+      storage_mutation_intent_id: intent_id, storage_integrity_scope_id: scope_id,
+      expected_epoch: 1, created_at: now, updated_at: now
+    })
+    allow(NodeCtld::StorageMutationReceipt).to receive(:new).and_raise('DB read unavailable')
+    cmd = build_strict_command(tx_id)
+    allow(cmd).to receive(:class_from_name)
+
+    expect(cmd.execute).to be(false)
+    unavailable_db = double
+    allow(unavailable_db).to receive(:transaction).and_raise('DB write unavailable')
+    expect { cmd.save(unavailable_db) }.to raise_error('DB write unavailable')
+    expect(sql_value('SELECT phase FROM storage_mutation_intents WHERE id = ?', intent_id)).to eq(0)
+    cmd.save(shared_db)
+    expect(cmd).not_to have_received(:class_from_name)
+    expect(sql_value('SELECT phase FROM storage_mutation_intents WHERE id = ?', intent_id)).to eq(5)
+    expect(sql_value('SELECT state FROM storage_integrity_scopes WHERE id = ?', scope_id)).to eq(2)
+    expect(chain_state(chain_id).fetch('state')).to eq(NodeCtldSpec::TxState::CHAIN_FATAL)
+  end
+
+  it 'rejects nested mutating handlers before constructing them in strict tests' do
+    chain_id = insert_chain
+    tx_id = insert_transaction(transaction_chain_id: chain_id, handle: 5212)
+    cmd = build_strict_command(tx_id)
+    nested = NodeCtld::Commands::Dataset::Snapshot
+    base = NodeCtld::Commands::Base.new(cmd, {})
+    allow(nested).to receive(:new)
+
+    expect do
+      base.send(:call_cmd, nested, {})
+    end.to raise_error(NodeCtld::StorageStrictDispatch::Refused, /nested storage effect 5204/)
+    expect(nested).not_to have_received(:new)
+  end
+
+  it 'closes a strict chain whose every member has no storage effect' do
+    chain_id = insert_chain(size: 2)
+    first = insert_transaction(transaction_chain_id: chain_id, handle: 10_001)
+    second = insert_transaction(transaction_chain_id: chain_id, handle: 10_001,
+                                depends_on_id: first)
+
+    [first, second].each do |tx_id|
+      cmd = build_strict_command(tx_id)
+      cmd.execute
+      cmd.save(shared_db)
+    end
+
+    expect(chain_state(chain_id).fetch('state')).to eq(NodeCtldSpec::TxState::CHAIN_DONE)
+    expect(tx_state(first).fetch('status')).to eq(NodeCtldSpec::TxState::TX_STATUS_OK)
+    expect(tx_state(second).fetch('status')).to eq(NodeCtldSpec::TxState::TX_STATUS_OK)
+  end
+
+  it 'does not let a strict no-op rollback excuse an old destroy effect' do
+    chain_id = insert_chain(state: NodeCtldSpec::TxState::CHAIN_ROLLBACKING)
+    tx_id = insert_transaction(transaction_chain_id: chain_id, handle: 5212,
+                               done: 1, status: 1)
+    sql_update('transactions', {
+      output: { execute: { status: 'ok' } }.to_json, finished_at: Time.now.utc
+    }, 'id = ?', tx_id)
+    cmd = build_strict_command(tx_id)
+    handler = double(output: {}, rollback: { ret: :ok })
+    allow(cmd).to receive(:class_from_name).and_return(double(new: handler))
+
+    cmd.execute
+    cmd.save(shared_db)
+
+    expect(chain_state(chain_id).fetch('state')).to eq(NodeCtldSpec::TxState::CHAIN_FATAL)
+    expect(tx_state(tx_id).fetch('done')).to eq(1)
+    expect(direction_output(tx_id, :rollback).fetch('error')).to include('Strict chain closure refused')
+  end
+
+  it 'refuses a strict no-storage tail after an old unproved storage effect' do
+    chain_id = insert_chain(size: 2, progress: 1)
+    prior = insert_transaction(transaction_chain_id: chain_id, handle: 5220,
+                               done: 1, status: 1)
+    sql_update('transactions', {
+      output: { execute: { status: 'ok' } }.to_json, finished_at: Time.now.utc
+    }, 'id = ?', prior)
+    tail = insert_transaction(transaction_chain_id: chain_id, handle: 10_001,
+                              depends_on_id: prior)
+    insert_resource_lock(chain_id:)
+    cmd = build_strict_command(tail)
+
+    cmd.execute
+    cmd.save(shared_db)
+
+    expect(chain_state(chain_id).fetch('state')).to eq(NodeCtldSpec::TxState::CHAIN_FATAL)
+    expect(tx_state(tail).fetch('done')).to eq(0)
+    expect(sql_value('SELECT COUNT(*) FROM resource_locks WHERE locked_by_id = ?', chain_id)).to eq(1)
+  end
+
+  it 'does not accept an earlier observer 5204 phase as strict chain proof' do
+    chain_id = insert_chain(size: 2, progress: 1)
+    prior = insert_transaction(transaction_chain_id: chain_id, handle: 5204,
+                               done: 1, status: 1)
+    sql_update('transactions', {
+      output: { execute: { status: 'ok' } }.to_json, finished_at: Time.now.utc
+    }, 'id = ?', prior)
+    node_id = NodeCtldSpec::BaselineSeed.ids.fetch(:node_id)
+    sql_insert('storage_mutation_intents', {
+      token: SecureRandom.hex(32), transaction_chain_id: chain_id,
+      transaction_id: prior, node_id:, node_catalog_id: node_id,
+      kind: 'snapshot_create', phase: 2, protocol_version: 1,
+      manifest_digest: 'c' * 64, created_at: Time.now.utc, updated_at: Time.now.utc
+    })
+    tail = insert_transaction(transaction_chain_id: chain_id, handle: 10_001,
+                              depends_on_id: prior)
+    cmd = build_strict_command(tail)
+
+    cmd.execute
+    cmd.save(shared_db)
+
+    expect(chain_state(chain_id).fetch('state')).to eq(NodeCtldSpec::TxState::CHAIN_FATAL)
+    expect(tx_state(tail).fetch('done')).to eq(0)
   end
 
   %i[success rollback fatal].each do |outcome|
@@ -196,26 +404,6 @@ RSpec.describe NodeCtld::Command do
     )
   end
 
-  it 'rejects a signed malformed storage guard before constructing a snapshot handler' do
-    chain_id = insert_chain
-    payload, signature = NodeCtldSpec::SigningHelpers.signed_input(
-      chain_id:, depends_on_id: nil, handle: 5204,
-      node_id: NodeCtldSpec::BaselineSeed.ids.fetch(:node_id),
-      reversible: NodeCtldSpec::TxState::TX_REVERSIBLE,
-      input: { storage_guard: 'malformed' }
-    )
-    tx_id = insert_transaction(transaction_chain_id: chain_id, handle: 5204,
-                               input: payload, signature:)
-    cmd = build_command(tx_id)
-    allow(cmd).to receive(:class_from_name)
-
-    expect(cmd.execute).to be(false)
-    cmd.save(shared_db)
-    expect(cmd).not_to have_received(:class_from_name)
-    expect(direction_output(tx_id, :execute).fetch('error')).to eq('Malformed storage guard')
-    expect(sql_value('SELECT COUNT(*) FROM storage_mutation_attempts')).to eq(0)
-  end
-
   it 'fails transactions whose handler returns an invalid value' do
     chain_id = insert_chain
     tx_id = insert_transaction(
@@ -292,6 +480,26 @@ RSpec.describe NodeCtld::Command do
     expect(chain_state(chain_id)).to include(
       'state' => NodeCtldSpec::TxState::CHAIN_FAILED
     )
+  end
+
+  it 'rejects a signed malformed storage guard before constructing a snapshot handler' do
+    chain_id = insert_chain
+    payload, signature = NodeCtldSpec::SigningHelpers.signed_input(
+      chain_id:, depends_on_id: nil, handle: 5204,
+      node_id: NodeCtldSpec::BaselineSeed.ids.fetch(:node_id),
+      reversible: NodeCtldSpec::TxState::TX_REVERSIBLE,
+      input: { storage_guard: 'malformed' }
+    )
+    tx_id = insert_transaction(transaction_chain_id: chain_id, handle: 5204,
+                               input: payload, signature:)
+    cmd = build_command(tx_id)
+    allow(cmd).to receive(:class_from_name)
+
+    expect(cmd.execute).to be(false)
+    cmd.save(shared_db)
+    expect(cmd).not_to have_received(:class_from_name)
+    expect(direction_output(tx_id, :execute).fetch('error')).to eq('Malformed storage guard')
+    expect(sql_value('SELECT COUNT(*) FROM storage_mutation_attempts')).to eq(0)
   end
 
   it 'rejects transactions whose signed options do not match relational columns' do

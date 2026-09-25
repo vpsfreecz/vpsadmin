@@ -1,3 +1,5 @@
+require 'time'
+
 module NodeCtld
   class Commands::Dataset::GroupSnapshot < Commands::Base
     handle 5215
@@ -6,6 +8,8 @@ module NodeCtld
     include Utils::Zfs
 
     def exec
+      return strict_exec if strict_receipt
+
       @name = nil
       @created_at = nil
 
@@ -40,9 +44,7 @@ module NodeCtld
       zfs(
         :snapshot,
         nil,
-        @snapshots.inject([]) do |snaps, s|
-          snaps << "#{s['pool_fs']}/#{s['dataset_name']}@#{@name}"
-        end.join(' ')
+        snapshot_paths.join(' ')
       )
 
       save_state
@@ -51,6 +53,8 @@ module NodeCtld
     end
 
     def rollback
+      return strict_rollback if strict_receipt
+
       @snapshots.each do |s|
         zfs(:destroy, nil, "#{s['pool_fs']}/#{s['dataset_name']}@#{@name}", valid_rcs: [1])
       end
@@ -68,10 +72,76 @@ module NodeCtld
     end
 
     def post_save
-      remove_state
+      remove_state unless strict_receipt
+    end
+
+    def storage_observation(direction)
+      if direction == :execute
+        [@execute_before, @execute_after]
+      else
+        [@rollback_before, @rollback_after]
+      end
+    end
+
+    def capture_interrupted_execute_observation
+      return unless strict_receipt && @execute_before
+
+      @execute_after = strict_receipt.observe_all! if @execute_after.nil?
     end
 
     protected
+
+    def strict_receipt
+      @command.strict_group_snapshot_receipt if @command.respond_to?(:strict_group_snapshot_receipt)
+    end
+
+    def strict_exec
+      @name = @planned_snapshot_name
+      @created_at = Time.strptime(@name, '%Y-%m-%dT%H:%M:%S').utc.strftime('%Y-%m-%d %H:%M:%S')
+      @execute_before = strict_receipt.before
+      zfs(:snapshot, nil, snapshot_paths.join(' '))
+      @execute_after = strict_receipt.observe_all!
+      raise 'group snapshot postflight is incomplete' unless
+        @execute_before.zip(@execute_after).all? do |prior, current|
+          StorageGroupSnapshotReceipt.created?(prior, current)
+        end
+
+      ok
+    ensure
+      if strict_receipt && @execute_before && @execute_after.nil?
+        @execute_after = strict_receipt.observe_all!
+      end
+    end
+
+    def strict_rollback
+      @name = @planned_snapshot_name
+      receipt = strict_receipt
+      @rollback_before = receipt.before
+      receipt.targets.zip(receipt.created_guids, @rollback_before).each do |target, guid, current|
+        next unless guid
+
+        latest = receipt.observe_target!(target)
+        raise 'group rollback identity changed' unless
+          latest == current && latest[:presence] == :present && latest[:guid] == guid &&
+          latest[:path] == target[:path] && latest[:owner_guid] == target[:owner_guid] &&
+          latest[:empty_dependencies]
+
+        zfs(:destroy, nil, target[:path])
+      end
+      @rollback_after = receipt.observe_all!
+      raise 'group rollback postflight is incomplete' unless
+        @rollback_before.zip(@rollback_after, receipt.created_guids).all? do |prior, current, guid|
+          guid ? StorageGroupSnapshotReceipt.compensated?(prior, current) : prior == current
+        end
+
+      ok
+    ensure
+      @rollback_after ||= receipt.observe_all! if receipt && @rollback_before
+    end
+
+    def snapshot_paths
+      @snapshots.map { |s| "#{s['pool_fs']}/#{s['dataset_name']}@#{@name}" }
+    end
 
     def save_state
       File.open(state_file_path, 'w') do |f|

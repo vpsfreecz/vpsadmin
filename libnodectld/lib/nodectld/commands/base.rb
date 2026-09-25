@@ -96,6 +96,7 @@ module NodeCtld::Commands
 
     # Call command +cmd+ with +opts+.
     def call_cmd(cmd, opts)
+      @command.strict_nested_command!(cmd) if @command.respond_to?(:strict_nested_command!)
       cmd.new(@command, opts).exec
     end
   end
