@@ -51,6 +51,16 @@ RSpec.describe NodeCtld::NodeActivity do
     queues.execute(inventory)
     expect(sample[:queues][:inventory][:workers]).to eq(1)
     expect(sample[:effect_generation]).to eq(0)
+
+    activity_probe = command(8, handle: 5291)
+    queues.execute(activity_probe)
+    expect(sample[:effect_generation]).to eq(0)
+    expect(sample[:queues][:inventory][:workers]).to eq(2)
+    excluded = activity.snapshot(
+      queues:, blockers:, excluding_transaction_id: activity_probe.id
+    )
+    expect(excluded[:queues][:inventory][:workers]).to eq(1)
+    expect(excluded[:unknown_reasons]).not_to include('probe_worker_unproved')
     queues[:inventory].delete_if(saved: true) { true }
     expect(sample[:effect_generation]).to eq(0)
 

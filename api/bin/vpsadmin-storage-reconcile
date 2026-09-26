@@ -8,7 +8,7 @@ require_relative '../lib/vpsadmin/storage_reconciler'
 command = ARGV.shift
 options = {}
 parser = OptionParser.new do |opts|
-  opts.banner = 'Usage: vpsadmin-storage-reconcile capture|compare|dry-run|plan [options]'
+  opts.banner = 'Usage: vpsadmin-storage-reconcile capture|compare|dry-run|plan|activity-report [options]'
   opts.on('--pool-id ID', Integer) { |value| options[:pool_id] = value }
   opts.on('--run-id ID', Integer) { |value| options[:run_id] = value }
   opts.on('--mode MODE') { |value| options[:mode] = value }
@@ -67,8 +67,19 @@ begin
       warn "invalid storage reconciliation artifacts: #{e.class.name.split('::').last}"
       exit(3)
     end
+  when 'activity-report'
+    raise OptionParser::InvalidOption, '--pool-id, --run-id and --mode are not valid' if
+      options[:pool_id] || options[:run_id] || options[:mode]
+
+    runner = VpsAdmin::StorageReconciler::ActivityReport.new(
+      private_dir: options.fetch(:private_dir)
+    )
+    result = runner.run!
+    puts "activity_report=#{File.basename(runner.report_directory)} state=#{result.fetch('state')}"
+    # Child lifetime coverage is incomplete, so this report never exits as ready.
+    exit(2)
   else
-    raise OptionParser::InvalidArgument, 'choose capture, compare, dry-run or plan'
+    raise OptionParser::InvalidArgument, 'choose capture, compare, dry-run, plan or activity-report'
   end
 rescue OptionParser::ParseError => e
   warn "invalid arguments: #{e.message}"

@@ -326,14 +326,22 @@ module NodeCtld
       end
     end
 
-    def activity_counts(deadline:)
+    def activity_counts(deadline:, excluding_transaction_id: nil)
       until @mon.try_enter
         return nil if Process.clock_gettime(Process::CLOCK_MONOTONIC) >= deadline
 
         sleep 0.001
       end
       begin
-        { workers: @workers.size, reservations: @reserved.size }
+        if excluding_transaction_id
+          excluded = @workers.values.count do |worker|
+            worker.cmd.id.to_i == excluding_transaction_id.to_i
+          end
+          { workers: @workers.size - excluded, reservations: @reserved.size,
+            excluded: }
+        else
+          { workers: @workers.size, reservations: @reserved.size }
+        end
       ensure
         @mon.exit
       end

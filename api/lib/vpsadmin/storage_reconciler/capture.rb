@@ -18,7 +18,7 @@ module VpsAdmin
       end
 
       def run!
-        unlock_signer!
+        unlock_signer! unless VpsAdmin::API::TransactionSigner.unlocked?
         config = broker_config!
         pool = Pool.includes(node: :location).find(@pool_id)
         scope = StorageIntegrityScope.find_or_create_by!(scope_key: "pool:#{pool.id}") do |row|
@@ -113,8 +113,6 @@ module VpsAdmin
         raise
       end
 
-      private
-
       def unlock_signer!
         tty = IO.console
         raise Incomplete, 'capture requires a controlling TTY' unless tty&.tty?
@@ -132,6 +130,8 @@ module VpsAdmin
           passphrase.replace("\0" * passphrase.bytesize)
         end
       end
+
+      private
 
       def broker_config!
         config = VpsAdmin::Supervisor::Cli.parse_config
