@@ -175,7 +175,8 @@ module VpsAdmin
 
       def manifest_for(store:, db:, final:, run_uuid:, attempt_uuid:, pool:, state:)
         data = {
-          'version' => Format::VERSION, 'policy_version' => Format::POLICY_VERSION,
+          'version' => Format::VERSION,
+          'policy_version' => Format::LEGACY_POLICY_VERSION,
           'run_id' => run.id.to_s, 'run_uuid' => run_uuid,
           'attempt_uuid' => attempt_uuid, 'mode' => @mode, 'state' => state,
           'confidence' => 'advisory_unguarded', 'finding_key' => store.key_metadata,
