@@ -6,7 +6,7 @@ module VpsAdmin
 
       COVERAGE_BLOCKERS = %w[
         selected_chain_confirmations_only observer_epoch_without_freeze
-        strict_writer_and_drain_proof_absent
+        strict_writer_and_drain_proof_absent historical_terminal_coverage_unknown
       ].freeze
       CATALOG_OWNERS = {
         'owner_pool_id' => 'Pool',
@@ -120,6 +120,8 @@ module VpsAdmin
           'proof_coverage' => {
             'db_closure' => 'selected_pool_and_captured_dependencies',
             'historical_confirmations' => @manifest.dig('db', 'confirmation_coverage'),
+            'historical_terminal_coverage' => @manifest.dig('db', 'historical_terminal_coverage'),
+            'evidence_selection' => @manifest.dig('db', 'evidence_selection'),
             'node_inventory' => if two_pass_complete?
                                   'complete_manifest_two_pass'
                                 else
