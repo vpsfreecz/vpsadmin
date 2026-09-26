@@ -642,13 +642,19 @@ module VpsAdmin
       def finding(code, kind, id, evidence, blockers, counterpart: nil)
         raise Invalid, 'finding limit exceeded' if @findings.size >= MAX_FINDINGS
 
+        coverage_blockers = ['historical_terminal_coverage_unknown']
+        if @manifest.dig('db', 'evidence_selection', 'strategy') !=
+           'current_graph_and_observable_node_work'
+          coverage_blockers << 'legacy_evidence_selection_unproved'
+        end
         identity = [Format::POLICY_VERSION, code, @scope.fetch('node_id').to_s,
                     @scope.fetch('pool_id').to_s, kind, id&.to_s, counterpart]
         key = Format.digest(identity)
         @findings << Format.record('finding', {
           'code' => code, 'finding_key' => key, 'subject_kind' => kind,
           'subject_id' => id&.to_s, 'scope' => @scope,
-          'confidence' => 'advisory_unguarded', 'blockers' => blockers,
+          'confidence' => 'advisory_unguarded',
+          'blockers' => (blockers + coverage_blockers).uniq.sort,
           'evidence' => evidence,
           'evidence_digest' => @store.hmac([
                                              evidence, @manifest.fetch('db').fetch('digest'),

@@ -86,7 +86,8 @@ RSpec.describe VpsAdmin::StorageReconciler::ProofPlanner do
       [path, object&.dig('fields', 'guid')]
     end
     manifest = {
-      'version' => format::VERSION, 'policy_version' => format::POLICY_VERSION,
+      'version' => format::VERSION,
+      'policy_version' => format::LEGACY_POLICY_VERSION,
       'state' => state, 'confidence' => 'advisory_unguarded',
       'finding_key' => store.key_metadata, 'run_id' => store.run_id.to_s,
       'mode' => mode,
@@ -113,7 +114,7 @@ RSpec.describe VpsAdmin::StorageReconciler::ProofPlanner do
   end
 
   def actions(store)
-    File.readlines(store.path('candidate-actions-v2.jsonl')).map do |line|
+    File.readlines(store.path('candidate-actions-v3.jsonl')).map do |line|
       format.parse_line!(line, expected_kind: 'candidate_action').fetch('fields')
     end
   end
@@ -780,7 +781,7 @@ RSpec.describe VpsAdmin::StorageReconciler::ProofPlanner do
         artifacts.compare!
         expect { artifacts.plan! }
           .to raise_error(described_class::Invalid, 'two-pass inventory proof is incomplete')
-        expect(File.exist?(store.path('candidate-actions-v2.jsonl'))).to be(false)
+        expect(File.exist?(store.path('candidate-actions-v3.jsonl'))).to be(false)
       end
     end
   end
@@ -793,7 +794,7 @@ RSpec.describe VpsAdmin::StorageReconciler::ProofPlanner do
       artifacts.compare!
       interrupted = false
       allow(store).to receive(:write).and_wrap_original do |original, name, &block|
-        if name == 'dry-run-v2.json' && !interrupted
+        if name == 'dry-run-v3.json' && !interrupted
           interrupted = true
           raise IOError, 'before summary seal'
         end
@@ -801,11 +802,11 @@ RSpec.describe VpsAdmin::StorageReconciler::ProofPlanner do
         original.call(name, &block)
       end
       expect { artifacts.plan! }.to raise_error(IOError, 'before summary seal')
-      first = File.binread(store.path('candidate-actions-v2.jsonl'))
+      first = File.binread(store.path('candidate-actions-v3.jsonl'))
       summary = artifacts.plan!
       expect(artifacts.plan!).to eq(summary)
-      expect(File.binread(store.path('candidate-actions-v2.jsonl'))).to eq(first)
-      File.open(store.path('candidate-actions-v2.jsonl'), 'a') { |file| file.write("tamper\n") }
+      expect(File.binread(store.path('candidate-actions-v3.jsonl'))).to eq(first)
+      File.open(store.path('candidate-actions-v3.jsonl'), 'a') { |file| file.write("tamper\n") }
       expect { artifacts.plan! }.to raise_error(
         VpsAdmin::StorageReconciler::Artifacts::Invalid,
         'existing report artifact differs from recomputed output'
@@ -836,7 +837,7 @@ RSpec.describe VpsAdmin::StorageReconciler::ProofPlanner do
     end
   end
 
-  it 'rejects incomplete or stale captures and an edited v1 report' do
+  it 'rejects incomplete or stale captures and an edited policy-2 report' do
     %w[incomplete stale].each do |state|
       Dir.mktmpdir do |root|
         store = VpsAdmin::StorageReconciler::PrivateStore.new(root:, run_id: 1, create: true)
@@ -850,10 +851,10 @@ RSpec.describe VpsAdmin::StorageReconciler::ProofPlanner do
       write_capture(store, mode: 'bootstrap')
       artifacts = VpsAdmin::StorageReconciler::Artifacts.new(store)
       artifacts.compare!
-      report = store.read_json('report-v1.json')
+      report = store.read_json('report-v2.json')
       report['finding_counts'] = {}
       report['digest'] = format.digest(report.except('digest'))
-      File.write(store.path('report-v1.json'), "#{format.canonical(report)}\n")
+      File.write(store.path('report-v2.json'), "#{format.canonical(report)}\n")
       expect { artifacts.plan! }
         .to raise_error(VpsAdmin::StorageReconciler::Artifacts::Invalid)
     end
@@ -862,7 +863,7 @@ RSpec.describe VpsAdmin::StorageReconciler::ProofPlanner do
       write_capture(store, mode: 'bootstrap')
       artifacts = VpsAdmin::StorageReconciler::Artifacts.new(store)
       artifacts.compare!
-      File.open(store.path('findings-v1.jsonl'), 'a') { |file| file.write("changed\n") }
+      File.open(store.path('findings-v2.jsonl'), 'a') { |file| file.write("changed\n") }
       expect { artifacts.plan! }
         .to raise_error(VpsAdmin::StorageReconciler::Artifacts::Invalid)
     end
