@@ -1,4 +1,5 @@
 require 'digest'
+require 'bigdecimal'
 require 'json'
 require 'open3'
 require 'securerandom'
@@ -241,17 +242,27 @@ module NodeCtld
                                                                      pool['node_id'].to_i == node_id
           raise Invalid, 'managed root differs from Pool' unless
             pool['filesystem'] == managed_root && managed_root.split('/').first == zpool
-          if pool['zpool_guid'] && pool['zpool_guid'].to_s != zpool_guid
+          if pool['zpool_guid'] && decimal_guid(pool['zpool_guid']) != zpool_guid
             raise Invalid, 'expected zpool GUID differs from Pool'
           end
 
-          catalog_roots = db.prepared(
+          catalog_roots = []
+          db.prepared(
             'SELECT filesystem FROM pools WHERE node_id = ?', node_id
-          ).map { |row| row['filesystem'] }
-           .select { |root| root.split('/').first == zpool }
-           .sort
+          ).each do |row|
+            root = row['filesystem']
+            catalog_roots << root if root.split('/').first == zpool
+          end
+          catalog_roots.sort!
           raise Invalid, 'managed roots differ from catalog' unless catalog_roots == roots.sort
         end
+      end
+
+      def decimal_guid(value)
+        raw = value.is_a?(BigDecimal) ? value.to_s('F') : value.to_s
+        raise Invalid, 'invalid Pool GUID' unless raw.match?(/\A\d+(?:\.0+)?\z/)
+
+        raw.split('.').first
       end
     end
 
