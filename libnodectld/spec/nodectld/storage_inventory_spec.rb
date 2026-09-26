@@ -147,6 +147,20 @@ RSpec.describe NodeCtld::StorageInventory do
     )
   end
 
+  it 'publishes through the existing transient node exchange' do
+    request.deadline = Time.now.utc + 60
+    publisher = described_class::Publisher.allocate
+    publisher.instance_variable_set(:@request, request)
+    exchange = instance_double(Bunny::Exchange, on_return: nil)
+    channel = instance_double(Bunny::Channel, confirm_select: nil, close: nil)
+    allow(NodeCtld::NodeBunny).to receive_messages(create_channel: channel, exchange_name: 'node:test')
+    allow(channel).to receive(:direct).with('node:test').and_return(exchange)
+
+    expect { publisher.send(:open_channel!) }.not_to raise_error
+    expect(channel).to have_received(:direct).with('node:test')
+    publisher.close
+  end
+
   it 'retries an ambiguously confirmed publish with identical bytes' do
     request.deadline = Time.now.utc + 10
     publisher = described_class::Publisher.allocate

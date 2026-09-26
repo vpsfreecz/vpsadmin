@@ -37,6 +37,27 @@ RSpec.describe VpsAdmin::StorageReconciler::NodeTransport do
     unsigned.merge('digest' => format.digest(unsigned))
   end
 
+  it 'binds the inventory queue to the existing transient node exchange' do
+    Dir.mktmpdir do |root|
+      store = VpsAdmin::StorageReconciler::PrivateStore.new(root:, run_id: 1, create: true)
+      receiver = transport(store)
+      receiver.instance_variable_set(:@config, {
+        'hosts' => ['broker.example.test'], 'vhost' => '/',
+        'username' => 'test', 'password' => 'test'
+      })
+      queue = instance_double(Bunny::Queue, bind: nil, subscribe: nil)
+      exchange = instance_double(Bunny::Exchange)
+      channel = instance_double(Bunny::Channel, prefetch: nil, queue: queue, close: nil)
+      connection = instance_double(Bunny::Session, start: nil, create_channel: channel, close: nil)
+      allow(Bunny).to receive(:new).and_return(connection)
+      allow(channel).to receive(:direct).with('node:node.example.test').and_return(exchange)
+
+      expect(receiver.open!).to be(true)
+      expect(channel).to have_received(:direct).with('node:node.example.test')
+      receiver.close
+    end
+  end
+
   it 'accepts exact broker redelivery within one live attempt and rejects changed bytes' do
     Dir.mktmpdir do |root|
       store = VpsAdmin::StorageReconciler::PrivateStore.new(root:, run_id: 1, create: true)

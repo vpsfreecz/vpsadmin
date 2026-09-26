@@ -432,7 +432,7 @@ module NodeCtld
         Timeout.timeout([remaining, 30].min) do
           @channel = NodeBunny.create_channel
           @channel.confirm_select
-          @exchange = @channel.direct(NodeBunny.exchange_name, durable: true)
+          @exchange = @channel.direct(NodeBunny.exchange_name)
           @returned = false
           @exchange.on_return { |_delivery, _metadata, _payload| @returned = true }
         end
