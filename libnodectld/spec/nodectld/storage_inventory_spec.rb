@@ -74,6 +74,35 @@ RSpec.describe NodeCtld::StorageInventory do
     $CFG = previous_cfg
   end
 
+  it 'checks all managed roots through the real DB result wrapper' do
+    node_id = NodeCtldSpec::BaselineSeed.ids.fetch(:node_id)
+    first = insert_pool!(filesystem: "tank/inventory-#{SecureRandom.hex(3)}")
+    second = insert_pool!(filesystem: "tank/inventory-#{SecureRandom.hex(3)}")
+    insert_pool!(filesystem: "other/inventory-#{SecureRandom.hex(3)}")
+    sql_update('pools', { zpool_guid: 50_001 }, 'id = ?', first.fetch('id'))
+    roots = [first.fetch('filesystem'), second.fetch('filesystem')].sort
+    run_uuid = SecureRandom.uuid
+    params = {
+      protocol_version: 1, run_uuid:, attempt_uuid: SecureRandom.uuid,
+      node_id:, pool_id: first.fetch('id').to_i, zpool: 'tank',
+      zpool_guid: '50001', managed_root: first.fetch('filesystem'), roots:,
+      routing_key: "storage_inventory:#{run_uuid}", nonce: SecureRandom.hex(32),
+      deadline: (Time.now.utc + 60).iso8601(6)
+    }
+    input, signature = NodeCtldSpec::SigningHelpers.signed_input(
+      chain_id: 123, depends_on_id: nil, handle: 5290, node_id:,
+      reversible: 0, input: params
+    )
+    command = Struct.new(:trans).new({
+      'signature' => signature, 'input' => input, 'handle' => 5290,
+      'node_id' => node_id
+    })
+    allow(NodeCtld::Db).to receive(:open).and_yield(shared_db)
+
+    expect(described_class::Request.new(command, params, now: -> { Time.now.utc }).validate!)
+      .to be_a(described_class::Request)
+  end
+
   it 'terminates and reaps a silent inventory child at the signed deadline' do
     request.deadline = Time.now.utc + 5
     scanner = described_class::Scanner.new(nil, request, now: -> { Time.now.utc })
