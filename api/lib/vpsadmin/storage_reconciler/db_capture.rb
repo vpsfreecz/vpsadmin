@@ -1,3 +1,4 @@
+require 'json'
 require 'time'
 
 module VpsAdmin
@@ -11,6 +12,9 @@ module VpsAdmin
       MAX_SECONDS = 15 * 60
       MAX_ROWS = 300_000
       STATEMENT_SECONDS = 10
+      MAX_TRANSACTION_OUTPUT_BYTES = 128 * 1024
+      MAX_CHAIN_MEMBERS = 256
+      RESULT_STATUSES = { 0 => 'failed', 1 => 'ok', 2 => 'warning' }.freeze
       CONFIRMATION_TABLES = %w[
         pools datasets dataset_in_pools dataset_trees branches snapshots
         snapshot_in_pools snapshot_in_pool_in_branches snapshot_in_pool_clones
@@ -26,6 +30,7 @@ module VpsAdmin
         @now = now
         @ids = Hash.new { |hash, key| hash[key] = Set.new }
         @written = Hash.new { |hash, key| hash[key] = Set.new }
+        @transaction_results = {}
         @count = 0
         @digest = Digest::SHA256.new
       end
@@ -75,11 +80,7 @@ module VpsAdmin
           'digest' => @digest.hexdigest, 'connection_id' => @connection_id.to_s,
           'confirmation_coverage' => 'selected_chains_only',
           'reference_closure' => 'selected_pool_sips_recursive_sipb_and_clones',
-          'known_chain_overlap' => @rows.fetch('transactions', {}).values.any? do |row|
-            [0, 2].include?(row['done'].to_i) &&
-              (POTENTIAL_RUNTIME_HANDLES.include?(row['handle'].to_i) ||
-                Transaction.for_type(row['handle'].to_i)&.storage_effect)
-          end,
+          'known_chain_overlap' => known_chain_overlap?,
           'scope_epoch' => @rows.fetch('storage_integrity_scopes', {}).values
                                 .find { |row| row['scope_key'] == "pool:#{@pool_id}" }
                                 &.fetch('mutation_epoch'),
@@ -411,7 +412,10 @@ module VpsAdmin
         end
         # Transaction payloads can contain large signed input and unrelated
         # private command data. Correlation needs only indexed chain metadata.
-        fields = fields.except('input', 'output', 'signature') if model == Transaction
+        if model == Transaction
+          @transaction_results[row.id] = terminal_transaction_result(fields)
+          fields = fields.except('input', 'output', 'signature')
+        end
         fields = fields.transform_values { |value| normalize(value) }
         data = { 'table' => table, 'id' => row.id.to_s, 'fields' => fields }
         record = Format.record('db_object', data)
@@ -424,6 +428,92 @@ module VpsAdmin
         @ids[table] << row.id
         @written[table] << row.id
         @rows[table][row.id] = fields
+      end
+
+      def known_chain_overlap?
+        transactions = @rows.fetch('transactions', {}).values
+        members_by_chain = transactions.group_by do |row|
+          Integer(row['transaction_chain_id'], exception: false)
+        end
+        transactions.any? do |row|
+          next false unless potential_storage_transaction?(row)
+
+          chain_id = Integer(row['transaction_chain_id'], exception: false)
+          !proved_terminal_chain?(chain_id, members_by_chain)
+        end
+      end
+
+      def potential_storage_transaction?(row)
+        handle = Integer(row['handle'], exception: false)
+        handle && (POTENTIAL_RUNTIME_HANDLES.include?(handle) ||
+          Transaction.for_type(handle)&.storage_effect)
+      end
+
+      def proved_terminal_chain?(chain_id, members_by_chain)
+        return false unless chain_id
+
+        @proved_terminal_chains ||= {}
+        return @proved_terminal_chains[chain_id] if @proved_terminal_chains.has_key?(chain_id)
+
+        @proved_terminal_chains[chain_id] = terminal_chain_proof(chain_id, members_by_chain)
+      end
+
+      def terminal_chain_proof(chain_id, members_by_chain)
+        chain = @rows.fetch('transaction_chains', {})[chain_id]
+        return false unless chain
+
+        state = Integer(chain['state'], exception: false)
+        members = members_by_chain.fetch(chain_id, [])
+        size = Integer(chain['size'], exception: false)
+        return false unless size && size.between?(1, MAX_CHAIN_MEMBERS) && members.length == size
+        return false unless members.all? { |member| @transaction_results[member['id'].to_i] }
+
+        progress = Integer(chain['progress'], exception: false)
+        case state
+        when TransactionChain.states.fetch('done')
+          return false unless progress == size
+
+          members.all? do |member|
+            result = @transaction_results[member['id'].to_i]
+            !potential_storage_transaction?(member) ||
+              (result[0] == 'execute' && %w[ok warning].include?(result[1]) && !result[2])
+          end
+        when TransactionChain.states.fetch('failed')
+          return false unless progress == 0
+
+          members.all? do |member|
+            result = @transaction_results[member['id'].to_i]
+            !potential_storage_transaction?(member) ||
+              result == ['rollback', 'ok', false] || result == ['execute', 'failed', true]
+          end
+        else
+          false
+        end
+      end
+
+      def terminal_transaction_result(fields)
+        done = Integer(fields['done'], exception: false)
+        status = RESULT_STATUSES[Integer(fields['status'], exception: false)]
+        finished_at = fields['finished_at']
+        raw = fields['output']
+        return unless [1, 2].include?(done) && status && finished_at &&
+                      !finished_at.to_s.empty? && raw.is_a?(String) &&
+                      raw.bytesize <= MAX_TRANSACTION_OUTPUT_BYTES
+
+        output = JSON.parse(raw)
+        direction = done == 2 ? 'rollback' : 'execute'
+        result = output[direction] if output.is_a?(Hash)
+        return unless result.is_a?(Hash) && result['status'] == status
+
+        skipped = result['skipped'] == true
+        return if result['skipped'] && !(direction == 'execute' && status == 'failed' && skipped)
+        # A retry can leave started_at intact before fail_followers overwrites
+        # the member with a skipped result. That result cannot prove no effect.
+        return if skipped && !fields['started_at'].nil?
+
+        [direction, status, skipped]
+      rescue JSON::JSONError
+        nil
       end
 
       def normalize(value)
