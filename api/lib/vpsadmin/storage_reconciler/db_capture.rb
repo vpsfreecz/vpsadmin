@@ -18,6 +18,12 @@ module VpsAdmin
       MAX_TRANSACTION_OUTPUT_BYTES = 128 * 1024
       MAX_CHAIN_MEMBERS = 256
       MAX_GUID = (1 << 64) - 1
+      ISOLATION_LEVELS = {
+        'READ-UNCOMMITTED' => 'READ UNCOMMITTED',
+        'READ-COMMITTED' => 'READ COMMITTED',
+        'REPEATABLE-READ' => 'REPEATABLE READ',
+        'SERIALIZABLE' => 'SERIALIZABLE'
+      }.freeze
       GUID_COLUMNS = {
         'pools' => %w[zpool_guid],
         'snapshot_in_pools' => %w[zfs_guid zfs_owner_fs_guid],
@@ -60,9 +66,15 @@ module VpsAdmin
           raise Incomplete, 'DB capture cannot join an existing transaction' if connection.transaction_open?
 
           original_timeout = connection.select_value('SELECT @@max_statement_time')
+          original_isolation = connection.select_value('SELECT @@tx_isolation').to_s.upcase.tr('_', '-')
+          restore_isolation = ISOLATION_LEVELS[original_isolation]
+          raise Incomplete, 'unsupported DB session isolation' unless restore_isolation
+
           connection.execute("SET SESSION max_statement_time = #{STATEMENT_SECONDS}")
+          isolation_restored = false
           begin
-            connection.execute('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ')
+            # @@tx_isolation reports the session level, not a one-transaction override.
+            connection.execute('SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ')
             connection.execute('START TRANSACTION WITH CONSISTENT SNAPSHOT, READ ONLY')
             @connection = connection
             @connection_id = metadata!.fetch('connection_id')
@@ -72,6 +84,8 @@ module VpsAdmin
               ActiveRecord::Base.uncached { capture_rows! }
               @observed_until_at = metadata!.fetch('server_time_utc')
               connection.execute('COMMIT')
+              connection.execute("SET SESSION TRANSACTION ISOLATION LEVEL #{restore_isolation}")
+              isolation_restored = true
             end
           rescue StandardError
             begin
@@ -81,6 +95,13 @@ module VpsAdmin
             end
             raise
           ensure
+            unless isolation_restored
+              begin
+                connection.execute("SET SESSION TRANSACTION ISOLATION LEVEL #{restore_isolation}")
+              rescue StandardError
+                connection.disconnect!
+              end
+            end
             begin
               connection.execute("SET SESSION max_statement_time = #{Float(original_timeout)}")
             rescue StandardError
