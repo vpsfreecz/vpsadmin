@@ -106,6 +106,14 @@ confirmations outside selected chains are not claimed as captured. A missing
 historical confirmation is never proof of absence. Findings for pending
 Datasets, DB-only Branches and detached heads retain that blocker.
 
+A finished rollback clears the DB chain-overlap blocker only when the captured
+chain has every member (at most 256), terminal results and a finish time for
+each member. Each result is limited to 128 KiB. A skipped member must never
+have started. Missing, oversized or
+contradictory results leave the capture stale; transaction payloads are checked
+in memory and omitted from `db.jsonl`. This proves DB chain completion, not
+physical quiet.
+
 The node lists the whole named zpool twice, sorted by exact path. Each pass
 has a signed two-hour wall deadline, including a silent `zfs list` subprocess
 and Rabbit publisher confirmation; an overdue subprocess is terminated and
