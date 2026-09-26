@@ -39,6 +39,7 @@ class StorageFreezeStatus
   COUNT_CAP = 1000
   ACTIVE_CHAIN_STATES = [0, 1, 3].freeze
   BLOCKING_INTENT_PHASES = [0, 1, 5].freeze
+  INFORMATIONAL_COUNT_NAMES = [:settled_unverified_intents].freeze
   MODES = { 0 => 'read_write', 1 => 'read_only' }.freeze
 
   def self.snapshot
@@ -90,7 +91,7 @@ class StorageFreezeStatus
     after = Control.find(1)
     mode = MODES.fetch(after.mode) { raise 'invalid storage freeze mode' }
     stable = before.epoch == after.epoch && before.mode == after.mode
-    blockers = counts.except(:settled_unverified_intents)
+    blockers = counts.except(*INFORMATIONAL_COUNT_NAMES)
     sample_intent_ids = intents.where(phase: BLOCKING_INTENT_PHASES)
                                .order(:id).limit(SAMPLE_LIMIT).pluck(:id)
 
