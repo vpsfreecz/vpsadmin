@@ -210,8 +210,12 @@ module NetworkExportDnsChainSpecHelpers
       raise ArgumentError, 'create_ipv4_address_in_network! expects an IPv4 /24 network'
     end
 
-    host_octet = ((IpAddress.maximum(:id).to_i % 200) + 20)
-    addr = "#{network.address.split('.').first(3).join('.')}.#{host_octet}"
+    start = IpAddress.maximum(:id).to_i % 200
+    occupied = IpAddress.pluck(:ip_addr)
+    network_prefix = network.address.split('.').first(3).join('.')
+    addr = (0...200).map { |offset| "#{network_prefix}.#{((start + offset) % 200) + 20}" }
+                    .find { |candidate| !occupied.include?(candidate) }
+    raise ArgumentError, 'No unused fixture IP address in network' unless addr
 
     create_ip_address!(
       network: network,
