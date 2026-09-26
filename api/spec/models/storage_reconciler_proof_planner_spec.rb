@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'stringio'
 require 'tmpdir'
 require 'vpsadmin/storage_reconciler'
 
@@ -282,6 +283,40 @@ RSpec.describe VpsAdmin::StorageReconciler::ProofPlanner do
       expect(candidate.fetch('before_values')).to include('zfs_guid' => nil)
       expect(candidate.fetch('after_values')).to include('zfs_guid' => '104',
                                                          'zfs_owner_fs_guid' => '101')
+    end
+  end
+
+  it 'plans from a captured max uint64 snapshot GUID without an exponent mismatch' do
+    max_guid = '18446744073709551615'
+    original = db_rows.find do |item|
+      item.dig('fields', 'table') == 'snapshot_in_pool_in_branches'
+    end
+    fields = original.fetch('fields').fetch('fields').merge('zfs_guid' => BigDecimal(max_guid))
+    row = Struct.new(:id, :attributes_before_type_cast).new(60, fields)
+    capture = VpsAdmin::StorageReconciler::DbCapture.new(pool_id: 1, store: nil)
+    output = StringIO.new
+    capture.instance_variable_set(:@file, output)
+    capture.send(:write_record, SnapshotInPoolInBranch, row)
+    captured = format.parse_line!(output.string, expected_kind: 'db_object')
+    expect(captured.dig('fields', 'fields', 'zfs_guid')).to eq(max_guid)
+
+    database = db_rows.map { |item| item == original ? captured : item }
+    physical = zfs_rows.map do |item|
+      next item unless item.dig('fields', 'path') == source_path
+
+      format.record('zfs_object', item.fetch('fields').merge('guid' => max_guid))
+    end
+    Dir.mktmpdir do |root|
+      store = VpsAdmin::StorageReconciler::PrivateStore.new(root:, run_id: 1, create: true)
+      write_capture(store, mode: 'steady', database:, physical:)
+      artifacts = VpsAdmin::StorageReconciler::Artifacts.new(store)
+      artifacts.compare!
+      artifacts.plan!
+
+      expect(actions(store).map { |item| item['possible_operation'] })
+        .to include('set_filesystem_origin')
+      expect(actions(store).map { |item| item['finding_code'] })
+        .not_to include('catalog_guid_mismatch')
     end
   end
 
