@@ -761,11 +761,16 @@ RSpec.describe VpsAdmin::StorageReconciler::DbCapture do
       capture = described_class.new(pool_id: 1, store:)
       statements = []
       connection = instance_double(ActiveRecord::ConnectionAdapters::AbstractAdapter, transaction_open?: false)
-      allow(connection).to receive_messages(select_value: '0', select_one: { 'connection_id' => 17, 'server_time_utc' => Time.utc(2026, 9, 25),
-                                                                             'isolation' => 'REPEATABLE-READ' })
+      allow(connection).to receive(:select_one).and_return({
+        'connection_id' => 17, 'server_time_utc' => Time.utc(2026, 9, 25),
+        'isolation' => 'REPEATABLE-READ'
+      })
+      allow(connection).to receive(:select_value).with('SELECT @@max_statement_time').and_return('0')
+      allow(connection).to receive(:select_value).with('SELECT @@tx_isolation').and_return('READ-COMMITTED')
       allow(connection).to receive(:execute) do |statement|
         statements << statement
-        expect(File.exist?(store.path('db.jsonl'))).to be(false) if statement == 'COMMIT'
+        expect(File.exist?(store.path('db.jsonl'))).to be(false) if
+          ['COMMIT', 'SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED'].include?(statement)
       end
       pool = instance_double(ActiveRecord::ConnectionAdapters::ConnectionPool)
       allow(ActiveRecord::Base).to receive(:connection_pool).and_return(pool)
@@ -782,14 +787,31 @@ RSpec.describe VpsAdmin::StorageReconciler::DbCapture do
 
       summary = capture.capture!
 
-      expect(statements).to include('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ',
+      expect(statements).to include('SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ',
                                     'START TRANSACTION WITH CONSISTENT SNAPSHOT, READ ONLY',
+                                    'SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED',
                                     'COMMIT')
+      expect(statements.index('COMMIT')).to be < statements.index('SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED')
       expect(summary.fetch('connection_id')).to eq('17')
       expect(summary.fetch('row_count')).to eq(0)
       expect(File.exist?(store.path('db.jsonl'))).to be(true)
       expect(connection).to have_received(:select_one).at_least(3).times
     end
+  end
+
+  it 'restores a read-committed pooled session after a real capture', :no_transaction do
+    connection = ActiveRecord::Base.connection
+    original_isolation = connection.select_value('SELECT @@tx_isolation')
+    connection.execute('SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED')
+
+    Dir.mktmpdir('storage-capture-isolation-') do |root|
+      summary, store = capture_from_database(root:, run_id: 1, pool: SpecSeed.pool)
+      expect(summary.fetch('row_count')).to be_positive
+      expect(File.exist?(store.path('db.jsonl'))).to be(true)
+      expect(connection.select_value('SELECT @@tx_isolation')).to eq('READ-COMMITTED')
+    end
+  ensure
+    connection&.execute("SET SESSION TRANSACTION ISOLATION LEVEL #{original_isolation.tr('-', ' ')}") if original_isolation
   end
 
   it 'never publishes db.jsonl when the read-only transaction cannot commit' do
@@ -798,6 +820,7 @@ RSpec.describe VpsAdmin::StorageReconciler::DbCapture do
       capture = described_class.new(pool_id: 1, store:)
       connection = instance_double(ActiveRecord::ConnectionAdapters::AbstractAdapter, transaction_open?: false)
       allow(connection).to receive(:select_value).with('SELECT @@max_statement_time').and_return('0')
+      allow(connection).to receive(:select_value).with('SELECT @@tx_isolation').and_return('READ-COMMITTED')
       allow(connection).to receive(:execute) do |statement|
         raise 'commit lost' if statement == 'COMMIT'
       end
