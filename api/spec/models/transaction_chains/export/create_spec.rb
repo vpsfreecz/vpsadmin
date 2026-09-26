@@ -71,6 +71,9 @@ RSpec.describe TransactionChains::Export::Create do
 
   it 'allows a user-owned export server address on an export interface' do
     dataset, dip, export_network = create_exportable_dataset(name: "export-user-ip-#{SecureRandom.hex(4)}")
+    existing_ip = export_network.ip_addresses.first!
+    occupied_octet = existing_ip.ip_addr.split('.').last.to_i - 20
+    allow(IpAddress).to receive(:maximum).with(:id).and_return(occupied_octet)
     create_ipv4_address_in_network!(
       network: export_network,
       location: dip.pool.node.location,
@@ -80,6 +83,7 @@ RSpec.describe TransactionChains::Export::Create do
     _chain, export = described_class.fire(dataset, enabled: false)
 
     expect(export.ip_address.user).to eq(user)
+    expect(export.ip_address.ip_addr).not_to eq(existing_ip.ip_addr)
     expect(export.ip_address.network_interface).to eq(export.network_interface)
     expect(export.network_interface.vps).to be_nil
   end
