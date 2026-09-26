@@ -138,6 +138,16 @@ and can finish a missing summary after checking the preceding JSONL file.
 A changed or tampered output fails closed; an incomplete file pair is not a
 complete report.
 
+The capture writer seals manifest version 1 with source policy 1 and JSONL
+record version 1. Its DB selection does not establish complete
+node-wide work coverage. The offline reader verifies the original sealed
+manifest and derives a separate in-memory view: historical terminal coverage
+is unknown, and the legacy evidence selectors are unspecified. It does not
+rewrite the capture. The reader also validates explicit version 2 manifests
+for bounded captures; the current writer does not produce them. A version 2
+manifest must identify the selected node and state that terminal history was
+not enumerated; unsupported version and policy pairs are rejected.
+
 The scanner currently caps a zpool at 200,000 objects and the receiver's
 durable queue at 256 MiB with reject-on-overflow and four-hour expiry.
 Exceeding a bound, unsupported ZFS properties, unclosed origin/clone edges,
@@ -165,15 +175,20 @@ and snapshots remain visible. A pending Snapshot name may retain
 intent and target permit an unresolved correlation; without that binding the
 report shows a possible pair with the physical object still unidentified.
 The current DB artifact omits signed transaction input, and fatal or unsettled
-attempts cannot prove identity or authorize backfill. `dry-run` retains its v1
-private no-action format. `plan` uses the same offline proof policy and writes
-`candidate-actions-v2.jsonl` and `dry-run-v2.json`. It checks the sealed capture,
-recomputes the comparison, then requires the existing v1 findings and report to
-match exactly. A missing, changed or stale input stops planning. Both commands
-can finish an interrupted summary only after the preceding JSONL matches the
-recomputed bytes.
+attempts cannot prove identity or authorize backfill. `compare` writes
+`findings-v2.jsonl` and `report-v2.json`, recording the source manifest pair,
+effective coverage and its digest. The unknown historical coverage and
+unproved legacy selection remain blockers. `dry-run` writes separate
+`advisory-actions-v2.jsonl` and `advisory-dry-run-v2.json` no-action files.
+`plan` uses the same offline proof policy and writes
+`candidate-actions-v3.jsonl` and `dry-run-v3.json`; the separate names preserve
+earlier plan version 2 files. It checks the sealed capture, recomputes the
+comparison, then requires the policy 2 findings and report to match exactly.
+A missing, changed or stale input stops planning. Both commands can finish an
+interrupted summary only after the preceding JSONL matches the recomputed
+bytes.
 
-Each v2 action binds the run, finding, evidence, capture, report, key epoch and
+Each v3 action binds the run, finding, evidence, capture, report, key epoch and
 plan policy with a private HMAC. A unique snapshot path, type, GUID and owning
 filesystem GUID can yield a blocked SIP or SIPB identity backfill candidate.
 A uniquely matched Pool root, DIP, Tree, Branch or persistent clone can yield a
@@ -198,7 +213,7 @@ the planner never proposes a SIPB parent edit from ZFS origin. Every candidate
 still needs a fresh frozen graph and strict writer coverage before approval or
 application. Empty branches, reference-count differences, unresolved parents,
 pending Datasets and headless backup DIPs remain no-action findings without
-their missing proofs. All v2 records have `executable: false`; the planner
+their missing proofs. All v3 records have `executable: false`; the planner
 writes no database rows and calls no node.
 
 The authenticated storage-freeze API and WebUI expose a bounded database

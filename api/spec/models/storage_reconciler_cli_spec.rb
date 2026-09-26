@@ -47,7 +47,8 @@ RSpec.describe VpsAdmin::StorageReconciler do
       zfs_pass = { 'count' => 1, 'digest' => Digest::SHA256.hexdigest(zfs_line),
                    'zpool_guid' => '900', 'roots' => { 'tank/backup' => '100' } }
       manifest = {
-        'version' => format::VERSION, 'policy_version' => format::POLICY_VERSION,
+        'version' => format::VERSION,
+        'policy_version' => format::LEGACY_POLICY_VERSION,
         'state' => 'complete', 'confidence' => 'advisory_unguarded',
         'finding_key' => store.key_metadata, 'run_id' => '91', 'mode' => 'bootstrap',
         'scope' => { 'node_id' => '1', 'pool_id' => '2', 'zpool' => 'tank',

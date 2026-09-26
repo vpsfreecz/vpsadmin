@@ -6,8 +6,10 @@ module VpsAdmin
   module StorageReconciler
     module Format
       VERSION = 1
-      POLICY_VERSION = 1
-      PLAN_POLICY_VERSION = 2
+      LEGACY_POLICY_VERSION = 1
+      MANIFEST_VERSION = 2
+      POLICY_VERSION = 2
+      PLAN_POLICY_VERSION = 3
       PROTOCOL_VERSION = 1
       MAX_RECORD_BYTES = 64 * 1024
 
