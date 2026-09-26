@@ -35,6 +35,23 @@ RSpec.describe VpsAdmin::StorageReconciler do
     end
   end
 
+  it 'unlocks a fresh capture signer and reuses the key for another capture' do
+    capture = VpsAdmin::StorageReconciler::Capture.new(
+      pool_id: 1, mode: 'steady', private_dir: '/tmp'
+    )
+    allow(VpsAdmin::API::TransactionSigner).to receive(:unlocked?).and_return(false, true)
+    allow(capture).to receive(:unlock_signer!)
+    allow(capture).to receive(:broker_config!)
+      .and_raise(VpsAdmin::StorageReconciler::Capture::Incomplete, 'stop after signer check')
+
+    2.times do
+      expect { capture.run! }.to raise_error(
+        VpsAdmin::StorageReconciler::Capture::Incomplete, 'stop after signer check'
+      )
+    end
+    expect(capture).to have_received(:unlock_signer!).once
+  end
+
   it 'routes plan through private artifacts without starting capture' do
     Dir.mktmpdir do |root|
       store = VpsAdmin::StorageReconciler::PrivateStore.new(root:, run_id: 91, create: true)

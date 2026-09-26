@@ -444,9 +444,11 @@ module NodeCtld
       end
     end
 
-    def node_activity_snapshot(timeout: NodeActivity::DEFAULT_TIMEOUT)
+    def node_activity_snapshot(timeout: NodeActivity::DEFAULT_TIMEOUT,
+                               excluding_transaction_id: nil)
       @node_activity.snapshot(
-        queues: @queues, blockers: method(:activity_blocker_count), timeout:
+        queues: @queues, blockers: method(:activity_blocker_count), timeout:,
+        excluding_transaction_id:
       )
     end
 

@@ -149,7 +149,7 @@ module NodeCtld
 
     # A reservation may hold @mutex while waiting on a semaphore. Never wait
     # indefinitely to sample it: nil means the caller must report unknown.
-    def activity_counts(deadline:)
+    def activity_counts(deadline:, excluding_transaction_id: nil)
       until @mutex.try_lock
         return nil if Process.clock_gettime(Process::CLOCK_MONOTONIC) >= deadline
 
@@ -160,7 +160,7 @@ module NodeCtld
                           @queues.keys.sort == QUEUES.sort
 
         @queues.each_with_object({}) do |(name, queue), counts|
-          sample = queue.activity_counts(deadline:)
+          sample = queue.activity_counts(deadline:, excluding_transaction_id:)
           return nil unless sample
 
           counts[name] = sample
@@ -175,7 +175,7 @@ module NodeCtld
     def queue_for(cmd)
       if cmd.current_chain_direction == :rollback
         :rollback
-      elsif cmd.type.to_i == 5290
+      elsif [5290, 5291].include?(cmd.type.to_i)
         :inventory
       else
         cmd.queue

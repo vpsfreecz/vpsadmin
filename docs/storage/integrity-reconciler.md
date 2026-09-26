@@ -26,6 +26,8 @@ vpsadmin-supervisor-ruby /path/to/api/bin/vpsadmin-storage-reconcile \
   dry-run --run-id 456 --private-dir /var/lib/vpsadmin-storage-reconciler
 vpsadmin-supervisor-ruby /path/to/api/bin/vpsadmin-storage-reconcile \
   plan --run-id 456 --private-dir /var/lib/vpsadmin-storage-reconciler
+vpsadmin-supervisor-ruby /path/to/api/bin/vpsadmin-storage-reconcile \
+  activity-report --private-dir /var/lib/vpsadmin-storage-reconciler
 ```
 
 These are interface examples, not a production runbook. The capture command
@@ -46,6 +48,31 @@ leaves the attempt incomplete.
 `compare`, `dry-run` and `plan` read only private artifacts. They make no database or
 RabbitMQ calls and do not unlock the transaction signer, but this CLI still
 loads the full vpsAdmin API runtime at startup.
+
+`activity-report` is a separate sampled observation while the global freeze is
+`read_only` and DB-drained. It signs one handle 5291 probe for each node with
+managed Pools, captures every Pool with the existing two-pass inventory, then
+checks the DB and probes again. The probe keeps the persisted `storage` queue
+for old-node compatibility; an upgraded node runs it on `inventory`. Each
+probe verifies the signed node, epoch and complete Pool claims against its DB
+and reads `pool_storage_activity` through a bounded local osctld socket. An old
+node or osctld, a missing Pool, changed epoch or generation, or incomplete
+inventory leaves the report unknown. Multiple managed roots on one zpool remain
+separate Pool claims, with one osctld read for that zpool per probe.
+The full observation has a four-hour monotonic deadline. An expired interval
+produces a private unknown report and needs a fresh attempt. Normal probe
+output binds the signed request by digest and carries Pool IDs and zpool names,
+without repeating managed-root paths.
+
+The command writes `activity-UUID/report.json` and its captures under a private
+`activity-UUID/captures` directory. The report contains IDs, counts and daemon
+generations, without member paths. It always exits `2`: the current NodeCtld
+observer cannot prove every child lifetime, so even a stable sampled interval
+does not establish `node_quiet`, `repair_ready` or repair authority. A sample
+does not prevent later work. Deploy the osctld activity interface and the
+NodeCtld observer before using 5291; a mixed-version response remains unknown.
+The paired effect registry version is 5. Strict dispatch is still test-only;
+its signed guard version must match the upgraded API and NodeCtld during tests.
 
 Exit `0` means a complete advisory report even when it contains findings.
 Exit `2` means incomplete or stale evidence; exit `3` means invalid input or

@@ -55,7 +55,8 @@ module NodeCtld
       token = Object.new
       @mutex.synchronize do
         tick(effectful:)
-        @workers[token] = { queue:, effectful:, registered: false }
+        @workers[token] = { queue:, effectful:, registered: false,
+                            transaction_id: cmd.id.to_i }
       end
       token
     end
@@ -137,10 +138,11 @@ module NodeCtld
       end
     end
 
-    def snapshot(queues:, blockers:, timeout: DEFAULT_TIMEOUT)
+    def snapshot(queues:, blockers:, timeout: DEFAULT_TIMEOUT,
+                 excluding_transaction_id: nil)
       deadline = monotonic + timeout
       before = state(deadline)
-      queue_counts = queues.activity_counts(deadline:) if before
+      queue_counts = queues.activity_counts(deadline:, excluding_transaction_id:) if before
       blocker_count = blockers.call(deadline:) if before
       after = state(deadline)
       reasons = ['child_lifetime_unproved']
@@ -150,15 +152,26 @@ module NodeCtld
 
       if before && after
         reasons << 'sample_changed' if before[:sample_generation] != after[:sample_generation]
-        reasons << 'worker_start_in_progress' if after[:workers].any? { |w| !w[:registered] }
+        workers = after[:workers]
+        if excluding_transaction_id
+          excluded = workers.count do |worker|
+            worker[:transaction_id] == excluding_transaction_id.to_i
+          end
+          queue_excluded = queue_counts&.values&.sum { |count| count.fetch(:excluded, 0) }
+          reasons << 'probe_worker_unproved' unless excluded == 1 && queue_excluded == 1
+          workers = workers.reject do |worker|
+            worker[:transaction_id] == excluding_transaction_id.to_i
+          end
+        end
+        reasons << 'worker_start_in_progress' if workers.any? { |w| !w[:registered] }
         reasons << 'reservation_in_progress' if after[:pending_reservations] != 0
-        if queue_counts && queue_counts.values.sum { |v| v[:workers] } != after[:workers].size
+        if queue_counts && queue_counts.values.sum { |v| v[:workers] } != workers.size
           reasons << 'worker_count_mismatch'
         end
         reasons << 'child_count_mismatch' if blocker_count && blocker_count != after[:children]
       end
 
-      counts = queue_counts&.values&.flat_map(&:values)
+      counts = queue_counts&.values&.flat_map { |value| value.values_at(:workers, :reservations) }
       counts = (counts || []) + [blocker_count, after&.dig(:children), after&.dig(:pending_reservations)]
       overflow = counts.compact.any? { |count| !count.is_a?(Integer) || count < 0 || count > COUNT_CAP }
       reasons << 'count_overflow' if overflow
@@ -173,7 +186,7 @@ module NodeCtld
         effect_generation: after&.dig(:effect_generation),
         sample_monotonic_ns: Process.clock_gettime(Process::CLOCK_MONOTONIC, :nanosecond),
         queues: queue_counts && queue_counts.transform_values do |v|
-          v.transform_values { |count| bounded(count) }
+          v.slice(:workers, :reservations).transform_values { |count| bounded(count) }
         end,
         pending_reservations: bounded(after&.dig(:pending_reservations)),
         detached_blockers: bounded(blocker_count),

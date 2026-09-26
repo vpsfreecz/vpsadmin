@@ -9,7 +9,7 @@ module VpsAdmin::API
     include Singleton
 
     class << self
-      %i[can_sign? unlock sign_base64].each do |m|
+      %i[can_sign? unlocked? unlock sign_base64].each do |m|
         define_method(m) do |*args, &block|
           instance.send(m, *args, &block)
         end
@@ -24,6 +24,10 @@ module VpsAdmin::API
       key.nil?
       # TODO: return true only if key is set
       true
+    end
+
+    def unlocked?
+      !key.nil?
     end
 
     # @param passphrase [String]

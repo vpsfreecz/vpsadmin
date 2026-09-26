@@ -4482,6 +4482,7 @@ cs:
           destroy: Smazání snapshotu v poolu
           purge_clones: Smazání klonů
         storage:
+          activity_probe: Sonda aktivity úložiště
           inventory: Inventura úložiště
         user:
           create: Vytvoření uživatele
@@ -4600,6 +4601,7 @@ cs:
         queue_release: Uvolnění fronty
         queue_reserve: Rezervace fronty
         storage_activate_snapshot_clone: Aktivace klonu snapshotu
+        storage_activity_probe: Sonda aktivity úložiště
         storage_apply_rollback: Aplikace rollbacku
         storage_clone_snapshot: Klonování snapshotu
         storage_clone_snapshot_name: Nastavení názvu klonu snapshotu

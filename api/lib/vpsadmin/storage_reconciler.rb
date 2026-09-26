@@ -6,6 +6,7 @@ require_relative 'storage_reconciler/comparator'
 require_relative 'storage_reconciler/proof_planner'
 require_relative 'storage_reconciler/artifacts'
 require_relative 'storage_reconciler/capture'
+require_relative 'storage_reconciler/activity_report'
 
 module VpsAdmin
   module StorageReconciler
