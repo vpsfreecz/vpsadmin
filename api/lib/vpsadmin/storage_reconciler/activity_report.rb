@@ -175,7 +175,8 @@ module VpsAdmin
         status = @status_reader.call
         raise Incomplete, 'storage freeze is not DB-drained at a stable epoch' unless
           status[:mode] == 'read_only' && status[:stable_epoch] && status[:db_drained] &&
-          status[:count_capped].empty? && status[:epoch].is_a?(Integer)
+          status[:count_capped].all? { |name| StorageFreezeStatus::INFORMATIONAL_COUNT_NAMES.include?(name) } &&
+          status[:epoch].is_a?(Integer)
 
         status
       end
