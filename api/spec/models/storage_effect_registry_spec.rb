@@ -31,7 +31,7 @@ RSpec.describe StorageEffectRegistry do
   it 'has the same version, vocabulary and paired directions as NodeCtld' do
     node = NodeCtld::StorageEffectRegistry
     expect(node::VERSION).to eq(described_class::VERSION)
-    expect(described_class::VERSION).to eq(4)
+    expect(described_class::VERSION).to eq(5)
     expect(node::EFFECT_CLASSES).to eq(described_class::EFFECT_CLASSES)
     expect(node::VERIFICATION_IMPACTS).to eq(described_class::VERIFICATION_IMPACTS)
     expect(node::STRICT_SUPPORT_STATES).to eq(described_class::STRICT_SUPPORT_STATES)
@@ -65,6 +65,12 @@ RSpec.describe StorageEffectRegistry do
       expect(described_class.fetch!(handle).execute_strict_support).to eq(:unsupported)
     end
     expect(described_class.fetch!(5290).execute_strict_support).to eq(:proved_no_storage_effect)
+    expect(described_class.fetch!(5291).to_h).to include(
+      execute: :read_only, rollback: :no_storage,
+      execute_impact: :none, rollback_impact: :none,
+      admission_required: false, execute_strict_support: :proved_no_storage_effect,
+      rollback_strict_support: :proved_no_storage_effect
+    )
   end
 
   it 'classifies both directions of the known topology and nested routes' do

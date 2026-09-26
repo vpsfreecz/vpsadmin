@@ -51,6 +51,18 @@ RSpec.describe NodeCtld::Queues do
     expect(queues[:storage].busy?(cmd.chain_id)).to be(false)
   end
 
+  it 'routes persisted storage handle 5291 to inventory, including free-slot checks' do
+    queues = build_queues
+    cmd = fake_cmd(3, queue: :storage, type: 5291)
+
+    allow(queues[:inventory]).to receive(:free_slot?).and_return(false, true)
+    expect(queues.free_slot?(cmd)).to be(false)
+    expect(queues.free_slot?(cmd)).to be(true)
+    expect(queues.execute(cmd)).to be_truthy
+    expect(queues[:inventory].busy?(cmd.chain_id)).to be(true)
+    expect(queues[:storage].busy?(cmd.chain_id)).to be(false)
+  end
+
   it 'keeps rollback routing ahead of the inventory alias' do
     queues = build_queues
     cmd = fake_cmd(2, queue: :storage, direction: :rollback, type: 5290)

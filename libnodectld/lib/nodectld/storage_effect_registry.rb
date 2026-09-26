@@ -4,7 +4,7 @@
 # injection. Production dispatch remains in observer mode.
 module NodeCtld
   class StorageEffectRegistry
-    VERSION = 4
+    VERSION = 5
     EFFECT_CLASSES = %i[
       no_storage read_only data_or_property_write bounded_topology opaque_topology
     ].freeze
@@ -41,7 +41,7 @@ module NodeCtld
     STORAGE_DATA = %w[
       5216 5219 5224 5226 5227 5228 5229 5302 5303
     ].map!(&:to_i).freeze
-    READ_ONLY = %w[5221 5222 5290].map!(&:to_i).freeze
+    READ_ONLY = %w[5221 5222 5290 5291].map!(&:to_i).freeze
     BOUNDED_TOPOLOGY = [5204].freeze
     OPAQUE_TOPOLOGY = %w[
       1001 1002 1003 2020 2029 2034
@@ -62,7 +62,8 @@ module NodeCtld
       5222 => :no_storage,
       5228 => :no_storage,
       5229 => :no_storage,
-      5290 => :no_storage
+      5290 => :no_storage,
+      5291 => :no_storage
     }.freeze
     EXECUTE_OVERRIDES = { 3035 => :no_storage }.freeze
 
