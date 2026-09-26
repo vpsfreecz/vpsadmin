@@ -99,6 +99,11 @@ finding identity.
 read-only DB transaction commits. It uses API model relations, 1,000-row
 primary-key pages, a 15-minute wall limit, 10-second statement limit and
 300,000-row cap. Server UTC time and connection ID delimit that snapshot.
+Captured storage GUID and owner GUID DECIMAL fields are written as plain
+unsigned decimal strings and must fit within 64 bits. An invalid value stops
+the capture; other DECIMAL fields retain their normal model serialization.
+Recapture artifacts made before this normalization before relying on exact
+GUID comparisons; replay does not rewrite their recorded values.
 The JSONL includes relevant cross-pool SIPB parent and inbound clone rows,
 intents, locks, chain state and confirmations for selected chains. Historical
 `TransactionConfirmation.row_pks` is YAML without an index; completed
@@ -109,8 +114,8 @@ Datasets, DB-only Branches and detached heads retain that blocker.
 A finished rollback clears the DB chain-overlap blocker only when the captured
 chain has every member (at most 256), terminal results and a finish time for
 each member. Each result is limited to 128 KiB. A skipped member must never
-have started. Missing, oversized or
-contradictory results leave the capture stale; transaction payloads are checked
+have started. Missing, oversized or contradictory results leave the capture
+stale; transaction payloads are checked
 in memory and omitted from `db.jsonl`. This proves DB chain completion, not
 physical quiet.
 
