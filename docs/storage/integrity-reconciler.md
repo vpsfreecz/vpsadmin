@@ -98,16 +98,24 @@ finding identity.
 `db.jsonl` is atomically published only after its single repeatable-read,
 read-only DB transaction commits. It uses API model relations, 1,000-row
 primary-key pages, a 15-minute wall limit, 10-second statement limit and
-300,000-row cap. Server UTC time and connection ID delimit that snapshot.
+300,000-row cap. It also caps visited rows at 300,000 and the DB artifact at
+1 GiB. A failed required query or exceeded cap leaves no published DB file.
+Server UTC time and connection ID delimit the snapshot.
 Captured storage GUID and owner GUID DECIMAL fields are written as plain
 unsigned decimal strings and must fit within 64 bits. An invalid value stops
 the capture; other DECIMAL fields retain their normal model serialization.
 Recapture artifacts made before this normalization before relying on exact
 GUID comparisons; replay does not rewrite their recorded values.
-The JSONL includes relevant cross-pool SIPB parent and inbound clone rows,
-intents, locks, chain state and confirmations for selected chains. Historical
-`TransactionConfirmation.row_pks` is YAML without an index; completed
-confirmations outside selected chains are not claimed as captured. A missing
+The JSONL includes relevant cross-pool SIPB parent and inbound clone rows. For
+the selected catalog it follows every pending SIP or SIPB target through live
+and copied catalog IDs, then includes sibling targets, attempts and
+observations. It also captures observable work on the selected node and the
+complete membership of reached chains. It does not enumerate all settled
+intents or completed rollback transactions from the node's lifetime.
+`TransactionConfirmation.row_pks` is YAML without an index. For unrelated
+pending confirmations in a reached chain, the capture keeps status and chain
+metadata but omits row keys and attribute changes. Completed confirmations
+outside selected catalog rows are not claimed as captured. A missing
 historical confirmation is never proof of absence. Findings for pending
 Datasets, DB-only Branches and detached heads retain that blocker.
 
@@ -138,15 +146,15 @@ and can finish a missing summary after checking the preceding JSONL file.
 A changed or tampered output fails closed; an incomplete file pair is not a
 complete report.
 
-The capture writer seals manifest version 1 with source policy 1 and JSONL
-record version 1. Its DB selection does not establish complete
-node-wide work coverage. The offline reader verifies the original sealed
-manifest and derives a separate in-memory view: historical terminal coverage
-is unknown, and the legacy evidence selectors are unspecified. It does not
-rewrite the capture. The reader also validates explicit version 2 manifests
-for bounded captures; the current writer does not produce them. A version 2
-manifest must identify the selected node and state that terminal history was
-not enumerated; unsupported version and policy pairs are rejected.
+The capture writer seals manifest version 2 with source policy 2 and JSONL
+record version 1. Its evidence selection covers the selected catalog, pending
+snapshot evidence and observable work on the selected node. Historical
+terminal coverage remains unknown. The offline reader also accepts sealed
+version 1, policy 1 captures: it verifies their original bytes and derives an
+in-memory view with unspecified selectors and unknown historical coverage.
+It does not rewrite the capture. Other version and policy pairs are rejected.
+An older reader that accepts only version 1 needs an older capture; it cannot
+read a version 2 manifest after a software rollback.
 
 The scanner currently caps a zpool at 200,000 objects and the receiver's
 durable queue at 256 MiB with reject-on-overflow and four-hour expiry.

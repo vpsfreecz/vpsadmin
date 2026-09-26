@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_24_210000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_26_100000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -1977,6 +1977,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_210000) do
     t.string "settlement_provenance", limit: 32
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["node_catalog_id", "phase", "id"], name: "idx_storage_intents_catalog_phase_id"
     t.index ["node_id", "phase"], name: "idx_storage_intents_node_phase"
     t.index ["phase", "transaction_chain_id"], name: "idx_storage_intents_phase_chain"
     t.index ["token"], name: "index_storage_mutation_intents_on_token", unique: true
@@ -2021,6 +2022,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_210000) do
     t.decimal "expected_owner_fs_guid", precision: 20
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["catalog_kind", "catalog_id", "id"], name: "idx_storage_targets_catalog_kind_id"
     t.index ["snapshot_in_pool_id"], name: "idx_storage_targets_sip"
     t.index ["snapshot_in_pool_in_branch_id"], name: "idx_storage_targets_sipb"
     t.index ["storage_filesystem_identity_id"], name: "idx_storage_targets_fs"
@@ -2157,6 +2159,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_210000) do
     t.integer "vps_id", unsigned: true
     t.index ["depends_on_id"], name: "index_transactions_on_depends_on_id"
     t.index ["done"], name: "index_transactions_on_done"
+    t.index ["node_id", "done", "id"], name: "idx_transactions_node_done_id"
     t.index ["node_id"], name: "index_transactions_on_node_id"
     t.index ["status"], name: "index_transactions_on_status"
     t.index ["transaction_chain_id"], name: "index_transactions_on_transaction_chain_id"
