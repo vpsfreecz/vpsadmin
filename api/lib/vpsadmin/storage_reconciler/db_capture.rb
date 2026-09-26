@@ -406,6 +406,9 @@ module VpsAdmin
         @rows ||= Hash.new { |hash, key| hash[key] = {} }
         table = model.table_name
         fields = row.attributes_before_type_cast
+        if table == 'pools' && !fields['zpool_guid'].nil?
+          fields = fields.merge('zpool_guid' => canonical_pool_guid(row.zpool_guid))
+        end
         # Transaction payloads can contain large signed input and unrelated
         # private command data. Correlation needs only indexed chain metadata.
         fields = fields.except('input', 'output', 'signature') if model == Transaction
@@ -434,6 +437,13 @@ module VpsAdmin
         else
           value
         end
+      end
+
+      def canonical_pool_guid(value)
+        raw = value.is_a?(BigDecimal) ? value.to_s('F') : value.to_s
+        raise Incomplete, 'invalid Pool GUID' unless raw.match?(/\A\d+(?:\.0+)?\z/)
+
+        raw.split('.').first
       end
 
       def ids_for(model)
