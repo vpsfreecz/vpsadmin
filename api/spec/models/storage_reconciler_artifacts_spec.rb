@@ -76,7 +76,7 @@ RSpec.describe VpsAdmin::StorageReconciler::Artifacts do
     File.write(store.path('manifest.json'), "#{format.canonical(data)}\n")
   end
 
-  it 'keeps the writer on the legacy source pair and record protocol' do
+  it 'writes the bounded source pair while keeping the record protocol' do
     expect(format::VERSION).to eq(1)
     expect(format::PROTOCOL_VERSION).to eq(1)
     expect(format::MANIFEST_VERSION).to eq(2)
@@ -92,7 +92,17 @@ RSpec.describe VpsAdmin::StorageReconciler::Artifacts do
       capture.instance_variable_set(:@run, run)
       arguments = {
         store:,
-        db: { 'pool' => { 'filesystem' => 'tank/backup' }, 'freeze_epoch' => '0' },
+        db: {
+          'pool' => { 'filesystem' => 'tank/backup' }, 'freeze_epoch' => '0',
+          'confirmation_coverage' => 'selected_chains_only',
+          'historical_terminal_coverage' => 'unknown',
+          'evidence_selection' => {
+            'version' => 1, 'strategy' => 'current_graph_and_observable_node_work',
+            'node_ids' => [SpecSeed.pool.node_id.to_s],
+            'catalog_closure' => 'complete', 'pending_snapshot_evidence' => 'complete',
+            'observable_node_work' => 'complete', 'terminal_history' => 'not_enumerated'
+          }
+        },
         final: { 'row_count' => 0, 'first' => { 'digest' => 'a' * 64 },
                  'second' => { 'digest' => 'a' * 64 },
                  'chunk_chain' => 'b' * 64 },
@@ -101,11 +111,12 @@ RSpec.describe VpsAdmin::StorageReconciler::Artifacts do
       }
       data = capture.send(:manifest_for, **arguments)
 
-      expect(data.slice('version', 'policy_version')).to eq(
-        'version' => 1, 'policy_version' => 1
+      expect(data.slice('version', 'policy_version', 'record_version')).to eq(
+        'version' => 2, 'policy_version' => 2, 'record_version' => 1
       )
-      expect(data).not_to have_key('record_version')
-      expect(data.fetch('db')).not_to have_key('evidence_selection')
+      expect(data.dig('db', 'evidence_selection', 'node_ids'))
+        .to eq([SpecSeed.pool.node_id.to_s])
+      expect(data.dig('db', 'historical_terminal_coverage')).to eq('unknown')
     end
   end
 

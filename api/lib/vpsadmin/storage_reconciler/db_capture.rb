@@ -9,8 +9,11 @@ module VpsAdmin
       class Incomplete < StandardError; end
 
       PAGE_SIZE = 1000
+      PAYLOAD_PAGE_SIZE = 128
       MAX_SECONDS = 15 * 60
       MAX_ROWS = 300_000
+      MAX_VISITED_ROWS = 300_000
+      MAX_ARTIFACT_BYTES = 1024 * 1024 * 1024
       STATEMENT_SECONDS = 10
       MAX_TRANSACTION_OUTPUT_BYTES = 128 * 1024
       MAX_CHAIN_MEMBERS = 256
@@ -41,8 +44,13 @@ module VpsAdmin
         @now = now
         @ids = Hash.new { |hash, key| hash[key] = Set.new }
         @written = Hash.new { |hash, key| hash[key] = Set.new }
+        @queried_ids = Hash.new { |hash, key| hash[key] = Set.new }
+        @expanded = Hash.new { |hash, key| hash[key] = Set.new }
         @transaction_results = {}
+        @redacted_confirmations = Set.new
         @count = 0
+        @visited = 0
+        @bytes = 0
         @digest = Digest::SHA256.new
       end
 
@@ -90,6 +98,13 @@ module VpsAdmin
           'version' => Format::VERSION, 'row_count' => @count,
           'digest' => @digest.hexdigest, 'connection_id' => @connection_id.to_s,
           'confirmation_coverage' => 'selected_chains_only',
+          'historical_terminal_coverage' => 'unknown',
+          'evidence_selection' => {
+            'version' => 1, 'strategy' => 'current_graph_and_observable_node_work',
+            'node_ids' => [selected_pool.fetch('node_id')],
+            'catalog_closure' => 'complete', 'pending_snapshot_evidence' => 'complete',
+            'observable_node_work' => 'complete', 'terminal_history' => 'not_enumerated'
+          },
           'reference_closure' => 'selected_pool_sips_recursive_sipb_and_clones',
           'known_chain_overlap' => known_chain_overlap?,
           'scope_epoch' => @rows.fetch('storage_integrity_scopes', {}).values
@@ -141,21 +156,19 @@ module VpsAdmin
         emit_relation(Branch, Branch.unscoped.where(dataset_tree_id: ids_for(DatasetTree)))
         emit_relation(SnapshotInPool, SnapshotInPool.unscoped.where(dataset_in_pool_id: ids_for(DatasetInPool)))
         emit_ids(Snapshot, ids_for(SnapshotInPool).map { |id| @rows.fetch('snapshot_in_pools').fetch(id)['snapshot_id'] })
-        emit_relation(
-          SnapshotInPoolInBranch,
-          SnapshotInPoolInBranch.unscoped.where(snapshot_in_pool_id: ids_for(SnapshotInPool))
-        )
         capture_storage_closure!
         capture_dependents!
         emit_ids(StorageFreezeControl, [1])
-        emit_relation(
-          StorageIntegrityScope,
-          StorageIntegrityScope.unscoped.where(pool_catalog_id: @pool_id)
-        )
+        scope_keys = ["pool:#{@pool_id}"] + ids_for(DatasetInPool).map { |id| "dip:#{id}" }
+        scope_keys.each_slice(PAGE_SIZE) do |slice|
+          emit_relation(StorageIntegrityScope,
+                        StorageIntegrityScope.unscoped.where(scope_key: slice))
+        end
+        capture_pending_snapshot_targets!
         capture_locks!
-        capture_confirmations_and_chains!
-        capture_mutation_evidence!
-        capture_confirmations_and_chains!
+        capture_node_work!
+        capture_node_owned_locks!
+        capture_evidence_closure!
       end
 
       def capture_dataset_ancestors!
@@ -194,10 +207,12 @@ module VpsAdmin
           before = @count
           capture_sipb_closure!
           capture_related_hierarchy!
-          emit_relation(
-            SnapshotInPoolClone,
-            SnapshotInPoolClone.unscoped.where(snapshot_in_pool_id: ids_for(SnapshotInPool))
-          )
+          frontier_ids_for(SnapshotInPool, :related_sips).each_slice(PAGE_SIZE) do |slice|
+            emit_relation(SnapshotInPoolInBranch,
+                          SnapshotInPoolInBranch.unscoped.where(snapshot_in_pool_id: slice))
+            emit_relation(SnapshotInPoolClone,
+                          SnapshotInPoolClone.unscoped.where(snapshot_in_pool_id: slice))
+          end
           capture_filesystem_identities!
           if @count == before
             converged = true
@@ -245,17 +260,18 @@ module VpsAdmin
       end
 
       def capture_filesystem_identities!
-        emit_relation(
-          StorageFilesystemIdentity,
-          StorageFilesystemIdentity.unscoped.where(pool_id: @pool_id)
-        )
-        ids_for(SnapshotInPool).each_slice(PAGE_SIZE) do |slice|
+        unless @scanned_selected_pool_fs
+          emit_relation(StorageFilesystemIdentity,
+                        StorageFilesystemIdentity.unscoped.where(pool_id: @pool_id))
+          @scanned_selected_pool_fs = true
+        end
+        frontier_ids_for(SnapshotInPool, :filesystem_sips).each_slice(PAGE_SIZE) do |slice|
           emit_relation(
             StorageFilesystemIdentity,
             StorageFilesystemIdentity.unscoped.where(origin_snapshot_in_pool_id: slice)
           )
         end
-        ids_for(SnapshotInPoolInBranch).each_slice(PAGE_SIZE) do |slice|
+        frontier_ids_for(SnapshotInPoolInBranch, :filesystem_sipbs).each_slice(PAGE_SIZE) do |slice|
           emit_relation(
             StorageFilesystemIdentity,
             StorageFilesystemIdentity.unscoped.where(origin_snapshot_in_pool_in_branch_id: slice)
@@ -297,77 +313,194 @@ module VpsAdmin
         end
       end
 
-      def capture_confirmations_and_chains!
-        # row_pks is serialized YAML without a searchable index. Scan only
-        # confirmations belonging to unfinished node chains or chains already
-        # bound to selected locks/intents. The transaction_id index bounds this.
-        emit_relation(
-          Transaction,
-          Transaction.unscoped.where(
-            node_id: @rows.fetch('pools').fetch(@pool_id)['node_id'], done: [0, 2]
-          )
-        ) do |row|
-          klass = Transaction.for_type(row.handle)
-          POTENTIAL_RUNTIME_HANDLES.include?(row.handle) || (klass && klass.storage_effect)
+      def capture_pending_snapshot_targets!
+        pending_sip_ids = @rows.fetch('snapshot_in_pools', {}).values.filter_map do |sip|
+          snapshot = @rows.fetch('snapshots', {})[sip['snapshot_id'].to_i]
+          sip.fetch('id') if sip['confirmed'].to_s != '1' ||
+                             (snapshot && snapshot['confirmed'].to_s != '1')
+        end.to_set
+        sipbs = @rows.fetch('snapshot_in_pool_in_branches', {}).values
+        sipbs.each do |sipb|
+          pending_sip_ids << sipb['snapshot_in_pool_id'] if sipb['confirmed'].to_s != '1'
         end
-        chain_ids = @rows.fetch('transactions', {}).values.map { |row| row['transaction_chain_id'] }
-        emit_ids(TransactionChain, chain_ids)
-        ids_for(TransactionChain).each_slice(PAGE_SIZE) do |slice|
-          emit_relation(Transaction, Transaction.unscoped.where(transaction_chain_id: slice))
+        pending_sipb_ids = sipbs.filter_map do |sipb|
+          sipb.fetch('id') if pending_sip_ids.include?(sipb['snapshot_in_pool_id'])
         end
-        ids_for(Transaction).each_slice(PAGE_SIZE) do |slice|
-          emit_relation(
-            TransactionConfirmation,
-            TransactionConfirmation.unscoped.where(transaction_id: slice)
-          ) do |row|
-            next false unless CONFIRMATION_TABLES.include?(row.table_name)
+        pending_targets_for!('SnapshotInPool', pending_sip_ids.to_a,
+                             :snapshot_in_pool_id)
+        pending_targets_for!('SnapshotInPoolInBranch', pending_sipb_ids,
+                             :snapshot_in_pool_in_branch_id)
+      end
 
-            pk = row.row_pks
-            pk.is_a?(Hash) && pk['id'] && @ids[row.table_name].include?(pk['id'].to_i)
+      def pending_targets_for!(kind, ids, column)
+        ids.each_slice(PAGE_SIZE) do |slice|
+          emit_relation(StorageMutationTarget,
+                        StorageMutationTarget.unscoped.where(column => slice))
+          emit_relation(StorageMutationTarget,
+                        StorageMutationTarget.unscoped.where(catalog_kind: kind, catalog_id: slice))
+        end
+      end
+
+      def capture_node_work!
+        node_id = @rows.fetch('pools').fetch(@pool_id).fetch('node_id')
+        terminal_phases = %w[verified rolled_back failed settled_unverified]
+                          .map { |name| StorageMutationIntent.phases.fetch(name) }
+        [StorageMutationIntent.unscoped.where(node_catalog_id: node_id),
+         StorageMutationIntent.unscoped.where(node_id:)].each do |relation|
+          emit_relation(StorageMutationIntent, relation.where.not(phase: terminal_phases))
+          attempt_states = %w[started uncertain].map do |name|
+            StorageMutationAttempt.states.fetch(name)
+          end
+          attempts = StorageMutationAttempt.unscoped
+                                           .where(state: attempt_states)
+                                           .select(:storage_mutation_intent_id)
+          emit_relation(StorageMutationIntent, relation.where(id: attempts))
+        end
+
+        active_states = %w[staged queued rollbacking fatal resolved]
+                        .map { |name| TransactionChain.states.fetch(name) }
+        active_chains = TransactionChain.unscoped.where(state: active_states).select(:id)
+        emit_relation(Transaction, Transaction.unscoped.where(node_id:, transaction_chain_id: active_chains))
+        emit_relation(Transaction, Transaction.unscoped.where(node_id:, done: 0)) do |row|
+          potential_storage_transaction?(row)
+        end
+        pending = TransactionConfirmation.unscoped.where(done: 0).select(:transaction_id)
+        emit_relation(Transaction, Transaction.unscoped.where(node_id:, id: pending))
+      end
+
+      def capture_node_owned_locks!
+        node_id = @rows.fetch('pools').fetch(@pool_id).fetch('node_id').to_i
+        pools = Pool.unscoped.where(node_id:).select(:id)
+        dips = DatasetInPool.unscoped.where(pool_id: pools).select(:id)
+        trees = DatasetTree.unscoped.where(dataset_in_pool_id: dips).select(:id)
+        sips = SnapshotInPool.unscoped.where(dataset_in_pool_id: dips).select(:id)
+        resources = {
+          'Node' => node_id, 'Pool' => pools, 'DatasetInPool' => dips,
+          'DatasetTree' => trees,
+          'Branch' => Branch.unscoped.where(dataset_tree_id: trees).select(:id),
+          'SnapshotInPool' => sips,
+          'SnapshotInPoolInBranch' => SnapshotInPoolInBranch.unscoped.where(
+            snapshot_in_pool_id: sips
+          ).select(:id),
+          'SnapshotInPoolClone' => SnapshotInPoolClone.unscoped.where(
+            snapshot_in_pool_id: sips
+          ).select(:id)
+        }
+        relation = ResourceLock.unscoped.where(
+          "resource_locks.locked_by_type = 'TransactionChain' AND " \
+          '(EXISTS (SELECT 1 FROM transactions t WHERE t.transaction_chain_id = ' \
+          'resource_locks.locked_by_id AND t.node_id = ?) OR ' \
+          'EXISTS (SELECT 1 FROM storage_mutation_intents i WHERE i.transaction_chain_id = ' \
+          'resource_locks.locked_by_id AND (i.node_id = ? OR i.node_catalog_id = ?)))',
+          node_id, node_id, node_id
+        )
+        resources.each do |resource, owners|
+          relation = relation.or(ResourceLock.unscoped.where(resource:, row_id: owners))
+        end
+        emit_relation(ResourceLock, relation)
+      end
+
+      def capture_evidence_closure!
+        converged = false
+        16.times do
+          before = @count
+          capture_reached_intents!
+          capture_reached_chains!
+          capture_reached_intents!
+          if @count == before
+            converged = true
+            break
+          end
+        end
+        raise Incomplete, 'storage evidence closure is too deep' unless converged
+      end
+
+      def capture_reached_intents!
+        emit_ids(StorageMutationIntent,
+                 @rows.fetch('storage_mutation_targets', {}).values.map { |row| row['storage_mutation_intent_id'] })
+        emit_ids(StorageMutationIntent,
+                 @rows.fetch('storage_mutation_attempts', {}).values.map { |row| row['storage_mutation_intent_id'] })
+        emit_ids(StorageMutationAttempt,
+                 @rows.fetch('storage_mutation_target_observations', {}).values.map do |row|
+                   row['storage_mutation_attempt_id']
+                 end)
+        emit_ids(StorageMutationTarget,
+                 @rows.fetch('storage_mutation_target_observations', {}).values.map do |row|
+                   row['storage_mutation_target_id']
+                 end)
+        emit_ids(StorageMutationIntentScope,
+                 @rows.fetch('storage_mutation_targets', {}).values.map do |row|
+                   row['storage_mutation_intent_scope_id']
+                 end)
+        emit_ids(StorageMutationIntent,
+                 @rows.fetch('storage_mutation_intent_scopes', {}).values.map do |row|
+                   row['storage_mutation_intent_id']
+                 end)
+        frontier_ids_for(StorageMutationIntent, :intent_evidence).each_slice(PAGE_SIZE) do |slice|
+          emit_relation(StorageMutationIntentScope,
+                        StorageMutationIntentScope.unscoped.where(storage_mutation_intent_id: slice))
+          emit_relation(StorageMutationTarget,
+                        StorageMutationTarget.unscoped.where(storage_mutation_intent_id: slice))
+          emit_relation(StorageMutationAttempt,
+                        StorageMutationAttempt.unscoped.where(storage_mutation_intent_id: slice))
+        end
+        emit_ids(StorageIntegrityScope,
+                 @rows.fetch('storage_mutation_intent_scopes', {}).values.map do |row|
+                   row['storage_integrity_scope_id']
+                 end)
+        frontier_ids_for(StorageMutationAttempt, :attempt_observations).each_slice(PAGE_SIZE) do |slice|
+          emit_relation(StorageMutationTargetObservation,
+                        StorageMutationTargetObservation.unscoped.where(storage_mutation_attempt_id: slice))
+        end
+        frontier_ids_for(StorageMutationTarget, :target_observations).each_slice(PAGE_SIZE) do |slice|
+          emit_relation(StorageMutationTargetObservation,
+                        StorageMutationTargetObservation.unscoped.where(storage_mutation_target_id: slice))
+        end
+      end
+
+      def capture_reached_chains!
+        intents = @rows.fetch('storage_mutation_intents', {}).values
+        emit_ids(Transaction, intents.map { |row| row['transaction_id'] })
+        chain_ids = intents.map { |row| row['transaction_chain_id'] }
+        chain_ids.concat(@rows.fetch('transactions', {}).values.map { |row| row['transaction_chain_id'] })
+        chain_ids.concat(@rows.fetch('resource_locks', {}).values.filter_map do |row|
+          row['locked_by_id'] if row['locked_by_type'] == 'TransactionChain'
+        end)
+        emit_ids(TransactionChain, chain_ids)
+        frontier_ids_for(TransactionChain, :chain_members).each_slice(PAGE_SIZE) do |slice|
+          emit_relation(Transaction, Transaction.unscoped.where(transaction_chain_id: slice))
+          emit_relation(StorageMutationIntent,
+                        StorageMutationIntent.unscoped.where(transaction_chain_id: slice))
+          emit_relation(ResourceLock,
+                        ResourceLock.unscoped.where(locked_by_type: 'TransactionChain', locked_by_id: slice))
+        end
+        frontier_ids_for(Transaction, :transaction_confirmations).each_slice(PAGE_SIZE) do |slice|
+          emit_relation(TransactionConfirmation,
+                        TransactionConfirmation.unscoped.where(transaction_id: slice)) do |row|
+            select_confirmation?(row)
           end
         end
       end
 
-      def capture_mutation_evidence!
-        scope_ids = ids_for(StorageIntegrityScope)
-        emit_relation(
-          StorageMutationIntentScope,
-          StorageMutationIntentScope.unscoped.where(storage_integrity_scope_id: scope_ids)
-        )
-        emit_relation(
-          StorageMutationIntent,
-          StorageMutationIntent.unscoped.where(transaction_chain_id: ids_for(TransactionChain))
-        )
-        emit_ids(
-          StorageMutationIntent,
-          @rows.fetch('storage_mutation_intent_scopes', {}).values.map { |row| row['storage_mutation_intent_id'] }
-        )
-        emit_ids(
-          TransactionChain,
-          @rows.fetch('storage_mutation_intents', {}).values.map { |row| row['transaction_chain_id'] }
-        )
-        emit_relation(
-          StorageMutationIntentScope,
-          StorageMutationIntentScope.unscoped.where(storage_mutation_intent_id: ids_for(StorageMutationIntent))
-        )
-        emit_relation(
-          StorageMutationTarget,
-          StorageMutationTarget.unscoped.where(storage_mutation_intent_id: ids_for(StorageMutationIntent))
-        )
-        emit_relation(
-          StorageMutationAttempt,
-          StorageMutationAttempt.unscoped.where(storage_mutation_intent_id: ids_for(StorageMutationIntent))
-        )
-        emit_relation(
-          StorageMutationTargetObservation,
-          StorageMutationTargetObservation.unscoped.where(
-            storage_mutation_attempt_id: ids_for(StorageMutationAttempt)
-          )
-        )
+      def select_confirmation?(row)
+        if CONFIRMATION_TABLES.include?(row.table_name)
+          raw = row.attributes_before_type_cast['row_pks']
+          raise Incomplete, 'confirmation row key exceeds capture bound' if
+            raw.nil? || raw.bytesize > Format::MAX_RECORD_BYTES
+
+          pk = row.row_pks
+          return true if pk.is_a?(Hash) && pk['id'] && @ids[row.table_name].include?(pk['id'].to_i)
+        end
+        return false if row.done.to_i == 1
+
+        @redacted_confirmations << row.id
+        true
+      rescue Psych::Exception, TypeError
+        raise Incomplete, 'confirmation row key is invalid'
       end
 
       def capture_locks!
-        %w[Pool DatasetInPool DatasetTree Branch Snapshot SnapshotInPool
+        %w[Node Pool DatasetInPool DatasetTree Branch Snapshot SnapshotInPool
            SnapshotInPoolInBranch SnapshotInPoolClone].each do |type|
           table = type.tableize
           ids_for_table(table).each_slice(PAGE_SIZE) do |slice|
@@ -387,18 +520,34 @@ module VpsAdmin
       end
 
       def emit_ids(model, values)
-        values.compact.map(&:to_i).uniq.each_slice(PAGE_SIZE) do |slice|
+        table = model.table_name
+        pending = values.compact.map(&:to_i).uniq.reject do |id|
+          @written[table].include?(id) || @queried_ids[table].include?(id)
+        end
+        @queried_ids[table].merge(pending)
+        pending.each_slice(PAGE_SIZE) do |slice|
           emit_relation(model, model.unscoped.where(id: slice))
         end
       end
 
+      def frontier_ids_for(model, key)
+        known = @ids[model.table_name]
+        frontier = known.difference(@expanded[key]).to_a
+        @expanded[key].merge(frontier)
+        frontier
+      end
+
       def emit_relation(model, relation)
         table = model.table_name
+        relation = bounded_projection(model, relation)
+        page_size = [Transaction, TransactionConfirmation].include?(model) ? PAYLOAD_PAGE_SIZE : PAGE_SIZE
         last_id = 0
         loop do
           check_budget!
           page = relation.where(model.arel_table[:id].gt(last_id))
-                         .reorder(id: :asc).limit(PAGE_SIZE).to_a
+                         .reorder(id: :asc).limit(page_size).to_a
+          @visited += page.size
+          raise Incomplete, 'DB capture visited-row limit exceeded' if @visited > MAX_VISITED_ROWS
           break if page.empty?
 
           page.each do |row|
@@ -409,6 +558,20 @@ module VpsAdmin
             write_record(model, row)
           end
           metadata!
+        end
+      end
+
+      def bounded_projection(model, relation)
+        case model.name
+        when 'Transaction'
+          columns = model.column_names - %w[input output signature]
+          relation.select(*columns, Arel.sql("LEFT(transactions.output, #{MAX_TRANSACTION_OUTPUT_BYTES + 1}) AS output"))
+        when 'TransactionConfirmation'
+          columns = model.column_names - %w[attr_changes row_pks]
+          expression = "LEFT(transaction_confirmations.row_pks, #{Format::MAX_RECORD_BYTES + 1}) AS row_pks"
+          relation.select(*columns, Arel.sql(expression))
+        else
+          relation
         end
       end
 
@@ -428,23 +591,43 @@ module VpsAdmin
         if model == Transaction
           @transaction_results[row.id] = terminal_transaction_result(fields)
           fields = fields.except('input', 'output', 'signature')
+        elsif model == TransactionConfirmation && @redacted_confirmations.include?(row.id)
+          fields = fields.except('row_pks', 'attr_changes')
         end
         fields = fields.transform_values { |value| normalize(value) }
         data = { 'table' => table, 'id' => row.id.to_s, 'fields' => fields }
         record = Format.record('db_object', data)
         line = "#{Format.canonical(record)}\n"
         raise Incomplete, 'oversize DB record' if line.bytesize > Format::MAX_RECORD_BYTES
+        raise Incomplete, 'DB capture artifact-byte limit exceeded' if
+          @bytes + line.bytesize > MAX_ARTIFACT_BYTES
 
         @file.write(line)
         @digest.update(line)
         @count += 1
+        @bytes += line.bytesize
         @ids[table] << row.id
         @written[table] << row.id
         @rows[table][row.id] = fields
       end
 
       def known_chain_overlap?
+        return true if @rows.fetch('resource_locks', {}).any?
+
+        terminal_phases = %w[verified rolled_back failed settled_unverified]
+                          .map { |name| StorageMutationIntent.phases.fetch(name).to_s }
+        return true if @rows.fetch('storage_mutation_intents', {}).values.any? do |row|
+          !terminal_phases.include?(row['phase'].to_s)
+        end
+        return true if @rows.fetch('storage_mutation_attempts', {}).values.any? do |row|
+          %w[0 3].include?(row['state'].to_s)
+        end
+
         transactions = @rows.fetch('transactions', {}).values
+        return true if @rows.fetch('transaction_confirmations', {}).values.any? do |confirmation|
+          confirmation['done'].to_s != '1'
+        end
+
         members_by_chain = transactions.group_by do |row|
           Integer(row['transaction_chain_id'], exception: false)
         end
@@ -458,8 +641,12 @@ module VpsAdmin
 
       def potential_storage_transaction?(row)
         handle = Integer(row['handle'], exception: false)
-        handle && (POTENTIAL_RUNTIME_HANDLES.include?(handle) ||
-          Transaction.for_type(handle)&.storage_effect)
+        return true unless handle
+        return true if POTENTIAL_RUNTIME_HANDLES.include?(handle)
+
+        StorageEffectRegistry.fetch!(handle).admission_required
+      rescue StorageEffectRegistry::Unclassified
+        true
       end
 
       def proved_terminal_chain?(chain_id, members_by_chain)
@@ -567,6 +754,8 @@ module VpsAdmin
 
       def check_budget!
         raise Incomplete, 'DB capture row limit exceeded' if @count >= MAX_ROWS
+        raise Incomplete, 'DB capture visited-row limit exceeded' if @visited > MAX_VISITED_ROWS
+        raise Incomplete, 'DB capture artifact-byte limit exceeded' if @bytes > MAX_ARTIFACT_BYTES
         raise Incomplete, 'DB capture time limit exceeded' if @now.call - @started > MAX_SECONDS
       end
     end
