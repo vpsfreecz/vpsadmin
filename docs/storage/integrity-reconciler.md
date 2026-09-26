@@ -45,9 +45,9 @@ NodeCtld routes that handle to its dedicated `inventory` worker; an older
 daemon can still receive the known queue and reject the unsupported handle.
 The CLI detects that terminal failure while waiting for inventory frames and
 leaves the attempt incomplete.
-`compare`, `dry-run` and `plan` read only private artifacts. They make no database or
-RabbitMQ calls and do not unlock the transaction signer, but this CLI still
-loads the full vpsAdmin API runtime at startup.
+`compare`, `dry-run` and `plan` load only the artifact reader and planner.
+Even in a cold process they do not boot the API, access the database or
+RabbitMQ, or unlock the transaction signer.
 
 `activity-report` is a separate sampled observation while the global freeze is
 `read_only` and DB-drained. It signs one handle 5291 probe for each node with

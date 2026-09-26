@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'open3'
+require 'rbconfig'
 require 'tmpdir'
 require 'vpsadmin/storage_reconciler'
 
@@ -20,6 +22,62 @@ RSpec.describe VpsAdmin::StorageReconciler do
 
         expect { load_cli(command, '--run-id', '91', '--private-dir', root) }
           .to raise_error(SystemExit) { |error| expect(error.status).to eq(3) }
+      end
+    end
+  end
+
+  it 'loads offline artifact commands without booting the API or database' do
+    Dir.mktmpdir do |root|
+      reconciler = described_class
+      format = reconciler::Format
+      store = reconciler::PrivateStore.new(root:, run_id: 91, create: true)
+      db_row = format.record('db_object', {
+                               'table' => 'pools', 'id' => '2',
+                               'fields' => { 'id' => '2', 'node_id' => '1',
+                                             'filesystem' => 'tank/backup', 'role' => '1' }
+                             })
+      zfs_row = format.record('zfs_object', {
+                                'path' => 'tank/backup', 'type' => 'filesystem', 'guid' => '100',
+                                'owner_path' => nil, 'owner_guid' => nil, 'origin' => nil,
+                                'clones' => [], 'userrefs' => '0', 'deferred_destroy' => 'off',
+                                'creation' => '1', 'createtxg' => '1'
+                              })
+      db_line = "#{format.canonical(db_row)}\n"
+      zfs_line = "#{format.canonical(zfs_row)}\n"
+      zfs_pass = { 'count' => 1, 'digest' => Digest::SHA256.hexdigest(zfs_line),
+                   'zpool_guid' => '900', 'roots' => { 'tank/backup' => '100' } }
+      manifest = {
+        'version' => format::VERSION, 'policy_version' => format::POLICY_VERSION,
+        'state' => 'complete', 'confidence' => 'advisory_unguarded',
+        'finding_key' => store.key_metadata, 'run_id' => '91', 'mode' => 'bootstrap',
+        'scope' => { 'node_id' => '1', 'pool_id' => '2', 'zpool' => 'tank',
+                     'managed_root' => 'tank/backup', 'mutation_epoch' => '0' },
+        'db' => { 'row_count' => 1, 'digest' => Digest::SHA256.hexdigest(db_line),
+                  'confirmation_coverage' => 'selected_chains_only',
+                  'managed_roots' => ['tank/backup'] },
+        'zfs' => zfs_pass.merge('row_count' => 1, 'first' => zfs_pass, 'second' => zfs_pass)
+      }
+      manifest['digest'] = format.digest(manifest)
+      store.write('db.jsonl') { |file| file.write(db_line) }
+      store.write('zfs.jsonl') { |file| file.write(zfs_line) }
+      store.write('manifest.json') { |file| file.write("#{format.canonical(manifest)}\n") }
+
+      cli = File.expand_path('../../bin/vpsadmin-storage-reconcile', __dir__)
+      script = <<~RUBY
+        cli = ARGV.shift
+        load cli
+        abort 'API booted' if defined?(ActiveRecord) || defined?(SysConfig)
+      RUBY
+
+      %w[compare dry-run plan].each do |command|
+        output, error, status = Open3.capture3(
+          { 'RUBYOPT' => nil, 'DATABASE_URL' => nil },
+          RbConfig.ruby, '-e', script, cli, command,
+          '--run-id', '91', '--private-dir', root
+        )
+        expect(status.exitstatus).to eq(0), "#{command}: #{error}"
+        expect(output).to include("#{command}=complete")
+        expect(error).to be_empty
       end
     end
   end

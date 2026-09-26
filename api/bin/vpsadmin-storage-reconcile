@@ -2,8 +2,6 @@
 # frozen_string_literal: true
 
 require 'optparse'
-require_relative '../lib/vpsadmin'
-require_relative '../lib/vpsadmin/storage_reconciler'
 
 command = ARGV.shift
 options = {}
@@ -30,6 +28,9 @@ begin
     raise OptionParser::InvalidArgument, '--mode must be bootstrap or steady' unless
       %w[bootstrap steady].include?(options[:mode])
 
+    require_relative '../lib/vpsadmin'
+    require_relative '../lib/vpsadmin/storage_reconciler'
+
     runner = VpsAdmin::StorageReconciler::Capture.new(
       pool_id: options.fetch(:pool_id), mode: options.fetch(:mode),
       private_dir: options.fetch(:private_dir)
@@ -41,6 +42,8 @@ begin
     raise OptionParser::MissingArgument, '--run-id' unless options[:run_id]
     raise OptionParser::InvalidOption, '--pool-id and --mode are capture-only' if
       options[:pool_id] || options[:mode]
+
+    require_relative '../lib/vpsadmin/storage_reconciler/offline'
 
     begin
       store = VpsAdmin::StorageReconciler::PrivateStore.new(
@@ -70,6 +73,9 @@ begin
   when 'activity-report'
     raise OptionParser::InvalidOption, '--pool-id, --run-id and --mode are not valid' if
       options[:pool_id] || options[:run_id] || options[:mode]
+
+    require_relative '../lib/vpsadmin'
+    require_relative '../lib/vpsadmin/storage_reconciler'
 
     runner = VpsAdmin::StorageReconciler::ActivityReport.new(
       private_dir: options.fetch(:private_dir)
