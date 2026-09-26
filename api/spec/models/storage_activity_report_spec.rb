@@ -114,6 +114,43 @@ RSpec.describe VpsAdmin::StorageReconciler::ActivityReport do
     end
   end
 
+  it 'accepts a capped historical settled count when DB work is drained' do
+    Dir.mktmpdir('g1-report') do |root|
+      File.chmod(0o700, root)
+      settled = status.merge(count_capped: [:settled_unverified_intents])
+      probe = ->(_node_id, _domain, request) { output_for(request) }
+
+      _runner, result, captures = run_report(
+        root, status_reader: -> { settled }, probe_runner: probe
+      )
+
+      expect(captures.length).to eq(2)
+      expect(result).to include('state' => 'sampled_incomplete',
+                                'reason' => 'child_lifetime_unproved')
+    end
+  end
+
+  it 'rejects a capped blocking count even if a status reader claims drained' do
+    Dir.mktmpdir('g1-report') do |root|
+      File.chmod(0o700, root)
+      calls = 0
+      capped = status.merge(count_capped: %i[settled_unverified_intents prepared_intents])
+      probe = lambda do |_node_id, _domain, request|
+        calls += 1
+        output_for(request)
+      end
+
+      _runner, result, captures = run_report(
+        root, status_reader: -> { capped }, probe_runner: probe
+      )
+
+      expect(result).to include('state' => 'unknown',
+                                'reason' => 'storage freeze is not DB-drained at a stable epoch')
+      expect(calls).to eq(0)
+      expect(captures).to be_empty
+    end
+  end
+
   it 'marks a changed node or osctld generation unknown even with complete inventory' do
     Dir.mktmpdir('g1-report') do |root|
       File.chmod(0o700, root)

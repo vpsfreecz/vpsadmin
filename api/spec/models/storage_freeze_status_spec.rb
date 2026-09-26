@@ -118,6 +118,25 @@ RSpec.describe StorageFreezeStatus do
     expect(status).to include(db_drained: true, repair_ready: false)
   end
 
+  it 'caps more than a thousand settled historical intents without blocking DB drain' do
+    now = Time.current
+    rows = Array.new(described_class::COUNT_CAP + 1) do
+      {
+        token: SecureRandom.hex(24), node_catalog_id: SpecSeed.node.id,
+        kind: 'observer_dependency', phase: 6, protocol_version: 1,
+        manifest_digest: 'c' * 64, settled_at: now,
+        settlement_provenance: 'node_chain_close',
+        created_at: now, updated_at: now
+      }
+    end
+    StorageMutationIntent.insert_all!(rows)
+
+    status = described_class.snapshot
+    expect(status[:counts][:settled_unverified_intents]).to eq(described_class::COUNT_CAP)
+    expect(status[:count_capped]).to eq([:settled_unverified_intents])
+    expect(status).to include(db_drained: true, repair_ready: false)
+  end
+
   it 'does no DML in status or drain' do
     statements = []
     listener = lambda do |_name, _start, _finish, _id, payload|
