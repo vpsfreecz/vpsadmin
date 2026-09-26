@@ -4482,6 +4482,7 @@ en:
           destroy: Destroy snapshot in pool
           purge_clones: Purge clones
         storage:
+          activity_probe: Storage activity probe
           inventory: Storage inventory
         user:
           create: Create user
@@ -4600,6 +4601,7 @@ en:
         queue_release: Release queue
         queue_reserve: Reserve queue
         storage_activate_snapshot_clone: Activate snapshot clone
+        storage_activity_probe: Storage activity probe
         storage_apply_rollback: Apply rollback
         storage_clone_snapshot: Clone snapshot
         storage_clone_snapshot_name: Set snapshot clone name

@@ -54,8 +54,8 @@ RSpec.describe NodeCtld::StorageEffectRegistry do
     end
   end
 
-  it 'refuses unsupported directions under the version-four test policy' do
-    expect(described_class::VERSION).to eq(4)
+  it 'refuses unsupported directions under the version-five test policy' do
+    expect(described_class::VERSION).to eq(5)
     expect(described_class.fetch!(5204)).to have_attributes(
       execute_strict_support: :guarded_5204_v1,
       rollback_strict_support: :guarded_5204_v1
@@ -71,5 +71,11 @@ RSpec.describe NodeCtld::StorageEffectRegistry do
     %w[1001 5220 5223].map(&:to_i).each do |handle|
       expect(described_class.fetch!(handle).execute_strict_support).to eq(:unsupported)
     end
+    expect(described_class.fetch!(5291).to_h).to include(
+      execute: :read_only, rollback: :no_storage,
+      execute_impact: :none, rollback_impact: :none,
+      admission_required: false, execute_strict_support: :proved_no_storage_effect,
+      rollback_strict_support: :proved_no_storage_effect
+    )
   end
 end
