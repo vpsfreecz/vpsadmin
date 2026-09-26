@@ -6,6 +6,46 @@ require 'tmpdir'
 require 'vpsadmin/storage_reconciler'
 
 RSpec.describe VpsAdmin::StorageReconciler::DbCapture do
+  def overlap_capture(chain_state:, done: 2, output: '{"rollback":{"status":"ok"}}',
+                      status: 1, finished_at: Time.current, chain_size: 1,
+                      progress: 0, capture_chain: true, follower: false,
+                      follower_started_at: nil)
+    chain, transaction, follower_transaction = with_current_context(user: SpecSeed.admin) do
+      chain = TransactionChain.create!(
+        name: 'db_capture_overlap', type: TransactionChains::Vps::Start.name,
+        state: chain_state, size: chain_size,
+        progress:, user: SpecSeed.user, urgent_rollback: false
+      )
+      transaction = Transaction.create!(
+        transaction_chain: chain, node: SpecSeed.node, user: SpecSeed.user,
+        handle: 1001, queue: 'storage', urgent: false, priority: 0,
+        status: 0, input: '{}', reversible: :is_reversible
+      )
+      transaction.update_columns(done:, status:, output:, finished_at:)
+      follower_transaction = if follower
+                               Transaction.create!(
+                                 transaction_chain: chain, node: SpecSeed.node, user: SpecSeed.user,
+                                 handle: 1001, queue: 'storage', urgent: false, priority: 0,
+                                 status: 0, input: '{}', reversible: :is_reversible
+                               ).tap do |member|
+                                 member.update_columns(
+                                   done: 1, status: 0,
+                                   output: '{"execute":{"status":"failed","skipped":true}}',
+                                   started_at: follower_started_at, finished_at: Time.current
+                                 )
+                               end
+                             end
+      [chain, transaction, follower_transaction]
+    end
+    capture = described_class.new(pool_id: SpecSeed.pool.id, store: nil)
+    artifact = StringIO.new
+    capture.instance_variable_set(:@file, artifact)
+    capture.send(:write_record, TransactionChain, chain.reload) if capture_chain
+    capture.send(:write_record, Transaction, transaction.reload)
+    capture.send(:write_record, Transaction, follower_transaction.reload) if follower_transaction
+    [capture, artifact]
+  end
+
   it 'keeps transaction payloads out of the bounded DB artifact' do
     model = Class.new do
       def self.table_name
@@ -75,6 +115,46 @@ RSpec.describe VpsAdmin::StorageReconciler::DbCapture do
     row.zpool_guid = BigDecimal('50001.5')
     expect { capture.send(:write_record, Pool, row) }
       .to raise_error(described_class::Incomplete, 'invalid Pool GUID')
+  end
+
+  it 'does not treat a proved completed rollback as an active chain overlap' do
+    output = { execute: { status: 'ok' },
+               rollback: { status: 'ok', private: 'terminal rollback private marker' } }.to_json
+    capture, artifact = overlap_capture(chain_state: :failed, output:)
+
+    expect(capture.send(:known_chain_overlap?)).to be(false)
+    expect(artifact.string).not_to include('terminal rollback private marker')
+  end
+
+  it 'keeps staged, rollbacking and fatal chains overlapping despite done=2' do
+    %i[staged rollbacking fatal].each do |state|
+      capture, = overlap_capture(chain_state: state)
+      expect(capture.send(:known_chain_overlap?)).to be(true)
+    end
+  end
+
+  it 'keeps waiting work and ambiguous terminal rollback records overlapping' do
+    cases = [
+      { chain_state: :failed, done: 0 },
+      { chain_state: :failed, output: nil },
+      { chain_state: :failed, output: '{"rollback":{"status":"failed"}}' },
+      { chain_state: :failed, finished_at: nil },
+      { chain_state: :failed, chain_size: 2 },
+      { chain_state: :failed, capture_chain: false }
+    ]
+    cases.each do |attrs|
+      capture, = overlap_capture(**attrs)
+      expect(capture.send(:known_chain_overlap?)).to be(true)
+    end
+  end
+
+  it 'does not accept a skipped retry member that previously started' do
+    capture, = overlap_capture(chain_state: :failed, chain_size: 2,
+                               follower: true, follower_started_at: Time.current)
+    expect(capture.send(:known_chain_overlap?)).to be(true)
+
+    never_started, = overlap_capture(chain_state: :failed, chain_size: 2, follower: true)
+    expect(never_started.send(:known_chain_overlap?)).to be(false)
   end
 
   it 'uses one repeatable-read connection and commits before publishing DB evidence' do
