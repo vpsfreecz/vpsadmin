@@ -28,7 +28,7 @@ module VpsAdmin
           row.state = :unverified
         end
         @run = StorageObservationRun.create!(
-          storage_integrity_scope: scope, collector_version: Format::VERSION,
+          storage_integrity_scope: scope, collector_version: Format::MANIFEST_VERSION,
           mutation_epoch: scope.mutation_epoch, state: :collecting
         )
         store = PrivateStore.new(root: @private_dir, run_id: run.id, create: true)
@@ -175,8 +175,9 @@ module VpsAdmin
 
       def manifest_for(store:, db:, final:, run_uuid:, attempt_uuid:, pool:, state:)
         data = {
-          'version' => Format::VERSION,
-          'policy_version' => Format::LEGACY_POLICY_VERSION,
+          'version' => Format::MANIFEST_VERSION,
+          'record_version' => Format::VERSION,
+          'policy_version' => Format::POLICY_VERSION,
           'run_id' => run.id.to_s, 'run_uuid' => run_uuid,
           'attempt_uuid' => attempt_uuid, 'mode' => @mode, 'state' => state,
           'confidence' => 'advisory_unguarded', 'finding_key' => store.key_metadata,
