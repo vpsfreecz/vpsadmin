@@ -14,6 +14,17 @@ module VpsAdmin
       STATEMENT_SECONDS = 10
       MAX_TRANSACTION_OUTPUT_BYTES = 128 * 1024
       MAX_CHAIN_MEMBERS = 256
+      MAX_GUID = (1 << 64) - 1
+      GUID_COLUMNS = {
+        'pools' => %w[zpool_guid],
+        'snapshot_in_pools' => %w[zfs_guid zfs_owner_fs_guid],
+        'snapshot_in_pool_in_branches' => %w[zfs_guid zfs_owner_fs_guid],
+        'storage_filesystem_identities' => %w[zfs_guid],
+        'storage_mutation_targets' => %w[expected_guid expected_owner_fs_guid],
+        'storage_mutation_target_observations' => %w[
+          before_guid after_guid before_owner_fs_guid after_owner_fs_guid
+        ]
+      }.freeze
       RESULT_STATUSES = { 0 => 'failed', 1 => 'ok', 2 => 'warning' }.freeze
       CONFIRMATION_TABLES = %w[
         pools datasets dataset_in_pools dataset_trees branches snapshots
@@ -407,8 +418,10 @@ module VpsAdmin
         @rows ||= Hash.new { |hash, key| hash[key] = {} }
         table = model.table_name
         fields = row.attributes_before_type_cast
-        if table == 'pools' && !fields['zpool_guid'].nil?
-          fields = fields.merge('zpool_guid' => canonical_pool_guid(row.zpool_guid))
+        GUID_COLUMNS.fetch(table, []).each do |column|
+          next if fields[column].nil?
+
+          fields = fields.merge(column => canonical_guid(fields[column], table:, column:))
         end
         # Transaction payloads can contain large signed input and unrelated
         # private command data. Correlation needs only indexed chain metadata.
@@ -529,11 +542,19 @@ module VpsAdmin
         end
       end
 
-      def canonical_pool_guid(value)
-        raw = value.is_a?(BigDecimal) ? value.to_s('F') : value.to_s
-        raise Incomplete, 'invalid Pool GUID' unless raw.match?(/\A\d+(?:\.0+)?\z/)
+      def canonical_guid(value, table:, column:)
+        raw = case value
+              when BigDecimal then value.to_s('F')
+              when Integer, String then value.to_s
+              end
+        invalid = "invalid GUID in #{table}.#{column}"
+        raise Incomplete, invalid unless raw&.match?(/\A\d+(?:\.0+)?\z/)
 
-        raw.split('.').first
+        digits = raw.split('.').first.sub(/\A0+/, '')
+        digits = '0' if digits.empty?
+        raise Incomplete, invalid if digits.length > 20 || digits.to_i > MAX_GUID
+
+        digits
       end
 
       def ids_for(model)

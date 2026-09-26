@@ -70,7 +70,8 @@ RSpec.describe VpsAdmin::StorageReconciler::DbCapture do
   end
 
   it 'carries a real DECIMAL Pool GUID as exact digits into signed inventory input' do
-    SpecSeed.pool.update_columns(zpool_guid: BigDecimal('50001'))
+    max_guid = '18446744073709551615'
+    SpecSeed.pool.update_columns(zpool_guid: BigDecimal(max_guid))
     pool = Pool.find(SpecSeed.pool.id)
 
     capture = described_class.new(pool_id: pool.id, store: nil)
@@ -78,7 +79,7 @@ RSpec.describe VpsAdmin::StorageReconciler::DbCapture do
     capture.instance_variable_set(:@file, output)
     capture.send(:write_record, Pool, pool)
     fields = JSON.parse(output.string).fetch('fields').fetch('fields')
-    expect(fields.fetch('zpool_guid')).to eq('50001')
+    expect(fields.fetch('zpool_guid')).to eq(max_guid)
 
     with_current_context do
       unlock_transaction_signer!
@@ -93,7 +94,7 @@ RSpec.describe VpsAdmin::StorageReconciler::DbCapture do
       chain, = TransactionChains::Storage::Inventory.fire(request)
       transaction = chain.transactions.sole.reload
 
-      expect(JSON.parse(transaction.input).fetch('input').fetch('zpool_guid')).to eq('50001')
+      expect(JSON.parse(transaction.input).fetch('input').fetch('zpool_guid')).to eq(max_guid)
       verify_signature_base64!(transaction.input, transaction.signature)
     ensure
       lock_transaction_signer!
@@ -101,8 +102,8 @@ RSpec.describe VpsAdmin::StorageReconciler::DbCapture do
   end
 
   it 'normalizes exponent-form BigDecimal GUIDs and rejects fractions' do
-    row = Struct.new(:id, :zpool_guid, :attributes_before_type_cast).new(
-      7, BigDecimal('50001'), { 'id' => 7, 'zpool_guid' => BigDecimal('50001') }
+    row = Struct.new(:id, :attributes_before_type_cast).new(
+      7, { 'id' => 7, 'zpool_guid' => BigDecimal('50001') }
     )
     capture = described_class.new(pool_id: 7, store: nil)
     output = StringIO.new
@@ -112,9 +113,50 @@ RSpec.describe VpsAdmin::StorageReconciler::DbCapture do
     fields = JSON.parse(output.string).fetch('fields').fetch('fields')
     expect(fields.fetch('zpool_guid')).to eq('50001')
 
-    row.zpool_guid = BigDecimal('50001.5')
+    row.attributes_before_type_cast['zpool_guid'] = BigDecimal('50001.5')
     expect { capture.send(:write_record, Pool, row) }
-      .to raise_error(described_class::Incomplete, 'invalid Pool GUID')
+      .to raise_error(described_class::Incomplete, 'invalid GUID in pools.zpool_guid')
+  end
+
+  it 'captures every storage GUID DECIMAL as bounded, plain unsigned digits' do
+    columns = {
+      Pool => %w[zpool_guid],
+      SnapshotInPool => %w[zfs_guid zfs_owner_fs_guid],
+      SnapshotInPoolInBranch => %w[zfs_guid zfs_owner_fs_guid],
+      StorageFilesystemIdentity => %w[zfs_guid],
+      StorageMutationTarget => %w[expected_guid expected_owner_fs_guid],
+      StorageMutationTargetObservation => %w[
+        before_guid after_guid before_owner_fs_guid after_owner_fs_guid
+      ]
+    }
+    max_guid = '18446744073709551615'
+
+    columns.each do |model, names|
+      fields = { 'id' => 7 }.merge(names.to_h { |name| [name, BigDecimal(max_guid)] })
+      row = Struct.new(:id, :attributes_before_type_cast).new(7, fields)
+      capture = described_class.new(pool_id: 7, store: nil)
+      output = StringIO.new
+      capture.instance_variable_set(:@file, output)
+
+      capture.send(:write_record, model, row)
+
+      recorded = JSON.parse(output.string).fetch('fields').fetch('fields')
+      names.each { |name| expect(recorded.fetch(name)).to eq(max_guid) }
+
+      names.each do |name|
+        [BigDecimal('1.5'), BigDecimal('-1'), BigDecimal('18446744073709551616'),
+         'NaN', '1e2', 1.0].each do |invalid|
+          row.attributes_before_type_cast[name] = invalid
+          expect { capture.send(:write_record, model, row) }
+            .to raise_error(described_class::Incomplete, "invalid GUID in #{model.table_name}.#{name}")
+        end
+        row.attributes_before_type_cast[name] = BigDecimal(max_guid)
+      end
+    end
+
+    capture = described_class.new(pool_id: 7, store: nil)
+    ordinary_decimal = BigDecimal('50001')
+    expect(capture.send(:normalize, ordinary_decimal)).to eq(ordinary_decimal.to_s)
   end
 
   it 'does not treat a proved completed rollback as an active chain overlap' do
