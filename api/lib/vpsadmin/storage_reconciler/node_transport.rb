@@ -49,7 +49,8 @@ module VpsAdmin
           @connection.start
           @channel = @connection.create_channel
           @channel.prefetch(PREFETCH)
-          exchange = @channel.direct(@exchange_name, durable: true)
+          # NodeCtld and Supervisor share this transient node exchange.
+          exchange = @channel.direct(@exchange_name)
           @queue = @channel.queue(
             queue_name, durable: true, arguments: {
               'x-queue-type' => 'quorum',
