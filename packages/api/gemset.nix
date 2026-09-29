@@ -1012,10 +1012,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0w5pgh8bjy1fqdj9is5395d61y58s2rvybsdj5rlx59q45fxj1fi";
+      sha256 = "0jxl6c5cagjz5i5n9jplhdy2izad6wapmwgfhqggb22nqfvvdvas";
       type = "gem";
     };
-    version = "2.13.0";
+    version = "2.13.1";
   };
   reline = {
     dependencies = [ "io-console" ];
