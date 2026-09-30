@@ -162,10 +162,10 @@ let
     "symfony/polyfill-php80" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "symfony-polyfill-php80-dfb55726c3a76ea3b6459fcfda1ec2d80a682411";
+        name = "symfony-polyfill-php80-9c6a5d6b01ca51d486c813e9a9c0ed55f208bb74";
         src = fetchurl {
-          url = "https://api.github.com/repos/symfony/polyfill-php80/zipball/dfb55726c3a76ea3b6459fcfda1ec2d80a682411";
-          sha256 = "0vhq5kidlw4n00msiisnhqnyw80g4qlfap1mkh4bvdp08izf7r36";
+          url = "https://api.github.com/repos/symfony/polyfill-php80/zipball/9c6a5d6b01ca51d486c813e9a9c0ed55f208bb74";
+          sha256 = "1iabspj9v8nj6cn4k1wk690icc0qk1zjy7w16jwa3k9aqmj9hmsi";
         };
       };
     };
