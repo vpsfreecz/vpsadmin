@@ -1,5 +1,7 @@
 module VpsAdmin
   class Scheduler::CronTask
+    class InvalidField < ArgumentError; end
+
     attr_reader :id, :class_name, :row_id, :minute, :hour, :day, :month, :weekday
 
     def initialize(id:, class_name:, row_id:, minute: '*', hour: '*', day: '*', month: '*', weekday: '*')
@@ -37,11 +39,23 @@ module VpsAdmin
     private
 
     def parse_field(field, min, max)
-      if field == '*'
-        (min..max).to_a
-      else
-        Array(field.to_i)
+      value = field.to_s
+      return (min..max).to_a if value == '*'
+
+      if value.match?(/\A[0-9]+\z/)
+        number = value.to_i
+        return [number] if number.between?(min, max)
+      elsif (match = %r{\A(?:\*|([0-9]+)-([0-9]+))/([0-9]+)\z}.match(value))
+        first = match[1] ? match[1].to_i : min
+        last = match[2] ? match[2].to_i : max
+        step = match[3].to_i
+
+        if first.between?(min, max) && last.between?(first, max) && step.between?(1, max - min + 1)
+          return (first..last).step(step).to_a
+        end
       end
+
+      raise InvalidField, "invalid cron field #{value.inspect} for #{min}..#{max}"
     end
 
     def minute_match?(time) = @minute.include?(time.min)

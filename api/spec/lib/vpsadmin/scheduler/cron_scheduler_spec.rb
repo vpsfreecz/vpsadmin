@@ -69,6 +69,20 @@ RSpec.describe VpsAdmin::Scheduler::CronScheduler do
     expect(worker).to have_received(:<<).with(scheduler.get_task(1))
   end
 
+  it 'retains the complete previous schedule when a replacement contains an invalid task' do
+    scheduler.add_task(id: 1, class_name: 'OldTask', row_id: 10)
+    previous = scheduler.get_tasks
+
+    expect do
+      scheduler.replace do
+        scheduler.add_task(id: 2, class_name: 'NewTask', row_id: 20, minute: '*/5')
+        scheduler.add_task(id: 3, class_name: 'InvalidTask', row_id: 30, minute: '*/0')
+      end
+    end.to raise_error(VpsAdmin::Scheduler::CronTask::InvalidField)
+
+    expect(scheduler.get_tasks).to eq(previous)
+  end
+
   it 'sleeps until the next minute boundary' do
     allow(Time).to receive(:now).and_return(
       Time.new(2026, 1, 1, 0, 5, 20),
