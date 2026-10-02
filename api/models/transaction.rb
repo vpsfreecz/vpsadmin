@@ -255,6 +255,10 @@ class Transaction < ApplicationRecord
       @transaction = t
     end
 
+    def transaction_chain_id
+      @transaction.transaction_chain_id
+    end
+
     # Create an object. Pass the object as an argument.
     def create(obj)
       add_confirmable(:create_type, obj)
@@ -298,9 +302,9 @@ class Transaction < ApplicationRecord
     # @param obj [ActiveRecord::Base]
     # @param attrs [Hash]
     def decrement_many(obj, **kwattrs)
+      # rubocop:disable Lint/UnreachableCode
       raise NotImplementedError
 
-      # rubocop:disable Lint/UnreachableCode
       add_confirmable(:decrement_type, obj, nil, kwattrs)
       # rubocop:enable Lint/UnreachableCode
     end
@@ -312,9 +316,9 @@ class Transaction < ApplicationRecord
     # @param obj [ActiveRecord::Base]
     # @param attrs [Hash]
     def increment_many(obj, **kwattrs)
+      # rubocop:disable Lint/UnreachableCode
       raise NotImplementedError
 
-      # rubocop:disable Lint/UnreachableCode
       add_confirmable(:increment_type, obj, nil, kwattrs)
       # rubocop:enable Lint/UnreachableCode
     end

@@ -805,6 +805,8 @@ module VpsAdmin::API::Resources
           object_state_check!(s, s.user)
 
           dip.add_plan(env_plan)
+        rescue VpsAdmin::API::Exceptions::OperationError => e
+          error!(e.message)
         end
       end
 
@@ -833,6 +835,8 @@ module VpsAdmin::API::Resources
 
           dip.del_plan(dip_plan)
           ok!
+        rescue VpsAdmin::API::Exceptions::OperationError => e
+          error!(e.message)
         end
       end
     end
