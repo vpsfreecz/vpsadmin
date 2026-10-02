@@ -100,7 +100,8 @@ Source: [rotation](../../api/models/transaction_chains/dataset/rotate.rb) and
 ## Scheduled work and downloads
 
 Dataset plans and repeatable tasks schedule operations such as snapshots,
-backup transfers, and rotation. Their implementation is in
+backup transfers, and rotation. Read [Dataset plans](dataset-plans.md) for
+shared templates and registration guards. Their implementation is in
 [dataset plans](../../api/lib/vpsadmin/api/dataset_plans.rb),
 [dataset actions](../../api/models/dataset_action.rb), and
 [repeatable tasks](../../api/models/repeatable_task.rb).
