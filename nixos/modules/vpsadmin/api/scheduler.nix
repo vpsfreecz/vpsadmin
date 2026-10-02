@@ -15,6 +15,11 @@ in
     vpsadmin.api = {
       scheduler = {
         enable = mkEnableOption "Enable vpsAdmin scheduler";
+        taskRefreshInterval = mkOption {
+          type = types.ints.positive;
+          default = 10800;
+          description = "Seconds between reloads of repeatable tasks from the database.";
+        };
       };
     };
   };
@@ -28,6 +33,7 @@ in
       wantedBy = [ "multi-user.target" ];
       environment.RACK_ENV = "production";
       environment.SCHEDULER_SOCKET = "${cfg.stateDirectory}/scheduler.sock";
+      environment.SCHEDULER_TASK_REFRESH_INTERVAL = toString cfg.scheduler.taskRefreshInterval;
       startLimitIntervalSec = 180;
       startLimitBurst = 5;
       serviceConfig = {
