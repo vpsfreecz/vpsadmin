@@ -1,11 +1,18 @@
 module VpsAdmin
   class Scheduler::Daemon
+    DEFAULT_TASK_REFRESH_INTERVAL = 10_800
+
+    attr_reader :task_refresh_interval
+
     def self.run
       scheduler = new
       scheduler.run
     end
 
-    def initialize
+    def initialize(task_refresh_interval: ENV.fetch('SCHEDULER_TASK_REFRESH_INTERVAL', DEFAULT_TASK_REFRESH_INTERVAL))
+      @task_refresh_interval = Integer(task_refresh_interval.to_s, 10)
+      raise ArgumentError, 'task refresh interval must be positive' unless @task_refresh_interval > 0
+
       @queue = Queue.new
       @worker = Scheduler::Worker.new
       @scheduler = Scheduler::CronScheduler.new(@worker)
@@ -21,7 +28,7 @@ module VpsAdmin
         puts 'Updating tasks'
         replace_tasks
         puts "#{@scheduler.size} tasks registered"
-        @queue.pop(timeout: 3 * 60 * 60)
+        @queue.pop(timeout: @task_refresh_interval)
       end
     end
 
@@ -45,9 +52,14 @@ module VpsAdmin
               month: t.month,
               weekday: t.day_of_week
             )
+          rescue Scheduler::CronTask::InvalidField => e
+            puts "Rejected repeatable task #{t.id}: #{e.message}"
+            raise
           end
         end
       end
+    rescue Scheduler::CronTask::InvalidField
+      false
     end
   end
 end

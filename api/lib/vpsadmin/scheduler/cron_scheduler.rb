@@ -33,8 +33,15 @@ module VpsAdmin
 
     def replace
       sync do
-        @cron_tasks.clear
-        yield
+        previous = @cron_tasks
+        @cron_tasks = {}
+
+        begin
+          yield
+        rescue StandardError
+          @cron_tasks = previous
+          raise
+        end
       end
     end
 
