@@ -100,6 +100,98 @@ RSpec.describe 'VpsAdmin::API::Resources::Dataset plan actions' do # rubocop:dis
     dip.add_plan(env_plan)
   end
 
+  def as_token(user)
+    session = create_open_session!(user:, auth_type: 'token', token_lifetime: 'permanent')
+    header 'X-HaveAPI-Auth-Token', session.token.token
+    yield
+  ensure
+    header 'X-HaveAPI-Auth-Token', nil
+  end
+
+  def plan_metadata_counts
+    [DatasetInPoolPlan.count, GroupSnapshot.count, DatasetAction.count, RepeatableTask.count]
+  end
+
+  def enabled_plan
+    create_daily_backup_env_plan!(environment: pool.node.location.environment,
+                                  user_add: true, user_remove: true).last
+  end
+
+  def pending_plan_confirmation!(membership)
+    with_current_context(user:) do |session|
+      chain = TransactionChain.create!(name: 'spec_plan', type: 'TransactionChain', state: :queued,
+                                       size: 0, progress: 0, user:, user_session: session, urgent_rollback: false)
+      transaction = Transactions::Utils::NoOp.fire_chained(chain, nil, args: [pool.node_id], urgent: false)
+      TransactionConfirmation.create!(parent_transaction: transaction, class_name: membership.class.name,
+                                      table_name: membership.class.table_name, row_pks: { 'id' => membership.id },
+                                      confirm_type: :just_destroy_type)
+    end
+  end
+
+  describe 'Common mutation guards' do
+    it 'refuses direct enrollment while storage is frozen without changing metadata' do
+      env_plan = enabled_plan
+      before = plan_metadata_counts
+      StorageFreezeControl.singleton!.update_columns(mode: 1)
+
+      as_token(user) { json_post plans_path(dataset.id), plan: { environment_dataset_plan: env_plan.id } }
+
+      expect_status(423)
+      expect(json['status']).to be(false)
+      expect(plan_metadata_counts).to eq(before)
+    end
+
+    it 'refuses direct removal while storage is frozen without changing metadata' do
+      membership = create_plan_for_dataset(enabled_plan)
+      before = plan_metadata_counts
+      StorageFreezeControl.singleton!.update_columns(mode: 1)
+
+      as_token(user) { json_delete plan_path(dataset.id, membership.id) }
+
+      expect_status(423)
+      expect(json['status']).to be(false)
+      expect(plan_metadata_counts).to eq(before)
+    end
+
+    it 'refuses direct enrollment of a locked source without changing metadata' do
+      env_plan = enabled_plan
+      before = plan_metadata_counts
+      dataset.acquire_lock
+
+      as_token(user) { json_post plans_path(dataset.id), plan: { environment_dataset_plan: env_plan.id } }
+
+      expect_status(423)
+      expect(json['status']).to be(false)
+      expect(plan_metadata_counts).to eq(before)
+    end
+
+    it 'refuses direct removal of a locked source without changing metadata' do
+      membership = create_plan_for_dataset(enabled_plan)
+      before = plan_metadata_counts
+      dip.acquire_lock
+
+      as_token(user) { json_delete plan_path(dataset.id, membership.id) }
+
+      expect_status(423)
+      expect(json['status']).to be(false)
+      expect(plan_metadata_counts).to eq(before)
+    end
+
+    it 'refuses pending removal without requiring a source lock' do
+      membership = create_plan_for_dataset(enabled_plan)
+      pending_plan_confirmation!(membership)
+      before = plan_metadata_counts
+      expect(dip.get_current_lock).to be_nil
+
+      as_token(user) { json_delete plan_path(dataset.id, membership.id) }
+
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(response_message).to include('pending confirmation')
+      expect(plan_metadata_counts).to eq(before)
+    end
+  end
+
   describe 'Index' do
     it 'rejects unauthenticated access' do
       json_get plans_path(dataset.id)
