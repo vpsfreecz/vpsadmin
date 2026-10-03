@@ -881,6 +881,62 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do # rubocop:disable 
     expect(authorization.reload.refresh_token.token).to eq(refresh_token)
   end
 
+  it 'authenticates refreshed access after expired access and SSO cleanup without recreating SSO' do
+    now = Time.utc(2026, 10, 3, 12)
+    allow(Time).to receive(:now).and_return(now)
+    client.update!(access_token_lifetime: 'renewable_auto')
+    session = create_open_session!(
+      user:, auth_type: 'oauth2', token_lifetime: 'renewable_auto',
+      token_interval: client.access_token_seconds, valid_to: now - 60
+    )
+    sso = create_single_sign_on!(user:, valid_to: now - 30)
+    authorization = create_oauth2_authorization!(
+      user:, client:, user_session: session, sso:, refresh_valid_to: now + 3600
+    )
+    old_access_id = session.token_id
+    old_sso_token_id = sso.token_id
+    old_refresh_id = authorization.refresh_token_id
+    task = VpsAdmin::API::Tasks::UserSession.new
+
+    expect do
+      with_current_context(user: SpecSeed.admin) do
+        with_env('EXECUTE' => 'yes') { task.close_expired }
+      end
+    end.to output(/Closing SSO session/).to_stdout
+
+    expect(session.reload.closed_at).to be_nil
+    expect(session.token).to be_nil
+    expect(sso.reload.token).to be_nil
+    expect(Token.exists?(old_access_id)).to be(false)
+    expect(Token.exists?(old_sso_token_id)).to be(false)
+    expect(authorization.reload.refresh_token_id).to eq(old_refresh_id)
+    expect(authorization.refreshable?).to be(true)
+    expect(authorization.single_sign_on).to eq(sso)
+
+    access_token, valid_to, refresh_token = config.refresh_tokens(authorization, request)
+
+    expect(session.reload.token.token).to eq(access_token)
+    expect(valid_to).to eq(now + client.access_token_seconds)
+    expect(authorization.reload.refresh_token.token).to eq(refresh_token)
+    expect(Token.exists?(old_refresh_id)).to be(false)
+    expect(sso.reload.token).to be_nil
+    resumed_at = now + 10
+    allow(Time).to receive(:now).and_return(resumed_at)
+
+    expect do
+      expect(config.find_user_by_access_token(request, access_token)).to eq(user)
+    end.not_to change(Token, :count)
+
+    expect(User.current).to eq(user)
+    expect(UserSession.current).to eq(session)
+    expect(session.reload.closed_at).to be_nil
+    expect(session.request_count).to eq(1)
+    expect(session.token.valid_to).to eq(resumed_at + client.access_token_seconds)
+    expect(authorization.reload.user_session).to eq(session)
+    expect(authorization.single_sign_on).to eq(sso)
+    expect(sso.reload.token).to be_nil
+  end
+
   it 'does not find refresh tokens for locked or forced-reset users' do
     %i[lockout password_reset].each do |flag|
       user.update!(lockout: false, password_reset: false)

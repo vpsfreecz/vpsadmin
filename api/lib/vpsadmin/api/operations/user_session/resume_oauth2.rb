@@ -34,11 +34,11 @@ module VpsAdmin::API
       # Extend single sign on
       if user_session.token_lifetime == 'renewable_auto'
         oauth = ::Oauth2Authorization.find_by(user_session:)
+        sso_token = oauth&.single_sign_on&.token
 
-        if oauth \
-           && oauth.single_sign_on \
-           && oauth.single_sign_on.token.valid_to < user_session.token.valid_to
-          oauth.single_sign_on.token.update!(valid_to: user_session.token.valid_to)
+        # Closed SSO retains authorization links; keep its token absent.
+        if sso_token && sso_token.valid_to < user_session.token.valid_to
+          sso_token.update!(valid_to: user_session.token.valid_to)
         end
       end
 
