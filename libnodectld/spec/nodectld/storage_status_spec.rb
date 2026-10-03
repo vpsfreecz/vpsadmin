@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'nodectld/rpc_client'
+
 class StorageStatusSpecExchange
   def marker; end
 end
@@ -32,6 +34,7 @@ RSpec.describe NodeCtld::StorageStatus do
   let(:channel) { instance_double(StorageStatusSpecChannel, direct: exchange) }
 
   before do
+    $CFG.patch(storage: { update_interval: 1 })
     # rubocop:disable RSpec/ReceiveMessages
     allow(NodeCtld::NodeBunny).to receive(:create_channel).and_return(channel)
     allow(NodeCtld::NodeBunny).to receive(:exchange_name).and_return('node:spec')
@@ -128,6 +131,111 @@ RSpec.describe NodeCtld::StorageStatus do
     expect(pool.available_bytes).to eq(3_072)
     expect(dataset.properties['available'].value).to eq(512)
     expect(dataset.properties['refquota'].value).to eq(4_096)
+  end
+
+  it 'preserves the complete previous catalog when a later pool RPC fails' do
+    status = new_status
+    previous = { 99 => Object.new }
+    status.instance_variable_set(:@pools, previous)
+    rpc = catalog_rpc
+    allow(rpc).to receive(:list_pool_dataset_properties).with(2, anything)
+                                                        .and_raise(NodeCtld::RpcClient::TransportError)
+    allow(NodeCtld::RpcClient).to receive(:run) { |**_opts, &block| block.call(rpc) }
+    updates = status.instance_variable_get(:@update_queue)
+    allow(updates).to receive(:pop).and_return(:update, :stop)
+
+    status.send(:run_updater)
+    expect(status.instance_variable_get(:@pools)).to equal(previous)
+    expect(status.instance_variable_get(:@read_queue).length).to eq(0)
+  end
+
+  it 'publishes a later complete view only after its RPC cleanup succeeds' do
+    status = new_status
+    previous = { 99 => Object.new }
+    status.instance_variable_set(:@pools, previous)
+    rpc = catalog_rpc
+    calls = 0
+    allow(NodeCtld::RpcClient).to receive(:run) do |**_opts, &block|
+      calls += 1
+      expect(status.instance_variable_get(:@pools)).to equal(previous)
+      block.call(rpc)
+      raise NodeCtld::RpcClient::CleanupError if calls == 1
+    end
+    updates = status.instance_variable_get(:@update_queue)
+    allow(updates).to receive(:pop).and_return(:update, :update, :stop)
+
+    status.send(:run_updater)
+    expect(status.instance_variable_get(:@pools).keys).to eq([1, 2])
+    expect(status.instance_variable_get(:@read_queue).length).to eq(1)
+    expect(calls).to eq(2)
+  end
+
+  it 'propagates malformed catalog and permanent protocol errors instead of retrying' do
+    status = new_status
+    rpc = catalog_rpc
+    allow(rpc).to receive(:list_pools).and_return([Object.new])
+    allow(NodeCtld::RpcClient).to receive(:run) { |**_opts, &block| block.call(rpc) }
+    updates = status.instance_variable_get(:@update_queue)
+    allow(updates).to receive(:pop).and_return(:update, :stop)
+
+    expect { status.send(:run_updater) }.to raise_error(NoMethodError, /undefined method .*\[\]/)
+    original = Bunny::AccessRefused.new('fixture refused', nil, nil)
+    allow(rpc).to receive(:list_pools).and_raise(original)
+    allow(updates).to receive(:pop).and_return(:update, :stop)
+    expect { status.send(:run_updater) }.to(raise_error { |error| expect(error).to equal(original) })
+    expect(status.instance_variable_get(:@read_queue).length).to eq(0)
+  end
+
+  it 'passes cooperative stop into RPC and never publishes a post-stop view' do
+    status = new_status
+    previous = { 99 => Object.new }
+    status.instance_variable_set(:@pools, previous)
+    rpc = catalog_rpc
+    allow(NodeCtld::RpcClient).to receive(:run) do |stopped:, &block|
+      expect(stopped.call).to be_falsey
+      block.call(rpc)
+      status.instance_variable_set(:@stop, true)
+      expect(stopped.call).to be(true)
+    end
+    updates = status.instance_variable_get(:@update_queue)
+    allow(updates).to receive(:pop).and_return(:update)
+
+    status.send(:run_updater)
+    expect(NodeCtld::RpcClient).to have_received(:run).once
+    expect(status.instance_variable_get(:@pools)).to equal(previous)
+    expect(status.instance_variable_get(:@read_queue).length).to eq(0)
+  end
+
+  it 'does not retry or publish when stop interrupts failed RPC recovery' do
+    status = new_status
+    allow(NodeCtld::RpcClient).to receive(:run) do |stopped:, **_opts|
+      status.instance_variable_set(:@stop, true)
+      expect(stopped.call).to be(true)
+      raise NodeCtld::RpcClient::Stopped
+    end
+    updates = status.instance_variable_get(:@update_queue)
+    allow(updates).to receive(:pop).and_return(:update)
+
+    status.send(:run_updater)
+    expect(NodeCtld::RpcClient).to have_received(:run).once
+    expect(updates).to have_received(:pop).once
+    expect(status.instance_variable_get(:@read_queue).length).to eq(0)
+  end
+
+  def new_status
+    described_class.new(instance_spy(NodeCtld::DatasetExpander))
+  end
+
+  def catalog_rpc
+    rpc = instance_double(NodeCtld::RpcClient)
+    allow(rpc).to receive_messages(
+      list_pools: [
+        { 'id' => 1, 'role' => 'primary', 'name' => 'tank', 'filesystem' => 'tank/ct' },
+        { 'id' => 2, 'role' => 'hypervisor', 'name' => 'other', 'filesystem' => 'other/ct' }
+      ],
+      list_pool_dataset_properties: []
+    )
+    rpc
   end
 
   def tree_with_datasets(datasets)
