@@ -264,10 +264,10 @@ let
     "phpunit/php-text-template" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "phpunit-php-text-template-a47af19f93f76aa3368303d752aa5272ca3299f4";
+        name = "phpunit-php-text-template-97107691cb2b6c743b5e0c44be19e983cb337a02";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/php-text-template/zipball/a47af19f93f76aa3368303d752aa5272ca3299f4";
-          sha256 = "1kacjd1zkz6i98vj52lvavgj97b71fv8kz6hd65cwxx896kfs3cw";
+          url = "https://api.github.com/repos/sebastianbergmann/php-text-template/zipball/97107691cb2b6c743b5e0c44be19e983cb337a02";
+          sha256 = "07hm4l4g3877h458180d419lxxb11i1vwg27mjg9473a00m7n5sz";
         };
       };
     };
