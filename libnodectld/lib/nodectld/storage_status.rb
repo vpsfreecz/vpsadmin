@@ -74,10 +74,21 @@ module NodeCtld
 
     def run_updater
       loop do
-        v = @update_queue.pop(timeout: $CFG.get(:storage, :update_interval))
-        return if v == :stop
+        return if @stop
 
-        pools = fetch
+        v = @update_queue.pop(timeout: $CFG.get(:storage, :update_interval))
+        return if v == :stop || @stop
+
+        begin
+          pools = fetch
+        rescue RpcClient::Error => e
+          return if @stop
+
+          log(:warn, "Storage catalog refresh failed: #{e.class}")
+          next
+        end
+        return if @stop
+
         @mutex.synchronize { @pools = pools }
         @read_queue << :read
       end
@@ -96,7 +107,7 @@ module NodeCtld
     def fetch
       pools = {}
 
-      RpcClient.run do |rpc|
+      RpcClient.run(stopped: -> { @stop }) do |rpc|
         rpc.list_pools.each do |pool|
           next unless %w[primary hypervisor].include?(pool['role'])
 

@@ -1,6 +1,7 @@
 require 'json'
 require 'libosctl'
 require 'securerandom'
+require 'nodectld/node_bunny'
 
 module NodeCtld
   class RpcClient
@@ -10,25 +11,62 @@ module NodeCtld
     class Error < ::StandardError; end
 
     class Timeout < Error; end
+    class TransportError < Error; end
+    class CleanupError < Error; end
+    class Stopped < Error; end
 
-    def self.run
-      rpc = new
-      yield(rpc)
-    ensure
-      rpc.close if rpc
+    # Pending signal/nonlocal unwinds must survive a secondary cleanup failure.
+    # rubocop:disable Lint/RescueException
+    def self.run(stopped: nil)
+      original = nil
+      begin
+        rpc = new(stopped:)
+        yield(rpc)
+      rescue Exception => e
+        original = e
+        raise
+      ensure
+        if rpc
+          begin
+            rpc.close
+          rescue Exception => e
+            raise unless original
+
+            rpc.send(:log_secondary, e)
+          end
+        end
+      end
     end
+    # rubocop:enable Lint/RescueException
 
     include OsCtl::Lib::Utils::Log
 
-    def initialize
+    def initialize(stopped: nil)
       @response = nil
+      @stopped = stopped
+      @close_mutex = Mutex.new
+      @closed = false
       @debug = $CFG.get(:rpc_client, :debug)
       setup_channel
     end
 
     def close
-      @reply_queue.delete
-      @channel.close
+      @close_mutex.synchronize do
+        return if @closed
+
+        # Even failed close cannot issue another method on this channel.
+        @closed = true
+        begin
+          channel_operation do
+            @reply_queue.delete
+            @channel.close
+          end
+          clear_channel
+        rescue Error => e
+          cause = e.is_a?(TransportError) ? e.cause : e
+          raise CleanupError, 'RPC cleanup failed', cause:
+        end
+      end
     end
 
     def get_node_config
@@ -121,26 +159,21 @@ module NodeCtld
     attr_accessor :response
 
     def setup_channel
-      SETUP_RETRIES.times do |i|
-        return setup_channel_once
-      rescue ::Timeout::Error
-        # NodeBunny recovers the connection before propagating a channel-open
-        # timeout. Later setup methods use per-channel continuations, so leave
-        # a timed-out channel registered until the connection is closed or
-        # recovered and its number cannot be reused for a delayed reply.
-        @channel = nil
-        @exchange = nil
-        @reply_queue = nil
+      (SETUP_RETRIES + 1).times do |i|
+        channel_operation { setup_channel_once }
+        return nil
+      rescue StandardError => e
+        # Includes the final attempt and constructors failing after a partial
+        # declaration. Never abandon a registered reply consumer on retry.
+        raise unless e.is_a?(TransportError) && timeout_cause?(e) && i < SETUP_RETRIES
 
         log(:warn, "[#{i + 1}/#{SETUP_RETRIES}] Timeout while setting up RPC channel")
-        sleep(SETUP_RETRY_DELAY)
+        wait_retry(SETUP_RETRY_DELAY)
       end
-
-      setup_channel_once
     end
 
     def setup_channel_once
-      @channel = NodeBunny.create_channel
+      @channel = NodeBunny.create_channel(stopped: @stopped)
       @exchange = @channel.direct(NodeBunny.exchange_name)
       setup_reply_queue
     end
@@ -171,6 +204,9 @@ module NodeCtld
     end
 
     def send_request(command, args: [], kwargs: {}, attempts: 1)
+      check_stopped
+      raise Error, 'RPC client is closed' if @closed
+
       attempt_counter = 1
 
       loop do
@@ -182,7 +218,7 @@ module NodeCtld
           raise if attempt_counter >= attempts
 
           attempt_counter += 1
-          sleep(5)
+          wait_retry(5)
           next
         end
 
@@ -190,7 +226,7 @@ module NodeCtld
 
         if resp['retry']
           log(:debug, "response id=#{@call_id[0..7]} status=false message=#{resp['message']} retry=true")
-          sleep(5)
+          wait_retry(5)
           next
         end
 
@@ -207,27 +243,31 @@ module NodeCtld
         log(:debug, "request id=#{@call_id[0..7]} command=#{command} args=#{args.inspect} kwargs=#{kwargs.inspect}")
       end
 
-      NodeBunny.publish_wait(
-        @exchange,
-        {
-          command:,
-          args:,
-          kwargs:
-        }.to_json,
-        persistent: true,
-        content_type: 'application/json',
-        routing_key: 'rpc',
-        correlation_id: @call_id,
-        reply_to: @reply_queue.name
-      )
+      message = { command:, args:, kwargs: }.to_json
+      transport_call do
+        NodeBunny.publish_wait(
+          @exchange,
+          message,
+          persistent: true,
+          content_type: 'application/json',
+          routing_key: 'rpc',
+          correlation_id: @call_id,
+          reply_to: @reply_queue.name,
+          stopped: @stopped,
+          recovery_timeout: NodeBunny::RECOVERY_WAIT
+        )
+      end
 
-      wait_secs = 0
-      timeout = 5
+      started = monotonic_time
+      timeout = @stopped ? 1 : 5
 
       @lock.synchronize do
         loop do
-          waited = @condition.wait(@lock, timeout)
-          wait_secs += waited || timeout
+          check_stopped
+          break if @response
+
+          @condition.wait(@lock, timeout)
+          wait_secs = monotonic_time - started
 
           if @response
             break
@@ -244,6 +284,88 @@ module NodeCtld
       end
 
       @response
+    end
+
+    # This boundary contains Bunny operations only. Catalog/JSON bugs are never
+    # reclassified as a temporary network failure.
+    def transport_call
+      check_stopped
+      yield
+    rescue NodeBunny::Stopped => e
+      raise Stopped, 'RPC operation stopped', cause: e
+    rescue StandardError => e
+      raise unless NodeBunny.transport_failure?(e)
+
+      raise TransportError, 'RPC transport failed', cause: e
+    end
+
+    # Retire allocated channels even during an Interrupt; always re-raise it.
+    # rubocop:disable Lint/RescueException
+    def channel_operation
+      entered = false
+      transport_call do
+        NodeBunny.channel_lifecycle(stopped: @stopped) do
+          entered = true
+          begin
+            yield
+          rescue Exception
+            # Close the gate before releasing the application lifecycle lock.
+            retire_channel
+            raise
+          end
+        end
+      end
+    rescue Exception
+      retire_channel unless entered
+      raise
+    end
+    # rubocop:enable Lint/RescueException
+
+    def timeout_cause?(error)
+      NodeBunny.transport_cause(error.cause).is_a?(::Timeout::Error)
+    end
+
+    # These diagnostic paths run only with another exception already pending.
+    # rubocop:disable Lint/RescueException
+    def retire_channel
+      return unless @channel
+
+      NodeBunny.retire_channel(@channel, stopped: @stopped)
+      clear_channel
+    rescue Exception => e
+      # Called only while another error is pending. NodeBunny retains ownership
+      # of an incomplete retirement even after timeout/cooperative stop.
+      log_secondary(e)
+    end
+
+    def clear_channel
+      @channel = @exchange = @reply_queue = nil
+    end
+
+    def log_secondary(error)
+      log(:warn, "Secondary RPC cleanup failure: #{error.class}")
+    rescue Exception
+      nil # diagnostics must not replace the pending original exception
+    end
+    # rubocop:enable Lint/RescueException
+
+    def check_stopped
+      raise Stopped, 'RPC operation stopped' if @stopped&.call
+    end
+
+    def wait_retry(seconds)
+      deadline = monotonic_time + seconds
+      loop do
+        check_stopped
+        remaining = deadline - monotonic_time
+        return unless remaining > 0
+
+        sleep(@stopped ? [remaining, 1].min : remaining)
+      end
+    end
+
+    def monotonic_time
+      Process.clock_gettime(Process::CLOCK_MONOTONIC)
     end
 
     def generate_uuid

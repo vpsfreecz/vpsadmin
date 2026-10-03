@@ -8,6 +8,7 @@ These pages describe vpsAdmin for developers and operators. Start with the
 - [Transactions](transactions.md): node commands, chains, resource locks, and
   database confirmations.
 - [Scheduler](scheduler.md): repeatable-task syntax and task reloads.
+- [Node RPC](node-rpc.md): cleanup errors, channel retirement and storage telemetry.
 - [IP ownership, accounting and locking](ip-locking.md)
 - [IP ownership operations](ip-ownership-operations.md)
 - [Upgrade to coordinated IP ownership reservations](upgrade-ip-ownership-reservations.md)
