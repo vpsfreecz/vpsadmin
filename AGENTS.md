@@ -15,13 +15,16 @@ stop the affected action and report it.
 | --- | --- |
 | Selecting/running builds, tests, component shells, dependency setup or manual test-database operations | [Development commands](docs/agent-instructions/development.md) |
 | Changing visible WebUI behavior (including labels, navigation or screenshots), translations, localization behavior or member-facing mail templates | [Localization and KB impact](docs/agent-instructions/localization.md) |
-| Selecting/running tests or CI on existing changes; planning/implementing a change that needs verification; adding/moving runtime files or API specs; changing integration/Playwright tests, CI selection, gem packaging or VPS data-preservation operations | [Testing and CI](docs/agent-instructions/testing.md) |
+| Selecting/running tests or CI on existing changes; planning/implementing a change that needs verification; adding/moving runtime files or API specs, changing API topic patterns or artifacts; changing integration/Playwright tests, CI selection, gem packaging or VPS data-preservation operations | [Testing and CI](docs/agent-instructions/testing.md) |
 
 Visible WebUI changes require the external KB documentation workflow even if
 vpsAdmin tests pass; read the localization procedure before proceeding. Tests
 of the data-preserving VPS operations listed in the testing procedure must
 verify that data survives. Preserve CI runtime test selection and exact-once API
-spec topic coverage when files move or change.
+spec topic coverage when files move or change. Follow the static topic placement,
+full/core artifact and local reproduction guidance in the testing procedure.
+Update its explicit patterns when a new API spec does not fit an existing topic;
+keep both modes and the aggregate's expected topic names consistent.
 Do not create build IDs or upload first-party gems to a remote RubyGems repository.
 
 

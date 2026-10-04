@@ -35,34 +35,21 @@ jobs:
       fail-fast: false
       matrix:
         include: &api_spec_topics
-          # --- Smoke / meta ---
-          - topic: smoke
+          # Static domains shared by full/core; see docs/agent-instructions/testing.md.
+          - topic: foundation
             patterns: |
               spec/smoke/**/*_spec.rb
-
-          - topic: coverage
-            patterns: |
               spec/api/custom_routes_coverage_spec.rb
               spec/api/endpoint_coverage_spec.rb
               spec/api/generate_pending_endpoints_spec.rb
-
-          - topic: routes
-            patterns: |
               spec/api/routes/**/*_spec.rb
-
-          - topic: engine
-            patterns: |
               spec/models/**/*_spec.rb
+              spec/supervisor/**/*_spec.rb
 
           - topic: plugins
             patterns: |
               spec/api/plugins/**/*_spec.rb
 
-          - topic: supervisor
-            patterns: |
-              spec/supervisor/**/*_spec.rb
-
-          # --- Resources by domain ---
           - topic: dns
             patterns: |
               spec/api/resources/dns*_spec.rb
@@ -75,45 +62,32 @@ jobs:
               spec/api/resources/snapshot_download_spec.rb
               spec/api/resources/export_spec.rb
 
-          - topic: network
-            patterns: |
-              spec/api/resources/network_*_spec.rb
-              spec/api/resources/network_interface*_spec.rb
-              spec/api/resources/ip_address*_spec.rb
-              spec/api/resources/ip_release*_spec.rb
-              spec/api/resources/host_ip_address_spec.rb
-              spec/api/resources/location_network_spec.rb
-
           - topic: mail
             patterns: |
               spec/api/resources/mail*_spec.rb
               spec/api/resources/mailbox_spec.rb
               spec/api/resources/user_mail_*_spec.rb
 
-          - topic: users-auth
-            patterns: |
-              spec/api/resources/user_cluster_resource*_spec.rb
-              spec/api/resources/user_environment_config_spec.rb
-              spec/api/resources/user_known_device_spec.rb
-              spec/api/resources/user_namespace*_spec.rb
-              spec/api/resources/user_public_key_spec.rb
-              spec/api/resources/user_read_spec.rb
-              spec/api/resources/user_session_spec.rb
-              spec/api/resources/user_state_log_spec.rb
-              spec/api/resources/user_totp_device_spec.rb
-              spec/api/resources/user_touch_spec.rb
-              spec/api/resources/user_available_ips_spec.rb
-              spec/api/resources/user_webauthn_credential_spec.rb
-              spec/api/resources/user_write_spec.rb
-              spec/api/resources/oauth2_client_spec.rb
-              spec/api/resources/password_change_log_spec.rb
-              spec/api/resources/webauthn_spec.rb
-
           - topic: vps
             patterns: |
               spec/api/resources/vps_*_spec.rb
 
-          - topic: platform
+          - topic: platform-infrastructure
+            patterns: |
+              spec/api/resources/node_*_spec.rb
+              spec/api/resources/os_*_spec.rb
+              spec/api/resources/migration_plan_spec.rb
+
+          - topic: platform-operations
+            patterns: |
+              spec/api/resources/security_advisory*_spec.rb
+              spec/api/resources/oom_report*_spec.rb
+              spec/api/resources/incident_report_spec.rb
+              spec/api/resources/lifecycle_bypass_spec.rb
+              spec/api/resources/object_history_spec.rb
+              spec/api/resources/transaction*_spec.rb
+
+          - topic: platform-config
             patterns: |
               spec/lib/**/*_spec.rb
               spec/api/resources/action_state_spec.rb
@@ -124,20 +98,45 @@ jobs:
               spec/api/resources/default_object_cluster_resource_spec.rb
               spec/api/resources/environment_read_spec.rb
               spec/api/resources/environment_write_spec.rb
-              spec/api/resources/incident_report_spec.rb
               spec/api/resources/language_spec.rb
-              spec/api/resources/lifecycle_bypass_spec.rb
               spec/api/resources/location_read_spec.rb
               spec/api/resources/location_write_spec.rb
               spec/api/resources/metrics_access_token_spec.rb
-              spec/api/resources/migration_plan_spec.rb
-              spec/api/resources/node_*_spec.rb
-              spec/api/resources/object_history_spec.rb
-              spec/api/resources/oom_report*_spec.rb
-              spec/api/resources/os_*_spec.rb
-              spec/api/resources/security_advisory*_spec.rb
               spec/api/resources/system_config_spec.rb
-              spec/api/resources/transaction*_spec.rb
+
+          - topic: auth
+            patterns: |
+              spec/api/resources/oauth2_client_spec.rb
+              spec/api/resources/password_change_log_spec.rb
+              spec/api/resources/webauthn_spec.rb
+              spec/api/resources/user_known_device_spec.rb
+              spec/api/resources/user_public_key_spec.rb
+              spec/api/resources/user_session_spec.rb
+              spec/api/resources/user_totp_device_spec.rb
+              spec/api/resources/user_webauthn_credential_spec.rb
+
+          - topic: users
+            patterns: |
+              spec/api/resources/user_cluster_resource*_spec.rb
+              spec/api/resources/user_environment_config_spec.rb
+              spec/api/resources/user_namespace*_spec.rb
+              spec/api/resources/user_read_spec.rb
+              spec/api/resources/user_state_log_spec.rb
+              spec/api/resources/user_touch_spec.rb
+              spec/api/resources/user_available_ips_spec.rb
+              spec/api/resources/user_write_spec.rb
+
+          - topic: ip-ownership
+            patterns: |
+              spec/api/resources/ip_address*_spec.rb
+              spec/api/resources/ip_release*_spec.rb
+
+          - topic: network
+            patterns: |
+              spec/api/resources/network_*_spec.rb
+              spec/api/resources/network_interface*_spec.rb
+              spec/api/resources/host_ip_address_spec.rb
+              spec/api/resources/location_network_spec.rb
 
     env:
       RACK_ENV: test
@@ -435,7 +434,7 @@ jobs:
         env:
           FULL_RESULT: ${{ needs.api-specs-full.result }}
           CORE_RESULT: ${{ needs.api-specs-core.result }}
-          EXPECTED_TOPICS: smoke coverage routes engine plugins supervisor dns storage network mail users-auth vps platform
+          EXPECTED_TOPICS: foundation plugins dns storage mail vps platform-infrastructure platform-operations platform-config auth users ip-ownership network
         run: |
           set -euo pipefail
           python3 - <<'PYTHON'
