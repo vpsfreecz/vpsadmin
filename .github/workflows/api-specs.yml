@@ -146,6 +146,7 @@ jobs:
       BUNDLE_JOBS: "4"
       BUNDLE_RETRY: "3"
       VPSADMIN_PLUGINS: all
+      SPEC_MODE: full
 
     steps:
       - name: Checkout
@@ -161,7 +162,7 @@ jobs:
           shopt -s nullglob globstar
 
           mkdir -p tmp
-          : > "tmp/rspec-files-$TOPIC.txt"
+          : > "tmp/rspec-files-$SPEC_MODE-$TOPIC.txt"
 
           files=()
           while IFS= read -r pat; do
@@ -179,15 +180,15 @@ jobs:
             exit 2
           fi
 
-          printf '%s\n' "${files[@]}" | sort -u > "tmp/rspec-files-$TOPIC.txt"
+          printf '%s\n' "${files[@]}" | sort -u > "tmp/rspec-files-$SPEC_MODE-$TOPIC.txt"
 
           {
             echo "### API spec topic: $TOPIC"
             echo ""
-            echo "Matched **$(wc -l < "tmp/rspec-files-$TOPIC.txt")** spec files:"
+            echo "Matched **$(wc -l < "tmp/rspec-files-$SPEC_MODE-$TOPIC.txt")** spec files:"
             echo ""
             echo '```'
-            cat "tmp/rspec-files-$TOPIC.txt"
+            cat "tmp/rspec-files-$SPEC_MODE-$TOPIC.txt"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -195,8 +196,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: rspec-files-${{ matrix.topic }}
-          path: api/tmp/rspec-files-${{ matrix.topic }}.txt
+          name: rspec-files-${{ env.SPEC_MODE }}-${{ matrix.topic }}
+          path: api/tmp/rspec-files-${{ env.SPEC_MODE }}-${{ matrix.topic }}.txt
           if-no-files-found: error
           retention-days: 7
 
@@ -225,11 +226,50 @@ jobs:
           bundler-cache: true
           working-directory: api
 
-      - name: Run RSpec (topic)
+      - name: Record RSpec environment
         working-directory: api
+        env:
+          TOPIC: ${{ matrix.topic }}
         run: |
           set -euo pipefail
-          xargs -a "tmp/rspec-files-${{ matrix.topic }}.txt" bundle exec rspec
+          bundle exec ruby -rjson -rdigest -rrspec/core -e '
+            evidence = {
+              mode: ENV.fetch("SPEC_MODE"),
+              topic: ENV.fetch("TOPIC"),
+              ruby: RUBY_DESCRIPTION,
+              bundler: Bundler::VERSION,
+              rspec: RSpec::Core::Version::STRING,
+              gemfile_lock_sha256: Digest::SHA256.file(Bundler.default_lockfile).hexdigest
+            }
+            File.write("tmp/rspec-environment-#{evidence[:mode]}-#{evidence[:topic]}.json",
+                       JSON.pretty_generate(evidence) + "\n")
+          '
+
+      - name: Run RSpec (topic)
+        working-directory: api
+        env:
+          TOPIC: ${{ matrix.topic }}
+        run: |
+          set -euo pipefail
+          mapfile -t files < "tmp/rspec-files-$SPEC_MODE-$TOPIC.txt"
+          if (( ${#files[@]} == 0 )); then
+            echo "ERROR: Topic '$TOPIC' has an empty spec manifest."
+            exit 2
+          fi
+          result="tmp/rspec-results-$SPEC_MODE-$TOPIC.json"
+          bundle exec rspec "${files[@]}" --format documentation --format json --out "$result"
+          test -s "$result"
+
+      - name: Upload RSpec results and environment
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rspec-results-${{ env.SPEC_MODE }}-${{ matrix.topic }}
+          path: |
+            api/tmp/rspec-results-${{ env.SPEC_MODE }}-${{ matrix.topic }}.json
+            api/tmp/rspec-environment-${{ env.SPEC_MODE }}-${{ matrix.topic }}.json
+          if-no-files-found: error
+          retention-days: 7
 
   api-specs-core:
     name: "API specs (core) - ${{ matrix.topic }}"
@@ -248,6 +288,7 @@ jobs:
       BUNDLE_JOBS: "4"
       BUNDLE_RETRY: "3"
       VPSADMIN_PLUGINS: none
+      SPEC_MODE: core
 
     steps:
       - name: Checkout
@@ -263,7 +304,7 @@ jobs:
           shopt -s nullglob globstar
 
           mkdir -p tmp
-          : > "tmp/rspec-files-$TOPIC.txt"
+          : > "tmp/rspec-files-$SPEC_MODE-$TOPIC.txt"
 
           files=()
           while IFS= read -r pat; do
@@ -281,17 +322,26 @@ jobs:
             exit 2
           fi
 
-          printf '%s\n' "${files[@]}" | sort -u > "tmp/rspec-files-$TOPIC.txt"
+          printf '%s\n' "${files[@]}" | sort -u > "tmp/rspec-files-$SPEC_MODE-$TOPIC.txt"
 
           {
             echo "### API spec topic: $TOPIC"
             echo ""
-            echo "Matched **$(wc -l < "tmp/rspec-files-$TOPIC.txt")** spec files:"
+            echo "Matched **$(wc -l < "tmp/rspec-files-$SPEC_MODE-$TOPIC.txt")** spec files:"
             echo ""
             echo '```'
-            cat "tmp/rspec-files-$TOPIC.txt"
+            cat "tmp/rspec-files-$SPEC_MODE-$TOPIC.txt"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload spec file list (for topic coverage checks)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rspec-files-${{ env.SPEC_MODE }}-${{ matrix.topic }}
+          path: api/tmp/rspec-files-${{ env.SPEC_MODE }}-${{ matrix.topic }}.txt
+          if-no-files-found: error
+          retention-days: 7
 
       # mysql2 needs client headers; specs start an isolated MariaDB server.
       - name: Install system dependencies (MariaDB server + headers)
@@ -318,16 +368,55 @@ jobs:
           bundler-cache: true
           working-directory: api
 
-      - name: Run RSpec (topic)
+      - name: Record RSpec environment
         working-directory: api
+        env:
+          TOPIC: ${{ matrix.topic }}
         run: |
           set -euo pipefail
-          xargs -a "tmp/rspec-files-${{ matrix.topic }}.txt" bundle exec rspec
+          bundle exec ruby -rjson -rdigest -rrspec/core -e '
+            evidence = {
+              mode: ENV.fetch("SPEC_MODE"),
+              topic: ENV.fetch("TOPIC"),
+              ruby: RUBY_DESCRIPTION,
+              bundler: Bundler::VERSION,
+              rspec: RSpec::Core::Version::STRING,
+              gemfile_lock_sha256: Digest::SHA256.file(Bundler.default_lockfile).hexdigest
+            }
+            File.write("tmp/rspec-environment-#{evidence[:mode]}-#{evidence[:topic]}.json",
+                       JSON.pretty_generate(evidence) + "\n")
+          '
+
+      - name: Run RSpec (topic)
+        working-directory: api
+        env:
+          TOPIC: ${{ matrix.topic }}
+        run: |
+          set -euo pipefail
+          mapfile -t files < "tmp/rspec-files-$SPEC_MODE-$TOPIC.txt"
+          if (( ${#files[@]} == 0 )); then
+            echo "ERROR: Topic '$TOPIC' has an empty spec manifest."
+            exit 2
+          fi
+          result="tmp/rspec-results-$SPEC_MODE-$TOPIC.json"
+          bundle exec rspec "${files[@]}" --format documentation --format json --out "$result"
+          test -s "$result"
+
+      - name: Upload RSpec results and environment
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rspec-results-${{ env.SPEC_MODE }}-${{ matrix.topic }}
+          path: |
+            api/tmp/rspec-results-${{ env.SPEC_MODE }}-${{ matrix.topic }}.json
+            api/tmp/rspec-environment-${{ env.SPEC_MODE }}-${{ matrix.topic }}.json
+          if-no-files-found: error
+          retention-days: 7
 
   api-spec-topic-coverage:
     name: "API specs - topic coverage"
     runs-on: ubuntu-latest
-    needs: [api-specs-full]
+    needs: [api-specs-full, api-specs-core]
     if: always()
     timeout-minutes: 10
 
@@ -342,53 +431,85 @@ jobs:
           path: artifacts
 
       - name: "Validate: every spec file belongs to exactly one topic"
+        if: always()
+        env:
+          FULL_RESULT: ${{ needs.api-specs-full.result }}
+          CORE_RESULT: ${{ needs.api-specs-core.result }}
+          EXPECTED_TOPICS: smoke coverage routes engine plugins supervisor dns storage network mail users-auth vps platform
         run: |
           set -euo pipefail
+          python3 - <<'PYTHON'
+          from collections import Counter
+          from pathlib import Path
+          import os
+          import subprocess
 
-          # All tracked spec files in the API component (paths relative to api/)
-          # Migration specs have a separate workflow because they are selected
-          # by changed migration file and also run as a scheduled full sweep.
-          git -C api ls-files 'spec/**/*_spec.rb' ':!spec/migrations/*_spec.rb' | sort > all_specs.txt
+          errors = []
+          topics = os.environ["EXPECTED_TOPICS"].split()
+          if len(topics) != 13 or len(set(topics)) != 13:
+              errors.append("Expected exactly thirteen distinct configured topics.")
 
-          # Union and duplicate detection from downloaded artifacts
-          find artifacts -type f -name 'rspec-files-*.txt' -print0 \
-            | xargs -0 cat \
-            | sed '/^\s*$/d' \
-            | sort > mapped_all.txt
+          for mode in ("full", "core"):
+              result = os.environ[f"{mode.upper()}_RESULT"]
+              if result != "success":
+                  errors.append(f"{mode} matrix result is {result!r}, expected 'success'.")
 
-          sort -u mapped_all.txt > mapped_uniq.txt
+          # Migration specs continue through their separate workflow.
+          eligible = set(subprocess.check_output([
+              "git", "-C", "api", "ls-files", "spec/**/*_spec.rb",
+              ":!spec/migrations/*_spec.rb"
+          ], text=True).splitlines())
+          artifacts = Path("artifacts")
+          expected_artifacts = {
+              f"rspec-files-{mode}-{topic}" for mode in ("full", "core") for topic in topics
+          }
+          actual_artifacts = {path.name for path in artifacts.iterdir()} if artifacts.is_dir() else set()
+          for name in sorted(actual_artifacts - expected_artifacts):
+              errors.append(f"Unexpected manifest artifact: {name}")
 
-          # Any duplicates => spec file appears in multiple topics (bad)
-          dupes="$(uniq -d mapped_all.txt || true)"
-          if [[ -n "$dupes" ]]; then
-            echo "ERROR: Some spec files are included in multiple topics:"
-            echo "$dupes"
-            exit 3
-          fi
+          manifests = {}
+          for mode in ("full", "core"):
+              mapped = []
+              for topic in topics:
+                  name = f"rspec-files-{mode}-{topic}"
+                  directory = artifacts / name
+                  manifest = directory / f"{name}.txt"
+                  if not directory.is_dir() or directory.is_symlink():
+                      errors.append(f"Missing manifest artifact directory: {name}")
+                      continue
+                  if set(directory.iterdir()) != {manifest} or not manifest.is_file() or manifest.is_symlink():
+                      errors.append(f"Expected exactly one unnested manifest file in {name}.")
+                      continue
+                  files = manifest.read_text().splitlines()
+                  if not files or any(not path.strip() for path in files):
+                      errors.append(f"Empty manifest or blank spec path: {name}")
+                      continue
+                  manifests[mode, topic] = files
+                  mapped.extend(files)
+              counts = Counter(mapped)
+              duplicates = sorted(path for path, count in counts.items() if count > 1)
+              missing = sorted(eligible - set(mapped))
+              extra = sorted(set(mapped) - eligible)
+              for label, paths in (("Duplicate", duplicates), ("Missing", missing), ("Untracked", extra)):
+                  if paths:
+                      errors.append(f"{mode}: {label} spec paths:\n" + "\n".join(paths))
+              print(f"{mode}: {sum((mode, topic) in manifests for topic in topics)} manifests, "
+                    f"{len(mapped)} mapped paths, {len(eligible)} eligible specs")
 
-          # Missing => spec exists but is not mapped into any topic (bad)
-          missing="$(comm -23 all_specs.txt mapped_uniq.txt || true)"
-          if [[ -n "$missing" ]]; then
-            echo "ERROR: Some spec files are not mapped to any topic. Update .github/workflows/api-specs.yml matrix patterns."
-            echo "$missing"
-            exit 4
-          fi
+          for topic in topics:
+              full = manifests.get(("full", topic))
+              core = manifests.get(("core", topic))
+              if full is not None and core is not None and sorted(full) != sorted(core):
+                  errors.append(f"Full/core manifests disagree for topic {topic}.")
 
-          # Extra => a mapped file isn't tracked (should not happen)
-          extra="$(comm -13 all_specs.txt mapped_uniq.txt || true)"
-          if [[ -n "$extra" ]]; then
-            echo "ERROR: Mapped spec paths include files not tracked by git:"
-            echo "$extra"
-            exit 5
-          fi
+          if errors:
+              for error in errors:
+                  print(f"ERROR: {error}")
+              raise SystemExit(1)
 
-          echo "OK: topic mapping covers all API spec files exactly once."
-
-          {
-            echo "### Topic coverage"
-            echo ""
-            echo "- Total API spec files: **$(wc -l < all_specs.txt)**"
-            echo "- Mapped spec files: **$(wc -l < mapped_uniq.txt)**"
-            echo ""
-            echo "OK: All spec files are mapped to exactly one topic."
-          } >> "$GITHUB_STEP_SUMMARY"
+          message = "OK: both successful matrices cover every eligible API spec exactly once."
+          print(message)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              summary.write(f"### Topic coverage\n\n- Eligible API spec files: **{len(eligible)}**\n"
+                            f"- Nonempty topics per mode: **{len(topics)}**\n\n{message}\n")
+          PYTHON
