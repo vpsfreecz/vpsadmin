@@ -2404,6 +2404,7 @@ en:
       snapshot_download_no_common_source: snapshots do not have a common available
         source for incremental download
       snapshot_download_unavailable: snapshot is not available for download
+      vps_already_marked_for_deletion: This VPS is already marked for deletion.
     password_changes:
       minimum_length_description: The password must be at least %{minimum} characters
         long

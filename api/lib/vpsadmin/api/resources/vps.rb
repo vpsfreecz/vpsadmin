@@ -565,6 +565,11 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
               end
 
       object_state_check!(vps.user)
+
+      if state == :soft_delete && vps.object_state == 'soft_delete'
+        error!(VpsAdmin::API::I18n.message('errors.vps_already_marked_for_deletion'))
+      end
+
       object_state_check!(vps) unless state == :soft_delete && vps.object_state == 'suspended'
 
       @chain, = vps.set_object_state(

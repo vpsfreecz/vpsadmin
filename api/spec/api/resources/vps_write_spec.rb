@@ -812,6 +812,127 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
         expect(response_message).to be_a(String)
       end
     end
+
+    context 'when already marked for deletion' do
+      let!(:vps) { create_vps!(user: SpecSeed.user, node: SpecSeed.node) }
+
+      before do
+        vps.record_object_state_change(
+          :soft_delete,
+          reason: 'spec setup',
+          user: SpecSeed.admin,
+          expiration: Time.utc(2040, 1, 2, 12, 0, 0),
+          remind_after: Time.utc(2040, 1, 1, 12, 0, 0)
+        )
+      end
+
+      after { header 'Accept-Language', nil }
+
+      %i[user admin].each do |role|
+        {
+          'en' => 'This VPS is already marked for deletion.',
+          'cs' => 'VPS už je označeno ke smazání.'
+        }.each do |locale, message|
+          it "rejects repeated soft deletion for #{role} in #{locale} without changing lifetime state" do
+            header 'Accept-Language', locale
+            expect_any_instance_of(Vps).not_to receive(:set_object_state) # rubocop:disable RSpec/AnyInstance
+
+            expect do
+              as(SpecSeed.public_send(role)) { json_delete show_path(vps.id) }
+            end.not_to(change do
+              [
+                vps.reload.attributes.slice('object_state', 'expiration_date', 'remind_after_date'),
+                ObjectState.where(class_name: 'Vps', row_id: vps.id).count,
+                TransactionChain.count
+              ]
+            end)
+
+            expect_status(200)
+            expect(json['status']).to be(false)
+            expect(response_message).to eq(message)
+          end
+        end
+      end
+
+      it 'hides repeated deletion from other users' do
+        expect_any_instance_of(Vps).not_to receive(:set_object_state) # rubocop:disable RSpec/AnyInstance
+
+        as(SpecSeed.other_user) { json_delete show_path(vps.id) }
+
+        expect_status(404)
+        expect(json['status']).to be(false)
+      end
+
+      it 'checks maintenance before the repeated deletion error for owners' do
+        vps.update!(
+          maintenance_lock: MaintenanceLock.maintain_lock(:lock),
+          maintenance_lock_reason: 'spec maintenance'
+        )
+        expect_any_instance_of(Vps).not_to receive(:set_object_state) # rubocop:disable RSpec/AnyInstance
+
+        as(SpecSeed.user) { json_delete show_path(vps.id) }
+
+        expect_status(423)
+        expect(json['status']).to be(false)
+        expect(response_message).to include('Resource is under maintenance: spec maintenance')
+      end
+
+      it 'preserves the admin maintenance exception' do
+        vps.update!(
+          maintenance_lock: MaintenanceLock.maintain_lock(:lock),
+          maintenance_lock_reason: 'spec maintenance'
+        )
+        expect_any_instance_of(Vps).not_to receive(:set_object_state) # rubocop:disable RSpec/AnyInstance
+
+        as(SpecSeed.admin) { json_delete show_path(vps.id) }
+
+        expect_status(200)
+        expect(json['status']).to be(false)
+        expect(response_message).to eq('This VPS is already marked for deletion.')
+      end
+
+      it 'checks the owner state before the repeated deletion error' do
+        SpecSeed.user.record_object_state_change(:suspended, reason: 'spec suspension', user: SpecSeed.admin)
+        mark_user_paid_until!(SpecSeed.user)
+        expect_any_instance_of(Vps).not_to receive(:set_object_state) # rubocop:disable RSpec/AnyInstance
+
+        as(SpecSeed.user) { json_delete show_path(vps.id) }
+
+        expect_status(200)
+        expect(json['status']).to be(false)
+        expect(response_message).to eq('Access forbidden: spec suspension')
+      end
+
+      it 'still hard deletes for admin when lazy is false' do
+        expect_any_instance_of(Vps).to receive(:set_object_state) # rubocop:disable RSpec/AnyInstance
+          .with(:hard_delete, reason: 'Deletion requested', expiration: true) do |inst, state, **_kwargs|
+            inst.update!(object_state: state)
+            [fake_chain!(TransactionChains::Vps::Destroy), nil]
+          end
+
+        as(SpecSeed.admin) { json_delete show_path(vps.id), vps: { lazy: false } }
+
+        expect_status(200)
+        expect(json['status']).to be(true)
+        expect(Vps.unscoped.find(vps.id).object_state).to eq('hard_delete')
+      end
+    end
+
+    %i[active suspended].each do |state|
+      it "preserves HTTP 423 when deletion of an #{state} VPS encounters a resource lock" do
+        vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node)
+        vps.record_object_state_change(state, reason: 'spec setup', user: SpecSeed.admin) if state != :active
+        allow_any_instance_of(Vps).to receive(:set_object_state) # rubocop:disable RSpec/AnyInstance
+          .and_raise(ResourceLocked.new(vps, 'spec pending deletion'))
+
+        as(SpecSeed.user) { json_delete show_path(vps.id) }
+
+        expect_status(423)
+        expect(json['status']).to be(false)
+        expect(response_message).to eq('Resource is locked. Try again later.')
+        expect(vps.reload.object_state).to eq(state.to_s)
+      end
+    end
   end
 
   describe 'Lifetimes::Resource' do
