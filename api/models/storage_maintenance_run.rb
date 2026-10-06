@@ -3,13 +3,18 @@
 require 'digest'
 require 'json'
 
-# API-only reservation. Contract 1 cannot accept physical responsibilities.
+# Retained API responsibility. Neither contract grants physical authority.
 class StorageMaintenanceRun < ApplicationRecord
   class UnsupportedRecord < StandardError; end
 
   RECORD_CONTRACT = 1
   REQUESTED_PROFILE = 'manual_storage_only_v1'
   REVISIONS = { 'reserved' => 1, 'abandoned' => 2 }.freeze
+  SUPPORTED_TUPLES = {
+    [1, 'reserved', 1].freeze => :active,
+    [1, 'abandoned', 2].freeze => :terminal,
+    [2, 'handoff_pending', 2].freeze => :active
+  }.freeze
   SCOPE_LIMIT = 1_048_576
   POOL_LIMIT = 256
   UUID_PATTERN = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/
@@ -19,10 +24,12 @@ class StorageMaintenanceRun < ApplicationRecord
                           acquired_by_user_session_id acquired_by_user_login acquisition_reason acquired_at].freeze
   ABANDONMENT_FIELDS = %w[abandoned_by_user_id abandoned_by_user_session_id
                           abandoned_by_user_login abandonment_reason abandoned_at].freeze
+  HANDOFF_FIELDS = %w[handed_off_by_user_id handed_off_by_user_session_id
+                      handed_off_by_user_login handoff_reason handed_off_at].freeze
   POOL_FIELDS = %w[pool_id node_id pool_role filesystem node_role hypervisor_type zpool_guid].freeze
 
   validate :supported_record
-  validate :only_terminal_transition, on: :update
+  validate :only_supported_transition, on: :update
   before_destroy { throw :abort }
 
   def self.request_id!(value)
@@ -40,6 +47,18 @@ class StorageMaintenanceRun < ApplicationRecord
     value.sort
   end
 
+  def self.supported_tuple?(contract, state, revision)
+    contract.is_a?(Integer) && revision.is_a?(Integer) && SUPPORTED_TUPLES.has_key?([contract, state, revision])
+  end
+
+  def self.active_tuple?(contract, state, revision)
+    supported_tuple?(contract, state, revision) && SUPPORTED_TUPLES[[contract, state, revision]] == :active
+  end
+
+  def active?
+    self.class.active_tuple?(record_contract, state, revision)
+  end
+
   def supported!
     raise UnsupportedRecord, 'unsupported storage maintenance record' unless valid?
 
@@ -55,7 +74,7 @@ class StorageMaintenanceRun < ApplicationRecord
     attributes.symbolize_keys.slice(
       :id, :request_id, :record_contract, :requested_profile, :state, :revision,
       :freeze_epoch, :requested_scope_digest, *ACQUISITION_FIELDS.map(&:to_sym),
-      *ABANDONMENT_FIELDS.map(&:to_sym)
+      *ABANDONMENT_FIELDS.map(&:to_sym), *HANDOFF_FIELDS.map(&:to_sym)
     ).except(:requested_scope_json).merge(
       requested_pool_ids: requested_scope.fetch('pools').map { |pool| pool.fetch('pool_id') }
     )
@@ -65,8 +84,7 @@ class StorageMaintenanceRun < ApplicationRecord
 
   def supported_record
     errors.add(:request_id, 'is invalid') unless request_id.is_a?(String) && UUID_PATTERN.match?(request_id)
-    unless record_contract.is_a?(Integer) && record_contract == RECORD_CONTRACT &&
-           requested_profile == REQUESTED_PROFILE && revision.is_a?(Integer) && REVISIONS[state] == revision
+    unless self.class.supported_tuple?(record_contract, state, revision) && requested_profile == REQUESTED_PROFILE
       errors.add(:record_contract, 'is unsupported')
     end
     errors.add(:freeze_epoch, 'is invalid') unless freeze_epoch.is_a?(Integer) && freeze_epoch >= 0
@@ -80,8 +98,17 @@ class StorageMaintenanceRun < ApplicationRecord
     elsif ABANDONMENT_FIELDS.any? { |field| !self[field].nil? }
       errors.add(:state, 'has unexpected abandonment audit')
     end
+    if state == 'handoff_pending'
+      actor_fields('handed_off')
+      safe_text(:handoff_reason, 255)
+      errors.add(:handed_off_at, 'is required') unless handed_off_at
+    elsif HANDOFF_FIELDS.any? { |field| !self[field].nil? }
+      errors.add(:state, 'has unexpected handoff audit')
+    end
     validate_scope
-    errors.add(:state, 'must begin reserved') if new_record? && state != 'reserved'
+    return unless new_record? && [record_contract, state, revision] != [1, 'reserved', 1]
+
+    errors.add(:state, 'must begin with an API-only reservation')
   end
 
   def actor_fields(prefix)
@@ -128,11 +155,19 @@ class StorageMaintenanceRun < ApplicationRecord
          pool['zpool_guid'].to_i <= 18_446_744_073_709_551_615))
   end
 
-  def only_terminal_transition
-    immutable = (changes_to_save.keys - (ABANDONMENT_FIELDS + %w[state revision])).any?
-    terminal = state_in_database == 'reserved' && revision_in_database == 1 &&
-               state == 'abandoned' && revision == 2 &&
-               ABANDONMENT_FIELDS.all? { |field| attribute_in_database(field).nil? && !self[field].nil? }
-    errors.add(:base, 'maintenance audit is immutable') if immutable || (has_changes_to_save? && !terminal)
+  def only_supported_transition
+    return unless has_changes_to_save?
+
+    predecessor = [record_contract_in_database, state_in_database, revision_in_database]
+    successor = [record_contract, state, revision]
+    audit = if predecessor == [1, 'reserved', 1] && successor == [1, 'abandoned', 2]
+              ABANDONMENT_FIELDS
+            elsif predecessor == [1, 'reserved', 1] && successor == [2, 'handoff_pending', 2]
+              HANDOFF_FIELDS + ['record_contract']
+            end
+    unless audit && (changes_to_save.keys - (audit + %w[state revision])).empty? &&
+           (audit - ['record_contract']).all? { |field| attribute_in_database(field).nil? && !self[field].nil? }
+      errors.add(:base, 'maintenance audit is immutable')
+    end
   end
 end

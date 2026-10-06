@@ -246,9 +246,17 @@ unchanged.
 Observer settlement can complete supported database work while the reservation
 is active. A drained status or successful capture still needs separate child
 exclusion, dependency closure, durable physical evidence and action approval
-before repair. A future handoff must change the reservation contract under its
-singleton authority before acquiring physical responsibilities. This API slice
-adds no executable action, approval, capture receipt or physical recovery path.
+before repair. `maintenance_handoff` changes the API record to contract 2 /
+`handoff_pending` / revision 2 under singleton authority and records the direct
+administrator accepting prospective responsibility. It retains the original
+UUID, pointer, epoch and catalog scope. Exact replay reports that committed
+acknowledgement only. It acquires no physical interval and does not bind an
+old capture to that owner. Contract 1 abandonment cannot end this state.
+
+There is no supported termination or recovery action for `handoff_pending`.
+Operational invocation must wait for separate audited recovery, termination and
+physical contracts. The API action adds no executable repair, approval,
+owner-bound capture receipt or physical recovery path.
 
 ## Storage-maintenance generation
 
@@ -304,14 +312,15 @@ and known payload contents. Its direct `init=` boot does not prove that a
 production bootloader will retain the selected generation.
 
 Building or selecting a generation does not acquire physical responsibility.
-Before an actual transition, a separately reviewed authenticated handoff must
-replace the API-only reservation contract under its owner, epoch and scope CAS;
-contract 1 abandonment cannot release a later physical hold. That transition
+Before an actual transition, the authenticated API responsibility
+acknowledgement must be followed by separately supported physical, termination
+and recovery contracts. Contract 2 grants no execution authority,
+and contract 1 abandonment cannot release it. The physical transition
 must persist the maintenance boot selection before retiring ordinary producers,
 prove that descendants and delegated work are contained and reaped, and bind
 capture and results to the owner, epoch, scope, boot and executable payloads.
-The current observer and activity-report interfaces provide no such handoff,
-physical receipt or executable repair path.
+The current observer and activity-report interfaces provide no physical
+handoff, receipt or executable repair path.
 
 Failed activation or operator death leaves the transition uncertain. Reboot
 invalidates prior process and capture evidence even when the generation is

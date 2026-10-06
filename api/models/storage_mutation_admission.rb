@@ -94,10 +94,55 @@ class StorageMutationAdmission
       raise MaintenanceConflict, 'maintenance request not found' unless run
 
       run.supported!
-      if run.state == 'reserved' && owner&.id != run.id
+      if run.active? && owner&.id != run.id
         raise MaintenanceConflict, 'maintenance owner is inconsistent'
       end
 
+      run
+    end
+  end
+
+  def self.handoff_maintenance_for_user!(request_id:, expected_epoch:, expected_contract:, expected_revision:,
+                                         expected_scope_digest:, reason:, user:, user_session:)
+    StorageMaintenanceRun.request_id!(request_id)
+    validate_epoch!(expected_epoch, required: true)
+    validate_reason!(reason)
+    unless expected_contract.is_a?(Integer) && expected_contract == 1 &&
+           expected_revision.is_a?(Integer) && expected_revision == 1 &&
+           expected_scope_digest.is_a?(String) && StorageMaintenanceRun::DIGEST_PATTERN.match?(expected_scope_digest)
+      raise ArgumentError, 'invalid maintenance compare-and-swap'
+    end
+
+    StorageFreezeControl.transaction(requires_new: true) do
+      control = StorageFreezeControl.lock.find(1)
+      actor, session = locked_api_actor!(user:, user_session:)
+      validate_maintenance_control!(control, expected_epoch)
+      run = active_maintenance!(control)
+      unless run && run.request_id == request_id && run.requested_scope_digest == expected_scope_digest
+        raise MaintenanceConflict, 'maintenance request binding changed'
+      end
+
+      if run.state == 'handoff_pending'
+        unless run.handed_off_by_user_id == actor.id && run.handed_off_by_user_session_id == session.id &&
+               run.handoff_reason == reason.strip
+          raise MaintenanceConflict, 'maintenance handoff binding changed'
+        end
+
+        next run
+      end
+      unless [run.record_contract, run.state, run.revision] == [expected_contract, 'reserved', expected_revision]
+        raise MaintenanceConflict, 'maintenance predecessor changed'
+      end
+
+      ids = run.requested_scope.fetch('pools').map { |pool| pool.fetch('pool_id') }
+      unless locked_maintenance_scope!(ids) == run.requested_scope_json
+        raise MaintenanceConflict, 'maintenance catalog scope changed'
+      end
+
+      run.update!(record_contract: 2, state: 'handoff_pending', revision: 2,
+                  handed_off_by_user_id: actor.id, handed_off_by_user_session_id: session.id,
+                  handed_off_by_user_login: actor.login, handoff_reason: reason.strip,
+                  handed_off_at: Time.current)
       run
     end
   end
@@ -121,6 +166,8 @@ class StorageMutationAdmission
       raise MaintenanceConflict, 'maintenance request not found' unless run
 
       run.supported!
+      raise MaintenanceConflict, 'maintenance responsibility cannot be abandoned' unless run.record_contract == 1
+
       unless run.freeze_epoch == expected_epoch && run.requested_scope_digest == expected_scope_digest
         raise MaintenanceConflict, 'maintenance request binding changed'
       end
@@ -155,7 +202,7 @@ class StorageMutationAdmission
     raise MaintenanceConflict, 'maintenance owner is missing' unless run
 
     run.supported!
-    unless run.state == 'reserved' && run.freeze_epoch == control.epoch
+    unless run.active? && run.freeze_epoch == control.epoch
       raise MaintenanceConflict, 'maintenance owner is inconsistent'
     end
 
@@ -261,9 +308,9 @@ class StorageMutationAdmission
 
     actor = User.lock.find_by(id: user.id)
     session = UserSession.lock.find_by(id: user_session.id)
-    requested_state = actor&.current_object_state&.state
+    requested_state = actor&.current_object_state(lock: true)
     active = actor && actor.object_state == 'active' &&
-             (requested_state.nil? || requested_state == 'active')
+             (requested_state.nil? || requested_state.state == 'active')
     unless active && actor.role == :admin && session && session.user_id == actor.id &&
            session.admin_id.nil? && session.closed_at.nil?
       raise AuthorizationRefused, 'active direct administrator session required'

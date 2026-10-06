@@ -44,7 +44,8 @@ RSpec.describe 'VpsAdmin::API::Resources::StorageFreeze' do
     expect(scopes).to include(
       'storage_freeze#show', 'storage_freeze#read_only',
       'storage_freeze#read_write', 'storage_freeze#settle_observer',
-      'storage_freeze#maintenance_reserve', 'storage_freeze#maintenance_show', 'storage_freeze#maintenance_abandon'
+      'storage_freeze#maintenance_reserve', 'storage_freeze#maintenance_show',
+      'storage_freeze#maintenance_handoff', 'storage_freeze#maintenance_abandon'
     )
   end
 
@@ -300,6 +301,14 @@ RSpec.describe 'VpsAdmin::API::Resources::StorageFreeze' do
       }.merge(attrs))
     end
 
+    def handoff_api(result, **attrs)
+      json_post('maintenance_handoff', {
+        request_id: result.fetch('request_id'), expected_epoch: result.fetch('freeze_epoch'),
+        expected_contract: 1, expected_revision: 1, expected_scope_digest: result.fetch('requested_scope_digest'),
+        reason: 'prospective responsibility'
+      }.merge(attrs))
+    end
+
     it 'reserves, looks up a UUID and abandons without unfreezing' do
       as_admin do
         reserve_api
@@ -388,7 +397,9 @@ RSpec.describe 'VpsAdmin::API::Resources::StorageFreeze' do
         reserve_api
         expect_status(200)
         result = status
-        StorageMaintenanceRun.find(result['id']).update_columns(record_contract: 2)
+        run = StorageMaintenanceRun.find(result['id'])
+        expect { run.update_columns(record_contract: 2) }.to raise_error(ActiveRecord::StatementInvalid)
+        run.reload.update_columns(requested_scope_json: '{}')
         maintenance_get(request_id)
         expect_status(409)
         abandon_api(result)
@@ -405,6 +416,161 @@ RSpec.describe 'VpsAdmin::API::Resources::StorageFreeze' do
       as_admin { maintenance_get('invalid') }
       expect_status(422)
       expect(StorageMaintenanceRun.count).to eq(0)
+    end
+
+    it 'acknowledges responsibility, shows bounded audit and replays without releasing the owner' do
+      as_admin do
+        reserve_api
+        expect_status(200)
+        result = status
+        control = StorageFreezeControl.singleton!.attributes
+        handoff_api(result)
+        expect_status(200)
+        acknowledged = status
+        expect(acknowledged).to include('record_contract' => 2, 'state' => 'handoff_pending', 'revision' => 2,
+                                        'request_id' => result['request_id'], 'freeze_epoch' => result['freeze_epoch'],
+                                        'requested_scope_digest' => result['requested_scope_digest'],
+                                        'handed_off_by_user_id' => SpecSeed.admin.id,
+                                        'handed_off_by_user_login' => SpecSeed.admin.login,
+                                        'handoff_reason' => 'prospective responsibility')
+        expect(acknowledged['handed_off_by_user_session_id']).to be > 0
+        expect(acknowledged['handed_off_at']).to be_a(String)
+        expect(acknowledged['abandoned_at']).to be_nil
+        expect(acknowledged).not_to have_key('requested_scope_json')
+        maintenance_get(request_id)
+        expect_status(200)
+        expect(status).to eq(acknowledged)
+        handoff_api(result)
+        expect_status(200)
+        expect(status).to eq(acknowledged)
+        json_get
+        expect_status(200)
+        expect(status['active_maintenance']).to eq(
+          acknowledged.merge(
+            'acquired_at' => Time.iso8601(acknowledged.fetch('acquired_at')).utc.to_s,
+            'handed_off_at' => Time.iso8601(acknowledged.fetch('handed_off_at')).utc.to_s
+          )
+        )
+        expect(status['repair_ready']).to be(false)
+        abandon_api(result)
+        expect_status(409)
+        abandon_api(result, expected_revision: 2)
+        expect_status(422)
+        reserve_api
+        expect_status(409)
+        json_post('read_write', expected_epoch: result['freeze_epoch'], reason: 'refused after handoff')
+        expect_status(409)
+        expect(StorageFreezeControl.singleton!.attributes).to eq(control)
+      end
+    end
+
+    it 'requires the dedicated scope and direct administrator before handoff' do
+      result = nil
+      as_admin do
+        reserve_api
+        expect_status(200)
+        result = status
+      end
+      before = StorageMaintenanceRun.find(result['id']).attributes
+      handoff_api(result)
+      expect_status(401)
+      as_token(SpecSeed.user) { handoff_api(result) }
+      expect_status(403)
+      as_token(SpecSeed.admin, admin: SpecSeed.admin) { handoff_api(result) }
+      expect_status(403)
+      as_token(SpecSeed.admin, scope: ['storage_freeze#maintenance_show']) { handoff_api(result) }
+      expect_status(403)
+      expect(StorageMaintenanceRun.find(result['id']).attributes).to eq(before)
+      as_token(SpecSeed.admin, scope: ['storage_freeze#maintenance_handoff']) do
+        handoff_api(result)
+        expect_status(200)
+        maintenance_get(request_id)
+        expect_status(403)
+      end
+      expect(StorageFreezeControl.singleton!.active_maintenance_run_id).to eq(result['id'])
+    end
+
+    it 'preserves inherited integer parameters while enforcing exact model predecessor values' do
+      as_admin do
+        reserve_api
+        expect_status(200)
+        result = status
+        before = StorageMaintenanceRun.find(result['id']).attributes
+        [{ expected_contract: 2 }, { expected_revision: 2 }].each do |attrs|
+          handoff_api(result, **attrs)
+          expect_status(422)
+        end
+        handoff_api(result, expected_epoch: result['freeze_epoch'] + 1)
+        expect_status(409)
+        handoff_api(result, expected_scope_digest: 'a' * 64)
+        expect_status(409)
+        handoff_api(result, request_id: SecureRandom.uuid)
+        expect_status(409)
+        expect(StorageMaintenanceRun.find(result['id']).attributes).to eq(before)
+        handoff_api(result, expected_contract: '1', expected_revision: '1')
+        expect_status(200)
+        acknowledged = status
+        handoff_api(result, expected_contract: 1.0, expected_revision: 1.0)
+        expect_status(200)
+        expect(status).to eq(acknowledged)
+      end
+    end
+
+    it 'refuses changed current catalog scope before creating handoff audit' do
+      as_admin do
+        reserve_api
+        expect_status(200)
+        result = status
+        before = StorageMaintenanceRun.find(result['id']).attributes
+        SpecSeed.pool.update_columns(filesystem: 'spec/changed-before-api-handoff')
+        handoff_api(result)
+        expect_status(409)
+        expect(StorageMaintenanceRun.find(result['id']).attributes).to eq(before)
+        expect(StorageFreezeControl.singleton!.active_maintenance_run_id).to eq(result['id'])
+      end
+    end
+
+    it 'refuses changed replay reason or session without transferring responsibility' do
+      result = nil
+      acknowledged = nil
+      as_admin do
+        reserve_api
+        expect_status(200)
+        result = status
+        handoff_api(result)
+        expect_status(200)
+        acknowledged = status
+        handoff_api(result, reason: 'changed')
+        expect_status(409)
+        SpecSeed.pool.update_columns(filesystem: 'spec/changed-after-api-handoff')
+        handoff_api(result)
+        expect_status(200)
+        expect(status).to eq(acknowledged)
+      end
+      as_admin do
+        handoff_api(result)
+        expect_status(409)
+        maintenance_get(request_id)
+        expect_status(200)
+        expect(status).to eq(acknowledged)
+      end
+    end
+
+    it 'revalidates current administrator access while preserving acknowledged responsibility' do
+      result = nil
+      as_admin do
+        reserve_api
+        expect_status(200)
+        result = status
+        handoff_api(result)
+        expect_status(200)
+        before = StorageMaintenanceRun.find(result['id']).attributes
+        SpecSeed.admin.update_columns(object_state: User.object_states.fetch(:suspended))
+        handoff_api(result)
+        expect_status(403)
+        expect(StorageMaintenanceRun.find(result['id']).attributes).to eq(before)
+        expect(StorageFreezeControl.singleton!.active_maintenance_run_id).to eq(result['id'])
+      end
     end
   end
 end

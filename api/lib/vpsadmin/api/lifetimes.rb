@@ -394,12 +394,17 @@ module VpsAdmin::API
           log
         end
 
-        # Returns the current (last) state.
-        def current_object_state
-          ::ObjectState.where(
+        # Returns the latest requested state. A locking caller must already hold
+        # this object's row lock in its transaction.
+        def current_object_state(lock: false)
+          raise ArgumentError, 'invalid object-state lock option' unless [true, false].include?(lock)
+
+          scope = ::ObjectState.where(
             class_name: self.class.name,
             row_id: id
-          ).order('created_at DESC, id DESC').take
+          ).order('created_at DESC, id DESC')
+          scope = scope.lock if lock
+          scope.take
         end
       end
 

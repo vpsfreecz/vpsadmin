@@ -164,6 +164,11 @@ module VpsAdmin::API::Resources
       string :abandoned_by_user_login, nullable: true, label: 'Abandoning administrator login'
       string :abandonment_reason, nullable: true, label: 'Abandonment reason'
       datetime :abandoned_at, nullable: true, label: 'Abandoned at'
+      integer :handed_off_by_user_id, nullable: true, label: 'Responsible administrator ID'
+      integer :handed_off_by_user_session_id, nullable: true, label: 'Responsible administrator session ID'
+      string :handed_off_by_user_login, nullable: true, label: 'Administrator login at handoff'
+      string :handoff_reason, nullable: true, label: 'Handoff reason'
+      datetime :handed_off_at, nullable: true, label: 'Responsibility acknowledged at'
     end
 
     class MaintenanceReserve < HaveAPI::Action
@@ -198,7 +203,7 @@ module VpsAdmin::API::Resources
 
       route 'maintenance_show'
       http_method :get
-      desc 'Inspect an API maintenance reservation by UUID'
+      desc 'Inspect retained maintenance responsibility by UUID'
       input { use :maintenance_identity }
       output { use :maintenance_result }
       authorize { |user| allow if Access.allowed?(user) }
@@ -207,6 +212,38 @@ module VpsAdmin::API::Resources
         maintenance_request do
           ::StorageMutationAdmission.show_maintenance_for_user!(
             request_id: input[:request_id], user: current_user, user_session: ::UserSession.current
+          )
+        end
+      end
+    end
+
+    class MaintenanceHandoff < HaveAPI::Action
+      include Access
+
+      route 'maintenance_handoff'
+      http_method :post
+      desc 'Acknowledge responsibility for a prospective transition without acquiring physical ownership'
+      input do
+        use :maintenance_identity
+        use :change, include: [:expected_epoch]
+        integer :expected_contract, required: true, label: 'Expected maintenance record contract',
+                                    desc: 'API-only predecessor contract, which must be 1'
+        integer :expected_revision, required: true, label: 'Expected maintenance revision',
+                                    desc: 'API-only predecessor revision, which must be 1'
+        string :expected_scope_digest, required: true, label: 'Expected requested catalog scope digest',
+                                       desc: 'Digest returned by maintenance_show; changed catalog claims refuse handoff'
+        text :reason, required: true, desc: 'Reason for accepting prospective maintenance responsibility'
+      end
+      output { use :maintenance_result }
+      authorize { |user| allow if Access.allowed?(user) }
+
+      def exec
+        maintenance_request do
+          ::StorageMutationAdmission.handoff_maintenance_for_user!(
+            request_id: input[:request_id], expected_epoch: input[:expected_epoch],
+            expected_contract: input[:expected_contract], expected_revision: input[:expected_revision],
+            expected_scope_digest: input[:expected_scope_digest], reason: input[:reason],
+            user: current_user, user_session: ::UserSession.current
           )
         end
       end

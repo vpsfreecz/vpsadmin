@@ -123,6 +123,21 @@ by `show`; the API rechecks actor, session, mode and epoch under SQL locks.
 Transition and catch-up audits copy the API user ID, session ID and login.
 The WebUI shows status and mode controls to a direct full administrator.
 
+Actor revalidation locks singleton 1, then User, UserSession and the latest
+requested `ObjectState` row. The requested-state lookup is a current locking
+read even inside an older repeatable-read transaction. Confirmed User state
+must be `active`; its latest request must be absent or explicitly `active`.
+The API refuses pending suspension or deletion and a present unknown or nil
+requested state before changing mode or writing audit. The same check covers
+catch-up requests and maintenance reserve, show, handoff and abandon. See
+[requested and confirmed state](../object-lifetimes.md#requested-and-confirmed-state).
+
+The canonical lifetime reader and storage admission caller must reach every
+API worker together before this check can be relied on. Older workers can read
+an older requested-state snapshot even with compatible schema. Rolling back
+the reader and caller restores this gap. The check changes no stored contract,
+wire format or physical authority.
+
 NodeCtld settles generic observer intents when a chain has terminal proof.
 During `read_only`, `settle_observer` can inspect bounded pages of old-node
 prepared intents. It commits a request audit before the work and a separate
@@ -140,9 +155,10 @@ repair are separate operations.
 ## API-only maintenance ownership
 
 The singular `storage_freeze` resource also exposes POST `maintenance_reserve`,
-GET `maintenance_show` and POST `maintenance_abandon`, each with its own action
-scope. They require an active direct administrator and open nondelegated
-session. This reservation prevents compatible API writers from unfreezing
+GET `maintenance_show`, POST `maintenance_handoff` and POST
+`maintenance_abandon`, each with its own action scope. They require an active
+direct administrator and open nondelegated session. This reservation prevents
+compatible API writers from unfreezing
 storage. It acquires no Node or physical interval, dispatches no command and
 accepts no exclusion evidence or repair approval.
 
@@ -165,29 +181,66 @@ roll back both run and pointer. A timeout, process exit, expired session or
 restart never clears a committed pointer. There is no automatic expiry or
 implicit takeover.
 
-`maintenance_abandon` compares UUID, freeze epoch, reserved revision 1 and
-requested scope digest. A fresh direct administrator may abandon the unused API reservation
-after its creator disconnects. Both actors remain in the audit. The service
-atomically records abandonment at revision 2 and clears the exact pointer,
-leaving `read_only` and its epoch unchanged. Exact terminal replay requires
-the same abandoning actor/session and request, unchanged epoch and no new
-owner. Unsupported contracts or later physical ownership cannot be abandoned
-through this API-only action. Changing mode to `read_write` is a separate
-audited request afterward.
+`maintenance_handoff` accepts responsibility for a prospective transition.
+It compares the UUID, freeze epoch and requested-scope digest with explicit
+`expected_contract=1` and `expected_revision=1`. These CAS values must be exact
+integers at the model boundary. In a short transaction, the service locks
+singleton 1, revalidates the direct actor and session, locks the run referenced
+by the owner pointer, and rechecks the requested Pools and Nodes with current
+ordered locking reads. It rejects changed or missing catalog claims before
+the transition.
+
+The committed result is contract 2 / `handoff_pending` / revision 2. Five copied
+handoff audit values record the accepting administrator and session IDs, login,
+normalized reason and time. That administrator may differ from the acquiring
+actor. UUID, pointer, epoch, profile, scope and original acquisition audit stay
+unchanged, as do mode and freeze history. The service calls no signer, chain,
+broker, Node, capture or physical operation. This state records prospective
+responsibility and establishes no physical ownership, exclusion or readiness.
+
+An exact lost-reply retry uses the original contract 1 / revision 1 CAS values
+and the same handoff actor and session, normalized reason and stored digest. It
+returns the acknowledgement without writing or advancing revision. Replay
+reports the retained commitment without a fresh catalog or physical check.
+Changed bindings conflict. Authenticated show is read-only and does not
+transfer responsibility. Failure before commit leaves the predecessor state;
+resolve an uncertain COMMIT through authenticated show or exact replay.
+Session expiry, process death, timeout or reboot never clears the owner.
+
+`maintenance_abandon` is restricted to contract 1, including terminal replay.
+It compares UUID, freeze epoch, reserved revision 1 and requested scope digest.
+A fresh direct administrator may abandon the unused API reservation after its
+creator disconnects. Both actors remain in the audit. The service atomically
+records abandonment at revision 2 and clears the exact pointer, leaving
+`read_only` and its epoch unchanged. Exact terminal replay requires the same
+abandoning actor/session and request, unchanged epoch and no new owner.
+Abandonment rejects contract 2 even with its matching actor, digest or revision 2;
+reservation cannot reopen its UUID. Changing mode to `read_write` is a separate
+audited request after a supported contract 1 abandonment.
 
 Every compatible `read_write` path refuses a nonnull owner pointer. Staged
 storage admission also refuses it even if the mode is contradictory
-`read_write`. Status includes bounded reservation metadata and compares its
-identity, contract, state and revision across the scan; ownership changes at
-the same epoch make the result unstable. No raw catalog scope paths appear in
-the public response. `db_drained` still describes bounded database work only;
-`repair_ready` remains false.
+`read_write`. Status accepts the exact active tuples at the same epoch and
+compares identity, contract, state, revision and bounded audit across the scan.
+A concurrent handoff at the same epoch makes the result unstable. No raw
+catalog scope paths appear in the public response. `db_drained` still describes
+bounded database work only; `repair_ready` remains false.
 
-The additive pointer cannot fence old API setters that ignore it. Deploy the
-compatible mode and admission readers across API, Supervisor, scheduler/task
-and administrative entrypoints, and exclude old unfreeze writers and direct
-out-of-band writes before relying on a reservation. Null ownership preserves
-ordinary legacy behavior. Code rollback while an owner is active is
-unsupported; keep compatible readers until explicit API-only abandonment or
-recovery through a future compatible physical owner. Node versions gain no
-physical exclusion capability from this API change.
+Deploy the additive schema before compatible code. Converge compatible readers
+across API, Supervisor, scheduler/task and administrative entrypoints, and
+exclude old unfreeze writers and direct out-of-band writes before relying on
+reservations. Null
+ownership preserves ordinary legacy behavior. Do not create contract 2 while
+old reservation readers are expected to serve it: contract 1 readers reject
+it, although compatible predecessor mode/admission guards still refuse any
+nonnull pointer. This does not fence pre-reservation writers or independent
+Node processes. No coordinated Node upgrade is required by this API-only unit.
+
+Running older code while a handoff owner exists is unsupported. Keep
+compatible readers and the additive schema; never discard audit, clear the
+pointer or downgrade contract 2 to make old code work. There is no TTL,
+cancellation, automatic release or supported termination from `handoff_pending`.
+Operational invocation remains unsupported until separate audited termination,
+recovery and physical contracts exist. Failed external work retains
+responsibility and invalidates physical evidence; the API acknowledgement
+alone authorizes no physical transition, capture or repair.

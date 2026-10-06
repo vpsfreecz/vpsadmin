@@ -92,7 +92,9 @@ class StorageFreezeStatus
     after = Control.find(1)
     mode = MODES.fetch(after.mode) { raise 'invalid storage freeze mode' }
     owner_after = maintenance_summary(after)
-    if owner_after && (owner_after[:state] != 'reserved' || owner_after[:freeze_epoch] != after.epoch)
+    if owner_after && (!StorageMaintenanceRun.active_tuple?(owner_after[:record_contract], owner_after[:state],
+                                                            owner_after[:revision]) ||
+                       owner_after[:freeze_epoch] != after.epoch)
       raise StorageMaintenanceRun::UnsupportedRecord, 'maintenance owner is inconsistent'
     end
 

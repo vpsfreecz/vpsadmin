@@ -453,6 +453,35 @@ RSpec.describe StorageMutationAdmission do
       expect(control.reload.active_maintenance_run_id).to eq(run.id)
     end
 
+    it 'keeps handoff ownership interlocked through read-write and staged admission contradictions' do
+      admin = SpecSeed.admin
+      session = create_open_session!(user: admin, auth_type: 'basic')
+      control = StorageFreezeControl.singleton!
+      control.update_columns(mode: 1)
+      run = described_class.reserve_maintenance_for_user!(
+        request_id: SecureRandom.uuid, expected_epoch: control.epoch, pool_ids: [SpecSeed.pool.id],
+        reason: 'handoff interlock', user: admin, user_session: session
+      )
+      run = described_class.handoff_maintenance_for_user!(
+        request_id: run.request_id, expected_epoch: control.epoch, expected_contract: 1, expected_revision: 1,
+        expected_scope_digest: run.requested_scope_digest, reason: 'prospective responsibility', user: admin, user_session: session
+      )
+      before = run.attributes
+      expect do
+        described_class.set_read_only_for_user!(read_only: false, expected_epoch: control.epoch,
+                                                reason: 'unfreeze refused', user: admin, user_session: session)
+      end.to raise_error(StorageMutationAdmission::MaintenanceConflict)
+      expect do
+        StorageFreezeControl.transaction(requires_new: true) { described_class.check! }
+      end.to raise_error(VpsAdmin::API::Exceptions::StorageReadOnly)
+      control.reload.update_columns(mode: 0)
+      expect do
+        StorageFreezeControl.transaction(requires_new: true) { described_class.check! }
+      end.to raise_error(VpsAdmin::API::Exceptions::StorageReadOnly)
+      expect(run.reload.attributes).to eq(before)
+      expect(control.reload.active_maintenance_run_id).to eq(run.id)
+    end
+
     it 'requires its staging transaction even when no reservation exists', :no_transaction do
       expect { described_class.check! }.to raise_error('storage mutation admission requires a staging transaction')
     end

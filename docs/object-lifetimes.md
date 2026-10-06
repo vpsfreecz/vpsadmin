@@ -40,6 +40,26 @@ Source: [lifetime model and resource support](../api/lib/vpsadmin/api/lifetimes.
 [lifetime wrapper](../api/models/transaction_chains/lifetimes/wrapper.rb),
 [User](../api/models/user.rb), and [VPS](../api/models/vps.rb).
 
+## Requested and confirmed state
+
+`ObjectState` records a requested transition before its chain confirms the
+model's `object_state`. A pending suspension or deletion can therefore coexist
+with a confirmed `active` state.
+
+`current_object_state` selects the latest request for the exact model class and
+row, ordered by `created_at DESC, id DESC`. By default it uses an ordinary read,
+which can see an older repeatable-read snapshot. Callers that need current
+eligibility can use the Boolean option `current_object_state(lock: true)`.
+They must hold the object's row lock in the same transaction before locking
+its latest state row. User requested-state writers hold that User lock before
+publishing the request.
+
+Storage administration uses this locking read after locking User and
+UserSession. It requires confirmed `active` state and either no requested-state
+row or an explicitly `active` request. It refuses a present row with an unknown
+or nil state. User authentication has a different policy and can permit
+suspended accounts.
+
 ## Expiration and history
 
 An object can have an `expiration_date`. The lifetime progress task selects

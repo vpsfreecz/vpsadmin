@@ -83,29 +83,45 @@ pointer. Its unique index and restrictive FK prevent deletion of a referenced
 run. An existing installation starts with a null pointer and no run; provider
 state never creates API ownership.
 
-Record contract 1 has two states: `reserved` at revision 1 and `abandoned` at
-revision 2. Its requested profile is `manual_storage_only_v1`. Acquisition
-records a canonical client UUID, freeze epoch, requested catalog scope and
-SHA-256 digest, plus the locked administrator's user/session IDs, copied login,
-reason and time. The scope is canonical JSON of 1 to 256 distinct Pool claims
-in ID order, bounded to 1 MiB. Each claim copies Pool/node IDs, Pool role/filesystem, Node role and
-hypervisor type, and known catalog zpool GUID or null. These claims describe
-the requested catalog; they do not identify a physical dependency closure.
-Aliases and absent GUIDs remain unproved.
+The supported record tuples are contract 1 / `reserved` / revision 1,
+contract 1 / `abandoned` / revision 2, and contract 2 / `handoff_pending` /
+revision 2. `StorageMaintenanceRun` owns this declaration for admission and
+status readers. Acquisition creates contract 1 and uses the requested profile
+`manual_storage_only_v1`.
 
-The model keeps acquisition fields immutable. Its only supported update adds
-the abandoning administrator's separately copied identity, reason and time,
-changes state and advances revision. Database constraints enforce complete
-acquisition and terminal audit groups, state/revision pairs, JSON size/validity
-and UUID uniqueness. User/session and catalog identities are copied rather
-than cascading FKs. Privileged SQL can bypass model immutability; this schema
-is not a tamper-proof audit journal. Completed runs remain retained.
+Acquisition records a canonical client UUID, freeze epoch, requested catalog
+scope and SHA-256 digest, plus the locked administrator's user/session IDs,
+copied login, reason and time. The scope is canonical JSON of 1 to 256 distinct
+Pool claims in ID order, bounded to 1 MiB. Each claim copies Pool/node IDs,
+Pool role/filesystem, Node role and hypervisor type, and known catalog zpool
+GUID or null. These claims describe the requested catalog; they do not identify
+a physical dependency closure. Aliases and absent GUIDs remain unproved.
 
-The additive reservation migration preserves the existing singleton mode,
-epoch and freeze audit. Its down migration checks for any run or active
-pointer before DDL and refuses to discard consumed audit. Keep the additive
-schema on code rollback once a reservation has existed. Unknown record
-contracts, malformed scope or inconsistent ownership fail closed in supported
-reservation readers. A future physical handoff must change the recognized
-contract before accepting its first physical responsibility or evidence;
-contract 1 cannot represent that handoff.
+The model permits two transitions from contract 1 / `reserved` / revision 1.
+Abandonment records its administrator audit and changes the run to contract 1 /
+`abandoned` / revision 2. Responsibility acknowledgement changes it to contract 2 /
+`handoff_pending` / revision 2 and adds `handed_off_by_user_id`,
+`handed_off_by_user_session_id`, `handed_off_by_user_login`, `handoff_reason`
+and `handed_off_at`. It retains the same pointer, UUID, epoch, profile and
+immutable acquisition scope and audit, with no abandonment audit. The model
+rejects subsequent updates and deletion. The acknowledgement grants no physical
+authority and has no supported termination or downgrade path. Supported readers
+reject unknown contracts, malformed scope and inconsistent ownership.
+
+Database constraints enforce complete acquisition, abandonment and handoff
+audit groups, the supported tuples, JSON size/validity and UUID uniqueness.
+Contract 1 has null handoff audit; contract 2 requires all five values and null
+abandonment audit. User/session and catalog identities are copied rather than
+cascading FKs. Privileged SQL can bypass model immutability; this schema is not
+a tamper-proof audit journal. Completed runs remain retained.
+
+The additive reservation migration preserves the singleton mode, epoch and
+freeze audit. Its down migration refuses to proceed if any run or active pointer
+exists, before issuing DDL. The handoff migration validates the predecessor rows,
+adds the five nullable audit columns and updates the existing state and audit
+constraint. It rejects unknown predecessor rows without normalizing them. Its
+down migration refuses before DDL if any handoff audit, contract 2 or unsupported
+row exists. Contract 1 rows with no handoff audit can retain their reservation
+audit when restoring the predecessor schema and constraint. Keep the additive
+schema and compatible readers while a handoff owner exists; clearing the
+pointer or relabeling it as contract 1 is unsupported.
