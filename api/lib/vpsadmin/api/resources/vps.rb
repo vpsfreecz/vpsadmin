@@ -530,6 +530,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         'update failed',
         e.record == vps ? to_param_names(vps.errors.to_hash, :input) : e.record.errors.to_hash
       )
+    rescue VpsAdmin::API::Exceptions::IpAddressInvalid => e
+      error!(e.message)
     end
 
     def state_id

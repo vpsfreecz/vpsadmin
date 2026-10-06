@@ -82,6 +82,7 @@ RSpec.describe TransactionChains::Vps::Migrate do
     _dataset, _dip, vps, dst_node = create_vps_migration_fixture
     netif = create_network_interface!(vps, name: 'eth0')
     ip = create_ip_address!(network_interface: netif)
+    ip.network.update!(enabled: false)
     set_vps_running!(vps)
 
     chain, = described_class.chain_for(vps, dst_node).fire(

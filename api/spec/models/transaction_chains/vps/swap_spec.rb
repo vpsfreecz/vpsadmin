@@ -117,6 +117,8 @@ RSpec.describe TransactionChains::Vps::Swap do
 
   it 'builds the expected broad migration and network-mutation subsequences for a cross-location swap' do
     primary_vps, secondary_vps = create_swap_fixture
+    # Both migrations reuse existing assignments even when their pool is disabled.
+    SpecSeed.network_v4.update!(enabled: false)
 
     chain, = described_class.fire(
       primary_vps,

@@ -10,6 +10,7 @@ These pages describe vpsAdmin for developers and operators. Start with the
 - [IP ownership, accounting and locking](ip-locking.md)
 - [IP ownership operations](ip-ownership-operations.md)
 - [Upgrade to coordinated IP ownership reservations](upgrade-ip-ownership-reservations.md)
+- [Upgrade to network availability controls](upgrade-network-availability.md)
 - [IP release campaigns](ip-release.md)
 - [Object lifetimes](object-lifetimes.md): suspension, deletion, expiration,
   and state transitions.

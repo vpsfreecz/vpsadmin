@@ -113,7 +113,7 @@ RSpec.describe TransactionChains::Export::Create do
       when :location
         LocationNetwork.where(network_id: network.id).delete_all
       end
-      allow(IpAddress).to receive(:pick_addr!).and_return(ip)
+      allow(IpAddress).to receive_messages(candidate_network_ids: [network.id], pick_from_admitted_networks!: ip)
 
       expect do
         described_class.fire(dataset)

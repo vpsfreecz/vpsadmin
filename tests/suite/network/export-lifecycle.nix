@@ -80,6 +80,15 @@ import ../../make-test.nix (
           expect(runtime).not_to be_nil
           wait_for_export_present(node, export.fetch('id'), expected_path: export.fetch('path'))
 
+          services.api_ruby_json(code: <<~RUBY)
+            IpAddress.find(#{Integer(runtime.fetch('ip_address_id'))}).network.update!(enabled: false)
+            puts JSON.dump(disabled: true)
+          RUBY
+          # Availability controls leave the existing export endpoint active.
+          wait_for_export_present(node, export.fetch('id'), expected_path: export.fetch('path'))
+          expect(export_runtime_row(services, export.fetch('id')).fetch('ip_address_id'))
+            .to eq(runtime.fetch('ip_address_id'))
+
           destroyed = destroy_export(
             services,
             admin_user_id: admin_user_id,

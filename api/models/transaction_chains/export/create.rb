@@ -129,13 +129,15 @@ module TransactionChains
 
     def pick_ip_address(user, location)
       selection = { user:, location:, ip_v: 4, role: :private_access, purpose: :export }
+      candidate_network_ids = ::IpAddress.candidate_network_ids(selection)
+      admission_networks = ::Network.lock_for_admission!(candidate_network_ids)
 
       loop do
         ip = nil
 
         ::IpAddress.transaction do
-          ip = ::IpAddress.pick_addr!(selection)
-          ip.lock_current!(self)
+          ip = ::IpAddress.pick_from_admitted_networks!(selection, admission_networks)
+          ip.lock_for_new_use!(self, networks: admission_networks)
           ip.ensure_pickable!(selection)
         end
 

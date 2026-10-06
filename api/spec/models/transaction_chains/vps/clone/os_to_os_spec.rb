@@ -670,13 +670,26 @@ RSpec.describe TransactionChains::Vps::Clone::OsToOs do
     ipv4_use = ClusterResourceUse.for_obj(config).joins(user_cluster_resource: :cluster_resource)
                                  .find_by!(cluster_resources: { name: 'ipv4' })
 
+    # The alternate primary association is real selection policy, not a
+    # rewritten allocator argument. All three families share one held union.
+    [SpecSeed.network_v4, private_network, v6_network].each do |network|
+      LocationNetwork.where(network:).update_all(primary: false)
+      LocationNetwork.find_or_create_by!(network:, location: SpecSeed.other_location).update!(primary: true, userpick: true)
+      network.update!(primary_location: SpecSeed.other_location)
+    end
+    lock_order = []
+    allow(Network).to receive(:lock_for_admission!).and_wrap_original do |original, ids|
+      lock_order << :network
+      original.call(ids)
+    end
+    allow_any_instance_of(IpAddress).to receive(:lock_current!).and_wrap_original do |original, *args, **kwargs| # rubocop:disable RSpec/AnyInstance
+      lock_order << :ip
+      original.call(*args, **kwargs)
+    end
     seen_address_locations = []
     allow(TransactionChains::Ip::Allocate).to receive(:use_in).and_wrap_original do |original, root_chain, opts|
       seen_address_locations << opts.fetch(:kwargs).fetch(:address_location)
-      forwarded = opts.dup
-      forwarded[:kwargs] = opts.fetch(:kwargs).dup
-      forwarded[:kwargs][:address_location] = nil
-      original.call(root_chain, forwarded)
+      original.call(root_chain, opts)
     end
 
     chain, dst_vps = described_class.fire(
@@ -707,6 +720,9 @@ RSpec.describe TransactionChains::Vps::Clone::OsToOs do
     end
     expect(ipv4_edits.map(&:attr_changes)).to eq([{ 'value' => before + 2 }])
     expect(seen_address_locations).to all(eq(SpecSeed.other_location))
+    expect(lock_order.first).to eq(:network)
+    expect(lock_order.count(:network)).to eq(1)
+    expect(lock_order.count(:ip)).to be >= 4
     expect(resource_edits.count).to be >= 3
   end
 

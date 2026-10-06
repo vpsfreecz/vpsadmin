@@ -8,27 +8,42 @@ module TransactionChains
       raise NotImplementedError
     end
 
-    def allocate_to_netif(r, netif, n, strict: true, host_addrs: false, address_location: nil)
+    # Shared with containing VPS batches so destination pool discovery uses
+    # exactly the allocator's owner, location and family policy.
+    def self.selection_for(resource_name, vps, address_location: nil)
+      name = resource_name.to_s
+      {
+        user: vps.user,
+        location: vps.node.location,
+        ip_v: name == 'ipv6' ? 6 : 4,
+        role: name.end_with?('_private') ? :private_access : :public_access,
+        purpose: :vps,
+        allocation_environment: vps.node.location.environment,
+        address_location:
+      }
+    end
+
+    def allocate_to_netif(r, netif, n, strict: true, host_addrs: false, address_location: nil,
+                          admission_networks: nil, candidate_network_ids: nil)
       return n if n == 0
 
       ips = []
       v = r.name == 'ipv6' ? 6 : 4
 
-      selection = {
-        user: netif.vps.user,
-        location: netif.vps.node.location,
-        ip_v: v,
-        role: r.name.end_with?('_private') ? :private_access : :public_access,
-        purpose: :vps,
-        allocation_environment: netif.vps.node.location.environment,
-        address_location:
-      }
+      selection = self.class.selection_for(r.name, netif.vps, address_location:)
+      if admission_networks
+        raise ArgumentError, 'candidate network IDs required with held admission networks' unless candidate_network_ids
+      else
+        candidate_network_ids = ::IpAddress.candidate_network_ids(selection)
+        admission_networks = ::Network.lock_for_admission!(candidate_network_ids)
+      end
+      candidates = admission_networks.slice(*candidate_network_ids)
 
       loop do
         begin
           ::IpAddress.transaction do
-            ip = ::IpAddress.pick_addr!(selection)
-            ip.lock_current!(self)
+            ip = ::IpAddress.pick_from_admitted_networks!(selection, candidates)
+            ip.lock_for_new_use!(self, networks: candidates)
             ip.ensure_pickable!(selection)
 
             ips << ip
