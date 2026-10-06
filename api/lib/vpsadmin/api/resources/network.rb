@@ -65,6 +65,7 @@ module VpsAdmin::API::Resources
         q = q.where(purpose: ::Network.purposes[input[:purpose]]) if input[:purpose]
         q = q.where(purpose: ::Network.purposes_for_use(input[:usable_for])) if input[:usable_for]
         q = q.where(enabled: input[:enabled]) if input.has_key?(:enabled)
+        q = q.where(enabled: true) unless current_user.role == :admin
         q
       end
 

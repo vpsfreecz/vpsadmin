@@ -203,6 +203,30 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddressAssignment' do
   end
 
   describe 'Index' do
+    it 'preserves active and historical disabled-network associations within owner permissions' do
+      SpecSeed.network_v4.update!(enabled: false)
+      SpecSeed.network_v6.update!(enabled: false)
+
+      as(SpecSeed.user) { json_get index_path, _meta: { includes: 'ip_address__network' } }
+      expect_status(200)
+      expect(assignment_ids).to contain_exactly(
+        assignment_user_active_v4.id, assignment_user_inactive_v4.id, assignment_user_active_v6.id
+      )
+      expect(assignments.to_h { |row| [row.fetch('id'), resource_id(row.fetch('ip_address'))] }).to eq(
+        assignment_user_active_v4.id => assignment_user_active_v4.ip_address_id,
+        assignment_user_inactive_v4.id => assignment_user_inactive_v4.ip_address_id,
+        assignment_user_active_v6.id => assignment_user_active_v6.ip_address_id
+      )
+
+      as(SpecSeed.user) { json_get index_path, ip_address_assignment: { active: true } }
+      expect_status(200)
+      expect(assignment_ids).to contain_exactly(assignment_user_active_v4.id, assignment_user_active_v6.id)
+
+      as(SpecSeed.user) { json_get show_path(assignment_other_active_v6.id) }
+      expect(last_response.status).to be_in([200, 403, 404])
+      expect(json['status']).to be(false)
+    end
+
     it 'rejects unauthenticated access' do
       json_get index_path
 
