@@ -249,3 +249,73 @@ exclusion, dependency closure, durable physical evidence and action approval
 before repair. A future handoff must change the reservation contract under its
 singleton authority before acquiring physical responsibilities. This API slice
 adds no executable action, approval, capture receipt or physical recovery path.
+
+## Storage-maintenance generation
+
+The optional vpsAdminOS profile keeps the Node integration, settings, key paths
+and command-line tools available. It excludes nodectld and osctld from every
+automatic runlevel. Import it alongside the ordinary integration:
+
+```nix
+{
+  imports = [
+    vpsadmin.nixosModules.vpsadminos-modules
+    vpsadmin.nixosModules.vpsadminos-storage-maintenance
+    ./node-configuration.nix
+  ];
+}
+```
+
+The same profile is available at
+[`nixos/profiles/storage-maintenance.nix`](../../nixos/profiles/storage-maintenance.nix)
+for direct file imports. It is absent from the default module list. It sets
+`osctld.enable = false` and `runit.services.nodectld.runlevels = []`, using
+ordinary module definitions. `vpsadmin.nodectld.enable` must remain true.
+Evaluation fails if the final configuration re-enables osctld or assigns either
+daemon an automatic runlevel. The profile does not override conflicting caller
+declarations. Setting osctld false alone does not select Admin maintenance: an
+ordinary storage-only Node can still need nodectld.
+
+Prepare compatible workload configuration before importing the profile. The
+final configuration must have empty `osctl.pools`, disabled
+`osctl.exportfs.enable`, no automatic osctld membership, and `install = false`
+for every `boot.zfs.pools` entry. The profile also refuses `osctl.oomd.enable`
+and `services.prometheus.exporters.osctl.enable`. Existing raw pool import,
+mount, dataset and property definitions remain active and can write storage.
+The profile leaves pool paths and on-disk osctl-active properties unchanged.
+
+Service executables, Node settings and keys, network configuration and tools
+remain available. The existing `nodectl halt-reason` outage template remains;
+its standalone local reader does not start nodectld. The OS renders the
+installed halt policy and runit stage 3 without automatic container
+shutdown. Other installed packages retain their identities. An administrator can
+still start a retained executable, and arbitrary hooks or persisted exports need
+separate inspection. These configuration checks do not prove that old workloads
+are absent or that children, delegated GC and other physical writers are excluded.
+
+This profile requires the OS implementation of `osctld.enable`, including its
+pool startup, activation and shutdown consumers. Older OS sources refuse the
+unknown option; there is no compatibility fallback. Ordinary imports and Node
+protocols are unchanged, so other Nodes need no coordinated update for this
+generation-only feature. The test activates the maintenance system, boots it
+afresh on the same disposable disk, and restores ordinary startup. It checks
+the current and booted systems, configuration and key hashes, dataset identities
+and known payload contents. Its direct `init=` boot does not prove that a
+production bootloader will retain the selected generation.
+
+Building or selecting a generation does not acquire physical responsibility.
+Before an actual transition, a separately reviewed authenticated handoff must
+replace the API-only reservation contract under its owner, epoch and scope CAS;
+contract 1 abandonment cannot release a later physical hold. That transition
+must persist the maintenance boot selection before retiring ordinary producers,
+prove that descendants and delegated work are contained and reaped, and bind
+capture and results to the owner, epoch, scope, boot and executable payloads.
+The current observer and activity-report interfaces provide no such handoff,
+physical receipt or executable repair path.
+
+Failed activation or operator death leaves the transition uncertain. Reboot
+invalidates prior process and capture evidence even when the generation is
+unchanged. There is no automatic fallback, expiry or release. Restoring an older
+ordinary generation can restart writers: end physical action authority through
+its future reviewed release path before ordinary restoration. The profile itself
+cannot authorize that rollback or resolve uncertain physical work.

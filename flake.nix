@@ -116,6 +116,7 @@
       lib.notificationTemplates = notificationTemplatesLib;
 
       nixosModules = {
+        vpsadminos-storage-maintenance = import ./nixos/profiles/storage-maintenance.nix;
         nixos-modules =
           { ... }:
           {
@@ -266,6 +267,13 @@
           };
         in
         {
+          storage-maintenance-profile = import ./nixos/tests/storage-maintenance-profile.nix {
+            inherit pkgs;
+            makeSystem = modules: vpsadminos.lib.vpsadminosSystem ({ inherit system; } // modules);
+            adminModule = self.nixosModules.vpsadminos-modules;
+            exportedProfile = self.nixosModules.vpsadminos-storage-maintenance;
+          };
+
           effective-notification-templates = pkgs.runCommand "effective-notification-templates" { } ''
             grep -Fx 'Overridden daily report' \
               ${effectiveNotificationTemplates}/templates/daily_report/email/en.subject.erb
