@@ -122,6 +122,13 @@ import ../../make-test.nix (
             mib: 4
           )
 
+          attach_test_vps_ip(services, admin_user_id: admin_user_id, vps_id: setup.fetch('vps_id'), addr: '198.51.100.10')
+          retained_ips = services.api_ruby_json(code: <<~RUBY)
+            ips = Vps.find(#{Integer(setup.fetch('vps_id'))}).ip_addresses.order(:id).to_a
+            raise 'restore availability fixture has no assigned IPs' if ips.empty?
+            ips.map(&:network).uniq(&:id).each { |network| network.update!(enabled: false) }
+            puts JSON.dump(ids: ips.map(&:id))
+          RUBY
           restore = rollback_dataset_to_snapshot(
             services,
             dataset_id: setup.fetch('dataset_id'),
@@ -129,6 +136,13 @@ import ../../make-test.nix (
           )
           services.wait_for_chain_state(restore.fetch('chain_id'), state: :done)
           wait_for_vps_running(services, setup.fetch('vps_id'))
+
+          after_ips = services.api_ruby_json(code: <<~RUBY)
+            ips = Vps.find(#{Integer(setup.fetch('vps_id'))}).ip_addresses.order(:id).to_a
+            puts JSON.dump(ids: ips.map(&:id), enabled: ips.map { |ip| ip.network.enabled? })
+          RUBY
+          expect(after_ips.fetch('ids')).to eq(retained_ips.fetch('ids'))
+          expect(after_ips.fetch('enabled')).to all(be(false))
 
           expect(
             read_dataset_text(

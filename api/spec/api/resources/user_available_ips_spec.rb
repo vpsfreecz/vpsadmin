@@ -162,6 +162,17 @@ RSpec.describe 'VpsAdmin::API::Resources::User' do
       expect(response_obj['ipv4']).to eq(2)
     end
 
+    it 'excludes disabled owned inventory and preserves its ownership' do
+      ip = create_ip!(addr: '192.0.2.215', network: SpecSeed.network_v4, user: SpecSeed.user)
+      SpecSeed.network_v4.update!(enabled: false)
+      as(SpecSeed.user) do
+        json_get available_ips_path(SpecSeed.user.id), user: { location: SpecSeed.location.id }
+      end
+      expect_status(200)
+      expect(response_obj['ipv4']).to eq(0)
+      expect(ip.reload.user_id).to eq(SpecSeed.user.id)
+    end
+
     it 'rejects address_location without shared networks' do
       vps_location = create_location!
 

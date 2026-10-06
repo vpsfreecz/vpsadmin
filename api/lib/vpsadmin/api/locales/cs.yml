@@ -664,6 +664,11 @@ cs:
       enable_user_dns_zones:
         label: Povolit DNS zóny uživatelů
       enabled:
+        choices:
+          'false':
+            label: Zakázáno
+          'true':
+            label: Povoleno
         label: Povoleno
       entity_id:
         description: Filtrovat hlášení podle ID entity
@@ -1266,6 +1271,8 @@ cs:
         label: Namespace
       network:
         label: Síť
+      network_enabled:
+        label: Síť povolena
       network_interface:
         label: Síťové rozhraní
       networks:
@@ -2389,6 +2396,7 @@ cs:
         keep_disabled: Současná pravidla neumožňují ponechat IP adresy na základě
           důvodu od uživatele.
         owner_changed: U některé vybrané IP adresy se změnil vlastník nebo přidělení.
+      network_disabled: Síť je zakázaná pro nové přidělování a přiřazování IP adres.
       object_not_found: Objekt nebyl nalezen
       object_not_found_lower: objekt nebyl nalezen
       object_with_attribute_not_found: objekt %{resource} = %{id} nebyl nalezen
@@ -3058,6 +3066,8 @@ cs:
             label: Adresa
           count:
             description: Počet přidaných IP adres
+          enabled:
+            description: Povolit nové přidělování a přiřazování IP adres
           environment:
             description: Prostředí, kterému jsou adresy účtovány
           id:

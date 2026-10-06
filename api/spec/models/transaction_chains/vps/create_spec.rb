@@ -42,6 +42,28 @@ RSpec.describe TransactionChains::Vps::Create do
     [pool, vps]
   end
 
+  it 'prepares all requested address families before reserving any allocation' do
+    _pool, vps = build_create_vps(os_template: create_os_template!)
+    public_ip = create_ip_address!(location: vps.node.location, addr: '192.0.2.240')
+    private_network = create_private_network!(location: vps.node.location, purpose: :vps)
+    private_ip = create_ipv4_address_in_network!(network: private_network, location: vps.node.location)
+    events = []
+    allow(Network).to receive(:lock_for_admission!).and_wrap_original do |original, ids|
+      events << [:networks, ids.sort]
+      original.call(ids)
+    end
+    allow_any_instance_of(IpAddress).to receive(:lock_current!).and_wrap_original do |original, *args, **kwargs| # rubocop:disable RSpec/AnyInstance
+      events << [:ip, original.receiver.id]
+      original.call(*args, **kwargs)
+    end
+
+    _chain, created = described_class.fire(vps, ipv4: 1, ipv4_private: 1, ipv6: 0, start: false)
+    expect(created.ip_addresses.pluck(:id)).to contain_exactly(public_ip.id, private_ip.id)
+    expect(events.first).to eq([:networks, [public_ip.network_id, private_network.id].sort])
+    expect(events.count { |event| event.first == :networks }).to eq(1)
+    expect(events.count { |event| event.first == :ip }).to be >= 2
+  end
+
   it 'creates datasets, mounts, features, network configuration, DNS, and start in the expected order' do
     template = create_os_template!(
       manage_dns_resolver: true,

@@ -3,6 +3,8 @@
 require 'securerandom'
 
 RSpec.describe 'VpsAdmin::API::Resources::Network write actions' do # rubocop:disable RSpec/DescribeClass
+  include CoreResourceSpecHelpers
+
   let(:ipv4_network) { SpecSeed.network_v4 }
   let(:ipv6_network) { SpecSeed.network_v6 }
 
@@ -111,6 +113,34 @@ RSpec.describe 'VpsAdmin::API::Resources::Network write actions' do # rubocop:di
     expect(json['status']).to be(false)
     expect(response_message).to include('provide environment')
     expect(IpAddress.count).to eq(count)
+  end
+
+  it 'preserves disabled state on unrelated updates and supports both toggle directions' do
+    basic_authorize SpecSeed.admin.login, SpecSeed::PASSWORD
+    expect(ipv4_network.enabled).to be(true)
+    json_put(show_path(ipv4_network.id), network: { enabled: false })
+    expect(json['status']).to be(true)
+    expect(ipv4_network.reload.enabled).to be(false)
+    json_put(show_path(ipv4_network.id), network: { label: 'Retired pool' })
+    expect(json['status']).to be(true)
+    expect(ipv4_network.reload.enabled).to be(false)
+    json_put(show_path(ipv4_network.id), network: { enabled: true })
+    expect(json['status']).to be(true)
+    expect(ipv4_network.reload.enabled).to be(true)
+  end
+
+  it 'rejects member writes while retaining readable disabled inventory and exact filters' do
+    ipv4_network.update!(enabled: false)
+    basic_authorize SpecSeed.user.login, SpecSeed::PASSWORD
+    json_put(show_path(ipv4_network.id), network: { enabled: true })
+    expect_status(403)
+    get show_path(ipv4_network.id)
+    expect_status(200)
+    expect(net_obj['enabled']).to be(false)
+    get index_path, network: { enabled: false }
+    expect_status(200)
+    expect(json.dig('response', 'networks').map { |network| network['id'] }).to include(ipv4_network.id)
+    expect(json.dig('response', 'networks').map { |network| network['enabled'] }).to all(be(false))
   end
 
   it 'rejects a charge environment without an owner atomically' do
@@ -339,6 +369,41 @@ RSpec.describe 'VpsAdmin::API::Resources::Network write actions' do # rubocop:di
   describe 'AddAddresses' do
     let(:managed_net) { create_network!(address: '203.0.113.0', prefix: 24, managed: true) }
     let(:unmanaged_net) { create_network!(address: '203.0.113.128', prefix: 25, managed: false) }
+
+    %w[en cs].each do |locale|
+      it "returns a localized action error for disabled owned additions in #{locale}" do
+        managed_net.update!(enabled: false)
+        LocationNetwork.create!(location: SpecSeed.location, network: managed_net, priority: 1)
+        header 'Accept-Language', locale
+
+        expect do
+          as(SpecSeed.admin) do
+            json_post add_addresses_path(managed_net.id), network: {
+              count: 2, user: SpecSeed.user.id, environment: SpecSeed.environment.id
+            }
+          end
+        end.not_to(change { ip_admission_snapshot })
+
+        expect_disabled_network_error(locale)
+      ensure
+        header 'Accept-Language', nil
+      end
+    end
+
+    it 'keeps unexpected addition failures non-disclosing HTTP500 errors' do
+      network = managed_net
+      allow(Network).to receive(:find).with(network.id.to_s).and_return(network)
+      allow(network).to receive(:add_ips).and_raise(RuntimeError, 'private addition failure')
+
+      expect do
+        as(SpecSeed.admin) { json_post add_addresses_path(network.id), network: { count: 2 } }
+      end.not_to(change { ip_admission_snapshot })
+
+      expect(network).to have_received(:add_ips)
+      expect_status(500)
+      expect(json['status']).to be(false)
+      expect(last_response.body).not_to include('private addition failure')
+    end
 
     it 'rejects unauthenticated access' do
       json_post add_addresses_path(managed_net.id), network: { count: 2 }

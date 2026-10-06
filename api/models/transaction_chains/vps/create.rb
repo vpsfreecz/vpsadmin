@@ -203,6 +203,13 @@ module TransactionChains
       # Add IP addresses
       versions = %i[ipv4 ipv4_private]
       versions << :ipv6 if vps.node.location.has_ipv6
+      versions.select! { |version| opts[version] && opts[version] > 0 }
+      candidate_network_ids = versions.flat_map do |version|
+        ::IpAddress.candidate_network_ids(
+          Ip::Allocate.selection_for(version, vps, address_location: opts[:address_location])
+        )
+      end.uniq
+      admission_networks = ::Network.lock_for_admission!(candidate_network_ids)
 
       ip_resources = []
       user_env = vps.user.environment_user_configs.find_by!(
@@ -221,7 +228,9 @@ module TransactionChains
           ],
           kwargs: {
             host_addrs: true,
-            address_location: opts[:address_location]
+            address_location: opts[:address_location],
+            admission_networks:,
+            candidate_network_ids:
           },
           method: :allocate_to_netif
         )

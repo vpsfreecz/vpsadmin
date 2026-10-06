@@ -64,10 +64,11 @@ class VpsAdmin::API::Resources::Cluster < HaveAPI::Resource
             ::Vps.object_states[:suspended]
           ]
         ).count,
-        ipv4_left: ::IpAddress.joins(:network).where(
+        ipv4_left: ::IpAddress.unreserved.joins(:network).where(
           user: nil,
           network_interface: nil,
           networks: {
+            enabled: true,
             ip_version: 4,
             role: ::Network.roles[:public_access]
           }

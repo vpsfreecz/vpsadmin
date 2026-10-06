@@ -3,6 +3,8 @@
 require 'securerandom'
 
 RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
+  include CoreResourceSpecHelpers
+
   before do
     header 'Accept', 'application/json'
     SpecSeed.network_v4
@@ -403,6 +405,35 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
   describe 'Create' do
     let(:payload) { { addr: '192.0.2.200', network: SpecSeed.network_v4.id } }
 
+    %w[en cs].each do |locale|
+      it "returns a localized action error for disabled owned registration in #{locale}" do
+        SpecSeed.network_v4.update!(enabled: false)
+        header 'Accept-Language', locale
+        owned_payload = payload.merge(user: SpecSeed.user.id, location: SpecSeed.location.id)
+
+        expect do
+          as(SpecSeed.admin) { json_post index_path, ip_address: owned_payload }
+        end.not_to(change { ip_admission_snapshot })
+
+        expect_disabled_network_error(locale)
+      ensure
+        header 'Accept-Language', nil
+      end
+    end
+
+    it 'keeps unexpected registration failures non-disclosing HTTP500 errors' do
+      allow(IpAddress).to receive(:register).and_raise(RuntimeError, 'private registration failure')
+
+      expect do
+        as(SpecSeed.admin) { json_post index_path, ip_address: payload }
+      end.not_to(change { ip_admission_snapshot })
+
+      expect(IpAddress).to have_received(:register)
+      expect_status(500)
+      expect(json['status']).to be(false)
+      expect(last_response.body).not_to include('private registration failure')
+    end
+
     it 'rejects unauthenticated access' do
       json_post index_path, ip_address: payload
 
@@ -505,6 +536,43 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
 
   describe 'Update' do
     let!(:ip_to_update) { create_ip!(addr: '192.0.2.120', network: SpecSeed.network_v4) }
+
+    %w[en cs].each do |locale|
+      it "returns a localized action error for disabled ownership changes in #{locale}" do
+        ensure_signer_unlocked!
+        SpecSeed.network_v4.update!(enabled: false)
+        header 'Accept-Language', locale
+
+        expect do
+          as(SpecSeed.admin) do
+            json_put show_path(ip_to_update.id), ip_address: {
+              user: SpecSeed.user.id, environment: SpecSeed.environment.id
+            }
+          end
+        end.not_to(change { ip_admission_snapshot })
+
+        expect_disabled_network_error(locale)
+      ensure
+        header 'Accept-Language', nil
+      end
+    end
+
+    it 'keeps unexpected ownership failures non-disclosing HTTP500 errors' do
+      allow(TransactionChains::Ip::Update).to receive(:fire).and_raise(RuntimeError, 'private ownership failure')
+
+      expect do
+        as(SpecSeed.admin) do
+          json_put show_path(ip_to_update.id), ip_address: {
+            user: SpecSeed.user.id, environment: SpecSeed.environment.id
+          }
+        end
+      end.not_to(change { ip_admission_snapshot })
+
+      expect(TransactionChains::Ip::Update).to have_received(:fire)
+      expect_status(500)
+      expect(json['status']).to be(false)
+      expect(last_response.body).not_to include('private ownership failure')
+    end
 
     it 'rejects unauthenticated access' do
       json_put show_path(ip_to_update.id), ip_address: { user: SpecSeed.user.id }
@@ -617,6 +685,25 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
         ip_owned_other: create_ip!(addr: '192.0.2.31', network: SpecSeed.network_v4, user: SpecSeed.other_user),
         ip_routed_other: create_ip!(addr: '192.0.2.32', network: SpecSeed.network_v4, netif: other_netif)
       }
+    end
+
+    %w[en cs].each do |locale|
+      it "retains the same localized disabled assignment action error in #{locale}" do
+        ensure_signer_unlocked!
+        data = assign_data
+        SpecSeed.network_v4.update!(enabled: false)
+        header 'Accept-Language', locale
+
+        expect do
+          as(SpecSeed.user) do
+            json_post assign_path(data[:ip_free].id), ip_address: { network_interface: data[:user_netif].id }
+          end
+        end.not_to(change { ip_admission_snapshot })
+
+        expect_disabled_network_error(locale)
+      ensure
+        header 'Accept-Language', nil
+      end
     end
 
     it 'rejects unauthenticated access' do

@@ -118,6 +118,13 @@ import ../../make-test.nix (
           )
           wait_for_route_present(node, vps_id: vps.fetch('id'), name: 'eth1', cidr: cidr)
 
+          # Disabling new use leaves the existing route and host management valid.
+          services.api_ruby_json(code: <<~RUBY)
+            Network.find(IpAddress.find(#{Integer(ip.fetch('id'))}).network_id).update!(enabled: false)
+            puts JSON.dump(disabled: true)
+          RUBY
+          wait_for_route_present(node, vps_id: vps.fetch('id'), name: 'eth1', cidr: cidr)
+
           added_host_ip = add_host_ip_to_netif(
             services,
             admin_user_id: admin_user_id,
@@ -180,6 +187,34 @@ import ../../make-test.nix (
             before_uses.fetch('ipv4_private', 0)
           )
           wait_for_route_absent(node, vps_id: vps.fetch('id'), name: 'eth1', cidr: cidr)
+
+          rejection = services.api_ruby_json(code: <<~RUBY)
+            #{api_session_prelude(admin_user_id)}
+            ip = IpAddress.find(#{Integer(ip.fetch('id'))})
+            begin
+              TransactionChains::NetworkInterface::AddRoute.fire(
+                NetworkInterface.find(#{Integer(created.fetch('netif_id'))}), [ip]
+              )
+              raise 'disabled network accepted a detached allocation'
+            rescue VpsAdmin::API::Exceptions::IpAddressInvalid => e
+              puts JSON.dump(rejected: true, message: e.message, assigned: ip.reload.network_interface_id)
+            end
+          RUBY
+          expect(rejection.fetch('rejected')).to be(true)
+          expect(rejection.fetch('message')).to include('disabled for new allocations')
+          expect(rejection.fetch('assigned')).to be_nil
+          wait_for_route_absent(node, vps_id: vps.fetch('id'), name: 'eth1', cidr: cidr)
+
+          services.api_ruby_json(code: <<~RUBY)
+            Network.find(IpAddress.find(#{Integer(ip.fetch('id'))}).network_id).update!(enabled: true)
+            puts JSON.dump(enabled: true)
+          RUBY
+          restored_route = add_route_to_netif(
+            services, admin_user_id: admin_user_id, netif_id: created.fetch('netif_id'), ip_id: ip.fetch('id')
+          )
+          expect_chain_done(services, restored_route, label: 're-enabled route',
+                            expected_handles: [tx_types(services).fetch('netif_add_route')])
+          wait_for_route_present(node, vps_id: vps.fetch('id'), name: 'eth1', cidr: cidr)
         end
       end
     '';

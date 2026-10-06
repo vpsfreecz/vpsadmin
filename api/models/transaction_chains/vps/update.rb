@@ -218,8 +218,21 @@ module TransactionChains
     def chown_vps(vps, orig_user)
       db_changes = { vps => { user_id: vps.user_id } }
 
-      reserved_ips = vps.ip_addresses.order(:id).to_a
+      datasets = vps.dataset_in_pool.dataset.subtree.to_a
+      chown_exports = datasets.flat_map do |ds|
+        ds.dataset_in_pools.flat_map { |dip| dip.exports.to_a }
+      end
+      vps_ips = vps.ip_addresses.to_a
+      export_ips = chown_exports.flat_map { |ex| ex.ip_addresses.to_a }
+      transferred_exports = chown_exports.reject { |ex| ex.user_id == vps.user_id }
+      new_owner_ip_ids = (vps_ips + transferred_exports.flat_map { |ex| ex.ip_addresses.to_a }).map(&:id)
+      reserved_ips = (vps_ips + export_ips).uniq(&:id).sort_by(&:id)
+      ::IpAddress.lock_networks_for_use!(reserved_ips)
       ::IpAddress.lock_all_current!(self, reserved_ips)
+      reserved_ips.each do |ip|
+        ip.ensure_admission_network!
+        ip.ensure_network_enabled! if new_owner_ip_ids.include?(ip.id)
+      end
       ::HostIpAddress.lock_all_with_ips!(self, reserved_ips.flat_map { |ip| ip.host_ip_addresses.to_a })
 
       # VPS and all related objects must be given to the target user:
@@ -240,11 +253,8 @@ module TransactionChains
       use_chain(UserNamespaceMap::Use, args: [vps, new_userns_map])
       db_changes[vps][:user_namespace_map_id] = new_userns_map.id
 
-      datasets = []
-
       # Transfer dataset cluster resources
-      vps.dataset_in_pool.dataset.subtree.each do |ds|
-        datasets << ds
+      datasets.each do |ds|
         db_changes[ds] = { user_id: vps.user_id }
 
         dip = ds.primary_dataset_in_pool!
@@ -302,24 +312,16 @@ module TransactionChains
       end
 
       # Transfer exports of the VPS's own datasets / snapshots
-      chown_exports = []
-
-      datasets.each do |ds|
-        ds.dataset_in_pools.each do |dip|
-          dip.exports.each do |ex|
-            # Remove hosts belonging to the original user
-            hosts_to_delete = ex.export_hosts.to_a.reject do |host|
-              host.ip_address.network_interface.vps_id == vps.id
-            end
-
-            use_chain(Export::DelHosts, args: [ex, hosts_to_delete]) if hosts_to_delete.any?
-
-            # Add hosts belonging to the target user
-            add_hosts_to_chowned_export(ex, vps.user) if ex.all_vps
-
-            chown_exports << ex
-          end
+      chown_exports.each do |ex|
+        # Remove hosts belonging to the original user
+        hosts_to_delete = ex.export_hosts.to_a.reject do |host|
+          host.ip_address.network_interface.vps_id == vps.id
         end
+
+        use_chain(Export::DelHosts, args: [ex, hosts_to_delete]) if hosts_to_delete.any?
+
+        # Add hosts belonging to the target user
+        add_hosts_to_chowned_export(ex, vps.user) if ex.all_vps
       end
 
       if chown_exports.any?

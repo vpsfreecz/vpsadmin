@@ -20,6 +20,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
                                              value_label: :login,
                                              nullable: true
     bool :assigned_to_interface, label: 'Assigned to interface'
+    bool :network_enabled, label: 'Network enabled'
     string :role, choices: ::Network.roles.keys
     string :purpose, choices: ::Network.purposes.keys
     string :usable_for, choices: %w[vps export], label: 'Usable for',
@@ -94,7 +95,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     authorize do |u|
       allow if u.role == :admin
       input whitelist: %i[location network version role purpose usable_for addr prefix vps
-                          network_interface assigned_to_interface order
+                          network_interface assigned_to_interface network_enabled order
                           limit from_id includes]
       allow
     end
@@ -157,6 +158,7 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       end
 
       ips = ips.where(networks: { ip_version: input[:version] }) if input[:version]
+      ips = ips.where(networks: { enabled: input[:network_enabled] }) if input.has_key?(:network_enabled)
 
       ips = ips.where(networks: { role: ::Network.roles[input[:role]] }) if input[:role]
 
@@ -273,6 +275,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
       error!(e.message, { addr: ['not a valid IP address'] })
     rescue ::ActiveRecord::RecordInvalid => e
       error!('create failed', e.record.errors.to_hash)
+    rescue VpsAdmin::API::Exceptions::IpAddressInvalid => e
+      error!(e.message)
     end
   end
 
@@ -308,7 +312,8 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
     rescue ActiveRecord::RecordInvalid => e
       error!('update failed', e.record.errors.to_hash)
     rescue VpsAdmin::API::Exceptions::IpAddressInvalidLocation,
-           VpsAdmin::API::Exceptions::IpAddressInUse => e
+           VpsAdmin::API::Exceptions::IpAddressInUse,
+           VpsAdmin::API::Exceptions::IpAddressInvalid => e
       error!(e.message)
     end
 

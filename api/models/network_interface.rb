@@ -123,6 +123,7 @@ class NetworkInterface < ApplicationRecord
 
   def validate_route_assignment!(ip, is_user:)
     ip.network.reload(lock: 'LOCK IN SHARE MODE')
+    ip.network.ensure_enabled!
     locnet = ip.network.location_networks.where(
       location_id: vps.node.location_id
     ).lock('LOCK IN SHARE MODE').take

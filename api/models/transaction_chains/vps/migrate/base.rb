@@ -39,7 +39,8 @@ module TransactionChains
 
     protected
 
-    attr_reader :opts, :vps_user, :datasets, :resources_changes, :maintenance_windows
+    attr_reader :opts, :vps_user, :datasets, :resources_changes, :maintenance_windows,
+                :admission_networks, :replacement_network_ids
     attr_accessor :userns_map
 
     def setup(vps, dst_node, opts)
@@ -48,6 +49,7 @@ module TransactionChains
                               transfer_ips: false,
                               resources: nil,
                               handle_ips: true,
+                              admission_networks: nil,
                               reallocate_ips: true,
                               swap: :enforce,
                               maintenance_window: true,
@@ -64,7 +66,29 @@ module TransactionChains
       # Keep addresses reserved through temporary detach confirmations and
       # rollback. Swap includes this setup for both VPSes in its outer chain.
       reserved_ips = vps.ip_addresses.order(:id).to_a
+      @replacement_network_ids =
+        if @opts[:handle_ips] && @opts[:replace_ips] && !@opts[:transfer_ips] &&
+           vps.node.location_id != dst_node.location_id
+          reserved_ips.flat_map do |ip|
+            ::IpAddress.candidate_network_ids(
+              replacement_selection(ip, vps.user, dst_node.location)
+            )
+          end
+        else
+          []
+        end
+      # Swap supplies the union locked before either source IP batch. Ordinary
+      # migration locks only source and actually needed replacement pools here.
+      @admission_networks = opts[:admission_networks]
+      if @admission_networks
+        ::IpAddress.bind_admission_networks!(reserved_ips, @admission_networks)
+      else
+        @admission_networks = ::IpAddress.lock_networks_for_use!(
+          reserved_ips, extra_network_ids: @replacement_network_ids
+        )
+      end
       ::IpAddress.lock_all_current!(self, reserved_ips)
+      reserved_ips.each(&:ensure_admission_network!)
       ::HostIpAddress.lock_all_with_ips!(self, reserved_ips.flat_map { |ip| ip.host_ip_addresses.to_a })
       lock(vps.dataset_in_pool)
       concerns(:affect, [vps.class.name, vps.id])
@@ -572,19 +596,24 @@ module TransactionChains
     end
 
     def pick_replacement_ip(source_ip)
-      selection = {
-        user: dst_vps.user,
-        location: dst_vps.node.location,
-        ip_v: source_ip.network.ip_version,
-        role: source_ip.network.role.to_sym,
-        purpose: source_ip.network.purpose.to_sym,
-        allocation_environment: dst_vps.node.location.environment
-      }
-      replacement = ::IpAddress.pick_addr!(selection)
-      replacement.lock_current!(self)
+      selection = replacement_selection(source_ip, dst_vps.user, dst_vps.node.location)
+      networks = admission_networks.slice(*replacement_network_ids)
+      replacement = ::IpAddress.pick_from_admitted_networks!(selection, networks)
+      replacement.lock_for_new_use!(self, networks:)
       replacement.ensure_pickable!(selection)
       ::HostIpAddress.lock_all_with_ips!(self, replacement.host_ip_addresses.to_a)
       replacement
+    end
+
+    def replacement_selection(source_ip, user, location)
+      {
+        user:,
+        location:,
+        ip_v: source_ip.network.ip_version,
+        role: source_ip.network.role.to_sym,
+        purpose: source_ip.network.purpose.to_sym,
+        allocation_environment: location.environment
+      }
     end
 
     # Transfer number of `ips` belonging to `user` from `src_env` to `dst_env`.

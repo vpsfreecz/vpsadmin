@@ -53,6 +53,32 @@ RSpec.describe TransactionChains::Vps::Update do
     user.environment_user_configs.find_by!(environment: environment)
   end
 
+  def create_update_export_fixture(dataset, vps, subdataset:)
+    if subdataset
+      dataset, dip = create_dataset_with_pool!(
+        user: user, pool: vps.dataset_in_pool.pool, parent: dataset,
+        name: "update-child-#{SecureRandom.hex(4)}"
+      )
+      allocate_dip_diskspace!(dip, user: user, value: 1024)
+    end
+    backup_dip = DatasetInPool.create!(
+      dataset: dataset, pool: create_pool!(node: SpecSeed.node, role: :backup),
+      confirmed: DatasetInPool.confirmed(:confirmed)
+    )
+    network = create_private_network!(address: '203.0.113.0')
+    ip = create_ipv4_address_in_network!(network: network, location: SpecSeed.location)
+    export, netif, = create_export_for_dataset!(dataset_in_pool: backup_dip, host_ip: ip)
+    ip.update!(network_interface: netif)
+    [export, ip]
+  end
+
+  def prepare_chown_user
+    other_user = SpecSeed.other_user
+    ensure_numeric_resources!(user: other_user, environment: SpecSeed.environment)
+    create_user_namespace_map!(user: other_user)
+    other_user
+  end
+
   def user_cluster_resource_for(user, resource, environment = SpecSeed.environment)
     UserClusterResource.joins(:cluster_resource).find_by!(
       user: user,
@@ -220,6 +246,96 @@ RSpec.describe TransactionChains::Vps::Update do
     expect do
       TransactionChains::DnsZoneTransfer::Create.fire(transfer)
     end.to raise_error(ResourceLocked)
+  end
+
+  it 'rejects ownership transfer carrying disabled allocations even without an explicit IP owner' do
+    dataset, vps = create_update_vps_fixture
+    other_user = SpecSeed.other_user
+    ensure_numeric_resources!(user: other_user, environment: SpecSeed.environment)
+    create_user_namespace_map!(user: other_user)
+    ip = create_ip_address!(network: SpecSeed.network_v4, location: SpecSeed.location,
+                            network_interface: vps.network_interfaces.first)
+    ip.network.update!(enabled: false)
+    expect { described_class.fire(vps, { user_id: other_user.id }) }
+      .to raise_error(VpsAdmin::API::Exceptions::IpAddressInvalid, /disabled/)
+    expect(vps.reload.user_id).to eq(user.id)
+    expect(dataset.reload.user_id).to eq(user.id)
+    expect(ip.reload.user_id).to be_nil
+    expect(ip.network_interface_id).to eq(vps.network_interfaces.first.id)
+  end
+
+  [false, true].each do |subdataset|
+    context "with an export on the #{subdataset ? 'child' : 'root'} dataset's backup pool" do
+      it 'reserves enabled export endpoints with the VPS allocations before queuing ownership transfer' do
+        dataset, vps = create_update_vps_fixture
+        export, endpoint = create_update_export_fixture(dataset, vps, subdataset: subdataset)
+        other_user = prepare_chown_user
+        vps_ip = create_ip_address!(network: SpecSeed.network_v4, location: SpecSeed.location,
+                                    network_interface: vps.network_interfaces.first)
+        environment_config_for(user).reallocate_resource!(
+          :ipv4, vps_ip.size, user: user, save: true,
+                              confirmed: ClusterResourceUse.confirmed(:confirmed)
+        )
+        events = []
+        allow(Network).to receive(:lock_for_admission!).and_wrap_original do |original, ids|
+          events << [:networks, ids.sort]
+          original.call(ids)
+        end
+        allow_any_instance_of(IpAddress).to receive(:lock_current!).and_wrap_original do |original, *args, **kwargs| # rubocop:disable RSpec/AnyInstance
+          events << [:ip, original.receiver.id]
+          original.call(*args, **kwargs)
+        end
+
+        chain, = described_class.fire(vps, { user_id: other_user.id })
+
+        export_confirmation = confirmations_for(chain).find do |row|
+          row.class_name == 'Export' && row.row_pks == { 'id' => export.id }
+        end
+        expect(export_confirmation.attr_changes).to include('user_id' => other_user.id)
+        expect(events.first).to eq([:networks, [vps_ip.network_id, endpoint.network_id].sort])
+        expect(events.count { |event| event.first == :networks }).to eq(1)
+        expect(events.select { |event| event.first == :ip }.first(2).map(&:last))
+          .to eq([vps_ip.id, endpoint.id].sort)
+        expect(chain.locks.map { |row| [row.resource, row.row_id] }).to include(
+          ['IpAddress', endpoint.id], ['HostIpAddress', endpoint.host_ip_addresses.first.id]
+        )
+        expect(export.reload).to have_attributes(user_id: user.id, enabled: true)
+        expect(endpoint.reload.network_interface_id).to eq(export.network_interface.id)
+      end
+
+      it 'rejects a disabled endpoint before queuing ownership or resource changes' do
+        dataset, vps = create_update_vps_fixture
+        export, endpoint = create_update_export_fixture(dataset, vps, subdataset: subdataset)
+        other_user = prepare_chown_user
+        endpoint.network.update!(enabled: false)
+        original_uses = ClusterResourceUse.order(:id).pluck(:id, :value, :confirmed)
+
+        expect { described_class.fire(vps, { user_id: other_user.id }) }
+          .to raise_error(VpsAdmin::API::Exceptions::IpAddressInvalid, /disabled/)
+
+        expect(vps.reload.user_id).to eq(user.id)
+        expect(dataset.reload.user_id).to eq(user.id)
+        expect(export.reload).to have_attributes(user_id: user.id, enabled: true)
+        expect(endpoint.reload.network_interface_id).to eq(export.network_interface.id)
+        expect(ClusterResourceUse.order(:id).pluck(:id, :value, :confirmed)).to eq(original_uses)
+        expect(ResourceLock.where(resource: 'IpAddress', row_id: endpoint.id)).to be_empty
+      end
+    end
+  end
+
+  it 'retains a running same-owner VPS and its existing export on a disabled endpoint network' do
+    dataset, vps = create_update_vps_fixture
+    export, endpoint = create_update_export_fixture(dataset, vps, subdataset: true)
+    set_vps_running!(vps)
+    endpoint.network.update!(enabled: false)
+
+    chain, updated_vps = described_class.fire(vps, { user_id: user.id })
+
+    expect(chain).to be_nil
+    expect(updated_vps.reload.user_id).to eq(user.id)
+    expect(export.reload).to have_attributes(user_id: user.id, enabled: true)
+    expect(endpoint.reload.network_interface_id).to eq(export.network_interface.id)
+    expect(vps.vps_current_status.is_running).to be(true)
   end
 
   it 'delegates enable_network changes and map mode changes to the expected transactions' do
