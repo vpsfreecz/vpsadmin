@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_26_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -1888,6 +1888,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_100000) do
     t.string "reason"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "active_maintenance_run_id"
+    t.index ["active_maintenance_run_id"], name: "index_storage_freeze_controls_on_active_maintenance_run_id", unique: true
     t.check_constraint "`id` = 1", name: "chk_storage_freeze_singleton"
   end
 
@@ -1929,6 +1931,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_100000) do
     t.index ["scope_key"], name: "index_storage_integrity_scopes_on_scope_key", unique: true
     t.check_constraint "`dataset_in_pool_catalog_id` is null and `scope_key` = concat('pool:',`pool_catalog_id`) or `dataset_in_pool_catalog_id` is not null and `scope_key` = concat('dip:',`dataset_in_pool_catalog_id`)", name: "chk_storage_scope_key"
     t.check_constraint "`state` in (0,1,2)", name: "chk_storage_scope_state"
+  end
+
+  create_table "storage_maintenance_runs", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.string "request_id", limit: 36, null: false, collation: "utf8mb3_bin"
+    t.integer "record_contract", null: false
+    t.string "requested_profile", limit: 64, null: false
+    t.string "state", limit: 32, null: false
+    t.integer "revision", null: false
+    t.bigint "freeze_epoch", null: false, unsigned: true
+    t.text "requested_scope_json", size: :medium, null: false
+    t.string "requested_scope_digest", limit: 64, null: false, collation: "utf8mb3_bin"
+    t.integer "acquired_by_user_id", null: false, unsigned: true
+    t.integer "acquired_by_user_session_id", null: false, unsigned: true
+    t.string "acquired_by_user_login", limit: 128, null: false
+    t.string "acquisition_reason", null: false
+    t.datetime "acquired_at", null: false
+    t.integer "abandoned_by_user_id", unsigned: true
+    t.integer "abandoned_by_user_session_id", unsigned: true
+    t.string "abandoned_by_user_login", limit: 128
+    t.string "abandonment_reason"
+    t.datetime "abandoned_at"
+    t.index ["request_id"], name: "index_storage_maintenance_runs_on_request_id", unique: true
+    t.check_constraint "`acquired_by_user_id` > 0 and `acquired_by_user_session_id` > 0 and char_length(trim(`acquired_by_user_login`)) between 1 and 128 and char_length(trim(`acquisition_reason`)) between 1 and 255", name: "chk_storage_maintenance_acquisition"
+    t.check_constraint "`record_contract` > 0 and char_length(trim(`requested_profile`)) between 1 and 64", name: "chk_storage_maintenance_contract"
+    t.check_constraint "`request_id` regexp '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'", name: "chk_storage_maintenance_uuid"
+    t.check_constraint "`state` = 'reserved' and `revision` = 1 and `abandoned_by_user_id` is null and `abandoned_by_user_session_id` is null and `abandoned_by_user_login` is null and `abandonment_reason` is null and `abandoned_at` is null or `state` = 'abandoned' and `revision` = 2 and `abandoned_by_user_id` is not null and `abandoned_by_user_id` > 0 and `abandoned_by_user_session_id` is not null and `abandoned_by_user_session_id` > 0 and `abandoned_by_user_login` is not null and char_length(trim(`abandoned_by_user_login`)) between 1 and 128 and `abandonment_reason` is not null and char_length(trim(`abandonment_reason`)) between 1 and 255 and `abandoned_at` is not null", name: "chk_storage_maintenance_terminal_audit"
+    t.check_constraint "json_valid(`requested_scope_json`) and octet_length(`requested_scope_json`) <= 1048576 and `requested_scope_digest` regexp '^[0-9a-f]{64}$'", name: "chk_storage_maintenance_scope"
   end
 
   create_table "storage_mutation_attempts", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
@@ -2662,6 +2691,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_100000) do
   add_foreign_key "storage_filesystem_identities", "snapshot_in_pool_in_branches", column: "origin_snapshot_in_pool_in_branch_id"
   add_foreign_key "storage_filesystem_identities", "snapshot_in_pools", column: "origin_snapshot_in_pool_id"
   add_foreign_key "storage_filesystem_identities", "storage_observation_runs"
+  add_foreign_key "storage_freeze_controls", "storage_maintenance_runs", column: "active_maintenance_run_id"
   add_foreign_key "storage_freeze_transitions", "storage_freeze_controls"
   add_foreign_key "storage_integrity_scopes", "dataset_in_pools", on_delete: :nullify
   add_foreign_key "storage_integrity_scopes", "pools", on_delete: :nullify

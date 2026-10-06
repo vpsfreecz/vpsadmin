@@ -298,6 +298,8 @@ select:
       - "api/models/transaction_chains/storage/**"
       - "api/bin/vpsadmin-storage-reconcile"
       - "api/lib/vpsadmin/api/transaction_signer.rb"
+      - "api/models/storage_maintenance_run.rb"
+      - "api/models/storage_freeze_control.rb"
       - "api/models/storage_freeze_status.rb"
       - "api/models/storage_freeze_transition.rb"
       - "api/models/storage_observer_catch_up_audit.rb"

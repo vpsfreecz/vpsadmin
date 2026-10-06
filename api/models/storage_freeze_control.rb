@@ -1,4 +1,6 @@
 class StorageFreezeControl < ApplicationRecord
+  belongs_to :active_maintenance_run, class_name: 'StorageMaintenanceRun', optional: true
+
   enum :mode, %i[read_write read_only]
 
   validates :id, inclusion: { in: [1] }, if: :persisted?

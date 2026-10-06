@@ -30,6 +30,16 @@ en:
       wrong_length: is the wrong length (should be %{count} characters)
   vpsadmin:
     attributes:
+      abandoned_at:
+        label: Abandoned at
+      abandoned_by_user_id:
+        label: Abandoning administrator ID
+      abandoned_by_user_login:
+        label: Abandoning administrator login
+      abandoned_by_user_session_id:
+        label: Abandoning administrator session ID
+      abandonment_reason:
+        label: Abandonment reason
       access:
         choices:
           all:
@@ -56,6 +66,16 @@ en:
         label: Account_name
       accounted_by:
         label: Accounted_by
+      acquired_at:
+        label: Reserved at
+      acquired_by_user_id:
+        label: Acquiring administrator ID
+      acquired_by_user_login:
+        label: Acquiring administrator login
+      acquired_by_user_session_id:
+        label: Acquiring administrator session ID
+      acquisition_reason:
+        label: Reservation reason
       action:
         choices:
           approve:
@@ -78,6 +98,8 @@ en:
           'true':
             label: 'true'
         label: Active
+      active_maintenance:
+        label: Active API maintenance reservation
       add_ip_addresses:
         description: Add all IP addresses from this network to the database now
         label: Add_ip_addresses
@@ -759,6 +781,12 @@ en:
         label: Expected_content_revision
       expected_epoch:
         label: Expected storage mode epoch
+      expected_revision:
+        description: Reserved revision returned by maintenance_show
+        label: Expected maintenance revision
+      expected_scope_digest:
+        description: Digest returned by maintenance_show; changed scope refuses abandonment
+        label: Expected requested catalog scope digest
       expiration:
         description: A date after which the token becomes invalid
       expirations:
@@ -826,6 +854,8 @@ en:
         label: Free
       free_chain:
         label: Free chain
+      freeze_epoch:
+        label: Reserved storage mode epoch
       from:
         label: From
       from_bytes:
@@ -1497,6 +1527,10 @@ en:
         label: Pool
       pool_checked_at:
         label: Pool_checked_at
+      pool_ids:
+        description: Array of 1 to 256 distinct positive integer Pool IDs to snapshot
+          under the maintenance reservation lock
+        label: Requested storage pools
       pool_scan:
         choices:
           error:
@@ -1614,6 +1648,8 @@ en:
         label: Recent_since
       reconstructed:
         label: Reconstructed
+      record_contract:
+        label: Maintenance record contract
       recordsize:
         description: Specifies a suggested block size for files in the file system
         label: Record size
@@ -1673,10 +1709,19 @@ en:
         label: Reported_release
       request_count:
         label: Request count
+      request_id:
+        description: Canonical client UUID identifying this API-only reservation
+        label: Maintenance request UUID
       requested_at:
         label: Mode requested at
       requested_by_user_id:
         label: Requesting user ID
+      requested_pool_ids:
+        label: Requested storage pool IDs
+      requested_profile:
+        label: Requested maintenance profile
+      requested_scope_digest:
+        label: Requested catalog scope digest
       resource:
         description: Resource name of the located object
         label: Resource
@@ -3743,6 +3788,18 @@ en:
             label: Url
       storage_freeze:
         actions:
+          maintenance_abandon:
+            input:
+              expected_epoch:
+                description: Epoch returned by show; the request fails if it has changed
+              reason:
+                description: Reason for abandoning the API maintenance reservation
+          maintenance_reserve:
+            input:
+              expected_epoch:
+                description: Epoch returned by show; the request fails if it has changed
+              reason:
+                description: Reason for the API maintenance reservation
           read_only:
             input:
               expected_epoch:
@@ -3762,6 +3819,9 @@ en:
                   has changed
               reason:
                 description: Reason for settling observer intents
+        attributes:
+          id:
+            label: Id
       system_config:
         attributes:
           name:

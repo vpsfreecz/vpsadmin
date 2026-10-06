@@ -136,3 +136,58 @@ chains, confirmations, intents, attempts and locks appear quiet at a stable
 delayed osctld garbage collection quiet, so `repair_ready` remains false.
 Freezing admission, settling the DB, proving node quiet and authorizing a
 repair are separate operations.
+
+## API-only maintenance ownership
+
+The singular `storage_freeze` resource also exposes POST `maintenance_reserve`,
+GET `maintenance_show` and POST `maintenance_abandon`, each with its own action
+scope. They require an active direct administrator and open nondelegated
+session. This reservation prevents compatible API writers from unfreezing
+storage. It acquires no Node or physical interval, dispatches no command and
+accepts no exclusion evidence or repair approval.
+
+`maintenance_reserve` takes a canonical UUID, expected freeze epoch, reason and
+`pool_ids`: a JSON array of 1 to 256 distinct positive integers. Strings,
+floats, booleans, nulls and duplicate IDs are refused without coercion or
+normalization. The service locks singleton 1, revalidates the direct actor and
+session, then reads the requested Pools and Nodes under ordered row locks.
+The Pool IDs must match the requested set exactly. The service commits the run
+and active pointer in one short transaction while storage is `read_only` at
+the requested epoch.
+No lock spans a Node wait, capture or operator action.
+
+An exact retry of an active UUID returns the retained run only for the same
+acquiring actor/session, normalized reason, epoch, contract, profile and
+current catalog scope. Changed bindings or a completed UUID conflict. After
+a lost response, authenticated UUID lookup distinguishes a committed run from
+a failed request; lookup never reacquires ownership. Failures before commit
+roll back both run and pointer. A timeout, process exit, expired session or
+restart never clears a committed pointer. There is no automatic expiry or
+implicit takeover.
+
+`maintenance_abandon` compares UUID, freeze epoch, reserved revision 1 and
+requested scope digest. A fresh direct administrator may abandon the unused API reservation
+after its creator disconnects. Both actors remain in the audit. The service
+atomically records abandonment at revision 2 and clears the exact pointer,
+leaving `read_only` and its epoch unchanged. Exact terminal replay requires
+the same abandoning actor/session and request, unchanged epoch and no new
+owner. Unsupported contracts or later physical ownership cannot be abandoned
+through this API-only action. Changing mode to `read_write` is a separate
+audited request afterward.
+
+Every compatible `read_write` path refuses a nonnull owner pointer. Staged
+storage admission also refuses it even if the mode is contradictory
+`read_write`. Status includes bounded reservation metadata and compares its
+identity, contract, state and revision across the scan; ownership changes at
+the same epoch make the result unstable. No raw catalog scope paths appear in
+the public response. `db_drained` still describes bounded database work only;
+`repair_ready` remains false.
+
+The additive pointer cannot fence old API setters that ignore it. Deploy the
+compatible mode and admission readers across API, Supervisor, scheduler/task
+and administrative entrypoints, and exclude old unfreeze writers and direct
+out-of-band writes before relying on a reservation. Null ownership preserves
+ordinary legacy behavior. Code rollback while an owner is active is
+unsupported; keep compatible readers until explicit API-only abandonment or
+recovery through a future compatible physical owner. Node versions gain no
+physical exclusion capability from this API change.
