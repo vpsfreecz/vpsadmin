@@ -43,7 +43,8 @@ RSpec.describe 'VpsAdmin::API::Resources::StorageFreeze' do
     scopes = EndpointInventory.scopes_for_version(self, api_version)
     expect(scopes).to include(
       'storage_freeze#show', 'storage_freeze#read_only',
-      'storage_freeze#read_write', 'storage_freeze#settle_observer'
+      'storage_freeze#read_write', 'storage_freeze#settle_observer',
+      'storage_freeze#maintenance_reserve', 'storage_freeze#maintenance_show', 'storage_freeze#maintenance_abandon'
     )
   end
 
@@ -271,5 +272,139 @@ RSpec.describe 'VpsAdmin::API::Resources::StorageFreeze' do
     expect_status(409)
     expect(StorageObserverCatchUpAudit.event_requested.count).to eq(1)
     expect(StorageObserverCatchUpAudit.event_completed.count).to eq(0)
+  end
+
+  context 'with API-only maintenance reservations' do
+    let(:request_id) { SecureRandom.uuid }
+    let(:reservation_attrs) do
+      { request_id:, expected_epoch: StorageFreezeControl.singleton!.epoch,
+        pool_ids: [SpecSeed.pool.id], reason: 'API-only reservation' }
+    end
+
+    before { StorageFreezeControl.singleton!.update_columns(mode: 1) }
+
+    def reserve_api
+      json_post('maintenance_reserve', reservation_attrs)
+    end
+
+    def maintenance_get(id)
+      get path('maintenance_show'), { storage_freeze: { request_id: id } },
+          'CONTENT_TYPE' => 'application/json'
+    end
+
+    def abandon_api(result, **attrs)
+      json_post('maintenance_abandon', {
+        request_id: result.fetch('request_id'), expected_epoch: result.fetch('freeze_epoch'),
+        expected_revision: 1, expected_scope_digest: result.fetch('requested_scope_digest'),
+        reason: 'unused API reservation'
+      }.merge(attrs))
+    end
+
+    it 'reserves, looks up a UUID and abandons without unfreezing' do
+      as_admin do
+        reserve_api
+        expect_status(200)
+        result = status
+        expect(result).to include('state' => 'reserved', 'revision' => 1, 'record_contract' => 1,
+                                  'requested_profile' => 'manual_storage_only_v1',
+                                  'requested_pool_ids' => [SpecSeed.pool.id])
+        expect(result).not_to have_key('requested_scope_json')
+        maintenance_get(request_id)
+        expect_status(200)
+        expect(status).to eq(result)
+        json_get
+        expect_status(200)
+        expect(status['active_maintenance']['id']).to eq(result['id'])
+        abandon_api(result)
+        expect_status(200)
+        expect(status).to include('state' => 'abandoned', 'revision' => 2)
+        terminal = status
+        abandon_api(result)
+        expect_status(200)
+        expect(status).to eq(terminal)
+        maintenance_get(request_id)
+        expect_status(200)
+        expect(status).to eq(terminal)
+      end
+      expect(StorageFreezeControl.singleton!).to have_attributes(mode: 'read_only', epoch: reservation_attrs[:expected_epoch])
+    end
+
+    it 'requires direct-admin authorization on every reservation action' do
+      as_token(SpecSeed.user) { reserve_api }
+      expect_status(403)
+      as_token(SpecSeed.support) { maintenance_get(request_id) }
+      expect_status(403)
+      as_token(SpecSeed.admin, admin: SpecSeed.admin) { reserve_api }
+      expect_status(403)
+      expect(StorageMaintenanceRun.count).to eq(0)
+    end
+
+    it 'does not let a show-only scope reserve or abandon' do
+      as_token(SpecSeed.admin, scope: ['storage_freeze#maintenance_show']) do
+        reserve_api
+        expect_status(403)
+        json_post('maintenance_abandon', request_id:, expected_epoch: 0, expected_revision: 1,
+                                         expected_scope_digest: 'a' * 64, reason: 'refused')
+        expect_status(403)
+      end
+      expect(StorageMaintenanceRun.count).to eq(0)
+    end
+
+    it 'preserves custom JSON element types and rejects duplicates or missing Pools' do
+      as_admin do
+        [[SpecSeed.pool.id.to_s], [SpecSeed.pool.id.to_f], [true], [nil],
+         [SpecSeed.pool.id, SpecSeed.pool.id], (1..257).to_a].each do |ids|
+          json_post('maintenance_reserve', reservation_attrs.merge(pool_ids: ids))
+          expect_status(422)
+        end
+        json_post('maintenance_reserve', reservation_attrs.merge(pool_ids: []))
+        expect_status(200)
+        expect(json['status']).to be(false)
+        expect(json['response']).to be_nil
+        expect(json.dig('errors', 'pool_ids')).to eq(['must be present and non-empty'])
+        json_post('maintenance_reserve', reservation_attrs.merge(pool_ids: [2_000_000_000]))
+        expect_status(409)
+      end
+      expect(StorageMaintenanceRun.count).to eq(0)
+    end
+
+    it 'returns safe conflicts for stale CAS and for read-write while owned' do
+      as_admin do
+        reserve_api
+        expect_status(200)
+        result = status
+        json_post('read_write', expected_epoch: result['freeze_epoch'], reason: 'refused unfreeze')
+        expect_status(409)
+        abandon_api(result, expected_scope_digest: 'a' * 64)
+        expect_status(409)
+        abandon_api(result, expected_revision: 2)
+        expect_status(422)
+      end
+      expect(StorageFreezeControl.singleton!.active_maintenance_run_id).not_to be_nil
+    end
+
+    it 'refuses unknown owner contracts without leaking scope or changing them' do
+      as_admin do
+        reserve_api
+        expect_status(200)
+        result = status
+        StorageMaintenanceRun.find(result['id']).update_columns(record_contract: 2)
+        maintenance_get(request_id)
+        expect_status(409)
+        abandon_api(result)
+        expect_status(409)
+        json_get
+        expect_status(409)
+      end
+      expect(StorageFreezeControl.singleton!.active_maintenance_run_id).not_to be_nil
+    end
+
+    it 'requires UUID input and does not acquire a new owner during lookup' do
+      as_admin { maintenance_get(SecureRandom.uuid) }
+      expect_status(409)
+      as_admin { maintenance_get('invalid') }
+      expect_status(422)
+      expect(StorageMaintenanceRun.count).to eq(0)
+    end
   end
 end

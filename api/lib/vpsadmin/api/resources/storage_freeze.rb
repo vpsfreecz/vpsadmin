@@ -18,7 +18,8 @@ module VpsAdmin::API::Resources
       def status
         snapshot = ::StorageFreezeStatus.snapshot
         control = ::StorageFreezeControl.singleton!
-        matching = control.epoch == snapshot.fetch(:epoch)
+        matching = control.epoch == snapshot.fetch(:epoch) && control.mode == snapshot.fetch(:mode) &&
+                   ::StorageFreezeStatus.maintenance_summary(control) == snapshot.fetch(:active_maintenance)
         transition = ::StorageFreezeTransition.find_by(new_epoch: snapshot.fetch(:epoch))
         snapshot[:stable_epoch] = false unless matching
         snapshot[:db_drained] = false unless matching
@@ -42,6 +43,17 @@ module VpsAdmin::API::Resources
         )
       end
 
+      def maintenance_request
+        yield.summary
+      rescue ::StorageMutationAdmission::StaleEpoch, ::StorageMutationAdmission::MaintenanceConflict,
+             ::StorageMaintenanceRun::UnsupportedRecord, ActiveRecord::RecordNotFound
+        error!(VpsAdmin::API::I18n.message('errors.storage_freeze_conflict'), {}, http_status: 409)
+      rescue ArgumentError
+        error!(VpsAdmin::API::I18n.message('errors.storage_freeze_invalid_request'), {}, http_status: 422)
+      rescue ::StorageMutationAdmission::AuthorizationRefused
+        error!(VpsAdmin::API::I18n.message('errors.access_denied'), {}, http_status: 403)
+      end
+
       def change_mode(read_only:)
         ::StorageMutationAdmission.set_read_only_for_user!(
           read_only:, expected_epoch: input[:expected_epoch],
@@ -49,7 +61,8 @@ module VpsAdmin::API::Resources
           user_session: ::UserSession.current
         )
         status
-      rescue ::StorageMutationAdmission::StaleEpoch, ::StorageMutationAdmission::SameMode
+      rescue ::StorageMutationAdmission::StaleEpoch, ::StorageMutationAdmission::SameMode,
+             ::StorageMutationAdmission::MaintenanceConflict, ::StorageMaintenanceRun::UnsupportedRecord
         error!(VpsAdmin::API::I18n.message('errors.storage_freeze_conflict'), {}, http_status: 409)
       rescue ArgumentError
         error!(VpsAdmin::API::I18n.message('errors.storage_freeze_invalid_request'), {}, http_status: 422)
@@ -74,6 +87,7 @@ module VpsAdmin::API::Resources
       integer :requested_by_user_id, nullable: true, label: 'Requesting user ID'
       datetime :requested_at, nullable: true, label: 'Mode requested at'
       custom :transition, nullable: true
+      custom :active_maintenance, nullable: true, label: 'Active API maintenance reservation'
       datetime :observed_at
     end
 
@@ -92,6 +106,8 @@ module VpsAdmin::API::Resources
 
       def exec
         status
+      rescue ::StorageMaintenanceRun::UnsupportedRecord, ActiveRecord::RecordNotFound
+        error!(VpsAdmin::API::I18n.message('errors.storage_freeze_conflict'), {}, http_status: 409)
       end
     end
 
@@ -120,6 +136,108 @@ module VpsAdmin::API::Resources
 
       def exec
         change_mode(read_only: false)
+      end
+    end
+
+    params(:maintenance_identity) do
+      string :request_id, required: true, label: 'Maintenance request UUID',
+                          desc: 'Canonical client UUID identifying this API-only reservation'
+    end
+
+    params(:maintenance_result) do
+      integer :id
+      string :request_id, label: 'Maintenance request UUID'
+      integer :record_contract, label: 'Maintenance record contract'
+      string :requested_profile, label: 'Requested maintenance profile'
+      string :state
+      integer :revision
+      integer :freeze_epoch, label: 'Reserved storage mode epoch'
+      custom :requested_pool_ids, label: 'Requested storage pool IDs'
+      string :requested_scope_digest, label: 'Requested catalog scope digest'
+      integer :acquired_by_user_id, label: 'Acquiring administrator ID'
+      integer :acquired_by_user_session_id, label: 'Acquiring administrator session ID'
+      string :acquired_by_user_login, label: 'Acquiring administrator login'
+      string :acquisition_reason, label: 'Reservation reason'
+      datetime :acquired_at, label: 'Reserved at'
+      integer :abandoned_by_user_id, nullable: true, label: 'Abandoning administrator ID'
+      integer :abandoned_by_user_session_id, nullable: true, label: 'Abandoning administrator session ID'
+      string :abandoned_by_user_login, nullable: true, label: 'Abandoning administrator login'
+      string :abandonment_reason, nullable: true, label: 'Abandonment reason'
+      datetime :abandoned_at, nullable: true, label: 'Abandoned at'
+    end
+
+    class MaintenanceReserve < HaveAPI::Action
+      include Access
+
+      route 'maintenance_reserve'
+      http_method :post
+      desc 'Reserve API storage admission without acquiring physical maintenance ownership'
+      input do
+        use :maintenance_identity
+        use :change, include: [:expected_epoch]
+        text :reason, required: true, desc: 'Reason for the API maintenance reservation'
+        custom :pool_ids, required: true, label: 'Requested storage pools',
+                          desc: 'Array of 1 to 256 distinct positive integer Pool IDs to snapshot under the maintenance reservation lock'
+      end
+      output { use :maintenance_result }
+      authorize { |user| allow if Access.allowed?(user) }
+
+      def exec
+        maintenance_request do
+          ::StorageMutationAdmission.reserve_maintenance_for_user!(
+            request_id: input[:request_id], expected_epoch: input[:expected_epoch],
+            pool_ids: input[:pool_ids], reason: input[:reason],
+            user: current_user, user_session: ::UserSession.current
+          )
+        end
+      end
+    end
+
+    class MaintenanceShow < HaveAPI::Action
+      include Access
+
+      route 'maintenance_show'
+      http_method :get
+      desc 'Inspect an API maintenance reservation by UUID'
+      input { use :maintenance_identity }
+      output { use :maintenance_result }
+      authorize { |user| allow if Access.allowed?(user) }
+
+      def exec
+        maintenance_request do
+          ::StorageMutationAdmission.show_maintenance_for_user!(
+            request_id: input[:request_id], user: current_user, user_session: ::UserSession.current
+          )
+        end
+      end
+    end
+
+    class MaintenanceAbandon < HaveAPI::Action
+      include Access
+
+      route 'maintenance_abandon'
+      http_method :post
+      desc 'Abandon an API-only reservation while keeping storage read-only'
+      input do
+        use :maintenance_identity
+        use :change, include: [:expected_epoch]
+        text :reason, required: true, desc: 'Reason for abandoning the API maintenance reservation'
+        integer :expected_revision, required: true, label: 'Expected maintenance revision',
+                                    desc: 'Reserved revision returned by maintenance_show'
+        string :expected_scope_digest, required: true, label: 'Expected requested catalog scope digest',
+                                       desc: 'Digest returned by maintenance_show; changed scope refuses abandonment'
+      end
+      output { use :maintenance_result }
+      authorize { |user| allow if Access.allowed?(user) }
+
+      def exec
+        maintenance_request do
+          ::StorageMutationAdmission.abandon_maintenance_for_user!(
+            request_id: input[:request_id], expected_epoch: input[:expected_epoch],
+            expected_revision: input[:expected_revision], expected_scope_digest: input[:expected_scope_digest],
+            reason: input[:reason], user: current_user, user_session: ::UserSession.current
+          )
+        end
       end
     end
 

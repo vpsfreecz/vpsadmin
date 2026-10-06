@@ -74,3 +74,38 @@ cannot certify a scope. There is no executable reconciliation decision or
 action table in the current schema. The private planner's candidates cannot
 be applied until an approval and action journal with exact evidence, actor,
 key and freeze-epoch binding is implemented.
+
+## API maintenance reservations
+
+`StorageMaintenanceRun` retains an API reservation and its audit.
+`StorageFreezeControl.active_maintenance_run_id` is the single active owner
+pointer. Its unique index and restrictive FK prevent deletion of a referenced
+run. An existing installation starts with a null pointer and no run; provider
+state never creates API ownership.
+
+Record contract 1 has two states: `reserved` at revision 1 and `abandoned` at
+revision 2. Its requested profile is `manual_storage_only_v1`. Acquisition
+records a canonical client UUID, freeze epoch, requested catalog scope and
+SHA-256 digest, plus the locked administrator's user/session IDs, copied login,
+reason and time. The scope is canonical JSON of 1 to 256 distinct Pool claims
+in ID order, bounded to 1 MiB. Each claim copies Pool/node IDs, Pool role/filesystem, Node role and
+hypervisor type, and known catalog zpool GUID or null. These claims describe
+the requested catalog; they do not identify a physical dependency closure.
+Aliases and absent GUIDs remain unproved.
+
+The model keeps acquisition fields immutable. Its only supported update adds
+the abandoning administrator's separately copied identity, reason and time,
+changes state and advances revision. Database constraints enforce complete
+acquisition and terminal audit groups, state/revision pairs, JSON size/validity
+and UUID uniqueness. User/session and catalog identities are copied rather
+than cascading FKs. Privileged SQL can bypass model immutability; this schema
+is not a tamper-proof audit journal. Completed runs remain retained.
+
+The additive reservation migration preserves the existing singleton mode,
+epoch and freeze audit. Its down migration checks for any run or active
+pointer before DDL and refuses to discard consumed audit. Keep the additive
+schema on code rollback once a reservation has existed. Unknown record
+contracts, malformed scope or inconsistent ownership fail closed in supported
+reservation readers. A future physical handoff must change the recognized
+contract before accepting its first physical responsibility or evidence;
+contract 1 cannot represent that handoff.

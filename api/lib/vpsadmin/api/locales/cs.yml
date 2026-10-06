@@ -30,6 +30,16 @@ cs:
       wrong_length: nemá správnou délku (má mít %{count} znaků)
   vpsadmin:
     attributes:
+      abandoned_at:
+        label: Čas zrušení rezervace
+      abandoned_by_user_id:
+        label: ID administrátora, který zrušil rezervaci
+      abandoned_by_user_login:
+        label: Login administrátora, který zrušil rezervaci
+      abandoned_by_user_session_id:
+        label: ID relace administrátora, který zrušil rezervaci
+      abandonment_reason:
+        label: Důvod zrušení rezervace
       access:
         choices:
           all:
@@ -56,6 +66,16 @@ cs:
         label: Název účtu
       accounted_by:
         label: Účtováno podle
+      acquired_at:
+        label: Čas vytvoření rezervace
+      acquired_by_user_id:
+        label: ID administrátora, který vytvořil rezervaci
+      acquired_by_user_login:
+        label: Login administrátora, který vytvořil rezervaci
+      acquired_by_user_session_id:
+        label: ID relace administrátora, který vytvořil rezervaci
+      acquisition_reason:
+        label: Důvod rezervace
       action:
         choices:
           approve:
@@ -78,6 +98,8 @@ cs:
           'true':
             label: ano
         label: Aktivní
+      active_maintenance:
+        label: Aktivní rezervace údržby v API
       add_ip_addresses:
         description: Přidat nyní všechny IP adresy z této sítě do databáze
         label: Přidat IP adresy
@@ -760,6 +782,13 @@ cs:
         label: Očekávaná revize obsahu
       expected_epoch:
         label: Očekávaná epocha režimu úložiště
+      expected_revision:
+        description: Revize rezervace vrácená akcí maintenance_show
+        label: Očekávaná revize rezervace
+      expected_scope_digest:
+        description: Otisk vrácený akcí maintenance_show; při změně rozsahu se zrušení
+          rezervace zamítne
+        label: Očekávaný otisk požadovaného rozsahu katalogu
       expiration:
         description: Datum, po kterém token přestane být platný
       expirations:
@@ -826,6 +855,8 @@ cs:
         label: Volné
       free_chain:
         label: Volný řetězec
+      freeze_epoch:
+        label: Rezervovaná epocha režimu úložiště
       from:
         label: Od
       from_bytes:
@@ -1493,6 +1524,10 @@ cs:
         label: Pool
       pool_checked_at:
         label: Pool zkontrolován
+      pool_ids:
+        description: Pole 1 až 256 různých kladných celočíselných ID poolů, jejichž
+          stav v katalogu se zaznamená pod zámkem rezervace údržby
+        label: Požadované pooly úložiště
       pool_scan:
         choices:
           error:
@@ -1610,6 +1645,8 @@ cs:
         label: Nedávné od
       reconstructed:
         label: Rekonstruováno
+      record_contract:
+        label: Verze kontraktu záznamu údržby
       recordsize:
         description: Určuje doporučenou velikost bloku pro soubory v souborovém systému
         label: Velikost záznamu (recordsize)
@@ -1669,10 +1706,20 @@ cs:
         label: Hlášená verze jádra
       request_count:
         label: Počet požadavků
+      request_id:
+        description: UUID zadané klientem v kanonickém formátu, které identifikuje
+          tuto rezervaci pouze v API
+        label: UUID požadavku na údržbu
       requested_at:
         label: Čas požadavku
       requested_by_user_id:
         label: ID žádajícího uživatele
+      requested_pool_ids:
+        label: ID požadovaných poolů úložiště
+      requested_profile:
+        label: Požadovaný profil údržby
+      requested_scope_digest:
+        label: Otisk požadovaného rozsahu katalogu
       resource:
         description: Název zdroje nalezeného objektu
         label: Zdroj
@@ -3741,6 +3788,20 @@ cs:
             label: URL
       storage_freeze:
         actions:
+          maintenance_abandon:
+            input:
+              expected_epoch:
+                description: Epocha vrácená akcí show; pokud se změnila, požadavek
+                  se zamítne
+              reason:
+                description: Důvod zrušení rezervace údržby v API
+          maintenance_reserve:
+            input:
+              expected_epoch:
+                description: Epocha vrácená akcí show; pokud se změnila, požadavek
+                  se zamítne
+              reason:
+                description: Důvod rezervace údržby v API
           read_only:
             input:
               expected_epoch:
@@ -3762,6 +3823,9 @@ cs:
                   požadavek se zamítne
               reason:
                 description: Důvod uzavření pozorovacích záměrů
+        attributes:
+          id:
+            label: ID
       system_config:
         attributes:
           name:

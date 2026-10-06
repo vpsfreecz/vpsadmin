@@ -109,6 +109,9 @@ covered:
 - snapshot_download#delete
 - snapshot_download#index
 - snapshot_download#show
+- storage_freeze#maintenance_abandon
+- storage_freeze#maintenance_reserve
+- storage_freeze#maintenance_show
 - storage_freeze#read_only
 - storage_freeze#read_write
 - storage_freeze#settle_observer

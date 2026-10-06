@@ -229,3 +229,23 @@ drain status. Existing admitted chains may still settle, and the status does
 not prove NodeCtld children or delayed osctld work quiet. VPS start/stop and
 other opaque effects need guarded coverage before a frozen repair can be
 claimed ready. No scope is marked `verified` by this observer command.
+
+## Reservation boundary
+
+The [API-only maintenance reservation](integrity-model.md#api-only-maintenance-ownership)
+keeps compatible API callers from switching a reserved freeze to `read_write`.
+Its UUID correlates requests; its Pool claims describe the requested catalog
+scope. Neither establishes a physical hold, selects a maintenance generation
+or authorizes capture.
+`maintenance_abandon` ends only an unused contract 1 API reservation and leaves
+storage read-only. It cannot release a held Node or resolve uncertain physical
+work. The current capture and activity-report interfaces do not acquire or
+bind that reservation to physical exclusion; their advisory guarantees remain
+unchanged.
+
+Observer settlement can complete supported database work while the reservation
+is active. A drained status or successful capture still needs separate child
+exclusion, dependency closure, durable physical evidence and action approval
+before repair. A future handoff must change the reservation contract under its
+singleton authority before acquiring physical responsibilities. This API slice
+adds no executable action, approval, capture receipt or physical recovery path.

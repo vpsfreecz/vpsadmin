@@ -168,4 +168,19 @@ class CiTestSelectionTest < Minitest::Test
       assert_includes selection.tags, 'storage', path
     end
   end
+
+  def test_storage_maintenance_owner_selects_existing_storage_coverage
+    %w[api/models/storage_maintenance_run.rb api/models/storage_freeze_control.rb].each do |path|
+      selection = selector.select([path])
+      assert_equal 'selected', selection.mode, path
+      assert_includes selection.tags, 'storage', path
+      assert_includes selection.tags, 'webui-storage-backup-export', path
+    end
+  end
+
+  def test_storage_reservation_migration_retains_full_runtime_selection
+    selection = selector.select(['api/db/migrate/20261006120000_add_storage_maintenance_reservations.rb'])
+    assert_equal 'full', selection.mode
+    assert_equal 'tag=ci', selection.filter
+  end
 end

@@ -44,6 +44,7 @@ class StorageFreezeStatus
 
   def self.snapshot
     before = Control.find(1)
+    owner_before = maintenance_summary(before)
     handles = StorageEffectRegistry::ENTRIES.filter_map do |handle, entry|
       handle if entry.admission_required
     end
@@ -90,7 +91,12 @@ class StorageFreezeStatus
     end
     after = Control.find(1)
     mode = MODES.fetch(after.mode) { raise 'invalid storage freeze mode' }
-    stable = before.epoch == after.epoch && before.mode == after.mode
+    owner_after = maintenance_summary(after)
+    if owner_after && (owner_after[:state] != 'reserved' || owner_after[:freeze_epoch] != after.epoch)
+      raise StorageMaintenanceRun::UnsupportedRecord, 'maintenance owner is inconsistent'
+    end
+
+    stable = before.epoch == after.epoch && before.mode == after.mode && owner_before == owner_after
     blockers = counts.except(*INFORMATIONAL_COUNT_NAMES)
     sample_intent_ids = intents.where(phase: BLOCKING_INTENT_PHASES)
                                .order(:id).limit(SAMPLE_LIMIT).pluck(:id)
@@ -99,6 +105,7 @@ class StorageFreezeStatus
       mode: mode,
       epoch: after.epoch,
       stable_epoch: stable,
+      active_maintenance: owner_after,
       counts: counts,
       count_capped: capped,
       sample_chain_ids: active_chains.order(:id).limit(SAMPLE_LIMIT).pluck(:id),
@@ -107,6 +114,15 @@ class StorageFreezeStatus
       db_drained: stable && mode == 'read_only' && blockers.values.all?(&:zero?),
       repair_ready: false
     }
+  end
+
+  def self.maintenance_summary(control)
+    return if control.active_maintenance_run_id.nil?
+
+    run = StorageMaintenanceRun.find_by(id: control.active_maintenance_run_id)
+    raise StorageMaintenanceRun::UnsupportedRecord, 'maintenance owner is missing' unless run
+
+    run.summary
   end
 
   def self.chain_membership_sql
