@@ -152,8 +152,14 @@ function ip_address_list($page)
     foreach ($ips as $ip) {
         $netif = $ip->network_interface_id ? $ip->network_interface : null;
         $vps = $netif && $netif->vps_id ? $netif->vps : null;
+        $enabled = network_enabled_state($ip->network);
 
-        $xtpl->table_td($ip->network->address . '/' . $ip->network->prefix);
+        $network = h($ip->network->address . '/' . $ip->network->prefix);
+        if ($enabled === false) {
+            $network = '<span tabindex="0" title="' . h(_('This network is disabled for new allocations and assignments. Existing assignments remain usable.'))
+                . '">' . $network . '</span>';
+        }
+        $xtpl->table_td($network);
         $xtpl->table_td($ip->addr . '/' . $ip->prefix);
         $xtpl->table_td(approx_number($ip->size), false, true);
 
@@ -190,7 +196,7 @@ function ip_address_list($page)
                 . '</a>'
             );
 
-        } elseif (!$netif) {
+        } elseif (!$netif && $enabled !== false) {
             $xtpl->table_td(
                 '<a href="?page=networking&action=route_assign&id=' . $ip->id . '&return=' . $return_url . '">'
                 . '<img src="template/icons/vps_add.png" alt="' . _('Add to a VPS') . '" title="' . _('Add to a VPS') . '">'
@@ -202,7 +208,7 @@ function ip_address_list($page)
 
         // 		$xtpl->table_td('<a href="?page=cluster&action=ipaddr_delete&ip_id='.$ip->id.'"><img src="template/icons/m_delete.png"  title="'. _("Delete from cluster") .'" /></a>');
 
-        $xtpl->table_tr();
+        $xtpl->table_tr($enabled === false ? '#A6A6A6' : false);
     }
 
     $xtpl->table_pagination($pagination);
@@ -420,6 +426,7 @@ function route_edit_form($id)
     global $xtpl, $api;
 
     $ip = $api->ip_address->show($id);
+    $enabled = network_enabled_state($ip->network);
     $netif = $ip->network_interface_id ? $ip->network_interface : null;
     $vps = $netif && $netif->vps_id ? $netif->vps : null;
 
@@ -438,7 +445,7 @@ function route_edit_form($id)
     if ($vps) {
         $xtpl->sbar_add(_('Remove from VPS'), '?page=networking&action=route_unassign&id=' . $ip->id . '&return=' . $return_url);
 
-    } elseif (!$netif) {
+    } elseif (!$netif && $enabled !== false) {
         $xtpl->sbar_add(_('Add to a VPS'), '?page=networking&action=route_assign&id=' . $ip->id . '&return=' . $return_url);
     }
 
@@ -448,6 +455,12 @@ function route_edit_form($id)
     $xtpl->table_td(_('Network') . ':');
     $xtpl->table_td($ip->network->address . '/' . $ip->network->prefix);
     $xtpl->table_tr();
+
+    if ($enabled !== null) {
+        $xtpl->table_td(_('Network enabled') . ':');
+        $xtpl->table_td($enabled ? _('Enabled') : _('Disabled'));
+        $xtpl->table_tr();
+    }
 
     $xtpl->table_td(_('IP address') . ':');
     $xtpl->table_td($ip->addr . '/' . $ip->prefix);
@@ -590,6 +603,11 @@ function route_assign_form($id)
         _("Back"),
         $_GET['return'] ? $_GET['return'] : '?page=networking&action=ip_addresses'
     );
+
+    if (network_enabled_state($ip->network) === false) {
+        $xtpl->perex(_('Disabled'), _('Disabling prevents new allocations and assignments. Existing service continues, and operations already accepted may finish. Detached owned addresses cannot be assigned until the network is enabled again.'));
+        return;
+    }
 
     if ($_POST['vps']) {
         try {

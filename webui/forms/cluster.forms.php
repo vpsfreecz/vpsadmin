@@ -213,59 +213,92 @@ function networks_list()
     $xtpl->title(_('Networks'));
 
     $xtpl->table_add_category(_('Network'));
-    $xtpl->table_add_category(_('Location'));
-    $xtpl->table_add_category(_('Label'));
-    $xtpl->table_add_category(_('Type'));
-    $xtpl->table_add_category(_('Managed'));
-    $xtpl->table_add_category(_('Size'));
-    $xtpl->table_add_category(_('Used'));
-    $xtpl->table_add_category(_('Assigned'));
-    $xtpl->table_add_category(_('Owned'));
-    $xtpl->table_add_category(_('Free'));
-    $xtpl->table_add_category(_('IPs'));
-    $xtpl->table_add_category(_('Locations'));
+    $xtpl->table_add_category(_('Properties'));
+    $xtpl->table_add_category(_('IP usage'));
+    $xtpl->table_add_category(_('Actions'));
 
     $networks = $api->network->list();
+    $canUpdateEnabled = isset($api->network->update->getParameters('input')->enabled);
 
     foreach ($networks as $n) {
-        $xtpl->table_td($n->address . '/' . $n->prefix);
-        $xtpl->table_td($n->primary_location_id ? $n->primary_location->label : '-');
-        $xtpl->table_td($n->label);
-        $xtpl->table_td([
-            'public_access' => 'Pub',
-            'private_access' => 'Priv',
-        ][$n->role]);
-        $xtpl->table_td(boolean_icon($n->managed));
-        $xtpl->table_td(approx_number($n->size), false, true);
-        $xtpl->table_td($n->used, false, true);
-        $xtpl->table_td($n->assigned, false, true);
-        $xtpl->table_td($n->owned, false, true);
         $xtpl->table_td(
-            (approx_number($n->used - $n->taken))
-            . ' (' . (approx_number($n->size - $n->taken)) . ')',
-            false,
-            true
+            '<strong>' . h($n->address . '/' . $n->prefix) . '</strong>'
+            . '<div>' . h($n->label) . '</div>'
+            . '<div>' . h($n->primary_location_id ? $n->primary_location->label : '-') . '</div>'
         );
+        $enabled = network_enabled_state($n);
         $xtpl->table_td(
-            ip_list_link(
-                'cluster',
-                '<img
-				src="template/icons/vps_ip_list.png"
-				title="' . _('List IP addresses in this network') . '">',
-                ['network' => $n->id]
-            )
+            '<dl class="inline network-properties"><dt>' . h(_('Type')) . '</dt><dd>' . h([
+                'public_access' => 'Pub',
+                'private_access' => 'Priv',
+            ][$n->role]) . '</dd>'
+            . '<dt>' . h(_('Managed')) . '</dt><dd>' . boolean_icon($n->managed) . '</dd>'
+            . '<dt>' . h(_('Enabled')) . '</dt><dd data-network-enabled>' . ($enabled !== null
+                ? boolean_icon($enabled) . ($canUpdateEnabled
+                    ? ' <a href="?page=cluster&action=network_enabled&network=' . $n->id . '">'
+                        . h(_('Edit')) . '</a>' : '')
+                : '-') . '</dd></dl>'
         );
+        $attributes = $n->attributes();
+        $usage = '<dl class="inline network-usage">';
+        foreach ([
+            ['available_to_users', _('Available to users'), _('Registered addresses or prefixes with no owner or interface assignment, and not reserved by an operation. Disabled networks contribute zero. Use on a particular VPS also depends on location, network purpose and user limits.')],
+            ['owned_unassigned', _('Owned, not assigned'), _('Addresses or prefixes held by users but not assigned to any interface. Other users cannot take them. Includes reserved entries and disabled networks; assignment still requires an enabled network and no conflicting reservation.')],
+            ['assigned', _('Assigned'), _('Addresses or prefixes attached to network interfaces, including VPS and export interfaces. These entries can also have an owner.')],
+            ['used', _('Registered in vpsAdmin'), _('Addresses or prefixes registered in vpsAdmin, including owned and assigned entries.')],
+            ['size', _('Total capacity'), _('Number of allocation units implied by the network and split prefixes, including entries not yet registered. This is not the available pool.')],
+        ] as [$field, $label, $tooltip]) {
+            $value = $attributes[$field] ?? null;
+            $usage .= '<dt><span tabindex="0" title="' . h($tooltip) . '" aria-label="'
+                . h($label . '. ' . $tooltip) . '">' . h($label) . '</span></dt>'
+                . '<dd><strong data-network-count="' . h($field) . '">'
+                . (is_numeric($value) ? approx_number($value) : '-') . '</strong></dd>';
+        }
+        $xtpl->table_td($usage . '</dl>');
         $xtpl->table_td(
-            '<a href="?page=cluster&action=network_locations&network=' . $n->id . '">'
-            . '<img
-				src="template/icons/vps_ip_list.png"
-				title="' . _('List locations this network is available in') . '">'
-            . '</a>'
+            ip_list_link('cluster', h(_('IP addresses')), ['network' => $n->id])
+            . '<div><a href="?page=cluster&action=network_locations&network=' . $n->id . '">'
+            . h(_('Locations')) . '</a></div>'
         );
         $xtpl->table_tr();
     }
 
-    $xtpl->table_out();
+    $xtpl->table_out('network-list');
+}
+
+function network_enabled_form($network_id)
+{
+    global $xtpl, $api;
+
+    $network = $api->network->show($network_id);
+    $enabled = network_enabled_state($network);
+    $xtpl->title(_('Network availability'));
+    $xtpl->sbar_add(_('Back to networks'), '?page=cluster&action=networks');
+
+    if (!isset($api->network->update->getParameters('input')->enabled) || $enabled === null) {
+        return;
+    }
+
+    $xtpl->form_create('?page=cluster&action=network_enabled&network=' . $network->id, 'post');
+    foreach ([
+        _('Network') => $network->address . '/' . $network->prefix . ' (#' . $network->id . ')',
+        _('Assigned') => $network->assigned,
+        _('Owned') => $network->owned,
+    ] as $label => $value) {
+        $xtpl->table_td(h($label) . ':');
+        $xtpl->table_td(h($value));
+        $xtpl->table_tr();
+    }
+    $xtpl->form_set_hidden_fields(['enabled' => $enabled ? '0' : '1']);
+    $xtpl->table_td(
+        h(_('Disabling prevents new allocations and assignments. Existing service continues, and operations already accepted may finish. Detached owned addresses cannot be assigned until the network is enabled again.')),
+        false,
+        false,
+        2
+    );
+    $xtpl->table_tr();
+    $xtpl->form_add_checkbox(_('Confirm') . ':', 'confirm', '1', false);
+    $xtpl->form_out($enabled ? _('Disable this network') : _('Enable this network'));
 }
 
 function ip_list_link($page, $text, $conds)
