@@ -78,6 +78,93 @@ async function expectTableWithinContent(page, selector) {
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth + 1);
 }
 
+async function switchLanguage(page, locale) {
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+    page.locator(`#langbox a[href*="newlang=${encodeURIComponent(locale)}"]`).click(),
+  ]);
+}
+
+async function expectNetworkAlignment(row) {
+  await expect(row.locator('td')).toHaveCount(4);
+  await expect(row.locator('dl.inline.network-properties')).toHaveCount(1);
+  await expect(row.locator('dl.inline.network-usage')).toHaveCount(1);
+  const layout = await row.evaluate((element) => {
+    const bounds = (node) => {
+      const { top, bottom, left, right } = node.getBoundingClientRect();
+      return { top, bottom, left, right };
+    };
+    const textBounds = (node) => {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      return bounds(range);
+    };
+    return {
+      cells: [...element.children].map((cell) => ({
+        overflow: cell.scrollWidth - cell.clientWidth,
+        verticalAlign: getComputedStyle(cell).verticalAlign,
+      })),
+      groups: [...element.querySelectorAll('dl.inline')].map((list) => ({
+        counts: list.classList.contains('network-usage'),
+        bounds: bounds(list),
+        cell: bounds(list.parentElement),
+        display: getComputedStyle(list).display,
+        margins: ['marginTop', 'marginRight', 'marginBottom', 'marginLeft']
+          .map((name) => getComputedStyle(list)[name]),
+        rowGap: parseFloat(getComputedStyle(list).rowGap),
+        pairs: [...list.querySelectorAll('dt')].map((label) => {
+          const value = label.nextElementSibling;
+          return {
+            label: bounds(label),
+            labelText: textBounds(label),
+            labelWeight: getComputedStyle(label).fontWeight,
+            value: bounds(value),
+            valueText: textBounds(value),
+            valueAlign: getComputedStyle(value).textAlign,
+            countWeight: value.querySelector('strong')
+              ? getComputedStyle(value.querySelector('strong')).fontWeight : null,
+          };
+        }),
+      })),
+    };
+  });
+  for (const cell of layout.cells) {
+    expect(cell.verticalAlign).toBe('top');
+    expect(cell.overflow).toBeLessThanOrEqual(1);
+  }
+  expect(Math.abs(layout.groups[0].bounds.top - layout.groups[1].bounds.top)).toBeLessThanOrEqual(1);
+  for (const group of layout.groups) {
+    expect(group.display).toBe('grid');
+    expect(group.margins).toEqual(['0px', '0px', '0px', '0px']);
+    expect(group.rowGap).toBe(5);
+    expect(group.pairs).toHaveLength(group.counts ? 5 : 3);
+    expect(group.bounds.left).toBeGreaterThanOrEqual(group.cell.left);
+    expect(group.bounds.right).toBeLessThanOrEqual(group.cell.right);
+    for (const [index, pair] of group.pairs.entries()) {
+      expect(pair.labelWeight).toBe('400');
+      expect(pair.valueAlign).toBe(group.counts ? 'right' : 'left');
+      expect(pair.value.left - pair.label.right).toBeGreaterThanOrEqual(9);
+      expect(Math.abs(pair.label.top - pair.value.top)).toBeLessThanOrEqual(1);
+      expect(Math.abs(pair.labelText.left - pair.label.left)).toBeLessThanOrEqual(1);
+      expect(pair.labelText.right).toBeLessThanOrEqual(pair.label.right + 1);
+      expect(pair.valueText.left).toBeGreaterThanOrEqual(pair.value.left - 1);
+      expect(pair.valueText.right).toBeLessThanOrEqual(pair.value.right + 1);
+      expect(pair.valueText.bottom).toBeLessThanOrEqual(group.cell.bottom + 1);
+      const edge = group.counts ? 'right' : 'left';
+      expect(Math.abs(pair.valueText[edge] - pair.value[edge])).toBeLessThanOrEqual(1);
+      if (group.counts) {
+        expect(Number(pair.countWeight)).toBeGreaterThanOrEqual(700);
+        expect(Math.abs(pair.valueText.right - group.pairs[0].valueText.right)).toBeLessThanOrEqual(1);
+      }
+      if (index > 0) {
+        const previous = group.pairs[index - 1];
+        expect(Math.abs(pair.label.top - Math.max(previous.label.bottom, previous.value.bottom)
+          - group.rowGap)).toBeLessThanOrEqual(1);
+      }
+    }
+  }
+}
+
 function resourcePackageItemRow(page, resourceLabel) {
   return page.locator('table.table-style01 tr', {
     has: page.locator('a[href*="resource_packages_item_edit"]'),
@@ -193,6 +280,68 @@ test.describe.serial('admin cluster browser coverage', () => {
     await expectNotification(page, 'Changes saved');
 
     await logout(page, fixtures.admin.username);
+  });
+
+  test('network availability uses confirmed POST targets and retains inventory in both directions', async ({ page }, testInfo) => {
+    const network = requireClusterAdminFixtures().networks.networkToLocation;
+    await login(page, fixtures.admin);
+    await gotoCluster(page, 'network_enabled', { network: network.id });
+    let form = formByAction(page, 'action=network_enabled');
+    await expect(form).toBeVisible();
+    await expect(form).toHaveAttribute('method', /post/i);
+    await expect(form).toContainText(`#${network.id}`);
+    await expect(form).toContainText('Assigned');
+    await expect(form).toContainText('Owned');
+    await expect(form).toContainText('Existing service continues');
+    await expect(form.locator('input[name="enabled"]')).toHaveValue('0');
+    // GET renders a confirmation form; it cannot toggle availability.
+    await page.reload();
+    await expect(form.locator('input[name="enabled"]')).toHaveValue('0');
+    await form.locator('input[name="confirm"]').check();
+    await submitForm(form, 'Disable this network');
+    await expectNotification(page, 'Changes saved');
+    const networkRow = rowWithText(page, network.label);
+    await expect(networkRow.locator('td')).toHaveCount(4);
+    await expect(networkRow.locator('[data-network-count="available_to_users"]')).toHaveText('0');
+    const enabledIcon = networkRow.locator('td').filter({
+      has: page.locator(`a[href="?page=cluster&action=network_enabled&network=${network.id}"]`),
+    }).locator('[data-network-enabled] img');
+    await expect(enabledIcon).toHaveCount(1);
+    await expect(enabledIcon).toHaveAttribute('src', 'template/icons/transact_fail.png');
+    try {
+      for (const [language, locale, properties, usage] of [
+        ['en', 'en_US.utf8', 'Properties', 'IP usage'],
+        ['cs', 'cs_CZ.utf8', 'Vlastnosti', 'Využití IP'],
+      ]) {
+        await switchLanguage(page, locale);
+        await expect(page.locator('html')).toHaveAttribute('lang', language);
+        await expect(page.locator('#network-list th').nth(1)).toHaveText(properties);
+        await expect(page.locator('#network-list th').nth(2)).toHaveText(usage);
+        await networkRow.scrollIntoViewIfNeeded();
+        await expectTableWithinContent(page, '#network-list');
+        await expectNetworkAlignment(networkRow);
+        await expect(networkRow.locator('[data-network-count="available_to_users"]')).toHaveText('0');
+        await expect(enabledIcon).toHaveAttribute('src', 'template/icons/transact_fail.png');
+        await expect(networkRow.locator('a[href*="action=ip_addresses"]')).toBeVisible();
+        await expect(networkRow.locator('a[href*="action=network_locations"]')).toBeVisible();
+        await page.screenshot({ path: testInfo.outputPath(`network-list-alignment-${language}.png`), fullPage: false });
+        await expectNetworkAlignment(networkRow);
+      }
+    } finally {
+      await switchLanguage(page, 'en_US.utf8');
+    }
+    await gotoCluster(page, 'network_enabled', { network: network.id });
+    form = formByAction(page, 'action=network_enabled');
+    await expect(form.locator('input[name="enabled"]')).toHaveValue('1');
+    await form.locator('input[name="confirm"]').check();
+    await submitForm(form, 'Enable this network');
+    await expectNotification(page, 'Changes saved');
+    await expect(enabledIcon).toHaveAttribute('src', 'template/icons/transact_ok.png');
+    await logout(page, fixtures.admin.username);
+    await login(page, fixtures.user);
+    await gotoCluster(page, 'network_enabled', { network: network.id });
+    await expect(formByAction(page, 'action=network_enabled')).toHaveCount(0);
+    await logout(page, fixtures.user.username);
   });
 
   test('DNS resolver create, edit, and delete work from cluster admin', async ({ page }) => {

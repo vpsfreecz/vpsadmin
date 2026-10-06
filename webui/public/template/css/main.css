@@ -97,6 +97,28 @@ dl.inline dd {
   margin: 0;
 }
 
+#network-list td {
+  vertical-align: top;
+}
+
+#network-list dl.inline {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  margin: 0;
+}
+
+#network-list dt {
+  font-weight: normal;
+}
+
+#network-list dd {
+  text-align: left;
+}
+
+#network-list .network-usage dd {
+  text-align: right;
+}
+
 #password-change-history {
   table-layout: fixed;
 }

@@ -33,6 +33,15 @@ if (!defined('VPSADMIN_SERVER_TIME_ZONE')) {
     define('VPSADMIN_SERVER_TIME_ZONE', date_default_timezone_get());
 }
 
+function network_enabled_state(\HaveAPI\Client\ResourceInstance $network): ?bool
+{
+    // HaveAPI ResourceInstance exposes attributes through __get(), without __isset().
+    $attrs = $network->attributes();
+    $enabled = $attrs['enabled'] ?? null;
+
+    return is_bool($enabled) ? $enabled : null;
+}
+
 
 function get_free_route_list($res, $vps, $role = null, $limit = null)
 {
@@ -54,6 +63,10 @@ function get_free_route_list($res, $vps, $role = null, $limit = null)
 
     if ($role) {
         $filters['role'] = $role;
+    }
+
+    if (isset($api->ip_address->list->getParameters('input')->network_enabled)) {
+        $filters['network_enabled'] = true;
     }
 
     if ($limit) {
