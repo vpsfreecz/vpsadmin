@@ -24,6 +24,13 @@ module TransactionChains
 
       lock(primary_vps)
       lock(secondary_vps)
+      # Both child migrations retain existing allocations. Capture and lock
+      # their network union before either child can lock a current IP row.
+      reserved_ips = (primary_vps.ip_addresses.to_a + secondary_vps.ip_addresses.to_a).uniq(&:id)
+      admission_networks = ::IpAddress.lock_networks_for_use!(reserved_ips)
+      ::IpAddress.lock_all_current!(self, reserved_ips)
+      reserved_ips.each(&:ensure_admission_network!)
+      ::HostIpAddress.lock_all_with_ips!(self, reserved_ips.flat_map { |ip| ip.host_ip_addresses.to_a })
       concerns(:transform,
                [secondary_vps.class.name, secondary_vps.id],
                [primary_vps.class.name, primary_vps.id])
@@ -131,6 +138,7 @@ module TransactionChains
             replace_ips: false,
             resources: opts[:resources] ? primary_resources : nil,
             handle_ips: false,
+            admission_networks:,
             reallocate_ips: false,
             maintenance_window: false,
             send_mail: false
@@ -290,6 +298,7 @@ module TransactionChains
             replace_ips: false,
             resources: opts[:resources] ? secondary_resources : nil,
             handle_ips: false,
+            admission_networks:,
             reallocate_ips: false,
             maintenance_window: false,
             send_mail: false

@@ -439,6 +439,18 @@ module TransactionChains
     end
 
     def clone_network_interfaces(vps, dst_vps, attrs)
+      netifs = vps.network_interfaces.to_a
+      ip_counts = netifs.to_h { |netif| [netif.id, clone_ip_address_counts(netif)] }
+      candidate_network_ids = netifs.flat_map do |netif|
+        ip_counts.fetch(netif.id).flat_map do |resource, count|
+          next [] if count <= 0 || (resource == :ipv6 && !dst_vps.node.location.has_ipv6)
+
+          ::IpAddress.candidate_network_ids(
+            Ip::Allocate.selection_for(resource, dst_vps, address_location: attrs[:address_location])
+          )
+        end
+      end.uniq
+      admission_networks = ::Network.lock_for_admission!(candidate_network_ids)
       sums = {
         ipv4: 0,
         ipv4_private: 0,
@@ -446,13 +458,14 @@ module TransactionChains
       }
 
       # Allocate addresses to interfaces
-      vps.network_interfaces.each do |netif|
+      netifs.each do |netif|
         dst_netif = use_chain(
           NetworkInterface.chain_for(netif.kind, :Clone),
           args: [netif, dst_vps]
         )
 
-        sums.merge!(clone_ip_addresses(netif, dst_netif, attrs)) do |_key, old_val, new_val|
+        sums.merge!(clone_ip_addresses(dst_netif, attrs, ips: ip_counts.fetch(netif.id),
+                                                         admission_networks:, candidate_network_ids:)) do |_key, old_val, new_val|
           old_val + new_val
         end
       end
@@ -484,8 +497,8 @@ module TransactionChains
     # Clone IP addresses.
     # Allocates the equal number (or how many are available) of
     # IP addresses.
-    def clone_ip_addresses(netif, dst_netif, attrs)
-      ips = {
+    def clone_ip_address_counts(netif)
+      {
         ipv4: netif.ip_addresses.joins(:network).where(
           networks: {
             ip_version: 4,
@@ -504,7 +517,9 @@ module TransactionChains
           networks: { ip_version: 6 }
         ).count
       }
+    end
 
+    def clone_ip_addresses(dst_netif, attrs, ips:, admission_networks:, candidate_network_ids:)
       versions = %i[ipv4 ipv4_private]
       versions << :ipv6 if dst_netif.vps.node.location.has_ipv6
 
@@ -521,7 +536,9 @@ module TransactionChains
           kwargs: {
             strict: false,
             host_addrs: true,
-            address_location: attrs[:address_location]
+            address_location: attrs[:address_location],
+            admission_networks:,
+            candidate_network_ids:
           },
           method: :allocate_to_netif
         )

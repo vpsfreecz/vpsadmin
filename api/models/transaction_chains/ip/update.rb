@@ -8,10 +8,13 @@ module TransactionChains
     # @option opts [User] user
     # @option opts [Environment] environment
     def link_chain(ip, opts)
+      ::IpAddress.lock_networks_for_use!([ip]) if opts[:user]
       ip.lock_current!(self)
       @ip = ip
 
       return unless opts.has_key?(:user) && ip.user != opts[:user]
+
+      ip.ensure_network_enabled! if opts[:user]
 
       vps = ip.network_interface&.vps
       if vps && vps.node.location.environment.user_ip_ownership

@@ -17,6 +17,51 @@ class IpAddress < ApplicationRecord
 
   include Lockable
 
+  scope :unreserved, lambda {
+    where("NOT EXISTS (SELECT 1 FROM resource_locks rl WHERE rl.resource = 'IpAddress' AND rl.row_id = ip_addresses.id)")
+  }
+
+  # Capture network identities before IP row locks, then verify them again after
+  # reservation. Never acquire a different pool late in a locked batch.
+  def self.lock_networks_for_use!(ips, extra_network_ids: [])
+    identities = where(id: ips.map(&:id)).pluck(:id, :network_id).to_h
+    networks = ::Network.lock_for_admission!(identities.values + extra_network_ids)
+    ips.each { |ip| ip.remember_admission_network(networks[identities[ip.id]]) }
+    networks
+  end
+
+  def remember_admission_network(network)
+    @admission_network = network
+  end
+
+  def self.bind_admission_networks!(ips, networks)
+    ips.each { |ip| ip.remember_admission_network(networks[ip.network_id]) }
+  end
+
+  def lock_for_new_use!(chain, networks: nil)
+    if networks
+      self.class.bind_admission_networks!([self], networks)
+    else
+      self.class.lock_networks_for_use!([self])
+    end
+    lock_current!(chain)
+    ensure_network_enabled!
+  end
+
+  def ensure_admission_network!
+    unless @admission_network && network_id == @admission_network.id
+      raise VpsAdmin::API::Exceptions::IpAddressInUse,
+            'IP address network changed during allocation'
+    end
+
+    self.network = @admission_network
+  end
+
+  def ensure_network_enabled!
+    ensure_admission_network!
+    network.ensure_enabled!
+  end
+
   # Reserve parents in a consistent order before reserving their host records.
   def self.lock_all_current!(chain, ips)
     ordered = ips.uniq(&:id).sort_by(&:id)
@@ -73,6 +118,7 @@ class IpAddress < ApplicationRecord
 
     transaction do
       params[:network].lock_for_registration!
+      params[:network].ensure_enabled! if params[:user]
       if params[:user] && (params[:allocate].nil? || params[:allocate])
         user_env = params[:user].environment_user_configs.find_by!(
           environment: charged_environment
@@ -165,9 +211,21 @@ class IpAddress < ApplicationRecord
   # @option opts [Array<::Network>] :except_networks
   # @option opts [Environment] :allocation_environment require compatible owned charges for automatic VPS allocation
   def self.pick_addr!(opts)
-    pick_scope(opts)
-      .joins("LEFT JOIN resource_locks rl ON rl.resource = 'IpAddress' AND rl.row_id = ip_addresses.id")
-      .where('rl.id IS NULL').take!
+    ids = candidate_network_ids(opts)
+    networks = ::Network.lock_for_admission!(ids)
+    pick_from_admitted_networks!(opts, networks)
+  end
+
+  # Internal preparation may reuse a map held by this SQL transaction. It must
+  # not expand its pool set after any source IP rows have been locked.
+  def self.pick_from_admitted_networks!(opts, networks)
+    pick_scope(opts).where(network_id: networks.keys).unreserved.take!.tap do |ip|
+      ip.remember_admission_network(networks[ip.network_id])
+    end
+  end
+
+  def self.candidate_network_ids(opts)
+    pick_scope(opts).reorder(nil).distinct.pluck(:network_id)
   end
 
   # Share selection criteria with the current check made after reservation.
@@ -179,6 +237,7 @@ class IpAddress < ApplicationRecord
             .joins(network: :location_networks)
             .where(
               networks: {
+                enabled: true,
                 ip_version: opts[:ip_v],
                 role: ::Network.roles[opts[:role]]
               }
@@ -233,7 +292,9 @@ class IpAddress < ApplicationRecord
 
   def ensure_pickable!(opts)
     ensure_charge_environment!
-    return if self.class.pick_scope(opts).where(id:).lock.exists?
+    # The IP row is already exclusively locked. A joined FOR UPDATE would
+    # upgrade the pool's shared admission lock and deadlock sibling allocations.
+    return if self.class.pick_scope(opts).where(id:).lock('LOCK IN SHARE MODE').exists?
 
     raise VpsAdmin::API::Exceptions::IpAddressInUse,
           'IP address is no longer available for this allocation'

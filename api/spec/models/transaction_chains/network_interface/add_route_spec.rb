@@ -9,6 +9,20 @@ RSpec.describe TransactionChains::NetworkInterface::AddRoute do
 
   let(:user) { SpecSeed.user }
 
+  [nil, :admin, :user].each do |actor|
+    it "rejects disabled detached owned allocations for #{actor || 'internal'} callers" do
+      fixture = create_netif_vps_fixture!(user: user)
+      ip = create_ip_address!(user: user)
+      ip.network.update!(enabled: false)
+      actor_user = { admin: SpecSeed.admin, user: user }[actor]
+      opts = actor ? { actor: actor_user } : {}
+      expect { described_class.fire(fixture[:netif], [ip], **opts) }
+        .to raise_error(VpsAdmin::API::Exceptions::IpAddressInvalid, /disabled/)
+      expect(ip.reload.user_id).to eq(user.id)
+      expect(ip.network_interface_id).to be_nil
+    end
+  end
+
   it 'locks resources, adds routes, reallocates resources, and updates exports' do
     fixture = create_netif_vps_fixture!(
       user: user,

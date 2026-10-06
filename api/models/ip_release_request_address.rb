@@ -57,7 +57,7 @@ class IpReleaseRequestAddress < ApplicationRecord
     return if ip_release_campaign.closed_at || released_at || excluded_at || release_in_progress?
 
     ip = IpAddress.find_by(id: ip_address_id)
-    ip.id if ip && original_allocation?(ip) && ip.free?
+    ip.id if ip && original_allocation?(ip) && ip.free? && ip.network.enabled?
   end
 
   def location_label

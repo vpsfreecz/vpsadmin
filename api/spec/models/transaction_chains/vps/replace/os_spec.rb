@@ -261,12 +261,13 @@ RSpec.describe TransactionChains::Vps::Replace::Os do
     fixture = create_replace_fixture
     vps = fixture.fetch(:vps)
     netif = create_network_interface!(vps, name: 'eth0')
-    create_ip_address!(
+    ip = create_ip_address!(
       network: SpecSeed.network_v4,
       location: fixture.fetch(:src_node).location,
       network_interface: netif,
       addr: "192.0.2.#{20 + SecureRandom.random_number(40)}"
     )
+    ip.network.update!(enabled: false)
 
     chain, dst_vps = described_class.fire(
       vps,

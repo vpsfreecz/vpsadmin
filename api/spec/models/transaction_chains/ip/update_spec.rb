@@ -34,6 +34,21 @@ RSpec.describe TransactionChains::Ip::Update do
     ip
   end
 
+  it 'rejects new or different ownership while allowing same-owner no-op and disownership' do
+    ip = create_owned_ip
+    ip.network.update!(enabled: false)
+    expect do
+      described_class.fire(ip, user: SpecSeed.other_user, environment: SpecSeed.environment)
+    end.to raise_error(VpsAdmin::API::Exceptions::IpAddressInvalid, /disabled/)
+    expect(ip.reload.user_id).to eq(SpecSeed.user.id)
+    expect { described_class.fire(ip, user: SpecSeed.user, environment: SpecSeed.environment) }.not_to raise_error
+    expect { described_class.fire(ip, user: nil) }.not_to raise_error
+    expect(ip.reload.user_id).to be_nil
+    expect do
+      described_class.fire(ip, user: SpecSeed.user, environment: SpecSeed.environment)
+    end.to raise_error(VpsAdmin::API::Exceptions::IpAddressInvalid, /disabled/)
+  end
+
   it 'moves resource use from the old owner to the new owner' do
     ip = create_owned_ip
     before_old = resource_use_value(user: SpecSeed.user, environment: SpecSeed.environment, resource: :ipv4)

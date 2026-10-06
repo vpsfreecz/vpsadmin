@@ -18,6 +18,7 @@ module VpsAdmin::API::Resources
       integer :prefix
       string :role, choices: ::Network.roles.keys
       bool :managed
+      bool :enabled, label: 'Enabled', desc: 'Allow new allocations and assignments'
       string :split_access, choices: ::Network.split_accesses.keys
       integer :split_prefix
       string :purpose, choices: ::Network.purposes.keys
@@ -35,7 +36,7 @@ module VpsAdmin::API::Resources
 
       input do
         resource Location
-        use :common, include: %i[purpose]
+        use :common, include: %i[purpose enabled]
         string :usable_for, choices: %w[vps export], label: 'Usable for',
                             desc: 'Filter by compatible network purpose, including networks with purpose any'
       end
@@ -47,7 +48,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         output whitelist: %i[
-          id address prefix ip_version role split_access split_prefix purpose
+          id address prefix ip_version role split_access split_prefix purpose enabled
         ]
         allow
       end
@@ -63,6 +64,7 @@ module VpsAdmin::API::Resources
 
         q = q.where(purpose: ::Network.purposes[input[:purpose]]) if input[:purpose]
         q = q.where(purpose: ::Network.purposes_for_use(input[:usable_for])) if input[:usable_for]
+        q = q.where(enabled: input[:enabled]) if input.has_key?(:enabled)
         q
       end
 
@@ -85,7 +87,7 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         output whitelist: %i[
-          id address prefix ip_version role split_access split_prefix purpose
+          id address prefix ip_version role split_access split_prefix purpose enabled
         ]
         allow
       end
@@ -202,7 +204,7 @@ module VpsAdmin::API::Resources
         }
       rescue ActiveRecord::RecordInvalid => e
         error!('add failed', e.record.errors.to_hash)
-      rescue ArgumentError => e
+      rescue ArgumentError, VpsAdmin::API::Exceptions::IpAddressInvalid => e
         error!(e.message)
       end
     end
