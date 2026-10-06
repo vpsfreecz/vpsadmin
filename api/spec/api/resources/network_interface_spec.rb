@@ -389,11 +389,12 @@ RSpec.describe 'VpsAdmin::API::Resources::NetworkInterface' do
       end
     end
 
-    it 'expands host details for an export owner without widening direct IP access' do
+    it 'expands disabled host details for an export owner without widening direct IP access' do
       network = SpecSeed.network_v4
       own_ip = IpAddress.create!(network: network, network_interface: netif,
                                  ip_addr: '192.0.2.231', prefix: 32, size: 1)
       host = HostIpAddress.create!(ip_address: own_ip, ip_addr: own_ip.ip_addr)
+      network.update!(enabled: false)
 
       as(SpecSeed.user) { json_get vpath("/ip_addresses/#{own_ip.id}") }
       expect_status(404)
@@ -403,20 +404,23 @@ RSpec.describe 'VpsAdmin::API::Resources::NetworkInterface' do
 
       as(SpecSeed.user) do
         json_get vpath('/host_ip_addresses'), host_ip_address: { network: network.id },
-                                              _meta: { includes: 'ip_address__network_interface__vps' }
+                                              _meta: { includes: 'ip_address__network,ip_address__network_interface__vps' }
       end
       expect_status(200)
       row = json.dig('response', 'host_ip_addresses').find { |item| item['id'] == host.id }
       expect(row.dig('ip_address', 'network_interface')).to include('id' => netif.id, 'vps' => nil)
+      expect(row.dig('ip_address', 'network')).to include('id' => network.id, 'enabled' => false)
 
       [SpecSeed.user, SpecSeed.admin].each do |actor|
         as(actor) do
           json_get vpath("/host_ip_addresses/#{host.id}"),
-                   _meta: { includes: 'ip_address__network_interface__vps' }
+                   _meta: { includes: 'ip_address__network,ip_address__network_interface__vps' }
         end
         expect_status(200)
         expect(json.dig('response', 'host_ip_address', 'ip_address', 'network_interface'))
           .to include('id' => netif.id, 'vps' => nil)
+        expect(json.dig('response', 'host_ip_address', 'ip_address', 'network'))
+          .to include('id' => network.id, 'enabled' => false)
       end
 
       as(SpecSeed.other_user) { json_get vpath("/host_ip_addresses/#{host.id}") }
@@ -430,7 +434,7 @@ RSpec.describe 'VpsAdmin::API::Resources::NetworkInterface' do
       expect(json.dig('response', 'host_ip_addresses').map { |item| item['id'] }).not_to include(host.id)
     end
 
-    it 'expands export interfaces in compatible IP and host address lists' do
+    it 'expands disabled owned export interfaces in compatible IP and host address lists' do
       network = Network.create!(
         label: 'Export on any-purpose network', address: '198.51.100.0', prefix: 24,
         ip_version: 4, role: :public_access, purpose: :any, managed: false,
@@ -440,6 +444,7 @@ RSpec.describe 'VpsAdmin::API::Resources::NetworkInterface' do
                              ip_addr: '198.51.100.20', prefix: 32, size: 1,
                              charged_environment: SpecSeed.environment)
       host = HostIpAddress.create!(ip_address: ip, ip_addr: ip.ip_addr)
+      network.update!(enabled: false)
 
       [SpecSeed.user, SpecSeed.admin].each do |actor|
         as(actor) do
