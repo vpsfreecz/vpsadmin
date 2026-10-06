@@ -529,6 +529,29 @@ if (isAdmin()) {
             $xtpl->sbar_add(_("Back to networks"), '?page=cluster&action=networks');
             break;
 
+        case 'network_enabled':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                csrf_check();
+                $enabled = $_POST['enabled'] ?? null;
+                if (($_POST['confirm'] ?? null) !== '1' || !in_array($enabled, ['0', '1'], true)
+                    || !isset($api->network->update->getParameters('input')->enabled)) {
+                    network_enabled_form($_GET['network']);
+                    break;
+                }
+
+                try {
+                    $api->network($_GET['network'])->update(['enabled' => $enabled === '1']);
+                    notify_user(_('Changes saved'), '');
+                    redirect('?page=cluster&action=networks');
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(_('Update failed'), $e->getResponse());
+                    network_enabled_form($_GET['network']);
+                }
+            } else {
+                network_enabled_form($_GET['network']);
+            }
+            break;
+
         case "location_networks":
             location_networks_list($_GET['location']);
             $xtpl->sbar_add(_("Back to locations"), '?page=cluster&action=locations');

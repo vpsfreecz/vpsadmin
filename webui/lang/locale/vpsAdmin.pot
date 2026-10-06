@@ -107,8 +107,8 @@ msgstr ""
 msgid "File name"
 msgstr ""
 
-#: forms/backup.forms.php forms/cluster.forms.php forms/networking.forms.php
-#: forms/userns.forms.php pages/page_transactions.php
+#: forms/backup.forms.php forms/networking.forms.php forms/userns.forms.php
+#: pages/page_transactions.php
 msgid "Size"
 msgstr ""
 
@@ -392,17 +392,16 @@ msgstr ""
 msgid "Network"
 msgstr ""
 
-#: forms/cluster.forms.php forms/dns.forms.php forms/ip_release.forms.php
-#: forms/networking.forms.php forms/node.forms.php forms/outage.forms.php
-#: forms/users.forms.php forms/vps.forms.php pages/page_adminvps.php
-#: pages/page_cluster.php pages/page_networking.php
-msgid "Location"
+#: forms/cluster.forms.php
+msgid "Properties"
 msgstr ""
 
-#: forms/cluster.forms.php forms/dataset.forms.php forms/monitoring.forms.php
-#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
-#: pages/page_adminm.php pages/page_backup.php pages/page_cluster.php
-msgid "Label"
+#: forms/cluster.forms.php
+msgid "IP usage"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Actions"
 msgstr ""
 
 #: forms/cluster.forms.php forms/dns.forms.php forms/oom_reports.forms.php
@@ -416,20 +415,66 @@ msgstr ""
 msgid "Managed"
 msgstr ""
 
-#: forms/cluster.forms.php pages/page_adminm.php
-msgid "Used"
+#: forms/cluster.forms.php forms/dns.forms.php forms/export.forms.php
+#: forms/networking.forms.php forms/users.forms.php pages/page_cluster.php
+msgid "Enabled"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Available to users"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid ""
+"Registered addresses or prefixes with no owner or interface assignment, and "
+"not reserved by an operation. Disabled networks contribute zero. Use on a "
+"particular VPS also depends on location, network purpose and user limits."
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid ""
+"Addresses or prefixes held by users but not assigned to any interface. Other "
+"users cannot take them. Includes reserved entries and disabled networks; "
+"assignment still requires an enabled network and no conflicting reservation."
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Owned, not assigned"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid ""
+"Addresses or prefixes attached to network interfaces, including VPS and "
+"export interfaces. These entries can also have an owner."
 msgstr ""
 
 #: forms/cluster.forms.php forms/networking.forms.php
 msgid "Assigned"
 msgstr ""
 
-#: forms/cluster.forms.php forms/dns.forms.php forms/networking.forms.php
-msgid "Owned"
+#: forms/cluster.forms.php
+msgid ""
+"Addresses or prefixes registered in vpsAdmin, including owned and assigned "
+"entries."
 msgstr ""
 
-#: forms/cluster.forms.php forms/ip_release.forms.php
-msgid "IPs"
+#: forms/cluster.forms.php
+msgid "Registered in vpsAdmin"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid ""
+"Number of allocation units implied by the network and split prefixes, "
+"including entries not yet registered. This is not the available pool."
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Total capacity"
+msgstr ""
+
+#: forms/cluster.forms.php forms/dns.forms.php forms/ip_release.forms.php
+#: forms/vps.forms.php
+msgid "IP addresses"
 msgstr ""
 
 #: forms/cluster.forms.php forms/ip_release.forms.php forms/outage.forms.php
@@ -437,11 +482,37 @@ msgid "Locations"
 msgstr ""
 
 #: forms/cluster.forms.php
-msgid "List IP addresses in this network"
+msgid "Network availability"
+msgstr ""
+
+#: forms/cluster.forms.php pages/page_cluster.php
+msgid "Back to networks"
+msgstr ""
+
+#: forms/cluster.forms.php forms/dns.forms.php forms/networking.forms.php
+msgid "Owned"
+msgstr ""
+
+#: forms/cluster.forms.php forms/networking.forms.php
+msgid ""
+"Disabling prevents new allocations and assignments. Existing service "
+"continues, and operations already accepted may finish. Detached owned "
+"addresses cannot be assigned until the network is enabled again."
+msgstr ""
+
+#: forms/cluster.forms.php forms/dns.forms.php forms/export.forms.php
+#: forms/monitoring.forms.php forms/networking.forms.php forms/users.forms.php
+#: forms/vps.forms.php pages/page_adminvps.php pages/page_backup.php
+#: pages/page_cluster.php pages/page_dataset.php
+msgid "Confirm"
 msgstr ""
 
 #: forms/cluster.forms.php
-msgid "List locations this network is available in"
+msgid "Disable this network"
+msgstr ""
+
+#: forms/cluster.forms.php
+msgid "Enable this network"
 msgstr ""
 
 #: forms/cluster.forms.php
@@ -450,6 +521,12 @@ msgstr ""
 
 #: forms/cluster.forms.php
 msgid "Add location"
+msgstr ""
+
+#: forms/cluster.forms.php forms/dataset.forms.php forms/monitoring.forms.php
+#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
+#: pages/page_adminm.php pages/page_backup.php pages/page_cluster.php
+msgid "Label"
 msgstr ""
 
 #: forms/cluster.forms.php forms/dns.forms.php
@@ -484,6 +561,13 @@ msgstr ""
 
 #: forms/cluster.forms.php
 msgid "Add network to location"
+msgstr ""
+
+#: forms/cluster.forms.php forms/dns.forms.php forms/ip_release.forms.php
+#: forms/networking.forms.php forms/node.forms.php forms/outage.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminvps.php
+#: pages/page_cluster.php pages/page_networking.php
+msgid "Location"
 msgstr ""
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
@@ -527,11 +611,6 @@ msgstr ""
 #: pages/page_backup.php pages/page_cluster.php pages/page_incidents.php
 #: pages/page_lifetimes.php pages/page_monitoring.php
 msgid "Back"
-msgstr ""
-
-#: forms/cluster.forms.php forms/dns.forms.php forms/ip_release.forms.php
-#: forms/vps.forms.php
-msgid "IP addresses"
 msgstr ""
 
 #: forms/cluster.forms.php
@@ -665,13 +744,6 @@ msgstr ""
 msgid ""
 "<b>Warning:</b> The package will also be immediately removed from all users "
 "that are using it."
-msgstr ""
-
-#: forms/cluster.forms.php forms/dns.forms.php forms/export.forms.php
-#: forms/monitoring.forms.php forms/networking.forms.php forms/users.forms.php
-#: forms/vps.forms.php pages/page_adminvps.php pages/page_backup.php
-#: pages/page_cluster.php pages/page_dataset.php
-msgid "Confirm"
 msgstr ""
 
 #: forms/cluster.forms.php forms/networking.forms.php forms/users.forms.php
@@ -1013,11 +1085,6 @@ msgstr ""
 
 #: forms/dns.forms.php
 msgid "Source"
-msgstr ""
-
-#: forms/dns.forms.php forms/export.forms.php forms/users.forms.php
-#: pages/page_cluster.php
-msgid "Enabled"
 msgstr ""
 
 #: forms/dns.forms.php forms/incidents.forms.php forms/monitoring.forms.php
@@ -1905,7 +1972,7 @@ msgstr ""
 msgid "Allowed"
 msgstr ""
 
-#: forms/ip_release.forms.php
+#: forms/ip_release.forms.php forms/networking.forms.php
 msgid "Disabled"
 msgstr ""
 
@@ -2037,6 +2104,10 @@ msgstr ""
 
 #: forms/ip_release.forms.php
 msgid "Kept"
+msgstr ""
+
+#: forms/ip_release.forms.php
+msgid "IPs"
 msgstr ""
 
 #: forms/ip_release.forms.php
@@ -2398,6 +2469,12 @@ msgstr ""
 msgid "'unassigned' to list free addresses"
 msgstr ""
 
+#: forms/networking.forms.php
+msgid ""
+"This network is disabled for new allocations and assignments. Existing "
+"assignments remain usable."
+msgstr ""
+
 #: forms/networking.forms.php forms/vps.forms.php
 msgid "List incident reports"
 msgstr ""
@@ -2440,6 +2517,10 @@ msgstr ""
 
 #: forms/networking.forms.php pages/page_index.php
 msgid "Overview"
+msgstr ""
+
+#: forms/networking.forms.php pages/page_adminvps.php
+msgid "Network enabled"
 msgstr ""
 
 #: forms/networking.forms.php forms/vps.forms.php
@@ -5864,6 +5945,10 @@ msgid "Step size"
 msgstr ""
 
 #: pages/page_adminm.php
+msgid "Used"
+msgstr ""
+
+#: pages/page_adminm.php
 msgid "Request approved"
 msgstr ""
 
@@ -6489,10 +6574,6 @@ msgstr ""
 
 #: pages/page_adminvps.php
 msgid "Failed to disable network"
-msgstr ""
-
-#: pages/page_adminvps.php
-msgid "Network enabled"
 msgstr ""
 
 #: pages/page_adminvps.php
@@ -7486,10 +7567,6 @@ msgstr ""
 
 #: pages/page_cluster.php pages/page_security_advisory.php
 msgid "Delete failed"
-msgstr ""
-
-#: pages/page_cluster.php
-msgid "Back to networks"
 msgstr ""
 
 #: pages/page_cluster.php
