@@ -99,6 +99,29 @@ RSpec.describe 'VpsAdmin::API::Resources::HostIpAddress' do
   end
 
   describe 'Index' do
+    it 'retains disabled assigned hosts and their included allocation details' do
+      _vps, netif = create_vps_with_netif!(user: SpecSeed.user)
+      network = SpecSeed.network_v4
+      ip = create_ip_address!(network:, ip_addr: '192.0.2.29', prefix: 32, size: 1, netif:)
+      host = create_host_ip!(ip_address: ip, ip_addr: ip.ip_addr)
+      network.update!(enabled: false)
+
+      as(SpecSeed.user) do
+        json_get index_path, host_ip_address: { network: network.id },
+                             _meta: { includes: 'ip_address__network' }
+      end
+      expect_status(200)
+      expect(host_list.map { |row| row['id'] }).to eq([host.id])
+      expect(host_list.first.dig('ip_address', 'network')).to include('id' => network.id, 'enabled' => false)
+
+      as(SpecSeed.user) { json_get show_path(host.id), _meta: { includes: 'ip_address__network' } }
+      expect_status(200)
+      expect(host_obj.dig('ip_address', 'network')).to include('id' => network.id, 'enabled' => false)
+
+      as(SpecSeed.other_user) { json_get show_path(host.id) }
+      expect_status(404)
+    end
+
     context 'with network purpose filters' do
       let(:purpose_records) do
         _vps, netif = create_vps_with_netif!(user: SpecSeed.user)

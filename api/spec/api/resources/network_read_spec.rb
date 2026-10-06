@@ -46,6 +46,83 @@ RSpec.describe 'VpsAdmin::API::Resources::Network' do
   end
 
   describe 'Index' do
+    context 'with a disabled network' do
+      before { ipv4_network.update!(enabled: false) }
+
+      %i[user support].each do |actor|
+        it "lists only enabled networks for #{actor}" do
+          as(SpecSeed.public_send(actor)) { json_get index_path }
+
+          expect_status(200)
+          expect(nets.map { |row| row['id'] }).to contain_exactly(ipv6_network.id)
+        end
+
+        it "intersects an explicit disabled filter for #{actor}" do
+          as(SpecSeed.public_send(actor)) { json_get index_path, network: { enabled: false } }
+
+          expect_status(200)
+          expect(nets).to be_empty
+        end
+      end
+
+      it 'preserves admin inventory and exact availability filters' do
+        as(SpecSeed.admin) { json_get index_path }
+        expect_status(200)
+        expect(nets.map { |row| row['id'] }).to contain_exactly(ipv4_network.id, ipv6_network.id)
+
+        as(SpecSeed.admin) { json_get index_path, network: { enabled: false } }
+        expect_status(200)
+        expect(nets.map { |row| row['id'] }).to eq([ipv4_network.id])
+
+        as(SpecSeed.admin) { json_get index_path, network: { enabled: true } }
+        expect_status(200)
+        expect(nets.map { |row| row['id'] }).to eq([ipv6_network.id])
+      end
+
+      it 'filters before counting and traversing pages' do
+        next_network = Network.create!(
+          label: 'Enabled pagination network', address: '203.0.113.0', prefix: 24,
+          ip_version: 4, role: :private_access, purpose: :any, managed: false,
+          split_access: :no_access, split_prefix: 32, primary_location: SpecSeed.location
+        )
+
+        as(SpecSeed.user) { json_get index_path, network: { limit: 1 }, _meta: { count: true } }
+        expect_status(200)
+        expect(nets.map { |row| row['id'] }).to eq([ipv6_network.id])
+        expect(json.dig('response', '_meta', 'total_count')).to eq(2)
+
+        as(SpecSeed.user) { json_get index_path, network: { limit: 1, from_id: ipv6_network.id } }
+        expect_status(200)
+        expect(nets.map { |row| row['id'] }).to eq([next_network.id])
+
+        as(SpecSeed.user) { json_get index_path, network: { limit: 1, from_id: next_network.id } }
+        expect_status(200)
+        expect(nets).to be_empty
+      end
+
+      it 'preserves location and purpose filter intersections' do
+        as(SpecSeed.user) do
+          json_get index_path, network: { location: SpecSeed.location.id, usable_for: 'vps' }
+        end
+        expect_status(200)
+        expect(nets).to be_empty
+
+        as(SpecSeed.user) do
+          json_get index_path, network: { location: SpecSeed.other_location.id, purpose: 'vps', enabled: true }
+        end
+        expect_status(200)
+        expect(nets.map { |row| row['id'] }).to eq([ipv6_network.id])
+      end
+
+      it 'lists a network again after it is enabled' do
+        ipv4_network.update!(enabled: true)
+        as(SpecSeed.user) { json_get index_path }
+
+        expect_status(200)
+        expect(nets.map { |row| row['id'] }).to contain_exactly(ipv4_network.id, ipv6_network.id)
+      end
+    end
+
     context 'with network purpose filters' do
       let(:purpose_records) { purpose_networks }
 
@@ -151,6 +228,18 @@ RSpec.describe 'VpsAdmin::API::Resources::Network' do
   end
 
   describe 'Show' do
+    %i[user support].each do |actor|
+      it "preserves disabled network details for #{actor}" do
+        ipv4_network.update!(enabled: false)
+        as(SpecSeed.public_send(actor)) { json_get show_path(ipv4_network.id) }
+
+        expect_status(200)
+        expect(net_obj).to include('id' => ipv4_network.id, 'enabled' => false)
+        expect(net_obj).not_to have_key('label')
+        expect(net_obj).not_to have_key('managed')
+      end
+    end
+
     it 'rejects unauthenticated access' do
       json_get show_path(ipv4_network.id)
 

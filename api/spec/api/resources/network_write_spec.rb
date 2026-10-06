@@ -129,7 +129,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Network write actions' do # rubocop:di
     expect(ipv4_network.reload.enabled).to be(true)
   end
 
-  it 'rejects member writes while retaining readable disabled inventory and exact filters' do
+  it 'rejects member writes and hides disabled networks from lists while retaining details' do
     ipv4_network.update!(enabled: false)
     basic_authorize SpecSeed.user.login, SpecSeed::PASSWORD
     json_put(show_path(ipv4_network.id), network: { enabled: true })
@@ -139,8 +139,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Network write actions' do # rubocop:di
     expect(net_obj['enabled']).to be(false)
     get index_path, network: { enabled: false }
     expect_status(200)
-    expect(json.dig('response', 'networks').map { |network| network['id'] }).to include(ipv4_network.id)
-    expect(json.dig('response', 'networks').map { |network| network['enabled'] }).to all(be(false))
+    expect(json.dig('response', 'networks')).to be_empty
   end
 
   it 'rejects a charge environment without an owner atomically' do

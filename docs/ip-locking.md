@@ -51,10 +51,15 @@ the existing node protocol and stored resource-lock format.
 ## Network availability
 
 `Network.enabled` controls new allocations and assignments. It defaults to true;
-only administrators can change it. Disabled networks remain visible in ordinary
-inventory queries. `Network.Index` accepts an exact `enabled` filter, and
-`IpAddress.Index` accepts `network_enabled` for availability selectors. Neither
-filter changes ownership, assignment or visibility rules.
+only administrators can change it. Non-admin network lists show enabled networks.
+Their IP lists retain addresses from enabled networks, their own detached
+addresses, and assigned addresses they already have permission to read.
+Disabled free inventory is hidden. Administrators retain the full inventory.
+`Network.Index` accepts an exact `enabled` filter, and `IpAddress.Index` accepts
+`network_enabled`; these filters only narrow the caller's list. Counts and
+pagination use the same restricted query. Direct `Show` access and included
+associations keep their existing permissions, including access to disabled
+networks and addresses. List visibility does not permit a new assignment.
 
 New automatic allocations, explicit assignments of detached addresses, new IP
 ownership, ownership transfers and owned registration require an enabled network.

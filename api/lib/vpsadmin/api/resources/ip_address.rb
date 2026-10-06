@@ -178,6 +178,11 @@ class VpsAdmin::API::Resources::IpAddress < HaveAPI::Resource
 
       if current_user.role != :admin
         ips = self.class.resource.user_visible_scope(current_user, ips)
+        ips = ips.where(
+          'networks.enabled = ? OR ip_addresses.user_id = ?
+            OR ip_addresses.network_interface_id IS NOT NULL',
+          true, current_user.id
+        )
       end
 
       ips
