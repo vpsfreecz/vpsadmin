@@ -163,6 +163,15 @@ RSpec.describe StorageFreezeStatus do
       )
     end
 
+    def handoff(run)
+      StorageMutationAdmission.handoff_maintenance_for_user!(
+        request_id: run.request_id, expected_epoch: run.freeze_epoch, expected_contract: 1,
+        expected_revision: 1, expected_scope_digest: run.requested_scope_digest,
+        reason: 'status prospective responsibility', user: SpecSeed.admin,
+        user_session: UserSession.find(run.acquired_by_user_session_id)
+      )
+    end
+
     it 'reports bounded active reservation metadata without scope paths or physical authority' do
       run = reservation
       status = described_class.snapshot
@@ -187,8 +196,41 @@ RSpec.describe StorageFreezeStatus do
 
     it 'refuses unsupported owner records rather than reporting absence' do
       run = reservation
-      run.update_columns(record_contract: 2)
+      expect { run.update_columns(record_contract: 2) }.to raise_error(ActiveRecord::StatementInvalid)
+      run.reload.update_columns(requested_scope_json: '{}')
       expect { described_class.snapshot }.to raise_error(StorageMaintenanceRun::UnsupportedRecord)
+    end
+
+    it 'reports the supported handoff tuple and bounded copied audit without physical readiness' do
+      run = handoff(reservation)
+      status = described_class.snapshot
+      expect(status).to include(stable_epoch: true, db_drained: true, repair_ready: false)
+      expect(status[:active_maintenance]).to include(id: run.id, record_contract: 2, state: 'handoff_pending', revision: 2,
+                                                     handed_off_by_user_id: run.handed_off_by_user_id,
+                                                     handed_off_by_user_session_id: run.handed_off_by_user_session_id,
+                                                     handoff_reason: run.handoff_reason, handed_off_at: run.handed_off_at)
+      expect(status[:active_maintenance]).not_to have_key(:requested_scope_json)
+      expect(status).not_to have_key(:acquisition_ready)
+    end
+
+    it 'marks a handoff at the same epoch unstable across the status scan' do
+      run = reservation
+      calls = 0
+      allow(StorageFreezeStatus::Control).to receive(:find).and_wrap_original do |original, *args|
+        calls += 1
+        handoff(run) if calls == 2
+        original.call(*args)
+      end
+      status = described_class.snapshot
+      expect(status).to include(stable_epoch: false, db_drained: false, repair_ready: false, epoch: run.freeze_epoch)
+      expect(status[:active_maintenance]).to include(record_contract: 2, state: 'handoff_pending', revision: 2)
+    end
+
+    it 'refuses a supported handoff tuple at an inconsistent singleton epoch' do
+      run = handoff(reservation)
+      run.update_columns(freeze_epoch: run.freeze_epoch + 1)
+      expect { described_class.snapshot }.to raise_error(StorageMaintenanceRun::UnsupportedRecord)
+      expect(StorageFreezeControl.singleton!.active_maintenance_run_id).to eq(run.id)
     end
   end
 end

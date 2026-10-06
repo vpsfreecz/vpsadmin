@@ -780,14 +780,14 @@ cs:
         label: Důvod výjimky administrátora
       expected_content_revision:
         label: Očekávaná revize obsahu
+      expected_contract:
+        description: Předchozí kontrakt rezervace pouze v API; musí být 1
+        label: Očekávaný kontrakt záznamu údržby
       expected_epoch:
         label: Očekávaná epocha režimu úložiště
       expected_revision:
-        description: Revize rezervace vrácená akcí maintenance_show
         label: Očekávaná revize rezervace
       expected_scope_digest:
-        description: Otisk vrácený akcí maintenance_show; při změně rozsahu se zrušení
-          rezervace zamítne
         label: Očekávaný otisk požadovaného rozsahu katalogu
       expiration:
         description: Datum, po kterém token přestane být platný
@@ -892,9 +892,19 @@ cs:
           current:
             label: Aktuální
         label: Stav systému
+      handed_off_at:
+        label: Čas potvrzení odpovědnosti
+      handed_off_by_user_id:
+        label: ID odpovědného administrátora
+      handed_off_by_user_login:
+        label: Login administrátora při převzetí odpovědnosti
+      handed_off_by_user_session_id:
+        label: ID relace odpovědného administrátora
       handled_by:
         description: Filtrovat hlášení řešená uživatelem
         label: Řeší
+      handoff_reason:
+        label: Důvod převzetí odpovědnosti
       has_hypervisor:
         label: Má hypervisor
       has_ipv6:
@@ -3793,8 +3803,25 @@ cs:
               expected_epoch:
                 description: Epocha vrácená akcí show; pokud se změnila, požadavek
                   se zamítne
+              expected_revision:
+                description: Revize rezervace vrácená akcí maintenance_show
+              expected_scope_digest:
+                description: Otisk vrácený akcí maintenance_show; při změně rozsahu
+                  se zrušení rezervace zamítne
               reason:
                 description: Důvod zrušení rezervace údržby v API
+          maintenance_handoff:
+            input:
+              expected_epoch:
+                description: Epocha vrácená akcí show; pokud se změnila, požadavek
+                  se zamítne
+              expected_revision:
+                description: Předchozí revize rezervace pouze v API; musí být 1
+              expected_scope_digest:
+                description: Otisk vrácený akcí maintenance_show; při změně záznamů
+                  katalogu se převzetí odpovědnosti zamítne
+              reason:
+                description: Důvod přijetí odpovědnosti za zamýšlenou údržbu
           maintenance_reserve:
             input:
               expected_epoch:

@@ -779,13 +779,14 @@ en:
         label: Admin exemption reason
       expected_content_revision:
         label: Expected_content_revision
+      expected_contract:
+        description: API-only predecessor contract, which must be 1
+        label: Expected maintenance record contract
       expected_epoch:
         label: Expected storage mode epoch
       expected_revision:
-        description: Reserved revision returned by maintenance_show
         label: Expected maintenance revision
       expected_scope_digest:
-        description: Digest returned by maintenance_show; changed scope refuses abandonment
         label: Expected requested catalog scope digest
       expiration:
         description: A date after which the token becomes invalid
@@ -891,9 +892,19 @@ en:
           current:
             label: current
         label: Generation
+      handed_off_at:
+        label: Responsibility acknowledged at
+      handed_off_by_user_id:
+        label: Responsible administrator ID
+      handed_off_by_user_login:
+        label: Administrator login at handoff
+      handed_off_by_user_session_id:
+        label: Responsible administrator session ID
       handled_by:
         description: Filter outages handled by user
         label: Handled by
+      handoff_reason:
+        label: Handoff reason
       has_hypervisor:
         label: Has hypervisor
       has_ipv6:
@@ -3792,8 +3803,24 @@ en:
             input:
               expected_epoch:
                 description: Epoch returned by show; the request fails if it has changed
+              expected_revision:
+                description: Reserved revision returned by maintenance_show
+              expected_scope_digest:
+                description: Digest returned by maintenance_show; changed scope refuses
+                  abandonment
               reason:
                 description: Reason for abandoning the API maintenance reservation
+          maintenance_handoff:
+            input:
+              expected_epoch:
+                description: Epoch returned by show; the request fails if it has changed
+              expected_revision:
+                description: API-only predecessor revision, which must be 1
+              expected_scope_digest:
+                description: Digest returned by maintenance_show; changed catalog
+                  claims refuse handoff
+              reason:
+                description: Reason for accepting prospective maintenance responsibility
           maintenance_reserve:
             input:
               expected_epoch:

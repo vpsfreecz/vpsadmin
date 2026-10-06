@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_130000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -1952,11 +1952,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
     t.string "abandoned_by_user_login", limit: 128
     t.string "abandonment_reason"
     t.datetime "abandoned_at"
+    t.integer "handed_off_by_user_id", unsigned: true
+    t.integer "handed_off_by_user_session_id", unsigned: true
+    t.string "handed_off_by_user_login", limit: 128
+    t.string "handoff_reason"
+    t.datetime "handed_off_at"
     t.index ["request_id"], name: "index_storage_maintenance_runs_on_request_id", unique: true
     t.check_constraint "`acquired_by_user_id` > 0 and `acquired_by_user_session_id` > 0 and char_length(trim(`acquired_by_user_login`)) between 1 and 128 and char_length(trim(`acquisition_reason`)) between 1 and 255", name: "chk_storage_maintenance_acquisition"
+    t.check_constraint "`record_contract` = 1 and cast(`requested_profile` as char charset binary) = 'manual_storage_only_v1' and cast(`state` as char charset binary) in ('reserved','abandoned') and (`state` = 'reserved' and `revision` = 1 and `abandoned_by_user_id` is null and `abandoned_by_user_session_id` is null and `abandoned_by_user_login` is null and `abandonment_reason` is null and `abandoned_at` is null or `state` = 'abandoned' and `revision` = 2 and `abandoned_by_user_id` is not null and `abandoned_by_user_id` > 0 and `abandoned_by_user_session_id` is not null and `abandoned_by_user_session_id` > 0 and `abandoned_by_user_login` is not null and char_length(trim(`abandoned_by_user_login`)) between 1 and 128 and `abandonment_reason` is not null and char_length(trim(`abandonment_reason`)) between 1 and 255 and `abandoned_at` is not null) and `handed_off_by_user_id` is null and `handed_off_by_user_session_id` is null and `handed_off_by_user_login` is null and `handoff_reason` is null and `handed_off_at` is null or `record_contract` = 2 and cast(`requested_profile` as char charset binary) = 'manual_storage_only_v1' and cast(`state` as char charset binary) = 'handoff_pending' and `revision` = 2 and `abandoned_by_user_id` is null and `abandoned_by_user_session_id` is null and `abandoned_by_user_login` is null and `abandonment_reason` is null and `abandoned_at` is null and `handed_off_by_user_id` is not null and `handed_off_by_user_id` > 0 and `handed_off_by_user_session_id` is not null and `handed_off_by_user_session_id` > 0 and `handed_off_by_user_login` is not null and char_length(trim(`handed_off_by_user_login`)) between 1 and 128 and `handoff_reason` is not null and char_length(trim(`handoff_reason`)) between 1 and 255 and `handed_off_at` is not null", name: "chk_storage_maintenance_terminal_audit"
     t.check_constraint "`record_contract` > 0 and char_length(trim(`requested_profile`)) between 1 and 64", name: "chk_storage_maintenance_contract"
     t.check_constraint "`request_id` regexp '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'", name: "chk_storage_maintenance_uuid"
-    t.check_constraint "`state` = 'reserved' and `revision` = 1 and `abandoned_by_user_id` is null and `abandoned_by_user_session_id` is null and `abandoned_by_user_login` is null and `abandonment_reason` is null and `abandoned_at` is null or `state` = 'abandoned' and `revision` = 2 and `abandoned_by_user_id` is not null and `abandoned_by_user_id` > 0 and `abandoned_by_user_session_id` is not null and `abandoned_by_user_session_id` > 0 and `abandoned_by_user_login` is not null and char_length(trim(`abandoned_by_user_login`)) between 1 and 128 and `abandonment_reason` is not null and char_length(trim(`abandonment_reason`)) between 1 and 255 and `abandoned_at` is not null", name: "chk_storage_maintenance_terminal_audit"
     t.check_constraint "json_valid(`requested_scope_json`) and octet_length(`requested_scope_json`) <= 1048576 and `requested_scope_digest` regexp '^[0-9a-f]{64}$'", name: "chk_storage_maintenance_scope"
   end
 
