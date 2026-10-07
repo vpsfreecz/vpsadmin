@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'rack/test'
+require_relative 'request_exception_diagnostics'
 
 module ApiAppHelper
   include Rack::Test::Methods
@@ -10,7 +11,7 @@ module ApiAppHelper
   end
 
   def self.app_instance
-    @app_instance ||= VpsAdmin::API.default.app
+    @app_instance ||= RequestExceptionDiagnostics::App.new(VpsAdmin::API.default.app)
   end
 end
 

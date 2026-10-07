@@ -232,18 +232,7 @@ jobs:
           TOPIC: ${{ matrix.topic }}
         run: |
           set -euo pipefail
-          bundle exec ruby -rjson -rdigest -rrspec/core -e '
-            evidence = {
-              mode: ENV.fetch("SPEC_MODE"),
-              topic: ENV.fetch("TOPIC"),
-              ruby: RUBY_DESCRIPTION,
-              bundler: Bundler::VERSION,
-              rspec: RSpec::Core::Version::STRING,
-              gemfile_lock_sha256: Digest::SHA256.file(Bundler.default_lockfile).hexdigest
-            }
-            File.write("tmp/rspec-environment-#{evidence[:mode]}-#{evidence[:topic]}.json",
-                       JSON.pretty_generate(evidence) + "\n")
-          '
+          bundle exec ruby spec/ci_environment.rb
 
       - name: Run RSpec (topic)
         working-directory: api
@@ -268,6 +257,7 @@ jobs:
           path: |
             api/tmp/rspec-results-${{ env.SPEC_MODE }}-${{ matrix.topic }}.json
             api/tmp/rspec-environment-${{ env.SPEC_MODE }}-${{ matrix.topic }}.json
+            api/tmp/rspec-Gemfile-${{ env.SPEC_MODE }}-${{ matrix.topic }}.lock
           if-no-files-found: error
           retention-days: 7
 
@@ -374,18 +364,7 @@ jobs:
           TOPIC: ${{ matrix.topic }}
         run: |
           set -euo pipefail
-          bundle exec ruby -rjson -rdigest -rrspec/core -e '
-            evidence = {
-              mode: ENV.fetch("SPEC_MODE"),
-              topic: ENV.fetch("TOPIC"),
-              ruby: RUBY_DESCRIPTION,
-              bundler: Bundler::VERSION,
-              rspec: RSpec::Core::Version::STRING,
-              gemfile_lock_sha256: Digest::SHA256.file(Bundler.default_lockfile).hexdigest
-            }
-            File.write("tmp/rspec-environment-#{evidence[:mode]}-#{evidence[:topic]}.json",
-                       JSON.pretty_generate(evidence) + "\n")
-          '
+          bundle exec ruby spec/ci_environment.rb
 
       - name: Run RSpec (topic)
         working-directory: api
@@ -410,6 +389,7 @@ jobs:
           path: |
             api/tmp/rspec-results-${{ env.SPEC_MODE }}-${{ matrix.topic }}.json
             api/tmp/rspec-environment-${{ env.SPEC_MODE }}-${{ matrix.topic }}.json
+            api/tmp/rspec-Gemfile-${{ env.SPEC_MODE }}-${{ matrix.topic }}.lock
           if-no-files-found: error
           retention-days: 7
 

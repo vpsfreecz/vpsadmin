@@ -91,11 +91,14 @@ Each job uploads these artifacts for seven days, including on failure:
 - `rspec-files-<mode>-<topic>` contains `rspec-files-<mode>-<topic>.txt`, selected
   before dependency setup, with paths relative to `api/`.
 - `rspec-results-<mode>-<topic>` contains native RSpec
-  `rspec-results-<mode>-<topic>.json` and
-  `rspec-environment-<mode>-<topic>.json`. RSpec also prints the documentation
-  formatter to stdout and retains its failure exit status. Environment evidence
-  records the mode/topic, Ruby/Bundler/RSpec versions and SHA256 of the effective
-  generated `api/Gemfile.lock`; CI does not resolve from `packages/api/Gemfile.lock`.
+  `rspec-results-<mode>-<topic>.json`,
+  `rspec-environment-<mode>-<topic>.json` and the exact effective
+  `rspec-Gemfile-<mode>-<topic>.lock`. RSpec also prints the documentation formatter
+  to stdout and retains its failure exit status. Environment evidence records
+  the mode/topic, Ruby/RubyGems/Bundler/RSpec versions, sorted resolved gem
+  name/version/platform values and SHA256 of that lock companion. CI uses the
+  generated `api/Gemfile.lock`, not `packages/api/Gemfile.lock`. Resolved specs
+  describe the effective bundle; they do not prove that every gem was loaded.
 
 Missing or malformed result JSON is incomplete evidence. For comparisons, use
 artifacts from explicit run IDs and attempts, retain their separate directories,
@@ -105,6 +108,58 @@ Normalize only a harmless leading `./` in paths/IDs; keep the full scoped ID
 suffix. Seed, order and duration may differ. A selected file can have no executed
 examples after filtering, so manifest coverage and example parity are separate
 checks.
+
+### Request exception evidence
+
+The spec Rack app observes HaveAPI exception dispatch before a listener can stop
+it. On failure, an example emits one `API_REQUEST_EXCEPTION_DIAGNOSTICS ` reporter
+message containing diagnostic format 1 JSON. The native JSON formatter retains
+the message in `messages`. Passing and pending examples discard their buffers.
+For each request, the wrapper calls the original memoized app once and preserves
+its status, headers and body.
+
+Each event is bound to the current example, request ordinal, execution thread and
+exact in-flight Rack environment. It records the method, final HTTP status when
+available, dispatcher name, primary exception class and up to two cause classes.
+Frames contain only enumerated public Ruby source IDs and line numbers from the
+checkout API/plugin source or loaded gem `lib` files. It records no exception
+message, SQL, request path, parameters, headers, body, credentials or absolute
+paths. This restriction applies to the new packet; it does not sanitize existing
+framework or RSpec output.
+
+Each example retains at most eight events and 16 KiB, including the fixed prefix.
+The observer inspects at most 64 locations per exception and retains at most six
+public frames. Cycles and truncation have fixed indicators. Unknown values and
+observer errors use fixed markers. Nested calls restore their scope, and calls outside
+the current request are not attributed to an earlier request. Both dispatcher
+stages remain distinct. Earlier request events stay grouped with their actual
+example; they are not assigned to its final failing assertion. Missing
+output after process loss or an outside-example error is incomplete evidence.
+
+`spec/ci_environment.rb` uses Bundler's effective lockfile and resolved specs.
+The helper copies exact lock bytes only after validating regular files within
+its size bounds, fresh ordinary outputs and public rubygems.org-only sources.
+It refuses credential-bearing, GIT, PATH and unknown source forms without
+excerpts. The results artifact allowlist contains only its three explicit
+companions. Missing lock/environment
+companions leave dependency reproduction unproved; a preparation failure is
+separate from an RSpec failure.
+
+For focused diagnostics, enter the declared API shell separately for each mode
+and run:
+
+```bash
+VPSADMIN_PLUGINS=none nix develop .#api -c bundle exec rspec spec/smoke/request_exception_diagnostics_spec.rb spec/smoke/api_boot_spec.rb spec/api/resources/environment_write_spec.rb --format documentation --format json --out "$DIAGNOSTIC_RESULT"
+VPSADMIN_PLUGINS=all nix develop .#api -c bundle exec rspec spec/smoke/request_exception_diagnostics_spec.rb spec/smoke/api_boot_spec.rb spec/api/resources/environment_write_spec.rb --format documentation --format json --out "$DIAGNOSTIC_RESULT"
+```
+
+Use separate fresh result destinations and the ordinary owned disposable database
+contract. Keep the exact source, mode, example IDs, seed, order and dependency
+companions when diagnosing CI. A local pass with a different Ruby, Bundler or
+lock does not explain a prior generic HTTP 500. These diagnostics provide test
+evidence only; API behavior, production handlers, authorization and database
+contracts are unchanged.
+Old checkouts and rollback lack the new evidence without changing API behavior.
 
 ### Local topic reproduction
 
