@@ -20,8 +20,10 @@ GUID of the managed filesystem at `Pool.filesystem`.
 
 A `StorageFilesystemIdentity` row represents a managed Pool root, DIP, tree,
 branch or snapshot clone. Exactly one catalog owner key belongs on a row.
-The owner ID remains copied when a live FK clears. A unique owner index
-prevents two identities for the same catalog object. For a known path, the
+The owner links are restrictive foreign keys; the row has no separate copied
+owner ID. Scopes and mutation targets retain copied catalog IDs when their
+live links clear. A unique owner index prevents two identities for the same
+catalog object. For a known path, the
 unique `(node_id, path_digest)` claim prevents two identities from claiming
 one node path. The application derives the SHA-256 digest from exact path
 bytes and compares full paths on a digest match. Path collation is binary.
