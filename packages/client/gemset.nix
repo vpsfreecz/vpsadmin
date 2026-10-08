@@ -315,10 +315,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1ijpbj7mdrq7rhpq2kb51yykhrs2s54wfs6sm9z3icgz4y6sb7rp";
+      sha256 = "1yv9n69g99wldlx04q3my61jy5cf75z5xvd0n1465vxvxac2wac9";
       type = "gem";
     };
-    version = "1.1.1";
+    version = "1.1.2";
   };
   vpsadmin-client = {
     dependencies = [

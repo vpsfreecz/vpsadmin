@@ -42,7 +42,7 @@ GEM
       cbor (~> 0.5.9)
       openssl-signature_algorithm (~> 1.0)
     csv (3.3.6)
-    date (3.5.1)
+    date (3.6.0)
     diff-lcs (1.6.2)
     dnsruby (1.74.0)
       base64 (>= 0.2)
@@ -129,7 +129,8 @@ GEM
     mysql2 (0.5.7)
       bigdecimal
     nesty (1.0.2)
-    net-http (0.9.1)
+    net-http (0.10.0)
+      net-protocol (>= 0.3.0)
       uri (>= 0.11.1)
     net-imap (0.6.7)
       date
@@ -266,7 +267,7 @@ GEM
     unicode-display_width (3.3.0)
       unicode-emoji (~> 4.3)
     unicode-emoji (4.3.0)
-    uri (1.1.1)
+    uri (1.1.2)
     user_agent_parser (2.21.0)
     webauthn (3.4.3)
       android_key_attestation (~> 0.3.0)
