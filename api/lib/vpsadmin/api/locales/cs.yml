@@ -261,6 +261,12 @@ cs:
         label: Dostupné
       available_space:
         label: Dostupné místo
+      available_to_users:
+        description: Evidované adresy nebo prefixy bez vlastníka a bez přiřazení k
+          rozhraní, které nejsou rezervované probíhající operací. V zakázané síti
+          je tento počet nulový. Použití na konkrétním VPS závisí také na lokaci,
+          účelu sítě a limitech uživatele.
+        label: Volné pro uživatele
       bcc:
         label: Bcc
       before_available:
@@ -1427,6 +1433,12 @@ cs:
       owned:
         description: Počet IP adres vlastněných některými uživateli
         label: Vlastněno
+      owned_unassigned:
+        description: Adresy nebo prefixy vlastněné uživateli, které nejsou přiřazené
+          k žádnému rozhraní. Jiný uživatel je nemůže převzít. Počet zahrnuje i rezervované
+          adresy a zakázané sítě; přiřazení vyžaduje povolenou síť a nesmí mu bránit
+          rezervace.
+        label: Vlastněné, nepřiřazené
       packets:
         label: Pakety
       packets_in:

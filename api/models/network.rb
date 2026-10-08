@@ -123,6 +123,16 @@ class Network < ApplicationRecord
     ).count
   end
 
+  def available_to_users
+    return 0 unless enabled?
+
+    ip_addresses.where(user_id: nil, network_interface_id: nil).unreserved.count
+  end
+
+  def owned_unassigned
+    ip_addresses.where.not(user_id: nil).where(network_interface_id: nil).count
+  end
+
   # Changing quota semantics requires an explicit conversion of existing IPs.
   # Registration takes this same SQL row lock before adding the first address.
   def preserve_allocation_resource
