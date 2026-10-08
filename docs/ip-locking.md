@@ -61,6 +61,17 @@ pagination use the same restricted query. Direct `Show` access and included
 associations keep their existing permissions, including access to disabled
 networks and addresses. List visibility does not permit a new assignment.
 
+Administrators receive two read-only network counts. `available_to_users` counts
+registered allocations without an owner, interface assignment or resource
+reservation, and is zero when the network is disabled. `owned_unassigned` counts
+owned allocations without an interface, including reserved allocations and
+disabled networks. Each registered address or prefix contributes one row.
+`used` is registered stock and `size` is theoretical capacity; `assigned` includes
+VPS and export interfaces, and `owned` also includes assigned allocations. An
+allocation can contribute to both `assigned` and `owned`. These inventory counts
+do not determine whether an allocation is allowed on a particular VPS.
+Older APIs omit the new fields; the UIs display a dash instead of deriving them.
+
 New automatic allocations, explicit assignments of detached addresses, new IP
 ownership, ownership transfers and owned registration require an enabled network.
 Changing a VPS owner also changes the effective owner of its assigned addresses

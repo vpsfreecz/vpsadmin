@@ -242,6 +242,10 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
         expect(assigned.fetch('network')).to include('id' => SpecSeed.network_v4.id, 'enabled' => false)
         owned = ip_list.find { |row| row['id'] == index_data[:ip_user_owned].id }
         expect(owned.fetch('network')).to include('enabled' => false)
+        [assigned, owned].each do |row|
+          expect(row.fetch('network')).not_to have_key('available_to_users')
+          expect(row.fetch('network')).not_to have_key('owned_unassigned')
+        end
         expect(index_data[:ip_user_owned].network_interface_id).to be_nil
       end
 
@@ -251,10 +255,14 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
         owned = create_ip!(addr: '192.0.2.16', network: SpecSeed.network_v4, user: SpecSeed.support)
         assigned = create_ip!(addr: '192.0.2.17', network: SpecSeed.network_v4, netif:)
 
-        as(SpecSeed.support) { json_get index_path }
+        as(SpecSeed.support) { json_get index_path, _meta: { includes: 'network' } }
 
         expect_status(200)
         expect(ip_list.map { |row| row['id'] }).to contain_exactly(enabled_free.id, owned.id, assigned.id)
+        ip_list.each do |row|
+          expect(row.fetch('network')).not_to have_key('available_to_users')
+          expect(row.fetch('network')).not_to have_key('owned_unassigned')
+        end
       end
 
       it 'preserves admin inventory and exact disabled filters' do

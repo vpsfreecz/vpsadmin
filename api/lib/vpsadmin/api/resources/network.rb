@@ -9,6 +9,10 @@ module VpsAdmin::API::Resources
       integer :assigned, desc: 'Number of IP addresses assigned to VPSes'
       integer :owned, desc: 'Number of IP addresses owned by some users'
       integer :taken, desc: 'Number of owned and assigned IP addresses'
+      integer :available_to_users, label: 'Available to users',
+                                   desc: 'Registered unowned, unassigned and unreserved addresses or prefixes; zero when the network is disabled'
+      integer :owned_unassigned, label: 'Owned, not assigned',
+                                 desc: 'User-owned addresses or prefixes without an interface assignment, including reserved entries and disabled networks'
     end
 
     params(:common) do

@@ -45,6 +45,76 @@ RSpec.describe 'VpsAdmin::API::Resources::Network' do
     expect(last_response.status).to eq(code), message
   end
 
+  describe 'inventory counters' do
+    include CoreResourceSpecHelpers
+
+    let(:counter_locks) { [] }
+    let(:stock) do
+      export = create_export!(user: SpecSeed.user)
+      interface = NetworkInterface.create!(export:, name: 'eth0', kind: :veth_routed)
+      rows = [
+        [nil, nil], [nil, nil], [SpecSeed.user, nil], [SpecSeed.other_user, nil],
+        [nil, interface], [SpecSeed.user, interface]
+      ].each_with_index.map do |(user, netif), offset|
+        IpAddress.create!(
+          network: ipv4_network, ip_addr: "192.0.2.#{220 + offset}", prefix: 32,
+          size: 1, user:, network_interface: netif,
+          charged_environment: user && SpecSeed.environment
+        )
+      end
+      ipv6_network.update!(split_prefix: 64)
+      prefix = IpAddress.create!(network: ipv6_network, ip_addr: '2001:db8::', prefix: 64, size: 1)
+      counter_locks << rows[1].acquire_lock(rows[1])
+      counter_locks << rows[3].acquire_lock(rows[3])
+      { rows:, prefix: }
+    end
+
+    before { stock }
+    after { counter_locks.each(&:release) }
+
+    it 'returns authoritative allocation-row counts on admin Index and Show' do
+      expected = {
+        'available_to_users' => 1, 'owned_unassigned' => 2,
+        'used' => 6, 'assigned' => 2, 'owned' => 3, 'taken' => 4
+      }
+      as(SpecSeed.admin) { json_get index_path }
+      expect_status(200)
+      expect(nets.find { |row| row['id'] == ipv4_network.id }).to include(expected)
+      expect(nets.find { |row| row['id'] == ipv6_network.id }).to include(
+        'available_to_users' => 1, 'owned_unassigned' => 0, 'used' => 1
+      )
+      expect(stock[:prefix].prefix).to eq(64)
+
+      as(SpecSeed.admin) { json_get show_path(ipv4_network.id) }
+      expect_status(200)
+      expect(net_obj).to include(expected)
+      expect(net_obj['size']).to eq(ipv4_network.size)
+    end
+
+    it 'reports zero availability when disabled while retaining reserved owned detached rows' do
+      ipv4_network.update!(enabled: false)
+      as(SpecSeed.admin) { json_get show_path(ipv4_network.id) }
+      expect_status(200)
+      expect(net_obj).to include('available_to_users' => 0, 'owned_unassigned' => 2)
+      expect(ResourceLock.where(id: counter_locks.map(&:id)).count).to eq(2)
+    end
+
+    %i[user support].each do |actor|
+      it "does not expose admin counters on #{actor} Index or Show" do
+        as(SpecSeed.public_send(actor)) { json_get index_path }
+        expect_status(200)
+        nets.each do |row|
+          expect(row).not_to have_key('available_to_users')
+          expect(row).not_to have_key('owned_unassigned')
+        end
+        as(SpecSeed.public_send(actor)) { json_get show_path(ipv4_network.id) }
+        expect_status(200)
+        expect(net_obj).not_to have_key('available_to_users')
+        expect(net_obj).not_to have_key('owned_unassigned')
+      end
+    end
+  end
+
   describe 'Index' do
     context 'with a disabled network' do
       before { ipv4_network.update!(enabled: false) }
