@@ -457,11 +457,98 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddressAssignment' do
       expect_status(200)
       expect(assignments.length).to eq(2)
 
-      boundary = assignment_user_active_v4.id
+      boundary = assignment_user_active_v6.id
       as(SpecSeed.admin) { json_get index_path, ip_address_assignment: { from_id: boundary } }
 
       expect_status(200)
-      expect(assignment_ids).to all(be > boundary)
+      expected = [
+        assignment_other_active_v6.id,
+        assignment_user_inactive_v4.id,
+        assignment_user_active_v4.id
+      ]
+      expect(assignment_ids).to eq(expected)
+    end
+
+    context 'with a chronological cursor' do
+      let(:cursor_rows) do
+        base = Time.utc(2026, 1, 1)
+        [40, 10, 60, 30, 60, 20, 50, 10, 70].map do |offset|
+          create_assignment!(
+            ip: ip_v4_primary,
+            user: SpecSeed.user,
+            vps: vps_user,
+            from_date: base + offset,
+            to_date: base + 100
+          )
+        end
+      end
+
+      %w[newest oldest].each do |order|
+        it "traverses tied/nonmonotonic dates exactly once in #{order} order" do
+          expected = cursor_rows.sort_by { |row| [row.from_date, row.id] }
+          expected.reverse! if order == 'newest'
+          seen = []
+          cursor = nil
+
+          6.times do
+            input = { order: order, limit: 2, ip_addr: '192.0.2.10', active: false,
+                      user: SpecSeed.user.id, vps: vps_user.id }
+            input[:from_id] = cursor if cursor
+            as(SpecSeed.admin) { json_get index_path, ip_address_assignment: input }
+            expect_status(200)
+            ids = assignment_ids
+            break if ids.empty?
+
+            expect(ids & seen).to be_empty
+            seen.concat(ids)
+            cursor = ids.last
+          end
+
+          expect(seen).to eq(expected.map(&:id))
+          expect(assignment_ids).to be_empty
+        end
+      end
+
+      it 'rejects unavailable or differently scoped cursors without returning rows' do
+        cursor_rows
+        [assignment_other_active_v6.id, IpAddressAssignment.maximum(:id) + 100].each do |cursor|
+          as(SpecSeed.user) do
+            json_get index_path, ip_address_assignment: { from_id: cursor }
+          end
+          expect_status(400)
+          expect(json['status']).to be(false)
+        end
+
+        as(SpecSeed.admin) do
+          json_get index_path, ip_address_assignment: {
+            from_id: cursor_rows.first.id, active: true
+          }
+        end
+        expect_status(400)
+        expect(json['status']).to be(false)
+      end
+
+      it 'keeps member scope across cursor pages and an exact terminal boundary' do
+        expected = cursor_rows.sort_by { |row| [row.from_date, row.id] }.reverse
+        seen = []
+        cursor = nil
+
+        4.times do
+          input = { limit: 3, ip_addr: '192.0.2.10', active: false }
+          input[:from_id] = cursor if cursor
+          as(SpecSeed.user) { json_get index_path, ip_address_assignment: input }
+          expect_status(200)
+          assignments.each do |row|
+            expect(row).not_to have_key('user')
+            expect(row).not_to have_key('raw_user_id')
+          end
+          seen.concat(assignment_ids)
+          cursor = assignment_ids.last
+        end
+
+        expect(seen).to eq(expected.map(&:id))
+        expect(assignment_ids).to be_empty
+      end
     end
 
     it 'returns total_count meta when requested' do
