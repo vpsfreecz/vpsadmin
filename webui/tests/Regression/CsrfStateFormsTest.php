@@ -8,6 +8,8 @@ if (!class_exists('CsrfTokenInvalid')) {
 
 class NullStateFormTemplate
 {
+    public function title($title) {}
+
     public function perex($title, $message = '') {}
 
     public function perex_format_errors($title, $response) {}
@@ -83,6 +85,19 @@ class RejectingStateApi
 
 final class CsrfStateFormsTest extends TestCase
 {
+    public function testNetworkAvailabilityRejectsMissingCsrfBeforeApiUpdate(): void
+    {
+        $this->installStubs();
+        global $xtpl, $api;
+        $xtpl = new NullStateFormTemplate();
+        $api = new RejectingStateApi();
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_GET = ['action' => 'network_enabled', 'network' => '4242'];
+        $_POST = ['enabled' => '0', 'confirm' => '1'];
+        $this->expectException(CsrfTokenInvalid::class);
+        require dirname(__DIR__, 2) . '/pages/page_cluster.php';
+    }
+
     public function testLifetimeStateChangeRejectsMissingCsrfBeforeApiUpdate(): void
     {
         $this->installStubs();

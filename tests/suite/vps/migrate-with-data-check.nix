@@ -87,6 +87,18 @@ import ../../make-test.nix (
             mib: 4
           )
 
+          attach_test_vps_ip(services, admin_user_id: admin_user_id, vps_id: vps.fetch('id'), addr: '198.51.100.10')
+          retained_ips = services.api_ruby_json(code: <<~RUBY)
+            vps = Vps.find(#{Integer(vps.fetch('id'))})
+            ips = vps.ip_addresses.order(:id).to_a
+            raise 'migration availability fixture has no assigned IPs' if ips.empty?
+            ips.map(&:network).uniq(&:id).each do |network|
+              LocationNetwork.find_or_create_by!(network: network, location: Node.find(#{Integer(node2_id)}).location)
+              network.update!(enabled: false)
+            end
+            puts JSON.dump(ids: ips.map(&:id))
+          RUBY
+
           response = vps_migrate(
             services,
             vps_id: vps.fetch('id'),
@@ -114,6 +126,12 @@ import ../../make-test.nix (
 
           wait_for_vps_on_node(services, vps_id: vps.fetch('id'), node_id: node2_id, running: true)
           expect_vps_migration_proof(node2, vps_id: vps.fetch('id'))
+          after_ips = services.api_ruby_json(code: <<~RUBY)
+            ips = Vps.find(#{Integer(vps.fetch('id'))}).ip_addresses.order(:id).to_a
+            puts JSON.dump(ids: ips.map(&:id), enabled: ips.map { |ip| ip.network.enabled? })
+          RUBY
+          expect(after_ips.fetch('ids')).to eq(retained_ips.fetch('ids'))
+          expect(after_ips.fetch('enabled')).to all(be(false))
           expect_vps_container_absent(node1, vps_id: vps.fetch('id'))
           dst_dataset_path = find_dataset_path_on_node(node2, info.fetch('dataset_full_name'))
           expect(read_dataset_text(

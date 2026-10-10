@@ -3,6 +3,8 @@
 require 'securerandom'
 
 RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disable RSpec/DescribeClass
+  include CoreResourceSpecHelpers
+
   before do
     header 'Accept', 'application/json'
     SpecSeed.location
@@ -469,6 +471,43 @@ RSpec.describe 'VpsAdmin::API::Resources::VPS write actions' do # rubocop:disabl
         target.save!(validate: false)
         [fake_chain!(TransactionChains::Vps::Update), nil]
       end
+    end
+
+    %w[en cs].each do |locale|
+      it "returns a localized action error for disabled VPS ownership transfers in #{locale}" do
+        allow(TransactionChains::Vps::Update).to receive(:fire).and_call_original
+        ensure_signer_unlocked!
+        vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node)
+        netif = create_network_interface!(vps, name: 'eth0')
+        ip = IpAddress.register(IPAddress.parse('192.0.2.242'),
+                                network: SpecSeed.network_v4, prefix: 32, size: 1,
+                                user: SpecSeed.user, location: SpecSeed.location)
+        ip.update!(network_interface: netif)
+        SpecSeed.network_v4.update!(enabled: false)
+        header 'Accept-Language', locale
+
+        expect do
+          as(SpecSeed.admin) { json_put show_path(vps.id), vps: { user: SpecSeed.other_user.id } }
+        end.not_to(change { ip_admission_snapshot })
+
+        expect_disabled_network_error(locale)
+      ensure
+        header 'Accept-Language', nil
+      end
+    end
+
+    it 'keeps unexpected VPS transfer failures non-disclosing HTTP500 errors' do
+      vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node)
+      allow(TransactionChains::Vps::Update).to receive(:fire).and_raise(RuntimeError, 'private VPS transfer failure')
+
+      expect do
+        as(SpecSeed.admin) { json_put show_path(vps.id), vps: { user: SpecSeed.other_user.id } }
+      end.not_to(change { ip_admission_snapshot })
+
+      expect(TransactionChains::Vps::Update).to have_received(:fire)
+      expect_status(500)
+      expect(json['status']).to be(false)
+      expect(last_response.body).not_to include('private VPS transfer failure')
     end
 
     it 'rejects unauthenticated access' do

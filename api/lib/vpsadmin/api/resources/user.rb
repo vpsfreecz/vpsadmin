@@ -305,18 +305,18 @@ class VpsAdmin::API::Resources::User < HaveAPI::Resource
 
     def count_addrs(ip_v:, role:)
       q = ::IpAddress
+          .unreserved
           .joins(network: :location_networks)
-          .joins("LEFT JOIN resource_locks rl ON rl.resource = 'IpAddress' AND rl.row_id = ip_addresses.id")
           .where(
             ip_addresses: { user_id: @user.id },
             networks: {
+              enabled: true,
               ip_version: ip_v,
               role: ::Network.roles[role],
               purpose: [::Network.purposes[:any], ::Network.purposes[:vps]]
             }
           )
           .where('ip_addresses.network_interface_id IS NULL')
-          .where('rl.id IS NULL')
 
       q = if @address_location
             shared_networks = @location.any_shared_networks_with_primary(

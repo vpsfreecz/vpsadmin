@@ -262,6 +262,10 @@ en:
         label: Available
       available_space:
         label: Available_space
+      available_to_users:
+        description: Registered unowned, unassigned and unreserved addresses or prefixes;
+          zero when the network is disabled
+        label: Available to users
       bcc:
         label: Bcc
       before_available:
@@ -664,6 +668,11 @@ en:
       enable_user_dns_zones:
         label: Enable_user_dns_zones
       enabled:
+        choices:
+          'false':
+            label: 'false'
+          'true':
+            label: 'true'
         label: Enabled
       entity_id:
         description: Filter outages by entity ID
@@ -1271,6 +1280,8 @@ en:
         label: Namespace
       network:
         label: Network
+      network_enabled:
+        label: Network enabled
       network_interface:
         label: NetworkInterface
       networks:
@@ -1425,6 +1436,10 @@ en:
       owned:
         description: Number of IP addresses owned by some users
         label: Owned
+      owned_unassigned:
+        description: User-owned addresses or prefixes without an interface assignment,
+          including reserved entries and disabled networks
+        label: Owned, not assigned
       packets:
         label: Packets
       packets_in:
@@ -2393,6 +2408,7 @@ en:
         invalid_record: Check the campaign settings or retention reason.
         keep_disabled: The current policy does not allow keeping IPs with a user reason.
         owner_changed: The owner or allocation of a selected IP has changed.
+      network_disabled: This network is disabled for new allocations and assignments.
       object_not_found: Object not found
       object_not_found_lower: object not found
       object_with_attribute_not_found: object %{resource} = %{id} not found
@@ -3063,6 +3079,8 @@ en:
             label: Address
           count:
             description: Number of added IP addresses
+          enabled:
+            description: Allow new allocations and assignments
           environment:
             description: Environment to which the addresses are charged
           id:

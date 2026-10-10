@@ -180,22 +180,32 @@ RSpec.describe 'VpsAdmin::API::Resources::Cluster' do
       expect(cluster_obj['ipv4_left']).to be_a(Integer)
     end
 
-    it 'returns correct ipv4_left' do
+    it 'counts enabled public IPv4 inventory once and excludes ownership, assignment and reservations' do
+      Network.update_all(enabled: false)
+      network_v4.update!(enabled: true, purpose: :export)
       create_ip!(addr: '192.0.2.200', network: network_v4)
       create_ip!(addr: '192.0.2.201', network: network_v4)
       create_ip!(addr: '192.0.2.202', network: network_v4, user: SpecSeed.user)
+      fixture = create_netif_vps_fixture!(user: SpecSeed.user)
+      create_ip!(addr: '192.0.2.203', network: network_v4, netif: fixture[:netif])
+      reserved = create_ip!(addr: '192.0.2.204', network: network_v4)
+      LocationNetwork.find_or_create_by!(network: network_v4, location: SpecSeed.other_location)
+      disabled = network_v4.dup
+      disabled.update!(address: '198.51.100.0', enabled: false)
+      create_ip!(addr: '198.51.100.10', network: disabled)
+      private_network = create_private_network!(location: SpecSeed.location)
+      create_ipv4_address_in_network!(network: private_network, location: SpecSeed.location)
+      ipv6_network = SpecSeed.network_v6
+      ipv6_network.update!(enabled: true)
+      create_ip!(addr: '2001:db8::200', network: ipv6_network)
 
-      json_get public_stats_path
+      reserved.acquire_lock do
+        json_get public_stats_path
+      end
 
       expect_status(200)
 
-      expected = IpAddress.joins(:network).where(
-        user: nil,
-        network_interface: nil,
-        networks: { ip_version: 4, role: Network.roles[:public_access] }
-      ).count
-
-      expect(cluster_obj['ipv4_left']).to eq(expected)
+      expect(cluster_obj['ipv4_left']).to eq(2)
     end
 
     it 'works for authenticated users as well' do

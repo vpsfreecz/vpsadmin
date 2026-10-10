@@ -48,6 +48,87 @@ writers. The [upgrade guide](upgrade-ip-ownership-reservations.md) describes how
 to transition older writers and in-flight chains. The reservation protocol uses
 the existing node protocol and stored resource-lock format.
 
+## Network availability
+
+`Network.enabled` controls new allocations and assignments. It defaults to true;
+only administrators can change it. Non-admin network lists show enabled networks.
+Their IP lists retain addresses from enabled networks, their own detached
+addresses, and assigned addresses they already have permission to read.
+Disabled free inventory is hidden. Administrators retain the full inventory.
+`Network.Index` accepts an exact `enabled` filter, and `IpAddress.Index` accepts
+`network_enabled`; these filters only narrow the caller's list. Counts and
+pagination use the same restricted query. Direct `Show` access and included
+associations keep their existing permissions, including access to disabled
+networks and addresses. List visibility does not permit a new assignment.
+
+Administrators receive two read-only network counts. `available_to_users` counts
+registered allocations without an owner, interface assignment or resource
+reservation, and is zero when the network is disabled. `owned_unassigned` counts
+owned allocations without an interface, including reserved allocations and
+disabled networks. Each registered address or prefix contributes one row.
+`used` is registered stock and `size` is theoretical capacity; `assigned` includes
+VPS and export interfaces, and `owned` also includes assigned allocations. An
+allocation can contribute to both `assigned` and `owned`. These inventory counts
+do not determine whether an allocation is allowed on a particular VPS.
+Older APIs omit the new fields; the UIs display a dash instead of deriving them.
+
+New automatic allocations, explicit assignments of detached addresses, new IP
+ownership, ownership transfers and owned registration require an enabled network.
+Changing a VPS owner also changes the effective owner of its assigned addresses
+and any export endpoints transferred with its datasets. Preparation captures
+these endpoints together with the VPS addresses before reserving any IP row.
+Keeping the same owner, disowning an address and releasing an address remain possible.
+Unowned inventory registration remains possible. Existing assigned service and
+host-address management within an assigned prefix continue. Internal migration,
+replacement, swap and restore can retain the same assigned allocations. Restore
+does not bypass admission for detached historical addresses. Taking a replacement
+address from another pool requires that destination network to be enabled.
+
+Disabled-network denials from IP registration and ownership changes, managed
+network additions, VPS ownership transfers and IP assignment use the existing
+action-error response: HTTP 200 with `status: false`, a localized `message`,
+`response: null` and an empty `errors` object. Clients must check `status` even
+when the HTTP request succeeds. Unexpected exceptions remain non-disclosing
+HTTP 500 errors.
+
+Admission takes shared current SQL reads of the relevant network rows in ID order
+before reserving and exclusively reloading IP rows. Parent IP reservations precede
+host reservations. The final check uses the reloaded IP's network identity and
+current allocation policy. A joined policy check uses shared reads so concurrent
+admissions do not upgrade their network locks to exclusive locks. Registration
+keeps its existing network-before-IP exclusive lock order. Network updates do
+not lock all allocation rows or take a chain-long network resource reservation.
+
+Migration preparation captures only its source networks and the destination
+candidates needed for replacement. Later selection is restricted to that captured
+destination set and current eligibility. Swap captures both source sets before
+either migration locks IP rows and passes the same held map to both children.
+This internal map is valid only within the preparation SQL transaction. A new
+pool cannot enter the set after IP locks; changed identity or no remaining
+capacity fails preparation through the normal reservation cleanup.
+
+VPS creation captures the destination candidates for all requested address
+families before locking any IP row. Cloning captures one destination set across
+all interfaces and address families. Each included allocation reuses that set;
+a standalone multi-address allocation captures its set before the first pick.
+Export endpoint selection also reuses its captured set when retrying a
+reservation. These helpers share their containing SQL transaction, so returning
+from a child allocation does not release its SQL locks. Candidate sets cannot
+grow during preparation.
+
+Disable and admission serialize at the network row. If disable commits first,
+new use fails or selects another enabled pool. If admission commits first, the
+accepted operation may finish after disable. Disabling does not cancel existing
+chains. Their resource reservations keep pending addresses out of availability
+counts until completion or rollback.
+
+`Cluster.PublicStats.ipv4_left` counts allocation rows that are unowned,
+unassigned and unreserved in enabled IPv4 networks with role `public_access`.
+Role is the sole public/private classification. Location associations, purpose,
+prefix size and maintenance state do not change this count, and each allocation
+row contributes at most once. See the [network availability upgrade guide](upgrade-network-availability.md)
+before disabling a network in a mixed-version installation.
+
 ## Accounting
 
 IP accounting uses `adjust_resource!(resource, delta:, ...)`. It shares

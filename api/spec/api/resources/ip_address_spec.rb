@@ -3,6 +3,8 @@
 require 'securerandom'
 
 RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
+  include CoreResourceSpecHelpers
+
   before do
     header 'Accept', 'application/json'
     SpecSeed.network_v4
@@ -219,6 +221,180 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
       }
     end
 
+    context 'with disabled free inventory' do
+      let(:enabled_free) { create_ip!(addr: '2001:db8::10', network: SpecSeed.network_v6) }
+
+      before do
+        index_data
+        enabled_free
+        SpecSeed.network_v4.update!(enabled: false)
+      end
+
+      it 'retains owned and accessible nonowned assigned addresses with disabled network details' do
+        as(SpecSeed.user) { json_get index_path, _meta: { includes: 'network' } }
+
+        expect_status(200)
+        expect(ip_list.map { |row| row['id'] }).to contain_exactly(
+          index_data[:ip_user_owned].id, index_data[:ip_user_routed].id, enabled_free.id
+        )
+        assigned = ip_list.find { |row| row['id'] == index_data[:ip_user_routed].id }
+        expect(assigned['user']).to be_nil
+        expect(assigned.fetch('network')).to include('id' => SpecSeed.network_v4.id, 'enabled' => false)
+        owned = ip_list.find { |row| row['id'] == index_data[:ip_user_owned].id }
+        expect(owned.fetch('network')).to include('enabled' => false)
+        [assigned, owned].each do |row|
+          expect(row.fetch('network')).not_to have_key('available_to_users')
+          expect(row.fetch('network')).not_to have_key('owned_unassigned')
+        end
+        expect(index_data[:ip_user_owned].network_interface_id).to be_nil
+      end
+
+      it 'uses the same visibility rule for support' do
+        vps = create_vps!(user: SpecSeed.support, node: SpecSeed.node, hostname: 'support-vps')
+        netif = create_netif!(vps:)
+        owned = create_ip!(addr: '192.0.2.16', network: SpecSeed.network_v4, user: SpecSeed.support)
+        assigned = create_ip!(addr: '192.0.2.17', network: SpecSeed.network_v4, netif:)
+
+        as(SpecSeed.support) { json_get index_path, _meta: { includes: 'network' } }
+
+        expect_status(200)
+        expect(ip_list.map { |row| row['id'] }).to contain_exactly(enabled_free.id, owned.id, assigned.id)
+        ip_list.each do |row|
+          expect(row.fetch('network')).not_to have_key('available_to_users')
+          expect(row.fetch('network')).not_to have_key('owned_unassigned')
+        end
+      end
+
+      it 'preserves admin inventory and exact disabled filters' do
+        as(SpecSeed.admin) { json_get index_path }
+        expect_status(200)
+        expect(ip_list.map { |row| row['id'] }).to contain_exactly(*index_data.values.map(&:id), enabled_free.id)
+
+        as(SpecSeed.admin) { json_get index_path, ip_address: { network_enabled: false } }
+        expect_status(200)
+        expect(ip_list.map { |row| row['id'] }).to match_array(index_data.values.map(&:id))
+      end
+
+      it 'intersects explicit availability and network filters with permissions' do
+        as(SpecSeed.user) do
+          json_get index_path, ip_address: { network: SpecSeed.network_v4.id, network_enabled: false }
+        end
+        expect_status(200)
+        expect(ip_list.map { |row| row['id'] }).to contain_exactly(
+          index_data[:ip_user_owned].id, index_data[:ip_user_routed].id
+        )
+
+        as(SpecSeed.user) { json_get index_path, ip_address: { network_enabled: true } }
+        expect_status(200)
+        expect(ip_list.map { |row| row['id'] }).to eq([enabled_free.id])
+
+        as(SpecSeed.support) { json_get index_path, ip_address: { network_enabled: false } }
+        expect_status(200)
+        expect(ip_list).to be_empty
+      end
+
+      it 'does not reveal hidden free or foreign addresses through exact filters' do
+        %i[ip_free ip_other_owned ip_other_routed].each do |key|
+          as(SpecSeed.user) do
+            json_get index_path, ip_address: { addr: index_data.fetch(key).ip_addr, network_enabled: false }
+          end
+          expect_status(200)
+          expect(ip_list).to be_empty
+        end
+      end
+
+      it 'retains accessible assignment filters without admitting foreign assignments' do
+        own = index_data[:ip_user_routed]
+
+        as(SpecSeed.user) do
+          json_get index_path, ip_address: { vps: own.network_interface.vps_id, network_enabled: false }
+        end
+        expect_status(200)
+        expect(ip_list.map { |row| row['id'] }).to eq([own.id])
+
+        as(SpecSeed.user) do
+          json_get index_path, ip_address: { network_interface: own.network_interface_id, assigned_to_interface: true }
+        end
+        expect_status(200)
+        expect(ip_list.map { |row| row['id'] }).to eq([own.id])
+
+        as(SpecSeed.user) do
+          json_get index_path, ip_address: { network_enabled: false, assigned_to_interface: true }
+        end
+        expect_status(200)
+        expect(ip_list.map { |row| row['id'] }).to eq([own.id])
+      end
+
+      it 'counts visible rows and traverses all visible pages' do
+        expected_ids = [index_data[:ip_user_owned].id, index_data[:ip_user_routed].id, enabled_free.id]
+        as(SpecSeed.user) { json_get index_path, ip_address: { limit: 1 }, _meta: { count: true } }
+        expect_status(200)
+        expect(ip_list.map { |row| row['id'] }).to eq(expected_ids.take(1))
+        expect(json.dig('response', '_meta', 'total_count')).to be_nil
+
+        version = api_version
+        params = { ip_address: { limit: 1 }, _meta: { count: true } }
+        context = HaveAPI::Context.new(
+          app.settings.api_server, version:, path: index_path, input: params, user: SpecSeed.user, endpoint: true
+        )
+        action = VpsAdmin::API::Resources::IpAddress::Index.new(nil, version, {}, params, context)
+        expect(action.authorized?(SpecSeed.user)).to be(true)
+        action.validate!
+        expect(action.input[:limit]).to eq(1)
+        expect(action.count).to eq(expected_ids.length)
+
+        expected_ids.each_with_index do |cursor, index|
+          as(SpecSeed.user) { json_get index_path, ip_address: { limit: 1, from_id: cursor } }
+          expect_status(200)
+          expect(ip_list.map { |row| row['id'] }).to eq(expected_ids.drop(index + 1).take(1))
+        end
+
+        as(SpecSeed.admin) { json_get index_path, ip_address: { limit: 1 }, _meta: { count: true } }
+        expect_status(200)
+        expect(ip_list.length).to eq(1)
+        expect(json.dig('response', '_meta', 'total_count')).to eq(index_data.length + 1)
+      end
+
+      it 'preserves purpose and location restrictions for retained addresses' do
+        SpecSeed.network_v4.location_networks.update_all(userpick: false)
+        as(SpecSeed.user) do
+          json_get index_path, ip_address: { location: SpecSeed.location.id, network_enabled: false }
+        end
+        expect_status(200)
+        expect(ip_list).to be_empty
+
+        as(SpecSeed.user) do
+          json_get index_path, ip_address: { network_enabled: false, purpose: 'export' }
+        end
+        expect_status(200)
+        expect(ip_list).to be_empty
+
+        as(SpecSeed.user) do
+          json_get index_path, ip_address: { network_enabled: false, role: 'public_access', usable_for: 'vps' }
+        end
+        expect_status(200)
+        expect(ip_list.map { |row| row['id'] }).to contain_exactly(
+          index_data[:ip_user_owned].id, index_data[:ip_user_routed].id
+        )
+      end
+
+      it 'retains disabled owned private addresses without making non-userpick inventory visible' do
+        network = create_non_userpick_network!
+        network.update!(enabled: false, role: :private_access)
+        owned = create_ip!(addr: network.address.sub(/\.0\z/, '.21'), network:, user: SpecSeed.user)
+        free = create_ip!(addr: network.address.sub(/\.0\z/, '.22'), network:)
+
+        as(SpecSeed.user) do
+          json_get index_path, ip_address: { network: network.id, role: 'private_access', network_enabled: false }
+        end
+        expect_status(200)
+        expect(ip_list.map { |row| row['id'] }).to eq([owned.id])
+
+        as(SpecSeed.user) { json_get show_path(free.id) }
+        expect_status(404)
+      end
+    end
+
     context 'with network purpose filters' do
       let(:purpose_records) do
         purpose_networks.transform_values do |network|
@@ -338,6 +514,29 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
       }
     end
 
+    it 'preserves disabled free, owned and assigned details without widening permissions' do
+      data = show_data
+      SpecSeed.network_v4.update!(enabled: false)
+
+      %i[ip_free ip_user_owned ip_user_routed].each do |key|
+        as(SpecSeed.user) { json_get show_path(data.fetch(key).id), _meta: { includes: 'network' } }
+        expect_status(200)
+        expect(ip_obj['id']).to eq(data.fetch(key).id)
+        expect(ip_obj.fetch('network')).to include('id' => SpecSeed.network_v4.id)
+        expect(ip_obj.dig('network', '_meta', 'resolved')).to be(false)
+      end
+
+      as(SpecSeed.user) { json_get vpath("/networks/#{SpecSeed.network_v4.id}") }
+      expect_status(200)
+      expect(json.dig('response', 'network')).to include('id' => SpecSeed.network_v4.id, 'enabled' => false)
+
+      %i[ip_other_owned ip_other_routed].each do |key|
+        as(SpecSeed.user) { json_get show_path(data.fetch(key).id), _meta: { includes: 'network' } }
+        expect_status(404)
+        expect(json['status']).to be(false)
+      end
+    end
+
     it 'rejects unauthenticated access' do
       json_get show_path(show_data[:ip_free].id)
 
@@ -402,6 +601,35 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
 
   describe 'Create' do
     let(:payload) { { addr: '192.0.2.200', network: SpecSeed.network_v4.id } }
+
+    %w[en cs].each do |locale|
+      it "returns a localized action error for disabled owned registration in #{locale}" do
+        SpecSeed.network_v4.update!(enabled: false)
+        header 'Accept-Language', locale
+        owned_payload = payload.merge(user: SpecSeed.user.id, location: SpecSeed.location.id)
+
+        expect do
+          as(SpecSeed.admin) { json_post index_path, ip_address: owned_payload }
+        end.not_to(change { ip_admission_snapshot })
+
+        expect_disabled_network_error(locale)
+      ensure
+        header 'Accept-Language', nil
+      end
+    end
+
+    it 'keeps unexpected registration failures non-disclosing HTTP500 errors' do
+      allow(IpAddress).to receive(:register).and_raise(RuntimeError, 'private registration failure')
+
+      expect do
+        as(SpecSeed.admin) { json_post index_path, ip_address: payload }
+      end.not_to(change { ip_admission_snapshot })
+
+      expect(IpAddress).to have_received(:register)
+      expect_status(500)
+      expect(json['status']).to be(false)
+      expect(last_response.body).not_to include('private registration failure')
+    end
 
     it 'rejects unauthenticated access' do
       json_post index_path, ip_address: payload
@@ -505,6 +733,43 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
 
   describe 'Update' do
     let!(:ip_to_update) { create_ip!(addr: '192.0.2.120', network: SpecSeed.network_v4) }
+
+    %w[en cs].each do |locale|
+      it "returns a localized action error for disabled ownership changes in #{locale}" do
+        ensure_signer_unlocked!
+        SpecSeed.network_v4.update!(enabled: false)
+        header 'Accept-Language', locale
+
+        expect do
+          as(SpecSeed.admin) do
+            json_put show_path(ip_to_update.id), ip_address: {
+              user: SpecSeed.user.id, environment: SpecSeed.environment.id
+            }
+          end
+        end.not_to(change { ip_admission_snapshot })
+
+        expect_disabled_network_error(locale)
+      ensure
+        header 'Accept-Language', nil
+      end
+    end
+
+    it 'keeps unexpected ownership failures non-disclosing HTTP500 errors' do
+      allow(TransactionChains::Ip::Update).to receive(:fire).and_raise(RuntimeError, 'private ownership failure')
+
+      expect do
+        as(SpecSeed.admin) do
+          json_put show_path(ip_to_update.id), ip_address: {
+            user: SpecSeed.user.id, environment: SpecSeed.environment.id
+          }
+        end
+      end.not_to(change { ip_admission_snapshot })
+
+      expect(TransactionChains::Ip::Update).to have_received(:fire)
+      expect_status(500)
+      expect(json['status']).to be(false)
+      expect(last_response.body).not_to include('private ownership failure')
+    end
 
     it 'rejects unauthenticated access' do
       json_put show_path(ip_to_update.id), ip_address: { user: SpecSeed.user.id }
@@ -617,6 +882,25 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
         ip_owned_other: create_ip!(addr: '192.0.2.31', network: SpecSeed.network_v4, user: SpecSeed.other_user),
         ip_routed_other: create_ip!(addr: '192.0.2.32', network: SpecSeed.network_v4, netif: other_netif)
       }
+    end
+
+    %w[en cs].each do |locale|
+      it "retains the same localized disabled assignment action error in #{locale}" do
+        ensure_signer_unlocked!
+        data = assign_data
+        SpecSeed.network_v4.update!(enabled: false)
+        header 'Accept-Language', locale
+
+        expect do
+          as(SpecSeed.user) do
+            json_post assign_path(data[:ip_free].id), ip_address: { network_interface: data[:user_netif].id }
+          end
+        end.not_to(change { ip_admission_snapshot })
+
+        expect_disabled_network_error(locale)
+      ensure
+        header 'Accept-Language', nil
+      end
     end
 
     it 'rejects unauthenticated access' do

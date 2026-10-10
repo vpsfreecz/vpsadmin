@@ -14,7 +14,7 @@ class Network < ApplicationRecord
   enum :purpose, %i[any vps export]
 
   validates :address, :prefix, :role, :split_prefix, :purpose, presence: true
-  validates :managed, inclusion: { in: [true, false] }
+  validates :managed, :enabled, inclusion: { in: [true, false] }
   validates :address, uniqueness: { scope: :prefix }
   validates :ip_version, inclusion: {
     in: [4, 6],
@@ -26,6 +26,21 @@ class Network < ApplicationRecord
   # Network purpose compatibility does not establish allocation availability.
   def self.purposes_for_use(purpose)
     [purposes.fetch('any'), purposes.fetch(purpose)]
+  end
+
+  # Lock pools before current IP rows. Shared admission locks serialize against
+  # disabling/registration without serializing allocations within the same pool.
+  def self.lock_for_admission!(ids)
+    ids.uniq.sort.to_h do |id|
+      [id, where(id:).lock('LOCK IN SHARE MODE').take!]
+    end
+  end
+
+  def ensure_enabled!
+    return if enabled?
+
+    raise VpsAdmin::API::Exceptions::IpAddressInvalid,
+          VpsAdmin::API::I18n.t('errors.network_disabled')
   end
 
   # @param attrs [Hash]
@@ -108,6 +123,16 @@ class Network < ApplicationRecord
     ).count
   end
 
+  def available_to_users
+    return 0 unless enabled?
+
+    ip_addresses.where(user_id: nil, network_interface_id: nil).unreserved.count
+  end
+
+  def owned_unassigned
+    ip_addresses.where.not(user_id: nil).where(network_interface_id: nil).count
+  end
+
   # Changing quota semantics requires an explicit conversion of existing IPs.
   # Registration takes this same SQL row lock before adding the first address.
   def preserve_allocation_resource
@@ -157,6 +182,7 @@ class Network < ApplicationRecord
     ips = []
     self.class.transaction do
       lock_for_registration!
+      ensure_enabled! if opts[:user]
       last_ip = ip_addresses.order("#{ip_order('ip_addr')} DESC").lock.take
       subsize = subnet_size
 

@@ -3,6 +3,24 @@
 require 'securerandom'
 
 module CoreResourceSpecHelpers
+  def ip_admission_snapshot
+    models = [Network, IpAddress, HostIpAddress, IpAddressAssignment, NetworkInterface,
+              Vps, Dataset, DatasetInPool, Export, EnvironmentUserConfig,
+              UserClusterResource, ClusterResourceUse, ResourceLock, TransactionChain]
+    models.to_h do |model|
+      [model.name, model.unscoped.order(:id).map(&:attributes)]
+    end.merge('Transaction count' => Transaction.count)
+  end
+
+  def expect_disabled_network_error(locale)
+    message = {
+      'en' => 'This network is disabled for new allocations and assignments.',
+      'cs' => 'Síť je zakázaná pro nové přidělování a přiřazování IP adres.'
+    }.fetch(locale)
+    expect(last_response.status).to eq(200)
+    expect(json).to eq('status' => false, 'message' => message, 'response' => nil, 'errors' => {})
+  end
+
   def with_current_user(user)
     prev = ::User.current
     ::User.current = user

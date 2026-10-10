@@ -27,8 +27,10 @@ module TransactionChains
       ips_arr = ips.to_a
       parents = ips_arr.dup
       parents << opts[:via].ip_address if opts[:via]
+      ::IpAddress.lock_networks_for_use!(parents)
       ::IpAddress.lock_all_current!(self, parents)
       ips_arr.each do |ip|
+        ip.ensure_network_enabled!
         ip.ensure_charge_environment!
         netif.validate_route_assignment!(ip, is_user: opts[:actor].role != :admin) if opts[:actor]
         unless ip.free? && (!ip.user_id || ip.user_id == netif.vps.user_id)

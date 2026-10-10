@@ -106,8 +106,8 @@ msgstr "Snapshot"
 msgid "File name"
 msgstr "Název souboru"
 
-#: forms/backup.forms.php forms/cluster.forms.php forms/networking.forms.php
-#: forms/userns.forms.php pages/page_transactions.php
+#: forms/backup.forms.php forms/networking.forms.php forms/userns.forms.php
+#: pages/page_transactions.php
 msgid "Size"
 msgstr "Velikost"
 
@@ -391,18 +391,17 @@ msgstr "Sítě"
 msgid "Network"
 msgstr "Síť"
 
-#: forms/cluster.forms.php forms/dns.forms.php forms/ip_release.forms.php
-#: forms/networking.forms.php forms/node.forms.php forms/outage.forms.php
-#: forms/users.forms.php forms/vps.forms.php pages/page_adminvps.php
-#: pages/page_cluster.php pages/page_networking.php
-msgid "Location"
-msgstr "Lokace"
+#: forms/cluster.forms.php
+msgid "Properties"
+msgstr "Vlastnosti"
 
-#: forms/cluster.forms.php forms/dataset.forms.php forms/monitoring.forms.php
-#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
-#: pages/page_adminm.php pages/page_backup.php pages/page_cluster.php
-msgid "Label"
-msgstr "Označení"
+#: forms/cluster.forms.php
+msgid "IP usage"
+msgstr "Využití IP"
+
+#: forms/cluster.forms.php
+msgid "Actions"
+msgstr "Akce"
 
 #: forms/cluster.forms.php forms/dns.forms.php forms/oom_reports.forms.php
 #: forms/outage.forms.php forms/security_advisory.forms.php
@@ -415,20 +414,79 @@ msgstr "Typ"
 msgid "Managed"
 msgstr "Spravováno"
 
-#: forms/cluster.forms.php pages/page_adminm.php
-msgid "Used"
-msgstr "Použitý"
+#: forms/cluster.forms.php forms/dns.forms.php forms/export.forms.php
+#: forms/networking.forms.php forms/users.forms.php pages/page_cluster.php
+msgid "Enabled"
+msgstr "Povoleno"
+
+#: forms/cluster.forms.php
+msgid "Available to users"
+msgstr "Volné pro uživatele"
+
+#: forms/cluster.forms.php
+msgid ""
+"Registered addresses or prefixes with no owner or interface assignment, and "
+"not reserved by an operation. Disabled networks contribute zero. Use on a "
+"particular VPS also depends on location, network purpose and user limits."
+msgstr ""
+"Evidované adresy nebo prefixy bez vlastníka a bez přiřazení k rozhraní, "
+"které nejsou rezervované probíhající operací. V zakázané síti je tento počet "
+"nulový. Použití na konkrétním VPS závisí také na lokaci, účelu sítě a "
+"limitech uživatele."
+
+#: forms/cluster.forms.php
+msgid ""
+"Addresses or prefixes held by users but not assigned to any interface. Other "
+"users cannot take them. Includes reserved entries and disabled networks; "
+"assignment still requires an enabled network and no conflicting reservation."
+msgstr ""
+"Adresy nebo prefixy vlastněné uživateli, které nejsou přiřazené k žádnému "
+"rozhraní. Jiný uživatel je nemůže převzít. Počet zahrnuje i rezervované "
+"adresy a zakázané sítě; přiřazení vyžaduje povolenou síť a nesmí mu bránit "
+"rezervace."
+
+#: forms/cluster.forms.php
+msgid "Owned, not assigned"
+msgstr "Vlastněné, nepřiřazené"
+
+#: forms/cluster.forms.php
+msgid ""
+"Addresses or prefixes attached to network interfaces, including VPS and "
+"export interfaces. These entries can also have an owner."
+msgstr ""
+"Adresy nebo prefixy přiřazené k síťovým rozhraním, včetně rozhraní VPS a "
+"exportů. Tyto adresy mohou zároveň mít vlastníka."
 
 #: forms/cluster.forms.php forms/networking.forms.php
 msgid "Assigned"
-msgstr "Zadáno"
+msgstr "Přiřazené"
 
-#: forms/cluster.forms.php forms/dns.forms.php forms/networking.forms.php
-msgid "Owned"
-msgstr "Vlastněno"
+#: forms/cluster.forms.php
+msgid ""
+"Addresses or prefixes registered in vpsAdmin, including owned and assigned "
+"entries."
+msgstr ""
+"Adresy nebo prefixy evidované ve vpsAdmin, včetně vlastněných a přiřazených."
 
-#: forms/cluster.forms.php forms/ip_release.forms.php
-msgid "IPs"
+#: forms/cluster.forms.php
+msgid "Registered in vpsAdmin"
+msgstr "Evidované ve vpsAdmin"
+
+#: forms/cluster.forms.php
+msgid ""
+"Number of allocation units implied by the network and split prefixes, "
+"including entries not yet registered. This is not the available pool."
+msgstr ""
+"Počet adres nebo prefixů podle prefixu sítě a prefixu pro dělení, včetně "
+"dosud neevidovaných. Tento počet nevyjadřuje dostupnost."
+
+#: forms/cluster.forms.php
+msgid "Total capacity"
+msgstr "Celková kapacita"
+
+#: forms/cluster.forms.php forms/dns.forms.php forms/ip_release.forms.php
+#: forms/vps.forms.php
+msgid "IP addresses"
 msgstr "IP adresy"
 
 #: forms/cluster.forms.php forms/ip_release.forms.php forms/outage.forms.php
@@ -436,12 +494,41 @@ msgid "Locations"
 msgstr "Lokace"
 
 #: forms/cluster.forms.php
-msgid "List IP addresses in this network"
-msgstr "Vypsat IP adresy v této síti"
+msgid "Network availability"
+msgstr "Dostupnost sítě"
+
+#: forms/cluster.forms.php pages/page_cluster.php
+msgid "Back to networks"
+msgstr "Zpět k sítím"
+
+#: forms/cluster.forms.php forms/dns.forms.php forms/networking.forms.php
+msgid "Owned"
+msgstr "Vlastněno"
+
+#: forms/cluster.forms.php forms/networking.forms.php
+msgid ""
+"Disabling prevents new allocations and assignments. Existing service "
+"continues, and operations already accepted may finish. Detached owned "
+"addresses cannot be assigned until the network is enabled again."
+msgstr ""
+"Zakázání sítě brání novému přidělování a přiřazování IP adres. Stávající "
+"provoz pokračuje a již přijaté operace mohou doběhnout. Nepřiřazené adresy s "
+"vlastníkem lze přiřadit až po opětovném povolení sítě."
+
+#: forms/cluster.forms.php forms/dns.forms.php forms/export.forms.php
+#: forms/monitoring.forms.php forms/networking.forms.php forms/users.forms.php
+#: forms/vps.forms.php pages/page_adminvps.php pages/page_backup.php
+#: pages/page_cluster.php pages/page_dataset.php
+msgid "Confirm"
+msgstr "Potvrdit"
 
 #: forms/cluster.forms.php
-msgid "List locations this network is available in"
-msgstr "Vypsat lokace, ve kterých je tato síť dostupná"
+msgid "Disable this network"
+msgstr "Zakázat tuto síť"
+
+#: forms/cluster.forms.php
+msgid "Enable this network"
+msgstr "Povolit tuto síť"
 
 #: forms/cluster.forms.php
 msgid "Network locations"
@@ -450,6 +537,12 @@ msgstr "Lokace sítě"
 #: forms/cluster.forms.php
 msgid "Add location"
 msgstr "Přidat lokaci"
+
+#: forms/cluster.forms.php forms/dataset.forms.php forms/monitoring.forms.php
+#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
+#: pages/page_adminm.php pages/page_backup.php pages/page_cluster.php
+msgid "Label"
+msgstr "Označení"
 
 #: forms/cluster.forms.php forms/dns.forms.php
 msgid "Primary"
@@ -484,6 +577,13 @@ msgstr "Adresa"
 #: forms/cluster.forms.php
 msgid "Add network to location"
 msgstr "Přidat síť do lokace"
+
+#: forms/cluster.forms.php forms/dns.forms.php forms/ip_release.forms.php
+#: forms/networking.forms.php forms/node.forms.php forms/outage.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminvps.php
+#: pages/page_cluster.php pages/page_networking.php
+msgid "Location"
+msgstr "Lokace"
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
 #: forms/oom_reports.forms.php forms/userdata.forms.php forms/userns.forms.php
@@ -527,11 +627,6 @@ msgstr "Přidat IP adresy"
 #: pages/page_lifetimes.php pages/page_monitoring.php
 msgid "Back"
 msgstr "Zpět"
-
-#: forms/cluster.forms.php forms/dns.forms.php forms/ip_release.forms.php
-#: forms/vps.forms.php
-msgid "IP addresses"
-msgstr "IP adresy"
 
 #: forms/cluster.forms.php
 msgid "Delete DNS resolver"
@@ -667,13 +762,6 @@ msgid ""
 msgstr ""
 "<b>Upozornění:</b> Balíček bude také okamžitě odebrán všem uživatelům, kteří "
 "jej používají."
-
-#: forms/cluster.forms.php forms/dns.forms.php forms/export.forms.php
-#: forms/monitoring.forms.php forms/networking.forms.php forms/users.forms.php
-#: forms/vps.forms.php pages/page_adminvps.php pages/page_backup.php
-#: pages/page_cluster.php pages/page_dataset.php
-msgid "Confirm"
-msgstr "Potvrdit"
 
 #: forms/cluster.forms.php forms/networking.forms.php forms/users.forms.php
 #: forms/vps.forms.php
@@ -1019,11 +1107,6 @@ msgstr "Role"
 #: forms/dns.forms.php
 msgid "Source"
 msgstr "Zdroj"
-
-#: forms/dns.forms.php forms/export.forms.php forms/users.forms.php
-#: pages/page_cluster.php
-msgid "Enabled"
-msgstr "Povoleno"
 
 #: forms/dns.forms.php forms/incidents.forms.php forms/monitoring.forms.php
 #: forms/oom_reports.forms.php forms/outage.forms.php
@@ -1921,7 +2004,7 @@ msgstr "Ponechat"
 msgid "Allowed"
 msgstr "povoleno"
 
-#: forms/ip_release.forms.php
+#: forms/ip_release.forms.php forms/networking.forms.php
 msgid "Disabled"
 msgstr "Zakázáno"
 
@@ -2061,6 +2144,10 @@ msgid "Kept"
 msgstr "Ponecháno"
 
 #: forms/ip_release.forms.php
+msgid "IPs"
+msgstr "IP adresy"
+
+#: forms/ip_release.forms.php
 msgid "Policy"
 msgstr "Pravidla"
 
@@ -2120,7 +2207,10 @@ msgid ""
 "All selected addresses remain owned until the whole release succeeds. If it "
 "rolls back, none are released. Addresses in a running release cannot be "
 "retained."
-msgstr "Všechny vybrané adresy zůstávají vlastníkům až do úspěšného dokončení celého uvolnění. Při vrácení změn se neuvolní žádná adresa. Adresy, které se právě uvolňují, už nelze zachovat."
+msgstr ""
+"Všechny vybrané adresy zůstávají vlastníkům až do úspěšného dokončení celého "
+"uvolnění. Při vrácení změn se neuvolní žádná adresa. Adresy, které se právě "
+"uvolňují, už nelze zachovat."
 
 #: forms/ip_release.forms.php
 msgid "Cleanup"
@@ -2187,12 +2277,10 @@ msgid "Rolling back; ownership is retained"
 msgstr "Probíhá vrácení změn; adresy zůstávají vlastníkům"
 
 #: forms/ip_release.forms.php
-#| msgid "Host addresses added"
 msgid "All selected addresses released"
 msgstr "Všechny vybrané adresy byly uvolněny"
 
 #: forms/ip_release.forms.php
-#| msgid "Release eligible addresses"
 msgid "Release rolled back; no addresses released"
 msgstr "Změny byly vráceny; žádné adresy nebyly uvolněny"
 
@@ -2201,7 +2289,6 @@ msgid "Release could not start; no addresses released"
 msgstr "Uvolnění se nepodařilo zahájit; žádné adresy nebyly uvolněny"
 
 #: forms/ip_release.forms.php
-#| msgid "Release eligible addresses"
 msgid "No eligible addresses"
 msgstr "Žádné adresy k uvolnění"
 
@@ -2211,21 +2298,20 @@ msgstr "Transakční řetězec vyžaduje zásah administrátora"
 
 #: forms/ip_release.forms.php
 #, php-format
-#| msgid "Transaction chain"
 msgid "Transaction chain #%d"
 msgstr "Transakční řetězec č. %d"
 
 #: forms/ip_release.forms.php
 #, php-format
 msgid "Resource %s #%d is busy. Try again after its transaction finishes."
-msgstr "Prostředek %s č. %d je zamčený. Zkus to znovu po dokončení jeho transakce."
+msgstr ""
+"Prostředek %s č. %d je zamčený. Zkus to znovu po dokončení jeho transakce."
 
 #: forms/ip_release.forms.php
 msgid "The database was busy. Try releasing the addresses again."
 msgstr "Databáze byla zaneprázdněná. Zkus adresy uvolnit znovu."
 
 #: forms/ip_release.forms.php
-#| msgid "Last release result"
 msgid "Latest release attempt"
 msgstr "Poslední pokus o uvolnění"
 
@@ -2243,12 +2329,10 @@ msgid ""
 msgstr "Před dalším pokusem o uvolnění zkontroluj a oprav transakční řetězec."
 
 #: forms/ip_release.forms.php
-#| msgid "Recovery code"
 msgid "Recovery"
 msgstr "Obnova"
 
 #: forms/ip_release.forms.php
-#| msgid "Release campaign"
 msgid "Release attempts"
 msgstr "Pokusy o uvolnění"
 
@@ -2450,6 +2534,14 @@ msgstr "Prefix"
 msgid "'unassigned' to list free addresses"
 msgstr "'unassigned' pro seznam volných adres"
 
+#: forms/networking.forms.php
+msgid ""
+"This network is disabled for new allocations and assignments. Existing "
+"assignments remain usable."
+msgstr ""
+"Síť je zakázaná pro nové přidělování a přiřazování adres. Existující "
+"přiřazené adresy zůstávají použitelné."
+
 #: forms/networking.forms.php forms/vps.forms.php
 msgid "List incident reports"
 msgstr "Zobrazit incidenty"
@@ -2493,6 +2585,10 @@ msgstr "Seznam incidentů"
 #: forms/networking.forms.php pages/page_index.php
 msgid "Overview"
 msgstr "Přehled"
+
+#: forms/networking.forms.php pages/page_adminvps.php
+msgid "Network enabled"
+msgstr "Síť povolena"
 
 #: forms/networking.forms.php forms/vps.forms.php
 msgid "Network interface"
@@ -5973,6 +6069,10 @@ msgid "Step size"
 msgstr "Velikost kroku"
 
 #: pages/page_adminm.php
+msgid "Used"
+msgstr "Použitý"
+
+#: pages/page_adminm.php
 msgid "Request approved"
 msgstr "Žádost schválena"
 
@@ -6599,10 +6699,6 @@ msgstr "Síť zakázána"
 #: pages/page_adminvps.php
 msgid "Failed to disable network"
 msgstr "Síť se nepodařilo zakázat"
-
-#: pages/page_adminvps.php
-msgid "Network enabled"
-msgstr "Síť povolena"
 
 #: pages/page_adminvps.php
 msgid "Failed to enable network"
@@ -7651,10 +7747,6 @@ msgstr "Balíček prostředků clusteru byl aktualizován."
 #: pages/page_cluster.php pages/page_security_advisory.php
 msgid "Delete failed"
 msgstr "Smazání se nezdařilo"
-
-#: pages/page_cluster.php
-msgid "Back to networks"
-msgstr "Zpět k sítím"
 
 #: pages/page_cluster.php
 msgid "Back to locations"
@@ -8970,6 +9062,12 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "List IP addresses in this network"
+#~ msgstr "Vypsat IP adresy v této síti"
+
+#~ msgid "List locations this network is available in"
+#~ msgstr "Vypsat lokace, ve kterých je tato síť dostupná"
 
 #~ msgid ""
 #~ "Addresses being released cannot be retained. If cleanup fails, ownership "
