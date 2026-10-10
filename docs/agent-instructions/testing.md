@@ -41,6 +41,25 @@ repository root unless explicitly stated otherwise.
   `.github/workflows/api-specs.yml` so every eligible file belongs to exactly one
   topic in both plugin modes.
 
+## API transaction fixtures
+
+Ordinary API examples run in a pinned transaction on the Base connection pool.
+The fixture pins the adapter, establishes its lease and unpins it in an ensure
+block after the example. Request cleanup may clear the thread's lease without
+releasing the pin; the next lease returns the same adapter with its fixture
+transaction still open. Unpinning owns rollback and release of the fixture.
+This uses the declared ActiveRecord 8.1 fixture API; dependency updates must
+preserve the fixture regressions.
+
+Use `:no_transaction` at the narrowest appropriate example or context for tests
+that require genuine independent database connections, committed writes or
+control of the outer transaction. The pin is pool-wide, so ordinary pinned
+examples cannot supply independent worker connections. Such tests must own
+committed setup where needed, explicit data and configuration restoration, and
+worker joins in failure paths. The metadata itself supplies no cleanup. Do not
+apply it broadly merely to avoid a failure, or assume unpinning undoes writes
+that a test committed after ending the fixture transaction.
+
 ## API spec topics
 
 `.github/workflows/api-specs.yml` defines thirteen static topics, shared by the

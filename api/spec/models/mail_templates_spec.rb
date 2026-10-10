@@ -346,7 +346,7 @@ RSpec.describe VpsAdmin::API::MailTemplates do
     )
   end
 
-  it 'serializes concurrent reconciliations on separate database connections' do
+  it 'serializes concurrent reconciliations on separate database connections', :no_transaction do
     template_name = 'spec_managed_concurrent_template'
     source_id = 'managed-concurrent-source'
     marker_attempts = Queue.new

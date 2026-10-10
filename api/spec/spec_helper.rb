@@ -21,9 +21,14 @@ RSpec.configure do |config|
     if example.metadata[:no_transaction]
       example.run
     else
-      ActiveRecord::Base.transaction do
+      pool = ActiveRecord::Base.connection_pool
+      pool.pin_connection!(true)
+
+      begin
+        pool.lease_connection
         example.run
-        raise ActiveRecord::Rollback
+      ensure
+        pool.unpin_connection!
       end
     end
   end

@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'timeout'
 
-RSpec.describe Network do
+RSpec.describe Network, :no_transaction do
   let(:committed) { {} }
 
   before do

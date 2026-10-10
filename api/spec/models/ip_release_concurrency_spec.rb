@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'timeout'
 
-RSpec.describe IpReleaseCampaign do
+RSpec.describe IpReleaseCampaign, :no_transaction do
   let(:committed) { {} }
 
   before { unlock_transaction_signer! }

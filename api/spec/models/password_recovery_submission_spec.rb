@@ -238,7 +238,7 @@ RSpec.describe PasswordRecoverySubmission do
   # rubocop:disable RSpec/LeakyLocalVariable
   queue_serialization_state = {}
 
-  describe 'queue admission serialization' do
+  describe 'queue admission serialization', :no_transaction do
     before(:context) do
       config = SysConfig.find_by!(
         category: 'core',
@@ -308,7 +308,7 @@ RSpec.describe PasswordRecoverySubmission do
 
   cleanup_serialization_state = {}
 
-  describe 'retention cleanup serialization' do
+  describe 'retention cleanup serialization', :no_transaction do
     before(:context) do
       config = SysConfig.find_by!(
         category: 'core',
