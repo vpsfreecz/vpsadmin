@@ -12,6 +12,9 @@ repository root unless explicitly stated otherwise.
   package has to be refreshed. Do not create build IDs or upload first-party
   gems to a remote RubyGems repository.
 - Use `./test-runner.sh ls` to enumerate tests and `./test-runner.sh test <test>` (e.g. `services-up`).
+- `services-up` checks shared HaveAPI documentation through the packaged API,
+  including JSON schema, protocol and client documentation. Run it after
+  updating HaveAPI package dependencies to catch missing gem content.
 - Test definitions are in `tests/all-tests.nix` and `tests/suite/*`; machines compose `tests/machines/cluster/*.nix` plus seeds from `api/db/seeds/test*.nix` to spin up services and vpsAdminOS nodes on user+socket networks.
 - Tests that transfer, migrate, reinstall, replace, back up, or restore a VPS
   dataset must verify data integrity when the operation is expected to preserve

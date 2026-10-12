@@ -138,6 +138,23 @@ import ../make-test.nix (
               true
             end
           end
+
+          {
+            '/doc/json-schema' => 'Envelope',
+            '/doc/protocol.md' => 'Protocol definition',
+            '/doc/create-client.md' => 'Client definition',
+          }.each do |path, heading|
+            it "serves shared documentation at #{path}" do
+              wait_until_block_succeeds(name: "api documentation #{path}") do
+                _, output = services.succeeds(
+                  "curl --silent --fail-with-body --write-out '\\n%{http_code}' http://api.vpsadmin.test#{path}"
+                )
+                expect(output).to include(heading)
+                expect(output).to end_with("\n200")
+                true
+              end
+            end
+          end
         end
 
         example 'scheduler is running' do
