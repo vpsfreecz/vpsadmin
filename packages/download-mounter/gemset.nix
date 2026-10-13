@@ -81,10 +81,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0vgfimffni6yryk76k7grvixisaikbhc925fs3z07rpsd6gr8ddk";
+      sha256 = "0724q26k3q2wswg1mwwxhfl1zfgx7363ml1knj8ykgbxhfmwcxh9";
       type = "gem";
     };
-    version = "0.6.20260921";
+    version = "0.7.20261007";
   };
   drb = {
     groups = [ "default" ];
@@ -172,10 +172,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1pqrpn0wkxvhcrwm4i0z9ailjj7if45zkkih0hij2k1q25xpwvcf";
+      sha256 = "1n1v9rhb19cnf1a89s6yvvhw394jy8qnqx9sg8bn12g5zpwcrrrw";
       type = "gem";
     };
-    version = "3.0.2";
+    version = "3.1.0";
   };
   logger = {
     groups = [ "default" ];
