@@ -718,6 +718,9 @@ RSpec.describe IpReleaseCampaign do
   end
 
   it 'renders singular and plural subjects, text and HTML for each message selection' do
+    # Generate lazy ActiveRecord readers before verifying the template doubles.
+    described_class.define_attribute_methods
+    IpReleaseRequest.define_attribute_methods
     IpReleaseRequestAddress.define_attribute_methods
     %w[requested reminder].product([1, 2, 5], [true, false], [true, false]).each do |event, count, allow_keep, public_ipv4|
       addresses = Array.new(count) do |i|
