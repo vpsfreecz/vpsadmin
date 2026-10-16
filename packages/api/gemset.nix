@@ -302,10 +302,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0vmb5wpiz7mf2r6vjvhvfp38rrfvqjzmv7m3max0s6v28j641d4v";
+      sha256 = "1zsz6ghll6hqsrnbfxagvln58nw4zvyfjygnnjhi7nby33qfzq1v";
       type = "gem";
     };
-    version = "2.14.4";
+    version = "2.15.0";
   };
   faraday-follow_redirects = {
     dependencies = [ "faraday" ];
@@ -324,10 +324,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "125m3qri52vwh5v9dhq0dkqxf8629cxrf99yyc01pva72wasyy0f";
+      sha256 = "0difl8kbbhz1pirq8prpv42p0rgqfrrz8gfc93h4wx9q9v1r8w1f";
       type = "gem";
     };
-    version = "3.4.4";
+    version = "3.5.0";
   };
   fio_api = {
     dependencies = [ "httparty" ];
