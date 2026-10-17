@@ -591,10 +591,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0bxfwiafwy50qlq5pz9kc61mcx21jg8gj1afb29z8mzqzprp6yb5";
+      sha256 = "15hwjr7ava56i23lndsqafj31qfbl8p4jrlph9c4xra758pia3rp";
       type = "gem";
     };
-    version = "3.2026.1006";
+    version = "3.2026.1013";
   };
   mini_mime = {
     groups = [ "default" ];
