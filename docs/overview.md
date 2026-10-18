@@ -38,6 +38,15 @@ Node status reports and RPC use RabbitMQ. They complement the database-backed
 transaction queue: reports update the API's view of running infrastructure,
 while transactions record requested work and its outcome.
 
+If osctld reports a container in `error` state or supplies a non-null
+`runstate_error`, nodectld publishes its VPS report with `status:false` and skips
+normal usage and root-dependent processing. The report's `running:false` field
+is an unavailable placeholder, not proof that the guest exited. Healthy peers
+continue reporting normally, including with older osctld responses that omit
+the diagnostic or return it as null. Deploy this compatible consumer before or
+alongside osctld runtime-error reporting. A rollback can again report a guest
+with unknown state as stopped.
+
 ## Relationship with vpsAdminOS
 
 vpsAdminOS provides the container host, including `osctld`, the `osctl` command,

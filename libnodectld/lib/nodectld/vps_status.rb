@@ -87,6 +87,16 @@ module NodeCtld
         next if vpsadmin_vps.nil?
 
         vpsadmin_vps.exists = true
+        runstate_error = ct[:runstate_error]
+
+        if ct.state == 'error' || !runstate_error.nil?
+          vpsadmin_vps.running = false
+          vpsadmin_vps.skip
+          reason = runstate_error.nil? ? 'container is in error state' : runstate_error
+          log(:warn, :vps_status, "#{ct.pool}:#{ct.id}: status unavailable: #{reason}")
+          next
+        end
+
         vpsadmin_vps.running = ct.state == 'running'
 
         next unless vpsadmin_vps.running?
