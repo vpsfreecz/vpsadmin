@@ -60,9 +60,9 @@ GEM
       net-http (~> 0.5)
     fio_api (0.0.11)
       httparty (>= 0.16.2)
-    haveapi (0.29.9)
+    haveapi (0.29.12)
       activesupport (>= 7.1)
-      haveapi-client (~> 0.29.9)
+      haveapi-client (~> 0.29.12)
       i18n (>= 1.6, < 2)
       json
       mail
@@ -74,7 +74,7 @@ GEM
       sinatra (~> 4.0)
       sinatra-contrib (~> 4.0)
       tilt (~> 2.4)
-    haveapi-client (0.29.9)
+    haveapi-client (0.29.12)
       activesupport (>= 7.0)
       highline (~> 3.1)
       json
@@ -156,7 +156,7 @@ GEM
     prism (1.9.0)
     prometheus-client (4.2.5)
       base64
-    pry (0.16.0)
+    pry (0.16.1)
       coderay (~> 1.1)
       method_source (~> 1.0)
       reline (>= 0.6.0)
