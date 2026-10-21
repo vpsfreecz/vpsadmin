@@ -364,10 +364,10 @@ let
     "sebastian/git-state" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "sebastian-git-state-792a952e0eba55b6960a48aeceb9f371aad1f76b";
+        name = "sebastian-git-state-31a565f463686f0eefa85f899549256bf5805985";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/git-state/zipball/792a952e0eba55b6960a48aeceb9f371aad1f76b";
-          sha256 = "1dh7smjk2y11m0rlc565l4c2r1qy0mnw4smjwl4cfzjkqi9v4mr3";
+          url = "https://api.github.com/repos/sebastianbergmann/git-state/zipball/31a565f463686f0eefa85f899549256bf5805985";
+          sha256 = "1q3mr19ysq5n52cnin6qpng2g5a1fnxykvagpchfvpl6ad1n3dlm";
         };
       };
     };
