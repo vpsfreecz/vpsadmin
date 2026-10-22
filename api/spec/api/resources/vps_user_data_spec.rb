@@ -281,6 +281,34 @@ RSpec.describe 'VpsAdmin::API::Resources::VpsUserData' do
       expect_status(200)
       expect(json.dig('response', '_meta', 'total_count')).to eq(VpsUserData.count)
     end
+
+    it 'walks scoped ID pages despite nonmonotonic timestamps' do
+      base = Time.utc(2026, 1, 1)
+      expected = [40, 10, 60, 30, 60, 20, 50].map do |offset|
+        row = create_user_data!(user: SpecSeed.user, label: "Page #{offset}", format: 'script',
+                                content: script_content)
+        row.update_columns(created_at: base + offset, updated_at: base - offset)
+        row.id
+      end
+      create_user_data!(user: SpecSeed.other_user, label: 'Foreign', format: 'script', content: script_content)
+      seen = []
+      cursor = nil
+
+      5.times do
+        input = { limit: 2, format: 'script' }
+        input[:from_id] = cursor if cursor
+        as(SpecSeed.user) { json_get index_path, vps_user_data: input }
+        expect_status(200)
+        ids = list.map { |row| row['id'] }
+        break if ids.empty?
+
+        seen.concat(ids)
+        cursor = ids.last
+      end
+
+      expect(seen).to eq(expected)
+      expect(list).to be_empty
+    end
   end
 
   describe 'Show' do
