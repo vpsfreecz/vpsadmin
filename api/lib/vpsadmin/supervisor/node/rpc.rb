@@ -101,6 +101,8 @@ module VpsAdmin::Supervisor
         list_pools
         list_pool_dataset_properties
         list_vps_status_check
+        list_vps_boot_autostart
+        reconcile_vps_boot_autostart
         list_vps_network_interfaces
         find_vps_network_interface
         list_running_vps_ids
@@ -205,6 +207,58 @@ module VpsAdmin::Supervisor
               pool_fs:
             }
           end
+      end
+
+      def list_vps_boot_autostart
+        vpses = ::Vps
+                .where(
+                  node: @node,
+                  object_state: %w[active suspended],
+                  confirmed: ::Vps.confirmed(:confirmed),
+                  autostart_enable: true
+                )
+                .left_outer_joins(dataset_in_pool: :pool)
+                .select('vpses.id, pools.filesystem AS pool_fs, pools.node_id AS pool_node_id')
+                .order('vpses.id')
+                .map do |vps|
+                  raise 'inventory_invalid' unless valid_boot_autostart_pool?(vps)
+
+                  { id: vps.id, pool_fs: vps[:pool_fs] }
+                end
+
+        { schema_version: 1, vpses: }
+      end
+
+      # Resolve every requested identity, including deleted rows with retained
+      # resource locks. One SELECT observes locks, confirmations and pool changes
+      # in the same database snapshot, without a retirement race between reads.
+      def reconcile_vps_boot_autostart(ids)
+        unless ids.is_a?(Array) && ids.size.between?(1, 1000) &&
+               ids.all? { |id| id.is_a?(Integer) && id > 0 } &&
+               ids.uniq.size == ids.size && ids.sort == ids
+          raise ArgumentError, 'ids must contain 1-1000 sorted unique positive integers'
+        end
+
+        requested_ids = ids.map { |id| "SELECT #{id} AS id" }.join(' UNION ALL ')
+        vpses = ::Vps.unscoped
+                     .from("(#{requested_ids}) AS boot_autostart_ids")
+                     .joins('LEFT JOIN vpses ON vpses.id = boot_autostart_ids.id')
+                     .joins(
+                       "LEFT JOIN resource_locks ON resource_locks.resource = 'Vps' " \
+                       'AND resource_locks.row_id = boot_autostart_ids.id'
+                     )
+                     .joins('LEFT JOIN dataset_in_pools ON dataset_in_pools.id = vpses.dataset_in_pool_id')
+                     .joins('LEFT JOIN pools ON pools.id = dataset_in_pools.pool_id')
+                     .select(
+                       'vpses.id, vpses.node_id, vpses.object_state, vpses.confirmed, ' \
+                       'vpses.autostart_enable, pools.filesystem AS pool_fs, ' \
+                       'pools.node_id AS pool_node_id, ' \
+                       'boot_autostart_ids.id AS requested_id, resource_locks.id AS resource_lock_id'
+                     )
+                     .order('boot_autostart_ids.id')
+                     .map { |vps| boot_autostart_disposition(vps) }
+
+        { schema_version: 1, vpses: }
       end
 
       def list_vps_network_interfaces
@@ -406,6 +460,43 @@ module VpsAdmin::Supervisor
                   .take
 
         console && console.vps_id
+      end
+
+      private
+
+      def valid_boot_autostart_pool?(vps)
+        vps[:pool_node_id] == @node.id &&
+          vps[:pool_fs].is_a?(String) &&
+          vps[:pool_fs].match?(%r{\A[A-Za-z0-9][A-Za-z0-9_.:-]*(?:/[A-Za-z0-9_.:-]+)*\z}) &&
+          !vps[:pool_fs].split('/').intersect?(%w[. ..])
+      end
+
+      def boot_autostart_disposition(vps)
+        disposition, reason =
+          if vps[:resource_lock_id]
+            %w[retain resource_locked]
+          elsif vps.id.nil?
+            %w[retire deleted]
+          elsif !vps.confirmed?
+            %w[retain transitional]
+          elsif vps.node_id != @node.id
+            %w[retire assigned_elsewhere]
+          elsif !%w[active suspended].include?(vps.object_state)
+            %w[retire inactive]
+          elsif !vps.autostart_enable
+            %w[retire autostart_disabled]
+          elsif !valid_boot_autostart_pool?(vps)
+            %w[unknown inventory_invalid]
+          else
+            %w[retain expected]
+          end
+
+        {
+          id: vps[:requested_id],
+          disposition:,
+          reason:,
+          pool_fs: reason == 'expected' ? vps[:pool_fs] : nil
+        }
       end
     end
   end

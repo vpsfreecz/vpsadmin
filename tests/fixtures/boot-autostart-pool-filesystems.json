@@ -1,0 +1,21 @@
+[
+  {"filesystem":"tank","valid":true},
+  {"filesystem":"tank/vps","valid":true},
+  {"filesystem":"tank/_vps","valid":true},
+  {"filesystem":"tank/-vps","valid":true},
+  {"filesystem":"tank/.hidden","valid":true},
+  {"filesystem":"tank/_vps/-data","valid":true},
+  {"filesystem":"tank/vps:archive","valid":true},
+  {"filesystem":"","valid":false},
+  {"filesystem":"/tank/vps","valid":false},
+  {"filesystem":"_tank/vps","valid":false},
+  {"filesystem":"-tank/vps","valid":false},
+  {"filesystem":"tank//vps","valid":false},
+  {"filesystem":"tank/vps/","valid":false},
+  {"filesystem":"tank vps","valid":false},
+  {"filesystem":"tank/.","valid":false},
+  {"filesystem":"tank/../vps","valid":false},
+  {"filesystem":"tank/vps/..","valid":false},
+  {"filesystem":"tank/~vps","valid":false},
+  {"filesystem":"tank/vps\n","valid":false}
+]
