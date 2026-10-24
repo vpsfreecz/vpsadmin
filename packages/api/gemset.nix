@@ -329,6 +329,16 @@
     };
     version = "3.5.0";
   };
+  fiddle = {
+    groups = [ "default" ];
+    platforms = [ ];
+    source = {
+      remotes = [ "https://rubygems.org" ];
+      sha256 = "1vifygrkw22gcd4wzh8gc4pv6h1zpk6kll6mmprrf5174wvfxa3z";
+      type = "gem";
+    };
+    version = "1.1.8";
+  };
   fio_api = {
     dependencies = [ "httparty" ];
     groups = [ "default" ];
@@ -360,10 +370,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1vgl4k818d5gy93ypd9x433ffsnllpcsga8fgkw8z9g8jv381cdj";
+      sha256 = "058qdfyxvbkl981m8d8jll7h0a00j6pg1r1gk3lqw232fjhgp45w";
       type = "gem";
     };
-    version = "0.29.12";
+    version = "0.30.2";
   };
   haveapi-client = {
     dependencies = [
@@ -378,10 +388,36 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0vxih4cpqji4ji7phjz83m9fpk9b538r5nqs6naamavhhw5iqaym";
+      sha256 = "1iyx3ma74c5f3w9ll08i2jr712wjzravbzgwmim40r0c3wysdknh";
       type = "gem";
     };
-    version = "0.29.12";
+    version = "0.30.2";
+  };
+  haveapi-go-client = {
+    dependencies = [ "haveapi-client" ];
+    groups = [ "default" ];
+    platforms = [ ];
+    source = {
+      remotes = [ "https://rubygems.org" ];
+      sha256 = "10zhbvgz0wmyf1xg17krzaq5x6al5jql4lvddad2bk1lz68pii8p";
+      type = "gem";
+    };
+    version = "0.30.2";
+  };
+  haveapi-rust-client = {
+    dependencies = [
+      "fiddle"
+      "haveapi-client"
+      "tomlrb"
+    ];
+    groups = [ "default" ];
+    platforms = [ ];
+    source = {
+      remotes = [ "https://rubygems.org" ];
+      sha256 = "0j49wlsggmhi1d2ibfhb4q0v7p57xa3h3rm7yzgl6x055pk58jxf";
+      type = "gem";
+    };
+    version = "0.30.2";
   };
   highline = {
     dependencies = [ "reline" ];
@@ -1358,6 +1394,17 @@
       type = "gem";
     };
     version = "0.6.1";
+  };
+  tomlrb = {
+    dependencies = [ "racc" ];
+    groups = [ "default" ];
+    platforms = [ ];
+    source = {
+      remotes = [ "https://rubygems.org" ];
+      sha256 = "0xs4gf516hy3nvmh7k871m806xw6956d3z3hwx13hwjam5q5x6kf";
+      type = "gem";
+    };
+    version = "2.0.5";
   };
   tpm-key_attestation = {
     dependencies = [
