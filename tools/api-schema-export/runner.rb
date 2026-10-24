@@ -22,7 +22,7 @@ module VpsAdmin
 
       def run
         raise UnsafeInput, 'Export requires a clean committed source checkout' unless git('status', '--porcelain').empty?
-        raise UnsafeInput, 'Schema export requires HaveAPI 0.30.2' unless Gem.loaded_specs.fetch('haveapi').version.to_s == '0.30.2'
+        raise UnsafeInput, 'Schema export requires HaveAPI 0.31.2' unless Gem.loaded_specs.fetch('haveapi').version.to_s == '0.31.2'
         raise UnsafeInput, 'Refusing an existing export destination' if File.exist?(@output) || File.symlink?(@output)
 
         api = Bootstrap.new(root: @root).load

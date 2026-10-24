@@ -1,7 +1,7 @@
 # This tooling bundle deliberately does not change the deployed API dependency.
 api_gemfile = File.expand_path('../../api/Gemfile', __dir__)
 source = File.read(api_gemfile)
-original = "gem 'haveapi', '~> 0.29.9'"
+original = "gem 'haveapi', '~> 0.31.2'"
 raise 'API HaveAPI dependency changed; review the schema tooling override' unless source.scan(original).length == 1
 
-instance_eval(source.sub(original, "gem 'haveapi', '= 0.30.2'"), api_gemfile)
+instance_eval(source.sub(original, "gem 'haveapi', '= 0.31.2'"), api_gemfile)

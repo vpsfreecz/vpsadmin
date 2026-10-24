@@ -18,10 +18,11 @@ nix develop .#vpsadmin
 tools/export-api-schema --prepare
 ```
 
-Preparation installs a separate tooling bundle with released HaveAPI 0.30.2.
-Its Gemfile evaluates the API Gemfile with one checked dependency replacement;
-the API and packaged runtime dependencies remain unchanged. The tooling bundle
-and its lockfile are ignored local files under `tools/api-schema-export/`.
+Preparation installs a separate tooling bundle that pins HaveAPI 0.31.2, the
+same release used by the API. Its Gemfile checks the API dependency declaration
+and replaces its constraint with that exact version. Preparation leaves the API
+and packaged runtime dependencies unchanged. The tooling bundle and its lockfile
+are ignored local files under `tools/api-schema-export/`.
 
 Commit the intended source changes and pass the database-free checks before
 exporting. Choose a destination that does not exist:

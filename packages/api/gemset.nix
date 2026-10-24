@@ -329,6 +329,16 @@
     };
     version = "3.5.0";
   };
+  fiddle = {
+    groups = [ "default" ];
+    platforms = [ ];
+    source = {
+      remotes = [ "https://rubygems.org" ];
+      sha256 = "1vifygrkw22gcd4wzh8gc4pv6h1zpk6kll6mmprrf5174wvfxa3z";
+      type = "gem";
+    };
+    version = "1.1.8";
+  };
   fio_api = {
     dependencies = [ "httparty" ];
     groups = [ "default" ];
@@ -360,10 +370,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1vgl4k818d5gy93ypd9x433ffsnllpcsga8fgkw8z9g8jv381cdj";
+      sha256 = "1804kzacc1n5hysksc34m4f5vnq6d41jzljj1qn918wjxadqdhzi";
       type = "gem";
     };
-    version = "0.29.12";
+    version = "0.31.2";
   };
   haveapi-client = {
     dependencies = [
@@ -378,10 +388,47 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0vxih4cpqji4ji7phjz83m9fpk9b538r5nqs6naamavhhw5iqaym";
+      sha256 = "14fqp3khfqm9nl4ajb34al7ns3yzmvg0y5x6mwf5y82cqa0063i3";
       type = "gem";
     };
-    version = "0.29.12";
+    version = "0.31.2";
+  };
+  haveapi-go-client = {
+    dependencies = [ "haveapi-client" ];
+    groups = [ "default" ];
+    platforms = [ ];
+    source = {
+      remotes = [ "https://rubygems.org" ];
+      sha256 = "0vvbxw5fhzj0a6df8yq8yqjy35dvl11r7zb9g3wihhw0y7qd3s3z";
+      type = "gem";
+    };
+    version = "0.31.2";
+  };
+  haveapi-rust-client = {
+    dependencies = [
+      "fiddle"
+      "haveapi-client"
+      "tomlrb"
+    ];
+    groups = [ "default" ];
+    platforms = [ ];
+    source = {
+      remotes = [ "https://rubygems.org" ];
+      sha256 = "1iadahvhykhv6ypwvp5416n3ws2zg9hbg8qhjv170cjynx0h3p9b";
+      type = "gem";
+    };
+    version = "0.31.2";
+  };
+  haveapi-typescript-client = {
+    dependencies = [ "haveapi-client" ];
+    groups = [ "default" ];
+    platforms = [ ];
+    source = {
+      remotes = [ "https://rubygems.org" ];
+      sha256 = "1gxw0mx2f0zhamzb9injaf9z2fw1nihl0zvifzir6si8d51v0ql8";
+      type = "gem";
+    };
+    version = "0.31.2";
   };
   highline = {
     dependencies = [ "reline" ];
@@ -1358,6 +1405,17 @@
       type = "gem";
     };
     version = "0.6.1";
+  };
+  tomlrb = {
+    dependencies = [ "racc" ];
+    groups = [ "default" ];
+    platforms = [ ];
+    source = {
+      remotes = [ "https://rubygems.org" ];
+      sha256 = "0xs4gf516hy3nvmh7k871m806xw6956d3z3hwx13hwjam5q5x6kf";
+      type = "gem";
+    };
+    version = "2.0.5";
   };
   tpm-key_attestation = {
     dependencies = [
