@@ -813,10 +813,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0a4q5h2hcihk79dbr20scgkm56l79qp7fsvfvkxlv8nmapvxg9i1";
+      sha256 = "1jnyqgbbzglgk1fzfr1rcqxi3jxki7gs8av9iz3b01gyq9irnbz0";
       type = "gem";
     };
-    version = "3.3.12.0";
+    version = "3.3.13.0";
   };
   prism = {
     groups = [
