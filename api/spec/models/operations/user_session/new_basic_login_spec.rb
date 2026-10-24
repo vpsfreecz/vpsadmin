@@ -30,14 +30,17 @@ RSpec.describe VpsAdmin::API::Operations::UserSession::NewBasicLogin do
   end
 
   it 'rejects a request from an older authentication generation' do
+    existing_session = create_open_session!(user:, auth_type: 'basic')
     generation = user.authentication_generation
     user.set_password('new-secret')
     user.save!
+    session_ids_before = UserSession.where(user:, auth_type: 'basic').order(:id).pluck(:id)
+    expect(session_ids_before).to include(existing_session.id)
 
     expect do
       op.run(user, request, authentication_generation: generation)
     end.to raise_error(VpsAdmin::API::Exceptions::OperationError, 'authentication expired')
 
-    expect(UserSession.where(user:, auth_type: 'basic')).to be_empty
+    expect(UserSession.where(user:, auth_type: 'basic').order(:id).pluck(:id)).to eq(session_ids_before)
   end
 end
