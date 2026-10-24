@@ -521,6 +521,8 @@
             componentPath = "api";
             packages = with pkgs; [
               git
+              libffi
+              pkg-config
               mariadb
               mariadb-connector-c
               ruby_3_4
