@@ -5,6 +5,12 @@ These pages describe vpsAdmin for developers and operators. Start with the
 
 ## Topics
 
+- [Boot auto-start obligations](boot-autostart.md): enrollment, sticky completion,
+  monitoring and recovery.
+- [Boot auto-start supervisor RPCs](boot-autostart-rpc.md)
+- [vpsAdminOS compatibility](vpsadminos-compatibility.md): recovery metadata and
+  daemon downgrade restrictions.
+- [Upgrade guides](upgrades/README.md): supported revision and schema transitions.
 - [Transactions](transactions.md): node commands, chains, resource locks, and
   database confirmations.
 - [IP ownership, accounting and locking](ip-locking.md)
