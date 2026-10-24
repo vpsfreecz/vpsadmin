@@ -15,6 +15,8 @@ These pages describe vpsAdmin for developers and operators. Start with the
 - [Object lifetimes](object-lifetimes.md): suspension, deletion, expiration,
   and state transitions.
 - [Plugins](plugins.md): API extensions, loading, and database migrations.
+- [API client examples](api-client-examples.md): Go and Rust documentation profiles
+  and SDK compatibility.
 - [Storage](storage/README.md): datasets, pools, snapshots, and operations.
   - [Backup branching](storage/branching.md)
   - [Snapshot downloads and local backups](storage/download.md)
