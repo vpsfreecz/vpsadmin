@@ -49,6 +49,14 @@ module NodeCtld
       send_read_request('list_vps_status_check')
     end
 
+    def list_vps_boot_autostart
+      send_read_request('list_vps_boot_autostart')
+    end
+
+    def reconcile_vps_boot_autostart(ids)
+      send_read_request('reconcile_vps_boot_autostart', args: [ids])
+    end
+
     def list_vps_network_interfaces
       send_read_request('list_vps_network_interfaces')
     end

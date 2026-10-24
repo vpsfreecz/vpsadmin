@@ -26,9 +26,20 @@ in
   config = mkIf cfg.enable {
     nixpkgs.overlays = import ../../../overlays { inherit vpsadminRev vpsadminosPath; };
 
+    environment.etc."nodectl/boot-autostart-version".text = "1\n";
+
     boot.postBootCommands = ''
       mkdir -m 0700 /run/nodectl
       ln -sfn /run/current-system/sw/bin/nodectl /run/nodectl/nodectl
+      # Only an actual boot may enroll a new cohort. Service startup and system
+      # activation must preserve missing/corrupt state as unavailable evidence.
+      (
+        umask 077
+        rm -f /run/nodectl/boot-autostart.failed.json
+        boot_id=$(cat /proc/sys/kernel/random/boot_id)
+        printf '{"schema_version":1,"boot_id":"%s","phase":"enrolling","capture_deadline_boottime_seconds":300,"failure_reason":null,"captured_at_boottime_seconds":null,"obligations":[]}\n' "$boot_id" > /run/nodectl/boot-autostart.json.new
+        mv /run/nodectl/boot-autostart.json.new /run/nodectl/boot-autostart.json
+      )
     '';
 
     runit.services.nodectld = {

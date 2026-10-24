@@ -4,11 +4,17 @@ require 'spec_helper'
 require 'prometheus/client/formats/text'
 require 'nodectld/exporter'
 require 'nodectld/vps_autostart_status'
+require 'nodectld/vps_boot_autostart'
 
 class VpsAutostartExporterDaemon
-  attr_reader :console, :queues, :start_time, :vps_status
+  attr_reader :console, :queues, :start_time, :vps_status, :vps_boot_autostart
 
-  def initialize(vps_autostart_status)
+  def initialize(vps_autostart_status, boot_snapshot: nil)
+    boot_snapshot ||= NodeCtld::VpsBootAutostart::Snapshot.new(
+      state: 'awaiting_reboot', reason: 'not_enrolled', success: false,
+      last_success_at: 0, expected: {}, unsatisfied: [], unsatisfied_counts: {}
+    )
+    @vps_boot_autostart = Struct.new(:snapshot).new(boot_snapshot)
     @console = Struct.new(:stats).new({})
     @queues = {}
     @start_time = Time.now
@@ -42,9 +48,9 @@ RSpec.describe NodeCtld::Exporter do
     )
   end
 
-  def render(status)
+  def render(status, boot_snapshot: nil)
     registry = Prometheus::Client::Registry.new
-    exporter = described_class.new(VpsAutostartExporterDaemon.new(status))
+    exporter = described_class.new(VpsAutostartExporterDaemon.new(status, boot_snapshot:))
     metrics = exporter.send(:setup_metrics, registry)
     exporter.send(:collect_metrics, metrics)
     Prometheus::Client::Formats::Text.marshal(registry)
@@ -110,5 +116,26 @@ RSpec.describe NodeCtld::Exporter do
     expect(output).not_to include('nodectld_vps_autostart_unsatisfied{')
     expect(output).not_to include('nodectld_vps_autostart_unsatisfied_reason{')
     expect(output).not_to include('nodectld_vps_autostart_mismatch{')
+  end
+
+  it 'exports capability and exactly one state while awaiting reboot' do
+    output = render(NodeCtld::VpsAutostartStatus.new)
+    expect(output).to include('nodectld_vps_boot_autostart_supported 1.0')
+    expect(output).to include('nodectld_vps_boot_autostart_state{state="awaiting_reboot",reason="not_enrolled"} 1.0')
+    expect(output).to include('nodectld_vps_boot_autostart_check_success 0.0')
+    expect(output).not_to include('nodectld_vps_boot_autostart_unsatisfied{')
+  end
+
+  it 'exports boot cohort and pending identity separately from stateless diagnostics' do
+    boot_snapshot = NodeCtld::VpsBootAutostart::Snapshot.new(
+      state: 'active', reason: 'none', success: true, last_success_at: 1234,
+      expected: { 'tank' => 3 },
+      unsatisfied: [NodeCtld::VpsAutostartStatus::Unsatisfied.new(pool: 'tank', vps_id: '101', reason: 'missing')],
+      unsatisfied_counts: { %w[tank missing] => 1 }
+    )
+    output = render(NodeCtld::VpsAutostartStatus.new, boot_snapshot:)
+    expect(output).to include('nodectld_vps_boot_autostart_expected{pool="tank"} 3.0')
+    expect(output).to include('nodectld_vps_boot_autostart_unsatisfied{pool="tank",vps_id="101"} 1.0')
+    expect(output).to include('nodectld_vps_boot_autostart_check_last_success_timestamp_seconds 1234.0')
   end
 end

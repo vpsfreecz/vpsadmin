@@ -214,6 +214,97 @@ RSpec.describe NodeCtld::Daemon do
     expect(NodeCtld::Command).to have_received(:new).once
   end
 
+  %i[load setup request close].each do |stage|
+    it "polls and dispatches execute and rollback commands while monitor #{stage} is blocked" do
+      queued_chain = insert_chain(state: NodeCtldSpec::TxState::CHAIN_QUEUED)
+      execute_id = insert_transaction(transaction_chain_id: queued_chain, handle: NodeCtldSpec::TestHandles::OK)
+      rollback_chain = insert_chain(state: NodeCtldSpec::TxState::CHAIN_ROLLBACKING, size: 2)
+      rollback_id = insert_transaction(
+        transaction_chain_id: rollback_chain, handle: NodeCtldSpec::TestHandles::OK,
+        done: NodeCtldSpec::TxState::TX_DONE_DONE, status: NodeCtldSpec::TxState::TX_STATUS_OK
+      )
+      insert_transaction(
+        transaction_chain_id: rollback_chain, handle: NodeCtldSpec::TestHandles::OK,
+        depends_on_id: rollback_id, done: NodeCtldSpec::TxState::TX_DONE_ROLLED_BACK,
+        status: NodeCtldSpec::TxState::TX_STATUS_OK
+      )
+      directory = Dir.mktmpdir('async-boot-daemon-spec-')
+      path = File.join(directory, 'ledger.json')
+      File.write(path, JSON.generate(
+                         schema_version: 1, boot_id: 'current', phase: 'enrolling',
+                         capture_deadline_boottime_seconds: 300, failure_reason: nil,
+                         captured_at_boottime_seconds: nil, obligations: []
+                       ))
+      entered = Queue.new
+      release = Queue.new
+      barrier = lambda {
+        entered << true
+        release.pop
+      }
+      rpc = instance_double(NodeCtld::RpcClient, list_vps_boot_autostart: { 'schema_version' => 1, 'vpses' => [] }, close: nil)
+      allow(NodeCtld::RpcClient).to receive(:new).and_return(rpc)
+      factory = lambda do
+        barrier.call if stage == :load
+        NodeCtld::VpsBootAutostartLedger.new(path:, marker: File.join(directory, 'marker'), boot_id: 'current')
+      end
+      case stage
+      when :setup
+        allow(NodeCtld::RpcClient).to receive(:new) {
+          barrier.call
+          rpc
+        }
+      when :request
+        allow(rpc).to receive(:list_vps_boot_autostart) {
+          barrier.call
+          { 'schema_version' => 1, 'vpses' => [] }
+        }
+      when :close
+        allow(rpc).to receive(:close) { barrier.call }
+      end
+      monitor = NodeCtld::VpsBootAutostart.new(ledger_factory: factory, clock: -> { 20 })
+      daemon.instance_variable_set(:@vps_boot_autostart, monitor)
+      allow(daemon).to receive(:check_commands?).and_return(true)
+      allow(daemon).to receive(:do_command)
+      daemon.resume
+      worker = Thread.new { monitor.update }
+      expect(entered.pop(timeout: 2)).to be(true)
+      transactions = Thread.new { daemon.do_commands(shared_db) }
+      expect(transactions.join(1)).not_to be_nil
+      expect(daemon).to have_received(:check_commands?).with(shared_db)
+      expect(daemon).to have_received(:do_command).with(have_attributes(id: execute_id))
+      expect(daemon).to have_received(:do_command).with(have_attributes(id: rollback_id))
+      scraper = Thread.new { monitor.snapshot }
+      expect(scraper.join(1)).not_to be_nil
+      expect(scraper.value.reason).to eq(stage == :load ? 'state_loading' : 'none')
+      expect(worker.alive?).to be(true)
+      release << true
+      expect(worker.join(2)).not_to be_nil
+    ensure
+      release << true if worker&.alive?
+      worker&.join(2)
+      transactions&.join(2)
+      scraper&.join(2)
+      FileUtils.remove_entry(directory) if directory
+    end
+  end
+
+  [['enrolling', 5], ['active', 120], ['unavailable', 120]].each do |state, interval|
+    it "uses the published #{state} snapshot to select monitoring cadence" do
+      monitor = instance_double(NodeCtld::VpsBootAutostart, update: nil, snapshot: instance_double(NodeCtld::VpsBootAutostart::Snapshot, state:))
+      daemon.instance_variable_set(:@vps_boot_autostart, monitor)
+      $CFG.patch(vpsadmin: { vps_status_interval: 120 })
+      allow(Process).to receive(:clock_gettime).with(Process::CLOCK_BOOTTIME).and_return(100, 102)
+      allow(daemon).to receive(:run_thread_unless_runs) do |name, &block|
+        block.call if name == :vps_boot_autostart
+      end
+      allow(daemon).to receive(:sleep) { throw :finished }
+      catch(:finished) { daemon.run_threads }
+      expect(daemon).to have_received(:sleep).with(interval - 2).once
+      expect(monitor).to have_received(:update).once
+      expect(monitor).to have_received(:snapshot).once
+    end
+  end
+
   it 'records a successful transaction metadata poll using both clocks' do
     result = double(get: { 'update_time' => Time.at(123) })
     allow(shared_db).to receive(:prepared).and_return(result)

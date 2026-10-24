@@ -10,6 +10,7 @@ require 'nodectld/storage_status'
 require 'nodectld/shaper'
 require 'nodectld/ct_top'
 require 'nodectld/ct_monitor'
+require 'nodectld/vps_boot_autostart'
 
 module NodeCtld
   EXIT_OK = 0
@@ -41,7 +42,8 @@ module NodeCtld
 
     attr_reader :start_time, :ct_top, :node, :console, :queues,
                 :last_transaction_check, :last_transaction_check_monotonic,
-                :start_monotonic, :transaction_thread, :vps_status
+                :start_monotonic, :transaction_thread, :vps_status,
+                :vps_boot_autostart
 
     def initialize
       self.class.instance = self
@@ -62,6 +64,7 @@ module NodeCtld
       @dataset_expander = DatasetExpander.new
       @storage_status = StorageStatus.new(@dataset_expander)
       @vps_status = VpsStatus.new
+      @vps_boot_autostart = VpsBootAutostart.new
       @kernel_log = KernelLog::Parser.new
       @exporter = Exporter.new(self)
       @osctl_exporter = OsCtlExporter.new
@@ -273,6 +276,7 @@ module NodeCtld
 
     def do_commands(db)
       return unless run?
+
       return unless check_commands?(db)
 
       rs = select_commands(db)
@@ -311,6 +315,18 @@ module NodeCtld
     end
 
     def run_threads
+      run_thread_unless_runs(:vps_boot_autostart) do
+        if $CFG.get(:vpsadmin, :type) == :node && !$CFG.minimal?
+          loop do
+            started = Process.clock_gettime(Process::CLOCK_BOOTTIME)
+            @vps_boot_autostart.update
+            interval = @vps_boot_autostart.snapshot.state == 'enrolling' ? 5 : $CFG.get(:vpsadmin, :vps_status_interval)
+            elapsed = Process.clock_gettime(Process::CLOCK_BOOTTIME) - started
+            sleep([interval - elapsed, 0.01].max)
+          end
+        end
+      end
+
       run_thread_unless_runs(:queues_prune) do
         loop do
           n = 0

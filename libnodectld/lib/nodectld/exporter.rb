@@ -27,7 +27,15 @@ module NodeCtld
       :vps_autostart_unsatisfied,
       :vps_autostart_unsatisfied_reason,
       :vps_autostart_unsatisfied_count,
-      :vps_autostart_mismatch
+      :vps_autostart_mismatch,
+      :vps_boot_autostart_supported,
+      :vps_boot_autostart_state,
+      :vps_boot_autostart_check_success,
+      :vps_boot_autostart_check_last_success_timestamp_seconds,
+      :vps_boot_autostart_expected,
+      :vps_boot_autostart_unsatisfied,
+      :vps_boot_autostart_unsatisfied_reason,
+      :vps_boot_autostart_unsatisfied_count
     )
 
     def initialize(daemon)
@@ -159,6 +167,38 @@ module NodeCtld
           docstring: 'Number of auto-start VPSes that are not running',
           labels: %i[pool reason]
         ),
+        vps_boot_autostart_supported: registry.gauge(
+          :nodectld_vps_boot_autostart_supported,
+          docstring: 'Whether nodectld supports boot auto-start obligations'
+        ),
+        vps_boot_autostart_state: registry.gauge(
+          :nodectld_vps_boot_autostart_state,
+          docstring: 'State of boot auto-start monitoring', labels: %i[state reason]
+        ),
+        vps_boot_autostart_check_success: registry.gauge(
+          :nodectld_vps_boot_autostart_check_success,
+          docstring: 'Whether the latest boot auto-start check succeeded'
+        ),
+        vps_boot_autostart_check_last_success_timestamp_seconds: registry.gauge(
+          :nodectld_vps_boot_autostart_check_last_success_timestamp_seconds,
+          docstring: 'Unix timestamp of the latest successful boot auto-start check'
+        ),
+        vps_boot_autostart_expected: registry.gauge(
+          :nodectld_vps_boot_autostart_expected,
+          docstring: 'Frozen number of boot auto-start obligations', labels: %i[pool]
+        ),
+        vps_boot_autostart_unsatisfied: registry.gauge(
+          :nodectld_vps_boot_autostart_unsatisfied,
+          docstring: 'Whether a boot auto-start obligation remains pending', labels: %i[pool vps_id]
+        ),
+        vps_boot_autostart_unsatisfied_reason: registry.gauge(
+          :nodectld_vps_boot_autostart_unsatisfied_reason,
+          docstring: 'Current diagnostic reason for a pending boot obligation', labels: %i[pool vps_id reason]
+        ),
+        vps_boot_autostart_unsatisfied_count: registry.gauge(
+          :nodectld_vps_boot_autostart_unsatisfied_count,
+          docstring: 'Number of pending boot obligations', labels: %i[pool reason]
+        ),
         vps_autostart_mismatch: registry.gauge(
           :nodectld_vps_autostart_mismatch,
           docstring: 'Difference between vpsAdmin and osctld auto-start settings',
@@ -213,6 +253,26 @@ module NodeCtld
       end
 
       collect_vps_autostart_metrics(metrics)
+      collect_vps_boot_autostart_metrics(metrics)
+    end
+
+    def collect_vps_boot_autostart_metrics(metrics)
+      snapshot = @daemon.vps_boot_autostart.snapshot
+      metrics.vps_boot_autostart_supported.set(1)
+      metrics.vps_boot_autostart_state.set(1, labels: { state: snapshot.state, reason: snapshot.reason })
+      metrics.vps_boot_autostart_check_success.set(snapshot.success ? 1 : 0)
+      metrics.vps_boot_autostart_check_last_success_timestamp_seconds.set(snapshot.last_success_at)
+      snapshot.expected.each do |pool, count|
+        metrics.vps_boot_autostart_expected.set(count, labels: { pool: })
+      end
+      snapshot.unsatisfied.each do |vps|
+        labels = { pool: vps.pool, vps_id: vps.vps_id }
+        metrics.vps_boot_autostart_unsatisfied.set(1, labels:)
+        metrics.vps_boot_autostart_unsatisfied_reason.set(1, labels: labels.merge(reason: vps.reason))
+      end
+      snapshot.unsatisfied_counts.each do |(pool, reason), count|
+        metrics.vps_boot_autostart_unsatisfied_count.set(count, labels: { pool:, reason: })
+      end
     end
 
     def collect_vps_autostart_metrics(metrics)
