@@ -12,6 +12,14 @@ class CiTestSelectionTest < Minitest::Test
     @selector ||= CiTestSelector.new
   end
 
+  def test_boot_autostart_smoke_selects_monitoring
+    selection = selector.select(['tests/suite/vps/autostart-monitoring.nix'])
+
+    assert_equal 'selected', selection.mode
+    assert_includes selection.tags, 'monitoring'
+    assert_includes selection.tags, 'vps'
+  end
+
   def test_no_changed_files_skips
     selection = selector.select([])
 

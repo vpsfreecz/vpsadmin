@@ -60,6 +60,10 @@ full:
 
 select:
   - paths:
+      - "tests/suite/vps/autostart-monitoring.nix"
+    tags: ["monitoring", "vps"]
+
+  - paths:
       - "tests/suite/webui.nix"
       - "tests/playwright/webui/lib/**"
       - "tests/playwright/webui/playwright.config.cjs"
