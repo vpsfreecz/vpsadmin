@@ -18,7 +18,7 @@ module VpsAdmin::API::Resources
     end
 
     class Index < HaveAPI::Actions::Default::Index
-      desc 'List VPS user data'
+      desc 'List VPS user data ordered by ascending ID'
 
       input do
         use :all, include: %i[user format]
@@ -50,7 +50,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_pagination(query)
+        with_pagination(query.order(:id))
       end
     end
 
