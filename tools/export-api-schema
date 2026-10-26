@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+
+# Refuse Ruby's preloader before the interpreter can execute it. The declared
+# Nix shell sets RUBYLIB; discard that search path for this isolated tool.
+if [ "${RUBYOPT+x}" = x ]; then
+  echo 'Refusing inherited RUBYOPT' >&2
+  exit 1
+fi
+if [ "${BUNDLER_SETUP+x}" = x ] || [ "${BUNDLER_VERSION+x}" = x ] ||
+   [ "${BUNDLE_BIN_PATH+x}" = x ] || [ "${BUNDLE_GEMFILE+x}" = x ] ||
+   [ "${BUNDLE_PATH+x}" = x ]; then
+  echo 'Refusing inherited Bundler settings' >&2
+  exit 1
+fi
+unset RUBYLIB
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+exec ruby "$script_dir/api-schema-export/cli.rb" "$@"
