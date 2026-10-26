@@ -302,10 +302,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1zsz6ghll6hqsrnbfxagvln58nw4zvyfjygnnjhi7nby33qfzq1v";
+      sha256 = "13r8mjqk8slscc8rxfhfrqglks131sb78ay4dklcafd7xm6ia247";
       type = "gem";
     };
-    version = "2.15.0";
+    version = "2.15.1";
   };
   faraday-follow_redirects = {
     dependencies = [ "faraday" ];
