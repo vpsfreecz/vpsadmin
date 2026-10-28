@@ -1,0 +1,28 @@
+# Copy to config/api.rb and keep it as a protected regular file.
+require 'json'
+require 'uri'
+
+VpsAdmin::API.configure do |api|
+  api.documentation_name = URI.parse(SysConfig.get(:core, :api_url)).host
+
+  config_path = File.join(__dir__, 'documentation-oauth.json')
+  next unless File.exist?(config_path)
+
+  begin
+    settings = JSON.parse(File.read(config_path))
+    raise ArgumentError unless settings.is_a?(Hash)
+
+    api.documentation_oauth(
+      client_id: settings.fetch('client_id'),
+      client_secret: settings.fetch('client_secret'),
+      redirect_uri: settings.fetch('redirect_uri'),
+      session_secret: File.binread(File.join(__dir__, 'documentation-session.key')),
+      scope: ['all'],
+      session_lifetime: 3600,
+      switch_user: settings.fetch('switch_user', false)
+    )
+  rescue JSON::ParserError, KeyError, ArgumentError, TypeError
+    # Do not include parsed values or nested exceptions in startup diagnostics.
+    raise ArgumentError, 'Invalid documentation OAuth configuration', cause: nil
+  end
+end
