@@ -514,8 +514,11 @@ test('IP release campaign: navigation, bulk exemptions, notices and manual relea
   await page.getByRole('button', { name: 'Release eligible addresses', exact: true }).click();
   await expect.poll(async () => {
     await page.reload();
-    return await rowWithText(page, ips[0].addr).innerText();
-  }, { timeout: 120000 }).toContain('Released');
+    return {
+      addressReleased: (await rowWithText(page, ips[0].addr).innerText()).includes('Released'),
+      campaignClosed: (await rowWithText(page, 'State').innerText()).includes('Closed'),
+    };
+  }, { timeout: 120000 }).toEqual({ addressReleased: true, campaignClosed: true });
   await expect(page.locator('#content-in')).toContainText('All selected addresses released');
   await expect(rowWithText(page, 'State')).toContainText('Closed');
   await expect(page.locator('#aside').getByRole('link', { name: 'Close without releasing IPs', exact: true })).toHaveCount(0);
