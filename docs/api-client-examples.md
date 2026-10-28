@@ -25,14 +25,108 @@ invalid profiles fail startup. HTML requests use the current user's authorized
 description and samples. They do not fetch schemas, generate SDKs or run
 compilers.
 
-HaveAPI 0.31.2 reuses unchanged, owned context fields when deriving documentation
-panels and copies explicitly supplied replacements. Container and string inputs
+The selected HaveAPI source reuses unchanged, owned context fields when deriving
+documentation panels and copies explicitly supplied replacements. Container and string inputs
 are detached from caller-owned data, including mutable children of shallow-frozen
 containers. Generated examples read the selected action and authentication
 provider from the current request's authorized description. Context reuse
 preserves each request's authorization and locale; it does not cache pages or
 authorization decisions between users. Rendering cost depends on the API shape
 and must be measured in the consuming API.
+
+## Documentation navigation and identity
+
+Open `/v7.0/` for initialization examples, `?page=authentication` for API
+credential examples, `?page=resources` for the directory, or `?resource=node`
+for a resource and its own actions. Nested resources use dotted paths.
+Slashless known version GET/HEAD URLs redirect to their slash form with the
+query preserved. `/doc` and its index/readme aliases display the packaged
+HaveAPI README. Internal guides remain neutral and do not sign readers in.
+
+HTML documentation and its search index use only a valid documentation OAuth
+cookie. Basic, Bearer, custom token headers and query credentials neither select
+that identity nor override it. Without a valid cookie, including when OAuth is
+unconfigured, documentation lists all declared resources anonymously. With a
+valid cookie, the requested API version validates its access token through the
+normal OAuth policy, then filters the page and search results for that account.
+Explicit language headers retain their negotiated locale. An invalid or expired
+session returns to the anonymous view.
+
+Ordinary API requests, JSON and OPTIONS descriptions, mutations and provider
+endpoints retain their existing credential handling. A documentation cookie
+does not authenticate them. Legacy documentation `_login` and `_logout`
+GET/HEAD links redirect to the default overview without challenging, signing
+out or clearing a session. Use Documentation settings for OAuth sign-in,
+sign-out, optional Switch user and theme choices.
+
+## Development-source packaging and documentation sign-in
+
+The API server and four Ruby client/generator gems must use one immutable
+HaveAPI Git revision. All five sibling gemspecs declare version 0.31.0, so the
+version alone does not identify the deployed code. Bundler's lock and the
+packaged gemset must agree on the full revision and Git source hash. Keep the
+released PHP, browser JavaScript and external SDK dependencies separate.
+
+The API bundle retains the whole Git source while evaluating nested gemspecs.
+All five Git-gem builds run repository-root `make doc` before Bundler stages and
+installs them. This gives their shared repository paths identical generated
+documents and gem metadata. After installation, the build removes the checkout
+and cache Git index files, whose filesystem timestamps differ between builds;
+Git objects, source and serialized gemspecs remain. Check the installed server
+gem's documentation contents and all five loaded gem paths. A successful Ruby
+require alone does not prove that the assets were packaged.
+
+Use the existing configure-before-mount hook for documentation sign-in. Copy
+[`api/config/api.rb.example`](../api/config/api.rb.example) to the API's private
+`config/api.rb` as a regular file. The NixOS API setup preserves regular private
+configuration files. The sample sets the documentation label from the configured
+API URL's host and reads these adjacent private files:
+
+- `documentation-oauth.json`: an object with `client_id`, `client_secret` and
+  `redirect_uri` strings, plus optional boolean `switch_user` (default `false`).
+- `documentation-session.key`: at least 64 bytes of stable random secret material,
+  shared by all API workers.
+
+Keep both files outside Git and the Nix store, readable only by their owner and
+the API service as required. A missing OAuth JSON file leaves the optional
+client disabled. Malformed JSON, missing fields, an invalid option or a missing
+session key fails startup. The sample suppresses parsed values and nested
+validation errors in its configuration diagnostic.
+
+Register a dedicated nondefault confidential OAuth client through the ordinary
+API. Use fixed 3600-second access tokens, no refresh tokens, and
+`allow_single_sign_on: false`. Set its exact HTTPS redirect to
+`<API origin>/_documentation/oauth/callback`; the API is mounted at `/`.
+The sample requests scope `['all']` and limits its documentation session to
+3600 seconds. Keep `switch_user` disabled until a fresh authorization with this
+client offers editable account credentials. Do not reuse PHP or React client
+credentials.
+
+HaveAPI obtains authorize, token and revoke URLs from the default API version's
+OAuth provider metadata. vpsAdmin derives those URLs from `core.auth_url`, or
+`core.api_url` when no separate authentication URL is configured. They use
+`/_auth/oauth2/` without an API-version prefix. Both the browser and API workers
+must trust the provider's HTTPS certificate. Keep sufficient worker concurrency
+for same-origin token and revoke requests.
+
+The test/development nginx frontend replaces client-supplied forwarding metadata
+with its own scheme, host, port and remote address. Its API/auth access log omits
+queries and its API/auth error log is disabled because nginx error messages can
+include the original request. The whole API virtual host connects directly to
+HAProxy, whose API request logging is disabled. It bypasses Varnish because
+Varnish shared-memory logging can retain request and response values even for
+uncached requests. This also removes the test/development API metrics endpoint's
+60-second Varnish cache. Keep the direct route on rollback while documentation
+OAuth remains enabled. Retain these settings when exposing documentation OAuth
+callbacks; never capture callback queries, credentials, cookies or tokens in
+request logs.
+
+The isolated [schema exporter](api-schema-export.md) still requires released
+HaveAPI 0.31.2. It deliberately rejects this development-source API and is not a
+deployment prerequisite. Deploy or roll back the private documentation
+configuration together with its matching API bundle; older documentation code
+cannot load these options. OAuth client administration remains a separate
+operation.
 
 ## Generated and dynamic TypeScript
 
@@ -42,17 +136,16 @@ clients discover resources dynamically; their TypeScript declarations describe
 the generic client API. Generated calls use the generic async runtime for
 transport and authentication. Server authorization and validation still apply.
 
-The published generated SDK 0.1.1 requires `haveapi-client@0.30.2`, and HaveAPI
-0.31.2's TypeScript renderer emits that supported runtime version. Install this
+The published generated SDK 0.1.1 requires `haveapi-client@0.30.2`. Install this
 pair in an example consumer:
 
 ```sh
 npm install vpsadmin-typescript-client@0.1.1 haveapi-client@0.30.2
 ```
 
-These example dependencies are separate from vpsAdmin's HaveAPI 0.31.2 application
-dependencies. Generated programs use an API base ending in `/v7.0` without the
-runtime constructor's `version` option. The profile supplies only
+These example dependencies are separate from vpsAdmin's Git-sourced Ruby
+application dependencies. Generated programs use an API base ending in `/v7.0`
+without the runtime constructor's `version` option. The profile supplies only
 `package_name: 'vpsadmin-typescript-client'`; it uses the mounted model and
 omits a saved snapshot and SDK version override.
 

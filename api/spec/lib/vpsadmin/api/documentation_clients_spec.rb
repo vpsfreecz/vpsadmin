@@ -7,18 +7,20 @@ RSpec.describe VpsAdmin::API do
 
   after do
     header 'Accept-Language', nil
+    header 'Cookie', nil
+    header 'X-HaveAPI-Auth-Token', nil
   end
 
-  def documentation(locale: 'en')
+  def documentation(page: nil, resource: nil, locale: 'en')
     header 'Accept', 'text/html'
     header 'Accept-Language', locale
-    get '/v7.0/'
+    get '/v7.0/', { page:, resource: }.compact, { 'HTTPS' => 'on' }
     expect(last_response.status).to eq(200)
     CGI.unescapeHTML(last_response.body)
   end
 
   def panel(html, id)
-    html.split(%(<div id="#{id}">), 2).fetch(1).split('</div>', 2).first
+    html.split(/<details\b[^>]*\bid="#{Regexp.escape(id)}"/, 2).fetch(1).split('</details>', 2).first
   end
 
   # Avoid constructing a diff of the entire version page on an assertion failure.
@@ -30,7 +32,7 @@ RSpec.describe VpsAdmin::API do
     values.each { |value| expect(html.include?(value)).to be(false), "Unexpected documentation text: #{value}" }
   end
 
-  it 'mounts the released generators for API 7.0 only', :documentation_profile do
+  it 'mounts the matching generators for API 7.0 only', :documentation_profile do
     expect(HaveAPI::GoClient::VERSION).to eq(HaveAPI::VERSION)
     expect(HaveAPI::RustClient::VERSION).to eq(HaveAPI::VERSION)
     expect(HaveAPI::TypeScriptClient::VERSION).to eq(HaveAPI::VERSION)
@@ -83,7 +85,7 @@ RSpec.describe VpsAdmin::API do
     )
     result = HaveAPI::ClientExamples::GoClient.render(:auth, context:, auth_method: :token, auth_description: token)
     expect(result.fetch(:status)).to eq(:code)
-    expect_text(result.fetch(:code), 'api.SetExistingTokenAuth(os.Getenv("HAVEAPI_TOKEN"))',
+    expect_text(result.fetch(:code), 'api.SetExistingTokenAuth("example-token")',
                 'github.com/vpsfreecz/vpsadmin-go-client/client')
     reject_text(result.fetch(:code), 'This authentication method does not match the configured Go SDK.')
   end
@@ -102,7 +104,7 @@ RSpec.describe VpsAdmin::API do
     initialization = renderer.render(:init, context:)
     expect(initialization.fetch(:status)).to eq(:code)
     expect_text(initialization.fetch(:code), 'import {createClient} from "vpsadmin-typescript-client";',
-                'runtime: haveapi-client@0.30.2.', %(new AsyncClient("#{last_request.url.chomp('/')}")))
+                %(new AsyncClient("#{last_request.url.chomp('/')}")))
 
     resource = description.fetch(:resources).fetch(:cluster)
     action = resource.fetch(:actions).fetch(:public_stats)
@@ -111,42 +113,134 @@ RSpec.describe VpsAdmin::API do
       sample: action.fetch(:examples).first
     ))
     expect(result.fetch(:status)).to eq(:code)
-    expect_text(result.fetch(:code), 'api["cluster"]["public_stats"]()', 'result.data')
+    expect_text(result.fetch(:code), 'api.cluster.public_stats()', 'result.data')
   end
 
-  it 'renders the SDK programs and preserves visibility and locale between requests' do
-    admin_html = as(SpecSeed.admin) { documentation }
-    expect_text(admin_html, 'id="root-node-update"')
+  it 'renders the actual VPS Index example through the mounted Go profile', :documentation_profile do
+    description = server.describe_version(HaveAPI::Context.new(server, version: '7.0', user: nil, doc: true))
+    resource = description.fetch(:resources).fetch('vps')
+    action = resource.fetch(:actions).fetch('index')
+    context = HaveAPI::ClientExample::Context.new(
+      version: '7.0', host: 'example.org', base_url: 'https://example.org/',
+      version_url: 'https://example.org/v7.0/', description:,
+      profile: server.documentation_client_profiles('7.0').fetch(:go),
+      resource_path: ['vps'], resource:, action_name: 'index', action:,
+      sample: action.fetch(:examples).first, detail: :thorough
+    )
+    result = HaveAPI::ClientExamples::GoClient.render(:example, context:)
+    expect(result.fetch(:status)).to eq(:code)
+    expect_text(result.fetch(:code), 'github.com/vpsfreecz/vpsadmin-go-client/client')
+  end
 
-    member_html = as(SpecSeed.user) { documentation(locale: 'cs') }
-    expect_text(member_html, 'init-go', 'init-rust-async', 'init-rust-blocking',
+  it 'serves anonymous overview, authentication and resource pages without API-header identity' do
+    html = as(SpecSeed.admin) { documentation }
+    expect_text(html, 'init-go', 'init-rust-async', 'init-rust-blocking',
                 'init-typescript-generated', 'init-typescript-callback', 'init-typescript-async')
-    reject_text(member_html, 'id="root-node-update"', 'example-node-update-0-', 'translation missing:')
-    node_index = member_html.split('id="root-node-index"', 2).fetch(1).split('<h3', 2).first
-    reject_text(node_index, '<td>ip_addr</td>', '192.168.0.10')
-    reject_text(member_html, 'haveapi.invalid', 'snapshot_path', 'generator_config_path')
-
-    html = documentation
-    expect_text(html, 'Rust (async and blocking)', 'TypeScript (generated)',
-                'github.com/vpsfreecz/vpsadmin-go-client/client')
-    expect_text(html, 'id="root-node-update"')
+    reject_text(html, 'docs-identity', 'data-documentation-login')
     expect_text(panel(html, 'init-typescript-generated'), 'createClient', 'vpsadmin-typescript-client',
-                'haveapi-client@0.30.2')
+                'haveapi-client')
     expect_text(panel(html, 'init-go'), 'go get github.com/vpsfreecz/vpsadmin-go-client/client@latest')
     expect_text(panel(html, 'init-rust-async'), '// cargo add vpsadmin-client')
     expect_text(panel(html, 'init-rust-blocking'), '// cargo add vpsadmin-client --features blocking')
-    %w[init-rust-async init-rust-blocking].each do |id|
-      reject_text(panel(html, id), 'https://github.com/vpsfreecz/vpsadmin-rust-client',
-                  'ff876abe17e3301da62c1b6afbda055ec89db9d2', 'version =')
-    end
-    reject_text(html, 'version = "latest"',
+    reject_text(html, 'https://github.com/vpsfreecz/vpsadmin-rust-client',
+                'ff876abe17e3301da62c1b6afbda055ec89db9d2', 'version = "latest"',
                 'haveapi.invalid', 'snapshot_path', 'generator_config_path')
+    auth = documentation(page: 'authentication')
+    expect_text(panel(auth, 'auth-token-go'), 'SetExistingTokenAuth("example-token")')
+    expect_text(panel(auth, 'auth-token-typescript-generated'),
+                %(runtime.authenticate('token', {token: "example-token"})))
+    cluster = documentation(resource: 'cluster')
+    expect_text(panel(cluster, 'example-cluster-public_stats-0-go'), 'api.Cluster.PublicStats')
+    expect_text(panel(cluster, 'example-cluster-public_stats-0-rust-async'), '.cluster().public_stats()')
+    expect_text(panel(cluster, 'example-cluster-public_stats-0-rust-blocking'), '.cluster().public_stats()')
+    expect_text(panel(cluster, 'example-cluster-public_stats-0-typescript-generated'),
+                'api.cluster.public_stats()')
+    expect_text(cluster, 'data-doc-section', 'class="docs-permalink"', 'data-example-details=')
+    example_details = cluster.match(/data-example-details="(\{[^}]+\})"/).captures.first
+    expect(JSON.parse(example_details).keys).to include('go', 'rust-async', 'typescript-generated')
+    expect_text(documentation(resource: 'node'), 'id="root-node-update"')
+    expect(User.current).to be_nil
+    expect(UserSession.current).to be_nil
+    expect(PaperTrail.request.whodunnit).to be_nil
+  end
 
-    expect_text(panel(html, 'example-cluster-public_stats-0-go'), 'api.Cluster.PublicStats', 'VpsCount')
-    expect_text(panel(html, 'example-cluster-public_stats-0-rust-async'), '.cluster().public_stats()', '.send().await?')
-    expect_text(panel(html, 'example-cluster-public_stats-0-rust-blocking'), '.cluster().public_stats()', '.send()?')
-    expect_text(panel(html, 'example-cluster-public_stats-0-typescript-generated'),
-                'api["cluster"]["public_stats"]()', 'result.data')
-    expect_text(html, 'HAVEAPI_USER', 'HAVEAPI_PASSWORD', 'HAVEAPI_TOKEN')
+  it 'normalizes only known slashless version GETs and serves neutral packaged guides' do
+    header 'Accept', 'text/html'
+    get '/v7.0?page=resources&q=a%2Bb'
+    expect(last_response.status).to eq(308)
+    expect(last_response.headers.fetch('location')).to end_with('/v7.0/?page=resources&q=a%2Bb')
+    get '/v99.0'
+    expect(last_response.status).to eq(406)
+    expect(last_response.headers).not_to have_key('location')
+    get '/_login?return=https://invalid.example/'
+    expect(last_response.status).to eq(303)
+    expect(last_response.headers.fetch('location')).to end_with('/v7.0/')
+    expect(last_response.headers).not_to have_key('www-authenticate')
+    %w[/doc /doc/index /doc/index.md /doc/readme].each do |path|
+      as(SpecSeed.admin) { get path }
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers.fetch('cache-control')).to include('no-store')
+      expect_text(last_response.body, 'HaveAPI', 'self-descriptive RESTful')
+      reject_text(last_response.body, 'docs-identity', 'data-documentation-login')
+    end
+  end
+
+  context 'with configured documentation OAuth' do
+    let(:app) do
+      original = described_class.instance_variable_get(:@configure)
+      allow(SysConfig).to receive(:get).and_call_original
+      allow(SysConfig).to receive(:get).with(:core, :auth_url).and_return('https://example.org')
+      described_class.configure do |api|
+        original&.call(api)
+        api.documentation_oauth(
+          client_id: 'disposable-documentation-client', client_secret: 'disposable-secret',
+          session_secret: 's' * 64, scope: ['all'], session_lifetime: 3600,
+          redirect_uri: 'https://example.org/_documentation/oauth/callback'
+        )
+      end
+      described_class.default.app
+    ensure
+      described_class.configure(&original)
+    end
+
+    def documentation_cookie(user)
+      user.update!(enable_oauth2_auth: true, lockout: false, password_reset: false)
+      session = create_open_session!(user:, auth_type: 'oauth2')
+      handler = Struct.new(:response).new(Rack::Response.new)
+      server.documentation_oauth.send(:write_cookie, handler, 'session', {
+                                       'token' => session.token.token, 'expires' => Time.now.to_f + 3600,
+                                       'csrf' => 'c' * 64
+                                     })
+      Array(handler.response.headers.fetch('set-cookie')).first.split(';', 2).first
+    end
+
+    it 'keeps cookie identity, member privacy, locale and ordinary OPTIONS authentication separate' do
+      header 'Cookie', documentation_cookie(SpecSeed.user)
+      member = as(SpecSeed.admin) { documentation(resource: 'node', locale: 'cs') }
+      expect(User.current).to eq(SpecSeed.user)
+      expect(PaperTrail.request.whodunnit.to_s).to eq(SpecSeed.user.id.to_s)
+      reject_text(member, 'id="root-node-update"', 'example-node-update-0-',
+                  '<code>ip_addr</code>', '192.168.0.10', 'translation missing:')
+      expect(last_response.headers.fetch('vary')).to include('Accept-Language')
+      expect_text(member, 'Nečinnost CPU')
+      header 'Authorization', 'Basic invalid'
+      documentation(page: 'resources', locale: 'cs')
+      expect(User.current).to eq(SpecSeed.user)
+      header 'Authorization', nil
+      header 'Accept', 'application/json'
+      options '/v7.0/'
+      expect(last_response.status).to eq(200)
+      expect(User.current).to be_nil
+      as(SpecSeed.admin) { options '/v7.0/' }
+      expect(last_response.status).to eq(200)
+      expect(User.current).to eq(SpecSeed.admin)
+      header 'Cookie', documentation_cookie(SpecSeed.admin)
+      expect_text(documentation(resource: 'node'), 'id="root-node-update"', '<code>ip_addr</code>')
+      header 'Cookie', nil
+      as(SpecSeed.admin) { documentation(resource: 'node') }
+      expect(User.current).to be_nil
+      expect(UserSession.current).to be_nil
+      expect(PaperTrail.request.whodunnit).to be_nil
+    end
   end
 end

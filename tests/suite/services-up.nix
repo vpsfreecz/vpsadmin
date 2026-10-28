@@ -134,12 +134,14 @@ import ../make-test.nix (
           it 'is responding' do
             wait_until_block_succeeds(name: 'api responds') do
               _, output = services.succeeds('curl --silent --fail-with-body http://api.vpsadmin.test/')
-              expect(output).to include('API description')
+              expect(output).to include('<h1>API versions</h1>', '<a href="/v7.0/">Version 7.0</a>')
               true
             end
           end
 
           {
+            '/doc' => 'self-descriptive RESTful',
+            '/doc/readme' => 'self-descriptive RESTful',
             '/doc/json-schema' => 'Envelope',
             '/doc/protocol.md' => 'Protocol definition',
             '/doc/create-client.md' => 'Client definition',
@@ -159,7 +161,9 @@ import ../make-test.nix (
           it 'serves generated Go, Rust and TypeScript client examples' do
             wait_until_block_succeeds(name: 'api generated client documentation') do
               _, output = services.succeeds(
-                'curl --silent --fail-with-body http://api.vpsadmin.test/v7.0/'
+                'curl --silent --fail-with-body http://api.vpsadmin.test/v7.0/ ' \
+                "'http://api.vpsadmin.test/v7.0/?page=authentication' " \
+                "'http://api.vpsadmin.test/v7.0/?resource=cluster'"
               )
               expect(output).to include(
                 'init-go',
@@ -173,8 +177,10 @@ import ../make-test.nix (
                 'example-cluster-public_stats-0-rust-blocking',
                 'example-cluster-public_stats-0-typescript-generated',
                 'vpsadmin-typescript-client',
-                'haveapi-client@0.30.2',
+                'haveapi-client',
                 'createClient',
+                'SetExistingTokenAuth',
+                'example-token',
                 'github.com/vpsfreecz/vpsadmin-go-client/client',
                 '// cargo add vpsadmin-client',
                 '// cargo add vpsadmin-client --features blocking'
