@@ -1,3 +1,39 @@
+GIT
+  remote: https://github.com/vpsfreecz/haveapi.git
+  revision: 5114746f3a9f87e91c704147c0d99dd4f0d32f02
+  ref: 5114746f3a9f87e91c704147c0d99dd4f0d32f02
+  glob: **/*.gemspec
+  specs:
+    haveapi (0.31.0)
+      activesupport (>= 7.1)
+      haveapi-client (~> 0.31.0)
+      i18n (>= 1.6, < 2)
+      json
+      mail
+      nesty (~> 1.0)
+      rack-oauth2 (~> 2.2.0)
+      rake
+      redcarpet (~> 3.6)
+      require_all (~> 2.0.0)
+      sinatra (~> 4.0)
+      sinatra-contrib (~> 4.0)
+      tilt (~> 2.4)
+    haveapi-client (0.31.0)
+      activesupport (>= 7.0)
+      highline (~> 3.1)
+      json
+      require_all (~> 2.0.0)
+      rest-client (~> 2.1.0)
+      ruby-progressbar (~> 1.13.0)
+    haveapi-go-client (0.31.0)
+      haveapi-client (~> 0.31.0)
+    haveapi-rust-client (0.31.0)
+      fiddle (~> 1.1, >= 1.1.8)
+      haveapi-client (~> 0.31.0)
+      tomlrb (~> 2.0)
+    haveapi-typescript-client (0.31.0)
+      haveapi-client (~> 0.31.0)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -61,35 +97,6 @@ GEM
     fiddle (1.1.8)
     fio_api (0.0.11)
       httparty (>= 0.16.2)
-    haveapi (0.31.2)
-      activesupport (>= 7.1)
-      haveapi-client (~> 0.31.2)
-      i18n (>= 1.6, < 2)
-      json
-      mail
-      nesty (~> 1.0)
-      rack-oauth2 (~> 2.2.0)
-      rake
-      redcarpet (~> 3.6)
-      require_all (~> 2.0.0)
-      sinatra (~> 4.0)
-      sinatra-contrib (~> 4.0)
-      tilt (~> 2.4)
-    haveapi-client (0.31.2)
-      activesupport (>= 7.0)
-      highline (~> 3.1)
-      json
-      require_all (~> 2.0.0)
-      rest-client (~> 2.1.0)
-      ruby-progressbar (~> 1.13.0)
-    haveapi-go-client (0.31.2)
-      haveapi-client (~> 0.31.2)
-    haveapi-rust-client (0.31.2)
-      fiddle (~> 1.1, >= 1.1.8)
-      haveapi-client (~> 0.31.2)
-      tomlrb (~> 2.0)
-    haveapi-typescript-client (0.31.2)
-      haveapi-client (~> 0.31.2)
     highline (3.1.2)
       reline
     http-accept (1.7.0)
@@ -303,10 +310,11 @@ DEPENDENCIES
   bunny (~> 2.24.0)
   dnsruby (~> 1.73)
   fio_api!
-  haveapi (~> 0.31.2)
-  haveapi-go-client (~> 0.31.2)
-  haveapi-rust-client (~> 0.31.2)
-  haveapi-typescript-client (~> 0.31.2)
+  haveapi (= 0.31.0)!
+  haveapi-client (= 0.31.0)!
+  haveapi-go-client (= 0.31.0)!
+  haveapi-rust-client (= 0.31.0)!
+  haveapi-typescript-client (= 0.31.0)!
   ipaddress (~> 0.8.3)
   json (< 3)
   mysql2 (~> 0.5.6)
@@ -331,4 +339,4 @@ DEPENDENCIES
   yard
 
 BUNDLED WITH
-   2.7.2
+  4.0.23

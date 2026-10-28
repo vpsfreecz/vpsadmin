@@ -369,11 +369,13 @@
     groups = [ "default" ];
     platforms = [ ];
     source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "1804kzacc1n5hysksc34m4f5vnq6d41jzljj1qn918wjxadqdhzi";
-      type = "gem";
+      fetchSubmodules = false;
+      rev = "5114746f3a9f87e91c704147c0d99dd4f0d32f02";
+      sha256 = "090cwkg4i8r8s1nwlx1yf73v62i05dxwsd4ah1da9y54kk2gj0by";
+      type = "git";
+      url = "https://github.com/vpsfreecz/haveapi.git";
     };
-    version = "0.31.2";
+    version = "0.31.0";
   };
   haveapi-client = {
     dependencies = [
@@ -387,22 +389,26 @@
     groups = [ "default" ];
     platforms = [ ];
     source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "14fqp3khfqm9nl4ajb34al7ns3yzmvg0y5x6mwf5y82cqa0063i3";
-      type = "gem";
+      fetchSubmodules = false;
+      rev = "5114746f3a9f87e91c704147c0d99dd4f0d32f02";
+      sha256 = "090cwkg4i8r8s1nwlx1yf73v62i05dxwsd4ah1da9y54kk2gj0by";
+      type = "git";
+      url = "https://github.com/vpsfreecz/haveapi.git";
     };
-    version = "0.31.2";
+    version = "0.31.0";
   };
   haveapi-go-client = {
     dependencies = [ "haveapi-client" ];
     groups = [ "default" ];
     platforms = [ ];
     source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "0vvbxw5fhzj0a6df8yq8yqjy35dvl11r7zb9g3wihhw0y7qd3s3z";
-      type = "gem";
+      fetchSubmodules = false;
+      rev = "5114746f3a9f87e91c704147c0d99dd4f0d32f02";
+      sha256 = "090cwkg4i8r8s1nwlx1yf73v62i05dxwsd4ah1da9y54kk2gj0by";
+      type = "git";
+      url = "https://github.com/vpsfreecz/haveapi.git";
     };
-    version = "0.31.2";
+    version = "0.31.0";
   };
   haveapi-rust-client = {
     dependencies = [
@@ -413,22 +419,26 @@
     groups = [ "default" ];
     platforms = [ ];
     source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "1iadahvhykhv6ypwvp5416n3ws2zg9hbg8qhjv170cjynx0h3p9b";
-      type = "gem";
+      fetchSubmodules = false;
+      rev = "5114746f3a9f87e91c704147c0d99dd4f0d32f02";
+      sha256 = "090cwkg4i8r8s1nwlx1yf73v62i05dxwsd4ah1da9y54kk2gj0by";
+      type = "git";
+      url = "https://github.com/vpsfreecz/haveapi.git";
     };
-    version = "0.31.2";
+    version = "0.31.0";
   };
   haveapi-typescript-client = {
     dependencies = [ "haveapi-client" ];
     groups = [ "default" ];
     platforms = [ ];
     source = {
-      remotes = [ "https://rubygems.org" ];
-      sha256 = "1gxw0mx2f0zhamzb9injaf9z2fw1nihl0zvifzir6si8d51v0ql8";
-      type = "gem";
+      fetchSubmodules = false;
+      rev = "5114746f3a9f87e91c704147c0d99dd4f0d32f02";
+      sha256 = "090cwkg4i8r8s1nwlx1yf73v62i05dxwsd4ah1da9y54kk2gj0by";
+      type = "git";
+      url = "https://github.com/vpsfreecz/haveapi.git";
     };
-    version = "0.31.2";
+    version = "0.31.0";
   };
   highline = {
     dependencies = [ "reline" ];

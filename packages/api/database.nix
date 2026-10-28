@@ -2,6 +2,8 @@
   lib,
   stdenv,
   fetchurl,
+  defaultGemConfig,
+  gnumake,
   bundlerEnv,
   ruby,
   vpsadmin-source,
