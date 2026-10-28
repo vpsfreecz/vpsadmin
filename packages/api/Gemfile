@@ -15,10 +15,15 @@ gem 'bcrypt', '~> 3.1.20'
 gem 'bunny', '~> 2.24.0'
 gem 'dnsruby', '~> 1.73'
 
-gem 'haveapi', '~> 0.31.2'
-gem 'haveapi-go-client', '~> 0.31.2'
-gem 'haveapi-rust-client', '~> 0.31.2'
-gem 'haveapi-typescript-client', '~> 0.31.2'
+git 'https://github.com/vpsfreecz/haveapi.git',
+    ref: '1b264e25a73a0ab9bca5f847bd52254f74e0931c',
+    glob: '**/*.gemspec' do
+  gem 'haveapi', '= 0.31.0'
+  gem 'haveapi-client', '= 0.31.0'
+  gem 'haveapi-go-client', '= 0.31.0'
+  gem 'haveapi-rust-client', '= 0.31.0'
+  gem 'haveapi-typescript-client', '= 0.31.0'
+end
 
 gem 'ipaddress', '~> 0.8.3'
 # ActiveSupport 8.1 passes JSON.parse options as a positional argument.
