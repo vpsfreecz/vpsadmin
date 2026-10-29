@@ -206,10 +206,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "01hd3ry6slb4x7hf9k1za0mw3f9gw1kh8w17fwk92d8ydivwqfvb";
+      sha256 = "0gyqylh01h5kidl5am1kafaqqkhnzjjzfxpbij51qk4p8jg74s25";
       type = "gem";
     };
-    version = "3.2026.1020";
+    version = "3.2026.1027";
   };
   minitest = {
     dependencies = [
