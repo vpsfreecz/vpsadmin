@@ -44,6 +44,13 @@ module VpsAdmin
         wait_for_ready!
         configure_root! unless configured? && tcp_query('SELECT 1')
         ensure_database!
+        settings = query(
+          "SHOW VARIABLES WHERE Variable_name IN ('version', 'tx_isolation', 'innodb_snapshot_isolation')",
+          tcp: true
+        )
+        raise Error, settings.message unless settings.success?
+
+        warn "MariaDB test settings:\n#{settings.stdout.strip}"
         write_metadata
       end
 
@@ -145,6 +152,7 @@ module VpsAdmin
           "--bind-address=#{host}",
           "--log-error=#{log_path}",
           '--skip-networking=0',
+          '--innodb-snapshot-isolation=OFF',
           out: [log_path, 'a'],
           err: %i[child out]
         ).tap { |pid| Process.detach(pid) }
