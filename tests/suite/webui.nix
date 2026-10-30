@@ -4846,6 +4846,16 @@ import ../make-test.nix (
     };
 
     testScripts = {
+      incident-escalation = {
+        description = "Run incident escalation summary and administrator settings browser tests.";
+        script = webuiTestScriptCommon + ''
+          describe 'webui incident escalation controls' do
+            it 'shows counts and enforces administrator-only settings' do
+              run_playwright('incident-escalation', 'specs/incident-escalation.spec.cjs')
+            end
+          end
+        '';
+      };
       auth = {
         description = ''
           Run anonymous, authentication, session, and role menu browser tests.

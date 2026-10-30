@@ -439,6 +439,16 @@ class MailTemplate < ApplicationRecord
     incident: ::IncidentReport
   }, roles: %i[admin], public: true
 
+  %i[vps_memory_pressure_warning vps_memory_pressure_stopped vps_incident_warning vps_incident_stopped].each do |event|
+    register event, vars: {
+      user: ::User, vps: ::Vps, base_url: String, incident_type: String, incident_type_label: String,
+      incident_count_7d: Integer, incident_count_30d: Integer,
+      warning_limit: Integer, stop_limit: Integer,
+      warning_period_days: Integer, stop_period_days: Integer, repeat_stop_hours: Integer,
+      incident_at: Time, stop_enforced: Boolean, stopped_at: Time, repeated_stop: Boolean
+    }, roles: %i[admin], public: true
+  end
+
   %i[ip_release_requested ip_release_reminder].each do |event|
     register event, vars: {
       user: ::User,

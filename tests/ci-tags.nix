@@ -20,6 +20,11 @@ let
   matches = regex: str: builtins.match regex str != null;
 
   webuiScriptTags = {
+    incident-escalation = [
+      "vps"
+      "alerts"
+      "webui-incident-escalation"
+    ];
     auth = [
       "auth"
       "webui-auth"

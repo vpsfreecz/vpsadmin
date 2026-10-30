@@ -1,0 +1,26 @@
+Hello <%= @user.login %>,
+
+Repeated incidents have been reported for your VPS <%= @vps.id %> <%= @vps.hostname %>.
+
+  Incident type: <%= @incident_type_label %>
+  Incidents in the last <%= @warning_period_days %> days: <%= @incident_count_7d %> (warning limit: <%= @warning_limit %>)
+  Incidents in the last <%= @stop_period_days %> days: <%= @incident_count_30d %> (stop limit: <%= @stop_limit %>)
+  Incident time: <%= local_time(@incident_at, '%Y-%m-%d %H:%M:%S %Z') %>
+
+Please review the incident reports and address their cause to prevent further incidents.
+<% if @stop_enforced -%>
+If a new incident of this type brings the total to <%= @stop_limit %> or more within <%= @stop_period_days %> days,
+your VPS will be stopped automatically. If you start it again and incidents of
+this type continue while it remains at or above this limit, it will be stopped
+again, at most once per <%= @repeat_stop_hours %> hours.
+<% end -%>
+
+Incident history in vpsAdmin:
+
+  <%= @base_url %>?page=incidents&action=list&list=1&vps=<%= @vps.id %>&codename=<%= @incident_type %>
+
+Best regards,
+
+vpsAdmin
+
+(This is an automated mail from vpsAdmin, your reply will be sent to our support)

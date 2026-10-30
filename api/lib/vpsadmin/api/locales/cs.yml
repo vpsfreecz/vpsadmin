@@ -914,6 +914,104 @@ cs:
         label: In reply to
       in_rescue_mode:
         label: V nouzovém režimu
+      incident_accounting_since:
+        description: Společný čas úspěšné změny vlastníka. Prázdná hodnota znamená,
+          že se počítání od zapnutí funkce nevynulovalo.
+        label: Incidenty počítané od
+      incident_action_chain_id:
+        description: Transakční řetězec společného nevyřízeného vypnutí VPS.
+        label: Transakce automatického vypnutí po incidentech
+      incident_action_state:
+        choices:
+          failed:
+            label: selhalo
+          none:
+            label: žádné
+          pending:
+            label: čeká na dokončení
+          uncertain:
+            label: neznámý výsledek
+        description: Společný stav nevyřízeného vypnutí VPS. Selhání nebo neznámý
+          výsledek vyžaduje ověření.
+        label: Stav automatického vypnutí po incidentech
+      incident_count_30d:
+        description: Počet jedinečných započítaných incidentů vybraného typu za posledních
+          30 dní pro současného vlastníka.
+        label: Incidenty za 30 dní
+      incident_count_7d:
+        description: Počet jedinečných započítaných incidentů vybraného typu za posledních
+          7 dní pro současného vlastníka.
+        label: Incidenty za 7 dní
+      incident_enforcement_enabled:
+        label: Povolit automatické vypínání po incidentech
+      incident_last_incident_at:
+        description: Poslední započítaný incident vybraného typu pro současného vlastníka.
+        label: Poslední incident
+      incident_last_stop_at:
+        description: Potvrzené dokončení posledního společného vypnutí VPS kvůli opakovaným
+          incidentům.
+        label: Poslední automatické vypnutí po incidentech
+      incident_last_warning_at:
+        description: Čas zařazení posledního upozornění na incidenty vybraného typu
+          k odeslání. Nepotvrzuje doručení mailu.
+        label: Poslední upozornění na incidenty zařazené k odeslání
+      incident_mode:
+        choices:
+          enforce:
+            label: enforce
+          notify:
+            label: notify
+          observe:
+            label: observe
+        description: Režim observe incidenty vybraného typu počítá, notify navíc posílá
+          upozornění a enforce povoluje automatické vypínání.
+        label: Režim incidentů
+      incident_next_stop_allowed_at:
+        description: Nejdřívější čas, kdy nový incident může vyvolat další společné
+          vypnutí VPS. Na tento čas není naplánované vypnutí.
+        label: Konec ochranné lhůty mezi vypnutími po incidentech
+      incident_policy:
+        choices:
+          oomd:
+            label: Incidenty přetížení paměti VPS
+        description: Registrovaný typ incidentu, jehož nastavení a přehled se zobrazují.
+        label: Typ incidentu
+      incident_policy_label:
+        description: Přeložený název vybraného typu incidentu.
+        label: Název typu incidentu
+      incident_status:
+        choices:
+          clear:
+            label: pod limity
+          near_limit:
+            label: blíží se limitu
+          stop_threshold:
+            label: dosažen limit pro automatické vypnutí
+          warning:
+            label: dosažen limit pro upozornění
+        label: Status incidentů
+      incident_stop_enforced:
+        description: Režim vybraného pravidla i společné nastavení tohoto VPS povolují
+          automatické vypínání.
+        label: Automatické vypínání po incidentech je aktivní
+      incident_stop_limit:
+        description: Výsledný počet incidentů vybraného typu za posledních 30 dní,
+          při kterém se VPS automaticky vypne.
+        label: Limit pro automatické vypnutí po incidentech
+      incident_stop_limit_override:
+        description: Vlastní limit pro vypnutí po incidentech vybraného typu za posledních
+          30 dní nastavený administrátorem. Prázdná hodnota přebírá globální výchozí
+          limit tohoto typu.
+        label: Vlastní limit pro automatické vypnutí po incidentech
+      incident_warning_limit:
+        description: Výsledný počet incidentů vybraného typu za posledních 7 dní,
+          při kterém se posílá upozornění.
+        label: Limit pro upozornění na incidenty
+      incident_warning_limit_override:
+        description: Vlastní limit pro upozornění na incidenty vybraného typu za posledních
+          7 dní nastavený administrátorem. Prázdná hodnota přebírá globální výchozí
+          limit tohoto typu.
+        label: Vlastní limit pro upozornění na incidenty
       incoming_payment:
         label: Příchozí platba
       info:
@@ -2393,6 +2491,11 @@ cs:
       access_denied_to_seed_vps: přístup k této VPS odepřen
       access_denied_to_vps_user_data: Přístup k VPS User data odepřen
       access_token_in_url: access_token nesmí být poslán v URL
+      incident_escalation:
+        invalid_configuration: Neplatný režim nebo limity incidentů; automatické akce
+          jsou vypnuté
+        separate_update: Nastavení incidentů měň odděleně od ostatních vlastností
+          VPS.
       ip_release:
         access_denied: Tato výzva k uvolnění IP adres patří jinému uživateli.
         already_released: Některá z vybraných IP adres se právě uvolňuje nebo už byla
@@ -4068,6 +4171,8 @@ cs:
             input:
               environment:
                 description: Filtrovat podle prostředí
+              incident_enforcement_enabled:
+                description: Filtrovat VPS podle povolení automatického vypínání.
               location:
                 description: Filtrovat podle lokace
               node:
@@ -4115,6 +4220,10 @@ cs:
                 label: Expirace
               hostname:
                 description: Hostname VPS
+              incident_enforcement_enabled:
+                description: Povolit automatické vypínání tohoto VPS po opakovaných
+                  incidentech všech registrovaných typů. Sběr incidentů a upozornění
+                  zůstávají zapnuté.
               node:
                 description: Node, na kterém VPS poběží
               object_state:
@@ -4178,6 +4287,10 @@ cs:
               label: ID
             name:
               label: Název
+        input:
+          incident_status:
+            description: Filtrovat VPS podle počtu incidentů vybraného typu vůči výsledným
+              limitům.
         mount:
           attributes:
             dataset:
@@ -4197,6 +4310,12 @@ cs:
             label: Expirace
           hostname:
             description: Hostname VPS
+          incident_enforcement_enabled:
+            description: Povolit automatické vypínání tohoto VPS po opakovaných incidentech
+              všech registrovaných typů. Sběr incidentů a upozornění zůstávají zapnuté.
+          incident_status:
+            description: Status podle počtu incidentů vybraného typu a výsledných
+              limitů. Společná výjimka a ochranná lhůta jsou uvedené samostatně.
           node:
             description: Node, na kterém VPS poběží
           object_state:
@@ -4469,6 +4588,7 @@ cs:
           expand_dataset: Rozšíření datasetu
           expand_dataset_again: Rozšíření datasetu+
           features: Funkce
+          incident_escalation_mail: Odeslání upozornění na opakované incidenty
           migrate:
             os_to_os: Migrace
             os_to_vz: Migrace

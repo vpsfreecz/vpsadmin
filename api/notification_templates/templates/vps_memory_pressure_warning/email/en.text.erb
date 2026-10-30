@@ -1,0 +1,34 @@
+Hello <%= @user.login %>,
+
+Your VPS <%= @vps.id %> <%= @vps.hostname %> has repeatedly triggered our resource protection system.
+
+  Incident type: <%= @incident_type_label %>
+  Incidents in the last <%= @warning_period_days %> days: <%= @incident_count_7d %> (warning limit: <%= @warning_limit %>)
+  Incidents in the last <%= @stop_period_days %> days: <%= @incident_count_30d %> (stop limit: <%= @stop_limit %>)
+  Incident time: <%= local_time(@incident_at, '%Y-%m-%d %H:%M:%S %Z') %>
+
+This resource pressure affects other VPS on the same node and may disrupt their
+services. Please review your VPS's memory usage and service configuration. A
+common cause is a web server or application spawning more worker processes than
+the available memory can support. Reducing the maximum number of workers may
+resolve the problem.
+
+If your workload needs more memory, you can increase your VPS's memory.
+
+Please address this to prevent further incidents.
+<% if @stop_enforced -%>
+If a new incident brings the total to <%= @stop_limit %> or more within <%= @stop_period_days %> days, your VPS
+will be stopped automatically. If you start it again and incidents continue while
+it remains at or above this limit, it will be stopped again, at most once per
+<%= @repeat_stop_hours %> hours.
+<% end -%>
+
+Incident history in vpsAdmin:
+
+  <%= @base_url %>?page=incidents&action=list&list=1&vps=<%= @vps.id %>&codename=oomd
+
+Best regards,
+
+vpsAdmin
+
+(This is an automated mail from vpsAdmin, your reply will be sent to our support)

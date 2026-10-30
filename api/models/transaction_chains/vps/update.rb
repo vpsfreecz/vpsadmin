@@ -4,6 +4,10 @@ module TransactionChains
     allow_empty
 
     def link_chain(vps, attrs, admin: nil, os_release: nil)
+      if attrs.keys.map(&:to_s).intersect?(::IncidentEscalation::SETTINGS + ['incident_policy'])
+        ::IncidentEscalation.update_settings!(vps, attrs)
+        return
+      end
       lock(vps)
       concerns(:affect, [vps.class.name, vps.id])
 
@@ -216,6 +220,7 @@ module TransactionChains
     end
 
     def chown_vps(vps, orig_user)
+      vps.update_columns(incident_owner_transfer_chain_id: current_chain.id)
       db_changes = { vps => { user_id: vps.user_id } }
 
       datasets = vps.dataset_in_pool.dataset.subtree.to_a

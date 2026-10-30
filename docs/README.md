@@ -7,6 +7,8 @@ These pages describe vpsAdmin for developers and operators. Start with the
 
 - [API schema export](api-schema-export.md): isolated source-based schema and
   provenance for client generation.
+- [Incident escalation](incident-escalation.md): thresholds, summaries,
+  administrator settings, event identity, ownership and recovery.
 - [Transactions](transactions.md): node commands, chains, resource locks, and
   database confirmations.
 - [IP ownership, accounting and locking](ip-locking.md)

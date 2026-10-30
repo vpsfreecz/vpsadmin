@@ -41,7 +41,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsEvents do
 
     it 'creates an incident report for oomd stop events' do
       vps = build_standalone_vps_fixture(node:).fetch(:vps)
-      allow(TransactionChains::IncidentReport::New).to receive(:fire)
+      allow(TransactionChains::IncidentReport::New).to receive(:fire).and_return([instance_double(TransactionChain, id: 999), nil])
 
       supervisor.send(:process_event, event_payload(vps, type: 'oomd', opts: { 'action' => 'stop' }))
 
@@ -56,7 +56,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsEvents do
 
     it 'creates an incident report for oomd restart events' do
       vps = build_standalone_vps_fixture(node:).fetch(:vps)
-      allow(TransactionChains::IncidentReport::New).to receive(:fire)
+      allow(TransactionChains::IncidentReport::New).to receive(:fire).and_return([instance_double(TransactionChain, id: 999), nil])
 
       supervisor.send(:process_event, event_payload(vps, type: 'oomd', opts: { 'action' => 'restart' }))
 
@@ -70,7 +70,7 @@ RSpec.describe VpsAdmin::Supervisor::Node::VpsEvents do
     it 'ignores events for VPSes on another node' do
       foreign_vps = build_standalone_vps_fixture(node: SpecSeed.other_node).fetch(:vps)
       status = set_vps_running!(foreign_vps)
-      allow(TransactionChains::IncidentReport::New).to receive(:fire)
+      allow(TransactionChains::IncidentReport::New).to receive(:fire).and_return([instance_double(TransactionChain, id: 999), nil])
 
       supervisor.send(
         :process_event,

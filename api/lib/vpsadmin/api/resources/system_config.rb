@@ -105,6 +105,8 @@ module VpsAdmin::API::Resources
         cfg.set_value(input[:value])
         cfg.save!
         cfg
+      rescue ActiveRecord::RecordInvalid => e
+        error!('Invalid configuration', e.record.errors.to_hash)
       end
     end
   end

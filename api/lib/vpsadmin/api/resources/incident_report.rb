@@ -52,6 +52,15 @@ module VpsAdmin::API::Resources
 
       def query
         q = ::IncidentReport.where(with_restricted)
+        if current_user.role != :admin
+          q = q.where(<<~SQL.squish, current_user.id)
+            incident_reports.id NOT IN (#{::IncidentEscalation.qualified_reports.select(:id).to_sql}) OR NOT EXISTS (
+              SELECT 1 FROM vpses incident_vps WHERE incident_vps.id = incident_reports.vps_id
+                AND incident_vps.user_id = ? AND incident_vps.incident_accounting_since IS NOT NULL
+                AND incident_reports.detected_at < incident_vps.incident_accounting_since
+            )
+          SQL
+        end
 
         %i[user vps ip_address_assignment filed_by mailbox codename].each do |v|
           q = q.where(v => input[v]) if input.has_key?(v)
@@ -96,9 +105,19 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @incident = with_includes(::IncidentReport).find_by!(with_restricted(
-                                                               id: path_params['incident_report_id']
-                                                             ))
+        scope = ::IncidentReport.all
+        if current_user.role != :admin
+          scope = scope.where(<<~SQL.squish, current_user.id)
+            incident_reports.id NOT IN (#{::IncidentEscalation.qualified_reports.select(:id).to_sql}) OR NOT EXISTS (
+              SELECT 1 FROM vpses incident_vps WHERE incident_vps.id = incident_reports.vps_id
+                AND incident_vps.user_id = ? AND incident_vps.incident_accounting_since IS NOT NULL
+                AND incident_reports.detected_at < incident_vps.incident_accounting_since
+            )
+          SQL
+        end
+        @incident = with_includes(scope).find_by!(with_restricted(
+                                                    id: path_params['incident_report_id']
+                                                  ))
       end
 
       def exec
@@ -146,7 +165,7 @@ module VpsAdmin::API::Resources
       end
 
       def state_id
-        @chain.id
+        @chain&.id
       end
     end
   end

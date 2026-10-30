@@ -914,6 +914,100 @@ en:
         label: In_reply_to
       in_rescue_mode:
         label: In rescue mode
+      incident_accounting_since:
+        description: Shared successful ownership-transfer boundary; null means no
+          reset since activation.
+        label: Incident accounting since
+      incident_action_chain_id:
+        description: Transaction chain for the shared outstanding VPS stop.
+        label: Incident stop transaction chain
+      incident_action_state:
+        choices:
+          failed:
+            label: failed
+          none:
+            label: none
+          pending:
+            label: pending
+          uncertain:
+            label: uncertain
+        description: Shared outstanding VPS stop state; failed or uncertain work requires
+          attention.
+        label: Incident stop action state
+      incident_count_30d:
+        description: Unique qualified incidents of the selected type in the rolling
+          30-day period for the current owner.
+        label: Incidents in 30 days
+      incident_count_7d:
+        description: Unique qualified incidents of the selected type in the rolling
+          7-day period for the current owner.
+        label: Incidents in 7 days
+      incident_enforcement_enabled:
+        label: Allow automatic incident stops
+      incident_last_incident_at:
+        description: Latest qualified incident of the selected type for the current
+          owner.
+        label: Last incident
+      incident_last_stop_at:
+        description: Confirmed completion of the latest VPS-wide escalation stop.
+        label: Last automatic incident stop
+      incident_last_warning_at:
+        description: Selected-type warning queue time; this does not confirm delivery.
+        label: Last incident warning queued
+      incident_mode:
+        choices:
+          enforce:
+            label: enforce
+          notify:
+            label: notify
+          observe:
+            label: observe
+        description: Observe counts selected incidents, notify also warns, and enforce
+          permits automatic stops.
+        label: Incident mode
+      incident_next_stop_allowed_at:
+        description: Earliest time a new incident may cause another VPS-wide stop;
+          no stop is scheduled.
+        label: Incident stop cooldown ends
+      incident_policy:
+        choices:
+          oomd:
+            label: oomd
+        description: Registered incident type whose settings and summary are selected.
+        label: Incident type
+      incident_policy_label:
+        description: Localized display name of the selected incident type.
+        label: Incident type label
+      incident_status:
+        choices:
+          clear:
+            label: clear
+          near_limit:
+            label: near_limit
+          stop_threshold:
+            label: stop_threshold
+          warning:
+            label: warning
+        label: Incident status
+      incident_stop_enforced:
+        description: Selected rule mode and the shared VPS permission both permit
+          automatic stops.
+        label: Automatic incident stops active
+      incident_stop_limit:
+        description: Effective selected-type threshold for an automatic stop within
+          30 days.
+        label: Incident automatic stop limit
+      incident_stop_limit_override:
+        description: Admin override for the selected type stop threshold within 30
+          days; null inherits its global default.
+        label: Incident automatic stop limit override
+      incident_warning_limit:
+        description: Effective selected-type threshold for a warning within 7 days.
+        label: Incident warning limit
+      incident_warning_limit_override:
+        description: Admin override for the selected type warning threshold within
+          7 days; null inherits its global default.
+        label: Incident warning limit override
       incoming_payment:
         label: IncomingPayment
       info:
@@ -2396,6 +2490,10 @@ en:
       access_denied_to_seed_vps: access to this VPS is denied
       access_denied_to_vps_user_data: Access denied to VPS user data
       access_token_in_url: access_token must not be sent in URL
+      incident_escalation:
+        invalid_configuration: Invalid incident mode or limits; automatic actions
+          are disabled
+        separate_update: Update incident settings separately from other VPS properties.
       ip_release:
         access_denied: This IP release request belongs to another user.
         already_released: A selected IP is being released or has already been released.
@@ -4067,6 +4165,8 @@ en:
             input:
               environment:
                 description: Filter by environment
+              incident_enforcement_enabled:
+                description: Filter VPSes by per-VPS automatic stop permission.
               location:
                 description: Filter by location
               node:
@@ -4114,6 +4214,9 @@ en:
                 label: Expiration
               hostname:
                 description: VPS hostname
+              incident_enforcement_enabled:
+                description: Permit escalation stops for all registered incident types
+                  on this VPS; collection and warnings remain enabled.
               node:
                 description: Node VPS will run on
               object_state:
@@ -4177,6 +4280,10 @@ en:
               label: Id
             name:
               label: Name
+        input:
+          incident_status:
+            description: Filter VPSes by incident counts relative to their effective
+              limits.
         mount:
           attributes:
             dataset:
@@ -4196,6 +4303,12 @@ en:
             label: Expiration
           hostname:
             description: VPS hostname
+          incident_enforcement_enabled:
+            description: Permit escalation stops for all registered incident types
+              on this VPS; collection and warnings remain enabled.
+          incident_status:
+            description: Selected-type counts relative to effective thresholds; shared
+              exemption and cooldown are shown separately.
           node:
             description: Node VPS will run on
           object_state:
@@ -4468,6 +4581,7 @@ en:
           expand_dataset: Expand
           expand_dataset_again: Expand+
           features: Features
+          incident_escalation_mail: Incident escalation notification
           migrate:
             os_to_os: Migrate
             os_to_vz: Migrate

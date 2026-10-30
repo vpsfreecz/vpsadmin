@@ -67,7 +67,7 @@ its explicit patterns if needed.
 | `dns` | `dns*` |
 | `storage` | `dataset_*`, `environment_dataset_*`, `pool_*`, `snapshot_download`, `export` |
 | `mail` | `mail*`, `mailbox`, `user_mail_*` |
-| `vps` | `vps_*` |
+| `vps` | `vps_*`, `incident_escalation` |
 | `platform-infrastructure` | `node_*`, `os_*`, `migration_plan` |
 | `platform-operations` | `security_advisory*`, `oom_report*`, `incident_report`, `lifecycle_bypass`, `object_history`, `transaction*` |
 | `platform-config` | `spec/lib/**/*_spec.rb`, `action_state`, `api_server`, `cluster*`, `component`, `debug`, `default_object_cluster_resource`, `environment_read`, `environment_write`, `language`, `location_read`, `location_write`, `metrics_access_token`, `system_config` |

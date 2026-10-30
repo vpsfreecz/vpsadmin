@@ -35,6 +35,7 @@ testLib.makeTests [
   "admin/nodectl-refresh-and-runtime-state"
   "admin/remote-mount-state"
   "admin/location-network-primary-switch"
+  "alerts/incident-escalation"
   "alerts/incident-report-process"
   "alerts/oom-report-notify-and-prune"
   "alerts/lifetime-and-daily-report"

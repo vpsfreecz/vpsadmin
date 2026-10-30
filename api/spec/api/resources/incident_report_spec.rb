@@ -435,6 +435,31 @@ RSpec.describe 'VpsAdmin::API::Resources::IncidentReport' do
       expect(json['status']).to be(false)
     end
 
+    it 'creates successfully without a chain when ordinary mail is intentionally disabled' do
+      template = MailTemplate.find_by!(name: 'vps_incident_report')
+      UserMailTemplateRecipient.handle_update!(vps_user.user, template, enabled: false)
+      chains = TransactionChain.count
+      expect do
+        as(SpecSeed.admin) { json_post index_path, incident_report: payload }
+      end.to change(IncidentReport, :count).by(1)
+      expect(TransactionChain.count).to eq(chains)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(action_state_id).to be_nil
+      expect(IncidentReport.find_by!(subject: payload[:subject]).vps_id).to eq(vps_user.id)
+    end
+
+    it 'does not enroll an admin-created oomd lookalike in escalation' do
+      SysConfig.find_by!(category: 'incident_policy_oomd', name: 'mode').update!(value: 'enforce')
+      as(SpecSeed.admin) { json_post index_path, incident_report: payload.merge(codename: 'oomd') }
+      expect(json['status']).to be(true)
+      report = IncidentReport.find_by!(subject: payload[:subject])
+      expect(report.source_key).to be_nil
+      expect(IncidentEscalation.rule.reports.where(id: report.id)).to be_empty
+      expect(VpsIncidentAction.where(vps: vps_user)).to be_empty
+    end
+
     it 'allows admins to create with minimal payload' do
       expect do
         as(SpecSeed.admin) { json_post index_path, incident_report: payload }
@@ -488,5 +513,46 @@ RSpec.describe 'VpsAdmin::API::Resources::IncidentReport' do
       expect(json['status']).to be(false)
       expect(errors.keys.map(&:to_s)).to include('vps_action')
     end
+  end
+
+  it 'hides pre-epoch source incidents from the new owner while keeping the administrator audit' do
+    vps = build_standalone_vps_fixture.fetch(:vps)
+    now = Time.now.utc.change(usec: 0)
+    incident = IncidentReport.create!(user: vps.user, vps:, subject: 'Old epoch', text: 'Private detail',
+                                      detected_at: now - 60, codename: 'oomd', source_key: SecureRandom.hex(32),
+                                      source_kind: 'node_vps_event', source_node_id: vps.node_id, source_action: 'restart')
+    vps.update_columns(incident_accounting_since: now)
+    as(vps.user) { get vpath("/incident_reports/#{incident.id}") }
+    expect(json['status']).to be(false)
+    as(SpecSeed.admin) { get vpath("/incident_reports/#{incident.id}") }
+    expect(json['status']).to be(true)
+  end
+
+  it 'scopes registered manual incidents to the owner epoch without hiding ordinary manual history' do
+    rule = IncidentEscalation::Rule.new(
+      key: 'spec_manual', labels: { 'en' => 'Test incidents' }, category: 'incident_policy_test',
+      qualification: ->(scope) { scope.where(codename: 'spec_manual', filed_by_id: SpecSeed.admin.id) }
+    )
+    stub_const('IncidentEscalation::RULES', IncidentEscalation::RULES.merge(rule.key => rule))
+    now = Time.now.utc.change(usec: 0)
+    attributes = { user: SpecSeed.user, vps: vps_user, codename: rule.key, text: 'Private detail' }
+    old = IncidentReport.create!(**attributes, subject: 'Prior epoch', filed_by: SpecSeed.admin, detected_at: now - 60)
+    current = IncidentReport.create!(**attributes, subject: 'Current epoch', filed_by: SpecSeed.admin, detected_at: now)
+    ordinary = IncidentReport.create!(**attributes, subject: 'Not enrolled', detected_at: now - 60)
+    expect([old, current, ordinary].map(&:source_key)).to all(be_nil)
+    vps_user.update_columns(incident_accounting_since: now)
+
+    as(SpecSeed.user) { json_get index_path, vps: vps_user.id }
+    expect(json['status']).to be(true)
+    expect(report_ids).to include(current.id, ordinary.id)
+    expect(report_ids).not_to include(old.id)
+    as(SpecSeed.user) { json_get show_path(old.id) }
+    expect(json['status']).to be(false)
+    as(SpecSeed.user) { json_get show_path(ordinary.id) }
+    expect(json['status']).to be(true)
+    as(SpecSeed.admin) { json_get index_path, vps: vps_user.id }
+    expect(report_ids).to include(old.id, current.id, ordinary.id)
+    as(SpecSeed.admin) { json_get show_path(old.id) }
+    expect(json['status']).to be(true)
   end
 end

@@ -60,6 +60,12 @@ full:
 
 select:
   - paths:
+      - "tests/playwright/webui/specs/incident-escalation.spec.cjs"
+      - "api/models/incident_escalation.rb"
+      - "api/models/vps_incident_*.rb"
+      - "api/models/transaction_chains/vps/incident_escalation_mail.rb"
+    tags: ["webui-incident-escalation", "vps", "alerts", "supervisor"]
+  - paths:
       - "tests/suite/webui.nix"
       - "tests/playwright/webui/lib/**"
       - "tests/playwright/webui/playwright.config.cjs"
