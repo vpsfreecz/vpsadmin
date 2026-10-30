@@ -41,13 +41,13 @@ if ($_GET["action"] == 'login') {
 // Callback from the OAuth2 authorization server
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $_GET["action"] == 'callback') {
     if (isset($_GET['code'])) {
-        setupOAuth2ForLogin();
-        $provider = $api->getAuthenticationProvider();
-
         try {
+            setupOAuth2ForLogin();
+            $provider = $api->getAuthenticationProvider();
             $provider->requestAccessToken();
             loginUser($_SESSION['access_url'] ?? null);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
+            error_log('vpsAdmin OAuth callback failed');
             $xtpl->perex(
                 _('Authentication error'),
                 _('vpsAdmin was unable to obtain access token from the authorization server, please contact support if the error persists.')
