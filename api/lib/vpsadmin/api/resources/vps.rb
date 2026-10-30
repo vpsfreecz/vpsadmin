@@ -42,6 +42,43 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     bool :enable_network, label: 'Enable network'
   end
 
+  params(:incident_selector) do
+    string :incident_policy, choices: ::IncidentEscalation::RULES.keys,
+                             label: 'Incident type', desc: 'Registered incident type whose settings and summary are selected.'
+  end
+
+  params(:incident_settings) do
+    integer :incident_warning_limit_override, nullable: true, label: 'Incident warning limit override',
+                                              desc: 'Admin override for the selected type warning threshold within 7 days; null inherits its global default.'
+    integer :incident_stop_limit_override, nullable: true, label: 'Incident automatic stop limit override',
+                                           desc: 'Admin override for the selected type stop threshold within 30 days; null inherits its global default.'
+    bool :incident_enforcement_enabled, label: 'Allow automatic incident stops',
+                                        desc: 'Permit escalation stops for all registered incident types on this VPS; collection and warnings remain enabled.'
+  end
+
+  params(:incident_summary) do
+    use :incident_selector
+    use :incident_settings
+    string :incident_policy_label, label: 'Incident type label', desc: 'Localized display name of the selected incident type.'
+    integer :incident_count_7d, label: 'Incidents in 7 days', desc: 'Unique qualified incidents of the selected type in the rolling 7-day period for the current owner.'
+    integer :incident_count_30d, label: 'Incidents in 30 days', desc: 'Unique qualified incidents of the selected type in the rolling 30-day period for the current owner.'
+    integer :incident_warning_limit, label: 'Incident warning limit', desc: 'Effective selected-type threshold for a warning within 7 days.'
+    integer :incident_stop_limit, label: 'Incident automatic stop limit', desc: 'Effective selected-type threshold for an automatic stop within 30 days.'
+    string :incident_mode, choices: %w[observe notify enforce], label: 'Incident mode',
+                           desc: 'Observe counts selected incidents, notify also warns, and enforce permits automatic stops.'
+    bool :incident_stop_enforced, label: 'Automatic incident stops active', desc: 'Selected rule mode and the shared VPS permission both permit automatic stops.'
+    string :incident_status, choices: ::IncidentEscalation::STATUSES, label: 'Incident status',
+                             desc: 'Selected-type counts relative to effective thresholds; shared exemption and cooldown are shown separately.'
+    datetime :incident_last_incident_at, nullable: true, label: 'Last incident', desc: 'Latest qualified incident of the selected type for the current owner.'
+    datetime :incident_last_warning_at, nullable: true, label: 'Last incident warning queued', desc: 'Selected-type warning queue time; this does not confirm delivery.'
+    datetime :incident_last_stop_at, nullable: true, label: 'Last automatic incident stop', desc: 'Confirmed completion of the latest VPS-wide escalation stop.'
+    datetime :incident_next_stop_allowed_at, nullable: true, label: 'Incident stop cooldown ends',
+                                             desc: 'Earliest time a new incident may cause another VPS-wide stop; no stop is scheduled.'
+    string :incident_action_state, choices: %w[none pending failed uncertain], label: 'Incident stop action state', desc: 'Shared outstanding VPS stop state; failed or uncertain work requires attention.'
+    integer :incident_action_chain_id, nullable: true, label: 'Incident stop transaction chain', desc: 'Transaction chain for the shared outstanding VPS stop.'
+    datetime :incident_accounting_since, nullable: true, label: 'Incident accounting since', desc: 'Shared successful ownership-transfer boundary; null means no reset since activation.'
+  end
+
   params(:dataset) do
     resource VpsAdmin::API::Resources::Dataset, label: 'Dataset',
                                                 desc: 'Dataset the VPS resides in', value_label: :name
@@ -92,6 +129,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     use :read_only
     use :resources
     use :status
+    use :incident_summary
   end
 
   class Index < HaveAPI::Actions::Default::Index
@@ -108,6 +146,11 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       use :template
       string :hostname_any
       string :hostname_exact
+      use :incident_selector
+      patch :incident_policy, default: 'oomd'
+      string :incident_status, choices: ::IncidentEscalation::STATUSES, label: 'Incident status',
+                               desc: 'Filter VPSes by incident counts relative to their effective limits.'
+      bool :incident_enforcement_enabled, label: 'Allow automatic incident stops', desc: 'Filter VPSes by per-VPS automatic stop permission.'
     end
 
     output(:object_list) do
@@ -126,6 +169,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update enable_network
         user_namespace_map implicit_oom_report_rule_hit_count created_at
+        incident_policy incident_policy_label incident_count_7d incident_count_30d incident_warning_limit incident_stop_limit
+        incident_enforcement_enabled incident_mode incident_stop_enforced incident_status incident_last_incident_at
+        incident_last_warning_at incident_last_stop_at incident_next_stop_allowed_at incident_action_state
+        incident_action_chain_id incident_accounting_since
       ]
       allow
     end
@@ -184,6 +231,9 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       q = q.where(os_template: input[:os_template]) if input[:os_template]
 
+      q = q.where(incident_enforcement_enabled: input[:incident_enforcement_enabled]) if input.has_key?(:incident_enforcement_enabled)
+      q = ::VpsIncidentSummary.filter(q, input[:incident_status], now: incident_now, incident_type: input.has_key?(:incident_policy) ? input[:incident_policy] : 'oomd') if input[:incident_status]
+
       q = q.where(hostname: input[:hostname_exact]) if input[:hostname_exact]
 
       q = q.where('vpses.hostname LIKE ?', "%#{input[:hostname_any]}%") if input[:hostname_any]
@@ -195,11 +245,16 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       query.count
     end
 
+    def incident_now
+      @incident_now ||= Time.now.utc
+    end
+
     def exec
-      with_pagination(with_includes(query)).includes(
+      rows = with_pagination(with_includes(query)).includes(
         :vps_current_status,
         dataset_in_pool: [:dataset]
       )
+      ::VpsIncidentSummary.load(rows, now: incident_now, incident_type: input.has_key?(:incident_policy) ? input[:incident_policy] : 'oomd', language: ::I18n.locale)
     end
   end
 
@@ -248,6 +303,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update enable_network
         user_namespace_map implicit_oom_report_rule_hit_count created_at
+        incident_policy incident_policy_label incident_count_7d incident_count_30d incident_warning_limit incident_stop_limit
+        incident_enforcement_enabled incident_mode incident_stop_enforced incident_status incident_last_incident_at
+        incident_last_warning_at incident_last_stop_at incident_next_stop_allowed_at incident_action_state
+        incident_action_chain_id incident_accounting_since
       ]
       allow
     end
@@ -395,6 +454,11 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   class Show < HaveAPI::Actions::Default::Show
     desc 'Show VPS properties'
 
+    input do
+      use :incident_selector
+      patch :incident_policy, default: 'oomd'
+    end
+
     output do
       use :all
     end
@@ -416,6 +480,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update enable_network
         user_namespace_map implicit_oom_report_rule_hit_count created_at
+        incident_policy incident_policy_label incident_count_7d incident_count_30d incident_warning_limit incident_stop_limit
+        incident_enforcement_enabled incident_mode incident_stop_enforced incident_status incident_last_incident_at
+        incident_last_warning_at incident_last_stop_at incident_next_stop_allowed_at incident_action_state
+        incident_action_chain_id incident_accounting_since
       ]
       allow
     end
@@ -429,7 +497,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
-      @vps
+      ::VpsIncidentSummary.load([@vps], incident_type: input.has_key?(:incident_policy) ? input[:incident_policy] : 'oomd', language: ::I18n.locale).first
     end
   end
 
@@ -439,6 +507,8 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     input do
       use :common
+      use :incident_settings
+      use :incident_selector
       VpsAdmin::API::ClusterResources.to_params(::Vps, self, resources: %i[cpu memory swap])
       text :change_reason, label: 'Change reason',
                            desc: 'If filled, it is send to VPS owner in an email'
@@ -460,11 +530,21 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
+      if ::IncidentEscalation.mixed_settings?(input)
+        error!(VpsAdmin::API::I18n.t('errors.incident_escalation.separate_update'))
+      end
+
       vps = ::Vps.including_deleted.find_by!(with_restricted(id: path_params['vps_id']))
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
       error!('provide at least one attribute to update') if input.empty?
+
+      if input.keys.map(&:to_s).intersect?(::IncidentEscalation::SETTINGS + ['incident_policy'])
+        ::IncidentEscalation.update_settings!(vps, input)
+        ok!
+        return
+      end
 
       update_object_state!(vps) if change_object_state?
 
@@ -942,6 +1022,10 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update enable_network
         user_namespace_map implicit_oom_report_rule_hit_count created_at
+        incident_policy incident_policy_label incident_count_7d incident_count_30d incident_warning_limit incident_stop_limit
+        incident_enforcement_enabled incident_mode incident_stop_enforced incident_status incident_last_incident_at
+        incident_last_warning_at incident_last_stop_at incident_next_stop_allowed_at incident_action_state
+        incident_action_chain_id incident_accounting_since
       ]
       allow
     end

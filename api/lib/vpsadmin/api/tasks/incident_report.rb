@@ -2,6 +2,15 @@ module VpsAdmin::API::Tasks
   class IncidentReport < Base
     # Process incident reports added by nodectl
     def process
+      qualified = ::IncidentEscalation.qualified_reports
+      ::Vps.where(id: qualified.select(:vps_id))
+           .or(::Vps.where.not(incident_owner_transfer_chain_id: nil))
+           .or(::Vps.where(id: ::VpsIncidentAction.where.not(state: 'suppressed').select(:vps_id))).find_each do |vps|
+        ::IncidentEscalation.process!(vps)
+      rescue StandardError => e
+        warn "Unable to process incident escalation for VPS #{vps.id}: #{e.class}: #{e.message}"
+      end
+
       incidents = ::IncidentReport.where(reported_at: nil).to_a
       return if incidents.empty?
 

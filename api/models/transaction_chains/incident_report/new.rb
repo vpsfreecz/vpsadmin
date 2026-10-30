@@ -3,6 +3,7 @@ require_relative 'utils'
 module TransactionChains
   class IncidentReport::New < ::TransactionChain
     label 'Incident report'
+    allow_empty
 
     include IncidentReport::Utils
 

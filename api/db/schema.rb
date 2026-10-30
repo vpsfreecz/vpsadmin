@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_30_180000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -528,6 +528,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
     t.bigint "user_id", null: false
     t.integer "vps_action", default: 0, null: false
     t.bigint "vps_id", null: false
+    t.string "source_key", limit: 64
+    t.string "source_kind", limit: 32
+    t.bigint "source_node_id"
+    t.string "source_action", limit: 16
+    t.bigint "notification_chain_id"
+    t.datetime "notification_processed_at"
     t.index ["cpu_limit"], name: "index_incident_reports_on_cpu_limit"
     t.index ["created_at"], name: "index_incident_reports_on_created_at"
     t.index ["detected_at"], name: "index_incident_reports_on_detected_at"
@@ -535,7 +541,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
     t.index ["ip_address_assignment_id"], name: "index_incident_reports_on_ip_address_assignment_id"
     t.index ["mailbox_id"], name: "index_incident_reports_on_mailbox_id"
     t.index ["reported_at"], name: "index_incident_reports_on_reported_at"
+    t.index ["source_key"], name: "index_incident_reports_on_source_key", unique: true
     t.index ["user_id"], name: "index_incident_reports_on_user_id"
+    t.index ["vps_id", "user_id", "codename", "detected_at"], name: "incident_reports_accounting"
     t.index ["vps_id"], name: "index_incident_reports_on_vps_id"
   end
 
@@ -2236,6 +2244,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
     t.index ["vps_id"], name: "index_vps_features_on_vps_id"
   end
 
+  create_table "vps_incident_actions", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.bigint "vps_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "incident_report_id", null: false
+    t.string "incident_type", limit: 100, null: false
+    t.datetime "accounting_since"
+    t.string "kind", limit: 16, null: false
+    t.string "state", limit: 16, default: "pending", null: false
+    t.bigint "transaction_chain_id"
+    t.datetime "completed_at"
+    t.boolean "repeated_stop", default: false, null: false
+    t.integer "incident_count_7d", null: false
+    t.integer "incident_count_30d", null: false
+    t.string "mail_state", limit: 16, default: "pending", null: false
+    t.bigint "mail_chain_id"
+    t.bigint "mail_log_id"
+    t.datetime "retry_after"
+    t.text "error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["incident_report_id", "incident_type"], name: "idx_on_incident_report_id_incident_type_3cdf01c3ea", unique: true
+    t.index ["vps_id", "state"], name: "index_vps_incident_actions_on_vps_id_and_state"
+  end
+
+  create_table "vps_incident_policies", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.bigint "vps_id", null: false
+    t.string "incident_type", limit: 100, null: false
+    t.integer "warning_limit_override"
+    t.integer "stop_limit_override"
+    t.datetime "last_warning_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["vps_id", "incident_type"], name: "index_vps_incident_policies_on_vps_id_and_incident_type", unique: true
+  end
+
   create_table "vps_maintenance_windows", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.integer "closes_at"
     t.boolean "is_open", null: false
@@ -2349,6 +2392,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
     t.datetime "updated_at", precision: nil
     t.integer "user_id", null: false, unsigned: true
     t.integer "user_namespace_map_id"
+    t.boolean "incident_enforcement_enabled", default: true, null: false
+    t.datetime "incident_accounting_since"
+    t.datetime "incident_last_stop_at"
+    t.bigint "incident_owner_transfer_chain_id"
     t.index ["allow_admin_modifications"], name: "index_vpses_on_allow_admin_modifications"
     t.index ["cgroup_version"], name: "index_vpses_on_cgroup_version"
     t.index ["dataset_in_pool_id"], name: "index_vpses_on_dataset_in_pool_id"

@@ -1,0 +1,28 @@
+Hello <%= @user.login %>,
+
+Your VPS <%= @vps.id %> <%= @vps.hostname %> was stopped after repeated incidents.
+
+  Incident type: <%= @incident_type_label %>
+  Incidents in the last <%= @warning_period_days %> days: <%= @incident_count_7d %> (warning limit: <%= @warning_limit %>)
+  Incidents in the last <%= @stop_period_days %> days: <%= @incident_count_30d %> (stop limit: <%= @stop_limit %>)
+  Incident time: <%= local_time(@incident_at, '%Y-%m-%d %H:%M:%S %Z') %>
+  Stopped at: <%= local_time(@stopped_at, '%Y-%m-%d %H:%M:%S %Z') %>
+
+Please review the incident reports and address their cause. The automatic stop
+also disabled autostart. You can start the VPS again in vpsAdmin to investigate
+and resolve the problem.
+<% if @stop_enforced -%>
+If another incident of this type occurs while the total remains at or above
+<%= @stop_limit %> within the last <%= @stop_period_days %> days, it will be stopped again, at most once per
+<%= @repeat_stop_hours %> hours. Once the total falls below this limit, the usual limits apply again.
+<% end -%>
+
+Incident history in vpsAdmin:
+
+  <%= @base_url %>?page=incidents&action=list&list=1&vps=<%= @vps.id %>&codename=<%= @incident_type %>
+
+Best regards,
+
+vpsAdmin
+
+(This is an automated mail from vpsAdmin, your reply will be sent to our support)

@@ -2,6 +2,8 @@ require 'vpsadmin/api/cluster_resources'
 require 'vpsadmin/api/lifetimes'
 require 'vpsadmin/api/maintainable'
 require 'vpsadmin/api/object_history'
+require_relative 'incident_escalation'
+require_relative 'vps_incident_summary'
 require_relative 'confirmable'
 require_relative 'lockable'
 require_relative 'transaction_chains/vps/block'
@@ -17,6 +19,27 @@ class Vps < ApplicationRecord
   belongs_to :os_template
   belongs_to :dns_resolver
   has_many :transactions
+  has_many :vps_incident_actions
+  attr_accessor :incident_summary
+
+  has_many :vps_incident_policies
+
+  def reload(*)
+    super.tap { self.incident_summary = nil }
+  end
+
+  IncidentEscalation::SUMMARY_FIELDS.each do |field|
+    next if %i[incident_enforcement_enabled incident_last_stop_at incident_accounting_since].include?(field)
+
+    define_method(field) do
+      VpsIncidentSummary.load([self], language: ::I18n.locale) unless incident_summary
+      incident_summary.fetch(field)
+    end
+  end
+
+  %i[incident_last_stop_at incident_accounting_since].each do |field|
+    define_method(field) { incident_summary ? incident_summary.fetch(field) : self[field] }
+  end
 
   has_many :datasets
   has_many :network_interfaces
