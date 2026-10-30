@@ -890,10 +890,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1dwgab330lsv4qppw3f52mc4ihr8lagxgll53mkmcdgr4hf3xqck";
+      sha256 = "1isfvhl6r55ddxwq8qsmn6zbljfmzjgq5zszjhm7mg1y8rgciv0z";
       type = "gem";
     };
-    version = "3.2.7";
+    version = "3.2.8";
   };
   rack-oauth2 = {
     dependencies = [
@@ -1076,10 +1076,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0m48hv6wpmmm6cjr6q92q78h1i610riml19k5h1dil2yws3h1m3m";
+      sha256 = "03bswhyscxaw1ympy9k25wzhynyn9m6l951165hl40xlv1ybwq6s";
       type = "gem";
     };
-    version = "6.3.0";
+    version = "6.3.1";
   };
   rspec = {
     dependencies = [
