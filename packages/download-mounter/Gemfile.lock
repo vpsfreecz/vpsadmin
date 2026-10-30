@@ -21,7 +21,7 @@ GEM
     diff-lcs (1.6.2)
     domain_name (0.7.20261007)
     drb (2.2.3)
-    haveapi-client (0.29.12)
+    haveapi-client (0.32.0)
       activesupport (>= 7.0)
       highline (~> 3.1)
       json
@@ -79,9 +79,9 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  haveapi-client (~> 0.29.9)
+  haveapi-client (~> 0.32.0)
   highline
   rspec
 
 BUNDLED WITH
-   2.7.2
+  4.0.23
