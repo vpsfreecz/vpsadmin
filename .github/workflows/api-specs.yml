@@ -205,6 +205,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
+            libffi-dev \
+            pkg-config \
             libmariadb-dev \
             libmariadb-dev-compat \
             mariadb-client \
@@ -347,6 +349,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
+            libffi-dev \
+            pkg-config \
             libmariadb-dev \
             libmariadb-dev-compat \
             mariadb-client \

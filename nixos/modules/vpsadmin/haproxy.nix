@@ -41,6 +41,12 @@ let
           '';
         };
 
+        logRequests = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Log HTTP requests for this frontend.";
+        };
+
         frontend = {
           address = mkOption {
             type = types.str;
@@ -95,6 +101,7 @@ let
 
   apiConfig = name: instance: ''
     frontend api-${name}
+      ${optionalString (!instance.logRequests) "no log"}
       ${concatMapStringsSep "\n" (v: "bind ${v}") instance.frontend.bind}
       default_backend app-api-${name}
 
@@ -105,6 +112,7 @@ let
 
   consoleRouterConfig = name: instance: ''
     frontend console-router-${name}
+      ${optionalString (!instance.logRequests) "no log"}
       ${concatMapStringsSep "\n" (v: "bind ${v}") instance.frontend.bind}
       default_backend app-console-router-${name}
 
@@ -115,6 +123,7 @@ let
 
   webuiConfig = name: instance: ''
     frontend webui-${name}
+      ${optionalString (!instance.logRequests) "no log"}
       ${concatMapStringsSep "\n" (v: "bind ${v}") instance.frontend.bind}
       default_backend app-webui-${name}
 

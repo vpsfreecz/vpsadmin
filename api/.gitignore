@@ -21,3 +21,6 @@ tmp
 *.a
 mkmf.log
 config/database.*
+config/api.rb
+config/documentation-oauth.json
+config/documentation-session.key

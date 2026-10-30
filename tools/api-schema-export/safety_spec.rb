@@ -24,7 +24,7 @@ RSpec.describe VpsAdmin::SchemaExport::Safety do
   end
 
   it 'accepts only the controlled configuration files without loading the API' do
-    %w[dataset_plans.rb dataset_properties.rb].each do |name|
+    %w[api.rb.example dataset_plans.rb dataset_properties.rb].each do |name|
       File.write(File.join(root, 'api/config', name), 'raise "must not execute"')
     end
 
@@ -50,7 +50,7 @@ RSpec.describe VpsAdmin::SchemaExport::Safety do
   end
 
   it 'rejects database and executable local overrides without evaluating them' do
-    %w[database.yml api.rb hooks.rb incident_reports.rb].each do |name|
+    %w[database.yml api.rb hooks.rb incident_reports.rb documentation-oauth.json documentation-session.key].each do |name|
       path = File.join(root, 'api/config', name)
       File.write(path, 'raise "must not execute"')
       expect { safety.check! }
@@ -60,9 +60,12 @@ RSpec.describe VpsAdmin::SchemaExport::Safety do
   end
 
   it 'rejects symlinks even when their target would otherwise be allowed' do
-    path = File.join(root, 'api/config/dataset_plans.rb')
-    File.symlink(File::NULL, path)
-    expect { safety.check! }.to raise_error(VpsAdmin::SchemaExport::UnsafeInput, /symlinks/)
+    %w[dataset_plans.rb api.rb.example].each do |name|
+      path = File.join(root, 'api/config', name)
+      File.symlink(File::NULL, path)
+      expect { safety.check! }.to raise_error(VpsAdmin::SchemaExport::UnsafeInput, /symlinks/)
+      File.unlink(path)
+    end
   end
 
   it 'rejects a symlinked configuration directory' do

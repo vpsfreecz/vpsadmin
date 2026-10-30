@@ -43,6 +43,16 @@ module VpsAdmin
       VpsAdmin::API::I18n.configure_server(api)
       api.use_version(:all)
       api.action_state = ActionState
+      api.documentation_clients('7.0',
+                                go: {
+                                  import_path: 'github.com/vpsfreecz/vpsadmin-go-client/client'
+                                },
+                                rust: {
+                                  crate_name: 'vpsadmin-client'
+                                },
+                                typescript: {
+                                  package_name: 'vpsadmin-typescript-client'
+                                })
 
       authenticate(api)
 

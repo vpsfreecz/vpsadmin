@@ -10,7 +10,7 @@ parser = OptionParser.new do |opts|
   opts.banner = 'Usage: tools/export-api-schema --output DIR [--api-version 7.0] | --prepare'
   opts.on('--output DIR') { |value| options[:output] = value }
   opts.on('--api-version VERSION') { |value| options[:api_version] = value }
-  opts.on('--prepare', 'Install the isolated HaveAPI 0.30.2 tooling bundle only') { options[:prepare] = true }
+  opts.on('--prepare', 'Install the isolated HaveAPI 0.32.0 tooling bundle only') { options[:prepare] = true }
 end
 
 begin

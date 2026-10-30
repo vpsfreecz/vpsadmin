@@ -18,10 +18,11 @@ nix develop .#vpsadmin
 tools/export-api-schema --prepare
 ```
 
-Preparation installs a separate tooling bundle with released HaveAPI 0.30.2.
-Its Gemfile evaluates the API Gemfile with one checked dependency replacement;
-the API and packaged runtime dependencies remain unchanged. The tooling bundle
-and its lockfile are ignored local files under `tools/api-schema-export/`.
+Preparation installs a separate tooling bundle that pins HaveAPI 0.32.0, the
+same release used by the API. Its Gemfile checks the API dependency declaration
+and replaces its constraint with that exact version. Preparation leaves the API
+and packaged runtime dependencies unchanged. The tooling bundle and its lockfile
+are ignored local files under `tools/api-schema-export/`.
 
 Commit the intended source changes and pass the database-free checks before
 exporting. Choose a destination that does not exist:
@@ -34,8 +35,9 @@ The exporter refuses inherited `DATABASE_URL`, test-database overrides, plugin
 directory overrides, Bundler overrides and MySQL/MariaDB connection settings.
 It also refuses local API database and configuration files, local Bundler configuration
 and alternate `api/plugins` directories. Use a fresh shell without those settings;
-do not supply a real database URL. The two tracked configuration files
-`dataset_plans.rb` and `dataset_properties.rb` are part of the recorded input.
+do not supply a real database URL. The tracked configuration files `dataset_plans.rb` and
+`dataset_properties.rb` are part of the recorded input. The tracked
+`api.rb.example` sample may be present but is never loaded.
 The exporter always selects `RACK_ENV=test`, English and all bundled plugins.
 Its shell launcher rejects Ruby preload options and active Bundler settings
 before starting Ruby, and discards inherited `RUBYLIB`. Run it directly from the
