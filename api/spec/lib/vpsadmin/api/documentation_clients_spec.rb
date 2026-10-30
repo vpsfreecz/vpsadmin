@@ -4,6 +4,8 @@ require 'cgi'
 
 RSpec.describe VpsAdmin::API do
   let(:server) { app.settings.api_server }
+  let(:default_api_version) { server.default_version }
+  let(:default_api_path) { server.version_prefix(default_api_version) }
 
   after do
     header 'Accept-Language', nil
@@ -14,7 +16,8 @@ RSpec.describe VpsAdmin::API do
   def documentation(page: nil, resource: nil, locale: 'en')
     header 'Accept', 'text/html'
     header 'Accept-Language', locale
-    get '/v7.0/', { page:, resource: }.compact, { 'HTTPS' => 'on' }
+    params = resource ? { resource: } : { page: page || 'overview' }
+    get '/', params, { 'HTTPS' => 'on' }
     expect(last_response.status).to eq(200)
     CGI.unescapeHTML(last_response.body)
   end
@@ -41,10 +44,10 @@ RSpec.describe VpsAdmin::API do
   end
 
   it 'renders registry initialization with the mounted Rust profile', :documentation_profile do
-    profile = server.documentation_client_profiles('7.0').fetch(:rust)
+    profile = server.documentation_client_profiles(default_api_version).fetch(:rust)
     context = HaveAPI::ClientExample::Context.new(
-      version: '7.0', host: 'example.org', base_url: 'https://example.org/',
-      version_url: 'https://example.org/v7.0/', description: {}, profile:
+      version: default_api_version, host: 'example.org', base_url: 'https://example.org/',
+      version_url: "https://example.org#{default_api_path}", description: {}, profile:
     )
     expect(profile.package_version).to be_nil
 
@@ -71,17 +74,17 @@ RSpec.describe VpsAdmin::API do
   end
 
   it 'renders existing Go token authentication through the mounted automatic profile', :documentation_profile do
-    description = server.describe_version(HaveAPI::Context.new(server, version: '7.0', user: nil, doc: true))
+    description = server.describe_version(HaveAPI::Context.new(server, version: default_api_version, user: nil, doc: true))
     token = description.fetch(:authentication).fetch(:token)
     serialized = JSON.parse(JSON.generate(description), symbolize_names: true)
     expect(token.fetch(:query_parameter)).to eq(:_auth_token)
     expect(serialized.fetch(:authentication).fetch(:token).fetch(:query_parameter)).to eq('_auth_token')
     expect(token.fetch(:http_header)).to eq('X-HaveAPI-Auth-Token')
 
-    profile = server.documentation_client_profiles('7.0').fetch(:go)
+    profile = server.documentation_client_profiles(default_api_version).fetch(:go)
     context = HaveAPI::ClientExample::Context.new(
-      version: '7.0', host: 'example.org', base_url: 'https://example.org/',
-      version_url: 'https://example.org/v7.0/', description:, profile:
+      version: default_api_version, host: 'example.org', base_url: 'https://example.org/',
+      version_url: "https://example.org#{default_api_path}", description:, profile:
     )
     result = HaveAPI::ClientExamples::GoClient.render(:auth, context:, auth_method: :token, auth_description: token)
     expect(result.fetch(:status)).to eq(:code)
@@ -91,20 +94,23 @@ RSpec.describe VpsAdmin::API do
   end
 
   it 'renders generated TypeScript initialization and an authorized public action', :documentation_profile do
-    as(SpecSeed.user) { options '/v7.0/' }
+    header 'Accept', 'application/json'
+    as(SpecSeed.user) { options '/?describe=default' }
     expect(last_response.status).to eq(200)
     description = JSON.parse(last_response.body, symbolize_names: true).fetch(:response)
-    profile = server.documentation_client_profiles('7.0').fetch(:typescript)
+    profile = server.documentation_client_profiles(default_api_version).fetch(:typescript)
     expect(profile.package_version).to be_nil
+    version_url = "#{last_request.base_url}#{default_api_path}"
     context = HaveAPI::ClientExample::Context.new(
-      version: '7.0', host: last_request.host, base_url: "#{last_request.base_url}/",
-      version_url: last_request.url, description:, profile:
+      version: default_api_version, host: last_request.host, base_url: "#{last_request.base_url}/",
+      version_url:, description:, profile:
     )
     renderer = HaveAPI::ClientExamples::TsGeneratedClient
     initialization = renderer.render(:init, context:)
     expect(initialization.fetch(:status)).to eq(:code)
     expect_text(initialization.fetch(:code), 'import { createClient } from "vpsadmin-typescript-client";',
-                %(new AsyncClient("#{last_request.url.chomp('/')}")))
+                %(new AsyncClient("#{version_url.chomp('/')}")))
+    reject_text(initialization.fetch(:code), last_request.url)
 
     resource = description.fetch(:resources).fetch(:cluster)
     action = resource.fetch(:actions).fetch(:public_stats)
@@ -117,13 +123,13 @@ RSpec.describe VpsAdmin::API do
   end
 
   it 'renders the actual VPS Index example through the mounted Go profile', :documentation_profile do
-    description = server.describe_version(HaveAPI::Context.new(server, version: '7.0', user: nil, doc: true))
+    description = server.describe_version(HaveAPI::Context.new(server, version: default_api_version, user: nil, doc: true))
     resource = description.fetch(:resources).fetch('vps')
     action = resource.fetch(:actions).fetch('index')
     context = HaveAPI::ClientExample::Context.new(
-      version: '7.0', host: 'example.org', base_url: 'https://example.org/',
-      version_url: 'https://example.org/v7.0/', description:,
-      profile: server.documentation_client_profiles('7.0').fetch(:go),
+      version: default_api_version, host: 'example.org', base_url: 'https://example.org/',
+      version_url: "https://example.org#{default_api_path}", description:,
+      profile: server.documentation_client_profiles(default_api_version).fetch(:go),
       resource_path: ['vps'], resource:, action_name: 'index', action:,
       sample: action.fetch(:examples).first, detail: :thorough
     )
@@ -166,15 +172,16 @@ RSpec.describe VpsAdmin::API do
 
   it 'normalizes only known slashless version GETs and serves neutral packaged guides' do
     header 'Accept', 'text/html'
-    get '/v7.0?page=resources&q=a%2Bb'
+    get "#{default_api_path.chomp('/')}?page=resources&q=a%2Bb"
     expect(last_response.status).to eq(308)
-    expect(last_response.headers.fetch('location')).to end_with('/v7.0/?page=resources&q=a%2Bb')
+    expect(last_response.headers.fetch('location')).to end_with("#{default_api_path}?page=resources&q=a%2Bb")
+    expect(server.versions).not_to include('99.0')
     get '/v99.0'
     expect(last_response.status).to eq(406)
     expect(last_response.headers).not_to have_key('location')
     get '/_login?return=https://invalid.example/'
     expect(last_response.status).to eq(303)
-    expect(last_response.headers.fetch('location')).to end_with('/v7.0/')
+    expect(last_response.headers.fetch('location')).to end_with(default_api_path)
     expect(last_response.headers).not_to have_key('www-authenticate')
     %w[/doc /doc/index /doc/index.md /doc/readme].each do |path|
       as(SpecSeed.admin) { get path }
@@ -228,10 +235,10 @@ RSpec.describe VpsAdmin::API do
       expect(User.current).to eq(SpecSeed.user)
       header 'Authorization', nil
       header 'Accept', 'application/json'
-      options '/v7.0/'
+      options default_api_path
       expect(last_response.status).to eq(200)
       expect(User.current).to be_nil
-      as(SpecSeed.admin) { options '/v7.0/' }
+      as(SpecSeed.admin) { options default_api_path }
       expect(last_response.status).to eq(200)
       expect(User.current).to eq(SpecSeed.admin)
       header 'Cookie', documentation_cookie(SpecSeed.admin)

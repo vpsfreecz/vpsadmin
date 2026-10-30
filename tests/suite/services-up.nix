@@ -40,6 +40,8 @@ import ../make-test.nix (
     };
 
     testScript = ''
+      require 'json'
+
       before(:suite) do
         services.start
       end
@@ -133,8 +135,18 @@ import ../make-test.nix (
 
           it 'is responding' do
             wait_until_block_succeeds(name: 'api responds') do
+              _, versions_output = services.succeeds(
+                'curl --silent --fail-with-body --request OPTIONS --header "Accept: application/json" ' \
+                "'http://api.vpsadmin.test/?describe=versions'"
+              )
+              versions = JSON.parse(versions_output).fetch('response')
+              default_version = versions.fetch('default')
+              expect(versions.fetch('versions')).to include(default_version)
               _, output = services.succeeds('curl --silent --fail-with-body http://api.vpsadmin.test/')
-              expect(output).to include('<h1>API versions</h1>', '<a href="/v7.0/">Version 7.0</a>')
+              expect(output).to include(
+                '<h1>API versions</h1>',
+                %(<a href="/v#{default_version}/">Version #{default_version}</a>)
+              )
               true
             end
           end
@@ -161,9 +173,9 @@ import ../make-test.nix (
           it 'serves generated Go, Rust and TypeScript client examples' do
             wait_until_block_succeeds(name: 'api generated client documentation') do
               _, output = services.succeeds(
-                'curl --silent --fail-with-body http://api.vpsadmin.test/v7.0/ ' \
-                "'http://api.vpsadmin.test/v7.0/?page=authentication' " \
-                "'http://api.vpsadmin.test/v7.0/?resource=cluster'"
+                "curl --silent --fail-with-body 'http://api.vpsadmin.test/?page=overview' " \
+                "'http://api.vpsadmin.test/?page=authentication' " \
+                "'http://api.vpsadmin.test/?resource=cluster'"
               )
               expect(output).to include(
                 'init-go',
