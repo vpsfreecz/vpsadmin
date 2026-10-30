@@ -10,7 +10,7 @@ module VpsAdmin
     # SpecDbSetup intentionally resets its selected test database, so allowing a
     # caller's connection settings here would make a harmless export destructive.
     class Safety
-      CONFIG_FILES = %w[.keep dataset_plans.rb dataset_properties.rb].freeze
+      CONFIG_FILES = %w[.keep api.rb.example dataset_plans.rb dataset_properties.rb].freeze
       CONNECTION_ENV = %w[DATABASE_URL VPSADMIN_PLUGIN_DIR].freeze
 
       def initialize(root:, env: ENV)

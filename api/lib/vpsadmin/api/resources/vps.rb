@@ -136,7 +136,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
                  id: 150,
                  user: {
                    id: 1,
-                   name: 'somebody'
+                   login: 'somebody'
                  },
                  hostname: 'thehostname',
                  os_template: {

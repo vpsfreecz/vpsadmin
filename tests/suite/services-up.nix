@@ -134,12 +134,14 @@ import ../make-test.nix (
           it 'is responding' do
             wait_until_block_succeeds(name: 'api responds') do
               _, output = services.succeeds('curl --silent --fail-with-body http://api.vpsadmin.test/')
-              expect(output).to include('API description')
+              expect(output).to include('<h1>API versions</h1>', '<a href="/v7.0/">Version 7.0</a>')
               true
             end
           end
 
           {
+            '/doc' => 'self-descriptive RESTful',
+            '/doc/readme' => 'self-descriptive RESTful',
             '/doc/json-schema' => 'Envelope',
             '/doc/protocol.md' => 'Protocol definition',
             '/doc/create-client.md' => 'Client definition',
@@ -153,6 +155,41 @@ import ../make-test.nix (
                 expect(output).to end_with("\n200")
                 true
               end
+            end
+          end
+
+          it 'serves generated Go, Rust and TypeScript client examples' do
+            wait_until_block_succeeds(name: 'api generated client documentation') do
+              _, output = services.succeeds(
+                'curl --silent --fail-with-body http://api.vpsadmin.test/v7.0/ ' \
+                "'http://api.vpsadmin.test/v7.0/?page=authentication' " \
+                "'http://api.vpsadmin.test/v7.0/?resource=cluster'"
+              )
+              expect(output).to include(
+                'init-go',
+                'init-rust-async',
+                'init-rust-blocking',
+                'init-typescript-generated',
+                'init-typescript-callback',
+                'init-typescript-async',
+                'example-cluster-public_stats-0-go',
+                'example-cluster-public_stats-0-rust-async',
+                'example-cluster-public_stats-0-rust-blocking',
+                'example-cluster-public_stats-0-typescript-generated',
+                'vpsadmin-typescript-client',
+                'haveapi-client',
+                'createClient',
+                'SetExistingTokenAuth',
+                'example-token',
+                'github.com/vpsfreecz/vpsadmin-go-client/client',
+                '// cargo add vpsadmin-client',
+                '// cargo add vpsadmin-client --features blocking'
+              )
+              expect(output).not_to include(
+                'https://github.com/vpsfreecz/vpsadmin-rust-client',
+                'ff876abe17e3301da62c1b6afbda055ec89db9d2'
+              )
+              true
             end
           end
         end
