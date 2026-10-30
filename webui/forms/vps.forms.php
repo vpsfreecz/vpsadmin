@@ -702,6 +702,57 @@ function vps_list_form()
         $xtpl->title(_("VPS list") . ' ' . _("[User mode]"));
     }
 
+    $incidentAvailable = false;
+    if (!isAdmin() || ($_GET['action'] ?? '') == 'list') {
+        if (isAdmin()) {
+            $params = [
+                'limit' => api_get_uint('limit', 25),
+                'from_id' => api_get_uint('from_id', 0),
+                'meta' => ['includes' => 'user,node,dataset__dataset_expansion'],
+            ];
+
+            $userId = api_get_uint('user');
+            if ($userId !== null) {
+                $params['user'] = $userId;
+            }
+
+            $nodeId = api_get_uint('node');
+            if ($nodeId !== null && $nodeId > 0) {
+                $params['node'] = $nodeId;
+            }
+
+            $locationId = api_get_uint('location');
+            if ($locationId !== null && $locationId > 0) {
+                $params['location'] = $locationId;
+            }
+
+            $environmentId = api_get_uint('environment');
+            if ($environmentId !== null && $environmentId > 0) {
+                $params['environment'] = $environmentId;
+            }
+
+            $objectState = api_get('object_state');
+            if ($objectState !== null) {
+                $params['object_state'] = $objectState;
+            }
+
+            $userNamespaceMapId = api_get_uint('user_namespace_map');
+            if ($userNamespaceMapId !== null && $userNamespaceMapId > 0) {
+                $params['user_namespace_map'] = $userNamespaceMapId;
+            }
+
+            $params += vps_incident_list_filters($api->vps->index->getParameters('input'));
+            $vpses = $api->vps->list($params);
+
+        } else {
+            $vpses = $api->vps->list([
+                'meta' => ['count' => true, 'includes' => 'user,node,dataset__dataset_expansion'],
+            ] + vps_incident_read_params($api->vps->index));
+        }
+
+        $incidentAvailable = count($vpses) > 0 && vps_incident_available($vpses->first());
+    }
+
     if (isAdmin()) {
         $xtpl->table_title(_('Filters'));
         $xtpl->form_create('', 'get', 'vps-filter', false);
@@ -743,6 +794,12 @@ function vps_list_form()
             get_val('user_namespace_map')
         );
 
+        if ($incidentAvailable || (isset($vpses) && count($vpses) === 0 && isset($api->vps->index->getParameters('output')->incident_count_7d, $api->vps->index->getParameters('output')->incident_policy))) {
+            vps_incident_filter_form(
+                $api->vps->index->getParameters('input'),
+                $incidentAvailable ? $vpses->first()->incident_policy : get_val('incident_policy', 'oomd')
+            );
+        }
         $xtpl->form_out(_('Show'));
     }
 
@@ -754,6 +811,9 @@ function vps_list_form()
         $xtpl->table_add_category(_("HOSTNAME"));
         $xtpl->table_add_category(_("USED RAM"));
         $xtpl->table_add_category(_("USED DISK"));
+        if ($incidentAvailable) {
+            $xtpl->table_add_category(h($vpses->first()->incident_policy_label));
+        }
         $xtpl->table_add_category('');
         $xtpl->table_add_category('');
         $xtpl->table_add_category('');
@@ -768,51 +828,6 @@ function vps_list_form()
             foreach ($api->user($_SESSION['user']['id'])->environment_config->list() as $env) {
                 $envs_destroy[$env->environment_id] = $env->can_destroy_vps;
             }
-        }
-
-        if (isAdmin()) {
-            $params = [
-                'limit' => api_get_uint('limit', 25),
-                'from_id' => api_get_uint('from_id', 0),
-                'meta' => ['includes' => 'user,node,dataset__dataset_expansion'],
-            ];
-
-            $userId = api_get_uint('user');
-            if ($userId !== null) {
-                $params['user'] = $userId;
-            }
-
-            $nodeId = api_get_uint('node');
-            if ($nodeId !== null && $nodeId > 0) {
-                $params['node'] = $nodeId;
-            }
-
-            $locationId = api_get_uint('location');
-            if ($locationId !== null && $locationId > 0) {
-                $params['location'] = $locationId;
-            }
-
-            $environmentId = api_get_uint('environment');
-            if ($environmentId !== null && $environmentId > 0) {
-                $params['environment'] = $environmentId;
-            }
-
-            $objectState = api_get('object_state');
-            if ($objectState !== null) {
-                $params['object_state'] = $objectState;
-            }
-
-            $userNamespaceMapId = api_get_uint('user_namespace_map');
-            if ($userNamespaceMapId !== null && $userNamespaceMapId > 0) {
-                $params['user_namespace_map'] = $userNamespaceMapId;
-            }
-
-            $vpses = $api->vps->list($params);
-
-        } else {
-            $vpses = $api->vps->list([
-                'meta' => ['count' => true, 'includes' => 'user,node,dataset__dataset_expansion'],
-            ]);
         }
 
         $pagination->setResourceList($vpses);
@@ -853,6 +868,10 @@ function vps_list_form()
                 );
             } else {
                 $xtpl->table_td('---', false, true);
+            }
+
+            if ($incidentAvailable) {
+                $xtpl->table_td(vps_incident_indicator($vps));
             }
 
             if (isAdmin() || $vps->maintenance_lock == 'no') {

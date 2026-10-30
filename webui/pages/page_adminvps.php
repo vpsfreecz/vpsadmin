@@ -229,6 +229,13 @@ if (isLoggedIn()) {
             }
             break;
 
+        case 'incident_policy':
+            if (vps_incident_save(api_get_uint('veid'))) {
+                redirect('?page=adminvps&action=info&veid=' . api_get_uint('veid') . '&incident_policy=' . rawurlencode(api_post('incident_policy')) . '#incident-policy');
+            }
+            $show_info = true;
+            break;
+
         case 'info':
             $show_info = true;
             break;
@@ -1150,7 +1157,7 @@ if (isLoggedIn()) {
             'meta' => [
                 'includes' => 'node__location__environment,user,os_template,user_namespace_map',
             ],
-        ]);
+        ] + vps_incident_read_params($api->vps->show));
 
         vps_details_suite($vps);
 
@@ -1270,6 +1277,8 @@ if (isLoggedIn()) {
         }
 
         $xtpl->table_out();
+
+        vps_incident_details($vps);
 
         if (!isAdmin() && $vps->maintenance_lock != 'no') {
             $xtpl->perex(
