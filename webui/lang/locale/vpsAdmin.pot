@@ -207,8 +207,9 @@ msgstr ""
 msgid "OOM reports"
 msgstr ""
 
-#: forms/cluster.forms.php forms/incidents.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_incidents.php
+#: forms/cluster.forms.php forms/incident_policy.forms.php
+#: forms/incidents.forms.php forms/vps.forms.php pages/page_adminm.php
+#: pages/page_incidents.php
 msgid "Incident reports"
 msgstr ""
 
@@ -416,7 +417,8 @@ msgid "Managed"
 msgstr ""
 
 #: forms/cluster.forms.php forms/dns.forms.php forms/export.forms.php
-#: forms/networking.forms.php forms/users.forms.php pages/page_cluster.php
+#: forms/incident_policy.forms.php forms/networking.forms.php
+#: forms/users.forms.php pages/page_cluster.php
 msgid "Enabled"
 msgstr ""
 
@@ -682,7 +684,8 @@ msgstr ""
 msgid "Content"
 msgstr ""
 
-#: forms/cluster.forms.php forms/dns.forms.php forms/networking.forms.php
+#: forms/cluster.forms.php forms/dns.forms.php forms/incident_policy.forms.php
+#: forms/networking.forms.php
 msgid "All"
 msgstr ""
 
@@ -1242,8 +1245,9 @@ msgstr ""
 msgid "Time"
 msgstr ""
 
-#: forms/dns.forms.php forms/export.forms.php forms/outage.forms.php
-#: pages/page_adminm.php pages/page_adminvps.php public/index.php
+#: forms/dns.forms.php forms/export.forms.php forms/incident_policy.forms.php
+#: forms/outage.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: public/index.php
 msgid "Status"
 msgstr ""
 
@@ -1555,7 +1559,7 @@ msgstr ""
 msgid "Reverse zone"
 msgstr ""
 
-#: forms/dns.forms.php lib/functions.lib.php
+#: forms/dns.forms.php forms/incident_policy.forms.php lib/functions.lib.php
 msgid "Unknown"
 msgstr ""
 
@@ -1740,6 +1744,221 @@ msgstr ""
 
 #: forms/export.forms.php
 msgid "Hide advanced options"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Below limits"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Approaching a limit"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Warning limit reached"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Automatic shutdown limit reached"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+#, php-format
+msgid "7 days: %1$d/%2$d; 30 days: %3$d/%4$d"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Automatic shutdown exempt"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Incident escalation"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Automatic shutdown permission"
+msgstr ""
+
+#: forms/incident_policy.forms.php forms/ip_release.forms.php
+msgid "Allowed"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Exempt"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Incident type"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Incidents in 7 days / warning limit"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Incidents in 30 days / automatic shutdown limit"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Observation only"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Warnings only"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Warnings and automatic shutdown"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Global mode"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Automatic shutdown active"
+msgstr ""
+
+#: forms/incident_policy.forms.php forms/ip_release.forms.php
+#: forms/networking.forms.php
+msgid "Disabled"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Last incident"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Last warning queued"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Last confirmed automatic shutdown"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Incidents counted since ownership change"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "No outstanding shutdown"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Automatic shutdown pending"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Automatic shutdown failed"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Automatic shutdown outcome uncertain"
+msgstr ""
+
+#: forms/incident_policy.forms.php forms/vps.forms.php lib/xtemplate.lib.php
+#: pages/page_adminm.php public/index.php
+msgid "Transaction log"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Outstanding shutdown"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Cooldown ends"
+msgstr ""
+
+#: forms/incident_policy.forms.php forms/networking.forms.php
+#: forms/vps.forms.php
+msgid "List incident reports"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid ""
+"Counts use rolling 7-day and 30-day periods. Another incident at or after "
+"the cooldown ends is required for another automatic shutdown; no shutdown is "
+"scheduled for the cooldown end."
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid ""
+"An exemption disables automatic shutdowns by vpsAdmin for repeated "
+"incidents. Incident collection and warnings remain active."
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid ""
+"Automatic shutdown permission, the cooldown and any unfinished shutdown are "
+"shared across incident types for this VPS."
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "The node's memory protection remains active."
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Incident settings"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Warning limit override (7 days)"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Automatic shutdown limit override (30 days)"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid ""
+"Leave an override empty to inherit the global default. Effective limits are "
+"shown above. The shutdown limit must be at least the warning limit."
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid ""
+"Changes apply to new incidents. An operation already running may still "
+"finish."
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Save incident settings"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Reset limits to defaults"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Incident settings unavailable"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Limits must be positive integers or empty to inherit defaults."
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Select whether automatic shutdown is allowed."
+msgstr ""
+
+#: forms/incident_policy.forms.php forms/node.forms.php pages/page_adminm.php
+#: pages/page_adminvps.php pages/page_backup.php pages/page_cluster.php
+#: pages/page_console.php pages/page_dataset.php pages/page_dns.php
+#: pages/page_export.php pages/page_history.php pages/page_incidents.php
+#: pages/page_jumpto.php pages/page_lifetimes.php pages/page_monitoring.php
+#: pages/page_nas.php pages/page_networking.php pages/page_node.php
+#: pages/page_oom_reports.php pages/page_outage.php pages/page_redirect.php
+#: pages/page_reminder.php pages/page_transactions.php pages/page_userdata.php
+#: pages/page_userns.php
+msgid "Access forbidden"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Incident settings saved"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Unable to save incident settings"
 msgstr ""
 
 #: forms/incidents.forms.php
@@ -1966,14 +2185,6 @@ msgstr ""
 
 #: forms/ip_release.forms.php
 msgid "Keep"
-msgstr ""
-
-#: forms/ip_release.forms.php
-msgid "Allowed"
-msgstr ""
-
-#: forms/ip_release.forms.php forms/networking.forms.php
-msgid "Disabled"
 msgstr ""
 
 #: forms/ip_release.forms.php
@@ -2476,10 +2687,6 @@ msgid ""
 msgstr ""
 
 #: forms/networking.forms.php forms/vps.forms.php
-msgid "List incident reports"
-msgstr ""
-
-#: forms/networking.forms.php forms/vps.forms.php
 msgid "List assignments"
 msgstr ""
 
@@ -2748,17 +2955,6 @@ msgstr ""
 
 #: forms/node.forms.php
 msgid "No kernel history is available yet."
-msgstr ""
-
-#: forms/node.forms.php pages/page_adminm.php pages/page_adminvps.php
-#: pages/page_backup.php pages/page_cluster.php pages/page_console.php
-#: pages/page_dataset.php pages/page_dns.php pages/page_export.php
-#: pages/page_history.php pages/page_incidents.php pages/page_jumpto.php
-#: pages/page_lifetimes.php pages/page_monitoring.php pages/page_nas.php
-#: pages/page_networking.php pages/page_node.php pages/page_oom_reports.php
-#: pages/page_outage.php pages/page_redirect.php pages/page_reminder.php
-#: pages/page_transactions.php pages/page_userdata.php pages/page_userns.php
-msgid "Access forbidden"
 msgstr ""
 
 #: forms/node.forms.php
@@ -5011,11 +5207,6 @@ msgstr ""
 
 #: forms/vps.forms.php
 msgid "Report incident"
-msgstr ""
-
-#: forms/vps.forms.php lib/xtemplate.lib.php pages/page_adminm.php
-#: public/index.php
-msgid "Transaction log"
 msgstr ""
 
 #: forms/vps.forms.php
