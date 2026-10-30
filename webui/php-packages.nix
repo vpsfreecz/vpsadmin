@@ -234,10 +234,10 @@ let
     "phpunit/php-code-coverage" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "phpunit-php-code-coverage-f1e54f06b6b4cea73cd6104ba3c0cfa0efa6d73f";
+        name = "phpunit-php-code-coverage-1db2f40af7a6538742e4a634b71ee556d6219be7";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/f1e54f06b6b4cea73cd6104ba3c0cfa0efa6d73f";
-          sha256 = "1ivrgl1n2cr9yqvix7b85ygh6x8anfndymz9w749qhxw73v1sbpk";
+          url = "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/1db2f40af7a6538742e4a634b71ee556d6219be7";
+          sha256 = "1ljvdnzldpxjpn712a899j1flahfah5ww0kc17al9v11yzn1975p";
         };
       };
     };
@@ -448,16 +448,6 @@ let
         src = fetchurl {
           url = "https://api.github.com/repos/staabm/side-effects-detector/zipball/d8334211a140ce329c13726d4a715adbddd0a163";
           sha256 = "04kvzfgwpgncn3wm316l24a02lzds05z3nf83wrm9kk2vg52rn4h";
-        };
-      };
-    };
-    "theseer/tokenizer" = {
-      targetDir = "";
-      src = composerEnv.buildZipPackage {
-        name = "theseer-tokenizer-7989e43bf381af0eac72e4f0ca5bcbfa81658be4";
-        src = fetchurl {
-          url = "https://api.github.com/repos/theseer/tokenizer/zipball/7989e43bf381af0eac72e4f0ca5bcbfa81658be4";
-          sha256 = "1d0rsx96jylbjvnhi0ylwrq5pxcmlmqir8n63cajy2zrvhzngkcp";
         };
       };
     };
