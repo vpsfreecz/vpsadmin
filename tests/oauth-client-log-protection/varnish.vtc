@@ -1,0 +1,86 @@
+varnishtest "Product VCL preserves metrics caching and uncached OAuth wire values"
+
+server s1 -listen "127.0.0.1:${backend_port}" {
+    rxreq
+    expect req.method == "GET"
+    expect req.url == "/metrics?access_token=PUBLIC_TOKEN_A"
+    txresp -hdr "Cache-Control: public, max-age=5" -body "metrics A"
+
+    rxreq
+    expect req.url == "/metrics?access_token=PUBLIC_TOKEN_B"
+    txresp -hdr "Cache-Control: public, max-age=5" -body "metrics B"
+
+    rxreq
+    expect req.method == "POST"
+    expect req.url == "/_auth/oauth2/callback?code=PUBLIC_CODE&state=a%2Bb%26c"
+    expect req.http.Authorization == "Bearer PUBLIC_AUTHORIZATION"
+    expect req.http.Cookie == "session=PUBLIC_COOKIE"
+    expect req.body == "PUBLIC_BODY"
+    txresp -status 302 -hdr "Location: /continue?code=PUBLIC_LOCATION" -hdr "Set-Cookie: session=PUBLIC_RESPONSE_COOKIE" -body "callback one"
+
+    rxreq
+    expect req.method == "POST"
+    expect req.url == "/_auth/oauth2/callback?code=PUBLIC_CODE&state=a%2Bb%26c"
+    expect req.http.Authorization == "Bearer PUBLIC_AUTHORIZATION"
+    expect req.http.Cookie == "session=PUBLIC_COOKIE"
+    expect req.body == "PUBLIC_BODY"
+    txresp -status 302 -hdr "Location: /continue?code=PUBLIC_LOCATION" -hdr "Set-Cookie: session=PUBLIC_RESPONSE_COOKIE" -body "callback two"
+
+    rxreq
+    expect req.url == "/metrics?access_token=PUBLIC_TOKEN_C"
+    expect req.http.Authorization == "Bearer PUBLIC_AUTHORIZATION"
+    expect req.http.Cookie == "session=PUBLIC_COOKIE"
+    txresp -hdr "Cache-Control: public, max-age=5" -body "private one"
+
+    rxreq
+    expect req.url == "/metrics?access_token=PUBLIC_TOKEN_C"
+    expect req.http.Authorization == "Bearer PUBLIC_AUTHORIZATION"
+    expect req.http.Cookie == "session=PUBLIC_COOKIE"
+    txresp -hdr "Cache-Control: public, max-age=5" -body "private two"
+} -start
+
+# The file is the module-generated VCL, with only its backend port isolated.
+varnish v1 -arg "-f ${vcl_file}" -start
+logexpect l1 -v v1 -g raw {
+    expect * * TTL "^VCL 60 "
+} -start
+
+client c1 {
+    txreq -url "/metrics?access_token=PUBLIC_TOKEN_A" -hdr "Host: api.test"
+    rxresp
+    expect resp.status == 200
+    expect resp.body == "metrics A"
+    txreq -url "/metrics?access_token=PUBLIC_TOKEN_A" -hdr "Host: api.test"
+    rxresp
+    expect resp.status == 200
+    expect resp.body == "metrics A"
+    txreq -url "/metrics?access_token=PUBLIC_TOKEN_B" -hdr "Host: api.test"
+    rxresp
+    expect resp.body == "metrics B"
+
+    txreq -req POST -url "/_auth/oauth2/callback?code=PUBLIC_CODE&state=a%2Bb%26c" -hdr "Host: api.test" -hdr "Authorization: Bearer PUBLIC_AUTHORIZATION" -hdr "Cookie: session=PUBLIC_COOKIE" -body "PUBLIC_BODY"
+    rxresp
+    expect resp.status == 302
+    expect resp.http.Location == "/continue?code=PUBLIC_LOCATION"
+    expect resp.http.Set-Cookie == "session=PUBLIC_RESPONSE_COOKIE"
+    expect resp.body == "callback one"
+    txreq -req POST -url "/_auth/oauth2/callback?code=PUBLIC_CODE&state=a%2Bb%26c" -hdr "Host: api.test" -hdr "Authorization: Bearer PUBLIC_AUTHORIZATION" -hdr "Cookie: session=PUBLIC_COOKIE" -body "PUBLIC_BODY"
+    rxresp
+    expect resp.status == 302
+    expect resp.http.Location == "/continue?code=PUBLIC_LOCATION"
+    expect resp.http.Set-Cookie == "session=PUBLIC_RESPONSE_COOKIE"
+    expect resp.body == "callback two"
+
+    txreq -url "/metrics?access_token=PUBLIC_TOKEN_C" -hdr "Host: api.test" -hdr "Authorization: Bearer PUBLIC_AUTHORIZATION" -hdr "Cookie: session=PUBLIC_COOKIE"
+    rxresp
+    expect resp.body == "private one"
+    txreq -url "/metrics?access_token=PUBLIC_TOKEN_C" -hdr "Host: api.test" -hdr "Authorization: Bearer PUBLIC_AUTHORIZATION" -hdr "Cookie: session=PUBLIC_COOKIE"
+    rxresp
+    expect resp.body == "private two"
+} -run
+
+server s1 -wait
+logexpect l1 -wait
+varnish v1 -expect MAIN.cache_miss == 2
+varnish v1 -expect MAIN.cache_hit == 1
+varnish v1 -expect MAIN.backend_req == 6

@@ -102,12 +102,18 @@ OAuth provider metadata. vpsAdmin derives those URLs from `core.auth_url`, or
 must trust the provider's HTTPS certificate. Keep sufficient worker concurrency
 for same-origin token and revoke requests.
 
-The test/development nginx frontend replaces client-supplied forwarding metadata
+The product nginx frontend replaces client-supplied forwarding metadata
 with its own scheme, host, port and remote address. Its API/auth access log omits
 queries and its API/auth error log is disabled because nginx error messages can
-include the original request. Retain these settings when exposing documentation OAuth
-callbacks; never capture callback queries, credentials, cookies or tokens in
-request logs.
+include the original request. The test/development API virtual host routes
+through Varnish to HAProxy. Varnish retains the metrics endpoint's 60-second
+cache; HAProxy API request logging is disabled. Varnish's runtime shared-memory
+records remain available and are outside the persistent-log protection.
+Retain the persistent-log protections when exposing documentation OAuth
+callbacks and on rollback. Persistent request logs must omit callback queries,
+credentials, cookies and tokens. See
+[HTTP logging and OAuth callbacks](http-log-protection.md) for the product
+defaults, TLS behavior and deployment boundaries.
 
 The isolated [schema exporter](api-schema-export.md) pins HaveAPI 0.32.0 for
 reproducible schema exports. Deploy or roll back the private documentation

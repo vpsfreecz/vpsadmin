@@ -207,7 +207,45 @@ let
     .${app};
 
   accessLog =
-    app: name: if app == "console-router" then "off" else "/var/log/nginx/vpsadmin-${app}-${name}.log";
+    app: name:
+    if app == "console-router" then
+      "off"
+    else
+      "/var/log/nginx/vpsadmin-${app}-${name}.log${optionalString (protectedApp app) " vpsadmin"}";
+
+  protectedApp =
+    app:
+    elem app [
+      "api"
+      "auth"
+      "webui"
+    ];
+
+  requestLogging = app: name: ''
+    access_log ${accessLog app name};
+    ${optionalString (protectedApp app) "error_log /dev/null crit;"}
+    ${optionalString (app == "webui") ''
+      proxy_hide_header Referrer-Policy;
+      add_header Referrer-Policy strict-origin always;
+    ''}
+  '';
+
+  apiProxyConfig = {
+    recommendedProxySettings = false;
+    extraConfig = ''
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $remote_addr;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header X-Forwarded-Host $host;
+      proxy_set_header X-Forwarded-Port $server_port;
+      proxy_set_header Forwarded "";
+      proxy_set_header X-Forwarded-Server "";
+      proxy_set_header X-Forwarded-Scheme "";
+      proxy_set_header X-Forwarded-Ssl "";
+      proxy_set_header X-Url-Scheme "";
+    '';
+  };
 
   baseVirtualHosts =
     app: name: instance:
@@ -224,7 +262,8 @@ let
           proxyPass = mkIf (!isUnderMaintenance app name instance) "http://${upstreamName app name}";
 
           return = mkIf (isUnderMaintenance app name instance) "503";
-        };
+        }
+        // optionalAttrs (app == "api") apiProxyConfig;
 
         "@maintenance" = {
           root = pkgs.runCommand "${app}-maintenance-root" { } ''
@@ -238,7 +277,7 @@ let
       };
 
       extraConfig = ''
-        access_log ${accessLog app name};
+        ${requestLogging app name}
         error_page 503 @maintenance;
       '';
     };
@@ -258,19 +297,22 @@ let
           proxyPass = mkIf (!isUnderMaintenance app name instance) "http://${upstreamName app name}";
 
           return = mkIf (isUnderMaintenance app name instance) "503";
-        };
+        }
+        // apiProxyConfig;
 
         "/webauthn" = {
           proxyPass = mkIf (!isUnderMaintenance app name instance) "http://${upstreamName app name}";
 
           return = mkIf (isUnderMaintenance app name instance) "503";
-        };
+        }
+        // apiProxyConfig;
 
         "/oauth2/password-reset" = {
           proxyPass = mkIf (!isUnderMaintenance app name instance) "http://${upstreamName app name}";
 
           return = mkIf (isUnderMaintenance app name instance) "503";
-        };
+        }
+        // apiProxyConfig;
 
         "@maintenance" = {
           root = pkgs.runCommand "${app}-maintenance-root" { } ''
@@ -284,7 +326,7 @@ let
       };
 
       extraConfig = ''
-        access_log ${accessLog app name};
+        ${requestLogging app name}
         error_page 503 @maintenance;
       '';
     };
