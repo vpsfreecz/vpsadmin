@@ -55,6 +55,13 @@ eligible files are the tracked `spec/**/*_spec.rb` paths under `api/`, excluding
 `spec/migrations/*_spec.rb`. The generator file remains selected, while RSpec
 excludes `:generator` examples unless `RUN_GENERATOR_SPECS=1`.
 
+Temporary servers started by `tools/test_db.rb` use REPEATABLE-READ with
+`innodb_snapshot_isolation=OFF`. Concurrency specs retain old snapshots for
+ordinary reads while locking reads see committed changes. Startup output records
+the actual server version and both isolation settings. The
+[product database module](../../nixos/modules/vpsadmin/database.nix) uses
+READ-COMMITTED; keep these separate contracts when reproducing a failure.
+
 Paths in the table are relative to `api/`. Resource entries mean
 `spec/api/resources/<entry>_spec.rb`, including any glob shown. The workflow's
 patterns are authoritative; place new specs in the matching domain and extend

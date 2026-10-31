@@ -466,8 +466,18 @@ RSpec.describe VpsAdmin::API::MailTemplates do
     end
   ensure
     release_install << true
-    threads.each { |thread| thread.join(5) }
-    cleanup&.call
+    failure = $!
+    threads.each do |thread|
+      thread.join(5) || thread.kill.join
+    rescue StandardError, RSpec::Expectations::ExpectationNotMetError => e
+      failure ||= e
+    end
+    begin
+      cleanup&.call
+    rescue StandardError, RSpec::Expectations::ExpectationNotMetError => e
+      failure ||= e
+    end
+    raise failure if failure
   end
 
   it 'does not overwrite existing templates or translations' do

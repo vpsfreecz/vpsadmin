@@ -45,6 +45,7 @@ module VpsAdmin
         configure_root! unless configured? && tcp_query('SELECT 1')
         ensure_database!
         write_metadata
+        warn "MariaDB test database: #{settings_summary}"
       end
 
       def stop
@@ -89,6 +90,20 @@ module VpsAdmin
       end
 
       private
+
+      def settings_summary
+        result = Result.capture(
+          client_env,
+          client_args + [
+            '--batch', '--skip-column-names', '--execute',
+            'SELECT VERSION(), @@session.tx_isolation, @@session.innodb_snapshot_isolation'
+          ]
+        )
+        raise Error, result.message unless result.success?
+
+        version, isolation, snapshot = result.stdout.strip.split("\t")
+        "version=#{version}, tx_isolation=#{isolation}, innodb_snapshot_isolation=#{snapshot}"
+      end
 
       def data_dir
         File.join(state_dir, 'data')
@@ -145,6 +160,8 @@ module VpsAdmin
           "--bind-address=#{host}",
           "--log-error=#{log_path}",
           '--skip-networking=0',
+          '--transaction-isolation=REPEATABLE-READ',
+          '--innodb-snapshot-isolation=OFF',
           out: [log_path, 'a'],
           err: %i[child out]
         ).tap { |pid| Process.detach(pid) }
@@ -361,7 +378,6 @@ module VpsAdmin
         instance.prune
       end
 
-      warn "Started local MariaDB test database at #{instance.url}"
       instance.url
     end
 
