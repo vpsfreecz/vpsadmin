@@ -19,6 +19,8 @@ These pages describe vpsAdmin for developers and operators. Start with the
 - [Plugins](plugins.md): API extensions, loading, and database migrations.
 - [API client examples](api-client-examples.md): Go, Rust and TypeScript documentation profiles
   and SDK compatibility.
+- [HTTP logging and OAuth callbacks](http-log-protection.md): frontend, HAProxy
+  and PHP defaults, TLS composition and deployment boundaries.
 - [Storage](storage/README.md): datasets, pools, snapshots, and operations.
   - [Backup branching](storage/branching.md)
   - [Snapshot downloads and local backups](storage/download.md)

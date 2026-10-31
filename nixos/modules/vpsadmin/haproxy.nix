@@ -30,6 +30,7 @@ let
     };
 
   appOpts =
+    app:
     { config, ... }:
     {
       options = {
@@ -43,8 +44,11 @@ let
 
         logRequests = mkOption {
           type = types.bool;
-          default = true;
-          description = "Log HTTP requests for this frontend.";
+          default = app == "console-router";
+          description = ''
+            Log HTTP requests for this frontend. Disabled for API and WebUI
+            because HTTP request logs include sensitive queries.
+          '';
         };
 
         frontend = {
@@ -161,7 +165,7 @@ in
       };
 
       api = mkOption {
-        type = types.attrsOf (types.submodule appOpts);
+        type = types.attrsOf (types.submodule (appOpts "api"));
         default = { };
         description = ''
           HAProxy instances for vpsAdmin API
@@ -169,7 +173,7 @@ in
       };
 
       console-router = mkOption {
-        type = types.attrsOf (types.submodule appOpts);
+        type = types.attrsOf (types.submodule (appOpts "console-router"));
         default = { };
         description = ''
           HAProxy instances for vpsAdmin console router
@@ -177,7 +181,7 @@ in
       };
 
       webui = mkOption {
-        type = types.attrsOf (types.submodule appOpts);
+        type = types.attrsOf (types.submodule (appOpts "webui"));
         default = { };
         description = ''
           HAProxy instances for vpsAdmin web UI

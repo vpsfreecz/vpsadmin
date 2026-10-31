@@ -151,29 +151,6 @@ let
   webuiPort = 8134;
   socketNetwork = "${cfg.socketAddress}/24";
 
-  # This nginx instance terminates TLS in the development cluster. Forward only
-  # origin data derived here, not client-supplied proxy headers.
-  apiProxyHeaders = ''
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $remote_addr;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header X-Forwarded-Host $host;
-    proxy_set_header X-Forwarded-Port $server_port;
-    proxy_set_header Forwarded "";
-    proxy_set_header X-Forwarded-Server "";
-    proxy_set_header X-Forwarded-Scheme "";
-    proxy_set_header X-Forwarded-Ssl "";
-    proxy_set_header X-Url-Scheme "";
-  '';
-
-  apiFrontendLogConfig = ''
-    access_log /var/log/nginx/vpsadmin-api-no-query.log vpsadmin_api_no_query;
-    # nginx error messages may contain the original request, including its query.
-    error_log /dev/null;
-    error_page 503 @maintenance;
-  '';
-
   mailerNode = {
     address = cfg.socketAddress;
     netInterfaces = [ "eth1" ];
@@ -257,32 +234,6 @@ in
         ];
       }
       // socketPeersAsHosts;
-    };
-
-    # Keep OAuth callback queries and credentials out of both proxy logs.
-    # Override the frontend module's complete server-level logging directives
-    # so its default access log cannot also retain the unredacted request.
-    services.nginx = {
-      # Named access-log formats must precede the virtual hosts that use them.
-      commonHttpConfig = ''
-        log_format vpsadmin_api_no_query '$remote_addr - $request_method $uri $server_protocol $status $body_bytes_sent';
-      '';
-      virtualHosts = {
-        "${config.vpsadmin.frontend.api.test.virtualHost}" = {
-          extraConfig = lib.mkForce apiFrontendLogConfig;
-          locations."/" = {
-            recommendedProxySettings = false;
-            extraConfig = apiProxyHeaders;
-          };
-        };
-        "${config.vpsadmin.frontend.auth.test.virtualHost}" = {
-          extraConfig = lib.mkForce apiFrontendLogConfig;
-          locations = lib.genAttrs [ "/_auth" "/webauthn" "/oauth2/password-reset" ] (_: {
-            recommendedProxySettings = false;
-            extraConfig = apiProxyHeaders;
-          });
-        };
-      };
     };
 
     environment.etc = listToAttrs secretFiles;
@@ -611,8 +562,6 @@ in
         enable = true;
 
         api.test = {
-          # HAProxy's inherited httplog records full callback queries.
-          logRequests = false;
           frontend.bind = [ "unix@/run/haproxy/vpsadmin-api.sock mode 0666" ];
           backends = [
             {
