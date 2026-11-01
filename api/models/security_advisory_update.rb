@@ -26,15 +26,15 @@ class SecurityAdvisoryUpdate < ApplicationRecord
   end
 
   def update_translations!(translations)
-    transaction do
+    ::SecurityAdvisory.find(security_advisory_id).with_lock(requires_new: true) do
+      reload(lock: true)
       translations.each do |lang, tr_attrs|
-        tr = security_advisory_translations.find_or_initialize_by(language: lang)
+        tr = security_advisory_translations.lock.find_or_initialize_by(language: lang)
         tr.assign_attributes(tr_attrs)
         tr.save!
       end
+      load_translations
     end
-
-    load_translations
   end
 
   def load_translations

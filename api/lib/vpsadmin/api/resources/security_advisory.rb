@@ -8,6 +8,11 @@ module VpsAdmin::API::Resources
       'Date and time shown as the advisory publication time.'.freeze
     SEND_MAIL_DESCRIPTION =
       'When enabled, affected users are emailed after the action completes.'.freeze
+    EXPECTED_STATE_DESCRIPTION =
+      'Apply the change only when the advisory is still in this state.'.freeze
+    EXPECTED_STATE_CHOICES = {
+      values: { 'draft' => 'Draft', 'published' => 'Published', 'retracted' => 'Retracted' }
+    }.freeze
     EFFECTIVE_DATE_SQL =
       'COALESCE(security_advisories.published_at, security_advisories.created_at)'.freeze
     TEXT_DESCRIPTIONS = {
@@ -52,8 +57,12 @@ module VpsAdmin::API::Resources
 
     params(:revision_precondition) do
       integer :expected_content_revision,
+              label: 'Expected content revision',
               required: true,
               desc: 'Apply the change only when the advisory has this content revision.'
+      string :expected_state,
+             label: 'Expected state', desc: EXPECTED_STATE_DESCRIPTION,
+             choices: EXPECTED_STATE_CHOICES
     end
 
     params(:all) do
@@ -102,10 +111,14 @@ module VpsAdmin::API::Resources
         tr
       end
 
-      def mutate_draft(advisory, &)
-        expected_revision = input.delete(:expected_content_revision)
-        advisory.mutate_draft!(expected_content_revision: expected_revision, &)
-      rescue ::SecurityAdvisory::DraftRequired, ::SecurityAdvisory::RevisionMismatch => e
+      def edit_content
+        preconditions = {
+          expected_content_revision: input.delete(:expected_content_revision),
+          expected_state: input.delete(:expected_state)
+        }
+        yield preconditions
+      rescue ::SecurityAdvisory::ContentEditRequired, ::SecurityAdvisory::StateMismatch,
+             ::SecurityAdvisory::RevisionMismatch => e
         error!(e.message, {}, http_status: 409)
       end
     end
@@ -323,7 +336,7 @@ module VpsAdmin::API::Resources
     class Update < HaveAPI::Actions::Default::Update
       include Helpers
 
-      desc 'Update security advisory draft metadata'
+      desc 'Correct original security advisory text without sending mail'
 
       input do
         use :editable
@@ -341,9 +354,8 @@ module VpsAdmin::API::Resources
       def exec
         advisory = ::SecurityAdvisory.find(path_params['security_advisory_id'])
         tr = extract_translations
-        mutate_draft(advisory) do
-          advisory.update!(to_db_names(input))
-          advisory.update_translations!(tr)
+        edit_content do |preconditions|
+          advisory.update_content!(to_db_names(input), tr, **preconditions)
         end
         advisory
       rescue ActiveRecord::RecordInvalid => e
@@ -359,6 +371,7 @@ module VpsAdmin::API::Resources
 
       input do
         integer :expected_content_revision,
+                label: 'Expected content revision',
                 required: true,
                 desc: 'Publish only the exact draft revision shown during review.'
         bool :send_mail,
@@ -388,7 +401,7 @@ module VpsAdmin::API::Resources
           published_by: current_user,
           published_at: input[:published_at]
         )
-      rescue ::SecurityAdvisory::RevisionMismatch => e
+      rescue ::SecurityAdvisory::DraftRequired, ::SecurityAdvisory::RevisionMismatch => e
         error!(e.message, {}, http_status: 409)
       rescue ActiveRecord::RecordInvalid => e
         error!('publish failed', to_param_names(e.record.errors.to_hash))
@@ -396,6 +409,51 @@ module VpsAdmin::API::Resources
 
       def state_id
         @advisory&.last_chain&.id
+      end
+    end
+
+    class Retract < HaveAPI::Action
+      include Helpers
+
+      desc 'Retract security advisory without sending mail'
+      route '{%{resource}_id}/retract'
+      http_method :post
+
+      input do
+        use :revision_precondition
+      end
+
+      output do
+        use :all
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        advisory = ::SecurityAdvisory.find(path_params['security_advisory_id'])
+        edit_content { |preconditions| advisory.retract!(**preconditions) }
+      end
+    end
+
+    class Delete < HaveAPI::Actions::Default::Delete
+      include Helpers
+
+      desc 'Permanently delete security advisory and its reports'
+
+      input do
+        use :revision_precondition
+      end
+
+      authorize do |u|
+        allow if u.role == :admin
+      end
+
+      def exec
+        advisory = ::SecurityAdvisory.find(path_params['security_advisory_id'])
+        edit_content { |preconditions| advisory.destroy_content!(**preconditions) }
+        ok!
       end
     end
 
@@ -421,8 +479,12 @@ module VpsAdmin::API::Resources
 
       params(:revision_precondition) do
         integer :expected_content_revision,
+                label: 'Expected content revision',
                 required: true,
                 desc: 'Apply the change only when the advisory has this content revision.'
+        string :expected_state,
+               label: 'Expected state', desc: EXPECTED_STATE_DESCRIPTION,
+               choices: EXPECTED_STATE_CHOICES
       end
 
       params(:notes) do
@@ -548,12 +610,8 @@ module VpsAdmin::API::Resources
         def exec
           advisory = ::SecurityAdvisory.find(path_params['security_advisory_id'])
           translations = extract_note_translations
-          mutate_draft(advisory) do
-            status = ::SecurityAdvisoryNodeStatus.create!(
-              to_db_names(input).merge(security_advisory: advisory)
-            )
-            status.update_translations!(translations)
-            status
+          edit_content do |preconditions|
+            advisory.create_node_status!(to_db_names(input), translations, **preconditions)
           end
         rescue ActiveRecord::RecordInvalid => e
           error!('create failed', to_param_names(e.record.errors.to_hash))
@@ -580,16 +638,12 @@ module VpsAdmin::API::Resources
         end
 
         def exec
-          status = ::SecurityAdvisoryNodeStatus.find_by!(
-            security_advisory_id: path_params['security_advisory_id'],
-            id: path_params['node_status_id']
-          )
+          advisory = ::SecurityAdvisory.find(path_params['security_advisory_id'])
           translations = extract_note_translations
-          mutate_draft(status.security_advisory) do
-            status.update!(to_db_names(input))
-            status.update_translations!(translations)
+          edit_content do |preconditions|
+            advisory.update_node_status!(path_params['node_status_id'], to_db_names(input),
+                                         translations, **preconditions)
           end
-          status
         rescue ActiveRecord::RecordInvalid => e
           error!('update failed', to_param_names(e.record.errors.to_hash))
         end
@@ -608,15 +662,11 @@ module VpsAdmin::API::Resources
           allow if u.role == :admin
         end
 
-        def prepare
-          @status = ::SecurityAdvisoryNodeStatus.find_by!(
-            security_advisory_id: path_params['security_advisory_id'],
-            id: path_params['node_status_id']
-          )
-        end
-
         def exec
-          mutate_draft(@status.security_advisory) { @status.destroy! }
+          advisory = ::SecurityAdvisory.find(path_params['security_advisory_id'])
+          edit_content do |preconditions|
+            advisory.delete_node_status!(path_params['node_status_id'], **preconditions)
+          end
           ok!
         end
       end

@@ -228,7 +228,9 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        @update.destroy!
+        ::SecurityAdvisory.find(@update.security_advisory_id).with_lock(requires_new: true) do
+          @update.reload(lock: true).destroy!
+        end
         ok!
       end
     end

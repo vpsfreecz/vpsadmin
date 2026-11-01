@@ -9,6 +9,8 @@ These pages describe vpsAdmin for developers and operators. Start with the
   provenance for client generation.
 - [Transactions](transactions.md): node commands, chains, resource locks, and
   database confirmations.
+- [Security advisories](security-advisories.md): original corrections,
+  announcements, preconditions and affected-user snapshots.
 - [IP ownership, accounting and locking](ip-locking.md)
 - [IP ownership operations](ip-ownership-operations.md)
 - [Upgrade to coordinated IP ownership reservations](upgrade-ip-ownership-reservations.md)

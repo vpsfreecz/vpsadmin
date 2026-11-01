@@ -100,10 +100,10 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        ::OutageSecurityAdvisory.create!(
-          outage: input[:outage],
-          security_advisory: input[:security_advisory]
-        )
+        advisory = input[:security_advisory]
+        advisory.with_lock(requires_new: true) do
+          ::OutageSecurityAdvisory.create!(outage: input[:outage], security_advisory: advisory)
+        end
       rescue ActiveRecord::RecordInvalid => e
         error!('create failed', to_param_names(e.record.errors.to_hash))
       rescue ActiveRecord::RecordNotUnique

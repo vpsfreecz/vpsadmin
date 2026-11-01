@@ -748,6 +748,17 @@ cs:
         label: Důvod výjimky administrátora
       expected_content_revision:
         label: Očekávaná revize obsahu
+      expected_state:
+        choices:
+          draft:
+            label: koncept
+          published:
+            label: publikováno
+          retracted:
+            label: staženo
+        description: Provést změnu pouze tehdy, pokud je upozornění stále v tomto
+          stavu.
+        label: Očekávaný stav
       expiration:
         description: Datum, po kterém token přestane být platný
       expirations:
@@ -3574,6 +3585,11 @@ cs:
               external_id:
                 description: Stabilní klíč idempotence; opakovaný požadavek vrátí
                   existující bezpečnostní upozornění.
+          delete:
+            input:
+              expected_content_revision:
+                description: Změnu provést pouze v případě, že má bezpečnostní upozornění
+                  tuto revizi obsahu.
           index:
             input:
               cve:
@@ -3585,6 +3601,11 @@ cs:
               expected_content_revision:
                 description: Zveřejnit pouze přesnou revizi konceptu zobrazenou při
                   kontrole.
+          retract:
+            input:
+              expected_content_revision:
+                description: Změnu provést pouze v případě, že má bezpečnostní upozornění
+                  tuto revizi obsahu.
           update:
             input:
               expected_content_revision:

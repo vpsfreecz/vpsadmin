@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'timeout'
+
 RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
   include CoreResourceSpecHelpers
 
@@ -27,6 +29,10 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
 
   def publish_path(id)
     vpath("/security_advisories/#{id}/publish")
+  end
+
+  def retract_path(id)
+    vpath("/security_advisories/#{id}/retract")
   end
 
   def cve_index_path
@@ -144,7 +150,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
     value
   end
 
-  def action_input_params(resource_name, action_name)
+  def action_input_params(resource_name, action_name, parent: nil)
     header 'Accept', 'application/json'
     options vpath('/')
     expect(last_response.status).to eq(200)
@@ -153,7 +159,8 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
     data = data['response'] if data.is_a?(Hash) && data['response'].is_a?(Hash)
 
     resources = data['resources'] || {}
-    action = resources.dig(resource_name.to_s, 'actions', action_name.to_s) || {}
+    resource = parent ? resources.dig(parent.to_s, 'resources', resource_name.to_s) : resources[resource_name.to_s]
+    action = resource&.dig('actions', action_name.to_s) || {}
     action.dig('input', 'parameters') || {}
   end
 
@@ -217,6 +224,8 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
         'security_advisory#create',
         'security_advisory#update',
         'security_advisory#publish',
+        'security_advisory#retract',
+        'security_advisory#delete',
         'security_advisory#rebuild_affected_vps',
         'security_advisory_cve#index',
         'security_advisory_cve#show',
@@ -266,6 +275,13 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
         'CVE-YYYY-NNNN'
       )
       expect(advisory_update_params.dig('expected_content_revision', 'required')).to be(true)
+      expect(advisory_update_params.dig('expected_state', 'type')).to eq('String')
+      expect(advisory_update_params.dig('expected_state', 'validators', 'include', 'values').keys)
+        .to eq(%w[draft published retracted])
+      node_update_params = action_input_params(:node_status, :update, parent: :security_advisory)
+      expect(node_update_params.dig('expected_state', 'type')).to eq('String')
+      expect(node_update_params.dig('expected_state', 'validators', 'include', 'values').keys)
+        .to eq(%w[draft published retracted])
       expect(cve_params.dig('expected_content_revision', 'required')).to be(true)
       expect(update_params.dig('state', 'description')).to include(
         'state change'
@@ -278,25 +294,41 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       )
       expect(update_params).not_to include('en_description', 'en_response')
     end
+
+    it 'advertises required revision and optional state on every correction and direct lifecycle action' do
+      params = %i[update retract delete].map { |action| action_input_params(:security_advisory, action) }
+      params.concat(%i[create update delete].map { |action| action_input_params(:security_advisory_cve, action) })
+      params.concat(%i[create update delete].map do |action|
+        action_input_params(:node_status, action, parent: :security_advisory)
+      end)
+      params.each do |input|
+        expect(input.dig('expected_content_revision', 'required')).to be(true)
+        expect(input.dig('expected_state', 'type')).to eq('String')
+        expect(input.dig('expected_state', 'required')).not_to be(true)
+        expect(input.dig('expected_state', 'validators', 'include', 'values').keys).to eq(%w[draft published retracted])
+      end
+    end
   end
 
   describe 'Index and show' do
     it 'shows only published advisories to public readers' do
       draft = build_advisory
       published = build_published_advisory
+      retracted = build_published_advisory
+      retracted.retract!(expected_content_revision: retracted.content_revision)
 
       json_get index_path
 
       expect_status(200)
       ids = security_advisories.map { |row| row['id'] }
       expect(ids).to include(published.id)
-      expect(ids).not_to include(draft.id)
+      expect(ids).not_to include(draft.id, retracted.id)
 
       as(SpecSeed.admin) { json_get index_path }
 
       expect_status(200)
       ids = security_advisories.map { |row| row['id'] }
-      expect(ids).to include(draft.id, published.id)
+      expect(ids).to include(draft.id, published.id, retracted.id)
     end
 
     it 'orders drafts and published advisories by their effective dates' do
@@ -407,6 +439,133 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
     end
   end
 
+  describe 'Read visibility' do
+    let(:readers) { [nil, SpecSeed.user, SpecSeed.support, SpecSeed.admin] }
+    let(:reports) do
+      draft = build_advisory
+      make_publishable!(draft)
+      published = build_published_advisory
+      retracted = build_published_advisory
+      retracted.retract!(expected_content_revision: retracted.content_revision)
+      [draft, published, retracted]
+    end
+
+    it 'scopes originals, state filters, counts and cursors for every reader role' do
+      draft, published, retracted = reports
+      readers.each do |reader|
+        api_login(reader) if reader
+        visible = reader == SpecSeed.admin ? reports : [published]
+        json_get index_path, _meta: { count: true }
+        expect_status(200)
+        expect(security_advisories.pluck('id')).to match_array(visible.map(&:id))
+        expect(json.dig('response', '_meta', 'total_count')).to eq(visible.length)
+
+        reports.each do |advisory|
+          json_get show_path(advisory.id)
+          expect_status(visible.include?(advisory) ? 200 : 404)
+          json_get index_path, security_advisory: { state: advisory.state }, _meta: { count: true }
+          expected = visible.include?(advisory) ? [advisory.id] : []
+          expect(security_advisories.pluck('id')).to eq(expected)
+          expect(json.dig('response', '_meta', 'total_count')).to eq(expected.length)
+        end
+
+        unless reader == SpecSeed.admin
+          [draft, retracted].each do |cursor|
+            %w[newest oldest].each do |order|
+              json_get index_path, security_advisory: { from_id: cursor.id, order: }
+              expect_status(200)
+              expect(security_advisories).to be_empty
+            end
+          end
+        end
+        clear_login
+      end
+    ensure
+      clear_login
+    end
+
+    it 'scopes CVE, node and update reads and included parents without changing retained history' do
+      updates = reports.to_h do |advisory|
+        [advisory, advisory.create_update!({}, { SpecSeed.language => { summary: 'Retained update' } })]
+      end
+      original_attributes = reports.map(&:attributes)
+      readers.each do |reader|
+        api_login(reader) if reader
+        reports.each do |advisory|
+          visible = reader == SpecSeed.admin || advisory.published?
+          cve = advisory.security_advisory_cves.first
+          update = updates.fetch(advisory)
+          [[cve_path(cve.id), 'security_advisory_cve'],
+           [update_path(update.id), 'security_advisory_update']].each do |path, object|
+            json_get path, _meta: { includes: 'security_advisory' }
+            expect_status(visible ? 200 : 404)
+            expect(json.dig('response', object, 'security_advisory', 'id')).to eq(advisory.id) if visible
+          end
+          [[cve_index_path, :security_advisory_cve, 'security_advisory_cves'],
+           [update_index_path, :security_advisory_update, 'security_advisory_updates']].each do |path, parameter, objects|
+            json_get path, parameter => { security_advisory: advisory.id },
+                           _meta: { count: true, includes: 'security_advisory' }
+            response = json
+            response_errors = response.dig('response', 'errors') || response['errors']
+            diagnostic = {
+              role: reader&.role || :anonymous,
+              path:,
+              state: advisory.state,
+              http_status: last_response.status,
+              response_status: response['status'],
+              error_class: response_errors&.class&.name,
+              error_fields: response_errors.is_a?(Hash) ? response_errors.keys : nil,
+              requested_meta: { count: true, includes: 'security_advisory' },
+              returned_meta: response.dig('response', '_meta')
+            }.inspect
+            expect(last_response.status).to eq(200), diagnostic
+            expect(response['status']).to be(true), diagnostic
+            rows = response.dig('response', objects) || []
+            expect(rows.length).to eq(visible ? 1 : 0), diagnostic
+            expect(response.dig('response', '_meta', 'total_count')).to eq(visible ? 1 : 0), diagnostic
+          end
+          json_get node_status_index_path(advisory.id), _meta: { count: true, includes: 'security_advisory' }
+          expect_status(200)
+          expect(node_statuses.length).to eq(visible ? 2 : 0)
+          expect(json.dig('response', '_meta', 'total_count')).to eq(visible ? 2 : 0)
+        end
+        clear_login
+      end
+      expect(reports.map { |advisory| advisory.reload.attributes }).to eq(original_attributes)
+      expect(updates.values.all? { |update| ::SecurityAdvisoryUpdate.exists?(update.id) }).to be(true)
+    ensure
+      clear_login
+    end
+
+    it 'hides retained affected-user and VPS projections after retraction while preserving ownership limits' do
+      create_vps!(user: SpecSeed.user, node: SpecSeed.node, hostname: 'visibility-owned-vps')
+      reports.each(&:rebuild_affected!)
+      readers.each do |reader|
+        api_login(reader) if reader
+        reports.each do |advisory|
+          [[:user_security_advisory, user_index_path, 'user_security_advisories'],
+           [:vps_security_advisory, vps_index_path, 'vps_security_advisories']].each do |parameter, path, objects|
+            json_get path, parameter => { security_advisory: advisory.id },
+                           _meta: { count: true, includes: 'security_advisory' }
+            if reader.nil?
+              expect_status(401)
+              next
+            end
+            expect_status(200)
+            visible = reader == SpecSeed.admin || (reader == SpecSeed.user && advisory.published?)
+            expect((json.dig('response', objects) || []).length).to eq(visible ? 1 : 0)
+            expect(json.dig('response', '_meta', 'total_count')).to eq(visible ? 1 : 0)
+          end
+        end
+        clear_login
+      end
+      expect(reports.all? { |advisory| advisory.security_advisory_vpses.exists? }).to be(true)
+      expect(reports.all? { |advisory| advisory.security_advisory_users.exists? }).to be(true)
+    ensure
+      clear_login
+    end
+  end
+
   describe 'Create and update' do
     let(:payload) do
       {
@@ -510,7 +669,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       expect(errors.fetch('expected_content_revision').join(' ')).to include('required')
     end
 
-    it 'rejects stale and post-publication draft updates' do
+    it 'rejects stale revisions and draft updates that cross publication' do
       advisory = build_advisory
       revision = advisory.content_revision
 
@@ -548,6 +707,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       as(SpecSeed.admin) do
         json_put show_path(advisory.id), security_advisory: {
           expected_content_revision: advisory.content_revision,
+          expected_state: 'draft',
           en_summary: 'Changed after publication'
         }
       end
@@ -558,6 +718,397 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
                         .find_by!(languages: { code: 'en' })
                         .summary
       expect(summary).to eq('First reviewed summary')
+    end
+  end
+
+  describe 'Published original corrections' do
+    it 'silently corrects localized content while preserving publication identity and update posts' do
+      advisory = build_published_advisory
+      advisory.update!(external_id: 'source:published-correction')
+      advisory.create_update!({}, { SpecSeed.language => { summary: 'Earlier announcement' } })
+      identity = advisory.reload.attributes.except('name', 'updated_at', 'content_revision')
+      revision = advisory.content_revision
+      updates = advisory.security_advisory_updates.map(&:attributes)
+      counts = [::SecurityAdvisory.count, ::SecurityAdvisoryUpdate.count, ::TransactionChain.count]
+
+      as(SpecSeed.admin) do
+        json_put show_path(advisory.id), security_advisory: {
+          expected_content_revision: advisory.content_revision,
+          expected_state: 'published',
+          name: 'Corrected name',
+          en_summary: 'Corrected summary',
+          en_description: 'Corrected description',
+          en_response: 'Corrected response'
+        }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true), json.inspect
+      expect(security_advisory_obj).to include(
+        'name' => 'Corrected name', 'en_summary' => 'Corrected summary',
+        'en_description' => 'Corrected description', 'en_response' => 'Corrected response'
+      )
+      expect(advisory.reload.attributes.except('name', 'updated_at', 'content_revision')).to eq(identity)
+      expect(advisory.content_revision).to eq(revision + 1)
+      expect(advisory.cve_ids).to eq(['CVE-2026-1000'])
+      expect(advisory.security_advisory_updates.map(&:attributes)).to eq(updates)
+      expect([::SecurityAdvisory.count, ::SecurityAdvisoryUpdate.count, ::TransactionChain.count]).to eq(counts)
+    end
+
+    it 'accepts equal, changed and null publication times without publishing again' do
+      advisory = build_published_advisory
+      published_at = Time.utc(2026, 1, 1, 12, 34, 56)
+      advisory.update!(published_at:)
+
+      as(SpecSeed.admin) do
+        json_put show_path(advisory.id), security_advisory: {
+          expected_content_revision: advisory.content_revision,
+          published_at: '2026-01-01T13:34:56+01:00', en_summary: 'Equal instant'
+        }
+      end
+      expect_status(200)
+      expect(json['status']).to be(true), json.inspect
+
+      ['2026-01-01T12:35:47Z', nil].each do |value|
+        revision = advisory.reload.content_revision
+        as(SpecSeed.admin) do
+          json_put show_path(advisory.id), security_advisory: {
+            expected_content_revision: revision,
+            published_at: value, en_summary: 'Corrected publication time'
+          }
+        end
+        expect_status(200)
+        expect(json['status']).to be(true), json.inspect
+        expect(advisory.reload.published_at).to eq(value && Time.parse(value))
+        expect(advisory.content_revision).to eq(revision + 1)
+        expect(advisory).to be_published
+      end
+      expect(advisory.security_advisory_updates).to be_empty
+    end
+
+    it 'refreshes affected counts and user visibility after node corrections without creating announcements' do
+      advisory = build_published_advisory
+      status = advisory.security_advisory_node_statuses.find_by!(node: SpecSeed.node)
+      vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node, hostname: 'corrected-snapshot')
+      publication = advisory.attributes.slice('published_at', 'published_by_id', 'state')
+      chain_count = ::TransactionChain.count
+      until_time = Time.utc(2026, 1, 1, 11, 1, 2)
+
+      as(SpecSeed.admin) do
+        json_put node_status_path(advisory.id, status.id), node_status: {
+          expected_content_revision: advisory.content_revision, expected_state: 'published',
+          vulnerable_until: until_time.iso8601, en_note: 'Corrected note'
+        }
+      end
+      expect_status(200)
+      expect(json['status']).to be(true), json.inspect
+      expect(node_status_obj['en_note']).to eq('Corrected note')
+      expect(advisory.security_advisory_vpses.find_by!(vps:).vulnerable_until).to eq(until_time)
+      expect(advisory.security_advisory_users.find_by!(user: SpecSeed.user).vps_count).to eq(1)
+      expect(advisory.affected_node_count).to eq(1)
+      as(SpecSeed.user) { json_get index_path, security_advisory: { affected: true } }
+      expect(security_advisories.map { |row| row['id'] }).to include(advisory.id)
+      as(SpecSeed.other_user) { json_get vps_index_path }
+      expect(vps_security_advisories.map { |row| resource_id(row['vps']) }).not_to include(vps.id)
+
+      %w[not_affected mitigated].each do |state|
+        as(SpecSeed.admin) do
+          json_put node_status_path(advisory.id, status.id), node_status: {
+            expected_content_revision: advisory.reload.content_revision, state:,
+            en_note: nil
+          }
+        end
+        expect_status(200)
+        expect(json['status']).to be(true), json.inspect
+        count = state == 'mitigated' ? 1 : 0
+        expect(advisory.affected_vps_count).to eq(count)
+        expect(advisory.affected_user_count).to eq(count)
+        expect(advisory.affected_node_count).to eq(count)
+        expect(status.reload.localized_note(SpecSeed.language)).to be_nil
+        as(SpecSeed.user) { json_get index_path, security_advisory: { affected: true } }
+        expect(security_advisories.any? { |row| row['id'] == advisory.id }).to eq(count == 1)
+      end
+      expect(advisory.reload.attributes.slice('published_at', 'published_by_id', 'state')).to eq(publication)
+      expect(advisory.content_revision).to eq(3)
+      expect(advisory.security_advisory_updates).to be_empty
+      expect(::TransactionChain.count).to eq(chain_count)
+    end
+
+    it 'rejects unresolved node states and missing mitigation times without partial changes' do
+      advisory = build_published_advisory
+      status = advisory.security_advisory_node_statuses.find_by!(node: SpecSeed.node)
+      status.update_translations!(SpecSeed.language => { note: 'Keep note' })
+      before = advisory.attributes
+      row = status.attributes
+
+      [{ state: 'unknown' }, { state: 'vulnerable' }, { mitigated_since: nil }].each do |attrs|
+        as(SpecSeed.admin) do
+          json_put node_status_path(advisory.id, status.id), node_status: attrs.merge(
+            expected_content_revision: advisory.content_revision, en_note: 'Must roll back'
+          )
+        end
+        expect_status(200)
+        expect(json['status']).to be(false)
+        expect(advisory.reload.attributes).to eq(before)
+        expect(status.reload.attributes).to eq(row)
+        expect(status.localized_note(SpecSeed.language)).to eq('Keep note')
+      end
+    end
+
+    it 'requires fresh revisions and checks the draft precondition on existing node rows' do
+      advisory = build_published_advisory
+      status = advisory.security_advisory_node_statuses.find_by!(node: SpecSeed.node)
+      [{}, { expected_content_revision: 10 },
+       { expected_content_revision: 0, expected_state: 'draft' }].each do |preconditions|
+        as(SpecSeed.admin) do
+          json_put node_status_path(advisory.id, status.id), node_status: preconditions.merge(en_note: 'Refused')
+        end
+        expect_status(preconditions.empty? ? 200 : 409)
+        expect(json['status']).to be(false)
+        expect(status.reload.localized_note(SpecSeed.language)).to be_nil
+        expect(advisory.reload.content_revision).to eq(0)
+      end
+    end
+
+    %w[published retracted].each do |advisory_state|
+      it "corrects original text and CVE/node membership in #{advisory_state} reports without announcements" do
+        advisory = build_published_advisory
+        advisory.retract!(expected_content_revision: 0) if advisory_state == 'retracted'
+        status = advisory.security_advisory_node_statuses.find_by!(node: SpecSeed.node)
+        cve = advisory.security_advisory_cves.first!
+        vps = create_vps!(user: SpecSeed.user, node: SpecSeed.node, hostname: "membership-#{advisory_state}")
+        chain_count = ::TransactionChain.count
+        revision = advisory.content_revision
+        preconditions = lambda do
+          { expected_content_revision: advisory.reload.content_revision, expected_state: advisory_state }
+        end
+        as(SpecSeed.admin) do
+          json_put show_path(advisory.id), security_advisory: preconditions.call.merge(name: 'Corrected', published_at: nil)
+          expect(json['status']).to be(true), json.inspect
+          json_post cve_index_path, security_advisory_cve: preconditions.call.merge(
+            security_advisory: advisory.id, cve_id: 'CVE-2026-9998'
+          )
+          expect(json['status']).to be(true), json.inspect
+          new_cve = security_advisory_cve_obj.fetch('id')
+          json_put cve_path(new_cve), security_advisory_cve: preconditions.call.merge(cve_id: 'CVE-2026-9999')
+          expect(json['status']).to be(true), json.inspect
+          expect(security_advisory_cve_obj['cve_id']).to eq('CVE-2026-9999')
+          [new_cve, cve.id].each do |id|
+            json_delete cve_path(id), security_advisory_cve: preconditions.call
+            expect(json['status']).to be(true), json.inspect
+          end
+          json_delete node_status_path(advisory.id, status.id), node_status: preconditions.call
+          expect(json['status']).to be(true), json.inspect
+          expect(advisory.affected_vps_count).to eq(0)
+          json_post node_status_index_path(advisory.id), node_status: preconditions.call.merge(
+            node: SpecSeed.node.id, state: 'mitigated', vulnerable_until: '2026-01-01T12:00:17Z',
+            mitigated_since: '2026-01-01T12:01:23Z', en_note: 'Added assessment'
+          )
+          expect(json['status']).to be(true), json.inspect
+          expect(node_status_obj['en_note']).to eq('Added assessment')
+        end
+        expect(advisory.reload.state).to eq(advisory_state)
+        expect(advisory.published_at).to be_nil
+        expect(advisory.cve_ids).to be_empty
+        expect(advisory.content_revision).to eq(revision + 7)
+        expect(advisory.security_advisory_vpses.pluck(:vps_id)).to eq([vps.id])
+        expect(advisory.security_advisory_users.find_by!(user: SpecSeed.user).vps_count).to eq(1)
+        expect(advisory.security_advisory_updates).to be_empty
+        expect(::TransactionChain.count).to eq(chain_count)
+      end
+    end
+
+    it 'denies original corrections to ordinary users and unauthenticated callers' do
+      advisory = build_published_advisory
+      status = advisory.security_advisory_node_statuses.first!
+      as(SpecSeed.user) do
+        json_put show_path(advisory.id), security_advisory: { expected_content_revision: 0, name: 'Refused' }
+        expect_status(403)
+        json_put node_status_path(advisory.id, status.id), node_status: {
+          expected_content_revision: 0, en_note: 'Refused'
+        }
+        expect_status(403)
+      end
+      json_put show_path(advisory.id), security_advisory: { expected_content_revision: 0, name: 'Refused' }
+      expect_status(401)
+      expect(advisory.reload.content_revision).to eq(0)
+    end
+  end
+
+  describe 'Correction preconditions and lifecycle' do
+    it 'guards newly enabled membership writes prepared before publication without changing rows' do
+      advisory = build_published_advisory
+      status = advisory.security_advisory_node_statuses.first!
+      cve = advisory.security_advisory_cves.first!
+      before = advisory.attributes
+      requests = [
+        ->(guard) { json_post cve_index_path, security_advisory_cve: guard.merge(security_advisory: advisory.id, cve_id: 'CVE-2026-9999') },
+        ->(guard) { json_put cve_path(cve.id), security_advisory_cve: guard.merge(cve_id: 'CVE-2026-9999') },
+        ->(guard) { json_delete cve_path(cve.id), security_advisory_cve: guard },
+        ->(guard) { json_post node_status_index_path(advisory.id), node_status: guard.merge(node: SpecSeed.node.id, state: 'not_affected') },
+        ->(guard) { json_delete node_status_path(advisory.id, status.id), node_status: guard }
+      ]
+      as(SpecSeed.admin) do
+        requests.each do |request|
+          request.call(expected_content_revision: 0, expected_state: 'draft')
+          expect_status(409)
+          request.call(expected_content_revision: 100, expected_state: 'published')
+          expect_status(409)
+          request.call(expected_state: 'published')
+          expect_status(200)
+          expect(json['status']).to be(false)
+          expect(errors.fetch('expected_content_revision')).not_to be_empty
+        end
+      end
+      expect(advisory.reload.attributes).to eq(before)
+      expect(cve.reload.cve_id).to eq('CVE-2026-1000')
+      expect(status.reload).to be_persisted
+      expect(advisory.security_advisory_node_statuses.count).to eq(2)
+    end
+
+    it 'rejects moving CVE links between parents while preserving their revisions' do
+      advisory = build_published_advisory
+      other = build_published_advisory
+      cve = advisory.security_advisory_cves.first!
+      as(SpecSeed.admin) do
+        json_put cve_path(cve.id), security_advisory_cve: {
+          security_advisory: other.id, cve_id: 'CVE-2026-9999', expected_content_revision: 0
+        }
+      end
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(cve.reload.security_advisory_id).to eq(advisory.id)
+      expect(advisory.reload.content_revision).to eq(0)
+      expect(other.reload.content_revision).to eq(0)
+    end
+
+    it 'rejects unresolved new assessments and permits removal after a node leaves the eligible scope' do
+      advisory = build_published_advisory
+      status = advisory.security_advisory_node_statuses.find_by!(node: SpecSeed.node)
+      SpecSeed.node.update!(active: false)
+      as(SpecSeed.admin) do
+        json_delete node_status_path(advisory.id, status.id), node_status: { expected_content_revision: 0 }
+      end
+      expect(json['status']).to be(true), json.inspect
+      SpecSeed.node.update!(active: true)
+      as(SpecSeed.admin) do
+        %w[unknown vulnerable mitigated].each do |state|
+          json_post node_status_index_path(advisory.id), node_status: {
+            expected_content_revision: 1, node: SpecSeed.node.id, state:, en_note: 'Must not persist'
+          }
+          expect_status(200)
+          expect(json['status']).to be(false)
+        end
+      end
+      expect(advisory.reload.content_revision).to eq(1)
+      expect(advisory.security_advisory_node_statuses.where(node: SpecSeed.node)).to be_empty
+      expect(::SecurityAdvisoryNodeStatusTranslation.where(note: 'Must not persist')).to be_empty
+    end
+
+    it 'silently retracts once, allows later corrections and blocks republication' do
+      advisory = build_published_advisory
+      advisory.create_update!({}, { SpecSeed.language => { summary: 'Existing update' } })
+      identity = advisory.reload.attributes.slice('published_at', 'published_by_id', 'created_by_id')
+      updates = advisory.security_advisory_updates.map(&:attributes)
+      chains = ::TransactionChain.count
+      as(SpecSeed.admin) do
+        json_post retract_path(advisory.id), security_advisory: {
+          expected_content_revision: 0, expected_state: 'published'
+        }
+      end
+      expect_status(200)
+      expect(json['status']).to be(true), json.inspect
+      expect(security_advisory_obj).to include('state' => 'retracted', 'content_revision' => 1)
+      expect(advisory.reload.retracted_at).not_to be_nil
+      stamp = advisory.retracted_at
+      expect(advisory.attributes.slice('published_at', 'published_by_id', 'created_by_id')).to eq(identity)
+      as(SpecSeed.admin) do
+        json_post retract_path(advisory.id), security_advisory: { expected_content_revision: 0 }
+        expect_status(409)
+        json_post retract_path(advisory.id), security_advisory: { expected_content_revision: 1, expected_state: 'retracted' }
+        expect_status(409)
+        json_put show_path(advisory.id), security_advisory: {
+          expected_content_revision: 1, expected_state: 'retracted', en_summary: 'Correction after retraction', published_at: nil
+        }
+        expect(json['status']).to be(true), json.inspect
+        json_post publish_path(advisory.id), publish_payload(advisory, send_mail: true)
+        expect_status(409)
+      end
+      expect(advisory.reload.retracted_at).to eq(stamp)
+      expect(advisory.published_at).to be_nil
+      expect(advisory.content_revision).to eq(2)
+      expect(advisory.security_advisory_updates.map(&:attributes)).to eq(updates)
+      expect(::TransactionChain.count).to eq(chains)
+    end
+
+    it 'blocks republishing a published report with a cleared publication time' do
+      advisory = build_published_advisory
+      advisory.update_content!({ published_at: nil }, expected_content_revision: 0)
+      as(SpecSeed.admin) { json_post publish_path(advisory.id), publish_payload(advisory) }
+      expect_status(409)
+      expect(advisory.reload.published_at).to be_nil
+      expect(advisory.content_revision).to eq(1)
+    end
+
+    %w[draft published retracted].each do |state|
+      it "deletes a #{state} report using guarded JSON DELETE input and returns 404 on repetition" do
+        advisory = state == 'draft' ? build_advisory : build_published_advisory
+        advisory.retract!(expected_content_revision: 0) if state == 'retracted'
+        revision = advisory.content_revision
+        as(SpecSeed.admin) do
+          json_delete show_path(advisory.id), security_advisory: { expected_state: state }
+          expect_status(200)
+          expect(json['status']).to be(false)
+          json_delete show_path(advisory.id), security_advisory: { expected_content_revision: revision + 1 }
+          expect_status(409)
+          wrong_state = state == 'draft' ? 'published' : 'draft'
+          json_delete show_path(advisory.id), security_advisory: { expected_content_revision: revision, expected_state: wrong_state }
+          expect_status(409)
+          json_delete show_path(advisory.id), security_advisory: { expected_content_revision: revision, expected_state: state }
+          expect_status(200)
+          expect(json['status']).to be(true), json.inspect
+          json_delete show_path(advisory.id), security_advisory: { expected_content_revision: revision, expected_state: state }
+          expect_status(404)
+        end
+        expect(::SecurityAdvisory.exists?(advisory.id)).to be(false)
+        expect(::SecurityAdvisoryCve.where(security_advisory_id: advisory.id)).to be_empty
+      end
+    end
+
+    it 'requires valid retraction preconditions and refuses a draft transition' do
+      advisory = build_advisory
+      as(SpecSeed.admin) do
+        json_post retract_path(advisory.id), security_advisory: {}
+        expect_status(200)
+        expect(json['status']).to be(false)
+        json_post retract_path(advisory.id), security_advisory: { expected_content_revision: 0, expected_state: 'published' }
+        expect_status(409)
+        json_post retract_path(advisory.id), security_advisory: { expected_content_revision: 0, expected_state: 'draft' }
+        expect_status(409)
+      end
+      expect(advisory.reload).to be_draft
+      expect(advisory.content_revision).to eq(0)
+    end
+
+    it 'requires admin authorization and separately granted scopes for direct lifecycle actions' do
+      advisory = build_published_advisory
+      as(SpecSeed.user) do
+        json_post retract_path(advisory.id), security_advisory: { expected_content_revision: 0 }
+        expect_status(403)
+        json_delete show_path(advisory.id), security_advisory: { expected_content_revision: 0 }
+        expect_status(403)
+      end
+      session = create_open_session!(user: SpecSeed.admin, auth_type: 'token', token_lifetime: 'permanent',
+                                     scope: ['security_advisory#update'])
+      header 'X-HaveAPI-Auth-Token', session.token.token
+      json_post retract_path(advisory.id), security_advisory: { expected_content_revision: 0 }
+      expect_status(403)
+      json_delete show_path(advisory.id), security_advisory: { expected_content_revision: 0 }
+      expect_status(403)
+      expect(advisory.reload).to be_published
+      expect(advisory.content_revision).to eq(0)
+    ensure
+      header 'X-HaveAPI-Auth-Token', nil
     end
   end
 
@@ -1079,7 +1630,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
   end
 
   describe 'Advisory updates' do
-    it 'creates public updates without sending mail by default' do
+    it 'retains explicit update state and publication-time changes without sending mail by default' do
       advisory = build_published_advisory
       published_at = Time.utc(2026, 1, 2, 12, 0, 0)
       allow(TransactionChains::SecurityAdvisories::Mail).to receive(:fire)
@@ -1087,6 +1638,7 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       as(SpecSeed.admin) do
         json_post update_index_path, security_advisory_update: {
           security_advisory: advisory.id,
+          state: 'retracted',
           published_at: published_at.iso8601,
           en_summary: 'Follow-up summary',
           cs_summary: 'Navazujici shrnuti',
@@ -1102,11 +1654,73 @@ RSpec.describe 'VpsAdmin::API::Resources::SecurityAdvisory' do
       update_id = security_advisory_update_obj.fetch('id')
       expect(TransactionChains::SecurityAdvisories::Mail).not_to have_received(:fire)
       expect(advisory.reload.published_at.utc).to eq(published_at)
+      expect(advisory).to be_retracted
 
       json_get update_index_path, security_advisory_update: { security_advisory: advisory.id }
 
       expect_status(200)
+      expect(security_advisory_updates).to be_empty
+
+      as(SpecSeed.admin) do
+        json_get update_index_path, security_advisory_update: { security_advisory: advisory.id }
+      end
+      expect_status(200)
       expect(security_advisory_updates.map { |row| row['id'] }).to include(update_id)
+    end
+
+    it 'retains the explicit announcement mail choice and nullable publication time' do
+      advisory = build_published_advisory
+      allow(TransactionChains::SecurityAdvisories::Mail).to receive(:fire).and_return([nil])
+      as(SpecSeed.admin) do
+        json_post update_index_path, security_advisory_update: {
+          security_advisory: advisory.id, state: 'retracted', published_at: nil,
+          en_summary: 'Explicit announcement', cs_summary: 'Výslovné oznámení', send_mail: true
+        }
+      end
+      expect_status(200)
+      expect(json['status']).to be(true), json.inspect
+      expect(advisory.reload).to be_retracted
+      expect(advisory.published_at).to be_nil
+      expect(TransactionChains::SecurityAdvisories::Mail).to have_received(:fire)
+        .with(have_attributes(id: advisory.id), :update, an_instance_of(::SecurityAdvisoryUpdate))
+    end
+
+    it 'refuses deleting an already resolved update after concurrent parent deletion', :no_transaction do
+      advisory = build_advisory({ state: :published })
+      update = advisory.create_update!({}, { SpecSeed.language => { summary: 'Original update' } })
+      ready = Queue.new
+      resume = Queue.new
+      action = VpsAdmin::API::Resources::SecurityAdvisoryUpdate::Delete
+      allow(action).to receive(:new).and_wrap_original do |constructor, *args, **kwargs|
+        instance = constructor.call(*args, **kwargs)
+        allow(instance).to receive(:exec).and_wrap_original do |method|
+          ready << true
+          Timeout.timeout(10) { resume.pop }
+          method.call
+        end
+        instance
+      end
+      deleter = Thread.new do
+        ActiveRecord::Base.connection_pool.with_connection do
+          with_current_context(user: SpecSeed.admin) do |session|
+            Timeout.timeout(10) { ready.pop }
+            ::SecurityAdvisory.find(advisory.id).destroy_content!(expected_content_revision: 0)
+          ensure
+            resume << true
+            session.destroy!
+          end
+        end
+      end
+      as(SpecSeed.admin) { json_delete update_path(update.id) }
+      Timeout.timeout(20) { deleter.value }
+      expect_status(404)
+      expect(::SecurityAdvisoryUpdate.where(id: update.id)).to be_empty
+      expect(::SecurityAdvisoryTranslation.where(security_advisory_update_id: update.id)).to be_empty
+    ensure
+      ready << true if ready
+      resume << true if resume
+      deleter&.join(25) || deleter&.kill&.join
+      ::SecurityAdvisory.where(id: advisory&.id).find_each(&:destroy!)
     end
 
     it 'rejects updates for missing advisories' do

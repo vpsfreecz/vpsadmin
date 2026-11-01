@@ -745,7 +745,17 @@ en:
       exemption_reason:
         label: Admin exemption reason
       expected_content_revision:
-        label: Expected_content_revision
+        label: Expected content revision
+      expected_state:
+        choices:
+          draft:
+            label: Draft
+          published:
+            label: Published
+          retracted:
+            label: Retracted
+        description: Apply the change only when the advisory is still in this state.
+        label: Expected state
       expiration:
         description: A date after which the token becomes invalid
       expirations:
@@ -3574,6 +3584,11 @@ en:
                 label: Initial CVE
               external_id:
                 description: Stable idempotency key; retries return the existing advisory.
+          delete:
+            input:
+              expected_content_revision:
+                description: Apply the change only when the advisory has this content
+                  revision.
           index:
             input:
               cve:
@@ -3584,6 +3599,11 @@ en:
             input:
               expected_content_revision:
                 description: Publish only the exact draft revision shown during review.
+          retract:
+            input:
+              expected_content_revision:
+                description: Apply the change only when the advisory has this content
+                  revision.
           update:
             input:
               expected_content_revision:

@@ -16,8 +16,13 @@ module VpsAdmin::API::Resources
 
     params(:revision_precondition) do
       integer :expected_content_revision,
+              label: 'Expected content revision',
               required: true,
               desc: 'Apply the change only when the advisory has this content revision.'
+      string :expected_state,
+             label: 'Expected state',
+             desc: VpsAdmin::API::Resources::SecurityAdvisory::EXPECTED_STATE_DESCRIPTION,
+             choices: VpsAdmin::API::Resources::SecurityAdvisory::EXPECTED_STATE_CHOICES
     end
 
     params(:all) do
@@ -113,11 +118,10 @@ module VpsAdmin::API::Resources
 
       def exec
         advisory = input[:security_advisory]
-        mutate_draft(advisory) do
-          ::SecurityAdvisoryCve.create!(
-            security_advisory: advisory,
-            cve_id: input[:cve_id]
-          )
+        edit_content do |preconditions|
+          advisory.mutate_content!(**preconditions) do
+            advisory.security_advisory_cves.create!(cve_id: input[:cve_id])
+          end
         end
       rescue ActiveRecord::RecordInvalid => e
         error!('create failed', to_param_names(e.record.errors.to_hash))
@@ -145,12 +149,18 @@ module VpsAdmin::API::Resources
       def exec
         cve = ::SecurityAdvisoryCve.find(path_params['security_advisory_cve_id'])
         attrs = {}
-        if input.has_key?(:security_advisory) && input[:security_advisory] != cve.security_advisory
-          error!('moving a CVE between security advisories is not supported')
-        end
         attrs[:cve_id] = input[:cve_id] if input.has_key?(:cve_id)
-        mutate_draft(cve.security_advisory) { cve.update!(attrs) }
-        cve
+        advisory = ::SecurityAdvisory.find(cve.security_advisory_id)
+        edit_content do |preconditions|
+          advisory.mutate_content!(**preconditions) do
+            cve = advisory.security_advisory_cves.lock.find(cve.id)
+            if input.has_key?(:security_advisory) && input[:security_advisory].id != advisory.id
+              error!('moving a CVE between security advisories is not supported')
+            end
+            cve.update!(attrs)
+            cve
+          end
+        end
       rescue ActiveRecord::RecordInvalid => e
         error!('update failed', to_param_names(e.record.errors.to_hash))
       end
@@ -174,7 +184,12 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        mutate_draft(@cve.security_advisory) { @cve.destroy! }
+        advisory = ::SecurityAdvisory.find(@cve.security_advisory_id)
+        edit_content do |preconditions|
+          advisory.mutate_content!(**preconditions) do
+            advisory.security_advisory_cves.lock.find(@cve.id).destroy!
+          end
+        end
         ok!
       end
     end

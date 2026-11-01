@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'timeout'
+
 RSpec.describe 'VpsAdmin::API::Resources::OutageSecurityAdvisory',
                requires_plugins: :outage_reports do
   include OutageReportsSpecHelpers
@@ -248,6 +250,99 @@ RSpec.describe 'VpsAdmin::API::Resources::OutageSecurityAdvisory',
 
       expect(json['status']).to be(false)
       expect(::OutageSecurityAdvisory.where(security_advisory_id: missing)).to be_empty
+    end
+
+    it 'deletes outage links with the advisory while retaining the outage itself' do
+      outage = build_outage
+      advisory = build_published_advisory
+      link = ::OutageSecurityAdvisory.create!(outage:, security_advisory: advisory)
+      advisory.destroy_content!(expected_content_revision: 0)
+
+      expect(::OutageSecurityAdvisory.exists?(link.id)).to be(false)
+      expect(::Outage.exists?(outage.id)).to be(true)
+      expect(::OutageTranslation.where(outage:)).not_to be_empty
+    end
+
+    it 'refuses an outage link when its resolved parent is concurrently deleted', :no_transaction do
+      outage = build_outage
+      advisory = build_published_advisory
+      ready = Queue.new
+      resume = Queue.new
+      action = VpsAdmin::API::Resources::OutageSecurityAdvisory::Create
+      allow(action).to receive(:new).and_wrap_original do |constructor, *args, **kwargs|
+        instance = constructor.call(*args, **kwargs)
+        allow(instance).to receive(:exec).and_wrap_original do |method|
+          ready << true
+          Timeout.timeout(10) { resume.pop }
+          method.call
+        end
+        instance
+      end
+      deleter = Thread.new do
+        ActiveRecord::Base.connection_pool.with_connection do
+          with_current_context(user: SpecSeed.admin) do |session|
+            Timeout.timeout(10) { ready.pop }
+            ::SecurityAdvisory.find(advisory.id).destroy_content!(expected_content_revision: 0)
+          ensure
+            resume << true
+            session.destroy!
+          end
+        end
+      end
+      as(SpecSeed.admin) do
+        json_post index_path, outage_security_advisory: { outage: outage.id, security_advisory: advisory.id }
+      end
+      Timeout.timeout(20) { deleter.value }
+      expect_status(404)
+      expect(::OutageSecurityAdvisory.where(security_advisory_id: advisory.id)).to be_empty
+      expect(::Outage.exists?(outage.id)).to be(true)
+    ensure
+      ready << true if ready
+      resume << true if resume
+      deleter&.join(25) || deleter&.kill&.join
+      ::SecurityAdvisory.where(id: advisory&.id).find_each(&:destroy!)
+      outage&.destroy!
+    end
+  end
+
+  describe 'Read visibility' do
+    it 'scopes advisory links, included parents and reverse outage filters for every reader role' do
+      outage = build_outage
+      advisories = %i[draft published retracted].map { |state| build_advisory(state:) }
+      links = advisories.to_h do |advisory|
+        [advisory, ::OutageSecurityAdvisory.create!(outage:, security_advisory: advisory)]
+      end
+
+      [nil, SpecSeed.user, SpecSeed.support, SpecSeed.admin].each do |reader|
+        api_login(reader) if reader
+        visible = reader == SpecSeed.admin ? advisories : advisories.select(&:published?)
+        json_get index_path, _meta: { count: true, includes: 'security_advisory,outage' }
+        expect_status(200)
+        expect(outage_security_advisories.pluck('id')).to match_array(visible.map { |a| links.fetch(a).id })
+        expect(json.dig('response', '_meta', 'total_count')).to eq(visible.length)
+
+        advisories.each do |advisory|
+          json_get show_path(links.fetch(advisory).id), _meta: { includes: 'security_advisory,outage' }
+          expect_status(visible.include?(advisory) ? 200 : 404)
+          if visible.include?(advisory)
+            expect(outage_security_advisory_obj.dig('security_advisory', 'id')).to eq(advisory.id)
+          end
+          json_get index_path, outage_security_advisory: { security_advisory: advisory.id },
+                               _meta: { count: true }
+          expect_status(200)
+          expect(outage_security_advisories.pluck('id')).to eq(visible.include?(advisory) ? [links.fetch(advisory).id] : [])
+
+          json_get vpath('/outages'), outage: { security_advisory: advisory.id }, _meta: { count: true }
+          expect_status(200)
+          expected = visible.include?(advisory) ? [outage.id] : []
+          expect((json.dig('response', 'outages') || []).pluck('id')).to eq(expected)
+          expect(json.dig('response', '_meta', 'total_count')).to eq(expected.length)
+        end
+        clear_login
+      end
+      expect(::OutageSecurityAdvisory.where(id: links.values.map(&:id)).count).to eq(3)
+    ensure
+      clear_login
     end
   end
 end

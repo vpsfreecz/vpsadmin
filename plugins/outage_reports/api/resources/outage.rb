@@ -172,9 +172,11 @@ module VpsAdmin::API::Resources
         end
 
         if input[:security_advisory]
-          q = q.joins(:outage_security_advisories).group('outages.id').where(
-            outage_security_advisories: { security_advisory_id: input[:security_advisory].id }
-          )
+          linked_outages = ::OutageSecurityAdvisory
+                           .joins(:security_advisory)
+                           .merge(::SecurityAdvisory.visible_to(current_user))
+                           .where(security_advisory: input[:security_advisory])
+          q = q.where(id: linked_outages.select(:outage_id))
         end
 
         %i[environment location node].each do |ent|

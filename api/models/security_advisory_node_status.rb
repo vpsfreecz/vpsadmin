@@ -24,7 +24,7 @@ class SecurityAdvisoryNodeStatus < ApplicationRecord
   def update_translations!(translations)
     translations.each do |lang, attrs|
       note_value = attrs[:note].presence
-      translation = security_advisory_node_status_translations.find_by(language: lang)
+      translation = security_advisory_node_status_translations.lock.find_by(language: lang)
 
       if note_value
         translation ||= security_advisory_node_status_translations.build(language: lang)

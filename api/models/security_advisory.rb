@@ -2,7 +2,9 @@ require_relative 'transaction_chains/security_advisories/mail'
 
 class SecurityAdvisory < ApplicationRecord
   class DraftRequired < StandardError; end
+  class ContentEditRequired < StandardError; end
   class RevisionMismatch < StandardError; end
+  class StateMismatch < StandardError; end
 
   attr_reader :last_chain
 
@@ -26,7 +28,7 @@ class SecurityAdvisory < ApplicationRecord
   def self.visible_to(user)
     return all if user && user.role == :admin
 
-    where(state: [states[:published], states[:retracted]])
+    where(state: states[:published])
   end
 
   def self.advisory_nodes
@@ -65,15 +67,59 @@ class SecurityAdvisory < ApplicationRecord
         raise DraftRequired, 'security advisory can only be changed while it is a draft'
       end
 
-      if !expected_content_revision.nil? && expected_content_revision.to_i != content_revision
-        raise RevisionMismatch,
-              "security advisory changed (expected revision #{expected_content_revision}, " \
-              "current revision #{content_revision})"
-      end
+      check_content_revision!(expected_content_revision) unless expected_content_revision.nil?
 
       result = yield
       update_columns(content_revision: content_revision + 1, updated_at: Time.current)
       result
+    end
+  end
+
+  def update_content!(attrs, translations = {}, expected_content_revision:, expected_state: nil)
+    mutate_content!(expected_content_revision:, expected_state:) do
+      update!(attrs)
+      update_translations!(translations)
+      self
+    end
+  end
+
+  def update_node_status!(status_id, attrs, translations = {}, expected_content_revision:, expected_state: nil)
+    mutate_content!(expected_content_revision:, expected_state:) do
+      status = security_advisory_node_statuses.lock.find(status_id)
+      save_node_status!(status, attrs, translations)
+      status
+    end
+  end
+
+  def create_node_status!(attrs, translations = {}, expected_content_revision:, expected_state: nil)
+    mutate_content!(expected_content_revision:, expected_state:) do
+      status = security_advisory_node_statuses.build
+      save_node_status!(status, attrs, translations)
+      status
+    end
+  end
+
+  def delete_node_status!(status_id, expected_content_revision:, expected_state: nil)
+    mutate_content!(expected_content_revision:, expected_state:) do
+      security_advisory_node_statuses.lock.find(status_id).destroy!
+      rebuild_affected! unless draft?
+    end
+  end
+
+  def mutate_content!(expected_content_revision:, expected_state: nil)
+    # A caller can rescue inside an outer transaction; keep this edit atomic.
+    with_lock(requires_new: true) do
+      check_content_preconditions!(expected_content_revision:, expected_state:)
+      result = yield
+      update_columns(content_revision: content_revision + 1, updated_at: Time.current)
+      result
+    end
+  end
+
+  def destroy_content!(expected_content_revision:, expected_state: nil)
+    with_lock(requires_new: true) do
+      check_content_preconditions!(expected_content_revision:, expected_state:)
+      destroy!
     end
   end
 
@@ -114,7 +160,7 @@ class SecurityAdvisory < ApplicationRecord
 
   def update_translations!(translations)
     translations.each do |lang, tr_attrs|
-      tr = security_advisory_translations.find_or_initialize_by(language: lang)
+      tr = security_advisory_translations.lock.find_or_initialize_by(language: lang)
       tr.assign_attributes(tr_attrs)
       tr.save!
     end
@@ -123,12 +169,10 @@ class SecurityAdvisory < ApplicationRecord
   end
 
   def publish!(expected_content_revision:, send_mail: false, published_by: nil, published_at: nil)
-    with_lock do
-      if expected_content_revision.to_i != content_revision
-        raise RevisionMismatch,
-              "security advisory changed (expected revision #{expected_content_revision}, " \
-              "current revision #{content_revision})"
-      end
+    with_lock(requires_new: true) do
+      raise DraftRequired, 'only draft security advisories can be published' unless draft?
+
+      check_content_revision!(expected_content_revision)
       validate_publishable!
       self.state = 'published'
       self.published_at = published_at if published_at
@@ -142,17 +186,22 @@ class SecurityAdvisory < ApplicationRecord
     self
   end
 
-  def retract!(send_mail: false)
-    update!(state: 'retracted', retracted_at: Time.now)
-    mail_chain(:update) if send_mail
-    self
+  def retract!(expected_content_revision:, expected_state: nil)
+    mutate_content!(expected_content_revision:, expected_state:) do
+      raise ContentEditRequired, 'only published security advisories can be retracted' unless published?
+
+      update!(state: :retracted, retracted_at: Time.current)
+      self
+    end
   end
 
   def rebuild_affected!
-    transaction do
+    with_lock(requires_new: true) do
+      # Locking reads also see committed changes inside an older outer transaction.
       mitigated = security_advisory_node_statuses
                   .where(state: ::SecurityAdvisoryNodeStatus.states[:mitigated])
-                  .includes(node: { location: :environment })
+                  .eager_load(node: { location: :environment })
+                  .lock
                   .to_a
       by_node = mitigated.to_h { |s| [s.node_id, s] }
       active_states = [
@@ -160,14 +209,15 @@ class SecurityAdvisory < ApplicationRecord
         ::Vps.object_states[:suspended]
       ]
       affected = ::Vps.unscoped
-                      .includes(node: { location: :environment })
+                      .eager_load(:user, node: { location: :environment })
                       .where(node_id: by_node.keys, object_state: active_states)
                       .order(:id)
+                      .lock
                       .to_a
 
       affected.each do |vps|
         ns = by_node.fetch(vps.node_id)
-        rec = security_advisory_vpses.find_or_initialize_by(vps:)
+        rec = security_advisory_vpses.lock.find_or_initialize_by(vps:)
         rec.assign_attributes(
           user: vps.user,
           environment: vps.node.location.environment,
@@ -186,16 +236,16 @@ class SecurityAdvisory < ApplicationRecord
   end
 
   def rebuild_affected_users!
-    user_ids = security_advisory_vpses.distinct.pluck(:user_id)
+    user_counts = security_advisory_vpses.lock.pluck(:user_id).tally
 
-    user_ids.each do |user_id|
-      security_advisory_users.find_or_initialize_by(user_id:).tap do |rec|
-        rec.vps_count = security_advisory_vpses.where(user_id:).count
+    user_counts.each do |user_id, count|
+      security_advisory_users.lock.find_or_initialize_by(user: ::User.lock.find(user_id)).tap do |rec|
+        rec.vps_count = count
         rec.save!
       end
     end
 
-    security_advisory_users.where.not(user_id: user_ids).delete_all
+    security_advisory_users.where.not(user_id: user_counts.keys).delete_all
   end
 
   def validate_publishable!
@@ -233,7 +283,7 @@ class SecurityAdvisory < ApplicationRecord
   end
 
   def create_update!(attrs = {}, translations = {}, advisory_attrs: {}, send_mail: false)
-    transaction do
+    with_lock(requires_new: true) do
       advisory_update = security_advisory_updates.create!(
         attrs.merge(reported_by: ::User.current)
       )
@@ -278,5 +328,36 @@ class SecurityAdvisory < ApplicationRecord
 
   def mail_chain(event, update: nil)
     @last_chain, = TransactionChains::SecurityAdvisories::Mail.fire(self, event, update)
+  end
+
+  protected
+
+  def save_node_status!(status, attrs, translations)
+    status.assign_attributes(attrs)
+    if !draft? && !status.not_affected? && !status.mitigated?
+      status.errors.add(:state, 'must be not_affected or mitigated for a published or retracted advisory')
+      raise ActiveRecord::RecordInvalid, status
+    end
+
+    status.save!
+    status.update_translations!(translations)
+    rebuild_affected! unless draft?
+  end
+
+  def check_content_preconditions!(expected_content_revision:, expected_state:)
+    if expected_state && expected_state.to_s != state
+      raise StateMismatch,
+            "security advisory changed (expected state #{expected_state}, current state #{state})"
+    end
+
+    check_content_revision!(expected_content_revision)
+  end
+
+  def check_content_revision!(expected_content_revision)
+    return if expected_content_revision.to_i == content_revision
+
+    raise RevisionMismatch,
+          "security advisory changed (expected revision #{expected_content_revision}, " \
+          "current revision #{content_revision})"
   end
 end
