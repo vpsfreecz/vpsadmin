@@ -295,6 +295,11 @@ div.page_listing {text-align: center;}
 #vps_swap_preview td {vertical-align: top;}
 form[name="userns-map-entries"] input[type="text"] {text-align: right;}
 
+form[name="security_advisory_nodes"] {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 #dns-zone-name-servers {
   width: 100%;
   table-layout: fixed;

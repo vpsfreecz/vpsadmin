@@ -399,7 +399,7 @@ msgstr "Vlastnosti"
 msgid "IP usage"
 msgstr "Využití IP"
 
-#: forms/cluster.forms.php
+#: forms/cluster.forms.php forms/security_advisory.forms.php
 msgid "Actions"
 msgstr "Akce"
 
@@ -586,8 +586,9 @@ msgid "Location"
 msgstr "Lokace"
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
-#: forms/oom_reports.forms.php forms/userdata.forms.php forms/userns.forms.php
-#: forms/users.forms.php pages/page_adminm.php
+#: forms/oom_reports.forms.php forms/security_advisory.forms.php
+#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
+#: pages/page_adminm.php
 msgid "Add"
 msgstr "Přidat"
 
@@ -763,8 +764,8 @@ msgstr ""
 "<b>Upozornění:</b> Balíček bude také okamžitě odebrán všem uživatelům, kteří "
 "jej používají."
 
-#: forms/cluster.forms.php forms/networking.forms.php forms/users.forms.php
-#: forms/vps.forms.php
+#: forms/cluster.forms.php forms/networking.forms.php
+#: forms/security_advisory.forms.php forms/users.forms.php forms/vps.forms.php
 msgid "Remove"
 msgstr "Odstranit"
 
@@ -3781,6 +3782,26 @@ msgstr "Vaše VPS nebyly tímto upozorněním ovlivněny."
 #: forms/security_advisory.forms.php
 msgid "Response"
 msgstr "Reakce"
+
+#: forms/security_advisory.forms.php
+msgid "Retract advisory"
+msgstr "Stáhnout upozornění"
+
+#: forms/security_advisory.forms.php
+msgid ""
+"Retract this advisory? Its reports and updates will be kept. No email will "
+"be sent."
+msgstr "Stáhnout toto upozornění? Jeho obsah i aktualizace zůstanou zachovány. Žádný e-mail se neodešle."
+
+#: forms/security_advisory.forms.php
+msgid "Delete advisory"
+msgstr "Smazat upozornění"
+
+#: forms/security_advisory.forms.php
+msgid ""
+"Delete this advisory, all updates and node assessments permanently? Recovery "
+"requires a backup."
+msgstr "Trvale smazat toto upozornění, všechny aktualizace a hodnocení nodů? Obnovení vyžaduje zálohu."
 
 #: forms/security_advisory.forms.php
 msgid "Publish advisory"

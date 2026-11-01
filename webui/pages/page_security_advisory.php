@@ -4,52 +4,85 @@ function security_advisory_params()
 {
     global $api;
 
-    $params = [
-        'name' => $_POST['name'],
-        'published_at' => security_advisory_datetime_param('published_at'),
-    ];
+    $params = [];
+    if (array_key_exists('name', $_POST)) {
+        $params['name'] = $_POST['name'];
+    }
+    if (array_key_exists('published_at', $_POST)) {
+        $params['published_at'] = security_advisory_datetime_param('published_at');
+    }
 
     foreach ($api->language->list() as $lang) {
         foreach (['summary', 'description', 'response'] as $field) {
             $key = $lang->code . '_' . $field;
-            $params[$key] = $_POST[$key] ?? '';
+            if (array_key_exists($key, $_POST)) {
+                $params[$key] = $_POST[$key];
+            }
         }
     }
 
     return $params;
 }
 
-function security_advisory_save_nodes($id, $revision)
+function security_advisory_save_nodes($id, $revision, $expectedState = 'draft')
 {
     global $api;
 
-    $statuses = [];
+    $nodes = [];
+    $eligibleIds = [];
+    foreach (security_advisory_nodes() as $node) {
+        $nodes[$node->id] = $node;
+        $eligibleIds[$node->id] = true;
+    }
     foreach ($api->security_advisory($id)->node_status->list() as $status) {
-        $statuses[$status->node->id] = $status;
+        $nodes[$status->node->id] = $status->node;
     }
 
-    foreach (security_advisory_nodes() as $node) {
+    foreach ($nodes as $node) {
         $prefix = 'node_' . $node->id;
-        $state = $_POST[$prefix . '_state'];
-        $params = [
-            'expected_content_revision' => $revision,
-            'state' => $state,
-            'vulnerable_until' => $state === 'not_affected' ? null : security_advisory_datetime_param($prefix . '_vulnerable_until'),
-            'mitigated_since' => $state === 'not_affected' ? null : security_advisory_datetime_param($prefix . '_mitigated_since'),
-        ];
-
-        foreach ($api->language->list() as $lang) {
-            $name = $lang->code . '_note';
-            $params[$name] = $_POST[$prefix . '_' . $name] ?: null;
+        if (!array_key_exists($prefix . '_status_id', $_POST)) {
+            continue;
         }
 
-        if (isset($statuses[$node->id])) {
-            $api->security_advisory($id)->node_status->update($statuses[$node->id]->id, $params);
+        $statusId = $_POST[$prefix . '_status_id'];
+        $params = [
+            'expected_content_revision' => $revision,
+            'expected_state' => $expectedState,
+        ];
+        if ($statusId !== '' && isset($_POST[$prefix . '_remove'])) {
+            $api->security_advisory($id)->node_status->delete((int) $statusId, $params);
+            $revision++;
+            continue;
+        }
+        if (
+            !isset($eligibleIds[$node->id])
+            || !array_key_exists($prefix . '_state', $_POST)
+            || ($statusId === '' && !isset($_POST[$prefix . '_add']))
+        ) {
+            continue;
+        }
+
+        $params['state'] = $_POST[$prefix . '_state'];
+        foreach (['vulnerable_until', 'mitigated_since'] as $field) {
+            if ($params['state'] === 'not_affected') {
+                $params[$field] = null;
+            } elseif (array_key_exists($prefix . '_' . $field, $_POST)) {
+                $params[$field] = security_advisory_datetime_param($prefix . '_' . $field);
+            }
+        }
+        foreach ($api->language->list() as $lang) {
+            $name = $lang->code . '_note';
+            if (array_key_exists($prefix . '_' . $name, $_POST)) {
+                $params[$name] = $_POST[$prefix . '_' . $name] ?: null;
+            }
+        }
+
+        if ($statusId !== '') {
+            $api->security_advisory($id)->node_status->update((int) $statusId, $params);
         } else {
             $params['node'] = $node->id;
             $api->security_advisory($id)->node_status->create($params);
         }
-
         $revision++;
     }
 
@@ -143,15 +176,22 @@ switch ($_GET['action'] ?? 'list') {
                 csrf_check();
 
                 try {
-                    $cves = security_advisory_parse_cves($_POST['cves'] ?? '');
+                    $expectedState = $_POST['expected_state'] ?? '';
+                    $cves = array_key_exists('cves', $_POST)
+                        ? security_advisory_parse_cves($_POST['cves'], true)
+                        : null;
                     $params = security_advisory_params();
-                    $params['expected_content_revision'] = (int) $_POST['expected_content_revision'];
+                    $params['expected_content_revision'] = isset($_POST['expected_content_revision']) ? (int) $_POST['expected_content_revision'] : null;
+                    $params['expected_state'] = $expectedState;
                     $advisory = $api->security_advisory->update($_GET['id'], $params);
-                    security_advisory_save_cves(
-                        $_GET['id'],
-                        $cves,
-                        $advisory->content_revision
-                    );
+                    if ($cves !== null) {
+                        security_advisory_save_cves(
+                            $_GET['id'],
+                            $cves,
+                            $advisory->content_revision,
+                            $expectedState
+                        );
+                    }
                     redirect('?page=security_advisory&action=show&id=' . $_GET['id']);
                 } catch (\InvalidArgumentException $e) {
                     $xtpl->perex(_('Update failed'), h($e->getMessage()));
@@ -176,7 +216,8 @@ switch ($_GET['action'] ?? 'list') {
                 try {
                     security_advisory_save_nodes(
                         $_GET['id'],
-                        (int) $_POST['expected_content_revision']
+                        isset($_POST['expected_content_revision']) ? (int) $_POST['expected_content_revision'] : null,
+                        $_POST['expected_state'] ?? ''
                     );
                     redirect('?page=security_advisory&action=show&id=' . $_GET['id']);
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
@@ -189,13 +230,37 @@ switch ($_GET['action'] ?? 'list') {
         }
         break;
 
+    case 'retract':
+    case 'delete':
+        if (isAdmin() && $_SERVER['REQUEST_METHOD'] === 'POST') {
+            csrf_check();
+            $action = $_GET['action'];
+            try {
+                $params = [
+                    'expected_content_revision' => isset($_POST['expected_content_revision']) ? (int) $_POST['expected_content_revision'] : null,
+                    'expected_state' => $_POST['expected_state'] ?? '',
+                ];
+                if ($action === 'retract') {
+                    $api->security_advisory->retract($_GET['id'], $params);
+                    redirect('?page=security_advisory&action=show&id=' . $_GET['id']);
+                } else {
+                    $api->security_advisory->delete($_GET['id'], $params);
+                    redirect('?page=security_advisory&action=list');
+                }
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex_format_errors($action === 'delete' ? _('Delete failed') : _('Update failed'), $e->getResponse());
+                security_advisory_details($_GET['id']);
+            }
+        }
+        break;
+
     case 'publish':
         if (isAdmin() && $_SERVER['REQUEST_METHOD'] === 'POST') {
             csrf_check();
 
             try {
                 $api->security_advisory->publish($_GET['id'], [
-                    'expected_content_revision' => (int) $_POST['expected_content_revision'],
+                    'expected_content_revision' => isset($_POST['expected_content_revision']) ? (int) $_POST['expected_content_revision'] : null,
                     'send_mail' => isset($_POST['send_mail']),
                     'published_at' => security_advisory_datetime_param('published_at'),
                 ]);

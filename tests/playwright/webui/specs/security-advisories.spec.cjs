@@ -35,6 +35,7 @@ function requireSecurityAdvisoryFixtures() {
     || !advisories.publishedAffected
     || !advisories.publishedNotAffected
     || !advisories.draftHidden
+    || !advisories.retractedHidden
     || !advisories.uiCreate
     || !advisories.uiCreate.editedPublishedAt
   ) {
@@ -97,6 +98,7 @@ test.describe('security advisory public browser coverage', () => {
     await expect(content(page)).toContainText(s.publishedAffected.summary);
     await expect(content(page)).toContainText(s.publishedNotAffected.summary);
     await expectAdvisoryAbsent(page, s.draftHidden);
+    await expectAdvisoryAbsent(page, s.retractedHidden);
     await expect(
       content(page).locator(
         'a[href="?page=security_advisory&action=list"]',
@@ -109,6 +111,10 @@ test.describe('security advisory public browser coverage', () => {
     await expectAdvisoryRow(page, s.publishedAffected);
     await expectAdvisoryRow(page, s.publishedNotAffected);
     await expectAdvisoryAbsent(page, s.draftHidden);
+    await expectAdvisoryAbsent(page, s.retractedHidden);
+
+    await gotoAdvisory(page, 'list', { state: 'retracted' });
+    await expectAdvisoryAbsent(page, s.retractedHidden);
 
     await gotoAdvisory(page, 'show', { id: s.publishedAffected.id });
     await expectAdvisoryDetail(page, s.publishedAffected, {
@@ -117,6 +123,8 @@ test.describe('security advisory public browser coverage', () => {
 
     await gotoAdvisory(page, 'show', { id: s.draftHidden.id });
     await expectAdvisoryAbsent(page, s.draftHidden);
+    await gotoAdvisory(page, 'show', { id: s.retractedHidden.id });
+    await expectAdvisoryAbsent(page, s.retractedHidden);
   });
 });
 
@@ -126,6 +134,7 @@ test.describe('security advisory user browser coverage', () => {
     const affected = s.publishedAffected;
     const notAffected = s.publishedNotAffected;
     const draft = s.draftHidden;
+    const retracted = s.retractedHidden;
 
     await login(page, fixtures.user);
     await gotoAdvisory(page, 'list', {
@@ -136,6 +145,7 @@ test.describe('security advisory user browser coverage', () => {
     await expectAdvisoryRow(page, affected);
     await expectAdvisoryAbsent(page, notAffected);
     await expectAdvisoryAbsent(page, draft);
+    await expectAdvisoryAbsent(page, retracted);
 
     await gotoAdvisory(page, 'show', { id: affected.id });
     await expectAdvisoryDetail(page, affected);
@@ -153,6 +163,10 @@ test.describe('security advisory user browser coverage', () => {
 
     await gotoAdvisory(page, 'show', { id: draft.id });
     await expectAdvisoryAbsent(page, draft);
+    await gotoAdvisory(page, 'show', { id: retracted.id });
+    await expectAdvisoryAbsent(page, retracted);
+    await gotoAdvisory(page, 'list', { state: 'retracted' });
+    await expectAdvisoryAbsent(page, retracted);
 
     await page.goto(`/?page=adminvps&action=info&veid=${affected.vpsId}`, {
       waitUntil: 'domcontentloaded',
@@ -172,6 +186,7 @@ test.describe('security advisory admin browser workflow', () => {
 
   let advisoryId = null;
   let updateId = null;
+  let originalPublishedAt = null;
 
   test.beforeEach(async ({ page }) => {
     requireSecurityAdvisoryFixtures();
@@ -188,6 +203,7 @@ test.describe('security advisory admin browser workflow', () => {
     await gotoAdvisory(page, 'list');
     await expectAdvisoryRow(page, s.draftHidden);
     await expectAdvisoryRow(page, s.publishedNotAffected);
+    await expectAdvisoryRow(page, s.retractedHidden);
 
     const rowTexts = await content(page).locator('tr').allTextContents();
     const draftIndex = rowTexts.findIndex((text) => text.includes(s.draftHidden.summary));
@@ -250,7 +266,7 @@ test.describe('security advisory admin browser workflow', () => {
     await gotoAdvisory(page, 'edit', { id: advisoryId });
     const form = formByAction(page, `action=edit&id=${advisoryId}`);
     await expect(form).toBeVisible();
-    await expect(form.locator('input[name="published_at"]')).toHaveValue(ui.publishedAt);
+    await expect(form.locator('input[name="published_at"]')).toHaveValue(`${ui.publishedAt}:00`);
     await fillAdvisoryTextFields(form, {
       publishedAt: ui.editedPublishedAt,
     });
@@ -284,6 +300,8 @@ test.describe('security advisory admin browser workflow', () => {
 
     await gotoAdvisory(page, 'nodes', { id: advisoryId });
     form = formByAction(page, `action=nodes&id=${advisoryId}`);
+    await expect(form.locator(`[name="node_${node.id}_vulnerable_until"]`)).toHaveValue('');
+    await expect(form.locator(`[name="node_${node.id}_mitigated_since"]`)).toHaveValue('');
     await applyNodeStatusDefaults(
       form,
       {
@@ -332,6 +350,13 @@ test.describe('security advisory admin browser workflow', () => {
   test('publishes with mail disabled and editable published time', async ({ page }) => {
     const s = requireSecurityAdvisoryFixtures();
     const ui = s.uiCreate;
+    const staleEditPage = await page.context().newPage();
+    const staleNodesPage = await page.context().newPage();
+    await gotoAdvisory(staleEditPage, 'edit', { id: advisoryId });
+    await gotoAdvisory(staleNodesPage, 'nodes', { id: advisoryId });
+    const staleEdit = formByAction(staleEditPage, `action=edit&id=${advisoryId}`);
+    const staleNodes = formByAction(staleNodesPage, `action=nodes&id=${advisoryId}`);
+    const revision = await staleEdit.locator('[name="expected_content_revision"]').inputValue();
 
     await gotoAdvisory(page, 'show', { id: advisoryId });
     const form = formByAction(page, `action=publish&id=${advisoryId}`);
@@ -348,13 +373,189 @@ test.describe('security advisory admin browser workflow', () => {
     );
     await expect(form.locator('input[name="send_mail"]')).not.toBeChecked();
     await expect(form.locator('input[name="published_at"]')).toHaveValue(ui.editedPublishedAt);
+    originalPublishedAt = `${ui.editedPublishedAt}:37`;
+    await form.locator('input[name="published_at"]').fill(originalPublishedAt);
     await setCheckboxIfPresent(form, 'send_mail', false);
     await submitForm(form, 'Publish');
 
     await expect(heading(page)).toContainText(`Security advisory #${advisoryId}`);
     await expect(content(page)).toContainText('published');
     await expect(content(page)).toContainText(ui.editedName);
-    await expect(content(page)).toContainText(expectedAdvisoryTime(ui.editedPublishedAt));
+    await expect(content(page)).toContainText(expectedAdvisoryTime(originalPublishedAt));
+
+    for (const [stalePage, staleForm, button] of [
+      [staleEditPage, staleEdit, 'Save'],
+      [staleNodesPage, staleNodes, 'Save node statuses'],
+    ]) {
+      await submitForm(staleForm, button);
+      await expectNotification(stalePage, 'Update failed');
+      await expect(staleForm.locator('[name="expected_state"]')).toHaveValue('draft');
+      await expect(staleForm.locator('[name="expected_content_revision"]')).toHaveValue(revision);
+      await submitForm(staleForm, button);
+      await expectNotification(stalePage, 'Update failed');
+      await stalePage.close();
+    }
+  });
+
+  test('corrects published original text without changing publication or adding an update', async ({ page }) => {
+    const ui = requireSecurityAdvisoryFixtures().uiCreate;
+    await gotoAdvisory(page, 'edit', { id: advisoryId });
+    const form = formByAction(page, `action=edit&id=${advisoryId}`);
+    await expect(form.locator('[name="published_at"]')).toHaveValue(originalPublishedAt);
+    await expect(form.locator('[name="cves"]')).toHaveValue(ui.editedCves.join(', '));
+    await expect(form.locator('[name="expected_state"]')).toHaveValue('published');
+    await fillAdvisoryTextFields(form, {
+      name: `${ui.editedName} corrected`,
+      summary: `${ui.editedSummary} corrected`,
+      description: `${ui.editedDescription} Corrected.`,
+      response: `${ui.editedResponse} Corrected.`,
+    });
+    await submitForm(form, 'Save');
+    await expect(content(page)).toContainText(`${ui.editedSummary} corrected`);
+    await expect(content(page)).toContainText(`${ui.editedDescription} Corrected.`);
+    await expect(content(page)).toContainText(`${ui.editedResponse} Corrected.`);
+    await expect(content(page)).toContainText(expectedAdvisoryTime(originalPublishedAt));
+    await expect(content(page)).toContainText('No updates posted.');
+    for (const cve of ui.editedCves) {
+      await expect(content(page)).toContainText(cve);
+    }
+  });
+
+  test('rejects a stale published correction without refreshing its revision', async ({ page }) => {
+    await gotoAdvisory(page, 'edit', { id: advisoryId });
+    const form = formByAction(page, `action=edit&id=${advisoryId}`);
+    const revision = await form.locator('[name="expected_content_revision"]').inputValue();
+    const otherPage = await page.context().newPage();
+    await gotoAdvisory(otherPage, 'edit', { id: advisoryId });
+    await submitForm(formByAction(otherPage, `action=edit&id=${advisoryId}`), 'Save');
+    await submitForm(form, 'Save');
+    await expectNotification(page, 'Update failed');
+    await expect(form.locator('[name="expected_content_revision"]')).toHaveValue(revision);
+    await expect(form.locator('[name="expected_state"]')).toHaveValue('published');
+    await otherPage.close();
+  });
+
+  test('corrects published node rows and refreshes the affected VPS display', async ({ page, browser, baseURL }) => {
+    const s = requireSecurityAdvisoryFixtures();
+    const nodeId = s.publishedAffected.nodeId;
+    const userContext = await browser.newContext({ baseURL });
+    const userPage = await userContext.newPage();
+    try {
+      await login(userPage, fixtures.user);
+      await gotoAdvisory(userPage, 'show', { id: advisoryId });
+      await expect(content(userPage)).toContainText(s.publishedAffected.vpsHostname);
+      await gotoAdvisory(page, 'nodes', { id: advisoryId });
+      let form = formByAction(page, `action=nodes&id=${advisoryId}`);
+      await expect(form.locator('[name="expected_state"]')).toHaveValue('published');
+      await expect(form.locator(`[name="node_${nodeId}_vulnerable_until"]`)).toHaveValue(s.uiCreate.vulnerableUntil);
+      await expect(form.locator(`[name="node_${nodeId}_mitigated_since"]`)).toHaveValue(s.uiCreate.mitigatedSince);
+      await setNodeStatus(form, nodeId, { notes: { en: 'Corrected node note', cs: '' } });
+      await submitForm(form, 'Save node statuses');
+      await gotoAdvisory(page, 'nodes', { id: advisoryId });
+      form = formByAction(page, `action=nodes&id=${advisoryId}`);
+      await expect(form.locator(`[name="node_${nodeId}_vulnerable_until"]`)).toHaveValue(s.uiCreate.vulnerableUntil);
+      await expect(form.locator(`[name="node_${nodeId}_mitigated_since"]`)).toHaveValue(s.uiCreate.mitigatedSince);
+      await expect(form.locator(`[name="node_${nodeId}_en_note"]`)).toHaveValue('Corrected node note');
+      await expect(form.locator(`[name="node_${nodeId}_cs_note"]`)).toHaveValue('');
+      await setNodeStatus(form, nodeId, { state: 'not_affected' });
+      await submitForm(form, 'Save node statuses');
+      await gotoAdvisory(userPage, 'show', { id: advisoryId });
+      await expect(content(userPage)).not.toContainText(s.publishedAffected.vpsHostname);
+      await gotoAdvisory(page, 'nodes', { id: advisoryId });
+      form = formByAction(page, `action=nodes&id=${advisoryId}`);
+      await setNodeStatus(form, nodeId, {
+        state: 'mitigated',
+        vulnerableUntil: s.uiCreate.vulnerableUntil,
+        mitigatedSince: s.uiCreate.mitigatedSince,
+      });
+      await submitForm(form, 'Save node statuses');
+      await gotoAdvisory(userPage, 'show', { id: advisoryId });
+      await expect(content(userPage)).toContainText(s.publishedAffected.vpsHostname);
+      await expect(content(page)).toContainText(expectedAdvisoryTime(originalPublishedAt));
+      await expect(content(page)).toContainText('No updates posted.');
+    } finally {
+      await userContext.close();
+    }
+  });
+
+  test('adds and removes published node membership only when explicitly selected', async ({ page }) => {
+    const s = requireSecurityAdvisoryFixtures();
+    const advisory = s.publishedNotAffected;
+    const prefix = `node_${advisory.missingNodeId}`;
+    await gotoAdvisory(page, 'nodes', { id: advisory.id });
+    let form = formByAction(page, `action=nodes&id=${advisory.id}`);
+    await expect(form.locator(`[name="${prefix}_status_id"]`)).toHaveValue('');
+    await expect(form.locator(`[name="${prefix}_add"]`)).not.toBeChecked();
+    await submitForm(form, 'Save node statuses');
+    await gotoAdvisory(page, 'nodes', { id: advisory.id });
+    form = formByAction(page, `action=nodes&id=${advisory.id}`);
+    await expect(form.locator(`[name="${prefix}_status_id"]`)).toHaveValue('');
+    await expect(form).toHaveAttribute('name', 'security_advisory_nodes');
+    const formBounds = await form.boundingBox();
+    const contentBounds = await content(page).boundingBox();
+    expect(formBounds).not.toBeNull();
+    expect(contentBounds).not.toBeNull();
+    expect(formBounds.x + formBounds.width).toBeLessThanOrEqual(contentBounds.x + contentBounds.width + 1);
+    await form.locator(`[name="${prefix}_add"]`).check();
+    await setNodeStatus(form, advisory.missingNodeId, { state: 'not_affected' });
+    await submitForm(form, 'Save node statuses');
+    await gotoAdvisory(page, 'nodes', { id: advisory.id });
+    form = formByAction(page, `action=nodes&id=${advisory.id}`);
+    await expect(form.locator(`[name="${prefix}_status_id"]`)).not.toHaveValue('');
+    const existingId = await form.locator(`[name="${prefix}_status_id"]`).inputValue();
+    await form.locator(`[name="${prefix}_status_id"]`).evaluate((field) => field.remove());
+    await form.locator(`[name="${prefix}_state"]`).evaluate((field) => field.remove());
+    await submitForm(form, 'Save node statuses');
+    await gotoAdvisory(page, 'nodes', { id: advisory.id });
+    form = formByAction(page, `action=nodes&id=${advisory.id}`);
+    await expect(form.locator(`[name="${prefix}_status_id"]`)).toHaveValue(existingId);
+    await form.locator(`[name="${prefix}_remove"]`).check();
+    await submitForm(form, 'Save node statuses');
+    await gotoAdvisory(page, 'nodes', { id: advisory.id });
+    form = formByAction(page, `action=nodes&id=${advisory.id}`);
+    await expect(form.locator(`[name="${prefix}_status_id"]`)).toHaveValue('');
+    await submitForm(form, 'Save node statuses');
+    await gotoAdvisory(page, 'nodes', { id: advisory.id });
+    await expect(formByAction(page, `action=nodes&id=${advisory.id}`)
+      .locator(`[name="${prefix}_status_id"]`)).toHaveValue('');
+  });
+
+  test('removes a retired node assessment without requiring editable fields', async ({ page }) => {
+    const advisory = requireSecurityAdvisoryFixtures().publishedNotAffected;
+    const prefix = `node_${advisory.retiredNodeId}`;
+    await gotoAdvisory(page, 'nodes', { id: advisory.id });
+    const form = formByAction(page, `action=nodes&id=${advisory.id}`);
+    await expect(form.locator(`[name="${prefix}_state"]`)).toHaveCount(0);
+    await form.locator(`[name="${prefix}_remove"]`).check();
+    await submitForm(form, 'Save node statuses');
+    await gotoAdvisory(page, 'nodes', { id: advisory.id });
+    await expect(formByAction(page, `action=nodes&id=${advisory.id}`)
+      .locator(`[name="${prefix}_status_id"]`)).toHaveCount(0);
+  });
+
+  test('edits and clears published time and CVEs without resetting state', async ({ page }) => {
+    const ui = requireSecurityAdvisoryFixtures().uiCreate;
+    const correctedTime = `${ui.editedPublishedAt}:51`;
+    await gotoAdvisory(page, 'edit', { id: advisoryId });
+    let form = formByAction(page, `action=edit&id=${advisoryId}`);
+    await fillAdvisoryTextFields(form, { publishedAt: correctedTime, cves: ['CVE-2099-20004'] });
+    await submitForm(form, 'Save');
+    await expect(content(page)).toContainText(expectedAdvisoryTime(correctedTime));
+    await expect(content(page)).toContainText('CVE-2099-20004');
+    await gotoAdvisory(page, 'edit', { id: advisoryId });
+    form = formByAction(page, `action=edit&id=${advisoryId}`);
+    await expect(form.locator('[name="published_at"]')).toHaveValue(correctedTime);
+    await fillAdvisoryTextFields(form, { publishedAt: '', cves: [] });
+    await submitForm(form, 'Save');
+    await expect(content(page)).toContainText('published');
+    await expect(rowWithText(page, 'Published at:')).toContainText('-');
+    await expect(content(page)).not.toContainText('CVE-2099-20004');
+    await gotoAdvisory(page, 'edit', { id: advisoryId });
+    form = formByAction(page, `action=edit&id=${advisoryId}`);
+    await expect(form.locator('[name="published_at"]')).toHaveValue('');
+    await expect(form.locator('[name="cves"]')).toHaveValue('');
+    await fillAdvisoryTextFields(form, { publishedAt: originalPublishedAt, cves: ui.editedCves });
+    await submitForm(form, 'Save');
   });
 
   test('posts, edits, and deletes an advisory update', async ({ page }) => {
@@ -367,6 +568,7 @@ test.describe('security advisory admin browser workflow', () => {
     await expect(form.locator('input[name="send_mail"]')).not.toBeChecked();
     await expect(form.locator('input[name="published_at"]')).toHaveValue(ui.editedPublishedAt);
     await fillUpdateTextFields(form, {
+      publishedAt: originalPublishedAt,
       summary: ui.updateSummary,
       message: ui.updateMessage,
     });
@@ -484,4 +686,32 @@ test.describe('security advisory admin browser workflow', () => {
     await expect(cvesRow).toContainText('-');
     await expect(cvesRow).not.toContainText(seeded.name);
   });
+
+  test('confirms silent retraction and permanent advisory deletion', async ({ page }) => {
+    await gotoAdvisory(page, 'show', { id: advisoryId });
+    let form = formByAction(page, `action=retract&id=${advisoryId}`);
+    await expect(form).toHaveAttribute('method', 'post');
+    await expect(form.locator('[name="csrf_token"]')).not.toHaveValue('');
+    await expect(form.locator('[name="expected_state"]')).toHaveValue('published');
+    await expect(form.locator('[name="send_mail"]')).toHaveCount(0);
+    await submitConfirmProtectedForm(page, form);
+    await expect(content(page)).toContainText('retracted');
+    await expect(content(page)).toContainText(expectedAdvisoryTime(originalPublishedAt));
+    await expect(formByAction(page, `action=retract&id=${advisoryId}`)).toHaveCount(0);
+    await gotoAdvisory(page, 'edit', { id: advisoryId });
+    form = formByAction(page, `action=edit&id=${advisoryId}`);
+    await expect(form.locator('[name="expected_state"]')).toHaveValue('retracted');
+    await form.locator('[name="name"]').fill('Retracted advisory correction');
+    await submitForm(form, 'Save');
+    await expect(content(page)).toContainText('Retracted advisory correction');
+    form = formByAction(page, `action=delete&id=${advisoryId}`);
+    await expect(form).toHaveAttribute('method', 'post');
+    await expect(form.locator('[name="csrf_token"]')).not.toHaveValue('');
+    await expect(form.locator('[name="expected_state"]')).toHaveValue('retracted');
+    await expect(form.locator('[name="send_mail"]')).toHaveCount(0);
+    await submitConfirmProtectedForm(page, form);
+    await expect(page).toHaveURL(/action=list/);
+    await expect(content(page)).not.toContainText('Retracted advisory correction');
+  });
+
 });

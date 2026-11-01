@@ -3809,6 +3809,18 @@ import ../make-test.nix (
         publish: true,
         admin: admin
       )
+      # Represent an active node added after this advisory was published.
+      security_advisory_published_not_affected.security_advisory_node_statuses
+        .find_by!(node: advisory_nodes.first).destroy!
+      advisory_retired_node = Node.find_or_initialize_by(name: 'webui-advisory-retired')
+      advisory_retired_node.assign_attributes(
+        role: :storage, location: node.location, ip_addr: '192.0.2.239', active: true
+      )
+      advisory_retired_node.save!
+      security_advisory_published_not_affected.security_advisory_node_statuses.create!(
+        node: advisory_retired_node, state: :not_affected
+      )
+      advisory_retired_node.update!(active: false)
 
       security_advisory_draft_hidden = ensure_security_advisory_fixture(
         name: 'Webui Security Advisory Draft Hidden',
@@ -3820,6 +3832,21 @@ import ../make-test.nix (
         published_at: nil,
         publish: false,
         admin: admin
+      )
+
+      security_advisory_retracted_hidden = ensure_security_advisory_fixture(
+        name: 'Webui Security Advisory Retracted Hidden',
+        cves: ['CVE-2099-10005'],
+        summary: 'Webui retracted advisory hidden from users',
+        description: 'Deterministic retracted advisory visible only to admins.',
+        response: 'The original report is retained for administrator review.',
+        node_statuses: affected_node_statuses,
+        published_at: Time.now - 5 * 60 * 60,
+        publish: true,
+        admin: admin
+      )
+      security_advisory_retracted_hidden.retract!(
+        expected_content_revision: security_advisory_retracted_hidden.content_revision
       )
 
       monitoring_events = {
@@ -4718,9 +4745,15 @@ import ../make-test.nix (
           ),
           'publishedNotAffected' => security_advisory_fixture_json(
             security_advisory_published_not_affected
+          ).merge(
+            'missingNodeId' => advisory_nodes.first.id,
+            'retiredNodeId' => advisory_retired_node.id
           ),
           'draftHidden' => security_advisory_fixture_json(
             security_advisory_draft_hidden
+          ),
+          'retractedHidden' => security_advisory_fixture_json(
+            security_advisory_retracted_hidden
           ),
           'uiCreate' => {
             'cves' => ['CVE-2099-20001', 'CVE-2099-20002'],
@@ -4729,8 +4762,8 @@ import ../make-test.nix (
             'editedName' => 'Webui Browser Advisory Edited',
             'publishedAt' => '2026-05-29 12:00',
             'editedPublishedAt' => '2026-05-29 12:30',
-            'vulnerableUntil' => '2026-05-29 08:00',
-            'mitigatedSince' => '2026-05-29 10:30',
+            'vulnerableUntil' => '2026-05-29 08:00:17',
+            'mitigatedSince' => '2026-05-29 10:30:43',
             'nodeNotes' => {
               'en' => 'Mitigated by kernel upgrade',
               'cs' => 'Ošetřeno aktualizací jádra'

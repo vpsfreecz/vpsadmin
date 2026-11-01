@@ -46,7 +46,7 @@ function security_advisory_cve_links($cves)
     return implode(', ', $ret);
 }
 
-function security_advisory_parse_cves($value)
+function security_advisory_parse_cves($value, $allowEmpty = false)
 {
     $ret = [];
 
@@ -63,7 +63,7 @@ function security_advisory_parse_cves($value)
         $ret[$cve] = $cve;
     }
 
-    if (count($ret) === 0) {
+    if (count($ret) === 0 && !$allowEmpty) {
         throw new \InvalidArgumentException(_('At least one CVE must be entered.'));
     }
 
@@ -170,7 +170,7 @@ function security_advisory_unlink_form($url, $confirm)
         . '</form>';
 }
 
-function security_advisory_save_cves($id, $desired, $revision)
+function security_advisory_save_cves($id, $desired, $revision, $expectedState = 'draft')
 {
     global $api;
 
@@ -187,6 +187,7 @@ function security_advisory_save_cves($id, $desired, $revision)
         } else {
             $api->security_advisory_cve->delete($cve->id, [
                 'expected_content_revision' => $revision,
+                'expected_state' => $expectedState,
             ]);
             $revision++;
         }
@@ -198,6 +199,7 @@ function security_advisory_save_cves($id, $desired, $revision)
                 'security_advisory' => $id,
                 'cve_id' => $cveId,
                 'expected_content_revision' => $revision,
+                'expected_state' => $expectedState,
             ]);
             $revision++;
         }
@@ -243,9 +245,10 @@ function security_advisory_time($value)
     return $value ? tolocaltz($value, 'Y-m-d H:i:s T') : '-';
 }
 
-function security_advisory_datetime_form_value($value = null)
+function security_advisory_datetime_form_value($value = null, $seconds = false)
 {
-    return $value ? tolocaltz($value, 'Y-m-d H:i') : date('Y-m-d H:i');
+    $format = $seconds ? 'Y-m-d H:i:s' : 'Y-m-d H:i';
+    return $value ? tolocaltz($value, $format) : date($format);
 }
 
 function security_advisory_current_language_code()
@@ -452,14 +455,15 @@ function security_advisory_form($id = null)
                 'expected_content_revision',
                 $advisory->content_revision
             ),
+            'expected_state' => post_val('expected_state', $advisory->state),
         ]);
     }
 
     security_advisory_form_input(
         _('Published at') . ':',
         'published_at',
-        post_val('published_at', security_advisory_datetime_form_value($advisory ? $advisory->published_at : null)),
-        security_advisory_datetime_form_value(),
+        post_val('published_at', $advisory && $advisory->published_at ? security_advisory_datetime_form_value($advisory->published_at, true) : ''),
+        security_advisory_datetime_form_value(null, true),
         security_advisory_param_description(
             $input,
             'published_at',
@@ -781,6 +785,28 @@ function security_advisory_details($id)
     security_advisory_outage_table($id);
     security_advisory_updates_table($id);
 
+    if (isAdmin()) {
+        $xtpl->table_title(_('Actions'));
+        $actions = '';
+        if ($advisory->state === 'published') {
+            $actions .= security_advisory_lifecycle_form(
+                $advisory,
+                'retract',
+                _('Retract advisory'),
+                _('Retract this advisory? Its reports and updates will be kept. No email will be sent.')
+            );
+        }
+        $actions .= security_advisory_lifecycle_form(
+            $advisory,
+            'delete',
+            _('Delete advisory'),
+            _('Delete this advisory, all updates and node assessments permanently? Recovery requires a backup.')
+        );
+        $xtpl->table_td($actions);
+        $xtpl->table_tr();
+        $xtpl->table_out();
+    }
+
     if (isAdmin() && $advisory->state == 'draft') {
         $publishInput = $api->security_advisory->publish->getParameters('input');
 
@@ -964,6 +990,16 @@ function security_advisory_clear_form_context()
     $xtpl->assign('TABLE_FORM_END', '');
 }
 
+function security_advisory_lifecycle_form($advisory, $action, $label, $confirmation)
+{
+    return '<form action="?page=security_advisory&amp;action=' . h($action) . '&amp;id=' . $advisory->id . '" method="post" style="display:inline">'
+        . '<input type="hidden" name="csrf_token" value="' . h(csrf_token()) . '">'
+        . '<input type="hidden" name="expected_content_revision" value="' . h((string) post_val('expected_content_revision', $advisory->content_revision)) . '">'
+        . '<input type="hidden" name="expected_state" value="' . h(post_val('expected_state', $advisory->state)) . '">'
+        . '<input type="submit" value="' . h($label) . '" onclick="return confirm(\'' . h(addslashes($confirmation)) . '\');">'
+        . '</form> ';
+}
+
 function security_advisory_node_form($id)
 {
     global $xtpl, $api;
@@ -971,12 +1007,13 @@ function security_advisory_node_form($id)
     $advisory = $api->security_advisory->show($id);
 
     $xtpl->title(_('Security advisory') . ' #' . $advisory->id . ' - ' . _('node statuses'));
-    $xtpl->form_create('?page=security_advisory&action=nodes&id=' . $id, 'post');
+    $xtpl->form_create('?page=security_advisory&action=nodes&id=' . $id, 'post', 'security_advisory_nodes');
     $xtpl->form_set_hidden_fields([
         'expected_content_revision' => post_val(
             'expected_content_revision',
             $advisory->content_revision
         ),
+        'expected_state' => post_val('expected_state', $advisory->state),
     ]);
     security_advisory_node_fields($id);
     $xtpl->form_out(_('Save node statuses'));
@@ -1089,6 +1126,8 @@ function security_advisory_node_header_html($langs)
         );
     }
 
+    $html .= security_advisory_node_table_cell_html(h(_('Actions')), $style);
+
     return $html . '</tr>';
 }
 
@@ -1101,7 +1140,7 @@ function security_advisory_node_note_placeholder($lang)
 
 function security_advisory_node_bulk_row_html($langs)
 {
-    $defaultTime = security_advisory_datetime_form_value();
+    $defaultTime = security_advisory_datetime_form_value(null, true);
 
     $html = '<tr class="security-advisory-node-bulk-row">'
         . security_advisory_node_table_cell_html(
@@ -1130,18 +1169,33 @@ function security_advisory_node_bulk_row_html($langs)
         ));
     }
 
-    return $html . '</tr>';
+    return $html . security_advisory_node_table_cell_html('') . '</tr>';
 }
 
-function security_advisory_node_row_html($node, $status, $langs)
+function security_advisory_node_membership_html($node, $status, $new = false)
 {
     $prefix = 'node_' . $node->id;
-    $defaultTime = security_advisory_datetime_form_value();
-    $vulnerableUntil = $status && $status->vulnerable_until
-        ? security_advisory_datetime_form_value($status->vulnerable_until)
+    $action = $status ? 'remove' : 'add';
+    $checked = $_SERVER['REQUEST_METHOD'] === 'POST'
+        ? isset($_POST[$prefix . '_' . $action])
+        : ($new && !$status);
+
+    return '<input type="hidden" name="' . $prefix . '_status_id" value="'
+        . h((string) post_val($prefix . '_status_id', $status ? $status->id : '')) . '">'
+        . '<label><input type="checkbox" name="' . $prefix . '_' . $action . '" value="1"'
+        . ($checked ? ' checked="checked"' : '') . '> '
+        . ($status ? _('Remove') : _('Add')) . '</label>';
+}
+
+function security_advisory_node_row_html($node, $status, $langs, $new = false)
+{
+    $prefix = 'node_' . $node->id;
+    $defaultTime = security_advisory_datetime_form_value(null, true);
+    $vulnerableUntil = $status
+        ? ($status->vulnerable_until ? security_advisory_datetime_form_value($status->vulnerable_until, true) : '')
         : $defaultTime;
-    $mitigatedSince = $status && $status->mitigated_since
-        ? security_advisory_datetime_form_value($status->mitigated_since)
+    $mitigatedSince = $status
+        ? ($status->mitigated_since ? security_advisory_datetime_form_value($status->mitigated_since, true) : '')
         : $defaultTime;
 
     $html = '<tr class="security-advisory-node-row">'
@@ -1178,7 +1232,9 @@ function security_advisory_node_row_html($node, $status, $langs)
         ));
     }
 
-    return $html . '</tr>';
+    return $html . security_advisory_node_table_cell_html(
+        security_advisory_node_membership_html($node, $status, $new)
+    ) . '</tr>';
 }
 
 function security_advisory_node_embedded_table_html($nodes, $statuses, $langs)
@@ -1188,7 +1244,7 @@ function security_advisory_node_embedded_table_html($nodes, $statuses, $langs)
     $html .= security_advisory_node_bulk_row_html($langs);
 
     foreach ($nodes as $node) {
-        $html .= security_advisory_node_row_html($node, $statuses[$node->id] ?? null, $langs);
+        $html .= security_advisory_node_row_html($node, $statuses[$node->id] ?? null, $langs, true);
     }
 
     return $html . '</table>' . security_advisory_node_script_html();
@@ -1199,12 +1255,19 @@ function security_advisory_node_fields($id = null, $embedded = false)
     global $xtpl, $api;
 
     $nodes = security_advisory_nodes();
+    $eligibleIds = [];
+    foreach ($nodes as $node) {
+        $eligibleIds[$node->id] = true;
+    }
     $langs = $api->language->list();
     $statuses = [];
 
     if ($id !== null) {
         foreach ($api->security_advisory($id)->node_status->list() as $status) {
             $statuses[$status->node->id] = $status;
+            if (!isset($eligibleIds[$status->node->id])) {
+                $nodes[] = $status->node;
+            }
         }
     }
 
@@ -1229,13 +1292,14 @@ function security_advisory_node_fields($id = null, $embedded = false)
     foreach ($langs as $lang) {
         $xtpl->table_add_category($lang->label . ' ' . _('Note'));
     }
+    $xtpl->table_add_category(_('Actions'));
 
     $xtpl->table_td(
         '<strong>' . h(_('All nodes')) . '</strong><br>'
         . '<input type="button" value="' . h(_('Apply')) . '" onclick="securityAdvisoryApplyNodeDefaults();" style="margin-top:3px;" />'
     );
     $xtpl->table_td(security_advisory_node_select_html('', 'mitigated', 'security-advisory-node-bulk', 'state'));
-    $defaultTime = security_advisory_datetime_form_value();
+    $defaultTime = security_advisory_datetime_form_value(null, true);
     $xtpl->table_td(security_advisory_node_bulk_input_html(
         'vulnerable_until',
         SECURITY_ADVISORY_NODE_DATE_INPUT_SIZE,
@@ -1255,16 +1319,30 @@ function security_advisory_node_fields($id = null, $embedded = false)
             security_advisory_node_note_placeholder($lang)
         ));
     }
+    $xtpl->table_td('');
     $xtpl->table_tr(false, 'security-advisory-node-bulk-row');
 
     foreach ($nodes as $node) {
         $status = $statuses[$node->id] ?? null;
         $prefix = 'node_' . $node->id;
-        $vulnerableUntil = $status && $status->vulnerable_until
-            ? security_advisory_datetime_form_value($status->vulnerable_until)
+        if (!isset($eligibleIds[$node->id])) {
+            $xtpl->table_td(h($node->domain_name));
+            $xtpl->table_td(security_advisory_node_state_label($status->state));
+            $xtpl->table_td(security_advisory_time($status->vulnerable_until));
+            $xtpl->table_td(security_advisory_time($status->mitigated_since));
+            foreach ($langs as $lang) {
+                $name = $lang->code . '_note';
+                $xtpl->table_td(h((string) $status->{$name}));
+            }
+            $xtpl->table_td(security_advisory_node_membership_html($node, $status));
+            $xtpl->table_tr(false, 'security-advisory-node-row');
+            continue;
+        }
+        $vulnerableUntil = $status
+            ? ($status->vulnerable_until ? security_advisory_datetime_form_value($status->vulnerable_until, true) : '')
             : $defaultTime;
-        $mitigatedSince = $status && $status->mitigated_since
-            ? security_advisory_datetime_form_value($status->mitigated_since)
+        $mitigatedSince = $status
+            ? ($status->mitigated_since ? security_advisory_datetime_form_value($status->mitigated_since, true) : '')
             : $defaultTime;
         $xtpl->table_td(h($node->domain_name) . '<br><small>' . security_advisory_node_role_label($node->type) . '</small>');
         $xtpl->table_td(security_advisory_node_select_html(
@@ -1297,10 +1375,11 @@ function security_advisory_node_fields($id = null, $embedded = false)
                 security_advisory_node_note_placeholder($lang)
             ));
         }
+        $xtpl->table_td(security_advisory_node_membership_html($node, $status));
         $xtpl->table_tr(false, 'security-advisory-node-row');
     }
 
-    security_advisory_node_script_row(4 + count($langs));
+    security_advisory_node_script_row(5 + count($langs));
 }
 
 function security_advisory_update_form($id, $updateId = null)

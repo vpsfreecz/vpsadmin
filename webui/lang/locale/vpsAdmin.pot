@@ -400,7 +400,7 @@ msgstr ""
 msgid "IP usage"
 msgstr ""
 
-#: forms/cluster.forms.php
+#: forms/cluster.forms.php forms/security_advisory.forms.php
 msgid "Actions"
 msgstr ""
 
@@ -571,8 +571,9 @@ msgid "Location"
 msgstr ""
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
-#: forms/oom_reports.forms.php forms/userdata.forms.php forms/userns.forms.php
-#: forms/users.forms.php pages/page_adminm.php
+#: forms/oom_reports.forms.php forms/security_advisory.forms.php
+#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
+#: pages/page_adminm.php
 msgid "Add"
 msgstr ""
 
@@ -746,8 +747,8 @@ msgid ""
 "that are using it."
 msgstr ""
 
-#: forms/cluster.forms.php forms/networking.forms.php forms/users.forms.php
-#: forms/vps.forms.php
+#: forms/cluster.forms.php forms/networking.forms.php
+#: forms/security_advisory.forms.php forms/users.forms.php forms/vps.forms.php
 msgid "Remove"
 msgstr ""
 
@@ -3697,6 +3698,26 @@ msgstr ""
 
 #: forms/security_advisory.forms.php
 msgid "Response"
+msgstr ""
+
+#: forms/security_advisory.forms.php
+msgid "Retract advisory"
+msgstr ""
+
+#: forms/security_advisory.forms.php
+msgid ""
+"Retract this advisory? Its reports and updates will be kept. No email will "
+"be sent."
+msgstr ""
+
+#: forms/security_advisory.forms.php
+msgid "Delete advisory"
+msgstr ""
+
+#: forms/security_advisory.forms.php
+msgid ""
+"Delete this advisory, all updates and node assessments permanently? Recovery "
+"requires a backup."
 msgstr ""
 
 #: forms/security_advisory.forms.php
