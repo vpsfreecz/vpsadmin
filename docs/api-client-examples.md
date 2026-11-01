@@ -88,12 +88,16 @@ validation errors in its configuration diagnostic.
 
 Register a dedicated nondefault confidential OAuth client through the ordinary
 API. Use fixed 3600-second access tokens, no refresh tokens, and
-`allow_single_sign_on: false`. Set its exact HTTPS redirect to
+`allow_single_sign_on: true`. Set its exact HTTPS redirect to
 `<API origin>/_documentation/oauth/callback`; the API is mounted at `/`.
 The sample requests scope `['all']` and limits its documentation session to
-3600 seconds. Keep `switch_user` disabled until a fresh authorization with this
-client offers editable account credentials. Do not reuse PHP or React client
-credentials.
+3600 seconds. Set `switch_user: true` in the private JSON to enable account
+switching. The sample sends `close_sso=1` when Switch user revokes its token.
+This closes the associated SSO session. Closing SSO does not itself revoke
+other authorizations' access tokens; existing provider logout preferences still
+apply. Ordinary sign-out does not send this parameter. The revoke option
+requires HaveAPI 0.32.1 or later in the 0.32 series. Do not reuse PHP or React
+client credentials.
 
 HaveAPI obtains authorize, token and revoke URLs from the default API version's
 OAuth provider metadata. vpsAdmin derives those URLs from `core.auth_url`, or
@@ -115,11 +119,11 @@ credentials, cookies and tokens. See
 [HTTP logging and OAuth callbacks](http-log-protection.md) for the product
 defaults, TLS behavior and deployment boundaries.
 
-The isolated [schema exporter](api-schema-export.md) pins HaveAPI 0.32.0 for
-reproducible schema exports. Deploy or roll back the private documentation
-configuration together with its matching API bundle; older documentation code
-cannot load these options. OAuth client administration remains a separate
-operation.
+The isolated [schema exporter](api-schema-export.md) pins HaveAPI 0.32.1 for
+reproducible schema exports. Deploy or roll back the documentation hook together
+with its matching API bundle; older HaveAPI versions reject the new hook option.
+Retain the private client configuration and session key. OAuth client
+administration remains a separate operation.
 
 ## Generated and dynamic TypeScript
 

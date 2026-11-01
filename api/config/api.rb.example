@@ -19,7 +19,8 @@ VpsAdmin::API.configure do |api|
       session_secret: File.binread(File.join(__dir__, 'documentation-session.key')),
       scope: ['all'],
       session_lifetime: 3600,
-      switch_user: settings.fetch('switch_user', false)
+      switch_user: settings.fetch('switch_user', false),
+      switch_user_revoke_params: { 'close_sso' => '1' }
     )
   rescue JSON::ParserError, KeyError, ArgumentError, TypeError
     # Do not include parsed values or nested exceptions in startup diagnostics.

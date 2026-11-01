@@ -370,10 +370,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "09wh2ry7dgkd8ha9p2zxfaassgxmkcxpyr7qymfp5izi5sbncmay";
+      sha256 = "066gdv0iis8z9lqzaxfyv8l0pvfbyhhmlvcfjcnydhqd114z94zw";
       type = "gem";
     };
-    version = "0.32.0";
+    version = "0.32.1";
   };
   haveapi-client = {
     dependencies = [
@@ -388,10 +388,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "04wn7vdi32hb9h5mdkbqgsximsfnfhkdh6873c1g2zqnwpij3kn5";
+      sha256 = "1m1kfnlb59yqnp7q24bp51k2xwmbf2qihqwhd920mzqhrj4yakgx";
       type = "gem";
     };
-    version = "0.32.0";
+    version = "0.32.1";
   };
   haveapi-go-client = {
     dependencies = [ "haveapi-client" ];
@@ -399,10 +399,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1hlj46gw12mvr1qy4p5ixa0wml145mzxi90w7bza3dawy6iy75hj";
+      sha256 = "1fi1mp80jidpsxjb96lgrknnpv127bfxysbymjcn04czgyapzpnm";
       type = "gem";
     };
-    version = "0.32.0";
+    version = "0.32.1";
   };
   haveapi-rust-client = {
     dependencies = [
@@ -414,10 +414,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1lcpcsq1aik68md6axvim8yzw9wq4xiiah5g2ikg93bw0aihhkm5";
+      sha256 = "0xs2znj8ki12bpxx7p10xrnx6zh8djf5x83637dnx3nnx05qw684";
       type = "gem";
     };
-    version = "0.32.0";
+    version = "0.32.1";
   };
   haveapi-typescript-client = {
     dependencies = [ "haveapi-client" ];
@@ -425,10 +425,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "041f5k2mxxsv94aa49fypxqvyc3gjlpmydx76q96nan6vav4qxrv";
+      sha256 = "14204z38shqgqy6xww1c5q33q5cz5wy0xk0yg2ji52mwrs6dhpy8";
       type = "gem";
     };
-    version = "0.32.0";
+    version = "0.32.1";
   };
   highline = {
     dependencies = [ "reline" ];

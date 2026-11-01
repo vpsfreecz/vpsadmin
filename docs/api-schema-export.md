@@ -18,7 +18,7 @@ nix develop .#vpsadmin
 tools/export-api-schema --prepare
 ```
 
-Preparation installs a separate tooling bundle that pins HaveAPI 0.32.0, the
+Preparation installs a separate tooling bundle that pins HaveAPI 0.32.1, the
 same release used by the API. Its Gemfile checks the API dependency declaration
 and replaces its constraint with that exact version. Preparation leaves the API
 and packaged runtime dependencies unchanged. The tooling bundle and its lockfile
