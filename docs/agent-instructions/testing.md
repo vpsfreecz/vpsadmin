@@ -107,6 +107,13 @@ Each job uploads these artifacts for seven days, including on failure:
   records the mode/topic, Ruby/Bundler/RSpec versions and SHA256 of the effective
   generated `api/Gemfile.lock`; CI does not resolve from `packages/api/Gemfile.lock`.
 
+The cached API spec app reports caught request exceptions to stderr with the
+`API_SPEC_REQUEST_EXCEPTION` prefix. Fields are limited to the current example
+ID, up to four cause classes, known API code/spec file locations and validated
+MySQL errno/SQLSTATE metadata. Missing fields are omitted, along with exception
+messages, request data and SQL values. The existing CI RSpec log retains these
+diagnostics. API error responses remain unchanged.
+
 Missing or malformed result JSON is incomplete evidence. For comparisons, use
 artifacts from explicit run IDs and attempts, retain their separate directories,
 and compare full/core independently. Require matching example IDs, statuses and
