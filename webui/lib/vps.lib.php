@@ -4,7 +4,7 @@ function vps_run_redirect_path($veid)
 {
     $fallback = ($_GET['action'] ?? null) == 'info'
         ? '?page=adminvps&action=info&veid=' . $veid
-        : '?page=adminvps';
+        : '?page=adminvps&action=list';
 
     $referer = vps_run_referer_target($_SERVER['HTTP_REFERER'] ?? null);
     $current = local_redirect_target($_SERVER['REQUEST_URI'] ?? '', null);
@@ -60,6 +60,11 @@ function vps_run_referer_target($referer)
     }
 
     $target = $parts['path'] ?? '/';
+
+    // An origin-only referrer carries no VPS return context.
+    if ($target === '/' && ($parts['query'] ?? '') === '') {
+        return null;
+    }
 
     if (isset($parts['query'])) {
         $target .= '?' . $parts['query'];

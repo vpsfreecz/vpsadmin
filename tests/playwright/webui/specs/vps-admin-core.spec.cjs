@@ -148,6 +148,7 @@ async function runFilteredListAction(page, vpsId, action, expectedNotification, 
   });
 
   await waitForQueryParams(page, { page: 'adminvps', action: 'list' });
+  await openAdminVpsListAround(page, vpsId);
   await expect(vpsListRow(page, vpsId)).toBeVisible();
 
   await waitForVpsTransactionsSettled(page, vpsId);

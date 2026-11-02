@@ -73,4 +73,61 @@ final class OpenRedirectTargetsTest extends TestCase
         $_SERVER['HTTP_REFERER'] = 'https://attacker.example/?page=adminvps&action=info&veid=101';
         self::assertSame('?page=adminvps&action=info&veid=101', vps_run_redirect_path(101));
     }
+
+    public function testVpsRunFallbacksHandleOriginOnlyAndUnavailableReferrers(): void
+    {
+        require_once dirname(__DIR__, 2) . '/lib/functions.lib.php';
+        require_once dirname(__DIR__, 2) . '/lib/vps.lib.php';
+
+        $_SERVER['HTTP_HOST'] = 'admin.example';
+
+        foreach (['list', 'info'] as $action) {
+            $_GET = ['action' => $action];
+            $_SERVER['REQUEST_URI'] = "/?page=adminvps&action={$action}&run=restart&veid=101&t=csrf";
+            $expected = $action === 'info'
+                ? '?page=adminvps&action=info&veid=101'
+                : '?page=adminvps&action=list';
+
+            foreach ([
+                null,
+                '',
+                'https://admin.example',
+                'https://admin.example/',
+                'https://admin.example?',
+                'https://admin.example/?',
+                'https://attacker.example/?page=adminvps&action=info&veid=101',
+                'https://admin.example' . $_SERVER['REQUEST_URI'],
+            ] as $referer) {
+                if ($referer === null) {
+                    unset($_SERVER['HTTP_REFERER']);
+                } else {
+                    $_SERVER['HTTP_REFERER'] = $referer;
+                }
+
+                self::assertSame($expected, vps_run_redirect_path(101));
+            }
+        }
+    }
+
+    public function testVpsRunRedirectsPreserveRootQueriesAndFilteredTargets(): void
+    {
+        require_once dirname(__DIR__, 2) . '/lib/functions.lib.php';
+        require_once dirname(__DIR__, 2) . '/lib/vps.lib.php';
+
+        $_SERVER['HTTP_HOST'] = 'admin.example';
+        $_GET = ['action' => 'info'];
+        $_SERVER['REQUEST_URI'] = '/?page=adminvps&action=info&run=restart&veid=101&t=csrf';
+
+        foreach ([
+            'https://admin.example?page=adminvps&action=list'
+                => '/?page=adminvps&action=list',
+            'https://admin.example/?page=adminvps&action=info&veid=101'
+                => '/?page=adminvps&action=info&veid=101',
+            'https://admin.example/?page=adminvps&action=list&from_id=100&limit=1&user=2'
+                => '/?page=adminvps&action=list&from_id=100&limit=1&user=2',
+        ] as $referer => $expected) {
+            $_SERVER['HTTP_REFERER'] = $referer;
+            self::assertSame($expected, vps_run_redirect_path(101));
+        }
+    }
 }
