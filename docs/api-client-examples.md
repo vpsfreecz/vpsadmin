@@ -119,7 +119,7 @@ credentials, cookies and tokens. See
 [HTTP logging and OAuth callbacks](http-log-protection.md) for the product
 defaults, TLS behavior and deployment boundaries.
 
-The isolated [schema exporter](api-schema-export.md) pins HaveAPI 0.32.1 for
+The isolated [schema exporter](api-schema-export.md) pins HaveAPI 0.32.2 for
 reproducible schema exports. Deploy or roll back the documentation hook together
 with its matching API bundle; older HaveAPI versions reject the new hook option.
 Retain the private client configuration and session key. OAuth client

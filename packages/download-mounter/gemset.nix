@@ -109,10 +109,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1m1kfnlb59yqnp7q24bp51k2xwmbf2qihqwhd920mzqhrj4yakgx";
+      sha256 = "11w1h8kzffmhgzq5xy77fa79w0gfdb7bskqnqr0fsmzwmbyw71ms";
       type = "gem";
     };
-    version = "0.32.1";
+    version = "0.32.2";
   };
   highline = {
     dependencies = [ "reline" ];
