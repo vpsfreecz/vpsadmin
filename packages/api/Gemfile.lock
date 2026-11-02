@@ -21,7 +21,7 @@ GEM
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
     aes_key_wrap (1.1.0)
-    amq-protocol (2.9.0)
+    amq-protocol (2.10.0)
     ancestry (4.3.3)
       activerecord (>= 5.2.6)
     android_key_attestation (0.3.0)
@@ -48,7 +48,7 @@ GEM
       base64 (>= 0.2)
       logger (~> 1.6)
       simpleidn (~> 0.2.1)
-    domain_name (0.7.20261007)
+    domain_name (0.7.20261031)
     drb (2.2.3)
     faraday (2.15.1)
       faraday-net_http (>= 2.0, < 3.6)
@@ -332,4 +332,4 @@ DEPENDENCIES
   yard
 
 BUNDLED WITH
-  4.0.23
+   2.7.2

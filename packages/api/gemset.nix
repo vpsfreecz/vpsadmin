@@ -64,10 +64,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "13hnjxizffdx211hhy80fq4r1r9r080d0jl58ns15skx3mfdq4k8";
+      sha256 = "03nn7yv2b4jwnqnw2sf5x306v9allksgl27hgw5cs0blhf1zxcwq";
       type = "gem";
     };
-    version = "2.9.0";
+    version = "2.10.0";
   };
   ancestry = {
     dependencies = [ "activerecord" ];
@@ -277,10 +277,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0724q26k3q2wswg1mwwxhfl1zfgx7363ml1knj8ykgbxhfmwcxh9";
+      sha256 = "1j8cbkf9z9fh324ym64q4y28nxdxrzmzkzpf97g044vqnk1g34b0";
       type = "gem";
     };
-    version = "0.7.20261007";
+    version = "0.7.20261031";
   };
   drb = {
     groups = [ "default" ];
