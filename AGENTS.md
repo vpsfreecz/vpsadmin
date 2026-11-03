@@ -13,6 +13,7 @@ stop the affected action and report it.
 
 | Before this activity | Read |
 | --- | --- |
+| Planning, implementing or reviewing API work, including behavior-only changes | [Generated client synchronization](docs/api-schema-export.md#generated-client-synchronization) |
 | Selecting/running builds, tests, component shells, dependency setup or manual test-database operations | [Development commands](docs/agent-instructions/development.md) |
 | Changing visible WebUI behavior (including labels, navigation or screenshots), translations, localization behavior or member-facing mail templates | [Localization and KB impact](docs/agent-instructions/localization.md) |
 | Selecting/running tests or CI on existing changes; planning/implementing a change that needs verification; adding/moving runtime files or API specs, changing API topic patterns or artifacts; changing integration/Playwright tests, CI selection, gem packaging or VPS data-preservation operations | [Testing and CI](docs/agent-instructions/testing.md) |
