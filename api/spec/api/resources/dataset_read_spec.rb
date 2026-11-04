@@ -88,6 +88,61 @@ RSpec.describe 'VpsAdmin::API::Resources::Dataset read actions' do # rubocop:dis
   end
 
   describe 'Index' do
+    it 'rejects ordered cursor anchors outside the authorized filtered dataset query' do
+      [2_147_483_647, other_dataset.id].each do |cursor|
+        as(user) { json_get datasets_path, dataset: { from_id: cursor } }
+        expect_status(400)
+        expect(json['status']).to be(false)
+      end
+
+      as(user) do
+        json_get datasets_path, dataset: { from_id: user_dataset.id, role: 'hypervisor' }
+      end
+      expect_status(400)
+
+      as(SpecSeed.admin) do
+        json_get datasets_path, dataset: { from_id: other_dataset.id, user: user.id }
+      end
+      expect_status(400)
+    end
+
+    it 'deduplicates ordered cursor rows with multiple matching pools' do
+      second_pool = pool.dup
+      second_pool.assign_attributes(label: 'cursor-secondary', filesystem: 'cursor-secondary')
+      second_pool.save!
+      DatasetInPool.create!(dataset: user_dataset, pool: second_pool, confirmed: DatasetInPool.confirmed(:confirmed))
+
+      as(user) { json_get datasets_path, dataset: { limit: 2 } }
+      expect_status(200)
+      expect(datasets.map { |row| row['id'] }).to eq([user_dataset.id])
+    end
+
+    %i[member admin].each do |role|
+      it "traverses ordered cursor pages by name for #{role}" do
+        user_dataset.update!(name: 'zz-cursor-root')
+        rows = %w[z b d a c].map do |name|
+          create_dataset_with_pool!(user: user, pool: pool, name: "cursor-#{name}").first
+        end
+        expected = (rows + [user_dataset]).sort_by { |row| [row.full_name, row.id] }.map(&:id)
+        actor = role == :admin ? SpecSeed.admin : user
+        collected = []
+        cursor = nil
+
+        4.times do
+          params = { limit: 2 }
+          params[:user] = user.id if role == :admin
+          params[:from_id] = cursor if cursor
+          as(actor) { json_get datasets_path, dataset: params }
+          expect_status(200)
+          ids = datasets.map { |row| row['id'] }
+          collected.concat(ids)
+          cursor = ids.last unless ids.empty?
+        end
+
+        expect(datasets).to be_empty
+        expect(collected).to eq(expected)
+      end
+    end
     it 'rejects unauthenticated access' do
       json_get datasets_path
 

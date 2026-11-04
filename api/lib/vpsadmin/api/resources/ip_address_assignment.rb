@@ -25,6 +25,10 @@ module VpsAdmin::API::Resources
       desc 'List IP address assignments'
 
       input do
+        patch :from_id,
+              desc: 'Continue after the last assignment from the previous page. Keep the same filters and order. ' \
+                    'Assignments are ordered by from_date and ID in the selected direction. ' \
+                    'An unavailable or differently scoped cursor returns HTTP 400.'
         use :all, include: %i[
           ip_address
           ip_addr
@@ -109,15 +113,22 @@ module VpsAdmin::API::Resources
 
       def exec
         q = query
+        ascending = input[:order] == 'oldest'
+        comparison = ascending ? '>' : '<'
+        direction = ascending ? 'ASC' : 'DESC'
 
-        case input[:order]
-        when 'newest'
-          q = q.order('ip_address_assignments.from_date DESC')
-        when 'oldest'
-          q = q.order('ip_address_assignments.from_date ASC')
+        q = ar_with_pagination(q, check: true) do |scope, from_id|
+          cursor_date = q.where(id: from_id).pick(:from_date)
+          error!('Invalid pagination cursor', {}, http_status: 400) unless cursor_date
+
+          scope.where(
+            "ip_address_assignments.from_date #{comparison} ? OR " \
+            "(ip_address_assignments.from_date = ? AND ip_address_assignments.id #{comparison} ?)",
+            cursor_date, cursor_date, from_id
+          )
         end
 
-        with_pagination(q)
+        q.order("ip_address_assignments.from_date #{direction}, ip_address_assignments.id #{direction}")
       end
     end
 
