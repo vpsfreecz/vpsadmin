@@ -65,6 +65,7 @@ module VpsAdmin::API::Resources
 
       output do
         use :all
+        string :payer_account, label: 'Payer account number', nullable: true
       end
 
       authorize do |u|

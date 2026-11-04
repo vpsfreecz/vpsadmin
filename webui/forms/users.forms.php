@@ -1084,19 +1084,25 @@ function user_payment_form($user_id)
     $xtpl->table_add_category(_('TO'));
     $xtpl->table_add_category(_('PAYMENT'));
 
-    $payments = $api->user_payment->list([
+    $params = [
         'user' => $u->id,
         'meta' => ['includes' => 'accounted_by'],
-    ]);
+    ];
+    if (isset($api->user_payment->list->getParameters('input')->include_expiration_changes)) {
+        $params['include_expiration_changes'] = true;
+    }
+    $payments = $api->user_payment->list($params);
 
     foreach ($payments as $payment) {
         $xtpl->table_td(tolocaltz($payment->created_at));
         $xtpl->table_td($payment->accounted_by_id ? $payment->accounted_by->login : '-');
-        $xtpl->table_td($payment->amount, false, true);
-        $xtpl->table_td(tolocaltz($payment->from_date, 'Y-m-d'));
-        $xtpl->table_td(tolocaltz($payment->to_date, 'Y-m-d'));
+        $xtpl->table_td($payment->amount ?? '—', false, true);
+        $xtpl->table_td($payment->from_date ? tolocaltz($payment->from_date, 'Y-m-d') : '—');
+        $xtpl->table_td($payment->to_date ? tolocaltz($payment->to_date, 'Y-m-d') : '—');
 
-        if ($payment->incoming_payment_id) {
+        if ($payment->expiration_change ?? false) {
+            $xtpl->table_td(_('Manual paid-until change'));
+        } elseif ($payment->incoming_payment_id) {
             $xtpl->table_td(
                 '<a href="?page=adminm&action=incoming_payment&id='
                 . $payment->incoming_payment_id . '">'
@@ -1305,6 +1311,10 @@ function incoming_payments_details($id)
 
     $xtpl->table_td(_('Account name') . ':');
     $xtpl->table_td(h($p->account_name));
+    $xtpl->table_tr();
+
+    $xtpl->table_td(_('Payer account number') . ':');
+    $xtpl->table_td(h($p->payer_account ?: '—'));
     $xtpl->table_tr();
 
     $xtpl->table_td(_('User identification') . ':');

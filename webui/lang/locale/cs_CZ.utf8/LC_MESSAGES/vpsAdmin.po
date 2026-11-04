@@ -4507,6 +4507,10 @@ msgid "PAYMENT"
 msgstr "PLATBA"
 
 #: forms/users.forms.php
+msgid "Manual paid-until change"
+msgstr "Ruční změna data"
+
+#: forms/users.forms.php
 msgid "Payment history"
 msgstr "Historie plateb"
 
@@ -4557,6 +4561,10 @@ msgstr "Původní měna"
 #: forms/users.forms.php
 msgid "Account name"
 msgstr "Název účtu"
+
+#: forms/users.forms.php
+msgid "Payer account number"
+msgstr "Číslo účtu plátce"
 
 #: forms/users.forms.php
 msgid "User identification"
