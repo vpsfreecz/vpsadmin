@@ -1313,6 +1313,10 @@ function incoming_payments_details($id)
     $xtpl->table_td(h($p->account_name));
     $xtpl->table_tr();
 
+    $xtpl->table_td(_('Payer account number') . ':');
+    $xtpl->table_td(h($p->payer_account ?: '—'));
+    $xtpl->table_tr();
+
     $xtpl->table_td(_('User identification') . ':');
     $xtpl->table_td(h($p->user_ident));
     $xtpl->table_tr();

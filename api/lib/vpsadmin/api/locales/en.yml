@@ -1479,6 +1479,8 @@ en:
         label: Patch_version
       path:
         label: Path
+      payer_account:
+        label: Payer account number
       peer_type:
         choices:
           primary_type:

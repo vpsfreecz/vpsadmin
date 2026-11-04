@@ -18,6 +18,7 @@ module VpsAdmin::API::Plugins::Payments::Backends
             amount: t.amount,
             currency: t.currency,
             account_name: t.account_name,
+            payer_account: payer_account(t),
             user_ident: t.user_identification,
             user_message: t.message_for_recipient,
             vs: t.vs,
@@ -37,6 +38,18 @@ module VpsAdmin::API::Plugins::Payments::Backends
           end
         end
       end
+    end
+
+    private
+
+    def payer_account(transaction)
+      account = transaction.account.to_s.strip
+      return if account.empty?
+
+      bank_code = transaction.bank_code.to_s.strip
+      return account if bank_code.empty? || !account.match?(/\A(?:[0-9]+-)?[0-9]+\z/)
+
+      "#{account}/#{bank_code}"
     end
   end
 end

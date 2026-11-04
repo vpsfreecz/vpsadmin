@@ -1479,6 +1479,8 @@ cs:
         label: Verze záplaty
       path:
         label: Cesta
+      payer_account:
+        label: Číslo účtu plátce
       peer_type:
         choices:
           primary_type:

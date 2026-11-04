@@ -4563,6 +4563,10 @@ msgid "Account name"
 msgstr "Název účtu"
 
 #: forms/users.forms.php
+msgid "Payer account number"
+msgstr "Číslo účtu plátce"
+
+#: forms/users.forms.php
 msgid "User identification"
 msgstr "Identifikace uživatele"
 

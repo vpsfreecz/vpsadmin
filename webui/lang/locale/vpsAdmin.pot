@@ -4479,6 +4479,10 @@ msgid "Account name"
 msgstr ""
 
 #: forms/users.forms.php
+msgid "Payer account number"
+msgstr ""
+
+#: forms/users.forms.php
 msgid "User identification"
 msgstr ""
 

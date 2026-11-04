@@ -134,12 +134,23 @@ RSpec.describe 'VpsAdmin::API::Resources::IncomingPayment', requires_plugins: :p
 
   describe 'Show' do
     it 'shows a payment for admin' do
+      payment_old.update!(payer_account: '123456789/0800')
       as(admin) { json_get show_path(payment_old.id) }
 
       expect_status(200)
       expect(json['status']).to be(true)
       expect(incoming_payment['id'].to_i).to eq(payment_old.id)
       expect(incoming_payment['transaction_id']).to eq('spec-tx-1')
+      expect(incoming_payment['payer_account']).to eq('123456789/0800')
+
+      as(admin) { json_get index_path }
+
+      expect_status(200)
+      expect(incoming_payments.flat_map(&:keys)).not_to include('payer_account')
+
+      as(user) { json_get show_path(payment_old.id) }
+
+      expect_status(403)
     end
 
     it 'returns 404 for missing payment' do

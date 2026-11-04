@@ -74,3 +74,8 @@ Apply the payments plugin migration before starting the new API. The migration
 preserves existing payments. Once edits have been recorded, keep them and use
 a rollback build that still filters them out of payment-only consumers. Code
 predating that filter treats every row in the table as a payment.
+
+The administrator's incoming payment detail includes `payer_account` when the
+Fio transaction provides the counterparty account. For a domestic number, the
+import appends the supplied bank code. International account identifiers are
+retained as supplied. Previously imported payments can have a null value.
