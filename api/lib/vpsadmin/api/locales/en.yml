@@ -758,6 +758,8 @@ en:
         label: Expected state
       expiration:
         description: A date after which the token becomes invalid
+      expiration_change:
+        label: Manual paid-until change
       expirations:
         description: Swap expirations
         label: Expirations
@@ -924,6 +926,9 @@ en:
         label: In_reply_to
       in_rescue_mode:
         label: In rescue mode
+      include_expiration_changes:
+        description: Include manual changes to the paid-until date in the history
+        label: Include manual paid-until changes
       incoming_payment:
         label: IncomingPayment
       info:

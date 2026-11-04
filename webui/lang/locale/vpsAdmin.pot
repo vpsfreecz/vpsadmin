@@ -4423,6 +4423,10 @@ msgid "PAYMENT"
 msgstr ""
 
 #: forms/users.forms.php
+msgid "Manual paid-until change"
+msgstr ""
+
+#: forms/users.forms.php
 msgid "Payment history"
 msgstr ""
 

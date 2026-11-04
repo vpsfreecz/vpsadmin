@@ -13,8 +13,10 @@ module VpsAdmin::API::Resources
       id :id
       use :writable
       resource VpsAdmin::API::Resources::User, name: :accounted_by, value_label: :login
-      datetime :from_date
-      datetime :to_date
+      bool :expiration_change, label: 'Manual paid-until change'
+      patch :amount, nullable: true
+      datetime :from_date, nullable: true
+      datetime :to_date, nullable: true
       datetime :created_at
     end
 
@@ -28,6 +30,8 @@ module VpsAdmin::API::Resources
                     'Returns an empty list if the payment is unavailable or does not match the filters.'
         resource VpsAdmin::API::Resources::User
         resource VpsAdmin::API::Resources::User, name: :accounted_by
+        bool :include_expiration_changes, label: 'Include manual paid-until changes',
+                                          desc: 'Include manual changes to the paid-until date in the history'
         datetime :created_from,
                  label: 'Created from',
                  desc: 'Include payments created at or after this timestamp'
@@ -43,12 +47,13 @@ module VpsAdmin::API::Resources
       authorize do |u|
         allow if u.role == :admin
         restrict user_id: u.id
-        input blacklist: %i[user accounted_by]
+        input blacklist: %i[user accounted_by include_expiration_changes]
         allow
       end
 
       def query
-        q = ::UserPayment.where(with_restricted)
+        q = input[:include_expiration_changes] ? ::UserPayment.all : ::UserPayment.payments
+        q = q.where(with_restricted)
 
         %i[user accounted_by].each do |v|
           q = q.where(v => input[v]) if input[v]
@@ -105,9 +110,7 @@ module VpsAdmin::API::Resources
       end
 
       def prepare
-        @payment = ::UserPayment.find_by!(with_restricted(
-                                            id: path_params['user_payment_id']
-                                          ))
+        @payment = ::UserPayment.payments.find_by!(with_restricted(id: path_params['user_payment_id']))
       end
 
       def exec

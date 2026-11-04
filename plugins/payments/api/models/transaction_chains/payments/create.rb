@@ -5,9 +5,9 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
 
     def link_chain(payment)
       u = payment.user
-      delta = payment.amount / u.user_account.monthly_payment
-
       lock(u.user_account)
+      u.user_account.reload(lock: true)
+      delta = payment.amount / u.user_account.monthly_payment
 
       if u.user_account.paid_until
         payment.from_date = u.user_account.paid_until

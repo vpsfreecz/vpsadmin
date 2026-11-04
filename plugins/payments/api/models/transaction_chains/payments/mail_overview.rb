@@ -19,7 +19,7 @@ module VpsAdmin::API::Plugins::Payments::TransactionChains
         vars[k.to_sym] = income.where(state: ::IncomingPayment.states[k])
       end
 
-      vars[:accepted] = ::UserPayment.where(
+      vars[:accepted] = ::UserPayment.payments.where(
         'DATE_ADD(created_at, INTERVAL ? SECOND) >= ?', period, t
       ).order('user_payments.created_at, user_payments.user_id')
 

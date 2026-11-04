@@ -55,3 +55,22 @@ in state `unmatched`.
 These two tasks can be run at once with task `vpsadmin:payments:process`:
 
     $ rake vpsadmin:payments:process BACKEND=fio
+
+### Administrator account history
+
+The administrator's user-payment index accepts `include_expiration_changes`.
+It includes manual paid-until edits alongside payments in the existing
+creation-time order and uses the same cursor. A manual edit has
+`expiration_change: true`, the authenticated administrator in `accounted_by`,
+and the previous and new dates in `from_date` and `to_date`. The amount is null.
+The previous or new date is null when setting a date for the first time or
+clearing it. Saving an unchanged value adds no history entry.
+
+The default list, payment details, and accepted-payment reports are scoped to
+payments. Clients should check index input metadata before requesting edits
+from servers running older versions.
+
+Apply the payments plugin migration before starting the new API. The migration
+preserves existing payments. Once edits have been recorded, keep them and use
+a rollback build that still filters them out of payment-only consumers. Code
+predating that filter treats every row in the table as a payment.

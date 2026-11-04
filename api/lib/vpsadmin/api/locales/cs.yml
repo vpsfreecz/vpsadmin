@@ -761,6 +761,8 @@ cs:
         label: Očekávaný stav
       expiration:
         description: Datum, po kterém token přestane být platný
+      expiration_change:
+        label: Ruční změna data zaplacení
       expirations:
         description: Prohodit expirace
         label: Expirace
@@ -925,6 +927,9 @@ cs:
         label: In reply to
       in_rescue_mode:
         label: V nouzovém režimu
+      include_expiration_changes:
+        description: Zahrne do historie ruční změny data Zaplaceno do
+        label: Zahrnout ruční změny data
       incoming_payment:
         label: Příchozí platba
       info:

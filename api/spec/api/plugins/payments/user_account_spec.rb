@@ -115,6 +115,41 @@ RSpec.describe 'VpsAdmin::API::Resources::UserAccount', requires_plugins: :payme
       expect(::UserAccount.find_by!(user_id: user.id).monthly_payment).to eq(150)
     end
 
+    it 'records paid-until changes with the administrator and keeps them separate from payments' do
+      before = Time.utc(2027, 2, 4, 12)
+      after = Time.utc(2027, 5, 4, 12)
+      user.user_account.update!(paid_until: before)
+      payment = ::UserPayment.new(user:, amount: 900, from_date: before - 3.months, to_date: before)
+      payment.save!
+
+      2.times do
+        as(admin) { json_put update_path(user.id), user_account: { paid_until: after.iso8601 } }
+        expect_status(200)
+      end
+
+      changes = ::UserPayment.where(user:, expiration_change: true)
+      expect(changes.count).to eq(1)
+      expect(changes.first).to have_attributes(accounted_by: admin, amount: nil, from_date: before, to_date: after)
+
+      history_path = vpath('/user_payments')
+      as(admin) { json_get history_path, user_payment: { user: user.id } }
+      expect_status(200)
+      expect(json.dig('response', 'user_payments').pluck('id')).to eq([payment.id])
+
+      as(admin) { json_get history_path, user_payment: { user: user.id, include_expiration_changes: 'true' } }
+      expect_status(200)
+      expect(json.dig('response', 'user_payments').pluck('id')).to eq([changes.first.id, payment.id])
+      expect(json.dig('response', 'user_payments', 0)).to include('expiration_change' => true, 'amount' => nil)
+
+      as(user) { json_get history_path }
+      expect_status(200)
+      expect(json.dig('response', 'user_payments').pluck('id')).to eq([payment.id])
+
+      as(admin) { json_put update_path(user.id), user_account: { paid_until: nil } }
+      expect_status(200)
+      expect(changes.order(:id).last).to have_attributes(from_date: after, to_date: nil, amount: nil)
+    end
+
     it 'updates paid_until and expiration for admin' do
       paid_until = Time.utc(2026, 1, 25, 12, 0, 0)
 
