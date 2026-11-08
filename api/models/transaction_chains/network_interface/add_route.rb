@@ -152,8 +152,8 @@ module TransactionChains
             changes[ip.charged_environment_id][:drop] += ip.size
             changes[target_env.id][:add] += ip.size
 
-          # If the address is not yet charged to target_env, charge it
-          elsif !target_env.user_ip_ownership || ip.user.nil?
+          # Unowned allocations are charged by assignment.
+          elsif ip.user.nil?
             changes[target_env.id][:add] += ip.size
           end
         end

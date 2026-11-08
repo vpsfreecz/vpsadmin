@@ -147,6 +147,21 @@ interfaces.
 
 ## Disownership
 
+Detaching an explicitly owned allocation preserves its host addresses, DNS
+transfer associations, TSIG references, recorded charge environment and quota.
+This applies even when the environment disables new IP ownership. Moving it to
+another VPS of the same owner does not require configuring each DNS zone again.
+The allocation's interface determines attachment; a host inside a routed prefix
+does not need to be configured locally on that interface to serve DNS.
+
+Without an explicit owner, detachment ends the inherited VPS ownership and
+removes DNS transfer associations. Disowning, deleting a host address and changing
+the VPS owner retain their DNS cleanup. Direct IP ownership changes to a different
+effective owner are rejected while existing DNS transfers reference any host in
+the allocation. Remove those references first. Claiming explicit ownership for
+the current effective VPS owner and same-owner no-ops remain allowed. This check
+shares the parent IP reservation with DNS transfer creation, before quota changes.
+
 Disowning an IP keeps its owner and quota until asynchronous DNS transfer,
 PTR and user-created host cleanup has confirmed successfully. Failed cleanup
 or rollback retains ownership and accounting. With no asynchronous cleanup,

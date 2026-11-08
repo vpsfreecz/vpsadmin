@@ -58,6 +58,10 @@ RSpec.describe Network do
                           .or(ResourceLock.where(resource: 'Network', row_id: committed[:network_id]))
       leaked_locks = locks.pluck(:resource, :row_id)
       locks.delete_all
+      if committed[:dns_zone_id]
+        DnsZoneTransfer.where(dns_zone_id: committed[:dns_zone_id]).delete_all
+        DnsZone.where(id: committed[:dns_zone_id]).delete_all
+      end
       HostIpAddress.where(ip_address_id: ids).delete_all
       ips.delete_all
       LocationNetwork.where(network_id: committed[:network_id]).delete_all
@@ -104,6 +108,92 @@ RSpec.describe Network do
       raise "Committed fixture restoration failed:\n#{restoration_errors.join("\n")}"
     end
     raise thread_error if thread_error
+  end
+
+  it 'sees a DNS primary committed after the ownership updater read its old snapshot' do
+    connection_thread do
+      committed[:dns_zone_id] = create_dns_zone!(user: SpecSeed.user, source: :external_source).id
+    end.value
+    snapshot = Queue.new
+    resume = Queue.new
+    worker = connection_thread do
+      IpAddress.transaction do
+        ip = IpAddress.find(committed[:ip_id])
+        expect(DnsZoneTransfer.where(dns_zone_id: committed[:dns_zone_id])).to be_empty
+        snapshot << true
+        resume.pop
+        expect do
+          TransactionChains::Ip::Update.fire(ip, user: SpecSeed.other_user, environment: SpecSeed.environment)
+        end.to raise_error(VpsAdmin::API::Exceptions::IpAddressInUse)
+      end
+    end
+    Timeout.timeout(10) { snapshot.pop }
+    connection_thread do
+      ip = IpAddress.find(committed[:ip_id])
+      transfer = DnsZoneTransfer.new(
+        dns_zone: DnsZone.find(committed[:dns_zone_id]), host_ip_address: ip.host_ip_addresses.take!,
+        peer_type: :primary_type
+      )
+      TransactionChains::DnsZoneTransfer::Create.fire(transfer)
+    end.value
+    resume << true
+    Timeout.timeout(20) { worker.value }
+    connection_thread do
+      expect(IpAddress.find(committed[:ip_id]).user_id).to eq(SpecSeed.user.id)
+      expect(EnvironmentUserConfig.find(committed[:config_id]).ipv4).to eq(committed[:usage])
+    end.value
+  ensure
+    resume << true if resume
+    worker&.join(25) || worker&.kill&.join
+  end
+
+  it 'revalidates a DNS creator waiting behind a completed ownership change' do
+    connection_thread do
+      committed[:dns_zone_id] = create_dns_zone!(user: SpecSeed.user, source: :external_source).id
+      config = SpecSeed.other_user.environment_user_configs.find_by!(environment: SpecSeed.environment)
+      committed[:extra_config_id] = config.id
+      committed[:extra_uses] = ClusterResourceUse.where(class_name: 'EnvironmentUserConfig', row_id: config.id).map(&:attributes)
+    end.value
+    locked = Queue.new
+    creating = Queue.new
+    resume = Queue.new
+    allow_any_instance_of(IpAddress).to receive(:ensure_charge_environment!).and_wrap_original do |original| # rubocop:disable RSpec/AnyInstance
+      result = original.call
+      if Thread.current[:dns_owner_change]
+        Thread.current[:dns_owner_change] = nil
+        locked << true
+        resume.pop
+      end
+      result
+    end
+    updater = connection_thread do
+      Thread.current[:dns_owner_change] = true
+      TransactionChains::Ip::Update.fire(
+        IpAddress.find(committed[:ip_id]), user: SpecSeed.other_user, environment: SpecSeed.environment
+      )
+    end
+    Timeout.timeout(10) { locked.pop }
+    creator = connection_thread do
+      transfer = DnsZoneTransfer.new(
+        dns_zone: DnsZone.find(committed[:dns_zone_id]),
+        host_ip_address: IpAddress.find(committed[:ip_id]).host_ip_addresses.take!, peer_type: :primary_type
+      )
+      creating << true
+      expect { TransactionChains::DnsZoneTransfer::Create.fire(transfer) }
+        .to raise_error(ActiveRecord::RecordInvalid, /does not belong/)
+    end
+    Timeout.timeout(10) { creating.pop }
+    expect(creator.join(0.1)).to be_nil
+    resume << true
+    Timeout.timeout(20) { updater.value }
+    Timeout.timeout(20) { creator.value }
+    connection_thread do
+      expect(IpAddress.find(committed[:ip_id]).user_id).to eq(SpecSeed.other_user.id)
+      expect(DnsZoneTransfer.where(dns_zone_id: committed[:dns_zone_id])).to be_empty
+    end.value
+  ensure
+    resume << true if resume
+    [updater, creator].compact.each { |thread| thread.join(25) || thread.kill.join }
   end
 
   it 'rejects a role change waiting behind the first direct registration' do

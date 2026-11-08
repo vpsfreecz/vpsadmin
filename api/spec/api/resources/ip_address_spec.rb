@@ -735,6 +735,33 @@ RSpec.describe 'VpsAdmin::API::Resources::IpAddress' do
     let!(:ip_to_update) { create_ip!(addr: '192.0.2.120', network: SpecSeed.network_v4) }
 
     %w[en cs].each do |locale|
+      it "returns a localized action error before changing a DNS primary owner in #{locale}" do
+        ensure_signer_unlocked!
+        ip_to_update.update!(user: SpecSeed.user, charged_environment: SpecSeed.environment)
+        zone = create_dns_zone!(user: SpecSeed.user, source: :external_source)
+        create_dns_zone_transfer!(
+          dns_zone: zone, host_ip_address: ip_to_update.host_ip_addresses.take!, peer_type: :primary_type
+        )
+        header 'Accept-Language', locale
+
+        expect do
+          as(SpecSeed.admin) do
+            json_put show_path(ip_to_update.id), ip_address: {
+              user: SpecSeed.other_user.id, environment: SpecSeed.environment.id
+            }
+          end
+        end.not_to(change { ip_admission_snapshot })
+
+        expect_status(200)
+        expect(json).to include('status' => false, 'response' => nil, 'errors' => {})
+        expected = ::I18n.t('vpsadmin.errors.ip_owner_dns_transfers', locale: locale, raise: true)
+        expect(response_message).to eq(expected)
+      ensure
+        header 'Accept-Language', nil
+      end
+    end
+
+    %w[en cs].each do |locale|
       it "returns a localized action error for disabled ownership changes in #{locale}" do
         ensure_signer_unlocked!
         SpecSeed.network_v4.update!(enabled: false)

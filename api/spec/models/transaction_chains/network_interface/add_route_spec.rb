@@ -9,6 +9,48 @@ RSpec.describe TransactionChains::NetworkInterface::AddRoute do
 
   let(:user) { SpecSeed.user }
 
+  it 'still charges an unowned allocation with ownership policy disabled' do
+    fixture = create_netif_vps_fixture!(user: user)
+    env = fixture[:vps].node.location.environment
+    env.update!(user_ip_ownership: false)
+    config = user.environment_user_configs.find_by!(environment: env)
+    before = config.ipv4
+    ip = create_ip_address!
+
+    chain, = described_class.fire(fixture[:netif], [ip])
+
+    quota = confirmations_for(chain).find_by!(class_name: 'ClusterResourceUse')
+    expect(quota.confirm_type).to eq('create_type')
+    expect(ClusterResourceUse.find(quota.row_pks.fetch('id')).value).to eq(before + ip.size)
+    expect(config.reload.ipv4).to eq(before + ip.size)
+    expect(ip.reload.user_id).to be_nil
+  end
+
+  it 'still transfers an owned charge between environments with ownership policy disabled' do
+    fixture = create_netif_vps_fixture!(user: user)
+    env = fixture[:vps].node.location.environment
+    env.update!(user_ip_ownership: false)
+    source = user.environment_user_configs.find_by!(environment: SpecSeed.other_environment)
+    target = user.environment_user_configs.find_by!(environment: env)
+    target.reallocate_resource!(
+      :ipv4, target.ipv4, user: user, save: true, confirmed: ClusterResourceUse.confirmed(:confirmed)
+    )
+    ip = create_ip_address!(user: user, location: SpecSeed.other_location)
+    before_source = source.reload.ipv4
+    before_target = target.ipv4
+
+    chain, = described_class.fire(fixture[:netif], [ip])
+
+    totals = confirmations_for(chain).where(class_name: 'ClusterResourceUse').to_h do |edit|
+      use = ClusterResourceUse.find(edit.row_pks.fetch('id'))
+      [use.user_cluster_resource.environment_id, edit.attr_changes.fetch('value')]
+    end
+    expect(totals).to eq(SpecSeed.other_environment.id => before_source - ip.size, env.id => before_target + ip.size)
+    expect(source.reload.ipv4).to eq(before_source)
+    expect(target.reload.ipv4).to eq(before_target)
+    expect(ip.reload.charged_environment_id).to eq(SpecSeed.other_environment.id)
+  end
+
   [nil, :admin, :user].each do |actor|
     it "rejects disabled detached owned allocations for #{actor || 'internal'} callers" do
       fixture = create_netif_vps_fixture!(user: user)

@@ -2406,6 +2406,8 @@ en:
       access_denied_to_seed_vps: access to this VPS is denied
       access_denied_to_vps_user_data: Access denied to VPS user data
       access_token_in_url: access_token must not be sent in URL
+      ip_owner_dns_transfers: Remove the IP address from DNS zone transfers before
+        changing its owner.
       ip_release:
         access_denied: This IP release request belongs to another user.
         already_released: A selected IP is being released or has already been released.

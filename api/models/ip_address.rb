@@ -173,6 +173,17 @@ class IpAddress < ApplicationRecord
           VpsAdmin::API::I18n.t('errors.access_denied_lower')
   end
 
+  # Call after reserving and reloading this IP, before owner or quota changes.
+  def ensure_dns_transfer_owner!(target)
+    reload_current_assignment! unless user_id
+    transfers = ::DnsZoneTransfer.existing.joins(:host_ip_address)
+                                 .where(host_ip_addresses: { ip_address_id: id }).lock
+    return if current_owner == target || !transfers.exists?
+
+    raise VpsAdmin::API::Exceptions::IpAddressInUse,
+          VpsAdmin::API::I18n.t('errors.ip_owner_dns_transfers')
+  end
+
   # Assignment can stay unchanged while the VPS owner changes. Use current
   # shared reads so authorization does not inherit an older transaction snapshot.
   def reload_current_assignment!

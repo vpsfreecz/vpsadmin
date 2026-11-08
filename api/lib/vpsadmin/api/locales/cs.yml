@@ -2404,6 +2404,8 @@ cs:
       access_denied_to_seed_vps: přístup k této VPS odepřen
       access_denied_to_vps_user_data: Přístup k VPS User data odepřen
       access_token_in_url: access_token nesmí být poslán v URL
+      ip_owner_dns_transfers: Před změnou vlastníka odeber IP adresu z nastavení přenosů
+        DNS zón.
       ip_release:
         access_denied: Tato výzva k uvolnění IP adres patří jinému uživateli.
         already_released: Některá z vybraných IP adres se právě uvolňuje nebo už byla

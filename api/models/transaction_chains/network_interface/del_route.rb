@@ -60,7 +60,8 @@ module TransactionChains
 
       confirm_resource_changes(uses, netif.vps.node_id)
 
-      ips_arr.each do |ip|
+      unowned_ips = ips_arr.reject(&:user_id)
+      unowned_ips.each do |ip|
         ip.host_ip_addresses.order(:id).lock.each do |host_ip|
           host_ip.lock_with_ip!(self)
           host_ip.remove_dns_transfers!(self)
@@ -68,7 +69,7 @@ module TransactionChains
       end
 
       use_chain(NetworkInterface::CleanupHostIpAddresses, kwargs: {
-        ips: ips_arr,
+        ips: unowned_ips,
         delete: !env.user_ip_ownership
       })
 
@@ -98,6 +99,8 @@ module TransactionChains
 
       config = netif.vps.user.environment_user_configs.find_by!(environment: env)
       ips.each do |ip|
+        next if ip.user_id
+
         resource = if ip.version == 6
                      :ipv6
                    elsif ip.network.role == 'public_access'
@@ -137,7 +140,7 @@ module TransactionChains
         order: nil
       }
 
-      unless env.user_ip_ownership
+      unless ip.user_id || env.user_ip_ownership
         changes[:charged_environment_id] = nil
       end
 

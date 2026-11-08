@@ -36,6 +36,7 @@ module TransactionChains
     def chown(user, env)
       return use_chain(Ip::Disown, kwargs: { ips: [@ip] }) unless user
 
+      @ip.ensure_dns_transfer_owner!(user)
       @ip.ensure_charge_environment!
       configs = [[@ip.user, @ip.charged_environment], [user, env]].filter_map do |owner, environment|
         owner&.environment_user_configs&.find_by!(environment:)
