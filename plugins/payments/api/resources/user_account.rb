@@ -5,7 +5,7 @@ module VpsAdmin::API::Resources
 
     params(:editable) do
       integer :monthly_payment
-      datetime :paid_until
+      datetime :paid_until, nullable: true
     end
 
     params(:all) do
@@ -76,19 +76,32 @@ module VpsAdmin::API::Resources
         acc = ::UserAccount.find_by!(user_id: path_params['user_account_id'])
 
         acc.class.transaction do
-          acc.update!(input)
-
-          if input.has_key?(:paid_until)
-            acc.user.set_expiration(
-              input[:paid_until],
-              reason: 'Paid until date has changed.'
-            )
+          acc.acquire_lock do
+            acc.lock!
+            acc.update!(input)
+            update_expiration(acc) if input.has_key?(:paid_until)
           end
         end
 
         acc
       rescue ActiveRecord::RecordInvalid => e
         error!('Update failed', e.record.errors.to_hash)
+      end
+
+      private
+
+      def update_expiration(acc)
+        acc.user.set_expiration(acc.paid_until, reason: 'Paid until date has changed.')
+        return unless acc.saved_change_to_paid_until?
+
+        previous_expiration, new_expiration = acc.saved_change_to_paid_until
+        ::UserPayment.new(
+          user: acc.user,
+          accounted_by: ::User.current,
+          expiration_change: true,
+          from_date: previous_expiration,
+          to_date: new_expiration
+        ).save!
       end
     end
   end

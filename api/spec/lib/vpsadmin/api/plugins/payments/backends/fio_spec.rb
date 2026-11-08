@@ -12,6 +12,8 @@ RSpec.describe 'payments Fio backend', requires_plugins: :payments do # rubocop:
       :amount,
       :currency,
       :account_name,
+      :account,
+      :bank_code,
       :user_identification,
       :message_for_recipient,
       :vs,
@@ -42,6 +44,8 @@ RSpec.describe 'payments Fio backend', requires_plugins: :payments do # rubocop:
         amount: 123.45,
         currency: 'CZK',
         account_name: 'Sender',
+        account: '001-0023456789',
+        bank_code: '0800',
         user_identification: 'User Ident',
         message_for_recipient: 'hello',
         vs: '100',
@@ -59,12 +63,27 @@ RSpec.describe 'payments Fio backend', requires_plugins: :payments do # rubocop:
     expect(payment.amount).to eq(123.45)
     expect(payment.currency).to eq('CZK')
     expect(payment.account_name).to eq('Sender')
+    expect(payment.payer_account).to eq('001-0023456789/0800')
     expect(payment.user_ident).to eq('User Ident')
     expect(payment.user_message).to eq('hello')
     expect(payment.vs).to eq('100')
     expect(payment.transaction_type).to eq('unset')
     expect(payment.src_amount).to eq(5.50)
     expect(payment.src_currency).to eq('EUR')
+  end
+
+  it 'keeps an IBAN as supplied and leaves a missing payer account empty' do
+    stub_fio_transactions(
+      fio_transaction(transaction_id: 'fio-iban', date: Date.today, amount: 20, currency: 'EUR',
+                      account: 'SK3112000000198742637541', bank_code: '1200'),
+      fio_transaction(transaction_id: 'fio-no-account', date: Date.today, amount: 30, currency: 'EUR',
+                      account: ' ', bank_code: '1200')
+    )
+
+    backend_class.new.fetch
+
+    expect(IncomingPayment.find_by!(transaction_id: 'fio-iban').payer_account).to eq('SK3112000000198742637541')
+    expect(IncomingPayment.find_by!(transaction_id: 'fio-no-account').payer_account).to be_nil
   end
 
   it 'ignores outgoing payments' do

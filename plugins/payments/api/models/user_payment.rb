@@ -3,7 +3,10 @@ class UserPayment < ApplicationRecord
   belongs_to :user
   belongs_to :accounted_by, class_name: 'User'
 
-  validates :user_id, :amount, :from_date, :to_date, presence: true
+  scope :payments, -> { where(expiration_change: false) }
+
+  validates :user_id, presence: true
+  validates :amount, :from_date, :to_date, presence: true, unless: :expiration_change?
 
   def self.create!(attrs)
     payment = new(attrs)
@@ -41,7 +44,7 @@ TransactionChains::Mail::DailyReport.connect_hook(:send) do |ret, _from, now|
   t = now.strftime('%Y-%m-%d %H:%M:%S')
 
   ret[:payments] ||= {}
-  ret[:payments][:accepted] = ::UserPayment.where(
+  ret[:payments][:accepted] = ::UserPayment.payments.where(
     'DATE_ADD(created_at, INTERVAL 1 DAY) >= ?', t
   ).order('user_payments.created_at, user_payments.user_id')
   ret
