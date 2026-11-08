@@ -13,6 +13,26 @@ module VpsAdmin::API::Resources
     params(:all) do
       integer :id, label: 'ID'
       use :common
+      string :transfer_check_status,
+             label: 'Transfer check status',
+             desc: 'Aggregate transfer readiness across assigned secondary servers',
+             choices: %w[success failed pending]
+      datetime :last_transfer_check_at,
+               label: 'Last transfer check',
+               desc: 'Time of the latest transfer readiness observation for this primary',
+               nullable: true
+      integer :transfer_check_failed_count,
+              label: 'Failed checks',
+              desc: 'Number of assigned secondary servers with failed transfer readiness'
+      integer :transfer_check_success_count,
+              label: 'Successful checks',
+              desc: 'Number of assigned secondary servers with successful transfer readiness'
+      integer :transfer_check_pending_count,
+              label: 'Pending checks',
+              desc: 'Number of assigned secondary servers without a conclusive current check'
+      integer :transfer_check_server_count,
+              label: 'Assigned secondary count',
+              desc: 'Number of visible secondary servers assigned to this zone'
       datetime :created_at
       datetime :updated_at
     end
@@ -49,7 +69,9 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_pagination(with_includes(query))
+        ::DnsZoneTransfer.preload_direct_transfer_stats(
+          with_pagination(with_includes(query)).to_a
+        )
       end
     end
 
@@ -71,7 +93,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        @zone
+        ::DnsZoneTransfer.preload_direct_transfer_stats([@zone]).first
       end
     end
 

@@ -1,5 +1,16 @@
 namespace :vpsadmin do
   namespace :monitoring do
+    desc 'Retire legacy DNS incidents at a drained primary-readiness cutover'
+    task :supersede_legacy_dns_transfer_events do
+      unless ENV['CONFIRM'] == '1'
+        raise 'Set CONFIRM=1 after stopping monitoring-event writers and draining alert work'
+      end
+
+      require_relative '../lib/vpsadmin/api/plugins/monitoring/dns_transfer_supersession'
+      result = VpsAdmin::API::Plugins::Monitoring::DnsTransferSupersession.run
+      puts "Inspected #{result[:inspected]} legacy DNS incidents; retired #{result[:retired]}"
+    end
+
     desc 'Run monitoring checks'
     task :check do
       VpsAdmin::API::Plugins::Monitoring.monitors.each(&:check)

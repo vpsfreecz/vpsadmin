@@ -3392,6 +3392,7 @@ import ../make-test.nix (
         .delete_all
       user_transfer_log = DnsServerZoneTransferLog.create!(
         dns_server_zone: dns_server_zone_log,
+        attempt_kind: :legacy,
         event_at: now - 500,
         event_key: 'webui-transfer-user',
         status: :success,
@@ -3405,6 +3406,7 @@ import ../make-test.nix (
       )
       admin_transfer_log = DnsServerZoneTransferLog.create!(
         dns_server_zone: dns_server_zone_log,
+        attempt_kind: :legacy,
         event_at: now - 400,
         event_key: 'webui-transfer-admin',
         status: :failed,

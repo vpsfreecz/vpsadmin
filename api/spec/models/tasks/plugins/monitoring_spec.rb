@@ -83,4 +83,35 @@ RSpec.describe 'monitoring plugin rake tasks', requires_plugins: :monitoring do 
     expect(MonitoredEvent.exists?(keep_confirmed.id)).to be(true)
     expect(MonitoredEvent.exists?(keep_recent.id)).to be(true)
   end
+
+  it 'requires confirmation for audit-preserving legacy supersession' do
+    expect { invoke_rake_task('vpsadmin:monitoring:supersede_legacy_dns_transfer_events') }
+      .to raise_error(RuntimeError, /CONFIRM=1.*stopping monitoring-event writers/)
+  end
+
+  it 'supersedes only active old incidents once without alerts or history deletion' do
+    event = create_event!(state: :confirmed, monitor_name: 'dns_secondary_transfer_failure')
+    event.update_columns(class_name: 'DnsServerZone', alert_count: 3, last_report_at: 1.hour.ago)
+    prior_report = event.reload.last_report_at
+    event.monitored_event_logs.create!(passed: false, value: 'original failure')
+    unrelated = create_event!(state: :confirmed, monitor_name: 'dns_primary_transfer_failure')
+    allow(VpsAdmin::API::Plugins::Monitoring::TransactionChains::Alert).to receive(:fire)
+
+    with_env('CONFIRM' => '1') do
+      expect { invoke_rake_task('vpsadmin:monitoring:supersede_legacy_dns_transfer_events') }
+        .to output(/Inspected 1.*retired 1/).to_stdout
+      expect { invoke_rake_task('vpsadmin:monitoring:supersede_legacy_dns_transfer_events') }
+        .to output(/Inspected 0.*retired 0/).to_stdout
+    end
+
+    expect(event.reload.state).to eq('closed')
+    expect(event.alert_count).to eq(3)
+    expect(event.last_report_at).to eq(prior_report)
+    expect(event.monitored_event_logs.map(&:value)).to include('original failure')
+    expect(event.monitored_event_logs.count).to eq(2)
+    expect(event.monitored_event_logs.last.value).to include('reason' => 'superseded_by_primary_readiness')
+    expect(event.monitored_event_states.where(state: :closed).count).to eq(1)
+    expect(unrelated.reload.state).to eq('confirmed')
+    expect(VpsAdmin::API::Plugins::Monitoring::TransactionChains::Alert).not_to have_received(:fire)
+  end
 end

@@ -6,8 +6,8 @@ module VpsAdmin::API::Resources
     params(:common) do
       resource Node, value_label: :domain_name
       string :name
-      string :ipv4_addr
-      string :ipv6_addr
+      string :ipv4_addr, nullable: true
+      string :ipv6_addr, nullable: true
       bool :hidden
       bool :enable_user_dns_zones
       string :user_dns_zone_type, choices: ::DnsServer.user_dns_zone_types.keys.map(&:to_s)
@@ -122,8 +122,8 @@ module VpsAdmin::API::Resources
 
       def exec
         server = self.class.model.find(path_params['dns_server_id'])
-        server.update!(input)
-        server
+        _chain, updated = TransactionChains::DnsServer::Update.fire(server, input)
+        updated
       end
     end
 

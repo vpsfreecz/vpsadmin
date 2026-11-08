@@ -9,6 +9,7 @@ module TransactionChains
                              .order(:ip_address_id, :id).to_a
       ::HostIpAddress.lock_all_with_ips!(self, hosts)
       lock(dns_zone)
+      server_zones = dns_zone.dns_server_zones.order(:id).lock.to_a
       transfers = dns_zone.dns_zone_transfers.order(:id).lock.to_a
       unless (transfers.map(&:host_ip_address_id) - hosts.map(&:id)).empty?
         raise ResourceLocked.new(dns_zone, 'DNS zone transfers changed; retry zone removal')
@@ -16,9 +17,12 @@ module TransactionChains
 
       concerns(:affect, [dns_zone.class.name, dns_zone.id])
 
-      dns_zone.dns_server_zones.each do |dns_server_zone|
+      server_zones.each do |dns_server_zone|
         append_t(Transactions::DnsServerZone::Destroy, args: [dns_server_zone]) do |t|
           dns_server_zone.update!(confirmed: ::DnsServerZone.confirmed(:confirm_destroy))
+          dns_server_zone.dns_server_zone_primary_transfer_states.each do |state|
+            t.just_destroy(state)
+          end
           t.destroy(dns_server_zone)
         end
 

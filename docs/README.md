@@ -9,6 +9,8 @@ These pages describe vpsAdmin for developers and operators. Start with the
   provenance for client generation.
 - [Transactions](transactions.md): node commands, chains, resource locks, and
   database confirmations.
+- [DNS primary readiness](dns-primary-readiness.md), [node probes](dns-transfer-probes.md),
+  [UI contracts](dns-transfer-ui.md) and [upgrade/recovery](upgrade-dns-primary-readiness.md).
 - [Security advisories](security-advisories.md): original corrections,
   announcements, preconditions and affected-user snapshots.
 - [IP ownership, accounting and locking](ip-locking.md)

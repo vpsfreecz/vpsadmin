@@ -15,7 +15,7 @@ RSpec.describe NodeCtld::DnsStatus do
   end
 
   def dns_config(zones)
-    Struct.new(:zones) do
+    Struct.new(:zones, :loaded_serials) do
       def any_zones?
         zones.any?
       end
@@ -29,7 +29,15 @@ RSpec.describe NodeCtld::DnsStatus do
         normalized = name.end_with?('.') ? name : "#{name}."
         normalized.downcase
       end
-    end.new(zones)
+
+      def update_loaded_serial(name, serial)
+        loaded_serials[canonical(name)] = serial
+      end
+
+      def loaded_serial(name)
+        loaded_serials[canonical(name)]
+      end
+    end.new(zones, {})
   end
 
   before do
@@ -79,8 +87,9 @@ RSpec.describe NodeCtld::DnsStatus do
       XML
       published = []
       status = described_class.new
+      config = dns_config(zones)
 
-      allow(NodeCtld::DnsConfig).to receive(:instance).and_return(dns_config(zones))
+      allow(NodeCtld::DnsConfig).to receive(:instance).and_return(config)
       allow(Net::HTTP).to receive(:get_response).and_return(bind_response(xml))
       allow(NodeCtld::NodeBunny).to receive(:publish_drop) do |_exchange, payload, **_opts|
         published << JSON.parse(payload)
@@ -110,6 +119,8 @@ RSpec.describe NodeCtld::DnsStatus do
           'refresh' => Time.parse('2026-01-01T01:00:00Z').to_i
         )
       )
+      expect(config.loaded_serial('example.test.')).to eq(123)
+      expect(config.loaded_serial('secondary.test.')).to be_nil
     end
   end
 

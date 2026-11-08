@@ -264,6 +264,21 @@ test.describe('DNS browser coverage', () => {
     await expect(page.locator('#content-in')).toContainText('Secondary DNS zones');
     await expect(page.locator('#content-in')).toContainText('Create new secondary zone');
 
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/?page=dns&action=zone_show&id=${d.zones.user_transfer_log.id}`, {
+      waitUntil: 'domcontentloaded',
+    });
+    const nameServers = page.locator('#dns-zone-name-servers');
+    const primaries = page.locator('#dns-zone-transfer-servers');
+    await expect(nameServers).toBeVisible();
+    await expect(primaries).toBeVisible();
+    const servingCell = nameServers.locator('td').first();
+    await expect(servingCell).toHaveCSS('display', 'block');
+    const firstCell = await servingCell.boundingBox();
+    const servingDetails = await nameServers.locator('td').nth(1).boundingBox();
+    expect(servingDetails.y).toBeGreaterThanOrEqual(firstCell.y + firstCell.height);
+    await page.setViewportSize({ width: 1280, height: 960 });
+
     await expectZoneUpdateForm(page, d.zones.user_update);
 
     await page.goto(`/?page=dns&action=dnssec_records&id=${d.zones.user_dnssec.id}`, {
@@ -298,6 +313,9 @@ test.describe('DNS browser coverage', () => {
     );
     await expect(page.locator('#content-in')).toContainText('DNS transfer log');
     await expect(page.locator('#content-in')).toContainText(d.logs.transferUser.reasonCode);
+    await expect(page.locator('#dns-transfer-log th')).toContainText(['Source']);
+    await expect(page.locator('#dns-transfer-log')).toContainText('Historical attempt');
+    await expect(page.locator('form[name="dns-transfer-log-filter"] select[name="dns_zone_transfer"]')).toBeVisible();
 
     await page.goto(
       `/?page=dns&action=ptr_list&list=1&vps=${fixtures.networking.vps.user_ptr.id}`,

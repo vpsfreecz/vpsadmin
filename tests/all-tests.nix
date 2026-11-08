@@ -95,6 +95,7 @@ testLib.makeTests [
   "network/export-lifecycle"
   "network/export-enable-disable-hosts"
   "dns/server-zone-lifecycle"
+  "dns/secondary-lifecycle-smoke"
   "dns/secondary-transfer-errors"
   "dns/zone-transfer-config"
   "user/create-with-initial-vps"

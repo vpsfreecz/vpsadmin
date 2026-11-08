@@ -5,6 +5,7 @@ module NodeCtld
     # @return [DnsServerZone]
     def get_dns_server_zone(**kwargs)
       zone_attrs = {
+        id: @id,
         name: @name,
         source: @source,
         type: @type,
@@ -15,7 +16,10 @@ module NodeCtld
         serial: @serial,
         email: @email,
         dnssec_enabled: @dnssec_enabled,
-        enabled: @enabled
+        enabled: @enabled,
+        primary_transfer_generation: @primary_transfer_generation,
+        primary_transfer_tracking_started_at: @primary_transfer_tracking_started_at,
+        probe_source_addrs: @probe_source_addrs
       }
       zone_attrs.update(kwargs)
 
@@ -23,7 +27,7 @@ module NodeCtld
     end
 
     def add_servers_to_zone
-      zone = DnsServerZone.new(name: @name, source: @source, type: @type)
+      zone = get_dns_server_zone(nameservers: nil, primaries: nil, secondaries: nil)
 
       @nameservers.each do |ns|
         zone.nameservers << ns unless zone.nameservers.include?(ns)
@@ -42,7 +46,7 @@ module NodeCtld
     end
 
     def remove_servers_from_zone
-      zone = DnsServerZone.new(name: @name, source: @source, type: @type)
+      zone = get_dns_server_zone(nameservers: nil, primaries: nil, secondaries: nil)
 
       if @nameservers.any?
         zone.nameservers.delete_if do |ns|

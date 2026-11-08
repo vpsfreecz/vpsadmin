@@ -129,6 +129,28 @@ RSpec.describe 'monitoring monitored event model', requires_plugins: :monitoring
       .to have_received(:fire).with(confirmed)
   end
 
+  it 'keeps ignored passing events untouched while acknowledged passing events close' do
+    ignored_monitor = monitor(:ignored_pass)
+    ack_monitor = monitor(:acknowledged_pass)
+    ignored = create_event(ignored_monitor, state: :ignored, saved_until: 1.hour.from_now)
+    acknowledged = create_event(ack_monitor, state: :acknowledged, saved_until: 1.hour.from_now)
+
+    with_registered_monitor(ignored_monitor) do
+      MonitoredEvent.report!(ignored_monitor, obj, { 'resolution' => 'recovered' }, true, user)
+    end
+    expect(ignored.reload.state).to eq('ignored')
+    expect(ignored.monitored_event_logs.count).to eq(0)
+    expect(VpsAdmin::API::Plugins::Monitoring::TransactionChains::Alert).not_to have_received(:fire)
+
+    with_registered_monitor(ack_monitor) do
+      MonitoredEvent.report!(ack_monitor, obj, { 'resolution' => 'configuration_changed' }, true, user)
+    end
+    expect(acknowledged.reload.state).to eq('closed')
+    expect(acknowledged.monitored_event_logs.last.value).to include('resolution' => 'configuration_changed')
+    expect(VpsAdmin::API::Plugins::Monitoring::TransactionChains::Alert)
+      .to have_received(:fire).with(acknowledged)
+  end
+
   it 'fires repeat alerts after the repeat interval elapses' do
     mon = monitor(:repeat_alert, repeat: 10.minutes)
     event = create_event(mon, state: :confirmed, last_report_at: 30.minutes.ago)

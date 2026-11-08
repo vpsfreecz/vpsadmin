@@ -336,6 +336,54 @@ form[name="security_advisory_nodes"] {
   text-align: center;
 }
 
+@media (max-width: 640px) {
+  #dns-zone-name-servers,
+  #dns-zone-transfer-servers {
+    width: 100%;
+    table-layout: auto;
+  }
+
+  #dns-zone-name-servers tr,
+  #dns-zone-transfer-servers tr,
+  #dns-zone-name-servers td,
+  #dns-zone-transfer-servers td {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    text-align: left;
+  }
+
+  #dns-zone-name-servers th,
+  #dns-zone-transfer-servers th {
+    display: none;
+  }
+
+  #dns-zone-name-servers dl.inline,
+  #dns-zone-transfer-servers dl.inline {
+    display: grid;
+    grid-template-columns: minmax(100px, 40%) minmax(0, 1fr);
+    gap: 0.35em 0.75em;
+    text-align: left;
+  }
+
+  #dns-zone-name-servers dl.inline dt,
+  #dns-zone-name-servers dl.inline dd,
+  #dns-zone-transfer-servers dl.inline dt,
+  #dns-zone-transfer-servers dl.inline dd {
+    float: none;
+    clear: none;
+    width: auto;
+    margin: 0;
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+
+  #dns-zone-transfer-servers textarea {
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+}
+
 #dns-transfer-log {
   width: 100%;
   table-layout: fixed;

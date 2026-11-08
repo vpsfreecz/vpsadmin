@@ -32,7 +32,8 @@ class HostIpAddress < ApplicationRecord
 
   # Call with the host and parent locked, before clearing the parent's owner.
   def remove_dns_transfers!(chain)
-    dns_zone_transfers.existing.order(:id).lock.each do |transfer|
+    # Destroy locks server zones before the transfer row, matching event admission.
+    dns_zone_transfers.existing.order(:id).each do |transfer|
       chain.use_chain(TransactionChains::DnsZoneTransfer::Destroy, args: [transfer])
     end
   end

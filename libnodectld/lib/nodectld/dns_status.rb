@@ -57,6 +57,7 @@ module NodeCtld
         end
 
         zones << status
+        DnsConfig.instance.update_loaded_serial(zone.name, status[:serial])
       end
 
       @dnskeys = nil

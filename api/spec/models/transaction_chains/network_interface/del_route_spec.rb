@@ -45,12 +45,24 @@ RSpec.describe TransactionChains::NetworkInterface::DelRoute do
       )
       transfers = [default_host, extra_host].map { |host| create_dns_primary(host) }
       before = transfers.map(&:attributes)
+      generations = transfers.map { |transfer| transfer.dns_zone.primary_transfer_generation }
+      states = transfers.map do |transfer|
+        DnsServerZonePrimaryTransferState.create!(
+          dns_server_zone: transfer.dns_zone.dns_server_zones.first, dns_zone_transfer: transfer,
+          status: :success, last_attempt_kind: :ixfr_probe, last_attempt_at: Time.current,
+          last_success_at: Time.current, last_event_key: SecureRandom.hex(16),
+          configuration_generation: transfer.dns_zone.primary_transfer_generation
+        )
+      end
+      state_before = states.map(&:attributes)
       config = user.environment_user_configs.find_by!(environment: env)
       usage = config.public_send(version == 4 ? :ipv4 : :ipv6)
 
       chain, = described_class.fire(fixture[:netif], [ip])
 
       expect(transfers.map { |transfer| transfer.reload.attributes }).to eq(before)
+      expect(transfers.map { |transfer| transfer.dns_zone.reload.primary_transfer_generation }).to eq(generations)
+      expect(states.map { |state| state.reload.attributes }).to eq(state_before)
       expect(tx_classes(chain)).not_to include(Transactions::DnsServerZone::RemoveServers)
       expect(ip.reload.user_id).to eq(user.id)
       expect(ip.charged_environment_id).to eq(env.id)

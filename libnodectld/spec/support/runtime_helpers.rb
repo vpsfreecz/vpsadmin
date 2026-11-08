@@ -51,7 +51,19 @@ module NodeCtldSpec
           transfer_log_cursor_file: File.join(Dir.tmpdir, 'dns-transfer-log.cursor'),
           transfer_log_command: 'journalctl',
           transfer_log_identifiers: ['named'],
-          transfer_log_unit: nil
+          transfer_log_unit: nil,
+          transfer_probe_state_file: File.join(Dir.tmpdir, 'dns-transfer-probe.json'),
+          transfer_probe_interval: 3600,
+          transfer_probe_failure_interval: 300,
+          transfer_probe_timeout: 30,
+          transfer_probe_axfr_timeout: 600,
+          transfer_probe_axfr_max_bytes: 256 * 1024 * 1024,
+          transfer_probe_concurrency: 5,
+          transfer_probe_systemd_run_command: 'systemd-run',
+          transfer_probe_systemctl_command: 'systemctl',
+          transfer_probe_worker_command: 'vpsadmin-dns-transfer-probe',
+          transfer_probe_dig_command: 'dig',
+          transfer_probe_checkconf_command: 'named-checkconf'
         }
       }
 

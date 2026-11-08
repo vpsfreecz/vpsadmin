@@ -17,6 +17,10 @@ module VpsAdmin::API::Resources
       datetime :expires_at
       datetime :refresh_at
       datetime :last_check_at
+      string :zone_status,
+             label: 'Serving status',
+             desc: 'Whether current BIND status shows that the zone is loaded and serving',
+             choices: %w[serving expired not_loaded unknown]
       datetime :last_transfer_at
       string :last_transfer_status, choices: ::DnsServerZone.last_transfer_statuses.keys.map(&:to_s)
       string :last_transfer_reason_code

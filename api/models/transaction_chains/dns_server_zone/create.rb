@@ -5,6 +5,9 @@ module TransactionChains
     # @param dns_server_zone [::DnsServerZone]
     # @return [::DnsServerZone]
     def link_chain(dns_server_zone)
+      lock(dns_server_zone.dns_server)
+      lock(dns_server_zone.dns_zone)
+      dns_server_zone.dns_zone.reload(lock: true)
       concerns(
         :affect,
         [dns_server_zone.dns_zone.class.name, dns_server_zone.dns_zone_id],
@@ -13,14 +16,16 @@ module TransactionChains
 
       # Create the new server zone
       dns_server_zone.save!
+      configuration = ::DnsServerZone.lock_configuration([dns_server_zone.dns_zone])
+      dns_server_zone = configuration.fetch(:server_zones).find { |entry| entry.id == dns_server_zone.id }
 
-      append_t(Transactions::DnsServerZone::Create, args: [dns_server_zone]) do |t|
+      append_t(Transactions::DnsServerZone::Create, args: [dns_server_zone], kwargs: { configuration: }) do |t|
         t.create(dns_server_zone)
       end
 
       append_t(Transactions::DnsServer::Reload, args: [dns_server_zone.dns_server])
 
-      dns_server_zone.dns_zone.dns_server_zones.each do |other_dns_server_zone|
+      configuration.fetch(:server_zones).each do |other_dns_server_zone|
         next if other_dns_server_zone == dns_server_zone
 
         if dns_server_zone.dns_zone.internal_source?

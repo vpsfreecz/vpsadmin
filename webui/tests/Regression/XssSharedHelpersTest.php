@@ -58,6 +58,10 @@ final class XssSharedHelpersTest extends TestCase
         $xtpl->sbar_add('Undocumented action', '?page=');
         self::assertSame('', $xtpl->vars['SBI_DOC_ATTR']);
 
+        $select = $xtpl->form_select_html('dns_tsig_key', [1 => 'key'], '', false, '5', 'dns.secondary-zones.primary-tsig');
+        self::assertStringContainsString('data-vpsadmin-doc-id="dns.secondary-zones.primary-tsig"', $select);
+        self::assertStringNotContainsString('data-vpsadmin-doc-id', $xtpl->form_select_html('ordinary', []));
+
         $xtpl->form_create('?page=cluster&type=' . $payload, 'post" autofocus="autofocus', 'x"><script>', false);
         $form = $xtpl->vars['TABLE_FORM_BEGIN'];
 

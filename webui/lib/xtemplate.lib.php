@@ -984,9 +984,11 @@ class XTemplate
       * @param $options - array of options, $option[option_name] = "Option Label"
       * @param $selected_value - default selected value
       */
-    public function form_select_html($name, $options, $selected_value = '', $multiple = false, $size = '5')
+    public function form_select_html($name, $options, $selected_value = '', $multiple = false, $size = '5', $docId = null)
     {
-        $code = ('<select  name="' . $name . '" id="input" ' . ($multiple ? 'multiple size="' . $size . '"' : '') . '>');
+        $docAttr = $this->documentation_attribute($docId);
+        $docAttr = $docAttr === '' ? '' : ' ' . $docAttr;
+        $code = ('<select  name="' . $name . '" id="input"' . $docAttr . ' ' . ($multiple ? 'multiple size="' . $size . '"' : '') . '>');
         if ($options) {
             foreach ($options as $key => $value) {
                 if ($selected_value == $key || ($multiple && is_array($selected_value) && in_array($key, $selected_value))) {

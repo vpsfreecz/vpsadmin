@@ -4,6 +4,11 @@ module TransactionChains
 
     # @param dns_server_zone [::DnsServerZone]
     def link_chain(dns_server_zone)
+      lock(dns_server_zone.dns_zone)
+      configuration = ::DnsServerZone.lock_configuration([dns_server_zone.dns_zone])
+      dns_server_zone = configuration.fetch(:server_zones).find { |entry| entry.id == dns_server_zone.id }
+      raise ActiveRecord::RecordNotFound unless dns_server_zone
+
       concerns(
         :affect,
         [dns_server_zone.dns_zone.class.name, dns_server_zone.dns_zone_id],
@@ -11,13 +16,19 @@ module TransactionChains
       )
 
       append_t(Transactions::DnsServerZone::Destroy, args: [dns_server_zone]) do |t|
-        dns_server_zone.update!(confirmed: ::DnsServerZone.confirmed(:confirm_destroy))
+        dns_server_zone.with_lock do
+          dns_server_zone.update!(confirmed: ::DnsServerZone.confirmed(:confirm_destroy))
+          dns_server_zone.dns_server_zone_primary_transfer_states.each do |state|
+            t.just_destroy(state)
+          end
+        end
+
         t.destroy(dns_server_zone)
       end
 
       append_t(Transactions::DnsServer::Reload, args: [dns_server_zone.dns_server])
 
-      dns_server_zone.dns_zone.dns_server_zones.each do |other_dns_server_zone|
+      configuration.fetch(:server_zones).each do |other_dns_server_zone|
         next if other_dns_server_zone == dns_server_zone
 
         if dns_server_zone.dns_zone.internal_source?

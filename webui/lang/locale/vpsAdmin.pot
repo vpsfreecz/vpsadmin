@@ -1136,7 +1136,9 @@ msgid "Warning"
 msgstr ""
 
 #: forms/dns.forms.php
-msgid "Add at least one primary DNS server for this zone to become active."
+msgid ""
+"No user primary is configured. Peer servers can still serve the zone, but "
+"cannot replace your primary server."
 msgstr ""
 
 #: forms/dns.forms.php
@@ -1164,11 +1166,7 @@ msgid "Last check"
 msgstr ""
 
 #: forms/dns.forms.php
-msgid "Zone state"
-msgstr ""
-
-#: forms/dns.forms.php
-msgid "Last transfer"
+msgid "Serving"
 msgstr ""
 
 #: forms/dns.forms.php
@@ -1192,19 +1190,11 @@ msgid "Secondary servers"
 msgstr ""
 
 #: forms/dns.forms.php
-msgid "Host IP address"
+msgid "Server details"
 msgstr ""
 
 #: forms/dns.forms.php
-msgid "TSIG key"
-msgstr ""
-
-#: forms/dns.forms.php
-msgid "TSIG algorithm"
-msgstr ""
-
-#: forms/dns.forms.php
-msgid "TSIG secret"
+msgid "Transfer checks"
 msgstr ""
 
 #: forms/dns.forms.php
@@ -1232,7 +1222,15 @@ msgid "DNS server zone ID"
 msgstr ""
 
 #: forms/dns.forms.php
+msgid "Primary server ID"
+msgstr ""
+
+#: forms/dns.forms.php
 msgid "DNS server zone"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "Primary server"
 msgstr ""
 
 #: forms/dns.forms.php
@@ -1304,6 +1302,10 @@ msgstr ""
 
 #: forms/dns.forms.php
 msgid "Select IP address on which your primary DNS server is running."
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "TSIG key"
 msgstr ""
 
 #: forms/dns.forms.php
@@ -1581,7 +1583,82 @@ msgid "Expires"
 msgstr ""
 
 #: forms/dns.forms.php
+msgid "Activity"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "View transfer log"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "Last transfer"
+msgstr ""
+
+#: forms/dns.forms.php
 msgid "No transfers recorded"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "Host IP address"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "TSIG algorithm"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "TSIG secret"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "Owned IP address is detached."
+msgstr ""
+
+#: forms/dns.forms.php
+msgid ""
+"The primary remains configured and transfer checks continue. Attach the "
+"allocation to a VPS to restore its network route."
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "Transfer readiness is unavailable."
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "Checks"
+msgstr ""
+
+#: forms/dns.forms.php
+#, php-format
+msgid "%1$d successful, %2$d failed, %3$d pending"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "Pending first check"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "Pending current evidence"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "Previous result"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "Last success"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "Reason observed"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "Expired"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "Not loaded"
 msgstr ""
 
 #: forms/dns.forms.php
@@ -1590,6 +1667,38 @@ msgstr ""
 
 #: forms/dns.forms.php
 msgid "Failed"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "Pending"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "BIND transfer"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "IXFR readiness check"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "AXFR validation"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "BIND refresh"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "DNS NOTIFY"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "BIND zone load"
+msgstr ""
+
+#: forms/dns.forms.php
+msgid "Historical attempt"
 msgstr ""
 
 #: forms/dns.forms.php

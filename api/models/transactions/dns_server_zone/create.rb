@@ -4,14 +4,20 @@ module Transactions::DnsServerZone
     t_type 5501
     queue :dns
 
-    def params(dns_server_zone)
+    def params(dns_server_zone, configuration: nil)
       self.node_id = dns_server_zone.dns_server.node_id
+      config = dns_server_zone.configuration_attrs(**(configuration || {}))
 
       ret = {
+        id: dns_server_zone.id,
         name: dns_server_zone.dns_zone.name,
         source: dns_server_zone.dns_zone.zone_source,
         type: dns_server_zone.zone_type,
-        enabled: dns_server_zone.dns_zone.enabled
+        enabled: dns_server_zone.dns_zone.enabled,
+        primary_transfer_generation: dns_server_zone.primary_transfer_configuration_generation,
+        primary_transfer_tracking_started_at:
+          dns_server_zone.dns_zone.primary_transfer_tracking_started_at&.to_i,
+        probe_source_addrs: dns_server_zone.probe_source_addrs
       }
 
       if dns_server_zone.dns_zone.internal_source?
@@ -21,8 +27,8 @@ module Transactions::DnsServerZone
           email: dns_server_zone.dns_zone.email,
           dnssec_enabled: dns_server_zone.dns_zone.dnssec_enabled,
           nameservers: dns_server_zone.dns_zone.nameservers,
-          primaries: dns_server_zone.primaries,
-          secondaries: dns_server_zone.secondaries,
+          primaries: config.fetch(:primaries),
+          secondaries: config.fetch(:secondaries),
           records: dns_server_zone.dns_zone.dns_records.where(enabled: true).map do |r|
             {
               id: r.id,
@@ -36,13 +42,13 @@ module Transactions::DnsServerZone
         )
       else
         ret.update(
-          primaries: dns_server_zone.primaries,
+          primaries: config.fetch(:primaries),
           # For external zones, all vpsAdmin DNS servers are secondaries.
           # Keep secondaries populated so the servers can AXFR/IXFR between
           # themselves and so libnodectld can render explicit peer NOTIFY
           # targets when the user allows transfers only to a subset of our
           # secondaries.
-          secondaries: dns_server_zone.secondaries
+          secondaries: config.fetch(:secondaries)
         )
       end
 

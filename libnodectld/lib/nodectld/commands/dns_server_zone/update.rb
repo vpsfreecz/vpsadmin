@@ -4,20 +4,27 @@ module NodeCtld
     needs :dns
 
     def exec
-      zone = get_dns_server_zone(**get_zone_attrs('new'))
-      zone.save
-      DnsConfig.instance.update_zone(zone)
-      ok
+      update_zone('new')
     end
 
     def rollback
-      zone = get_dns_server_zone(**get_zone_attrs('original'))
+      update_zone('original')
+    end
+
+    protected
+
+    def update_zone(direction)
+      zone = get_dns_server_zone(**get_zone_attrs(direction))
+      changes = direction == 'new' ? @new : @original
+      %w[primary_transfer_generation primary_transfer_tracking_started_at probe_source_addrs].each do |attr|
+        # Explicit nil clears tracking on disable. Constructor nil would load
+        # the previous value from disk instead.
+        zone.public_send(:"#{attr}=", changes[attr]) if changes.has_key?(attr)
+      end
       zone.save
       DnsConfig.instance.update_zone(zone)
       ok
     end
-
-    protected
 
     def get_zone_attrs(dir)
       ret = {}

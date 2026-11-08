@@ -58,7 +58,7 @@ RSpec.describe TransactionChains::DnsZoneTransfer::Create do
     )
 
     chain, created = described_class.fire(transfer)
-    server_opts = [{ 'ip_addr' => host_ip.ip_addr, 'tsig_key' => nil }]
+    server_opts = [created.server_opts.deep_stringify_keys]
 
     expect(created).to be_persisted
     expect(tx_classes(chain)).to eq(
@@ -100,22 +100,16 @@ RSpec.describe TransactionChains::DnsZoneTransfer::Create do
       dns_tsig_key: tsig_key,
       peer_type: :primary_type
     )
+    previous_generation = zone.primary_transfer_generation
 
     chain, = described_class.fire(transfer)
     payload = tx_payload(chain, Transactions::DnsServerZone::AddServers)
 
-    expect(payload.fetch('primaries')).to eq(
-      [
-        {
-          'ip_addr' => host_ip.ip_addr,
-          'tsig_key' => {
-            'name' => tsig_key.name,
-            'algorithm' => tsig_key.algorithm,
-            'secret' => tsig_key.secret
-          }
-        }
-      ]
+    expect(payload.fetch('primaries')).to eq([transfer.server_opts.deep_stringify_keys])
+    expect(payload.fetch('primary_transfer_generation')).to eq(
+      zone.reload.primary_transfer_generation
     )
+    expect(zone.primary_transfer_generation).not_to eq(previous_generation)
     expect(tx_classes(chain)).to include(Transactions::DnsServer::Reload)
   end
 

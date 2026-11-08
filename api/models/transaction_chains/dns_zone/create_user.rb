@@ -7,24 +7,22 @@ module TransactionChains
     # @param seed_vps [::Vps, nil]
     # @return [::DnsZone]
     def link_chain(dns_zone, seed_vps: nil)
+      dns_servers = ::DnsServer.where(enable_user_dns_zones: true)
+      # Always reserve servers before zones, also when this zone is not yet
+      # discoverable by a concurrent source-address update.
+      user_servers = (dns_zone.internal_source? ? dns_servers : dns_servers.secondary_type).order(:id).to_a
+      user_servers.each { |server| lock(server) }
+      user_servers.each(&:reload)
+      user_servers.select! do |server|
+        server.enable_user_dns_zones? && (dns_zone.internal_source? || server.secondary_type?)
+      end
+
       dns_zone.save!
 
       lock(dns_zone)
       concerns(:affect, [dns_zone.class.name, dns_zone.id])
 
       seeded_records, seeded_logs = records_for_vps(dns_zone, seed_vps)
-
-      dns_servers = ::DnsServer.where(enable_user_dns_zones: true)
-
-      # For internal zones, we use all user servers. For external zones,
-      # we use only servers for secondary zones, as the primary server is
-      # external.
-      user_servers =
-        if dns_zone.internal_source?
-          dns_servers
-        else
-          dns_servers.secondary_type
-        end
 
       # First create all DNS server zone records
       dns_server_zones = user_servers.map do |dns_server|
@@ -36,8 +34,9 @@ module TransactionChains
       end
 
       # When all server zones are already created, fire transactions
-      dns_server_zones.each do |dns_server_zone|
-        append_t(Transactions::DnsServerZone::Create, args: [dns_server_zone]) do |t|
+      configuration = ::DnsServerZone.lock_configuration([dns_zone])
+      configuration.fetch(:server_zones).each do |dns_server_zone|
+        append_t(Transactions::DnsServerZone::Create, args: [dns_server_zone], kwargs: { configuration: }) do |t|
           t.create(dns_server_zone)
         end
 

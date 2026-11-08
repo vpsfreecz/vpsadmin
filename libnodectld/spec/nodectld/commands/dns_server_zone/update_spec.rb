@@ -68,4 +68,71 @@ RSpec.describe NodeCtld::Commands::DnsServerZone::Update do
     expect(zone).to have_received(:save)
     expect(dns_config).to have_received(:update_zone).with(zone)
   end
+
+  context 'with persisted tracking' do
+    around do |example|
+      Dir.mktmpdir('dns-zone-update-spec') do |dir|
+        $CFG = NodeCtldSpec::FakeCfg.new(
+          dns_server: {
+            db_template: File.join(dir, '%{name}.json'),
+            zone_template: File.join(dir, '%{name}.zone')
+          }
+        )
+        example.run
+      end
+    end
+
+    before do
+      allow(NodeCtld::DnsConfig).to receive(:instance).and_return(dns_config)
+      allow(FileUtils).to receive(:chown)
+    end
+
+    [true, false].each do |enabled|
+      it "persists matching direction-specific tracking for #{enabled ? 'disable' : 'enable'} and rollback" do
+        old_generation = enabled ? SecureRandom.uuid : nil
+        new_generation = enabled ? nil : SecureRandom.uuid
+        original = {
+          'enabled' => enabled,
+          'primary_transfer_generation' => old_generation,
+          'primary_transfer_tracking_started_at' => enabled ? 100 : nil,
+          'probe_source_addrs' => { 'ipv4' => '192.0.2.53', 'ipv6' => nil }
+        }
+        updated = {
+          'enabled' => !enabled,
+          'primary_transfer_generation' => new_generation,
+          'primary_transfer_tracking_started_at' => enabled ? nil : 200,
+          'probe_source_addrs' => { 'ipv4' => nil, 'ipv6' => '2001:db8::53' }
+        }
+        attrs = {
+          'id' => 123,
+          'name' => 'update.example.test.',
+          'source' => 'external_source',
+          'type' => 'secondary_type',
+          'primaries' => [],
+          'secondaries' => [],
+          'primary_transfer_generation' => new_generation,
+          'primary_transfer_tracking_started_at' => updated.fetch('primary_transfer_tracking_started_at'),
+          'probe_source_addrs' => updated.fetch('probe_source_addrs'),
+          'new' => updated,
+          'original' => original
+        }
+        NodeCtld::DnsServerZone.new(
+          id: 123, name: attrs.fetch('name'), source: 'external_source',
+          type: 'secondary_type', primaries: [], secondaries: [], enabled:,
+          primary_transfer_generation: old_generation,
+          primary_transfer_tracking_started_at: original.fetch('primary_transfer_tracking_started_at'),
+          probe_source_addrs: original.fetch('probe_source_addrs'),
+          load_db: false
+        ).save
+        cmd = described_class.new(driver, attrs)
+
+        expect(cmd.exec).to eq(ret: :ok)
+        db_file = File.join($CFG.get(:dns_server, :db_template).sub('%{name}', attrs.fetch('name')))
+        expect(JSON.parse(File.read(db_file))).to include(updated)
+        expect(cmd.rollback).to eq(ret: :ok)
+        expect(JSON.parse(File.read(db_file))).to include(original)
+        expect(dns_config).to have_received(:update_zone).twice
+      end
+    end
+  end
 end

@@ -1,4 +1,8 @@
+require_relative 'lockable'
+
 class DnsServer < ApplicationRecord
+  include Lockable
+
   belongs_to :node
   has_many :dns_server_zones
   has_many :dns_zones, through: :dns_server_zones

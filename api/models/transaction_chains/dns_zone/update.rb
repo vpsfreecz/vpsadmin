@@ -44,6 +44,17 @@ module TransactionChains
 
       return dns_zone if new_attrs.empty?
 
+      db_attrs.update(original_attrs)
+      if dns_zone.enabled_changed? && dns_zone.external_source?
+        %i[primary_transfer_generation primary_transfer_tracking_started_at].each do |attr|
+          current = dns_zone.public_send(attr)
+          original = dns_zone.public_send(:"#{attr}_was")
+          db_attrs[attr] = original
+          new_attrs[attr] = attr == :primary_transfer_tracking_started_at ? current&.to_i : current
+          original_attrs[attr] = attr == :primary_transfer_tracking_started_at ? original&.to_i : original
+        end
+      end
+
       dns_zone.dns_server_zones.each do |dns_server_zone|
         append_t(
           Transactions::DnsServerZone::Update,
@@ -62,7 +73,6 @@ module TransactionChains
       return dns_zone if empty?
 
       append_t(Transactions::Utils::NoOp, args: find_node_id) do |t|
-        db_attrs.update(original_attrs)
         t.edit_before(dns_zone, **db_attrs)
       end
 
