@@ -7,6 +7,52 @@ require 'nodectld/system_probes/security_evidence'
 RSpec.describe NodeCtld::SystemProbes::SecurityEvidence do
   let(:now) { Time.utc(2026, 7, 1, 12, 0, 0) }
 
+  def stub_livepatch_documents(booted:, current:)
+    allow(File).to receive(:read).and_call_original
+    {
+      described_class::BOOTED_LIVEPATCH_MONITOR_PATH => booted,
+      described_class::CURRENT_LIVEPATCH_MONITOR_PATH => current
+    }.each do |path, document|
+      stub = allow(File).to receive(:read).with(path)
+      if document.nil?
+        stub.and_raise(Errno::ENOENT)
+      else
+        stub.and_return(JSON.generate(document))
+      end
+    end
+  end
+
+  def stub_livepatch_sysfs(states)
+    allow(Dir).to receive(:children)
+      .with(described_class::SYS_LIVEPATCH_ROOT)
+      .and_return(states.keys)
+    allow(Dir).to receive(:exist?).and_call_original
+
+    states.each do |module_name, state|
+      sysfs_path = File.join(described_class::SYS_LIVEPATCH_ROOT, module_name)
+      allow(Dir).to receive(:exist?).with(sysfs_path).and_return(true)
+      %i[enabled transition].each do |attribute|
+        allow(File).to receive(:read)
+          .with(File.join(sysfs_path, attribute.to_s))
+          .and_return("#{state.fetch(attribute)}\n")
+      end
+
+      applied_at_path = File.join(
+        described_class::LIVEPATCH_STATE_ROOT,
+        "#{module_name}.applied-at"
+      )
+      if state[:applied_at]
+        allow(File).to receive(:read)
+          .with(applied_at_path)
+          .and_return("#{state[:applied_at]}\n")
+      else
+        allow(File).to receive(:read)
+          .with(applied_at_path)
+          .and_raise(Errno::ENOENT)
+      end
+    end
+  end
+
   it 'tokenizes the kernel command line without losing order or duplicate names' do
     probe = described_class.new
     probe.instance_variable_set(:@errors, [])
@@ -151,6 +197,239 @@ RSpec.describe NodeCtld::SystemProbes::SecurityEvidence do
     expect(probe.instance_variable_get(:@errors)).to contain_exactly(
       'component' => 'livepatch.livepatch_2.enabled',
       'reason' => 'unavailable'
+    )
+  end
+
+  it 'uses plural booted metadata and reports stable runtime state' do
+    booted = {
+      schemaVersion: 2,
+      kernelVersion: '6.12.113',
+      modules: [
+        {
+          module: 'livepatch_z',
+          patchVersion: 2,
+          patches: [{ name: 'fix-z', version: 1 }]
+        },
+        {
+          module: 'livepatch_a',
+          patchVersion: 1,
+          patches: [{ name: 'fix-a', version: 1 }]
+        }
+      ]
+    }
+    current = {
+      module: 'livepatch_a',
+      kernelVersion: '6.12.114',
+      patchVersion: 99,
+      patches: [{ name: 'wrong-generation', version: 1 }]
+    }
+    stub_livepatch_documents(booted:, current:)
+    stub_livepatch_sysfs(
+      'livepatch_z' => { enabled: '1', transition: '1' },
+      'livepatch_external' => { enabled: '0', transition: '0' },
+      'livepatch_a' => {
+        enabled: '1',
+        transition: '0',
+        applied_at: '2026-07-01T11:30:00Z'
+      }
+    )
+    probe = described_class.new
+    probe.instance_variable_set(:@errors, [])
+
+    patches = probe.send(:livepatches)
+
+    expect(patches.map { |patch| patch.fetch('id') }).to eq(
+      %w[livepatch_a livepatch_external livepatch_z]
+    )
+    expect(patches[0]).to include(
+      'kernel_version' => '6.12.113',
+      'patch_version' => 1,
+      'loaded' => true,
+      'enabled' => true,
+      'transition' => false,
+      'applied_at' => '2026-07-01T11:30:00Z'
+    )
+    expect(patches[1]).to include(
+      'kernel_version' => nil,
+      'patch_version' => nil,
+      'patches' => [],
+      'loaded' => true,
+      'enabled' => false,
+      'transition' => false
+    )
+    expect(patches[2]).to include(
+      'kernel_version' => '6.12.113',
+      'patch_version' => 2,
+      'loaded' => true,
+      'enabled' => true,
+      'transition' => true
+    )
+    expect(probe.instance_variable_get(:@errors)).to contain_exactly(
+      'component' => 'livepatch.livepatch_external.metadata',
+      'reason' => 'unavailable'
+    )
+  end
+
+  it 'merges legacy booted metadata with current plural metadata' do
+    booted = {
+      module: 'livepatch_a',
+      kernelVersion: '6.12.113',
+      patchVersion: 1,
+      patches: []
+    }
+    current = {
+      schemaVersion: 2,
+      modules: [
+        { module: 'livepatch_a', patchVersion: 9, patches: [] },
+        { module: 'livepatch_b', patchVersion: 2, patches: [] }
+      ]
+    }
+    stub_livepatch_documents(booted:, current:)
+    stub_livepatch_sysfs(
+      'livepatch_b' => { enabled: '1', transition: '0' },
+      'livepatch_a' => { enabled: '1', transition: '0' }
+    )
+    probe = described_class.new
+    probe.instance_variable_set(:@errors, [])
+
+    patches = probe.send(:livepatches)
+
+    expect(patches.map { |patch| patch.fetch('id') }).to eq(%w[livepatch_a livepatch_b])
+    expect(patches[0]).to include(
+      'kernel_version' => '6.12.113',
+      'patch_version' => 1
+    )
+    expect(patches[1]).to include(
+      'kernel_version' => nil,
+      'patch_version' => 2
+    )
+    expect(probe.instance_variable_get(:@errors)).to be_empty
+  end
+
+  it 'rejects an empty plural list without falling back to scalar metadata' do
+    current = {
+      schemaVersion: 2,
+      kernelVersion: '6.12.113',
+      modules: [],
+      module: 'livepatch_hidden',
+      patchVersion: 1,
+      patches: []
+    }
+    stub_livepatch_documents(booted: nil, current:)
+    stub_livepatch_sysfs(
+      'livepatch_hidden' => { enabled: '1', transition: '0' }
+    )
+    probe = described_class.new
+    probe.instance_variable_set(:@errors, [])
+
+    expect(probe.send(:livepatches)).to contain_exactly(
+      include(
+        'id' => 'livepatch_hidden',
+        'kernel_version' => nil,
+        'patch_version' => nil,
+        'patches' => []
+      )
+    )
+    expect(probe.instance_variable_get(:@errors)).to contain_exactly(
+      {
+        'component' => 'livepatch_monitor',
+        'reason' => 'invalid'
+      },
+      {
+        'component' => 'livepatch.livepatch_hidden.metadata',
+        'reason' => 'unavailable'
+      }
+    )
+  end
+
+  it 'rejects malformed plural and legacy metadata' do
+    invalid_documents = [
+      {
+        'schemaVersion' => 1,
+        'modules' => [{ 'module' => 'livepatch_a', 'patchVersion' => 1, 'patches' => [] }]
+      },
+      {
+        'schemaVersion' => 2.0,
+        'modules' => [{ 'module' => 'livepatch_a', 'patchVersion' => 1, 'patches' => [] }]
+      },
+      { 'schemaVersion' => 2, 'modules' => [] },
+      { 'schemaVersion' => 2, 'modules' => {} },
+      { 'schemaVersion' => 2, 'modules' => [nil] },
+      {
+        'schemaVersion' => 2,
+        'modules' => [{ 'module' => '', 'patchVersion' => 1, 'patches' => [] }]
+      },
+      {
+        'schemaVersion' => 2,
+        'modules' => [{ 'module' => 'livepatch_a', 'patchVersion' => 0, 'patches' => [] }]
+      },
+      {
+        'schemaVersion' => 2,
+        'modules' => [{ 'module' => 'livepatch_a', 'patchVersion' => 1.0, 'patches' => [] }]
+      },
+      {
+        'schemaVersion' => 2,
+        'modules' => [{ 'module' => 'livepatch_a', 'patchVersion' => 1 }]
+      },
+      {
+        'schemaVersion' => 2,
+        'modules' => [{ 'module' => 'livepatch_a', 'patchVersion' => 1, 'patches' => {} }]
+      },
+      { 'module' => [] }
+    ]
+
+    invalid_documents.each do |document|
+      probe = described_class.new
+      probe.instance_variable_set(:@errors, [])
+
+      expect(probe.send(:livepatch_metadata_entries, document)).to be_nil
+      expect(probe.instance_variable_get(:@errors)).to contain_exactly(
+        'component' => 'livepatch_monitor',
+        'reason' => 'invalid'
+      )
+    end
+  end
+
+  it 'rejects a duplicate booted document without using current fallback metadata' do
+    booted = {
+      schemaVersion: 2,
+      kernelVersion: '6.12.113',
+      modules: [
+        { module: 'livepatch_a', patchVersion: 1, patches: [] },
+        { module: 'livepatch_a', patchVersion: 2, patches: [] }
+      ]
+    }
+    current = {
+      module: 'livepatch_a',
+      kernelVersion: '6.12.114',
+      patchVersion: 7,
+      patches: []
+    }
+    stub_livepatch_documents(booted:, current:)
+    stub_livepatch_sysfs(
+      'livepatch_a' => { enabled: '1', transition: '0' }
+    )
+    probe = described_class.new
+    probe.instance_variable_set(:@errors, [])
+
+    expect(probe.send(:livepatches)).to contain_exactly(
+      include(
+        'id' => 'livepatch_a',
+        'kernel_version' => nil,
+        'patch_version' => nil,
+        'enabled' => true,
+        'transition' => false
+      )
+    )
+    expect(probe.instance_variable_get(:@errors)).to contain_exactly(
+      {
+        'component' => 'livepatch_monitor',
+        'reason' => 'invalid'
+      },
+      {
+        'component' => 'livepatch.livepatch_a.metadata',
+        'reason' => 'unavailable'
+      }
     )
   end
 

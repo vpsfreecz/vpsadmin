@@ -444,12 +444,78 @@ module NodeCtld::SystemProbes
         BOOTED_LIVEPATCH_MONITOR_PATH,
         CURRENT_LIVEPATCH_MONITOR_PATH
       ].each_with_object({}) do |path, ret|
-        monitor = read_json(path, required: false)
-        module_name = monitor['module']
-        next if module_name.nil?
+        document = read_json(path, required: false)
+        entries = livepatch_metadata_entries(document)
+        break {} if entries.nil? && path == BOOTED_LIVEPATCH_MONITOR_PATH
+        next if entries.nil?
 
-        ret[module_name] ||= monitor
+        entries.each do |monitor|
+          ret[monitor.fetch('module')] ||= monitor
+        end
       end
+    end
+
+    def livepatch_metadata_entries(document)
+      if document.has_key?('modules')
+        plural_livepatch_metadata_entries(document)
+      else
+        legacy_livepatch_metadata_entries(document)
+      end
+    end
+
+    def plural_livepatch_metadata_entries(document)
+      entries = document['modules']
+      valid = document['schemaVersion'].is_a?(Integer) &&
+              document['schemaVersion'] == 2 &&
+              entries.is_a?(Array) &&
+              !entries.empty? &&
+              entries.all? { |entry| valid_plural_livepatch_metadata_entry?(entry) }
+      module_names = []
+      if entries.is_a?(Array)
+        module_names = entries.filter_map do |entry|
+          entry['module'] if entry.is_a?(Hash)
+        end
+      end
+      valid &&= module_names.uniq.length == module_names.length
+
+      unless valid
+        record_error('livepatch_monitor', 'invalid')
+        return
+      end
+
+      entries.map do |entry|
+        entry.merge('kernelVersion' => document['kernelVersion'])
+      end
+    end
+
+    def legacy_livepatch_metadata_entries(document)
+      return [] unless document.has_key?('module')
+
+      unless valid_legacy_livepatch_metadata_entry?(document)
+        record_error('livepatch_monitor', 'invalid')
+        return
+      end
+
+      [document]
+    end
+
+    def valid_plural_livepatch_metadata_entry?(entry)
+      return false unless entry.is_a?(Hash)
+
+      module_name = entry['module']
+      patch_version = entry['patchVersion']
+      module_name.is_a?(String) &&
+        !module_name.empty? &&
+        patch_version.is_a?(Integer) &&
+        patch_version > 0 &&
+        entry['patches'].is_a?(Array)
+    end
+
+    def valid_legacy_livepatch_metadata_entry?(entry)
+      module_name = entry['module']
+      module_name.is_a?(String) &&
+        !module_name.empty? &&
+        (!entry.has_key?('patches') || entry['patches'].is_a?(Array))
     end
 
     def livepatch_module_names
