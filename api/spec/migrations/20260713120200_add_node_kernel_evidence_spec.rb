@@ -67,7 +67,7 @@ RSpec.describe AddNodeKernelEvidence do
       %w[node_kernel_evidence_id generation component]
     )
     expect(software_index.unique).to be(true)
-    expect(column(:node_software_versions, :revision_dirty).default).to be(false)
+    expect(column(:node_software_versions, :revision_dirty).default).to eq('0')
     expect(column(:node_software_versions, :revision_dirty).null).to be(false)
   end
 

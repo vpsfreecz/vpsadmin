@@ -17,7 +17,7 @@ RSpec.describe AddPasswordEventCounters do
     expect(column(:password_event_counters, :event_count)).to have_attributes(
       type: :integer,
       null: false,
-      default: 0,
+      default: '0',
       unsigned?: true
     )
     expect(column_exists?(:password_event_counters, :last_occurred_at)).to be(true)

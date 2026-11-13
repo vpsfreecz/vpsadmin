@@ -46,7 +46,7 @@ RSpec.describe AddSysconfigLocalized do
     migrate_up!
 
     expect(column_exists?(:sysconfig, :localized)).to be(true)
-    expect(column(:sysconfig, :localized).default).to be(false)
+    expect(column(:sysconfig, :localized).default).to eq('0')
 
     noticeboard = find_row(:sysconfig, category: 'webui', name: 'noticeboard')
     expect(boolish(noticeboard.fetch('localized'))).to be(true)

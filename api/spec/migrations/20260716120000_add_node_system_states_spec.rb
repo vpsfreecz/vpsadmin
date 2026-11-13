@@ -32,7 +32,7 @@ RSpec.describe AddNodeSystemStates do
     expect(column(:node_system_states, :cpus).null).to be(true)
     expect(column(:node_system_states, :first_observed_at).null).to be(false)
     expect(column(:node_system_states, :last_observed_at).null).to be(false)
-    expect(column(:node_system_states, :current).default).to be(false)
+    expect(column(:node_system_states, :current).default).to eq('0')
     expect(index_exists?(:node_system_states, %i[node_id first_observed_at])).to be(true)
     expect(index_exists?(:node_system_states, %i[node_id current])).to be(true)
   end

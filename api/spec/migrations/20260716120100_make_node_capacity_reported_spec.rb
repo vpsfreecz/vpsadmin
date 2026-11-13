@@ -18,9 +18,9 @@ RSpec.describe MakeNodeCapacityReported do
   it 'defaults the legacy rollback cache for capacity-optional registration' do
     migrate_up!
 
-    expect(column(:nodes, :cpus).default).to eq(0)
-    expect(column(:nodes, :total_memory).default).to eq(0)
-    expect(column(:nodes, :total_swap).default).to eq(0)
+    expect(column(:nodes, :cpus).default).to eq('0')
+    expect(column(:nodes, :total_memory).default).to eq('0')
+    expect(column(:nodes, :total_swap).default).to eq('0')
   end
 
   it 'removes the cache defaults on rollback' do

@@ -11,7 +11,7 @@ RSpec.describe AddIpReleaseCampaigns do
     insert_row(:ip_release_attempt_addresses, membership)
     expect { insert_row(:ip_release_attempt_addresses, membership) }.to raise_error(ActiveRecord::RecordNotUnique)
     insert_row(:ip_release_attempt_addresses, membership.merge(ip_release_attempt_id: 2))
-    expect(column(:ip_release_campaigns, :allow_keep).default).to be(true)
+    expect(column(:ip_release_campaigns, :allow_keep).default).to eq('1')
     attrs = {
       ip_release_request_id: 1, ip_address_id: 10, active_ip_address_id: 10,
       network_id: 1, address: '192.0.2.10', prefix: 32, size: 1,

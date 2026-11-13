@@ -17,7 +17,7 @@ RSpec.describe AddAuthenticationGeneration do
     expect(column(:users, :authentication_generation)).to have_attributes(
       type: :integer,
       null: false,
-      default: 0
+      default: '0'
     )
   end
 

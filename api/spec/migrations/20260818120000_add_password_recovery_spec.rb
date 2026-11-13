@@ -25,7 +25,7 @@ RSpec.describe AddPasswordRecovery do
     expect(column(:oauth2_clients, :authorization_start_requires_user_action)).to have_attributes(
       type: :boolean,
       null: false,
-      default: false
+      default: '0'
     )
     expect(index_exists?(:users, [:email])).to be(true)
     expect(table_exists?(:password_recovery_submissions)).to be(true)

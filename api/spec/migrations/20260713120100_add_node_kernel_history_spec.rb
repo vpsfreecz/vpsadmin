@@ -29,7 +29,7 @@ RSpec.describe AddNodeKernelHistory do
     expect(table_exists?(:node_kernel_events)).to be(true)
     expect(column(:node_kernel_events, :reported_release).null).to be(false)
     expect(column(:node_kernel_events, :observed_before).null).to be(false)
-    expect(column(:node_kernel_events, :current).default).to be(false)
+    expect(column(:node_kernel_events, :current).default).to eq('0')
     expect(column_exists?(:node_kernel_events, :source_status_id)).to be(true)
     expect(column_exists?(:node_kernel_events, :evidence)).to be(false)
     expect(index_exists?(:node_kernel_events, %i[node_id observed_before])).to be(true)
