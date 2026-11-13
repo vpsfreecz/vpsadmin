@@ -175,15 +175,74 @@ RSpec.describe 'VpsAdmin::API::Resources::Dataset snapshot actions' do # rubocop
       expect(action_state_id.to_i).to be > 0
     end
 
-    it 'rejects create when too many snapshots exist' do
-      dip.update!(max_snapshots: 1)
-      create_snapshot!(dataset: dataset, dip: dip)
+    context 'when the snapshot limit is reached' do
+      before do
+        dip.update!(max_snapshots: 2)
+        create_snapshot!(dataset: dataset, dip: dip)
+        create_snapshot!(dataset: dataset, dip: dip, label: 'keep-this-snapshot')
+      end
 
-      as(user) { json_post snapshots_path(dataset.id), snapshot: { label: 'another' } }
+      after { header 'Accept-Language', nil }
+
+      {
+        'en' => 'The limit of 2 snapshots for this dataset has been reached. ' \
+                'All snapshots count, regardless of label. Check the snapshot list; ' \
+                'contact support if you need a higher limit.',
+        'cs' => 'Byl dosažen limit 2 snapshotů tohoto datasetu. ' \
+                'Počítají se všechny snapshoty bez ohledu na popisek. Zkontroluj seznam snapshotů; ' \
+                'pokud potřebuješ vyšší limit, kontaktuj podporu.'
+      }.each do |locale, message|
+        %i[owner admin].each do |role|
+          it "returns the API limit message in #{locale} for #{role} without creating work" do
+            header 'Accept-Language', locale
+            actor = role == :owner ? user : SpecSeed.admin
+
+            expect do
+              as(actor) { json_post snapshots_path(dataset.id), snapshot: { label: 'another' } }
+            end.not_to(change { [Snapshot.count, TransactionChain.count] })
+
+            expect_status(200)
+            expect(json['status']).to be(false)
+            expect(response_message).to eq(message)
+          end
+        end
+      end
+
+      it 'uses the user language when Accept-Language is absent' do
+        user.update!(language: Language.find_by!(code: 'cs'))
+
+        as(user) { json_post snapshots_path(dataset.id), snapshot: { label: 'another' } }
+
+        expect_status(200)
+        expect(json['status']).to be(false)
+        expect(response_message).to start_with('Byl dosažen limit 2 snapshotů tohoto datasetu.')
+      end
+
+      it 'does not reveal another users dataset limit' do
+        header 'Accept-Language', 'cs'
+
+        expect do
+          as(other_user) { json_post snapshots_path(dataset.id), snapshot: { label: 'another' } }
+        end.not_to(change { [Snapshot.count, TransactionChain.count] })
+
+        expect_status(404)
+        expect(json['status']).to be(false)
+        expect(response_message).not_to include('snapshot')
+      end
+    end
+
+    it 'allows creation immediately below the snapshot limit' do
+      ensure_signer_unlocked!
+      dip.update!(max_snapshots: 2)
+      create_snapshot!(dataset: dataset, dip: dip, label: 'keep-this-snapshot')
+
+      expect do
+        as(user) { json_post snapshots_path(dataset.id), snapshot: { label: 'another' } }
+      end.to change { Snapshot.where(dataset: dataset).count }.from(1).to(2)
 
       expect_status(200)
-      expect(json['status']).to be(false)
-      expect(response_message).to match(/cannot make more than/i)
+      expect(json['status']).to be(true)
+      expect(action_state_id.to_i).to be > 0
     end
 
     it 'allows user to create snapshot when dataset is not editable' do
