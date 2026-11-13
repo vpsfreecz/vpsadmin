@@ -62,10 +62,10 @@ let
     "guzzlehttp/psr7" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "guzzlehttp-psr7-adee536f95101929f262b8c59e8a61472f347d58";
+        name = "guzzlehttp-psr7-6d3cd8285a97eaa352956a4ada92fa03ecce1c4e";
         src = fetchurl {
-          url = "https://api.github.com/repos/guzzle/psr7/zipball/adee536f95101929f262b8c59e8a61472f347d58";
-          sha256 = "0wmyfw6i19sh2447hl67mmlch09l08g9aqymf089lw7f748knka8";
+          url = "https://api.github.com/repos/guzzle/psr7/zipball/6d3cd8285a97eaa352956a4ada92fa03ecce1c4e";
+          sha256 = "0m974f6w2aqsgmiz76xlxwm9jf2z5bj3pks78w6pw6v27cmqxags";
         };
       };
     };
@@ -284,10 +284,10 @@ let
     "phpunit/phpunit" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "phpunit-phpunit-4821376960d0e1e5a7b7b700955ebcab33ecd71b";
+        name = "phpunit-phpunit-e6458d44279e3b4fc492d4c41fe8e677efed7a2c";
         src = fetchurl {
-          url = "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/4821376960d0e1e5a7b7b700955ebcab33ecd71b";
-          sha256 = "0bw594cp4l0wyg2kc6f7b9v20pdslkg8ym13m7x1m6s1xkb2h1gk";
+          url = "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/e6458d44279e3b4fc492d4c41fe8e677efed7a2c";
+          sha256 = "01cdg00y0lp63i8fd0zrw3d04j7sqv0i0h95h75kcrdki1sb2ixb";
         };
       };
     };
