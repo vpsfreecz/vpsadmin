@@ -106,7 +106,13 @@ consequences use settings current when that mail is rendered or retried.
 
 The existing incident-report task reconciles transfers, actions, pending
 individual incident mail and threshold mail. Individual incident reports remain
-in addition to threshold notifications. Disabling ordinary incident mail records
+in addition to threshold notifications. New osctl-oomd stop and restart reports
+store their subject and body in the VPS owner's configured language at receipt
+time, falling back to English for a missing or unsupported language. Rendering
+and owner selection share the VPS lock. Later language or ownership changes and
+duplicate deliveries leave stored reports unchanged. Ordinary mail embeds that
+stored text; its wrapper still uses the language selected during mail preparation.
+Disabling ordinary incident mail records
 a prepared-or-intentionally-suppressed notification decision without inventing
 a chain ID. Its nullable `notification_processed_at` timestamp is an acknowledgment,
 not SMTP delivery proof. Ordinary mail

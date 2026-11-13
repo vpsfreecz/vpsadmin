@@ -2529,6 +2529,20 @@ en:
         source for incremental download
       snapshot_download_unavailable: snapshot is not available for download
       vps_already_marked_for_deletion: This VPS is already marked for deletion.
+    incident_reports:
+      oomd:
+        restart:
+          subject: Restart due to abuse
+          text: 'VPS #%{vps_id} %{hostname} abused shared system resources and was
+            restarted.
+
+            '
+        stop:
+          subject: Stop due to abuse
+          text: 'VPS #%{vps_id} %{hostname} abused shared system resources and was
+            stopped.
+
+            '
     password_changes:
       minimum_length_description: The password must be at least %{minimum} characters
         long

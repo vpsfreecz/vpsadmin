@@ -23,6 +23,52 @@ RSpec.describe VpsAdmin::API::IncidentReports do
     create_incident_report_fixture!(vps: fixture.fetch(:vps), user: fixture.fetch(:vps).user, **attrs)
   end
 
+  describe '.oomd_event_message' do
+    let(:vps) { instance_double(Vps, id: 123, hostname: 'host<%= 1 + 1 %>&%{hostname}') }
+
+    [nil, '', 'de'].each do |code|
+      it "falls back to English for language #{code.inspect} and restores the ambient locale" do
+        user = instance_double(User, language: code.nil? ? nil : instance_double(Language, code:))
+
+        ::I18n.with_locale(:cs) do
+          message = described_class.oomd_event_message(vps:, user:, action: 'restart')
+
+          expect(message).to eq(
+            subject: 'Restart due to abuse',
+            text: "VPS #123 #{vps.hostname} abused shared system resources and was restarted.\n"
+          )
+          expect(::I18n.locale).to eq(:cs)
+        end
+      end
+    end
+
+    it 'restores the ambient locale on rendering failure' do
+      user = instance_double(User, language: instance_double(Language, code: 'cs'))
+      allow(VpsAdmin::API::I18n).to receive(:t).with('incident_reports.oomd.stop.subject').and_raise('render failure')
+
+      ::I18n.with_locale(:en) do
+        expect { described_class.oomd_event_message(vps:, user:, action: 'stop') }.to raise_error('render failure')
+        expect(::I18n.locale).to eq(:en)
+      end
+    end
+
+    it 'keeps report and ambient languages separate across threads' do
+      users = %w[en cs].map { |code| instance_double(User, language: instance_double(Language, code:)) }
+      messages = users.map do |user|
+        Thread.new do
+          ::I18n.with_locale(:cs) do
+            [described_class.oomd_event_message(vps:, user:, action: 'stop')[:subject], ::I18n.locale]
+          end
+        end
+      end.map(&:value)
+
+      expect(messages).to eq([
+                               ['Stop due to abuse', :cs],
+                               ['Zastavení kvůli nadměrnému využívání prostředků', :cs]
+                             ])
+    end
+  end
+
   describe described_class::Handler do
     it 'returns the processed boolean in dry-run mode without firing chains' do
       result = VpsAdmin::API::IncidentReports::Result.new(incidents: [], processed: true)

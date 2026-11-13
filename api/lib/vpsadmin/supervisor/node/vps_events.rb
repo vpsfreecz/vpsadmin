@@ -20,10 +20,11 @@ module VpsAdmin::Supervisor
     # The existing node protocol is the only trusted source for this rule.
     def self.record_oomd_event(vps, node:, action:, time:, now: Time.now.utc)
       key = Digest::SHA256.hexdigest([node.id, vps.id, 'oomd', time.to_i, action].join(':'))
-      ::IncidentEscalation.ingest!(vps, incident_type: 'oomd', source_node: node, now:, attributes: {
+      message = lambda do |locked_vps, user|
+        VpsAdmin::API::IncidentReports.oomd_event_message(vps: locked_vps, user:, action:)
+      end
+      ::IncidentEscalation.ingest!(vps, incident_type: 'oomd', source_node: node, report_message: message, now:, attributes: {
                                     codename: 'oomd', detected_at: time,
-                                    subject: "#{action.capitalize} due to abuse",
-                                    text: "VPS ##{vps.id} #{vps.hostname} abused shared system resources and was #{action == 'stop' ? 'stopped' : 'restarted'}.\n",
                                     source_key: key, source_kind: 'node_vps_event', source_node_id: node.id, source_action: action
                                   }) { vps.log(action.to_sym, time:) }
     end

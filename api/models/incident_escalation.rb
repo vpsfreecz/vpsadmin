@@ -94,13 +94,17 @@ class IncidentEscalation
     end
   end
 
-  def self.ingest!(vps, incident_type:, attributes:, source_node: nil, now: Time.now.utc)
+  def self.ingest!(vps, incident_type:, attributes:, source_node: nil, report_message: nil, now: Time.now.utc)
     selected = rule(incident_type)
     serialized(vps) do
       return if source_node && vps.node_id != source_node.id
       return if attributes[:source_key] && IncidentReport.exists?(source_key: attributes[:source_key])
 
-      incident = IncidentReport.create!(attributes.merge(user: vps.user, vps:))
+      user = vps.user
+      if report_message
+        attributes = attributes.merge(report_message.call(vps, user).slice(:subject, :text))
+      end
+      incident = IncidentReport.create!(attributes.merge(user:, vps:))
       yield incident if block_given?
       policy = new(vps, incident_type: selected.key, now:)
       policy.reconcile_transfer!

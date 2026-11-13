@@ -1,5 +1,27 @@
 module VpsAdmin::API
   module IncidentReports
+    def self.oomd_event_message(vps:, user:, action:)
+      locale = user.language&.code&.to_sym
+      locale = VpsAdmin::API::I18n::DEFAULT_LOCALE unless VpsAdmin::API::I18n.available_locales.include?(locale)
+
+      ::I18n.with_locale(locale) do
+        case action
+        when 'stop'
+          {
+            subject: VpsAdmin::API::I18n.t('incident_reports.oomd.stop.subject'),
+            text: VpsAdmin::API::I18n.t('incident_reports.oomd.stop.text', vps_id: vps.id, hostname: vps.hostname)
+          }
+        when 'restart'
+          {
+            subject: VpsAdmin::API::I18n.t('incident_reports.oomd.restart.subject'),
+            text: VpsAdmin::API::I18n.t('incident_reports.oomd.restart.text', vps_id: vps.id, hostname: vps.hostname)
+          }
+        else
+          raise ArgumentError, "Unsupported oomd action #{action.inspect}"
+        end
+      end
+    end
+
     # Entry point for incoming messages
     class Handler
       # @param mailbox [::Mailbox]
