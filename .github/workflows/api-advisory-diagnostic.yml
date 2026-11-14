@@ -1,0 +1,233 @@
+name: API advisory isolated diagnostic
+
+on:
+  push:
+    branches: [2026-11-14-api-advisory-diagnostic]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-advisory-diagnostic-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  diagnostic:
+    if: github.event.deleted != true
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    env:
+      SOURCE_SHA: 7919441ccb8e9587ad0afc84674b074ca9c5a880
+      LOCK_SHA: 7e2f9babb3b733a438ab5a77c8bf813ae53a32025df1ce55990a2270fec69e51
+      RACK_ENV: test
+      VPSADMIN_PLUGINS: all
+      SPEC_MODE: full
+      BUNDLE_WITHOUT: development
+      BUNDLE_JOBS: "4"
+      BUNDLE_RETRY: "3"
+      BUNDLE_FROZEN: "true"
+
+    steps:
+      - name: Initialize evidence
+        env:
+          WORKFLOW_SHA: ${{ github.sha }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+          EVENT_REF: ${{ github.ref }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          export EVIDENCE_DIR="$RUNNER_TEMP/api-advisory-diagnostic"
+          echo "EVIDENCE_DIR=$EVIDENCE_DIR" >> "$GITHUB_ENV"
+          mkdir -p "$EVIDENCE_DIR"
+          printf '%s\n' "source=$SOURCE_SHA" "workflow=$WORKFLOW_SHA" \
+            "workflow_ref=$WORKFLOW_REF" "ref=$EVENT_REF" \
+            "run=$RUN_ID" "attempt=$RUN_ATTEMPT" > "$EVIDENCE_DIR/identity.txt"
+          printf '%s\n' 'Controlled isolated comparison; not historical Ubuntu image equivalence.' \
+            'Original: Ubuntu 26.04.1, image ubuntu-26.04/20261111.196.1.' \
+            'Original failures remain unresolved even if both examples pass.' \
+            > "$EVIDENCE_DIR/scope.txt"
+
+      - name: Checkout diagnostic lock
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Retain frozen lock outside checkout
+        run: |
+          set -euo pipefail
+          cp .github/diagnostics/api-advisory-frozen.lock "$EVIDENCE_DIR/Gemfile.lock"
+          echo "$LOCK_SHA  $EVIDENCE_DIR/Gemfile.lock" | sha256sum --check
+
+      - name: Checkout exact failed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 7919441ccb8e9587ad0afc84674b074ca9c5a880
+          persist-credentials: false
+
+      - name: Gate source, OS and exact SQL packages
+        id: host
+        run: |
+          set -euo pipefail
+          exec > >(tee "$EVIDENCE_DIR/host-inputs.log") 2>&1
+          trap 'printf "%s\n" "$?" > "$EVIDENCE_DIR/host-inputs.exit"' EXIT
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          cp "$EVIDENCE_DIR/Gemfile.lock" api/Gemfile.lock
+          echo "$LOCK_SHA  api/Gemfile.lock" | sha256sum --check
+          cat /etc/os-release
+          uname -a
+          printf 'ImageOS=%s\nImageVersion=%s\n' "${ImageOS:-unavailable}" "${ImageVersion:-unavailable}"
+          # shellcheck source=/dev/null
+          source /etc/os-release
+          test "$ID" = ubuntu
+          test "$VERSION_ID" = 26.04
+          test ! -e api/config/database.yml
+          test -z "${DATABASE_URL:-}"
+          sudo apt-get update
+          packages=(mariadb-server mariadb-server-core mariadb-client mariadb-client-core
+            mariadb-common libmariadb3 libmariadb-dev libmariadb-dev-compat)
+          version='1:11.8.6-5ubuntu0.1'
+          requested=()
+          for package in "${packages[@]}"; do
+            apt-cache policy "$package"
+            apt-cache madison "$package" > "$EVIDENCE_DIR/available-$package.txt"
+            cat "$EVIDENCE_DIR/available-$package.txt"
+          done
+          for package in "${packages[@]}"; do
+            awk -F '|' -v wanted="$version" \
+              '{ gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); if ($2 == wanted) found=1 }
+               END { exit !found }' \
+              "$EVIDENCE_DIR/available-$package.txt"
+            requested+=("$package=$version")
+          done
+          sudo apt-get install -y libffi-dev pkg-config "${requested[@]}"
+          for package in "${packages[@]}"; do
+            installed=$(dpkg-query -W -f='${Version}' "$package")
+            printf '%s=%s\n' "$package" "$installed"
+            test "$installed" = "$version"
+          done
+          dpkg-query -W -f='${Package}\t${Version}\n' > "$EVIDENCE_DIR/packages.txt"
+          mariadbd --version
+          mariadb --version
+          mariadbd --version | grep -E '11\.8\.6-MariaDB([-[:space:]]|$)'
+          mariadb --version | grep -E '11\.8\.6-MariaDB([-,[:space:]]|$)'
+
+      - name: Set up exact Ruby and frozen full bundle
+        id: ruby
+        uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1.338.0
+        with:
+          ruby-version: 3.4.12
+          bundler: 2.6.9
+          bundler-cache: true
+          working-directory: api
+
+      - name: Gate Ruby, graph and actual temporary DB settings
+        id: database
+        working-directory: api
+        run: |
+          set -euo pipefail
+          exec > >(tee "$EVIDENCE_DIR/software-db-inputs.log") 2>&1
+          trap 'printf "%s\n" "$?" > "$EVIDENCE_DIR/software-db-inputs.exit"' EXIT
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          echo "$LOCK_SHA  Gemfile.lock" | sha256sum --check
+          bundle exec ruby -rjson -rbundler -rrspec/core -e '
+            abort "Unexpected Ruby" unless RUBY_VERSION == "3.4.12"
+            abort "Unexpected Bundler" unless Bundler::VERSION == "2.6.9"
+            specs = Bundler::LockfileParser.new(Bundler.read_file("Gemfile.lock")).specs
+            gems = specs.map { |s| [s.name, s.version.to_s] }.uniq
+            abort "Unexpected frozen graph size" unless gems.length == 122
+            data = {ruby: RUBY_DESCRIPTION, bundler: Bundler::VERSION,
+                    rspec: RSpec::Core::Version::STRING,
+                    rack_env: ENV.fetch("RACK_ENV"), mode: ENV.fetch("SPEC_MODE"),
+                    plugins: ENV.fetch("VPSADMIN_PLUGINS"),
+                    without: ENV.fetch("BUNDLE_WITHOUT"),
+                    gems: specs.map { |s| [s.name, s.version.to_s, s.platform.to_s] }}
+            File.write(File.join(ENV.fetch("EVIDENCE_DIR"), "ruby-gems.json"),
+                       JSON.pretty_generate(data) + "\n")
+            puts JSON.pretty_generate(data)
+          '
+          bundle exec ruby -I spec -r spec_helper -rjson -e '
+            row = ActiveRecord::Base.connection.select_rows(
+              "SELECT VERSION(), @@session.tx_isolation, @@session.innodb_snapshot_isolation"
+            ).fetch(0)
+            puts JSON.pretty_generate(row)
+            File.write(File.join(ENV.fetch("EVIDENCE_DIR"), "database.json"),
+                       JSON.pretty_generate(row) + "\n")
+            abort "Unexpected server version" unless row[0].start_with?("11.8.6-MariaDB")
+            abort "Unexpected isolation" unless row[1] == "REPEATABLE-READ"
+            abort "Unexpected snapshot isolation" unless row[2].to_s == "0"
+          '
+          echo "$LOCK_SHA  Gemfile.lock" | sha256sum --check
+
+      - name: Run original operations example with original seed
+        id: operations
+        working-directory: api
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          echo "$LOCK_SHA  Gemfile.lock" | sha256sum --check
+          set +e
+          bundle exec rspec 'spec/api/resources/security_advisory_spec.rb[1:3:1]' \
+            --seed 42376 --format documentation --format json \
+            --out "$EVIDENCE_DIR/matching-software-operations.json" \
+            2>&1 | tee "$EVIDENCE_DIR/operations.log"
+          statuses=("${PIPESTATUS[@]}")
+          set -e
+          printf '%s\n' "${statuses[0]}" > "$EVIDENCE_DIR/operations.exit"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          echo "$LOCK_SHA  Gemfile.lock" | sha256sum --check
+          if (( statuses[0] != 0 )); then exit "${statuses[0]}"; fi
+          exit "${statuses[1]}"
+
+      - name: Run original plugin example with original seed
+        id: plugins
+        working-directory: api
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          echo "$LOCK_SHA  Gemfile.lock" | sha256sum --check
+          set +e
+          bundle exec rspec 'spec/api/plugins/outage_reports/security_advisory_spec.rb[1:3:1]' \
+            --seed 55119 --format documentation --format json \
+            --out "$EVIDENCE_DIR/matching-software-plugins.json" \
+            2>&1 | tee "$EVIDENCE_DIR/plugins.log"
+          statuses=("${PIPESTATUS[@]}")
+          set -e
+          printf '%s\n' "${statuses[0]}" > "$EVIDENCE_DIR/plugins.exit"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          echo "$LOCK_SHA  Gemfile.lock" | sha256sum --check
+          if (( statuses[0] != 0 )); then exit "${statuses[0]}"; fi
+          exit "${statuses[1]}"
+
+      - name: Record gate and execution outcomes
+        if: always()
+        env:
+          HOST_OUTCOME: ${{ steps.host.outcome }}
+          RUBY_OUTCOME: ${{ steps.ruby.outcome }}
+          DATABASE_OUTCOME: ${{ steps.database.outcome }}
+          OPERATIONS_OUTCOME: ${{ steps.operations.outcome }}
+          PLUGINS_OUTCOME: ${{ steps.plugins.outcome }}
+        run: |
+          set -euo pipefail
+          printf 'host=%s\nruby=%s\ndatabase=%s\noperations=%s\nplugins=%s\n' \
+            "$HOST_OUTCOME" "$RUBY_OUTCOME" "$DATABASE_OUTCOME" \
+            "$OPERATIONS_OUTCOME" "$PLUGINS_OUTCOME" > "$EVIDENCE_DIR/outcomes.txt"
+          # Skipped or interrupted execution can leave no native exit recorded.
+          for example in operations plugins; do
+            if [[ ! -f "$EVIDENCE_DIR/$example.exit" ]]; then
+              printf '%s\n' 'no native exit recorded; see step outcome/logs' > "$EVIDENCE_DIR/$example.exit"
+            fi
+          done
+
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: api-advisory-diagnostic-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE_DIR }}
+          if-no-files-found: error
+          retention-days: 7
