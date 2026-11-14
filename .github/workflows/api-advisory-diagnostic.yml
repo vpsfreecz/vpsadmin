@@ -1,4 +1,4 @@
-name: API advisory isolated diagnostic
+name: API advisory original topics diagnostic
 
 on:
   push:
@@ -15,7 +15,7 @@ jobs:
   diagnostic:
     if: github.event.deleted != true
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     defaults:
       run:
         shell: bash
@@ -40,15 +40,15 @@ jobs:
           RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
           set -euo pipefail
-          export EVIDENCE_DIR="$RUNNER_TEMP/api-advisory-diagnostic"
+          export EVIDENCE_DIR="$RUNNER_TEMP/api-advisory-original-topics"
           echo "EVIDENCE_DIR=$EVIDENCE_DIR" >> "$GITHUB_ENV"
           mkdir -p "$EVIDENCE_DIR"
           printf '%s\n' "source=$SOURCE_SHA" "workflow=$WORKFLOW_SHA" \
             "workflow_ref=$WORKFLOW_REF" "ref=$EVENT_REF" \
             "run=$RUN_ID" "attempt=$RUN_ATTEMPT" > "$EVIDENCE_DIR/identity.txt"
-          printf '%s\n' 'Controlled isolated comparison; not historical Ubuntu image equivalence.' \
+          printf '%s\n' 'Complete original topics with original seeds; stop after one pair.' \
             'Original: Ubuntu 26.04.1, image ubuntu-26.04/20261111.196.1.' \
-            'Original failures remain unresolved even if both examples pass.' \
+            'A nonreproduction does not waive the original CI failures.' \
             > "$EVIDENCE_DIR/scope.txt"
 
       - name: Checkout diagnostic lock
@@ -57,10 +57,11 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
 
-      - name: Retain frozen lock outside checkout
+      - name: Retain frozen lock and complete manifests outside checkout
         run: |
           set -euo pipefail
           cp .github/diagnostics/api-advisory-frozen.lock "$EVIDENCE_DIR/Gemfile.lock"
+          cp .github/diagnostics/api-advisory-topics.json "$EVIDENCE_DIR/api-advisory-topics.json"
           echo "$LOCK_SHA  $EVIDENCE_DIR/Gemfile.lock" | sha256sum --check
 
       - name: Checkout exact failed source
@@ -163,41 +164,69 @@ jobs:
           '
           echo "$LOCK_SHA  Gemfile.lock" | sha256sum --check
 
-      - name: Run original operations example with original seed
+      - name: Run complete original operations topic with original seed
         id: operations
         working-directory: api
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           echo "$LOCK_SHA  Gemfile.lock" | sha256sum --check
+          bundle exec ruby -rjson -e '
+            topics = JSON.parse(File.read(File.join(ENV.fetch("EVIDENCE_DIR"), "api-advisory-topics.json")))
+            abort "Expected two fixed topics" unless topics.is_a?(Array) && topics.length == 2
+            topic = topics.fetch(0)
+            abort "Unexpected topic/seed" unless topic.values_at("topic", "seed") == ["platform-operations", 42376]
+            files = topic.fetch("files")
+            abort "Expected complete operations manifest" unless files.is_a?(Array) && files.length == 8 &&
+              files == files.sort.uniq && files.all? { |path| File.file?(path) }
+            File.write(File.join(ENV.fetch("EVIDENCE_DIR"), "platform-operations.files.txt"), files.join("\n") + "\n")
+            File.write(File.join(ENV.fetch("EVIDENCE_DIR"), "platform-operations.seed"), "#{topic.fetch("seed")}\n")
+          '
+          mapfile -t files < "$EVIDENCE_DIR/platform-operations.files.txt"
+          read -r seed < "$EVIDENCE_DIR/platform-operations.seed"
+          (( ${#files[@]} == 8 ))
           set +e
-          bundle exec rspec 'spec/api/resources/security_advisory_spec.rb[1:3:1]' \
-            --seed 42376 --format documentation --format json \
-            --out "$EVIDENCE_DIR/matching-software-operations.json" \
-            2>&1 | tee "$EVIDENCE_DIR/operations.log"
+          bundle exec rspec "${files[@]}" --seed "$seed" --fail-fast \
+            --format documentation --format json \
+            --out "$EVIDENCE_DIR/full-topic-operations.json" \
+            2>&1 | tee "$EVIDENCE_DIR/full-topic-operations.log"
           statuses=("${PIPESTATUS[@]}")
           set -e
-          printf '%s\n' "${statuses[0]}" > "$EVIDENCE_DIR/operations.exit"
+          printf '%s\n' "${statuses[0]}" > "$EVIDENCE_DIR/full-topic-operations.exit"
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           echo "$LOCK_SHA  Gemfile.lock" | sha256sum --check
           if (( statuses[0] != 0 )); then exit "${statuses[0]}"; fi
           exit "${statuses[1]}"
 
-      - name: Run original plugin example with original seed
+      - name: Run complete original plugins topic with original seed
         id: plugins
         working-directory: api
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           echo "$LOCK_SHA  Gemfile.lock" | sha256sum --check
+          bundle exec ruby -rjson -e '
+            topics = JSON.parse(File.read(File.join(ENV.fetch("EVIDENCE_DIR"), "api-advisory-topics.json")))
+            abort "Expected two fixed topics" unless topics.is_a?(Array) && topics.length == 2
+            topic = topics.fetch(1)
+            abort "Unexpected topic/seed" unless topic.values_at("topic", "seed") == ["plugins", 55119]
+            files = topic.fetch("files")
+            abort "Expected complete plugins manifest" unless files.is_a?(Array) && files.length == 17 &&
+              files == files.sort.uniq && files.all? { |path| File.file?(path) }
+            File.write(File.join(ENV.fetch("EVIDENCE_DIR"), "plugins.files.txt"), files.join("\n") + "\n")
+            File.write(File.join(ENV.fetch("EVIDENCE_DIR"), "plugins.seed"), "#{topic.fetch("seed")}\n")
+          '
+          mapfile -t files < "$EVIDENCE_DIR/plugins.files.txt"
+          read -r seed < "$EVIDENCE_DIR/plugins.seed"
+          (( ${#files[@]} == 17 ))
           set +e
-          bundle exec rspec 'spec/api/plugins/outage_reports/security_advisory_spec.rb[1:3:1]' \
-            --seed 55119 --format documentation --format json \
-            --out "$EVIDENCE_DIR/matching-software-plugins.json" \
-            2>&1 | tee "$EVIDENCE_DIR/plugins.log"
+          bundle exec rspec "${files[@]}" --seed "$seed" --fail-fast \
+            --format documentation --format json \
+            --out "$EVIDENCE_DIR/full-topic-plugins.json" \
+            2>&1 | tee "$EVIDENCE_DIR/full-topic-plugins.log"
           statuses=("${PIPESTATUS[@]}")
           set -e
-          printf '%s\n' "${statuses[0]}" > "$EVIDENCE_DIR/plugins.exit"
+          printf '%s\n' "${statuses[0]}" > "$EVIDENCE_DIR/full-topic-plugins.exit"
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           echo "$LOCK_SHA  Gemfile.lock" | sha256sum --check
           if (( statuses[0] != 0 )); then exit "${statuses[0]}"; fi
@@ -217,9 +246,9 @@ jobs:
             "$HOST_OUTCOME" "$RUBY_OUTCOME" "$DATABASE_OUTCOME" \
             "$OPERATIONS_OUTCOME" "$PLUGINS_OUTCOME" > "$EVIDENCE_DIR/outcomes.txt"
           # Skipped or interrupted execution can leave no native exit recorded.
-          for example in operations plugins; do
-            if [[ ! -f "$EVIDENCE_DIR/$example.exit" ]]; then
-              printf '%s\n' 'no native exit recorded; see step outcome/logs' > "$EVIDENCE_DIR/$example.exit"
+          for topic in operations plugins; do
+            if [[ ! -f "$EVIDENCE_DIR/full-topic-$topic.exit" ]]; then
+              printf '%s\n' 'no native exit recorded; see step outcome/logs' > "$EVIDENCE_DIR/full-topic-$topic.exit"
             fi
           done
 
@@ -227,7 +256,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: api-advisory-diagnostic-${{ github.run_id }}-${{ github.run_attempt }}
+          name: api-advisory-original-topics-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ env.EVIDENCE_DIR }}
           if-no-files-found: error
           retention-days: 7

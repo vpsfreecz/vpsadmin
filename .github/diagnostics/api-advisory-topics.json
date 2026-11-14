@@ -1,0 +1,39 @@
+[
+  {
+    "topic": "platform-operations",
+    "seed": 42376,
+    "files": [
+      "spec/api/resources/incident_report_spec.rb",
+      "spec/api/resources/lifecycle_bypass_spec.rb",
+      "spec/api/resources/object_history_spec.rb",
+      "spec/api/resources/oom_report_rule_spec.rb",
+      "spec/api/resources/oom_report_spec.rb",
+      "spec/api/resources/security_advisory_spec.rb",
+      "spec/api/resources/transaction_chain_read_spec.rb",
+      "spec/api/resources/transaction_read_spec.rb"
+    ]
+  },
+  {
+    "topic": "plugins",
+    "seed": 55119,
+    "files": [
+      "spec/api/plugins/monitoring/monitored_event_spec.rb",
+      "spec/api/plugins/newslog/news_log_spec.rb",
+      "spec/api/plugins/outage_reports/export_outage_spec.rb",
+      "spec/api/plugins/outage_reports/outage_spec.rb",
+      "spec/api/plugins/outage_reports/outage_update_spec.rb",
+      "spec/api/plugins/outage_reports/security_advisory_spec.rb",
+      "spec/api/plugins/outage_reports/user_outage_spec.rb",
+      "spec/api/plugins/outage_reports/vps_outage_spec.rb",
+      "spec/api/plugins/payments/incoming_payment_spec.rb",
+      "spec/api/plugins/payments/payment_stats_spec.rb",
+      "spec/api/plugins/payments/user_account_spec.rb",
+      "spec/api/plugins/payments/user_get_payment_instructions_spec.rb",
+      "spec/api/plugins/payments/user_payment_spec.rb",
+      "spec/api/plugins/requests/change_spec.rb",
+      "spec/api/plugins/requests/registration_spec.rb",
+      "spec/api/plugins/webui/help_box_spec.rb",
+      "spec/api/plugins/webui/webui_user_setting_spec.rb"
+    ]
+  }
+]
