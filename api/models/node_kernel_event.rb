@@ -34,8 +34,18 @@ class NodeKernelEvent < ApplicationRecord
             uniqueness: { scope: %i[node_id event_type] },
             allow_nil: true
   validates :livepatch_action, absence: true, unless: :livepatch_change?
+  validates :livepatch_id, presence: true, allow_nil: true
+  validate :livepatch_id_fits_column
 
   scope :kernel_history, lambda {
     where(event_type: event_types.slice(*PUBLIC_EVENT_TYPES).values)
   }
+
+  protected
+
+  def livepatch_id_fits_column
+    return unless livepatch_id && livepatch_id.bytesize > 63
+
+    errors.add(:livepatch_id, :too_long, count: 63)
+  end
 end

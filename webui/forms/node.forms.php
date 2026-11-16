@@ -182,6 +182,12 @@ function node_kernel_history_table($node_id)
         }
 
         $eventCell = h($eventLabel);
+        if ($event->event_type === 'livepatch') {
+            $eventCell = node_livepatch_event_cell(
+                $event->livepatch_action ?? null,
+                $event->livepatch_id ?? null
+            );
+        }
         if (isAdmin() && $event->event_type === 'boot') {
             $eventCell = '<a data-vpsadmin-doc-id="node.kernel-boot-evidence"'
                 . ' href="?page=node&amp;action=kernel_boot_evidence&amp;id=' . (int) $node->id
@@ -666,6 +672,17 @@ function node_livepatch_event_label($action)
         default:
             return _('Live patch change');
     }
+}
+
+function node_livepatch_event_cell($action, $livepatch_id = null)
+{
+    $label = h(node_livepatch_event_label($action));
+
+    if (!is_string($livepatch_id) || $livepatch_id === '') {
+        return $label;
+    }
+
+    return $label . ' &middot; <code>' . h($livepatch_id) . '</code>';
 }
 
 function node_sysctl_availability($value)

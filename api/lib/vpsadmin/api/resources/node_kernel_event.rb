@@ -16,6 +16,10 @@ module VpsAdmin::API::Resources
              desc: 'Effective live patch lifecycle action',
              choices: ::NodeKernelEvent.livepatch_actions.keys,
              nullable: true
+      string :livepatch_id,
+             label: 'Live patch ID',
+             desc: 'Exact live patch module identifier',
+             nullable: true
       string :boot_id, nullable: true
       datetime :booted_at, nullable: true
       string :booted_release, nullable: true

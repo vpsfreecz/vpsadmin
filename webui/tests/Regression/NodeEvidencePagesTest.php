@@ -53,6 +53,16 @@ final class NodeEvidencePagesTest extends TestCase
         self::assertSame('Live patch applied', node_livepatch_event_label('applied'));
         self::assertSame('Live patch removed', node_livepatch_event_label('removed'));
         self::assertSame('Live patch change', node_livepatch_event_label(null));
+        self::assertSame('Live patch applied', node_livepatch_event_cell('applied'));
+        self::assertSame('Live patch removed', node_livepatch_event_cell('removed', null));
+        self::assertSame(
+            'Live patch applied &middot; <code>lp_612113_1_0123456789ab</code>',
+            node_livepatch_event_cell('applied', 'lp_612113_1_0123456789ab')
+        );
+        self::assertSame(
+            'Live patch change &middot; <code>&lt;script&gt;alert(1)&lt;/script&gt;</code>',
+            node_livepatch_event_cell(null, '<script>alert(1)</script>')
+        );
     }
 
     public function testObservedIntervalsUseCompactAccessibleDetails(): void

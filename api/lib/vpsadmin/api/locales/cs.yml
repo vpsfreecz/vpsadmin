@@ -1104,7 +1104,7 @@ cs:
             label: Odstraněna
         label: Akce živé záplaty
       livepatch_id:
-        label: ID živé záplaty
+        description: Přesný identifikátor modulu živé záplaty
       loadavg1:
         label: Loadavg1
       loadavg15:
@@ -3246,6 +3246,8 @@ cs:
               label: ID
             livepatch_action:
               description: Akce životního cyklu účinné živé záplaty
+            livepatch_id:
+              label: ID živé záplaty
         status:
           attributes:
             cgroup_version:
@@ -3292,6 +3294,8 @@ cs:
         attributes:
           id:
             label: ID události kernelu Node
+          livepatch_id:
+            label: ID živé záplaty
         input:
           livepatch_action:
             description: Filtrovat podle akce životního cyklu účinné živé záplaty
@@ -3318,6 +3322,8 @@ cs:
         attributes:
           id:
             label: ID záznamu živé záplaty
+          livepatch_id:
+            label: ID živé záplaty
       node_kernel_livepatch_patch:
         attributes:
           id:

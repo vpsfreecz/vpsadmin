@@ -139,6 +139,7 @@ RSpec.describe VpsAdmin::API::Operations::Node::RecordKernelEvidence do
     expect(events.last).to be_inferred
     expect(events.last.effective_at).to be_nil
     expect(events.last.livepatch_action).to eq('applied')
+    expect(events.last.livepatch_id).to eq('livepatch_1')
   end
 
   it 'does not treat a legacy activation marker as the application time' do
@@ -160,6 +161,7 @@ RSpec.describe VpsAdmin::API::Operations::Node::RecordKernelEvidence do
 
     expect(node.node_kernel_events.livepatch_change.sole).to have_attributes(
       livepatch_action: 'applied',
+      livepatch_id: 'livepatch_1',
       effective_at: nil,
       observed_after: t0 + 10,
       observed_before: t0 + 120,
@@ -209,6 +211,7 @@ RSpec.describe VpsAdmin::API::Operations::Node::RecordKernelEvidence do
 
     expect(node.node_kernel_events.livepatch_change.sole).to have_attributes(
       livepatch_action: 'applied',
+      livepatch_id: nil,
       effective_at: nil,
       observed_after: t0 + 10,
       observed_before: t0 + 120,
@@ -293,6 +296,7 @@ RSpec.describe VpsAdmin::API::Operations::Node::RecordKernelEvidence do
 
     event = node.node_kernel_events.livepatch_change.sole
     expect(event.livepatch_action).to eq('applied')
+    expect(event.livepatch_id).to eq('livepatch_external')
     stored = stored_report(event.kernel_evidence)
     expect(stored.livepatches.sole).to have_attributes(
       id: 'livepatch_external',
@@ -469,6 +473,7 @@ RSpec.describe VpsAdmin::API::Operations::Node::RecordKernelEvidence do
     event = node.node_kernel_events.livepatch_change.sole
     expect(event).to have_attributes(
       livepatch_action: 'applied',
+      livepatch_id: 'livepatch_1',
       reported_release: '6.12.93.1',
       effective_at: nil,
       observed_after: t0 + 120,
@@ -516,12 +521,55 @@ RSpec.describe VpsAdmin::API::Operations::Node::RecordKernelEvidence do
     event = node.node_kernel_events.livepatch_change.sole
     expect(event).to have_attributes(
       livepatch_action: 'removed',
+      livepatch_id: 'livepatch_1',
       effective_at: nil,
       observed_after: t0 + 40,
       observed_before: t0 + 120,
       current: true
     )
     expect(event).to be_inferred
+  end
+
+  it 'does not select an ID when multiple patches become effective together' do
+    initial = evidence
+    applied = evidence(livepatches: %w[livepatch_1 livepatch_2].map do |id|
+      { 'id' => id, 'enabled' => true }
+    end)
+
+    described_class.run(node:, observed_at: t0 + 10, report: report(initial))
+    described_class.run(
+      node:,
+      observed_at: t0 + 120,
+      report: report(applied),
+      previous_report: report(initial),
+      previous_observed_at: t0 + 10
+    )
+
+    expect(node.node_kernel_events.livepatch_change.sole).to have_attributes(
+      livepatch_action: 'applied',
+      livepatch_id: nil
+    )
+  end
+
+  it 'does not select an ID when multiple patches are removed together' do
+    applied = evidence(livepatches: %w[livepatch_1 livepatch_2].map do |id|
+      { 'id' => id, 'enabled' => true }
+    end)
+    removed = evidence
+
+    described_class.run(node:, observed_at: t0 + 10, report: report(applied))
+    described_class.run(
+      node:,
+      observed_at: t0 + 120,
+      report: report(removed),
+      previous_report: report(applied),
+      previous_observed_at: t0 + 10
+    )
+
+    expect(node.node_kernel_events.livepatch_change.sole).to have_attributes(
+      livepatch_action: 'removed',
+      livepatch_id: nil
+    )
   end
 
   it 'bounds a release deferred by transition from the stable event' do

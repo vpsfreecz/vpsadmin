@@ -54,6 +54,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Node::KernelHistory' do
     expect(events.length).to eq(1)
     expect(events.first).to include(
       'event_type' => 'boot',
+      'livepatch_id' => nil,
       'booted_release' => '6.12.95',
       'reported_release' => '6.12.95',
       'confidence' => 'exact',
@@ -115,6 +116,7 @@ RSpec.describe 'VpsAdmin::API::Resources::Node::KernelHistory' do
       node:,
       event_type: :livepatch_change,
       livepatch_action: :applied,
+      livepatch_id: 'lp_612113_1_0123456789ab',
       source: :node_report,
       confidence: :exact,
       booted_release: '6.12.93',
@@ -129,7 +131,8 @@ RSpec.describe 'VpsAdmin::API::Resources::Node::KernelHistory' do
     )
     expect(events.first).to include(
       'event_type' => 'livepatch',
-      'livepatch_action' => 'applied'
+      'livepatch_action' => 'applied',
+      'livepatch_id' => 'lp_612113_1_0123456789ab'
     )
   end
 

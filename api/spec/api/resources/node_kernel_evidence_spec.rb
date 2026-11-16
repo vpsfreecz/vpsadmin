@@ -282,6 +282,7 @@ RSpec.describe VpsAdmin::API::Resources::NodeKernelEvidence do
       node:,
       event_type: :livepatch_change,
       livepatch_action: :applied,
+      livepatch_id: 'lp_612113_1_0123456789ab',
       source: :node_report,
       confidence: :exact,
       boot_id: 'boot-a',
@@ -309,7 +310,10 @@ RSpec.describe VpsAdmin::API::Resources::NodeKernelEvidence do
       'kernel_source_revision' => 'a2384967',
       'node_kernel_evidence' => include('id' => a_kind_of(Integer))
     )
-    expect(returned.last['livepatch_action']).to eq('applied')
+    expect(returned.last).to include(
+      'livepatch_action' => 'applied',
+      'livepatch_id' => 'lp_612113_1_0123456789ab'
+    )
   end
 
   it 'selects a filtered pre-window baseline independently for every Node' do

@@ -1103,7 +1103,7 @@ en:
             label: removed
         label: Live patch action
       livepatch_id:
-        label: Livepatch_id
+        description: Exact live patch module identifier
       loadavg1:
         label: Loadavg1
       loadavg15:
@@ -3246,6 +3246,8 @@ en:
               label: Id
             livepatch_action:
               description: Effective live patch lifecycle action
+            livepatch_id:
+              label: Live patch ID
         status:
           attributes:
             cgroup_version:
@@ -3292,6 +3294,8 @@ en:
         attributes:
           id:
             label: Id
+          livepatch_id:
+            label: Live patch ID
         input:
           livepatch_action:
             description: Filter by effective live patch lifecycle action
@@ -3318,6 +3322,8 @@ en:
         attributes:
           id:
             label: Id
+          livepatch_id:
+            label: Livepatch_id
       node_kernel_livepatch_patch:
         attributes:
           id:

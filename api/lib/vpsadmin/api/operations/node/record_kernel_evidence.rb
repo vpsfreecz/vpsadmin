@@ -104,13 +104,14 @@ module VpsAdmin::API
 
       if lifecycle
         lifecycle_observed_after = stable_observed_at
-        if lifecycle == :applied && livepatch_observation_complete?(previous_report)
+        if lifecycle[:action] == :applied && livepatch_observation_complete?(previous_report)
           lifecycle_observed_after = [stable_observed_at, previous_observed_at].compact.max
         end
         create_event!(
           node:,
           event_type: :livepatch_change,
-          livepatch_action: lifecycle,
+          livepatch_action: lifecycle[:action],
+          livepatch_id: lifecycle[:livepatch_id],
           observed_at:,
           previous_observed_at: lifecycle_observed_after,
           report:
@@ -313,13 +314,24 @@ module VpsAdmin::API
       added_ids = current_effective - previous_effective
       removed_ids = previous_effective - current_effective
 
-      return :applied if added_ids.any?
-      return :removed if removal_observed?(
+      if added_ids.any?
+        return {
+          action: :applied,
+          livepatch_id: added_ids.one? && removed_ids.empty? ? added_ids.first : nil
+        }
+      end
+
+      if removal_observed?(
         removed_ids,
         current,
         previous_report.kernel.reported_release,
         current_report.kernel.reported_release
       )
+        return {
+          action: :removed,
+          livepatch_id: removed_ids.one? ? removed_ids.first : nil
+        }
+      end
 
       nil
     end
@@ -379,6 +391,7 @@ module VpsAdmin::API
       previous_observed_at:,
       report:,
       livepatch_action: nil,
+      livepatch_id: nil,
       effective_at: nil,
       confidence: :inferred,
       public_event: true
@@ -389,6 +402,7 @@ module VpsAdmin::API
         node:,
         event_type:,
         livepatch_action:,
+        livepatch_id:,
         source: :node_report,
         confidence:,
         boot_id: kernel.boot_id,
