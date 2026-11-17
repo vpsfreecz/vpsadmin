@@ -82,10 +82,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0p2m65inmzqpza2x8ls6l5zdfa7n8rlinc2ns0cwqkh6rxc0g014";
+      sha256 = "1p7fdhxg6kgxgnn389dw12z3xm5m74wp06yimdg1gl54r4s9lv9s";
       type = "gem";
     };
-    version = "8.1.1";
+    version = "8.1.2";
   };
   rack = {
     groups = [
@@ -111,10 +111,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1b4bamcbpk29i7jvly3i7ayfj69yc1g03gm4s7jgamccvx12hvng";
+      sha256 = "16as0s0hg7a7mhrcv4dpavawxwdiidbcwlj4ai0l0b26mr6pcx8f";
       type = "gem";
     };
-    version = "4.2.1";
+    version = "4.2.2";
   };
   rack-session = {
     dependencies = [
@@ -261,10 +261,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "103h6wjpcqp3i034hi44za2v365yz7qk9s5df8lmasq43nqvkbmp";
+      sha256 = "0bylk92avw7pn2vkmiichv8p0a1zaflrgmd0dynxfrgb033663is";
       type = "gem";
     };
-    version = "4.2.1";
+    version = "4.2.2";
   };
   sorted_set = {
     dependencies = [ "rbtree" ];

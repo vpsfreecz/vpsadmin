@@ -910,10 +910,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0p2m65inmzqpza2x8ls6l5zdfa7n8rlinc2ns0cwqkh6rxc0g014";
+      sha256 = "1p7fdhxg6kgxgnn389dw12z3xm5m74wp06yimdg1gl54r4s9lv9s";
       type = "gem";
     };
-    version = "8.1.1";
+    version = "8.1.2";
   };
   racc = {
     groups = [
@@ -970,10 +970,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1b4bamcbpk29i7jvly3i7ayfj69yc1g03gm4s7jgamccvx12hvng";
+      sha256 = "16as0s0hg7a7mhrcv4dpavawxwdiidbcwlj4ai0l0b26mr6pcx8f";
       type = "gem";
     };
-    version = "4.2.1";
+    version = "4.2.2";
   };
   rack-session = {
     dependencies = [
@@ -1062,10 +1062,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0jxl6c5cagjz5i5n9jplhdy2izad6wapmwgfhqggb22nqfvvdvas";
+      sha256 = "09yvadj15kzz9hbq0gvql92kpbn04q9b9ck1vkmhd5zw5av3x0y9";
       type = "gem";
     };
-    version = "2.13.1";
+    version = "2.13.3";
   };
   reline = {
     dependencies = [ "io-console" ];
@@ -1221,10 +1221,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "10jk3xf483h5cl8mvl2riz9irs0m2w65av0qg1pxr823s7p33yql";
+      sha256 = "1xigcyc13kn6lc0gs59m2zw5p7y508bqm1jgacx1rsg88sngwxzx";
       type = "gem";
     };
-    version = "1.92.2";
+    version = "1.92.3";
   };
   rubocop-ast = {
     dependencies = [
@@ -1339,10 +1339,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "103h6wjpcqp3i034hi44za2v365yz7qk9s5df8lmasq43nqvkbmp";
+      sha256 = "0bylk92avw7pn2vkmiichv8p0a1zaflrgmd0dynxfrgb033663is";
       type = "gem";
     };
-    version = "4.2.1";
+    version = "4.2.2";
   };
   sinatra-activerecord = {
     dependencies = [
@@ -1370,10 +1370,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "0jkbsaika8pr9bc90ag3wqrhbgiy7h5a93k11j8sls6j8k4r3l0h";
+      sha256 = "080nrafdpv8fgyagwia6cvdlbak3vvfd02b6rb7n7qs76vxrqqix";
       type = "gem";
     };
-    version = "4.2.1";
+    version = "4.2.2";
   };
   sorted_set = {
     dependencies = [ "rbtree" ];
