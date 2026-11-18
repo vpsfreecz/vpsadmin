@@ -42,10 +42,10 @@ let
     "guzzlehttp/guzzle" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "guzzlehttp-guzzle-22e3847536750e5a7b89d4f880f28aaf7b72e287";
+        name = "guzzlehttp-guzzle-c88a78082757dd5a0c44191651535259fcb6e605";
         src = fetchurl {
-          url = "https://api.github.com/repos/guzzle/guzzle/zipball/22e3847536750e5a7b89d4f880f28aaf7b72e287";
-          sha256 = "06jrbbzmdyn66f8py358kcjfn0bk90skldc4n7ij8dd63m1gv1g0";
+          url = "https://api.github.com/repos/guzzle/guzzle/zipball/c88a78082757dd5a0c44191651535259fcb6e605";
+          sha256 = "1sqr96b6ssvz84ixwx3qgm8g7pfnc40q6d9xlmry3rncclgwwhh8";
         };
       };
     };
@@ -62,10 +62,10 @@ let
     "guzzlehttp/psr7" = {
       targetDir = "";
       src = composerEnv.buildZipPackage {
-        name = "guzzlehttp-psr7-6d3cd8285a97eaa352956a4ada92fa03ecce1c4e";
+        name = "guzzlehttp-psr7-ad5e3f872690e1151e1171de2963150fc45ea1e3";
         src = fetchurl {
-          url = "https://api.github.com/repos/guzzle/psr7/zipball/6d3cd8285a97eaa352956a4ada92fa03ecce1c4e";
-          sha256 = "0m974f6w2aqsgmiz76xlxwm9jf2z5bj3pks78w6pw6v27cmqxags";
+          url = "https://api.github.com/repos/guzzle/psr7/zipball/ad5e3f872690e1151e1171de2963150fc45ea1e3";
+          sha256 = "13q4ank7qgy1m3hvqqzp1ylbkldhkif51z7di2cjsgcc4l2rc786";
         };
       };
     };
