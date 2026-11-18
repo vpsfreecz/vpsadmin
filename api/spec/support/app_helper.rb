@@ -10,7 +10,31 @@ module ApiAppHelper
   include Rack::Test::Methods
 
   def app
+    preserve_fixture_connection
     ApiAppHelper.app_instance
+  end
+
+  private
+
+  def preserve_fixture_connection
+    example = RSpec.current_example
+    return if @fixture_connection_preserved || !example || example.metadata[:no_transaction]
+
+    pool = ActiveRecord::Base.connection_pool
+    fixture_connection = pool.active_connection?
+    return unless fixture_connection&.transaction_open?
+
+    owner = Thread.current
+    # HaveAPI releases request connections, but this transaction belongs to the
+    # example. Keep its lease until rollback without pinning other threads.
+    allow(pool).to receive(:release_connection).and_wrap_original do |original, *args|
+      if Thread.current == owner && pool.active_connection? == fixture_connection && fixture_connection.transaction_open?
+        false
+      else
+        original.call(*args)
+      end
+    end
+    @fixture_connection_preserved = true
   end
 
   class << self
