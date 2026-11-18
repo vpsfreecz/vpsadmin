@@ -20,6 +20,20 @@ vpsadminos checkout is required.
   Path selection rules live in `tests/ci-selection.yml`; derived test and
   webui script tags are added by `tests/ci-tags.nix` through `tests/make-test.nix`.
 
+## Isolated spec database
+
+API and libnodectld specs use `tools/test_db.rb` to start a disposable MariaDB
+server when no database is configured. Its startup explicitly disables
+`innodb_snapshot_isolation`, preserving the current locking-read behavior of
+the pinned MariaDB 11.4 development environment. MariaDB 11.8 enables snapshot
+isolation by default; under that mode, existing concurrency checks encounter
+snapshot conflicts instead of reading the current locked row.
+
+The helper logs the actual server version, transaction isolation and snapshot
+setting in the test output. This setting applies only to the isolated spec
+database. Database upgrades need to qualify these locking semantics explicitly;
+this helper does not configure application or production databases.
+
 ## Webui Playwright coverage
 
 The webui application root is `webui/`. Only browser entrypoints and assets
