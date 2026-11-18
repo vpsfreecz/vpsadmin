@@ -1,5 +1,6 @@
 class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
   model ::Vps
+  INCIDENT_STATUS_CHOICES = { 'clear' => 'Below limits', 'near_limit' => 'Approaching a limit', 'stop_threshold' => 'Shutdown limit reached', 'warning' => 'Warning limit reached' }.freeze
   desc 'Manage VPS'
 
   params(:id) do
@@ -40,6 +41,29 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     bool :allow_admin_modifications, label: 'Allow admin modifications'
     bool :enable_os_template_auto_update, label: 'Enable OS template auto update'
     bool :enable_network, label: 'Enable network'
+  end
+
+  params(:incident_settings) do
+    bool :incident_enforcement_enabled, label: 'Allow automatic shutdown',
+                                        desc: 'Allow automatic shutdown under any incident policy for this VPS. Collection and eligible warnings remain active.'
+  end
+
+  params(:incident_summary) do
+    use :incident_settings
+    integer :incident_warning_count, label: 'Policies at warning limit',
+                                     desc: 'Number of active policies at their warning limit, excluding those at their shutdown limit.'
+    integer :incident_stop_threshold_count, label: 'Policies at shutdown limit',
+                                            desc: 'Number of active policies at their shutdown limit. Reaching a limit does not guarantee an automatic shutdown.'
+    datetime :incident_last_stop_at, label: 'Last automatic shutdown', nullable: true,
+                                     desc: 'Confirmed completion of the latest automatic shutdown under any incident policy.'
+    datetime :incident_next_stop_allowed_at, label: 'Shutdown cooldown ends', nullable: true,
+                                             desc: 'Earliest time a new incident may cause another automatic shutdown. No shutdown is scheduled for this time.'
+    string :incident_action_state, label: 'Automatic shutdown state', choices: %w[none pending failed uncertain],
+                                   desc: 'State of the outstanding automatic shutdown shared by all policies. Failed or uncertain outcomes require verification.'
+    integer :incident_action_chain_id, label: 'Automatic shutdown transaction chain', nullable: true,
+                                       desc: 'Transaction chain for the outstanding automatic shutdown shared by all policies.'
+    datetime :incident_accounting_since, label: 'Incidents counted since', nullable: true,
+                                         desc: 'Start of incident accounting after a completed ownership transfer. Null means accounting has not been reset since activation.'
   end
 
   params(:dataset) do
@@ -92,6 +116,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     use :read_only
     use :resources
     use :status
+    use :incident_summary
   end
 
   class Index < HaveAPI::Actions::Default::Index
@@ -108,6 +133,11 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       use :template
       string :hostname_any
       string :hostname_exact
+      string :incident_policy, label: 'Incident policy key',
+                               desc: 'Active policy key used by the incident status filter.'
+      string :incident_status, choices: { values: INCIDENT_STATUS_CHOICES }, label: 'Incident status',
+                               desc: 'Filter by current threshold status for the specified policy key.'
+      bool :incident_enforcement_enabled, label: 'Allow automatic shutdown', desc: 'Filter VPSes by their automatic shutdown permission.'
     end
 
     output(:object_list) do
@@ -126,6 +156,12 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update enable_network
         user_namespace_map implicit_oom_report_rule_hit_count created_at
+
+        incident_enforcement_enabled
+        incident_last_stop_at incident_next_stop_allowed_at incident_action_state
+        incident_action_chain_id incident_accounting_since
+
+        incident_warning_count incident_stop_threshold_count
       ]
       allow
     end
@@ -184,6 +220,13 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
       q = q.where(os_template: input[:os_template]) if input[:os_template]
 
+      q = q.where(incident_enforcement_enabled: input[:incident_enforcement_enabled]) if input.has_key?(:incident_enforcement_enabled)
+      if input[:incident_status]
+        error!(VpsAdmin::API::I18n.t('errors.incident_escalation.policy_key_required')) unless input[:incident_policy]
+        error!(VpsAdmin::API::I18n.t('errors.incident_escalation.unknown_policy')) unless ::IncidentEscalation::RULES.has_key?(input[:incident_policy])
+        q = ::VpsIncidentSummary.filter(q, input[:incident_status], now: incident_now, policy_key: input[:incident_policy])
+      end
+
       q = q.where(hostname: input[:hostname_exact]) if input[:hostname_exact]
 
       q = q.where('vpses.hostname LIKE ?', "%#{input[:hostname_any]}%") if input[:hostname_any]
@@ -195,11 +238,16 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
       query.count
     end
 
+    def incident_now
+      @incident_now ||= Time.now.utc
+    end
+
     def exec
-      with_pagination(with_includes(query)).includes(
+      rows = with_pagination(with_includes(query)).includes(
         :vps_current_status,
         dataset_in_pool: [:dataset]
       )
+      ::VpsIncidentSummary.load(rows, now: incident_now, language: ::I18n.locale)
     end
   end
 
@@ -248,6 +296,11 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update enable_network
         user_namespace_map implicit_oom_report_rule_hit_count created_at
+
+        incident_enforcement_enabled
+        incident_last_stop_at incident_next_stop_allowed_at incident_action_state
+        incident_action_chain_id incident_accounting_since
+        incident_warning_count incident_stop_threshold_count
       ]
       allow
     end
@@ -416,6 +469,12 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update enable_network
         user_namespace_map implicit_oom_report_rule_hit_count created_at
+
+        incident_enforcement_enabled
+        incident_last_stop_at incident_next_stop_allowed_at incident_action_state
+        incident_action_chain_id incident_accounting_since
+
+        incident_warning_count incident_stop_threshold_count
       ]
       allow
     end
@@ -429,7 +488,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
-      @vps
+      ::VpsIncidentSummary.load([@vps], language: ::I18n.locale).first
     end
   end
 
@@ -439,6 +498,7 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
 
     input do
       use :common
+      use :incident_settings
       VpsAdmin::API::ClusterResources.to_params(::Vps, self, resources: %i[cpu memory swap])
       text :change_reason, label: 'Change reason',
                            desc: 'If filled, it is send to VPS owner in an email'
@@ -460,11 +520,21 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
     end
 
     def exec
+      if ::IncidentEscalation.mixed_settings?(input)
+        error!(VpsAdmin::API::I18n.t('errors.incident_escalation.separate_update'))
+      end
+
       vps = ::Vps.including_deleted.find_by!(with_restricted(id: path_params['vps_id']))
       maintenance_check!(vps)
       object_state_check!(vps, vps.user)
 
       error!('provide at least one attribute to update') if input.empty?
+
+      if input.keys.map(&:to_s).intersect?(::IncidentEscalation::SETTINGS)
+        ::IncidentEscalation.update_settings!(vps, input)
+        ok!
+        return
+      end
 
       update_object_state!(vps) if change_object_state?
 
@@ -942,6 +1012,11 @@ class VpsAdmin::API::Resources::VPS < HaveAPI::Resource
         uptime loadavg1 loadavg5 loadavg15 cpu_user cpu_nice cpu_system cpu_idle cpu_iowait
         cpu_irq cpu_softirq start_menu_timeout enable_os_template_auto_update enable_network
         user_namespace_map implicit_oom_report_rule_hit_count created_at
+
+        incident_enforcement_enabled
+        incident_last_stop_at incident_next_stop_allowed_at incident_action_state
+        incident_action_chain_id incident_accounting_since
+        incident_warning_count incident_stop_threshold_count
       ]
       allow
     end

@@ -3,10 +3,13 @@ require_relative 'utils'
 module TransactionChains
   class IncidentReport::New < ::TransactionChain
     label 'Incident report'
+    allow_empty
 
     include IncidentReport::Utils
 
     def link_chain(incident)
+      return if incident.policy_notice?
+
       concerns(:affect, [incident.vps.class.name, incident.vps_id])
 
       use_chain(IncidentReport::Send, args: [

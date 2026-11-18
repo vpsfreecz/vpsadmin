@@ -34,6 +34,8 @@ require_rel 'vpsadmin/api/authentication'
 require_rel 'vpsadmin/api/plugin'
 
 VpsAdmin::API.load_configurable(:dataset_properties)
+VpsAdmin::API.load_configurable(:incident_escalation)
+IncidentEscalation.finalize!
 
 require_rel '../models/application_record.rb'
 require_rel '../models/transaction.rb'

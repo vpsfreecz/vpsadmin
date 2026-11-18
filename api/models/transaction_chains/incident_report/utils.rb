@@ -2,6 +2,8 @@ module TransactionChains
   module IncidentReport::Utils
     # @param incident [::IncidentReport]
     def process_incident(incident)
+      return if incident.policy_notice?
+
       if incident.cpu_limit
         use_chain(
           Vps::Update,

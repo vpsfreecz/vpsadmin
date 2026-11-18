@@ -435,6 +435,8 @@ cs:
         label: Konfigurace
       configuration_digest:
         label: Kontrolní součet konfigurace
+      configuration_valid:
+        label: Platná konfigurace
       configured_value:
         label: Nastavená hodnota
       confirmed:
@@ -447,6 +449,10 @@ cs:
         label: Pokračovat
       count:
         label: Počet
+      count_30d:
+        label: Incidenty za 30 dní
+      count_7d:
+        label: Incidenty za 7 dní
       cpu:
         description: Minimálně 1, maximálně 1024, krok je 1
         label: CPU
@@ -540,6 +546,15 @@ cs:
       deadline:
         description: Orientační datum uvolnění nepoužívaných IP adres
         label: Plánované datum uvolnění
+      decision:
+        choices:
+          none:
+            label: bez akce
+          stop:
+            label: vypnutí
+          warning:
+            label: upozornění
+        label: Rozhodnutí
       default:
         description: Pokud je true, uživatelská konfigurace se dědí z konfigurace
           prostředí
@@ -615,6 +630,15 @@ cs:
         label: URL dynamické aktualizace
       effective_at:
         label: Čas účinnosti
+      effective_mode:
+        choices:
+          enforce:
+            label: automatické vypnutí povoleno
+          notify:
+            label: pouze upozornění
+          observe:
+            label: pouze sledování
+        label: Účinný režim
       effective_value:
         label: Účinná hodnota
       email:
@@ -689,8 +713,25 @@ cs:
         label: Plán datasetu prostředí
       error:
         label: Chyba při přípravě
+      error_class:
+        label: Třída chyby
+      error_stage:
+        label: Fáze chyby
       estimated_income:
         label: Odhadovaný příjem
+      evaluated_at:
+        label: Čas vyhodnocení pravidla
+      evaluation_report_id:
+        label: Poslední hlášení s vyhodnocením pravidla
+      evaluation_state:
+        choices:
+          error:
+            label: chyba
+          none:
+            label: žádné
+          recorded:
+            label: zaznamenáno
+        label: Stav vyhodnocení pravidla
       event:
         choices:
           reminder:
@@ -860,6 +901,15 @@ cs:
           current:
             label: Aktuální
         label: Stav systému
+      global_mode:
+        choices:
+          enforce:
+            label: automatické vypnutí povoleno
+          notify:
+            label: pouze upozornění
+          observe:
+            label: pouze sledování
+        label: Globální režim
       handled_by:
         description: Filtrovat hlášení řešená uživatelem
         label: Řeší
@@ -925,6 +975,60 @@ cs:
         label: In reply to
       in_rescue_mode:
         label: V nouzovém režimu
+      incident_accounting_since:
+        description: Začátek počítání incidentů po dokončené změně vlastníka. Prázdná
+          hodnota znamená, že se počítání od zapnutí funkce nevynulovalo.
+        label: Incidenty počítané od
+      incident_action_chain_id:
+        description: Transakční řetězec nevyřízeného automatického vypnutí společného
+          pro všechna pravidla.
+        label: Transakce automatického vypnutí
+      incident_action_state:
+        choices:
+          failed:
+            label: selhalo
+          none:
+            label: žádné
+          pending:
+            label: čeká na dokončení
+          uncertain:
+            label: neznámý výsledek
+        description: Stav nevyřízeného automatického vypnutí společného pro všechna
+          pravidla. Selhání nebo neznámý výsledek vyžaduje ověření.
+        label: Stav automatického vypnutí
+      incident_enforcement_enabled:
+        label: Povolit automatické vypínání
+      incident_last_stop_at:
+        description: Potvrzené dokončení posledního automatického vypnutí podle kteréhokoli
+          pravidla pro incidenty.
+        label: Poslední automatické vypnutí
+      incident_next_stop_allowed_at:
+        description: Nejdřívější čas, kdy nový incident může vyvolat další automatické
+          vypnutí. Na tento čas není naplánované vypnutí.
+        label: Konec ochranné lhůty mezi vypnutími
+      incident_policy:
+        description: Klíč aktivního pravidla pro filtrování podle statusu incidentů.
+        label: Klíč pravidla pro incidenty
+      incident_status:
+        choices:
+          clear:
+            label: pod limity
+          near_limit:
+            label: blíží se limitu
+          stop_threshold:
+            label: dosažen limit pro vypnutí
+          warning:
+            label: dosažen limit pro upozornění
+        description: Filtrovat podle aktuálního statusu vůči limitům zadaného pravidla.
+        label: Status incidentů
+      incident_stop_threshold_count:
+        description: Počet aktivních pravidel s dosaženým limitem pro vypnutí. Dosažení
+          limitu nezaručuje automatické vypnutí.
+        label: Pravidla s dosaženým limitem pro vypnutí
+      incident_warning_count:
+        description: Počet aktivních pravidel s dosaženým limitem pro upozornění.
+          Nezahrnuje pravidla s dosaženým limitem pro vypnutí.
+        label: Pravidla s dosaženým limitem pro upozornění
       incoming_payment:
         label: Příchozí platba
       info:
@@ -1054,6 +1158,8 @@ cs:
         label: Poslední aktivita
       last_check_at:
         label: Poslední kontrola
+      last_incident_at:
+        label: Poslední incident
       last_observed_at:
         label: Poslední pozorování
       last_report:
@@ -1087,6 +1193,8 @@ cs:
         label: Poslední použití
       last_use_at:
         label: Poslední použití
+      last_warning_at:
+        label: Poslední upozornění zařazené k odeslání
       latest_release_attempt:
         label: Poslední pokus o uvolnění
       lazy:
@@ -1222,6 +1330,8 @@ cs:
         label: Režim mapování
       master_enabled:
         label: Master povolen
+      matched:
+        label: Shoda s pravidlem
       max:
         description: Když objekt alokuje zdroj, nesmí použít více než maximum
         label: Maximální hodnota
@@ -1339,6 +1449,36 @@ cs:
         label: Stav nodu
       nodes_online:
         label: Nody online
+      notice_kind:
+        choices:
+          stop_completed:
+            label: potvrzené vypnutí
+          warning:
+            label: rozhodnutí o upozornění
+        description: Zaznamenané rozhodnutí o upozornění nebo potvrzené vypnutí. Nejde
+          o potvrzení doručení e-mailu.
+        label: Druh souhrnného hlášení
+      notice_mail_state:
+        choices:
+          failed:
+            label: selhalo
+          pending:
+            label: čeká na zařazení
+          queued:
+            label: zařazeno
+          sent:
+            label: přijato poštovním serverem
+          suppressed:
+            label: potlačeno
+          uncertain:
+            label: výsledek nejistý
+        description: Stav souhrnného e-mailu. Přijetí poštovním serverem nepotvrzuje
+          doručení do schránky.
+        label: Stav souhrnného e-mailu
+      notice_policy_key:
+        label: Klíč pravidla souhrnného hlášení
+      notice_policy_label:
+        label: Název pravidla souhrnného hlášení
       notified_at:
         label: Poslední výzva zařazená k odeslání
       ns_id:
@@ -1490,6 +1630,10 @@ cs:
           vpsadminos:
             label: vpsAdminOS
         label: Platforma
+      policy_key:
+        description: Filtrovat podle uložené příslušnosti k pravidlu, včetně odstraněných
+          pravidel.
+        label: Klíč pravidla
       pool:
         description: Pool úložiště, ve kterém se VPS nachází
         label: Pool
@@ -1789,6 +1933,8 @@ cs:
         label: Sériové číslo
       server:
         label: Server
+      settings_category:
+        label: Kategorie nastavení
       sha256sum:
         description: Kontrolní součet
         label: SHA256 suma
@@ -1877,6 +2023,8 @@ cs:
             label: oznámeno
           approved:
             label: schváleno
+          audit_only:
+            label: pouze evidováno
           awaiting:
             label: čeká
           cancelled:
@@ -1927,6 +2075,8 @@ cs:
             label: publikováno
           queued:
             label: ve frontě
+          recorded:
+            label: zaznamenáno
           resolved:
             label: vyřešeno
           retracted:
@@ -1935,6 +2085,8 @@ cs:
             label: rollback
           running:
             label: běží
+          skipped:
+            label: vynecháno
           staged:
             label: připraveno
           suspended:
@@ -1950,10 +2102,18 @@ cs:
         label: Stav
       status:
         choices:
+          clear:
+            label: pod limity
           failed:
             label: selhalo
+          near_limit:
+            label: blíží se limitu
+          stop_threshold:
+            label: dosažen limit pro vypnutí
           success:
             label: úspěch
+          warning:
+            label: dosažen limit pro upozornění
         label: Status
       stepsize:
         description: Kroky, po kterých se může iterovat alokovaná hodnota zdroje objektu
@@ -1962,6 +2122,12 @@ cs:
         description: Provést konzistentní klon - před vytvořením snapshotu se původní
           VPS řádně vypne
         label: Vypnout
+      stop_enforced:
+        label: Automatické vypnutí je povoleno
+      stop_limit:
+        label: Limit pro vypnutí
+      stop_limit_override:
+        label: Vlastní limit pro vypnutí
       stop_vps:
         description: Vypnout VPS, pokud se extra místo používá příliš dlouho nebo
           proběhlo příliš mnoho rozšíření
@@ -2065,6 +2231,9 @@ cs:
         label: Přenést IP adresy
       transition:
         label: Probíhá přechod
+      trigger_incident_report_id:
+        description: Přístupné původní hlášení, které vyvolalo souhrnné opatření.
+        label: ID zdrojového hlášení
       ttl:
         description: Volitelné TTL v sekundách, výchozí je TTL zóny
         label: TTL
@@ -2293,6 +2462,10 @@ cs:
       vulnerable_until:
         description: Kdy expozice zranitelnosti na tomto nodu skončila, pokud je známo.
         label: Zranitelné do
+      warning_limit:
+        label: Limit pro upozornění
+      warning_limit_override:
+        label: Vlastní limit pro upozornění
       weekday:
         label: Den v týdnu
       year:
@@ -2404,6 +2577,15 @@ cs:
       access_denied_to_seed_vps: přístup k této VPS odepřen
       access_denied_to_vps_user_data: Přístup k VPS User data odepřen
       access_token_in_url: access_token nesmí být poslán v URL
+      incident_escalation:
+        invalid_configuration: Režim nebo limity incidentů nejsou platné. Automatické
+          akce jsou vypnuté.
+        limit_required: Zadej alespoň jeden limit, který chceš změnit.
+        policy_key_required: Pro tento filtr zadej klíč pravidla pro incidenty.
+        separate_update: Povolení automatického vypínání měň odděleně od ostatních
+          vlastností VPS.
+        unable_to_save_limits: Limity incidentů se nepodařilo uložit.
+        unknown_policy: Neznámé pravidlo pro incidenty.
       ip_release:
         access_denied: Tato výzva k uvolnění IP adres patří jinému uživateli.
         already_released: Některá z vybraných IP adres se právě uvolňuje nebo už byla
@@ -2432,6 +2614,28 @@ cs:
         pro inkrementální stažení
       snapshot_download_unavailable: snapshot není dostupný ke stažení
       vps_already_marked_for_deletion: VPS už je označeno ke smazání.
+    incident_reports:
+      notices:
+        stop_completed:
+          subject: Potvrzené vypnutí kvůli opakovaným incidentům
+          text: 'VPS #%{vps_id} se po incidentu #%{trigger_id} úspěšně vypnulo.'
+        warning:
+          subject: Upozornění na opakované incidenty
+          text: 'Pro VPS #%{vps_id} bylo po incidentu #%{trigger_id} zaznamenáno upozornění
+            na opakované incidenty.'
+      oomd:
+        restart:
+          subject: Restart kvůli nadměrnému využívání prostředků
+          text: 'VPS #%{vps_id} %{hostname} byl restartován, protože přetěžoval sdílené
+            systémové prostředky a omezoval tak dostupnost ostatních VPS na nodu.
+
+            '
+        stop:
+          subject: Zastavení kvůli nadměrnému využívání prostředků
+          text: 'VPS #%{vps_id} %{hostname} byl vypnut, protože přetěžoval sdílené
+            systémové prostředky a omezoval tak dostupnost ostatních VPS na nodu.
+
+            '
     password_changes:
       minimum_length_description: Heslo musí mít alespoň %{minimum} znaků
     resources:
@@ -2801,6 +3005,14 @@ cs:
         output:
           addr:
             label: Adresa
+      incident_policy:
+        attributes:
+          key:
+            label: Klíč pravidla
+          stop_period_days:
+            label: Období pro vypnutí (dny)
+          warning_period_days:
+            label: Období pro upozornění (dny)
       incident_report:
         attributes:
           created_at:
@@ -2811,6 +3023,12 @@ cs:
             label: IP adresa
           vps:
             label: VPS
+        policy_evaluation:
+          attributes:
+            stop_period_days:
+              label: Období pro vypnutí (dny)
+            warning_period_days:
+              label: Období pro upozornění (dny)
       incoming_payment:
         attributes:
           created_at:
@@ -4089,6 +4307,8 @@ cs:
             input:
               environment:
                 description: Filtrovat podle prostředí
+              incident_enforcement_enabled:
+                description: Filtrovat VPS podle povolení automatického vypínání.
               location:
                 description: Filtrovat podle lokace
               node:
@@ -4136,6 +4356,10 @@ cs:
                 label: Expirace
               hostname:
                 description: Hostname VPS
+              incident_enforcement_enabled:
+                description: Povolit automatické vypínání tohoto VPS podle kteréhokoli
+                  pravidla pro incidenty. Sběr incidentů a oprávněná upozornění zůstávají
+                  aktivní.
               node:
                 description: Node, na kterém VPS poběží
               object_state:
@@ -4199,6 +4423,14 @@ cs:
               label: ID
             name:
               label: Název
+        incident_policy:
+          attributes:
+            key:
+              label: Klíč pravidla
+            stop_period_days:
+              label: Období pro vypnutí (dny)
+            warning_period_days:
+              label: Období pro upozornění (dny)
         mount:
           attributes:
             dataset:
@@ -4218,6 +4450,10 @@ cs:
             label: Expirace
           hostname:
             description: Hostname VPS
+          incident_enforcement_enabled:
+            description: Povolit automatické vypínání tohoto VPS podle kteréhokoli
+              pravidla pro incidenty. Sběr incidentů a oprávněná upozornění zůstávají
+              aktivní.
           node:
             description: Node, na kterém VPS poběží
           object_state:
@@ -4490,6 +4726,7 @@ cs:
           expand_dataset: Rozšíření datasetu
           expand_dataset_again: Rozšíření datasetu+
           features: Funkce
+          incident_escalation_mail: Odeslání upozornění na opakované incidenty
           migrate:
             os_to_os: Migrace
             os_to_vz: Migrace

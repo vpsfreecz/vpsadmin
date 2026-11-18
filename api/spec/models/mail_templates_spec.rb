@@ -740,4 +740,257 @@ RSpec.describe VpsAdmin::API::MailTemplates do
       expect(content).not_to match(/\bmember(ship|s)?\b/i)
     end
   end
+
+  context 'with incident mail presentation' do
+    require 'cgi'
+
+    let(:incident_mail_variants) do
+      path = ENV.fetch('VPSADMIN_SPEC_MAIL_TEMPLATES', File.expand_path('../../notification_templates/templates', __dir__))
+      names = %w[vps_incident_report vps_incident_warning vps_incident_stopped vps_memory_pressure_warning vps_memory_pressure_stopped]
+      described_class.find_templates([path]).select { |template| names.include?(template.name) }.flat_map do |template|
+        template.variants.map { |variant| [template, variant] }
+      end
+    end
+
+    let(:incident_mail_vars) do
+      vps = build_standalone_vps_fixture.fetch(:vps)
+      vps.update_column(:hostname, 'host<script> & <%= 1 + 1 %>')
+      time = Time.utc(2026, 1, 10, 12)
+      incident = IncidentReport.new(vps:, user: vps.user, subject: 'Source <subject>', text: "Source <message>\nnext line",
+                                    detected_at: time, vps_action: 'none', codename: 'oomd')
+      policy = { key: 'alpha', label: 'Test <policy>', count_7d: 7, count_30d: 7, warning_limit: 5, stop_limit: 10, evaluated_at: Time.utc(2001, 2, 3),
+                 warning_period_days: 7, stop_period_days: 30, mode: 'enforce', suppress_actions: false, stop_exempt: false, stop_enforced: true }
+      entry = { id: 123, available: true, detected_at: time, subject: 'Evidence <subject>', url: 'https://example.test/?x="quoted"&id=123' }
+      { user: vps.user, vps:, incident:, incident_policies: [policy], base_url: nil, incident_type_label: 'Test incidents',
+        warning_period_days: 7, stop_period_days: 30, incident_count_7d: 7, incident_count_30d: 7, warning_limit: 5, stop_limit: 10,
+        stopped_at: time, stop_enforced: true, contributor_snapshot_available: true, contributing_incidents: [entry],
+        contributing_incident_count: 1, incident_history_url: 'https://example.test/?page=incidents&vps=123' }
+    end
+
+    def incident_body(variant, format, vars)
+      MailTemplateTranslation::TemplateBuilder.new(vars, time_zone: 'Europe/Prague').build(variant.content(format))
+    end
+
+    def incident_rows(body, format)
+      if format == :html
+        body.scan(%r{<tbody>(.*?)</tbody>}m).flat_map do |table|
+          table.first.scan(%r{<tr>(.*?)</tr>}m).map do |row|
+            row.first.scan(%r{<td[^>]*>(.*?)</td>}m).map do |cell|
+              CGI.unescapeHTML(cell.first.gsub(/<[^>]*>/, ' ')).split.join(' ')
+            end
+          end
+        end
+      else
+        body.lines.filter_map { |line| line.match(/\A(\d+ .+?) \| (\d+) \| (\d+) \| (.+?)\n?\z/)&.captures }
+      end
+    end
+
+    def expected_incident_rows(language, counts: [7, 7], limits: [5, 10], periods: [7, 30])
+      actions = language == 'cs' ? ['Upozornění', 'Vypnutí VPS'] : ['Warning', 'VPS stop']
+      forms = {
+        'cs' => { 0 => 'dní', 1 => 'den', 2 => 'dny', 4 => 'dny', 5 => 'dní', 7 => 'dní', 11 => 'dní', 21 => 'dní', 30 => 'dní' },
+        'en' => { 0 => 'days', 1 => 'day', 2 => 'days', 4 => 'days', 5 => 'days', 7 => 'days', 11 => 'days', 21 => 'days', 30 => 'days' }
+      }
+      periods.each_with_index.map do |days, index|
+        ["#{days} #{forms.fetch(language).fetch(days)}", counts[index].to_s, limits[index].to_s, actions[index]]
+      end
+    end
+
+    def save_incident_preview(name, variant, format, body)
+      return unless ENV['VPSADMIN_INCIDENT_MAIL_PREVIEWS']
+
+      suffix = format == :text ? 'txt' : 'html'
+      File.write(File.join(ENV.fetch('VPSADMIN_INCIDENT_MAIL_PREVIEWS'), "#{name}-#{variant.language}.#{suffix}"), body)
+    end
+
+    it 'renders labelled period, count, limit and action columns for every complete saved policy' do
+      expect(incident_mail_variants.map { |template, _| template.name }.uniq.length).to eq(5)
+      incident_mail_variants.each do |template, variant|
+        %i[text html].each do |format|
+          body = incident_body(variant, format, incident_mail_vars)
+          heads = variant.language == 'cs' ? ['Období', 'Počet incidentů', 'Limit', 'Akce'] : %w[Period Incidents Limit Action]
+          if format == :html
+            headers = body.scan(%r{<th\b[^>]*>(.*?)</th>}m).flatten.map { |head| CGI.unescapeHTML(head) }
+            expect(headers).to eq(heads)
+          else
+            expect(body).to include(heads.join(' | '))
+          end
+          expect(incident_rows(body, format)).to eq(expected_incident_rows(variant.language))
+          label = template.name == 'vps_incident_report' ? 'Test <policy>' : 'Test incidents'
+          expect(body).to include(format == :html ? CGI.escapeHTML(label) : label)
+          expect(body).not_to match(%r{<p>\s*</p>})
+          expect(body).not_to include('2001-02-03', 'As of:', 'Stav k:', '7/10', 'do not stop', 'without warnings')
+          save_incident_preview("#{template.name}-one", variant, format, body)
+        end
+      end
+    end
+
+    it 'omits the ordinary policy section when snapshots are absent or incomplete without inventing no-match claims' do
+      incident_mail_variants.select { |template, _| template.name == 'vps_incident_report' }.map(&:last).each do |variant|
+        incomplete = incident_mail_vars[:incident_policies].first.merge(label: 'Hidden error', warning_limit: nil)
+        [incident_mail_vars.except(:incident_policies), incident_mail_vars.merge(incident_policies: []),
+         incident_mail_vars.merge(incident_policies: [nil, {}, incomplete])].each do |vars|
+          %i[text html].each do |format|
+            body = incident_body(variant, format, vars)
+            expect(incident_rows(body, format)).to be_empty
+            expect(body).not_to include('Incident summary:', 'Přehled incidentů:', 'Hidden error', 'No policies', 'Žádná pravidla', 'may be stopped', 'může být vypnuto')
+            expect(body).to include(format == :html ? 'Source &lt;message&gt;' : 'Source <message>')
+            expect(body).not_to match(%r{<p>\s*</p>})
+            save_incident_preview('ordinary-zero', variant, format, body)
+          end
+        end
+      end
+    end
+
+    it 'keeps two policies independent with unequal saved counts, periods and limits in one ordinary body' do
+      incident_mail_variants.select { |template, _| template.name == 'vps_incident_report' }.map(&:last).each do |variant|
+        [[false, false], [true, false], [false, true], [true, true]].each do |first, second|
+          policies = [incident_mail_vars[:incident_policies].first.merge(mode: first ? 'enforce' : 'observe', suppress_actions: !first, stop_enforced: first),
+                      incident_mail_vars[:incident_policies].first.merge(key: 'zeta', label: 'Other <policy>', count_7d: 2, count_30d: 3,
+                                                                         warning_period_days: 2, stop_period_days: 11,
+                                                                         warning_limit: 4, stop_limit: 20, mode: second ? 'enforce' : 'notify', suppress_actions: false, stop_enforced: second)]
+          %i[text html].each do |format|
+            body = incident_body(variant, format, incident_mail_vars.merge(incident_policies: policies))
+            expected = expected_incident_rows(variant.language) + expected_incident_rows(variant.language, counts: [2, 3], limits: [4, 20], periods: [2, 11])
+            expect(incident_rows(body, format)).to eq(expected)
+            labels = format == :html ? ['Test &lt;policy&gt;', 'Other &lt;policy&gt;'] : ['Test <policy>', 'Other <policy>']
+            expect(body.index(labels.first)).to be < body.index(labels.last)
+            sentence = variant.language == 'cs' ? 'Pokud se tato situace bude opakovat, VPS může být vypnuto.' : 'If this happens again, the VPS may be stopped.'
+            expect(body.scan(sentence).length).to eq(first || second ? 1 : 0)
+            both_note = variant.language == 'cs' ? 'Při tomto vyhodnocení byla u pravidla zakázaná automatická upozornění i vypínání VPS.' : 'Automatic warnings and VPS stopping were disabled for this policy at the time of evaluation.'
+            stop_note = variant.language == 'cs' ? 'Při tomto vyhodnocení nebylo u pravidla povoleno automatické vypínání VPS.' : 'Automatic VPS stopping was disabled for this policy at the time of evaluation.'
+            expect(body.scan(both_note).length).to eq(first ? 0 : 1)
+            expect(body.scan(stop_note).length).to eq(second ? 0 : 1)
+            unless first
+              expect(body.index(both_note)).to be_between(body.index(labels.first), body.index(labels.last))
+            end
+            expect(body.index(stop_note)).to be > body.index(labels.last) unless second
+            expect(body).not_to include('Test <policy>', 'Other <policy>') if format == :html
+            save_incident_preview("ordinary-two-#{first}-#{second}", variant, format, body)
+          end
+        end
+      end
+    end
+
+    it 'does not turn absent or unknown flags into disabled or enabled ordinary actions' do
+      incident_mail_variants.select { |template, _| template.name == 'vps_incident_report' }.map(&:last).each do |variant|
+        [nil, 'unknown'].each do |flag|
+          policy = incident_mail_vars[:incident_policies].first.merge(mode: flag, suppress_actions: flag, stop_enforced: flag)
+          %i[text html].each do |format|
+            body = incident_body(variant, format, incident_mail_vars.merge(incident_policies: [policy]))
+            expect(body).not_to include('were disabled', 'was disabled', 'zakázaná', 'nebylo u pravidla povoleno', 'may be stopped', 'může být vypnuto')
+            expect(incident_rows(body, format)).to eq(expected_incident_rows(variant.language))
+          end
+        end
+      end
+    end
+
+    it 'uses saved assessment facts for late ordinary mail without consulting live policy state or changing the snapshot' do
+      vars = incident_mail_vars
+      vars[:incident].detected_at = Time.utc(1999, 1, 1)
+      snapshot = vars[:incident_policies].first.merge(count_7d: 1, count_30d: 2, warning_limit: 8, stop_limit: 27).freeze
+      vars = vars.merge(incident_policies: [snapshot])
+      allow(IncidentEscalation).to receive(:rule).and_raise('renderer must not load current declarations')
+      incident_mail_variants.select { |template, _| template.name == 'vps_incident_report' }.map(&:last).each do |variant|
+        %i[text html].each do |format|
+          body = incident_body(variant, format, vars)
+          expect(incident_rows(body, format)).to eq(expected_incident_rows(variant.language, counts: [1, 2], limits: [8, 27]))
+        end
+      end
+      expect(snapshot).to include(count_7d: 1, count_30d: 2, warning_limit: 8, stop_limit: 27, evaluated_at: Time.utc(2001, 2, 3))
+    end
+
+    it 'keeps aggregate notices on their single originating policy and supplied action calculation' do
+      incident_mail_variants.reject { |template, _| template.name == 'vps_incident_report' }.each do |template, variant|
+        vars = incident_mail_vars.merge(warning_limit: 9, stop_limit: 25,
+                                        incident_policies: [incident_mail_vars[:incident_policies].first.merge(label: 'Unrelated policy', warning_limit: 80, stop_limit: 90)])
+        %i[text html].each do |format|
+          body = incident_body(variant, format, vars)
+          expect(incident_rows(body, format)).to eq(expected_incident_rows(variant.language, limits: [9, 25]))
+          expect(body).to include('Test incidents', variant.language == 'cs' ? 'Incidenty (1/1):' : 'Incidents (1/1):')
+          expect(body).not_to include('Unrelated policy', 'Showing ', 'Zobrazeno ')
+          save_incident_preview("#{template.name}-action", variant, format, body)
+        end
+      end
+    end
+
+    it 'preserves mode, suppression and exemption truth without promising a warning or an unconditional stop' do
+      incident_mail_variants.each do |template, variant|
+        [true, false].each do |enforced|
+          policy = incident_mail_vars[:incident_policies].first.merge(mode: enforced ? 'enforce' : 'observe', suppress_actions: !enforced, stop_exempt: !enforced, stop_enforced: enforced)
+          vars = incident_mail_vars.merge(stop_enforced: enforced, incident_policies: [policy])
+          %i[text html].each do |format|
+            body = incident_body(variant, format, vars)
+            expect(incident_rows(body, format)).to eq(expected_incident_rows(variant.language))
+            sentence = if template.name.end_with?('_stopped')
+                         variant.language == 'cs' ? 'Pokud se incidenty opakují, může být znovu vypnuto.' : 'If the incidents repeat, the VPS may be stopped again.'
+                       else
+                         variant.language == 'cs' ? 'Pokud se tato situace bude opakovat, VPS může být vypnuto.' : 'If this happens again, the VPS may be stopped.'
+                       end
+            expect(body.include?(sentence)).to eq(enforced)
+            expect(body).not_to include('will be stopped', 'will receive a warning', 'bude automaticky vypnuto')
+            save_incident_preview("#{template.name}-enforced-#{enforced}", variant, format, body)
+          end
+        end
+      end
+    end
+
+    it 'omits incomplete aggregate tables while preserving the originating policy and available contributor evidence' do
+      incident_mail_variants.reject { |template, _| template.name == 'vps_incident_report' }.map(&:last).each do |variant|
+        %i[text html].each do |format|
+          body = incident_body(variant, format, incident_mail_vars.merge(stop_limit: nil))
+          expect(incident_rows(body, format)).to be_empty
+          expect(body).to include('Test incidents', format == :html ? 'Evidence &lt;subject&gt;' : 'Evidence <subject>')
+          expect(body).not_to include('unknown', 'unavailable', '7/')
+        end
+      end
+    end
+
+    it 'inflects supplied integer periods in every bilingual plain and HTML table' do
+      [0, 1, 2, 4, 5, 11, 21].each do |days|
+        incident_mail_variants.map(&:last).each do |variant|
+          vars = incident_mail_vars.merge(warning_period_days: days, stop_period_days: days,
+                                          incident_policies: [incident_mail_vars[:incident_policies].first.merge(warning_period_days: days, stop_period_days: days)])
+          %i[text html].each do |format|
+            expect(incident_rows(incident_body(variant, format, vars), format)).to eq(expected_incident_rows(variant.language, periods: [days, days]))
+          end
+        end
+      end
+    end
+
+    it 'keeps the root-approved memory advice, membership facts, KB targets and existing footer' do
+      incident_mail_variants.select { |template, _| template.name.start_with?('vps_memory_pressure_') }.map(&:last).each do |variant|
+        %i[text html].each do |format|
+          body = incident_body(variant, format, incident_mail_vars)
+          visible = CGI.unescapeHTML(format == :html ? body.gsub(/<[^>]*>/, '') : body).split.join(' ')
+          resource = variant.language == 'cs' ? 'Taková zátěž narušuje provoz ostatních VPS na stejném nodu. Zkontroluj prosím využití paměti a nastavení služeb ve VPS. U webového serveru nebo aplikace může pomoci snížení počtu pracovních procesů.' : 'This load disrupts other VPSes on the same node. Please check memory usage and service settings. Reducing the number of worker processes in your web server or application may help.'
+          expect(visible).to include(resource)
+          next unless ENV['VPSADMIN_SPEC_MAIL_TEMPLATES']
+
+          membership = variant.language == 'cs' ? 'Parametry VPS včetně paměti můžeš násobit současně s navýšením členského příspěvku.' : 'For more memory, you can multiply your VPS resources and increase your membership fee accordingly.'
+          expect(visible).to include(membership)
+          expect(body).to include(variant.language == 'cs' ? 'https://kb.vpsfree.cz/informace/platby#z_ceho_se_sklada_clensky_poplatek' : 'https://kb.vpsfree.org/information/membership_fees#what_the_membership_fee_is_composed_of')
+          expect(body).to include(variant.language == 'cs' ? '(Tento mail automaticky rozesílá vpsAdmin, Tvoje odpověď se zašle na naši podporu)' : '(This is an automated mail from vpsAdmin, your reply will be sent to our support)')
+        end
+      end
+    end
+
+    it 'preserves escaping, contribution filtering and missing optional data in stopped notices' do
+      incident_mail_variants.select { |template, _| template.name.end_with?('_stopped') }.each do |template, variant|
+        restart = variant.language == 'cs' ? 'VPS můžeš znovu spustit ve vpsAdminu.' : 'You can start the VPS again in vpsAdmin.'
+        vars = incident_mail_vars.merge(stopped_at: nil, contributing_incidents: [], incident_history_url: nil, stop_enforced: false)
+        %i[text html].each do |format|
+          body = incident_body(variant, format, vars)
+          expect(body).not_to include('Incidenty:', 'Incidents:', 'Čas vypnutí:', 'Stopped at:', 'Details', 'Podrobnosti', '<li>')
+          expect(body).to include(restart)
+          full_body = incident_body(variant, format, incident_mail_vars)
+          if format == :html
+            expect(full_body).to include('Evidence &lt;subject&gt;', 'x=&quot;quoted&quot;&amp;id=123')
+            expect(full_body).not_to include('Evidence <subject>', 'host<script>')
+          end
+          save_incident_preview("#{template.name}-optional", variant, format, body)
+        end
+      end
+    end
+  end
 end
