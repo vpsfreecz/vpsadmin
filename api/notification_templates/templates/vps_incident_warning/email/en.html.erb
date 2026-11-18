@@ -1,0 +1,67 @@
+<% day_word = ->(days) { days == 1 ? 'day' : 'days' } -%>
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:24px 12px;background:#f3f5f7;color:#24313d;font-family:Arial,sans-serif;line-height:1.6;">
+<table role="presentation" style="width:100%;max-width:640px;margin:0 auto;background:#fff;border:1px solid #dce2e7;border-radius:8px;">
+<tr><td style="padding:24px;">
+<p>Hello <%= ERB::Util.html_escape((@user.login).to_s) %>,</p>
+<p>we have recorded repeated incidents on VPS <%= ERB::Util.html_escape((@vps.id).to_s) %> <%= ERB::Util.html_escape((@vps.hostname).to_s) %>.</p>
+<p><strong><%= ERB::Util.html_escape((@incident_type_label).to_s) %></strong></p>
+<% if [@warning_period_days, @stop_period_days, @incident_count_7d, @incident_count_30d].all? { |value| value.is_a?(Integer) && value >= 0 } &&
+      [@warning_limit, @stop_limit].all? { |value| value.is_a?(Integer) && value.positive? } -%>
+<table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:14px;line-height:1.4;">
+<colgroup><col style="width:25%;"><col style="width:25%;"><col style="width:18%;"><col style="width:32%;"></colgroup>
+<thead><tr>
+<th scope="col" style="padding:8px 4px;text-align:left;border-bottom:2px solid #dce2e7;overflow-wrap:anywhere;">Period</th>
+<th scope="col" style="padding:8px 4px;text-align:left;border-bottom:2px solid #dce2e7;overflow-wrap:anywhere;">Incidents</th>
+<th scope="col" style="padding:8px 4px;text-align:left;border-bottom:2px solid #dce2e7;overflow-wrap:anywhere;">Limit</th>
+<th scope="col" style="padding:8px 4px;text-align:left;border-bottom:2px solid #dce2e7;overflow-wrap:anywhere;">Action</th>
+</tr></thead>
+<tbody>
+<tr>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;"><%= ERB::Util.html_escape(@warning_period_days.to_s) %> <%= day_word.call(@warning_period_days) %></td>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;"><%= ERB::Util.html_escape(@incident_count_7d.to_s) %></td>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;"><%= ERB::Util.html_escape(@warning_limit.to_s) %></td>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;">Warning</td>
+</tr>
+<tr>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;"><%= ERB::Util.html_escape(@stop_period_days.to_s) %> <%= day_word.call(@stop_period_days) %></td>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;"><%= ERB::Util.html_escape(@incident_count_30d.to_s) %></td>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;"><%= ERB::Util.html_escape(@stop_limit.to_s) %></td>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;">VPS stop</td>
+</tr>
+</tbody>
+</table>
+<% end -%>
+<% if @stop_enforced -%>
+<p>If this happens again, the VPS may be stopped.</p>
+<% end -%>
+<p>Please resolve the issue.</p>
+<% incidents = if @contributor_snapshot_available
+                 Array(@contributing_incidents).select { |incident| incident[:available] }
+               elsif @trigger_incident && @trigger_incident[:available]
+                 [@trigger_incident]
+               else
+                 []
+               end -%>
+<% if incidents.any? -%>
+<p><strong>Incidents<% if @contributor_snapshot_available %> (<%= ERB::Util.html_escape(incidents.length.to_s) %>/<%= ERB::Util.html_escape(@contributing_incident_count.to_s) %>)<% end %>:</strong></p>
+<ul>
+<% incidents.each do |incident| -%>
+  <li>#<%= ERB::Util.html_escape(incident[:id].to_s) %><% if incident[:detected_at] %> | <%= ERB::Util.html_escape(local_time(incident[:detected_at], '%Y-%m-%d %H:%M:%S %Z')) %><% end %> | <%= ERB::Util.html_escape(incident[:subject].to_s.gsub(/[[:cntrl:]\u2028\u2029]/, ' ')) %>
+<% if incident[:url] -%>
+    <br><a href="<%= ERB::Util.html_escape(incident[:url]) %>">Details</a>
+<% end -%>
+  </li>
+<% end -%>
+</ul>
+<% end -%>
+<% if @incident_history_url -%>
+<p><a href="<%= ERB::Util.html_escape(@incident_history_url) %>">Incident history in vpsAdmin</a></p>
+<% end -%>
+<p>Best regards,<br>vpsAdmin</p>
+</td></tr>
+</table>
+</body>
+</html>

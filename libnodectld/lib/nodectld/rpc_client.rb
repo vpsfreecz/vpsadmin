@@ -31,6 +31,11 @@ module NodeCtld
       @channel.close
     end
 
+    # The caller retains this token and the exact facts after an uncertain reply.
+    def create_incident_report(request_token:, **facts)
+      send_write_request('create_incident_report', kwargs: facts.merge(request_token:))
+    end
+
     def get_node_config
       send_read_request('get_node_config')
     end

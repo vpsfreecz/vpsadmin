@@ -7,6 +7,9 @@ module TransactionChains
     include IncidentReport::Utils
 
     def link_chain(incidents)
+      incidents = incidents.reject(&:policy_notice?)
+      return if incidents.empty?
+
       concerns(:affect, *incidents.map { |inc| [inc.vps.class.name, inc.vps_id] }.uniq)
 
       use_chain(IncidentReport::Send, args: [

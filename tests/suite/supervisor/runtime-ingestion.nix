@@ -672,7 +672,7 @@ import ../../make-test.nix (
 
           expect(reports.first.fetch('codename')).to eq('oomd')
           expect(reports.first.fetch('subject')).to eq('Stop due to abuse')
-          expect(reports.first.fetch('text')).to include('was stopped')
+          expect(reports.first.fetch('text')).to include('was therefore stopped')
         end
       end
     '';

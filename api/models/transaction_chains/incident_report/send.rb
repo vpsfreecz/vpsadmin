@@ -11,13 +11,18 @@ module TransactionChains
       use_chain(IncidentReport::Reply, args: [message, result]) if message && result.reply
 
       result.active.each do |inc|
+        template = ::MailTemplate.find_by!(name: 'vps_incident_report')
+        translation = ::MailTemplate.mail_template_translation_for(template, inc.user.language)
+        raise ::VpsAdmin::API::Exceptions::MailTemplateDoesNotExist, :vps_incident_report unless translation
+
         mail(:vps_incident_report, {
-               user: inc.user,
+               user: inc.user, language: translation.language,
                vars: {
                  base_url: ::SysConfig.get(:webui, :base_url),
                  user: inc.user,
                  vps: inc.vps,
-                 incident: inc
+                 incident: inc,
+                 incident_policies: VpsAdmin::API::IncidentReports.mail_policies(inc, language: translation.language.code)
                }
              })
       end

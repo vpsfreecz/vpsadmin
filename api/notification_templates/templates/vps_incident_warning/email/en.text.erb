@@ -1,0 +1,46 @@
+<% day_word = ->(days) { days == 1 ? 'day' : 'days' } -%>
+Hello <%= @user.login %>,
+
+we have recorded repeated incidents on VPS <%= @vps.id %> <%= @vps.hostname %>.
+
+<%= @incident_type_label %>
+<% if [@warning_period_days, @stop_period_days, @incident_count_7d, @incident_count_30d].all? { |value| value.is_a?(Integer) && value >= 0 } &&
+      [@warning_limit, @stop_limit].all? { |value| value.is_a?(Integer) && value.positive? } -%>
+Period | Incidents | Limit | Action
+<%= @warning_period_days %> <%= day_word.call(@warning_period_days) %> | <%= @incident_count_7d %> | <%= @warning_limit %> | Warning
+<%= @stop_period_days %> <%= day_word.call(@stop_period_days) %> | <%= @incident_count_30d %> | <%= @stop_limit %> | VPS stop
+<% end -%>
+
+<% if @stop_enforced -%>
+If this happens again, the VPS may be stopped.
+<% end -%>
+
+Please resolve the issue.
+
+<% incidents = if @contributor_snapshot_available
+                 Array(@contributing_incidents).select { |incident| incident[:available] }
+               elsif @trigger_incident && @trigger_incident[:available]
+                 [@trigger_incident]
+               else
+                 []
+               end -%>
+<% if incidents.any? -%>
+Incidents<% if @contributor_snapshot_available %> (<%= incidents.length %>/<%= @contributing_incident_count %>)<% end %>:
+
+<% incidents.each do |incident| -%>
+  #<%= incident[:id] %><% if incident[:detected_at] %> | <%= local_time(incident[:detected_at], '%Y-%m-%d %H:%M:%S %Z') %><% end %> | <%= incident[:subject].to_s.gsub(/[[:cntrl:]\u2028\u2029]/, ' ') %>
+<% if incident[:url] -%>
+    <%= incident[:url] %>
+<% end -%>
+<% end -%>
+
+<% end -%>
+<% if @incident_history_url -%>
+Incident history in vpsAdmin:
+
+  <%= @incident_history_url %>
+
+<% end -%>
+Best regards,
+
+vpsAdmin

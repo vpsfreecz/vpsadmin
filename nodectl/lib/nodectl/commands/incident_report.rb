@@ -1,5 +1,7 @@
 require 'libosctl'
 require 'tempfile'
+require 'securerandom'
+require 'time'
 
 module NodeCtl
   class Commands::IncidentReport < Command::Local
@@ -13,7 +15,9 @@ module NodeCtl
       :cpu_limit,
       :vps_action,
       :admin_id,
-      :message
+      :message,
+      :request_token,
+      :detected_at
     )
 
     VPS_ACTIONS = %w[none stop suspend disable_network].freeze
@@ -391,41 +395,23 @@ module NodeCtl
     def save_incidents(incidents)
       require 'nodectld/standalone'
 
-      db = NodeCtld::Db.new
-      t = Time.now.utc.strftime('%Y-%m-%d %H:%M:%S')
-
       incidents.each do |inc|
-        user_id = db.prepared(
-          'SELECT user_id FROM vpses WHERE id = ?',
-          inc.vps_id
-        ).get!['user_id']
-
-        db.prepared(
-          'INSERT INTO incident_reports SET
-            user_id = ?,
-            vps_id = ?,
-            filed_by_id = ?,
-            subject = ?,
-            text = ?,
-            codename = ?,
-            cpu_limit = ?,
-            vps_action = ?,
-            detected_at = ?,
-            created_at = ?,
-            updated_at = ?,
-            reported_at = NULL',
-          user_id, inc.vps_id, inc.admin_id, inc.subject, inc.message, inc.codename, inc.cpu_limit, VPS_ACTIONS.index(inc.vps_action),
-          t, t, t
-        )
-
-        puts "Created incident report ##{db.insert_id} for VPS #{inc.vps_id}"
-
-        next unless inc.cpu_limit
-
-        cmd = %W[osctl ct set cpu-limit #{inc.vps_id} #{inc.cpu_limit}]
-        puts "  #{cmd.join(' ')}"
-
-        warn "  Failed to set CPU limit on VPS #{inc.vps_id}" unless Kernel.system(*cmd)
+        inc.request_token ||= SecureRandom.uuid
+        inc.detected_at ||= Time.now.utc.iso8601(6)
+      end
+      NodeCtld::RpcClient.run do |rpc|
+        incidents.each do |inc|
+          puts "Incident request #{inc.request_token} for VPS #{inc.vps_id} at #{inc.detected_at}"
+          result = rpc.create_incident_report(
+            request_token: inc.request_token, vps_id: inc.vps_id, subject: inc.subject,
+            text: inc.message, codename: inc.codename, cpu_limit: inc.cpu_limit,
+            vps_action: inc.vps_action, filed_by_id: inc.admin_id, detected_at: inc.detected_at
+          )
+          puts "Created incident report ##{result.fetch('id')} for VPS #{inc.vps_id}"
+        rescue NodeCtld::RpcClient::Timeout
+          warn "Incident request #{inc.request_token} has an uncertain outcome; retain its facts and reconcile this token before retrying"
+          raise
+        end
       end
     end
   end

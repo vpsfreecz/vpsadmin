@@ -59,6 +59,26 @@ RSpec.describe 'VpsAdmin::API::Resources::IncidentReport' do
     reports.map { |row| row['id'] }
   end
 
+  def expect_history_visibility(user, vps:, visible:, hidden: [])
+    as(user) { json_get index_path, incident_report: { vps: vps.id }, _meta: { count: true } }
+    expect_status(200)
+    expect(json['status']).to be(true)
+    expect(report_ids).to match_array(visible.map(&:id))
+    expect(json.dig('response', '_meta', 'total_count')).to eq(visible.length)
+
+    visible.each do |incident|
+      as(user) { json_get show_path(incident.id) }
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(report_obj['id']).to eq(incident.id)
+    end
+    hidden.each do |incident|
+      as(user) { json_get show_path(incident.id) }
+      expect_status(404)
+      expect(json['status']).to be(false)
+    end
+  end
+
   def resource_id(value)
     value.is_a?(Hash) ? value['id'] : value
   end
@@ -435,6 +455,32 @@ RSpec.describe 'VpsAdmin::API::Resources::IncidentReport' do
       expect(json['status']).to be(false)
     end
 
+    it 'creates successfully without a chain when ordinary mail is intentionally disabled' do
+      template = MailTemplate.find_by!(name: 'vps_incident_report')
+      UserMailTemplateRecipient.handle_update!(vps_user.user, template, enabled: false)
+      chains = TransactionChain.count
+      expect do
+        as(SpecSeed.admin) { json_post index_path, incident_report: payload }
+      end.to change(IncidentReport, :count).by(1)
+      expect(TransactionChain.count).to eq(chains)
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(action_state_id).to be_nil
+      expect(IncidentReport.find_by!(subject: payload[:subject]).vps_id).to eq(vps_user.id)
+    end
+
+    it 'does not enroll an admin-created oomd lookalike in escalation' do
+      install_incident_policy_fixture
+      SysConfig.find_by!(category: 'incident_policy_oomd', name: 'mode').update!(value: 'enforce')
+      as(SpecSeed.admin) { json_post index_path, incident_report: payload.merge(codename: 'oomd') }
+      expect(json['status']).to be(true)
+      report = IncidentReport.find_by!(subject: payload[:subject])
+      expect(report.source_key).to be_nil
+      expect(IncidentEscalation.rule('oomd').reports.where(id: report.id)).to be_empty
+      expect(VpsIncidentAction.where(vps: vps_user)).to be_empty
+    end
+
     it 'allows admins to create with minimal payload' do
       expect do
         as(SpecSeed.admin) { json_post index_path, incident_report: payload }
@@ -488,5 +534,46 @@ RSpec.describe 'VpsAdmin::API::Resources::IncidentReport' do
       expect(json['status']).to be(false)
       expect(errors.keys.map(&:to_s)).to include('vps_action')
     end
+  end
+
+  it 'keeps source and notice owner-epoch visibility identical across Index, count and Show' do
+    install_incident_policy_fixture
+    vps = build_standalone_vps_fixture.fetch(:vps)
+    now = Time.now.utc.change(usec: 0)
+    attributes = { user: vps.user, vps:, text: 'Private detail', codename: 'oomd',
+                   source_kind: 'node_vps_event', source_node_id: vps.node_id, source_action: 'restart' }
+    old = IncidentReport.create!(**attributes, subject: 'Old epoch', detected_at: now - 60, source_key: SecureRandom.hex(32))
+    current = IncidentReport.create!(**attributes, subject: 'Current epoch', detected_at: now, source_key: SecureRandom.hex(32))
+    # Both notices arrive after transfer; the action epoch still scopes the old notice.
+    notices = [[old, now - 3600], [current, now]].map do |trigger, epoch|
+      notice = IncidentReport.create!(user: vps.user, vps:, subject: 'Warning', text: 'Warning', codename: 'oomd',
+                                      source_kind: 'incident_policy_notice', detected_at: now + 60)
+      vps.vps_incident_actions.create!(user: vps.user, incident_report: trigger, notice_incident_report: notice,
+                                       policy_key: 'oomd', incident_policy_evaluation: trigger.incident_policy_evaluations.sole, kind: 'warning', accounting_since: epoch,
+                                       incident_count_7d: 5, incident_count_30d: 5)
+      notice
+    end
+    vps.update_columns(incident_accounting_since: now)
+
+    expect_history_visibility(vps.user, vps:, visible: [current, notices.last], hidden: [old, notices.first])
+    expect_history_visibility(SpecSeed.other_user, vps:, visible: [], hidden: [old, current, *notices])
+    expect_history_visibility(SpecSeed.admin, vps:, visible: [old, current, *notices])
+  end
+
+  it 'preserves unevaluated manual history while applying owner-epoch privacy to new configured outcomes' do
+    now = Time.now.utc.change(usec: 0)
+    attributes = { user: SpecSeed.user, vps: vps_user, codename: 'oomd', text: 'Private detail' }
+    old = IncidentReport.create!(**attributes, subject: 'Prior epoch', filed_by: SpecSeed.admin, detected_at: now - 60)
+    current = IncidentReport.create!(**attributes, subject: 'Current epoch', filed_by: SpecSeed.admin, detected_at: now)
+    ordinary = IncidentReport.create!(**attributes, subject: 'Not enrolled', detected_at: now - 60)
+    expect([old, current, ordinary].map(&:source_key)).to all(be_nil)
+    expect(IncidentPolicyEvaluation.where(incident_report_id: [old.id, current.id, ordinary.id])).to be_empty
+    install_incident_policy_fixture
+    evaluated = IncidentReport.create!(**attributes, subject: 'Configured manual report', detected_at: now)
+    expect(evaluated.incident_policy_evaluations.sole).to have_attributes(matched: false, state: 'skipped')
+    vps_user.update_columns(incident_accounting_since: now + 1)
+    history = [user_incident_newer, user_incident_older, old, current, ordinary]
+    expect_history_visibility(SpecSeed.user, vps: vps_user, visible: history, hidden: [evaluated])
+    expect_history_visibility(SpecSeed.admin, vps: vps_user, visible: [*history, evaluated])
   end
 end

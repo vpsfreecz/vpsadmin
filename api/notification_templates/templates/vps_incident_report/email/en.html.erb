@@ -1,0 +1,68 @@
+<% day_word = ->(days) { days == 1 ? 'day' : 'days' } -%>
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:24px 12px;background:#f3f5f7;color:#24313d;font-family:Arial,sans-serif;line-height:1.6;">
+<table role="presentation" style="width:100%;max-width:640px;margin:0 auto;background:#fff;border:1px solid #dce2e7;border-radius:8px;">
+<tr><td style="padding:24px;">
+<p>Hello <%= ERB::Util.html_escape((@user.login).to_s) %>,</p>
+<p>vpsAdmin received an incident report related to VPS #<%= ERB::Util.html_escape((@vps.id).to_s) %> (<%= ERB::Util.html_escape((@vps.hostname).to_s) %>).</p>
+<p>Subject: <%= ERB::Util.html_escape((@incident.subject).to_s) %></p>
+<% if @incident.detected_at -%>
+<p>Detected at: <%= ERB::Util.html_escape((local_time(@incident.detected_at, '%Y-%m-%d %H:%M %Z')).to_s) %></p>
+<% end -%>
+<% if @incident.ip_address -%>
+<p>IP address: <%= ERB::Util.html_escape((@incident.ip_address).to_s) %></p>
+<% end -%>
+<p>Action: <%= ERB::Util.html_escape((@incident.vps_action).to_s) %></p>
+<pre style="white-space:pre-wrap;word-break:break-word;font:inherit;"><%= ERB::Util.html_escape((@incident.text).to_s) %></pre>
+<% policies = Array(@incident_policies).select do |policy|
+     policy.is_a?(Hash) && !policy[:label].to_s.empty? &&
+       %i[warning_period_days stop_period_days count_7d count_30d].all? { |key| policy[key].is_a?(Integer) && policy[key] >= 0 } &&
+       %i[warning_limit stop_limit].all? { |key| policy[key].is_a?(Integer) && policy[key].positive? }
+   end -%>
+<% if policies.any? -%>
+<p>Incident summary:</p>
+<% policies.each_with_index do |policy, index| -%>
+<p><strong><%= ERB::Util.html_escape(policy[:label].to_s) %></strong></p>
+<table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:14px;line-height:1.4;">
+<colgroup><col style="width:25%;"><col style="width:25%;"><col style="width:18%;"><col style="width:32%;"></colgroup>
+<thead><tr>
+<th scope="col" style="padding:8px 4px;text-align:left;border-bottom:2px solid #dce2e7;overflow-wrap:anywhere;">Period</th>
+<th scope="col" style="padding:8px 4px;text-align:left;border-bottom:2px solid #dce2e7;overflow-wrap:anywhere;">Incidents</th>
+<th scope="col" style="padding:8px 4px;text-align:left;border-bottom:2px solid #dce2e7;overflow-wrap:anywhere;">Limit</th>
+<th scope="col" style="padding:8px 4px;text-align:left;border-bottom:2px solid #dce2e7;overflow-wrap:anywhere;">Action</th>
+</tr></thead>
+<tbody>
+<tr>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;"><%= ERB::Util.html_escape(policy[:warning_period_days].to_s) %> <%= day_word.call(policy[:warning_period_days]) %></td>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;"><%= ERB::Util.html_escape(policy[:count_7d].to_s) %></td>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;"><%= ERB::Util.html_escape(policy[:warning_limit].to_s) %></td>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;">Warning</td>
+</tr>
+<tr>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;"><%= ERB::Util.html_escape(policy[:stop_period_days].to_s) %> <%= day_word.call(policy[:stop_period_days]) %></td>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;"><%= ERB::Util.html_escape(policy[:count_30d].to_s) %></td>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;"><%= ERB::Util.html_escape(policy[:stop_limit].to_s) %></td>
+<td style="padding:8px 4px;vertical-align:top;border-bottom:1px solid #dce2e7;overflow-wrap:anywhere;">VPS stop</td>
+</tr>
+</tbody>
+</table>
+<% if policy[:mode] == 'observe' || policy[:suppress_actions] == true -%>
+<p>Automatic warnings and VPS stopping were disabled for this policy at the time of evaluation.</p>
+<% elsif policy[:stop_enforced] == false -%>
+<p>Automatic VPS stopping was disabled for this policy at the time of evaluation.</p>
+<% end -%>
+<% end -%>
+<% if policies.any? { |policy| policy[:stop_enforced] == true } -%>
+<p>If this happens again, the VPS may be stopped.</p>
+<% end -%>
+<% end -%>
+<% if @base_url && @base_url.match?(%r{\Ahttps?://}i) -%>
+<p>vpsAdmin: <a href="<%= ERB::Util.html_escape(@base_url) %>"><%= ERB::Util.html_escape(@base_url) %></a></p>
+<% end -%>
+<p>Best regards,<br>vpsAdmin</p>
+</td></tr>
+</table>
+</body>
+</html>

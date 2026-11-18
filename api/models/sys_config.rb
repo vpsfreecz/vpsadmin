@@ -2,6 +2,7 @@ class SysConfig < ApplicationRecord
   self.table_name = 'sysconfig'
 
   serialize :value, coder: JSON
+  has_paper_trail only: [:value], on: [:update], if: ->(row) { IncidentEscalation::RULES.values.any? { |rule| rule.category == row.category } }
   validates :name, presence: true
   validates :category, format: {
     with: /\A[a-zA-Z0-9_]{1,75}\z/,
@@ -11,6 +12,23 @@ class SysConfig < ApplicationRecord
     with: /\A[a-zA-Z0-9_]{1,75}\z/,
     message: 'bad format'
   }
+
+  validate :validate_incident_escalation, if: -> { IncidentEscalation::RULES.values.any? { |rule| rule.category == category } && !new_record? && will_save_change_to_value? }
+
+  def validate_incident_escalation
+    values = self.class.where(category:).order(:id).lock.to_h { |row| [row.name, row.value] }.merge(name => value)
+    rule = IncidentEscalation::RULES.values.find { |entry| entry.category == category }
+    config = IncidentEscalation.config(values, policy_key: rule.key)
+    invalid = VpsIncidentPolicy.where(policy_key: rule.key).where(
+      'COALESCE(warning_limit_override, CAST(? AS SIGNED)) <= 0 OR COALESCE(stop_limit_override, CAST(? AS SIGNED)) < COALESCE(warning_limit_override, CAST(? AS SIGNED))',
+      config[:warning] || rule.warning_limit,
+      config[:stop] || rule.stop_limit,
+      config[:warning] || rule.warning_limit
+    ).exists?
+    errors.add(:value, 'conflicts with existing per-VPS thresholds') if invalid
+  rescue IncidentEscalation::InvalidConfiguration => e
+    errors.add(:value, e.message)
+  end
 
   def self.get(category, key)
     obj = find_by(category:, name: key)
@@ -154,6 +172,13 @@ class SysConfig < ApplicationRecord
   register :node, :key_type, String
   register :core, :ipv4_ddns_url, String, min_user_level: 99
   register :core, :ipv6_ddns_url, String, min_user_level: 99
+  IncidentEscalation::RULES.each_value do |rule|
+    register rule.category, :mode, String, default: 'observe', min_user_level: 99
+    register rule.category, :warning_limit, Integer, min_user_level: 99,
+                                                     description: 'Global warning limit override. Null uses the limit declared in the policy.'
+    register rule.category, :stop_limit, Integer, min_user_level: 99,
+                                                  description: 'Global shutdown limit override. Null uses the limit declared in the policy.'
+  end
   register :dns, :protected_zones, Array, min_user_level: 99
 
   def get_value
@@ -185,6 +210,12 @@ class SysConfig < ApplicationRecord
   end
 
   def set_value(v)
+    if IncidentEscalation::RULES.values.any? { |rule| rule.category == category } && %w[warning_limit stop_limit].include?(name) && v == ''
+      v = nil
+    end
+    if IncidentEscalation::RULES.values.any? { |rule| rule.category == category } && %w[warning_limit stop_limit].include?(name) && v.is_a?(String) && v.match?(/\A[0-9]+\z/)
+      v = Integer(v, 10)
+    end
     self.value = case data_type
                  when 'Hash', 'Array'
                    YAML.safe_load(v)

@@ -17,6 +17,20 @@ module VpsAdmin::Supervisor
       end
     end
 
+    # The existing node protocol is the only trusted source for this rule.
+    def self.record_oomd_event(vps, node:, action:, time:, now: Time.now.utc)
+      raise ArgumentError, 'Invalid node event action' unless %w[restart stop].include?(action)
+
+      key = Digest::SHA256.hexdigest([node.id, vps.id, 'oomd', time.to_i, action].join(':'))
+      message = lambda do |locked_vps, user|
+        VpsAdmin::API::IncidentReports.oomd_event_message(vps: locked_vps, user:, action:)
+      end
+      ::IncidentEscalation.ingest!(vps, source_node: node, report_message: message, now:, attributes: {
+                                    codename: 'oomd', detected_at: time,
+                                    source_key: key, source_kind: 'node_vps_event', source_node_id: node.id, source_action: action
+                                  }) { vps.log(action.to_sym, time:) }
+    end
+
     protected
 
     def process_event(event)
@@ -38,30 +52,12 @@ module VpsAdmin::Supervisor
         end
 
       when 'oomd'
-        action_past =
-          case event['opts']['action']
-          when 'restart'
-            'restarted'
-          when 'stop'
-            'stopped'
-          else
-            raise "Unsupported oomd action #{event['opts']['action'].inspect}"
-          end
+        action = event['opts']['action']
+        unless %w[restart stop].include?(action)
+          raise "Unsupported oomd action #{action.inspect}"
+        end
 
-        vps.log(event['opts']['action'].to_sym, time:)
-
-        incident = ::IncidentReport.create!(
-          user: vps.user,
-          vps: vps,
-          subject: "#{event['opts']['action'].capitalize} due to abuse",
-          text: <<~END,
-            VPS ##{vps.id} #{vps.hostname} abused shared system resources and was #{action_past}.
-          END
-          codename: 'oomd',
-          detected_at: time
-        )
-
-        TransactionChains::IncidentReport::New.fire(incident)
+        self.class.record_oomd_event(vps, node:, action:, time:)
       end
     end
   end

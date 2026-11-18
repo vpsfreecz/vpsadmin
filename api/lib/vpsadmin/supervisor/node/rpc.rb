@@ -1,3 +1,5 @@
+require 'digest'
+require 'time'
 require_relative 'base'
 
 module VpsAdmin::Supervisor
@@ -106,11 +108,51 @@ module VpsAdmin::Supervisor
         list_running_vps_ids
         list_vps_user_namespace_maps
         list_exports
+        create_incident_report
         authenticate_console_session
       ].freeze
 
       def initialize(node)
         @node = node
+      end
+
+      # Node-bound write endpoint. Report content cannot attest its provenance.
+      def create_incident_report(request_token:, vps_id:, subject:, text:, detected_at:,
+                                 codename: nil, cpu_limit: nil, vps_action: 'none', filed_by_id: nil)
+        unless request_token.is_a?(String) && request_token.match?(/\A[a-zA-Z0-9_-]{16,128}\z/) &&
+               vps_id.is_a?(Integer) && vps_id > 0 && subject.is_a?(String) && subject.length.between?(1, 255) &&
+               text.is_a?(String) && !text.strip.empty? && (codename.nil? || (codename.is_a?(String) && codename.length <= 100)) &&
+               (cpu_limit.nil? || (cpu_limit.is_a?(Integer) && cpu_limit.between?(1, 2_147_483_647))) &&
+               ::IncidentReport.vps_actions.has_key?(vps_action) &&
+               (filed_by_id.nil? || (filed_by_id.is_a?(Integer) && filed_by_id > 0)) && detected_at.is_a?(String)
+          raise ArgumentError, 'Invalid incident report request'
+        end
+
+        detected = Time.at(Time.iso8601(detected_at).to_i).utc
+        admin = ::User.find_by(id: filed_by_id) if filed_by_id
+        raise ArgumentError, 'Invalid incident report administrator' if filed_by_id && admin&.role != :admin
+
+        vps = ::Vps.find_by!(id: vps_id, node_id: @node.id)
+        key = Digest::SHA256.hexdigest(['node_incident_report', @node.id, request_token].join(':'))
+        facts = { vps_id:, subject:, text:, detected_at: detected, codename:, cpu_limit:, vps_action:, filed_by_id: }
+        incident = nil
+        ::IncidentEscalation.serialized(vps, requires_new: true) do
+          raise ArgumentError, 'VPS no longer belongs to this node' unless vps.node_id == @node.id
+
+          incident = ::IncidentReport.lock.find_by(source_key: key)
+          if incident
+            unless facts.all? { |field, value| incident.public_send(field) == value } &&
+                   incident.source_kind == 'node_incident_report' && incident.source_node_id == @node.id
+              raise ArgumentError, 'Incident request token was reused with different report facts'
+            end
+          else
+            incident = ::IncidentReport.create!(**facts, user: vps.user,
+                                                         source_key: key, source_kind: 'node_incident_report', source_node_id: @node.id)
+            chain, = ::TransactionChains::IncidentReport::New.fire(incident)
+            incident.update!(notification_chain_id: chain&.id, notification_processed_at: Time.now.utc)
+          end
+        end
+        { id: incident.id }
       end
 
       def get_node_config

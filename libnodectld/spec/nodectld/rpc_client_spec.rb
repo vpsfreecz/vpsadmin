@@ -19,6 +19,14 @@ RSpec.describe NodeCtld::RpcClient do
     allow(reply_queue).to receive(:subscribe)
   end
 
+  it 'sends incident creation through the write transport with the caller token and unchanged facts' do
+    client = described_class.allocate
+    facts = { vps_id: 1, subject: 'Abuse', text: 'Evidence', detected_at: '2026-11-18T12:00:00Z' }
+    allow(client).to receive(:send_write_request).and_return('id' => 42)
+    expect(client.create_incident_report(request_token: 'stable-token', **facts)).to eq('id' => 42)
+    expect(client).to have_received(:send_write_request).with('create_incident_report', kwargs: facts.merge(request_token: 'stable-token'))
+  end
+
   it 'retries channel creation after it times out' do
     calls = 0
 

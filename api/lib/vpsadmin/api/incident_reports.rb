@@ -1,5 +1,72 @@
+require 'uri'
+require 'time'
+
 module VpsAdmin::API
   module IncidentReports
+    def self.with_language(user, &)
+      locale = user.language&.code&.to_sym
+      locale = VpsAdmin::API::I18n::DEFAULT_LOCALE unless VpsAdmin::API::I18n.available_locales.include?(locale)
+      ::I18n.with_locale(locale, &)
+    end
+
+    def self.webui_url(**query)
+      base = SysConfig.get(:webui, :base_url).to_s
+      return if base.empty?
+
+      uri = URI.parse(base)
+      return unless %w[https http].include?(uri.scheme) && uri.host && !uri.userinfo && !uri.fragment
+
+      uri.query = URI.encode_www_form(query)
+      uri.to_s
+    rescue URI::InvalidURIError
+      nil
+    end
+
+    def self.mail_policies(incident, language: :en)
+      incident.incident_policy_evaluations.sort_by(&:policy_key).filter_map do |evaluation|
+        evaluation.mail_summary(language:)
+      end
+    end
+
+    def self.escalation_message(action)
+      with_language(action.user) do
+        labels = action.saved_policy_evaluation.fetch('metadata').fetch('labels')
+        label = labels.fetch(::I18n.locale.to_s) { labels.fetch('en') }
+        if action.kind == 'warning'
+          subject = VpsAdmin::API::I18n.t('incident_reports.notices.warning.subject')
+          text = VpsAdmin::API::I18n.t('incident_reports.notices.warning.text', vps_id: action.vps_id,
+                                                                                trigger_id: action.incident_report_id)
+        else
+          subject = VpsAdmin::API::I18n.t('incident_reports.notices.stop_completed.subject')
+          text = VpsAdmin::API::I18n.t('incident_reports.notices.stop_completed.text', vps_id: action.vps_id,
+                                                                                       trigger_id: action.incident_report_id)
+        end
+        { subject: "#{subject}: #{label}", text: "#{label}\n\n#{text}\n" }
+      end
+    end
+
+    def self.oomd_event_message(vps:, user:, action:)
+      locale = user.language&.code&.to_sym
+      locale = VpsAdmin::API::I18n::DEFAULT_LOCALE unless VpsAdmin::API::I18n.available_locales.include?(locale)
+
+      ::I18n.with_locale(locale) do
+        case action
+        when 'stop'
+          {
+            subject: VpsAdmin::API::I18n.t('incident_reports.oomd.stop.subject'),
+            text: VpsAdmin::API::I18n.t('incident_reports.oomd.stop.text', vps_id: vps.id, hostname: vps.hostname)
+          }
+        when 'restart'
+          {
+            subject: VpsAdmin::API::I18n.t('incident_reports.oomd.restart.subject'),
+            text: VpsAdmin::API::I18n.t('incident_reports.oomd.restart.text', vps_id: vps.id, hostname: vps.hostname)
+          }
+        else
+          raise ArgumentError, "Unsupported oomd action #{action.inspect}"
+        end
+      end
+    end
+
     # Entry point for incoming messages
     class Handler
       # @param mailbox [::Mailbox]
@@ -50,13 +117,13 @@ module VpsAdmin::API
       # @option reply [Array<String>] :to
       # @param processed [Boolean, nil]
       def initialize(incidents:, reply: nil, processed: nil)
-        @incidents = incidents
-        @active = incidents.select do |inc|
+        @incidents = incidents.reject(&:policy_notice?)
+        @active = @incidents.select do |inc|
           inc.user && inc.user.object_state == 'active' \
             && inc.vps && inc.vps.object_state == 'active'
         end
         @reply = reply
-        @processed = processed.nil? ? incidents.any? : processed
+        @processed = processed.nil? ? @incidents.any? : processed
       end
     end
 

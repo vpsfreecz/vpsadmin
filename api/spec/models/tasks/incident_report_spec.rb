@@ -72,4 +72,23 @@ RSpec.describe VpsAdmin::API::Tasks::IncidentReport do
     end.to output(/Unable to process incident ##{locked.id}: VPS #{locked.vps.id} is locked/).to_stderr
     expect(processed).to eq([other.id])
   end
+
+  it 'processes saved generic memberships without selecting again or enrolling legacy reports' do
+    legacy = create_unreported_incident!(subject: 'Legacy ordinary report')
+    install_generic_incident_policy_fixture
+    vps = build_standalone_vps_fixture.fetch(:vps)
+    report = IncidentReport.create!(user: vps.user, vps:, codename: 'manual_abuse', subject: 'Current ordinary report',
+                                    text: 'Imported evidence', detected_at: Time.now)
+    saved = report.incident_policy_evaluations.order(:policy_key).map(&:attributes)
+    IncidentEscalation::RULES.each_value do |rule|
+      allow(rule.selector).to receive(:call).and_call_original
+    end
+    allow(IncidentEscalation).to receive(:process!).and_call_original
+    task.process
+    expect(IncidentEscalation).to have_received(:process!).with(have_attributes(id: vps.id)).once
+    IncidentEscalation::RULES.each_value { |rule| expect(rule.selector).not_to have_received(:call) }
+    expect(report.incident_policy_evaluations.reload.order(:policy_key).map(&:attributes)).to eq(saved)
+    expect(legacy.incident_policy_evaluations).to be_empty
+    expect(TransactionChains::IncidentReport::Process).to have_received(:fire).with(include(legacy))
+  end
 end

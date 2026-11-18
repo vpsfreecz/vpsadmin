@@ -434,6 +434,8 @@ en:
         label: Config
       configuration_digest:
         label: Configuration_digest
+      configuration_valid:
+        label: Configuration valid
       configured_value:
         label: Configured_value
       confirmed:
@@ -446,6 +448,10 @@ en:
         label: Continue
       count:
         label: Count
+      count_30d:
+        label: Incidents in 30 days
+      count_7d:
+        label: Incidents in 7 days
       cpu:
         description: Minimally 1, maximally 1024, step size is 1
         label: CPU
@@ -539,6 +545,15 @@ en:
       deadline:
         description: Advisory date for releasing unused IP addresses
         label: Planned release date
+      decision:
+        choices:
+          none:
+            label: No action
+          stop:
+            label: Shutdown
+          warning:
+            label: Warning
+        label: Decision
       default:
         description: If true, the user config is inherited from the environment config
         label: Default
@@ -613,6 +628,15 @@ en:
         label: Dynamic update URL
       effective_at:
         label: Effective_at
+      effective_mode:
+        choices:
+          enforce:
+            label: Automatic shutdown permitted
+          notify:
+            label: Warnings only
+          observe:
+            label: Observation only
+        label: Effective mode
       effective_value:
         label: Effective_value
       email:
@@ -687,8 +711,25 @@ en:
         label: Environment_dataset_plan
       error:
         label: Preparation error
+      error_class:
+        label: Error class
+      error_stage:
+        label: Error stage
       estimated_income:
         label: Estimated_income
+      evaluated_at:
+        label: Policy evaluated at
+      evaluation_report_id:
+        label: Last policy evaluation report
+      evaluation_state:
+        choices:
+          error:
+            label: Failed
+          none:
+            label: Not recorded
+          recorded:
+            label: Recorded
+        label: Policy evaluation state
       event:
         choices:
           reminder:
@@ -858,6 +899,15 @@ en:
           current:
             label: current
         label: Generation
+      global_mode:
+        choices:
+          enforce:
+            label: Automatic shutdown permitted
+          notify:
+            label: Warnings only
+          observe:
+            label: Observation only
+        label: Global mode
       handled_by:
         description: Filter outages handled by user
         label: Handled by
@@ -924,6 +974,60 @@ en:
         label: In_reply_to
       in_rescue_mode:
         label: In rescue mode
+      incident_accounting_since:
+        description: Start of incident accounting after a completed ownership transfer.
+          Null means accounting has not been reset since activation.
+        label: Incidents counted since
+      incident_action_chain_id:
+        description: Transaction chain for the outstanding automatic shutdown shared
+          by all policies.
+        label: Automatic shutdown transaction chain
+      incident_action_state:
+        choices:
+          failed:
+            label: failed
+          none:
+            label: none
+          pending:
+            label: pending
+          uncertain:
+            label: uncertain
+        description: State of the outstanding automatic shutdown shared by all policies.
+          Failed or uncertain outcomes require verification.
+        label: Automatic shutdown state
+      incident_enforcement_enabled:
+        label: Allow automatic shutdown
+      incident_last_stop_at:
+        description: Confirmed completion of the latest automatic shutdown under any
+          incident policy.
+        label: Last automatic shutdown
+      incident_next_stop_allowed_at:
+        description: Earliest time a new incident may cause another automatic shutdown.
+          No shutdown is scheduled for this time.
+        label: Shutdown cooldown ends
+      incident_policy:
+        description: Active policy key used by the incident status filter.
+        label: Incident policy key
+      incident_status:
+        choices:
+          clear:
+            label: Below limits
+          near_limit:
+            label: Approaching a limit
+          stop_threshold:
+            label: Shutdown limit reached
+          warning:
+            label: Warning limit reached
+        description: Filter by current threshold status for the specified policy key.
+        label: Incident status
+      incident_stop_threshold_count:
+        description: Number of active policies at their shutdown limit. Reaching a
+          limit does not guarantee an automatic shutdown.
+        label: Policies at shutdown limit
+      incident_warning_count:
+        description: Number of active policies at their warning limit, excluding those
+          at their shutdown limit.
+        label: Policies at warning limit
       incoming_payment:
         label: IncomingPayment
       info:
@@ -1053,6 +1157,8 @@ en:
         label: Last activity
       last_check_at:
         label: Last_check_at
+      last_incident_at:
+        label: Last incident
       last_observed_at:
         label: Last observed at
       last_report:
@@ -1086,6 +1192,8 @@ en:
         label: Last use
       last_use_at:
         label: Last_use_at
+      last_warning_at:
+        label: Last warning queued
       latest_release_attempt:
         label: Latest release attempt
       lazy:
@@ -1222,6 +1330,8 @@ en:
         label: Map mode
       master_enabled:
         label: Master enabled
+      matched:
+        label: Matched policy
       max:
         description: When an object is allocating a resource, it must not use more
           than maximum
@@ -1341,6 +1451,36 @@ en:
         label: Node_state
       nodes_online:
         label: Nodes_online
+      notice_kind:
+        choices:
+          stop_completed:
+            label: Automatic stop confirmed
+          warning:
+            label: Warning about repeated incidents
+        description: Recorded escalation warning decision or confirmed stop outcome;
+          not proof of mail delivery.
+        label: Escalation notice kind
+      notice_mail_state:
+        choices:
+          failed:
+            label: Sending failed
+          pending:
+            label: Not yet queued
+          queued:
+            label: Queued for sending
+          sent:
+            label: Accepted by mail server
+          suppressed:
+            label: Sending suppressed
+          uncertain:
+            label: Sending outcome uncertain
+        description: State of the escalation email. Sent means accepted by the mail
+          server; inbox delivery is not confirmed.
+        label: Escalation mail state
+      notice_policy_key:
+        label: Notice policy key
+      notice_policy_label:
+        label: Notice policy label
       notified_at:
         label: Last notice queued
       ns_id:
@@ -1490,6 +1630,9 @@ en:
           vpsadminos:
             label: vpsadminos
         label: Platform
+      policy_key:
+        description: Filter by saved policy membership, including removed policies.
+        label: Policy key
       pool:
         description: Storage pool the VPS resides in
         label: Pool
@@ -1789,6 +1932,8 @@ en:
         label: Serial
       server:
         label: Server
+      settings_category:
+        label: Settings category
       sha256sum:
         description: Control checksum
         label: Sha256sum
@@ -1877,6 +2022,8 @@ en:
             label: announced
           approved:
             label: approved
+          audit_only:
+            label: audit only
           awaiting:
             label: awaiting
           cancelled:
@@ -1927,6 +2074,8 @@ en:
             label: published
           queued:
             label: queued
+          recorded:
+            label: recorded
           resolved:
             label: resolved
           retracted:
@@ -1935,6 +2084,8 @@ en:
             label: rollbacking
           running:
             label: running
+          skipped:
+            label: skipped
           staged:
             label: staged
           suspended:
@@ -1950,10 +2101,18 @@ en:
         label: State
       status:
         choices:
+          clear:
+            label: Below limits
           failed:
             label: failed
+          near_limit:
+            label: Approaching a limit
+          stop_threshold:
+            label: Shutdown limit reached
           success:
             label: success
+          warning:
+            label: Warning limit reached
         label: Status
       stepsize:
         description: Steps in which the objects allocated resource value may be iterated
@@ -1962,6 +2121,12 @@ en:
         description: Do a consistent clone - original VPS is shut down before making
           a snapshot
         label: Shutdown
+      stop_enforced:
+        label: Automatic shutdown permitted
+      stop_limit:
+        label: Shutdown limit
+      stop_limit_override:
+        label: Shutdown limit override
       stop_vps:
         description: Shut down the VPS after extra space is used too long or there
           are too many expansions
@@ -2066,6 +2231,9 @@ en:
         label: Transfer IP addresses
       transition:
         label: Transition
+      trigger_incident_report_id:
+        description: Authorized original source report for an escalation notice.
+        label: Source incident report ID
       ttl:
         description: Optional TTL in seconds, defaults to zone TTL
         label: TTL
@@ -2293,6 +2461,10 @@ en:
       vulnerable_until:
         description: When vulnerability exposure ended on this node, if known.
         label: Vulnerable_until
+      warning_limit:
+        label: Warning limit
+      warning_limit_override:
+        label: Warning limit override
       weekday:
         label: Weekday
       year:
@@ -2406,6 +2578,15 @@ en:
       access_denied_to_seed_vps: access to this VPS is denied
       access_denied_to_vps_user_data: Access denied to VPS user data
       access_token_in_url: access_token must not be sent in URL
+      incident_escalation:
+        invalid_configuration: The incident mode or limits are invalid. Automatic
+          actions are disabled.
+        limit_required: Provide at least one limit to update.
+        policy_key_required: Specify an incident policy key for this filter.
+        separate_update: Update automatic shutdown permission separately from other
+          VPS properties.
+        unable_to_save_limits: Unable to save incident limits.
+        unknown_policy: Unknown incident policy.
       ip_release:
         access_denied: This IP release request belongs to another user.
         already_released: A selected IP is being released or has already been released.
@@ -2431,6 +2612,30 @@ en:
         source for incremental download
       snapshot_download_unavailable: snapshot is not available for download
       vps_already_marked_for_deletion: This VPS is already marked for deletion.
+    incident_reports:
+      notices:
+        stop_completed:
+          subject: Automatic stop after repeated incidents
+          text: 'VPS #%{vps_id} was successfully stopped after incident #%{trigger_id}.'
+        warning:
+          subject: Warning about repeated incidents
+          text: 'A warning about repeated incidents was recorded for VPS #%{vps_id}
+            after incident #%{trigger_id}.'
+      oomd:
+        restart:
+          subject: Restart due to abuse
+          text: 'VPS #%{vps_id} %{hostname} used excessive shared system resources
+            and reduced the availability of other VPSes on the node. It was therefore
+            restarted.
+
+            '
+        stop:
+          subject: Stop due to abuse
+          text: 'VPS #%{vps_id} %{hostname} used excessive shared system resources
+            and reduced the availability of other VPSes on the node. It was therefore
+            stopped.
+
+            '
     password_changes:
       minimum_length_description: The password must be at least %{minimum} characters
         long
@@ -2801,6 +3006,14 @@ en:
         output:
           addr:
             label: Address
+      incident_policy:
+        attributes:
+          key:
+            label: Policy key
+          stop_period_days:
+            label: Shutdown period (days)
+          warning_period_days:
+            label: Warning period (days)
       incident_report:
         attributes:
           created_at:
@@ -2811,6 +3024,12 @@ en:
             label: IP address
           vps:
             label: VPS
+        policy_evaluation:
+          attributes:
+            stop_period_days:
+              label: Shutdown period in days
+            warning_period_days:
+              label: Warning period in days
       incoming_payment:
         attributes:
           created_at:
@@ -4087,6 +4306,8 @@ en:
             input:
               environment:
                 description: Filter by environment
+              incident_enforcement_enabled:
+                description: Filter VPSes by their automatic shutdown permission.
               location:
                 description: Filter by location
               node:
@@ -4134,6 +4355,9 @@ en:
                 label: Expiration
               hostname:
                 description: VPS hostname
+              incident_enforcement_enabled:
+                description: Allow automatic shutdown under any incident policy for
+                  this VPS. Collection and eligible warnings remain active.
               node:
                 description: Node VPS will run on
               object_state:
@@ -4197,6 +4421,14 @@ en:
               label: Id
             name:
               label: Name
+        incident_policy:
+          attributes:
+            key:
+              label: Policy key
+            stop_period_days:
+              label: Shutdown period (days)
+            warning_period_days:
+              label: Warning period (days)
         mount:
           attributes:
             dataset:
@@ -4216,6 +4448,9 @@ en:
             label: Expiration
           hostname:
             description: VPS hostname
+          incident_enforcement_enabled:
+            description: Allow automatic shutdown under any incident policy for this
+              VPS. Collection and eligible warnings remain active.
           node:
             description: Node VPS will run on
           object_state:
@@ -4488,6 +4723,7 @@ en:
           expand_dataset: Expand
           expand_dataset_again: Expand+
           features: Features
+          incident_escalation_mail: Incident escalation notification
           migrate:
             os_to_os: Migrate
             os_to_vz: Migrate

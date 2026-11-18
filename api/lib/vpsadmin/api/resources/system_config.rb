@@ -8,7 +8,7 @@ module VpsAdmin::API::Resources
       string :name
       string :type, db_name: :data_type
       bool :localized
-      custom :value, db_name: :get_value
+      custom :value, db_name: :get_value, nullable: true
       custom :localized_value, label: 'Localized value'
       string :label
       string :description
@@ -105,6 +105,8 @@ module VpsAdmin::API::Resources
         cfg.set_value(input[:value])
         cfg.save!
         cfg
+      rescue ActiveRecord::RecordInvalid => e
+        error!('Invalid configuration', e.record.errors.to_hash)
       end
     end
   end
