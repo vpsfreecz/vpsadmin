@@ -860,10 +860,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1jnyqgbbzglgk1fzfr1rcqxi3jxki7gs8av9iz3b01gyq9irnbz0";
+      sha256 = "13z5jwb190xmvxq9kmdz82mi306bkl78h4fqw9g446dryxmggy32";
       type = "gem";
     };
-    version = "3.3.13.0";
+    version = "3.3.14.0";
   };
   prism = {
     groups = [
@@ -1240,10 +1240,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "13gyfnkfwsv4hvnrdrp4bi22sr2j9jxcab8p4a99m775wj7wbm8q";
+      sha256 = "0x6mrbfs8x8qz1abnpczb4wgam0g110r6by7whm51ml5hk988y82";
       type = "gem";
     };
-    version = "1.52.0";
+    version = "1.53.0";
   };
   rubocop-rake = {
     dependencies = [
