@@ -4,18 +4,20 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-      body { color: #20252b; font-family: Arial, sans-serif; line-height: 1.5; }
-      h2 { font-size: 18px; margin: 24px 0 8px; }
-      p { margin: 12px 0; }
-      .account { border-top: 1px solid #d9dde2; margin-top: 20px; padding-top: 4px; }
-      .action { margin: 18px 0 22px; }
-      .action a { background: #0875c1; border: 1px solid #075f9d;
+      .mail-content h2 { font-size: 18px; margin: 24px 0 8px; }
+      .mail-content p { margin: 12px 0; }
+      .mail-content .account { border-top: 1px solid #d9dde2; margin-top: 20px; padding-top: 4px; }
+      .mail-content .action { margin: 18px 0 22px; }
+      .mail-content .action a { background: #0875c1; border: 1px solid #075f9d;
                   border-radius: 4px; color: #fff; display: inline-block;
                   padding: 10px 16px; text-decoration: none; }
-      .footer { color: #59636e; font-size: 13px; margin-top: 24px; }
+      .mail-content .footer { color: #59636e; font-size: 13px; margin-top: 24px; }
     </style>
   </head>
-  <body>
+  <body style="margin:0;padding:24px 12px;background:#f3f5f7;color:#24313d;font-family:Arial,sans-serif;line-height:1.6;">
+<table role="presentation" style="table-layout:fixed;width:100%;max-width:640px;margin:0 auto;background:#fff;border:1px solid #dce2e7;border-radius:8px;">
+<tr><td style="padding:24px;">
+<div class="mail-content" style="overflow-x:auto;overflow-wrap:anywhere;">
     <p>Hi,</p>
     <p>
       We received a password recovery request for the following vpsAdmin
@@ -58,8 +60,11 @@
       been changed.
     </p>
     <p>Best regards,<br>vpsAdmin team</p>
-    <p class="footer">
+    <p class="footer" style="font-size:12px;color:#596773;">
       (This is an automated mail from vpsAdmin, your reply will be sent to our support)
     </p>
-  </body>
+</div>
+</td></tr>
+</table>
+</body>
 </html>
