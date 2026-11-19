@@ -3941,6 +3941,53 @@ import ../make-test.nix (
       )
       support_incident.save! if support_incident.changed? || support_incident.new_record?
 
+      # Saved-policy views use the existing support VPS. The browser creates a
+      # different zero-count VPS for settings and draft-isolation assertions.
+      %w[fixture_alpha fixture_beta].each do |key|
+        SysConfig.find_or_initialize_by(category: "incident_policy_#{key}", name: 'mode').tap do |row|
+          row.update!(value: 'observe', data_type: 'String')
+        end
+      end
+      policy_fixture_report = lambda do |name, codename, **attrs|
+        report = IncidentReport.find_or_initialize_by(vps: support_vps, subject: "Policy fixture #{name}")
+        if report.new_record?
+          report.assign_attributes(user: user, filed_by: admin, codename: codename,
+            text: "Saved policy fixture #{name}.", detected_at: Time.now - 60, **attrs)
+          report.save!
+        end
+        report
+      end
+      policy_matched = policy_fixture_report.call('matched', 'fixture_abuse')
+      policy_unmatched = policy_fixture_report.call('unmatched', 'fixture_unmatched')
+      policy_error = policy_fixture_report.call('error', 'fixture_error')
+      policy_audit = policy_fixture_report.call('audit-only', 'fixture_abuse', detected_at: Time.now - (2 * 86_400))
+      policy_fixture_report.call('threshold', 'fixture_abuse')
+      policy_retired = policy_fixture_report.call('retired', 'fixture_retired')
+      retired_key = 'retired_fixture'
+      unless policy_retired.incident_policy_evaluations.exists?(policy_key: retired_key)
+        saved = policy_matched.incident_policy_evaluations.find_by!(policy_key: 'fixture_alpha').snapshot.deep_dup
+        saved['metadata']['key'] = retired_key
+        saved['metadata']['labels'] = { 'en' => 'Retired fixture policy', 'cs' => 'Odebrané testovací pravidlo' }
+        policy_retired.incident_policy_evaluations.create!(policy_key: retired_key, matched: true,
+          state: 'recorded', evaluated_at: Time.now, snapshot: saved)
+      end
+      policy_notice = policy_fixture_report.call('notice', 'fixture_alpha', source_kind: 'incident_policy_notice')
+      unless policy_notice.notice_action
+        saved = policy_matched.incident_policy_evaluations.find_by!(policy_key: 'fixture_alpha')
+        VpsIncidentAction.create!(vps: support_vps, user: user, incident_report: policy_matched,
+          incident_policy_evaluation: saved, policy_key: 'fixture_alpha', accounting_since: support_vps.incident_accounting_since,
+          kind: 'warning', state: 'completed', mail_state: 'suppressed', incident_count_7d: 1, incident_count_30d: 1,
+          notice_incident_report: policy_notice)
+      end
+      policy_foreign = policy_fixture_report.call('foreign', 'fixture_unmatched', user: admin)
+      incident_policy_views = {
+        'vpsId' => support_vps.id,
+        'reports' => { 'matched' => policy_matched.id, 'unmatched' => policy_unmatched.id,
+          'error' => policy_error.id, 'auditOnly' => policy_audit.id, 'retired' => policy_retired.id,
+          'notice' => policy_notice.id, 'foreign' => policy_foreign.id },
+        'retiredKey' => retired_key
+      }
+
       oom_rule = OomReportRule.find_or_initialize_by(
         vps: support_vps,
         cgroup_pattern: '/'
@@ -3982,6 +4029,7 @@ import ../make-test.nix (
         .index_by(&:filesystem)
 
       fixture_stdout.puts JSON.dump(
+        'incidentPolicies' => incident_policy_views,
         'passwordRecovery' => {
           'completionToken' => password_recovery_completion_token,
           'formToken' => password_recovery_form_token
@@ -4845,6 +4893,30 @@ import ../make-test.nix (
       fixture_stdout.flush
     '';
 
+    incidentPolicyConfig = pkgs.runCommand "vpsadmin-webui-incident-policy-config" { } ''
+      mkdir -p "$out"
+      cp -R ${../configs/vpsadmin/api}/. "$out/"
+      rm "$out/incident_escalation.rb"
+      cat > "$out/incident_escalation.rb" <<'RUBY'
+      IncidentEscalation.configure do
+        rule :fixture_alpha do
+          labels en: 'First fixture policy', cs: 'První testovací pravidlo'
+          limits warning: 5, stop: 10
+          applies_if do |ctx|
+            raise 'Fixture selection error' if ctx.report[:codename] == 'fixture_error'
+
+            ctx.report[:codename] == 'fixture_abuse'
+          end
+        end
+        rule :fixture_beta do
+          labels en: 'Second fixture policy', cs: 'Druhé testovací pravidlo'
+          limits warning: 3, stop: 6
+          applies_if { |ctx| ctx.report[:codename] == 'fixture_abuse' }
+        end
+      end
+      RUBY
+    '';
+
     baseMachines = import ../machines/cluster/2-node.nix args;
   in
   {
@@ -4865,6 +4937,12 @@ import ../make-test.nix (
     machines = baseMachines // {
       services = baseMachines.services // {
         config = baseMachines.services.config // {
+          vpsadmin = baseMachines.services.config.vpsadmin // {
+            api.configDirectory = pkgs.lib.mkForce incidentPolicyConfig;
+            supervisor.configDirectory = pkgs.lib.mkForce incidentPolicyConfig;
+            databaseSetup.configDirectory = pkgs.lib.mkForce incidentPolicyConfig;
+          };
+
           environment.systemPackages = [
             playwrightRunner
           ];
@@ -4879,6 +4957,16 @@ import ../make-test.nix (
     };
 
     testScripts = {
+      incident-escalation = {
+        description = "Run incident escalation summary and administrator settings browser tests.";
+        script = webuiTestScriptCommon + ''
+          describe 'webui incident escalation controls' do
+            it 'shows counts and enforces administrator-only settings' do
+              run_playwright('incident-escalation', 'specs/incident-escalation.spec.cjs')
+            end
+          end
+        '';
+      };
       auth = {
         description = ''
           Run anonymous, authentication, session, and role menu browser tests.

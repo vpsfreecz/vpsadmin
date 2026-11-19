@@ -229,6 +229,21 @@ if (isLoggedIn()) {
             }
             break;
 
+        case 'incident_policy':
+        case 'incident_permission':
+            if (vps_incident_save(api_get_uint('veid'), $_GET['action'] === 'incident_permission')) {
+                redirect(vps_incident_url(api_get_uint('veid')));
+            }
+            // Keep failed drafts on the same policy page.
+            // no break
+        case 'incidents':
+            $vps = $api->vps->show(api_get_uint('veid'), [
+                'meta' => ['includes' => 'node__location__environment,user,os_template,user_namespace_map'],
+            ]);
+            vps_details_suite($vps);
+            vps_incident_page($vps);
+            break;
+
         case 'info':
             $show_info = true;
             break;
@@ -1150,9 +1165,10 @@ if (isLoggedIn()) {
             'meta' => [
                 'includes' => 'node__location__environment,user,os_template,user_namespace_map',
             ],
-        ]);
+        ] + vps_incident_read_params($api->vps->show));
 
         vps_details_suite($vps);
+        vps_incident_overview_warning($vps);
 
         if (isAdmin()) {
             $xtpl->sbar_add(_('State log'), '?page=lifetimes&action=changelog&resource=vps&id=' . $vps->id . '&return=' . urlencode($_SERVER['REQUEST_URI']));
@@ -1270,6 +1286,7 @@ if (isLoggedIn()) {
         }
 
         $xtpl->table_out();
+
 
         if (!isAdmin() && $vps->maintenance_lock != 'no') {
             $xtpl->perex(

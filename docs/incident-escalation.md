@@ -166,8 +166,9 @@ reports link to the existing filtered list and a separate Incident policies entr
 `?page=adminvps&action=incidents&veid=ID`. React has separate reports and policies
 tabs. Policy pages show limits and counts for each configured policy. The overview
 and VPS list show only reached warning/stop-threshold alerts. Each policy
-has its own limit form; shared stop permission has one separate form. Inherit
-clears the draft and Save writes it. API capability checks must cover these
+has its own limit form; shared stop permission has one separate form. In PHP,
+a blank limit inherits and a positive number is an explicit override, including
+when it equals the default. Save writes the draft. API capability checks must cover these
 resources and fields before enabling the feature. Members cannot change settings.
 
 ## Source, ownership and time boundaries

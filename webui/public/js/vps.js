@@ -19,3 +19,13 @@ $(document).ready(function() {
 
 	toggleUserDataRows();
 });
+
+function incidentLimitUnit(input) {
+    const unit = input.siblings('[data-incident-unit]');
+    // The supported EN/CS report units distinguish only one from other numbers.
+    unit.text(unit.attr(input.val() === '1' ? 'data-one' : 'data-other'));
+}
+
+$(document).on('input', 'form[name^="incident-policy-"] input[type="number"]', function() {
+    incidentLimitUnit($(this));
+});
