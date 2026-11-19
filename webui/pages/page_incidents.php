@@ -5,6 +5,10 @@ if (isLoggedIn()) {
         case 'list':
             incident_list();
 
+            if (api_get_uint('vps')) {
+                $xtpl->sbar_add(_('Incident policies'), vps_incident_url(api_get_uint('vps')));
+            }
+
             if ($_GET['return'] ?? false) {
                 $xtpl->sbar_add(_('Back'), $_GET['return']);
             }

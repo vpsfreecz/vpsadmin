@@ -46,6 +46,7 @@ include WEBUI_ROOT . 'forms/cluster.forms.php';
 include WEBUI_ROOT . 'forms/dataset.forms.php';
 include WEBUI_ROOT . 'forms/export.forms.php';
 include WEBUI_ROOT . 'forms/vps.forms.php';
+include WEBUI_ROOT . 'forms/incident_policy.forms.php';
 include WEBUI_ROOT . 'forms/users.forms.php';
 include WEBUI_ROOT . 'forms/lifetimes.forms.php';
 include WEBUI_ROOT . 'forms/object_history.forms.php';

@@ -36,12 +36,12 @@ msgid "Filters"
 msgstr "Filtry"
 
 #: forms/backup.forms.php forms/dns.forms.php forms/export.forms.php
-#: forms/incidents.forms.php forms/monitoring.forms.php
-#: forms/networking.forms.php forms/object_history.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php forms/userdata.forms.php
-#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
-#: pages/page_transactions.php
+#: forms/incident_policy.forms.php forms/incidents.forms.php
+#: forms/monitoring.forms.php forms/networking.forms.php
+#: forms/object_history.forms.php forms/oom_reports.forms.php
+#: forms/outage.forms.php forms/userdata.forms.php forms/userns.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
+#: pages/page_nas.php pages/page_networking.php pages/page_transactions.php
 msgid "Limit"
 msgstr "Limit"
 
@@ -206,8 +206,8 @@ msgstr "Spravovat balíčky prostředků"
 msgid "OOM reports"
 msgstr "OOM reporty"
 
-#: forms/cluster.forms.php forms/incidents.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_incidents.php
+#: forms/cluster.forms.php forms/incident_policy.forms.php
+#: forms/incidents.forms.php pages/page_adminm.php pages/page_incidents.php
 msgid "Incident reports"
 msgstr "Incidenty"
 
@@ -609,7 +609,8 @@ msgid "Location network"
 msgstr "Síť lokace"
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
-#: forms/export.forms.php forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/export.forms.php forms/incident_policy.forms.php
+#: forms/oom_reports.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/userdata.forms.php
 #: forms/userns.forms.php forms/users.forms.php pages/page_adminm.php
 #: pages/page_adminvps.php pages/page_cluster.php
@@ -684,7 +685,8 @@ msgstr "Aktualizovat"
 msgid "Page"
 msgstr "Strana"
 
-#: forms/cluster.forms.php forms/dataset.forms.php forms/ip_release.forms.php
+#: forms/cluster.forms.php forms/dataset.forms.php
+#: forms/incident_policy.forms.php forms/ip_release.forms.php
 #: forms/oom_reports.forms.php lib/xtemplate.lib.php
 #: pages/page_transactions.php
 msgid "Action"
@@ -698,7 +700,8 @@ msgstr "Jazyk"
 msgid "Content"
 msgstr "Obsah"
 
-#: forms/cluster.forms.php forms/dns.forms.php forms/networking.forms.php
+#: forms/cluster.forms.php forms/dns.forms.php forms/incident_policy.forms.php
+#: forms/networking.forms.php
 msgid "All"
 msgstr "Vše"
 
@@ -953,11 +956,11 @@ msgstr "Mountpoint"
 msgid "On mount fail"
 msgstr "Selhání při mountu"
 
-#: forms/dataset.forms.php forms/ip_release.forms.php forms/lifetimes.forms.php
-#: forms/monitoring.forms.php forms/node.forms.php forms/outage.forms.php
-#: forms/security_advisory.forms.php forms/users.forms.php
-#: pages/page_adminm.php pages/page_adminvps.php pages/page_lifetimes.php
-#: pages/page_transactions.php
+#: forms/dataset.forms.php forms/incidents.forms.php forms/ip_release.forms.php
+#: forms/lifetimes.forms.php forms/monitoring.forms.php forms/node.forms.php
+#: forms/outage.forms.php forms/security_advisory.forms.php
+#: forms/users.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: pages/page_lifetimes.php pages/page_transactions.php
 msgid "State"
 msgstr "Stav"
 
@@ -973,7 +976,7 @@ msgstr "Připojeno"
 msgid "Unmounted"
 msgstr "Nepřipojeno"
 
-#: forms/dataset.forms.php
+#: forms/dataset.forms.php forms/incidents.forms.php
 msgid "Skipped"
 msgstr "Přeskočeno"
 
@@ -1265,8 +1268,9 @@ msgstr "Log přenosů"
 msgid "Time"
 msgstr "Čas"
 
-#: forms/dns.forms.php forms/export.forms.php forms/outage.forms.php
-#: pages/page_adminm.php pages/page_adminvps.php public/index.php
+#: forms/dns.forms.php forms/export.forms.php forms/incident_policy.forms.php
+#: forms/outage.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: public/index.php
 msgid "Status"
 msgstr "Status"
 
@@ -1578,7 +1582,8 @@ msgstr "Dopředná zóna"
 msgid "Reverse zone"
 msgstr "Reverzní zóna"
 
-#: forms/dns.forms.php lib/functions.lib.php
+#: forms/dns.forms.php forms/incident_policy.forms.php
+#: forms/incidents.forms.php lib/functions.lib.php
 msgid "Unknown"
 msgstr "Neznámý"
 
@@ -1610,7 +1615,7 @@ msgstr "Nebyly zaznamenány žádné přenosy"
 msgid "Successful"
 msgstr "Úspěšný"
 
-#: forms/dns.forms.php
+#: forms/dns.forms.php forms/incidents.forms.php
 msgid "Failed"
 msgstr "Nepodařilo se"
 
@@ -1767,6 +1772,269 @@ msgstr "Zobrazit pokročilé možnosti"
 msgid "Hide advanced options"
 msgstr "Skrýt pokročilé možnosti"
 
+#: forms/incident_policy.forms.php forms/incidents.forms.php
+#: pages/page_incidents.php
+msgid "Incident policies"
+msgstr "Pravidla incidentů"
+
+#: forms/incident_policy.forms.php
+msgid "Approaching a limit"
+msgstr "Blíží se limitu"
+
+#: forms/incident_policy.forms.php
+msgid "Below limits"
+msgstr "Pod limity"
+
+#: forms/incident_policy.forms.php
+msgid "Shutdown limit reached"
+msgstr "Dosažen limit pro vypnutí"
+
+#: forms/incident_policy.forms.php
+msgid "Warning limit reached"
+msgstr "Dosažen limit pro upozornění"
+
+#: forms/incident_policy.forms.php
+msgid "Too many incident reports: VPS shutdown limit reached"
+msgstr "Počet hlášení incidentů dosáhl limitu pro vypnutí VPS"
+
+#: forms/incident_policy.forms.php
+msgid "Too many incident reports: warning limit reached"
+msgstr "Počet hlášení incidentů dosáhl limitu pro upozornění"
+
+#: forms/incident_policy.forms.php forms/incidents.forms.php
+#: forms/ip_release.forms.php
+msgid "Policy"
+msgstr "Pravidlo"
+
+#: forms/incident_policy.forms.php
+msgctxt "incident-policy-column"
+msgid "Incidents"
+msgstr "Počet incidentů"
+
+#: forms/incident_policy.forms.php
+msgid "Period"
+msgstr "Období"
+
+#: forms/incident_policy.forms.php forms/incidents.forms.php
+msgctxt "incident-policy-action"
+msgid "Warning"
+msgstr "Upozornění"
+
+#: forms/incident_policy.forms.php forms/incidents.forms.php
+msgid "VPS stop"
+msgstr "Vypnutí VPS"
+
+#: forms/incident_policy.forms.php
+#, php-format
+msgid "Last %d day"
+msgid_plural "Last %d days"
+msgstr[0] "Za poslední %d den"
+msgstr[1] "Za poslední %d dny"
+msgstr[2] "Za posledních %d dní"
+
+#: forms/incident_policy.forms.php lib/functions.lib.php
+#, php-format
+msgid "%d day"
+msgid_plural "%d days"
+msgstr[0] "%d den"
+msgstr[1] "%d dny"
+msgstr[2] "%d dní"
+
+#: forms/incident_policy.forms.php
+msgid "Observation only"
+msgstr "Pouze sledování"
+
+#: forms/incident_policy.forms.php
+msgid "Warnings only"
+msgstr "Pouze upozornění"
+
+#: forms/incident_policy.forms.php
+msgid "Warnings and automatic shutdown"
+msgstr "Upozornění a automatické vypínání"
+
+#: forms/incident_policy.forms.php
+msgid "Last incident"
+msgstr "Poslední incident"
+
+#: forms/incident_policy.forms.php
+msgid "Last warning queued"
+msgstr "Poslední upozornění zařazené k odeslání"
+
+#: forms/incident_policy.forms.php forms/incidents.forms.php
+msgid "Policy evaluated at"
+msgstr "Čas vyhodnocení pravidel"
+
+#: forms/incident_policy.forms.php
+msgid "Last policy evaluation"
+msgstr "Poslední vyhodnocení pravidel"
+
+#: forms/incident_policy.forms.php
+msgid "Policy evaluation failed"
+msgstr "Vyhodnocení pravidel selhalo"
+
+#: forms/incident_policy.forms.php forms/incidents.forms.php
+msgid "Incident report"
+msgstr "Zpráva o incidentu"
+
+#: forms/incident_policy.forms.php forms/incidents.forms.php
+msgid "Incident history"
+msgstr "Historie incidentů"
+
+#: forms/incident_policy.forms.php
+msgid "Policy settings"
+msgstr "Nastavení pravidla"
+
+#: forms/incident_policy.forms.php
+msgid "Leave a limit empty to use the default."
+msgstr "Pro použití výchozí hodnoty ponech limit prázdný."
+
+#: forms/incident_policy.forms.php
+msgid "Shutdown limit"
+msgstr "Limit pro vypnutí"
+
+#: forms/incident_policy.forms.php
+msgid "Warning limit"
+msgstr "Limit pro upozornění"
+
+#: forms/incident_policy.forms.php
+#, php-format
+msgid "%d report"
+msgid_plural "%d reports"
+msgstr[0] "%d hlášení"
+msgstr[1] "%d hlášení"
+msgstr[2] "%d hlášení"
+
+#: forms/incident_policy.forms.php
+#, php-format
+msgid "%s in %s"
+msgstr "%s za %s"
+
+#: forms/incident_policy.forms.php
+msgid "Automatic shutdown"
+msgstr "Automatické vypínání"
+
+#: forms/incident_policy.forms.php
+msgid "Allow automatic shutdown"
+msgstr "Povolit automatické vypínání"
+
+#: forms/incident_policy.forms.php forms/ip_release.forms.php
+msgid "Allowed"
+msgstr "povoleno"
+
+#: forms/incident_policy.forms.php
+msgid "Exempt"
+msgstr "Výjimka"
+
+#: forms/incident_policy.forms.php
+msgid "Last automatic shutdown"
+msgstr "Poslední automatické vypnutí"
+
+#: forms/incident_policy.forms.php
+msgid "Automatic shutdown failed"
+msgstr "Automatické vypnutí selhalo"
+
+#: forms/incident_policy.forms.php
+msgid "Automatic shutdown pending"
+msgstr "Automatické vypnutí čeká na dokončení"
+
+#: forms/incident_policy.forms.php
+msgid "Automatic shutdown outcome uncertain"
+msgstr "Výsledek automatického vypnutí není známý"
+
+#: forms/incident_policy.forms.php forms/vps.forms.php lib/xtemplate.lib.php
+#: pages/page_adminm.php public/index.php
+msgid "Transaction log"
+msgstr "Transakce"
+
+#: forms/incident_policy.forms.php
+msgid "Outstanding shutdown"
+msgstr "Nevyřízené vypnutí"
+
+#: forms/incident_policy.forms.php
+msgid "Cooldown ends"
+msgstr "Konec ochranné lhůty"
+
+#: forms/incident_policy.forms.php forms/incidents.forms.php
+msgid "Incident settings unavailable"
+msgstr "Nastavení incidentů není dostupné"
+
+#: forms/incident_policy.forms.php
+msgid "Incident limits are misconfigured."
+msgstr "Limity incidentů nejsou správně nastavené."
+
+#: forms/incident_policy.forms.php forms/incidents.forms.php
+msgid "Mode"
+msgstr "Režim"
+
+#: forms/incident_policy.forms.php
+msgid "Enter a positive whole number, or leave the limit empty."
+msgstr "Zadej kladné celé číslo, nebo nech limit prázdný."
+
+#: forms/incident_policy.forms.php forms/node.forms.php pages/page_adminm.php
+#: pages/page_adminvps.php pages/page_backup.php pages/page_cluster.php
+#: pages/page_console.php pages/page_dataset.php pages/page_dns.php
+#: pages/page_export.php pages/page_history.php pages/page_incidents.php
+#: pages/page_jumpto.php pages/page_lifetimes.php pages/page_monitoring.php
+#: pages/page_nas.php pages/page_networking.php pages/page_node.php
+#: pages/page_oom_reports.php pages/page_outage.php pages/page_redirect.php
+#: pages/page_reminder.php pages/page_transactions.php pages/page_userdata.php
+#: pages/page_userns.php
+msgid "Access forbidden"
+msgstr "Přístup zakázán"
+
+#: forms/incident_policy.forms.php
+msgid "Select whether automatic shutdown is allowed."
+msgstr "Vyber, zda je povolené automatické vypínání."
+
+#: forms/incident_policy.forms.php pages/page_adminm.php pages/page_cluster.php
+#: pages/page_dataset.php
+msgid "Changes saved"
+msgstr "Změny byly uloženy"
+
+#: forms/incident_policy.forms.php
+msgid "Unable to save changes"
+msgstr "Změny se nepodařilo uložit"
+
+#: forms/incidents.forms.php
+msgid "Confirmed escalation stop"
+msgstr "Potvrzené vypnutí kvůli opakovaným incidentům"
+
+#: forms/incidents.forms.php
+msgid "Escalation warning decision"
+msgstr "Rozhodnutí o souhrnném upozornění"
+
+#: forms/incidents.forms.php
+msgid "Mail not yet queued"
+msgstr "E-mail dosud nebyl zařazen k odeslání"
+
+#: forms/incidents.forms.php
+msgid "Mail queued"
+msgstr "E-mail je zařazen k odeslání"
+
+#: forms/incidents.forms.php forms/vps.forms.php pages/page_networking.php
+msgid "Sent"
+msgstr "Odesláno"
+
+#: forms/incidents.forms.php
+msgid "Mail failed"
+msgstr "Odeslání e-mailu selhalo"
+
+#: forms/incidents.forms.php
+msgid "Mail outcome uncertain"
+msgstr "Výsledek odeslání e-mailu je nejistý"
+
+#: forms/incidents.forms.php
+msgid "Mail suppressed"
+msgstr "Odeslání e-mailu je potlačeno"
+
+#: forms/incidents.forms.php
+msgid "Source incident"
+msgstr "Zdrojový incident"
+
+#: forms/incidents.forms.php
+msgid "All policies"
+msgstr "Všechna pravidla"
+
 #: forms/incidents.forms.php
 msgid "Assignment ID"
 msgstr "ID přidělení"
@@ -1793,10 +2061,6 @@ msgid "Admin"
 msgstr "Admin"
 
 #: forms/incidents.forms.php
-msgid "Incident report"
-msgstr "Zpráva o incidentu"
-
-#: forms/incidents.forms.php
 msgid "Assignment"
 msgstr "Přidělení"
 
@@ -1815,6 +2079,10 @@ msgstr "Přidáno"
 #: forms/incidents.forms.php
 msgid "Reported at"
 msgstr "Nahlášeno"
+
+#: forms/incidents.forms.php
+msgid "Escalation notice"
+msgstr "Souhrnné hlášení"
 
 #: forms/incidents.forms.php pages/page_adminvps.php
 msgid "CPU limit"
@@ -1835,6 +2103,60 @@ msgstr "Nová zpráva o incidentu"
 #: forms/incidents.forms.php
 msgid "Report"
 msgstr "Zpráva"
+
+#: forms/incidents.forms.php forms/networking.forms.php forms/outage.forms.php
+#: pages/page_adminm.php
+msgid "No"
+msgstr "Žádný"
+
+#: forms/incidents.forms.php forms/networking.forms.php forms/outage.forms.php
+#: pages/page_adminm.php
+msgid "Yes"
+msgstr "Ano"
+
+#: forms/incidents.forms.php
+msgid "Matched"
+msgstr "Shoda s pravidlem"
+
+#: forms/incidents.forms.php
+msgid "Recorded"
+msgstr "zaznamenáno"
+
+#: forms/incidents.forms.php
+msgid "Error class"
+msgstr "Třída chyby"
+
+#: forms/incidents.forms.php
+msgid "Error stage"
+msgstr "Fáze chyby"
+
+#: forms/incidents.forms.php
+msgid "No action"
+msgstr "žádná akce"
+
+#: forms/incidents.forms.php
+msgid "Decision"
+msgstr "Rozhodnutí"
+
+#: forms/incidents.forms.php
+msgid "Matched policies"
+msgstr "Odpovídající pravidla"
+
+#: forms/incidents.forms.php
+msgid "No matching policies"
+msgstr "Žádná odpovídající pravidla"
+
+#: forms/incidents.forms.php
+msgid "Policy information is unavailable for this report."
+msgstr "Informace o pravidlech nejsou pro toto hlášení dostupné."
+
+#: forms/incidents.forms.php
+msgid "These counts and limits were saved when this report was evaluated."
+msgstr "Počty a limity byly uloženy při vyhodnocení tohoto hlášení."
+
+#: forms/incidents.forms.php
+msgid "Other policy evaluations"
+msgstr "Ostatní vyhodnocení pravidel"
 
 #: forms/ip_release.forms.php
 #, php-format
@@ -2001,10 +2323,6 @@ msgstr ""
 msgid "Keep"
 msgstr "Ponechat"
 
-#: forms/ip_release.forms.php
-msgid "Allowed"
-msgstr "povoleno"
-
 #: forms/ip_release.forms.php forms/networking.forms.php
 msgid "Disabled"
 msgstr "Zakázáno"
@@ -2147,10 +2465,6 @@ msgstr "Ponecháno"
 #: forms/ip_release.forms.php
 msgid "IPs"
 msgstr "IP adresy"
-
-#: forms/ip_release.forms.php
-msgid "Policy"
-msgstr "Pravidla"
 
 #: forms/ip_release.forms.php
 msgid ""
@@ -2563,14 +2877,6 @@ msgstr "Přidat do VPS"
 msgid "Host IP Addresses"
 msgstr "Hostitelské IP adresy"
 
-#: forms/networking.forms.php forms/outage.forms.php pages/page_adminm.php
-msgid "Yes"
-msgstr "Ano"
-
-#: forms/networking.forms.php forms/outage.forms.php pages/page_adminm.php
-msgid "No"
-msgstr "Žádný"
-
 #: forms/networking.forms.php
 msgid "Routed address"
 msgstr "Směrovaná adresa"
@@ -2817,17 +3123,6 @@ msgstr "Změna hlášeného jádra"
 #: forms/node.forms.php
 msgid "No kernel history is available yet."
 msgstr "Historie jádra zatím není k dispozici."
-
-#: forms/node.forms.php pages/page_adminm.php pages/page_adminvps.php
-#: pages/page_backup.php pages/page_cluster.php pages/page_console.php
-#: pages/page_dataset.php pages/page_dns.php pages/page_export.php
-#: pages/page_history.php pages/page_incidents.php pages/page_jumpto.php
-#: pages/page_lifetimes.php pages/page_monitoring.php pages/page_nas.php
-#: pages/page_networking.php pages/page_node.php pages/page_oom_reports.php
-#: pages/page_outage.php pages/page_redirect.php pages/page_reminder.php
-#: pages/page_transactions.php pages/page_userdata.php pages/page_userns.php
-msgid "Access forbidden"
-msgstr "Přístup zakázán"
 
 #: forms/node.forms.php
 msgid "The requested boot evidence does not belong to this Node."
@@ -3791,7 +4086,9 @@ msgstr "Stáhnout upozornění"
 msgid ""
 "Retract this advisory? Its reports and updates will be kept. No email will "
 "be sent."
-msgstr "Stáhnout toto upozornění? Jeho obsah i aktualizace zůstanou zachovány. Žádný e-mail se neodešle."
+msgstr ""
+"Stáhnout toto upozornění? Jeho obsah i aktualizace zůstanou zachovány. Žádný "
+"e-mail se neodešle."
 
 #: forms/security_advisory.forms.php
 msgid "Delete advisory"
@@ -3801,7 +4098,9 @@ msgstr "Smazat upozornění"
 msgid ""
 "Delete this advisory, all updates and node assessments permanently? Recovery "
 "requires a backup."
-msgstr "Trvale smazat toto upozornění, všechny aktualizace a hodnocení nodů? Obnovení vyžaduje zálohu."
+msgstr ""
+"Trvale smazat toto upozornění, všechny aktualizace a hodnocení nodů? "
+"Obnovení vyžaduje zálohu."
 
 #: forms/security_advisory.forms.php
 msgid "Publish advisory"
@@ -5134,11 +5433,6 @@ msgstr "Konfigurace OOM reportů"
 msgid "Report incident"
 msgstr "Nahlásit incident"
 
-#: forms/vps.forms.php lib/xtemplate.lib.php pages/page_adminm.php
-#: public/index.php
-msgid "Transaction log"
-msgstr "Transakce"
-
 #: forms/vps.forms.php
 msgid "VPS owner"
 msgstr "Vlastník VPS"
@@ -5375,10 +5669,6 @@ msgstr "Pakety"
 msgid "Received"
 msgstr "Přijato"
 
-#: forms/vps.forms.php pages/page_networking.php
-msgid "Sent"
-msgstr "Odesláno"
-
 #: forms/vps.forms.php
 msgid "See traffic accounting log"
 msgstr "Zobrazit log přenosů"
@@ -5462,14 +5752,6 @@ msgstr "Neodstraňujte VPS okamžitě, ale po uplynutí předem definované doby
 #: lib/functions.lib.php
 msgid "(IMPORTANT: This template is currently disabled, it cannot be used)"
 msgstr "(DŮLEŽITÉ: Tato šablona je aktuálně zakázána, nelze ji použít)"
-
-#: lib/functions.lib.php
-#, php-format
-msgid "%d day"
-msgid_plural "%d days"
-msgstr[0] "%d den"
-msgstr[1] "%d dny"
-msgstr[2] "%d dní"
 
 #: lib/functions.lib.php
 #, php-format
@@ -6404,10 +6686,6 @@ msgstr "Známé přihlašovací zařízení bylo smazáno"
 #: pages/page_adminm.php
 msgid "Known login device deletion failed"
 msgstr "Smazání známého přihlašovacího zařízení se nezdařilo"
-
-#: pages/page_adminm.php pages/page_cluster.php pages/page_dataset.php
-msgid "Changes saved"
-msgstr "Změny uloženy"
 
 #: pages/page_adminm.php
 msgid "User personal information were updated."
@@ -9084,6 +9362,170 @@ msgstr "Upravit pole nápovědy"
 msgid "Help"
 msgstr "Pomoc"
 
+#~ msgid "Use inherited limits"
+#~ msgstr "Použít výchozí limity"
+
+#~ msgid "Inherited"
+#~ msgstr "Výchozí"
+
+#~ msgid "Use inherited limit"
+#~ msgstr "Použít výchozí limit"
+
+#~ msgid "Inherited after saving"
+#~ msgstr "Výchozí po uložení"
+
+#~ msgid "Limits must be positive integers."
+#~ msgstr "Limity musí být kladná celá čísla."
+
+#~ msgid "Limits"
+#~ msgstr "Limity"
+
+#~ msgid ""
+#~ "Each policy counts reports that matched it when they were created. "
+#~ "Sending a warning or stopping the VPS also depends on the policy and VPS "
+#~ "settings."
+#~ msgstr ""
+#~ "Každé pravidlo počítá hlášení, která mu při vytvoření odpovídala. "
+#~ "Odeslání upozornění i vypnutí VPS závisí také na nastavení pravidla a VPS."
+
+#~ msgid "SMTP transaction succeeded; inbox delivery is not confirmed"
+#~ msgstr "Poštovní server e-mail přijal; doručení do schránky není potvrzeno"
+
+#~ msgid ""
+#~ "Each policy counts matching incident reports. Reaching a limit does not "
+#~ "guarantee a warning or VPS stop."
+#~ msgstr ""
+#~ "Každé pravidlo počítá odpovídající incidenty. Dosažení limitu samo o sobě "
+#~ "nezaručuje upozornění ani vypnutí VPS."
+
+#~ msgid "View incidents"
+#~ msgstr "Zobrazit incidenty"
+
+#, php-format
+#~ msgid "Incidents in %d day"
+#~ msgid_plural "Incidents in %d days"
+#~ msgstr[0] "Incidenty za %d den"
+#~ msgstr[1] "Incidenty za %d dny"
+#~ msgstr[2] "Incidenty za %d dní"
+
+#, php-format
+#~| msgid "7 days: %1$d/%2$d; 30 days: %3$d/%4$d"
+#~ msgid "7 days: %1$d/%2$s; 30 days: %3$d/%4$s"
+#~ msgstr "7 dní: %1$d/%2$s; 30 dní: %3$d/%4$s"
+
+#~ msgid "Incident escalation"
+#~ msgstr "Opatření při opakovaných incidentech"
+
+#~ msgid "Automatic shutdown permission"
+#~ msgstr "Automatické vypínání"
+
+#~ msgid "Incidents in 30 days / automatic shutdown limit"
+#~ msgstr "Incidenty za 30 dní / limit pro automatické vypnutí"
+
+#~ msgid "Global mode"
+#~ msgstr "Globální režim"
+
+#~| msgid "Automatic shutdown permission"
+#~ msgid "Automatic shutdown permitted by global and VPS settings"
+#~ msgstr "Automatické vypnutí povolené globálním nastavením a nastavením VPS"
+
+#~ msgid "Historical policy evaluation"
+#~ msgstr "Uložené vyhodnocení pravidla"
+
+#~ msgid "No policy evaluation recorded"
+#~ msgstr "Žádné vyhodnocení pravidla není uloženo"
+
+#~ msgid ""
+#~ "Runtime policy limits are evaluated only when an eligible incident "
+#~ "arrives. A historical evaluation does not describe current limits. Global "
+#~ "and VPS permissions do not guarantee an automatic action."
+#~ msgstr ""
+#~ "Limity pravidla se vyhodnocují až při novém incidentu, který splňuje jeho "
+#~ "podmínky. Uložené vyhodnocení nepopisuje aktuální limity. Globální "
+#~ "nastavení a nastavení VPS nezaručují automatické opatření."
+
+#~ msgid "Incidents counted since ownership change"
+#~ msgstr "Incidenty počítané od změny vlastníka"
+
+#~ msgid "No outstanding shutdown"
+#~ msgstr "Žádné nevyřízené vypnutí"
+
+#~ msgid ""
+#~ "Counts use rolling 7-day and 30-day periods. Another incident at or after "
+#~ "the cooldown ends is required for another automatic shutdown; no shutdown "
+#~ "is scheduled for the cooldown end."
+#~ msgstr ""
+#~ "Incidenty se počítají za posledních 7 a 30 dní. Další automatické vypnutí "
+#~ "vyžaduje nový incident v okamžiku konce ochranné lhůty nebo později. Na "
+#~ "konec lhůty není naplánované žádné vypnutí."
+
+#~ msgid ""
+#~ "An exemption disables automatic shutdowns by vpsAdmin for repeated "
+#~ "incidents. Incident collection and warnings remain active."
+#~ msgstr ""
+#~ "Výjimka vypíná automatická vypnutí ve vpsAdminu kvůli opakovaným "
+#~ "incidentům. Sběr incidentů a upozornění zůstávají aktivní."
+
+#~ msgid ""
+#~ "Automatic shutdown permission, the cooldown and any unfinished shutdown "
+#~ "are shared across incident types for this VPS."
+#~ msgstr ""
+#~ "Povolení automatického vypínání, ochranná lhůta a dosud nedokončené "
+#~ "vypnutí jsou společné pro všechny typy incidentů tohoto VPS."
+
+#~ msgid "The node's memory protection remains active."
+#~ msgstr "Ochrana paměti na nodu zůstává aktivní."
+
+#~ msgid "Incident settings"
+#~ msgstr "Nastavení incidentů"
+
+#~ msgid "Warning limit override (7 days)"
+#~ msgstr "Vlastní limit pro upozornění (7 dní)"
+
+#~ msgid "Automatic shutdown limit override (30 days)"
+#~ msgstr "Vlastní limit pro automatické vypnutí (30 dní)"
+
+#~| msgid ""
+#~| "Leave an override empty to inherit the global default. Effective limits "
+#~| "are shown above. The shutdown limit must be at least the warning limit."
+#~ msgid ""
+#~ "Leave an override empty to inherit the policy limit after global "
+#~ "overrides. Current limits are unavailable for a site policy evaluated on "
+#~ "new incidents. The shutdown limit must be at least the warning limit."
+#~ msgstr ""
+#~ "Prázdná vlastní hodnota přebírá limit pravidla upravený globálním "
+#~ "nastavením. Aktuální limity pravidel vyhodnocovaných při nových "
+#~ "incidentech nejsou dostupné. Limit pro vypnutí nesmí být nižší než limit "
+#~ "pro upozornění."
+
+#~| msgid ""
+#~| "Changes apply to new incidents. An operation already running may still "
+#~| "finish."
+#~ msgid ""
+#~ "Changes apply to new incidents and are checked before pending actions "
+#~ "run. An operation already running may still finish."
+#~ msgstr ""
+#~ "Změny se uplatní při nových incidentech a zkontrolují se před provedením "
+#~ "čekajících akcí. Již probíhající operace může ještě doběhnout."
+
+#~ msgid "Save incident settings"
+#~ msgstr "Uložit nastavení incidentů"
+
+#~ msgid "Incident settings saved"
+#~ msgstr "Nastavení incidentů bylo uloženo"
+
+#~ msgid "Unable to save incident settings"
+#~ msgstr "Nepodařilo se uložit nastavení incidentů"
+
+#~ msgid "Automatic shutdown active"
+#~ msgstr "Automatické vypínání aktivní"
+
+#~ msgid "Reset limits to defaults"
+#~ msgstr "Obnovit výchozí limity"
+
+#~ msgid "OOM daemon incidents"
+#~ msgstr "Incidenty OOM démona"
+
 #~ msgid "List IP addresses in this network"
 #~ msgstr "Vypsat IP adresy v této síti"
 
@@ -9118,9 +9560,6 @@ msgstr "Pomoc"
 
 #~ msgid "Admin exemption reason"
 #~ msgstr "Důvod výjimky administrátora"
-
-#~ msgid "Last notice queued"
-#~ msgstr "Poslední výzva zařazená k odeslání"
 
 #~ msgid ""
 #~ "Assign an address to a VPS to keep it. User reasons do not prevent "

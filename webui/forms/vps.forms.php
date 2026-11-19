@@ -702,6 +702,55 @@ function vps_list_form()
         $xtpl->title(_("VPS list") . ' ' . _("[User mode]"));
     }
 
+    if (!isAdmin() || ($_GET['action'] ?? '') == 'list') {
+        if (isAdmin()) {
+            $params = [
+                'limit' => api_get_uint('limit', 25),
+                'from_id' => api_get_uint('from_id', 0),
+                'meta' => ['includes' => 'user,node,dataset__dataset_expansion'],
+            ];
+
+            $userId = api_get_uint('user');
+            if ($userId !== null) {
+                $params['user'] = $userId;
+            }
+
+            $nodeId = api_get_uint('node');
+            if ($nodeId !== null && $nodeId > 0) {
+                $params['node'] = $nodeId;
+            }
+
+            $locationId = api_get_uint('location');
+            if ($locationId !== null && $locationId > 0) {
+                $params['location'] = $locationId;
+            }
+
+            $environmentId = api_get_uint('environment');
+            if ($environmentId !== null && $environmentId > 0) {
+                $params['environment'] = $environmentId;
+            }
+
+            $objectState = api_get('object_state');
+            if ($objectState !== null) {
+                $params['object_state'] = $objectState;
+            }
+
+            $userNamespaceMapId = api_get_uint('user_namespace_map');
+            if ($userNamespaceMapId !== null && $userNamespaceMapId > 0) {
+                $params['user_namespace_map'] = $userNamespaceMapId;
+            }
+
+            $params += vps_incident_list_filters($api->vps->index->getParameters('input'));
+            $vpses = $api->vps->list($params);
+
+        } else {
+            $vpses = $api->vps->list([
+                'meta' => ['count' => true, 'includes' => 'user,node,dataset__dataset_expansion'],
+            ] + vps_incident_read_params($api->vps->index));
+        }
+
+    }
+
     if (isAdmin()) {
         $xtpl->table_title(_('Filters'));
         $xtpl->form_create('', 'get', 'vps-filter', false);
@@ -743,6 +792,7 @@ function vps_list_form()
             get_val('user_namespace_map')
         );
 
+        vps_incident_filter_form($api->vps->index->getParameters('input'));
         $xtpl->form_out(_('Show'));
     }
 
@@ -770,51 +820,6 @@ function vps_list_form()
             }
         }
 
-        if (isAdmin()) {
-            $params = [
-                'limit' => api_get_uint('limit', 25),
-                'from_id' => api_get_uint('from_id', 0),
-                'meta' => ['includes' => 'user,node,dataset__dataset_expansion'],
-            ];
-
-            $userId = api_get_uint('user');
-            if ($userId !== null) {
-                $params['user'] = $userId;
-            }
-
-            $nodeId = api_get_uint('node');
-            if ($nodeId !== null && $nodeId > 0) {
-                $params['node'] = $nodeId;
-            }
-
-            $locationId = api_get_uint('location');
-            if ($locationId !== null && $locationId > 0) {
-                $params['location'] = $locationId;
-            }
-
-            $environmentId = api_get_uint('environment');
-            if ($environmentId !== null && $environmentId > 0) {
-                $params['environment'] = $environmentId;
-            }
-
-            $objectState = api_get('object_state');
-            if ($objectState !== null) {
-                $params['object_state'] = $objectState;
-            }
-
-            $userNamespaceMapId = api_get_uint('user_namespace_map');
-            if ($userNamespaceMapId !== null && $userNamespaceMapId > 0) {
-                $params['user_namespace_map'] = $userNamespaceMapId;
-            }
-
-            $vpses = $api->vps->list($params);
-
-        } else {
-            $vpses = $api->vps->list([
-                'meta' => ['count' => true, 'includes' => 'user,node,dataset__dataset_expansion'],
-            ]);
-        }
-
         $pagination->setResourceList($vpses);
 
         foreach ($vpses as $vps) {
@@ -829,15 +834,15 @@ function vps_list_form()
 
             if (!$vps->enable_network) {
                 $xtpl->table_td(
-                    '<a href="?page=adminvps&action=info&veid=' . $vps->id . '"><img src="template/icons/warning.png"  title="' . _("The VPS has disabled network") . '"/> ' . h($vps->hostname) . '</a>'
+                    vps_incident_indicator($vps) . '<a href="?page=adminvps&action=info&veid=' . $vps->id . '"><img src="template/icons/warning.png"  title="' . _("The VPS has disabled network") . '"/> ' . h($vps->hostname) . '</a>'
                 );
             } elseif ($vps->in_rescue_mode) {
                 $xtpl->table_td(
-                    '<a href="?page=adminvps&action=info&veid=' . $vps->id . '"><img src="template/icons/warning.png"  title="' . _("The VPS is in rescue mode") . '"/> ' . h($vps->hostname) . '</a>'
+                    vps_incident_indicator($vps) . '<a href="?page=adminvps&action=info&veid=' . $vps->id . '"><img src="template/icons/warning.png"  title="' . _("The VPS is in rescue mode") . '"/> ' . h($vps->hostname) . '</a>'
                 );
             } else {
                 $xtpl->table_td(
-                    '<a href="?page=adminvps&action=info&veid=' . $vps->id . '"><img src="template/icons/vps_edit.png"  title="' . _("Edit") . '"/> ' . h($vps->hostname) . '</a>'
+                    vps_incident_indicator($vps) . '<a href="?page=adminvps&action=info&veid=' . $vps->id . '"><img src="template/icons/vps_edit.png"  title="' . _("Edit") . '"/> ' . h($vps->hostname) . '</a>'
                 );
             };
 
@@ -854,6 +859,7 @@ function vps_list_form()
             } else {
                 $xtpl->table_td('---', false, true);
             }
+
 
             if (isAdmin() || $vps->maintenance_lock == 'no') {
                 $xtpl->table_td(($vps->is_running) ? '<a href="?page=adminvps&run=restart&veid=' . $vps->id . '&t=' . csrf_token() . '" ' . vps_confirm_action_onclick($vps, 'restart') . '><img src="template/icons/vps_restart.png" title="' . _("Restart") . '"/></a>' : '<img src="template/icons/vps_restart_grey.png"  title="' . _("Unable to restart") . '" />');
@@ -973,7 +979,7 @@ function vps_details_submenu($vps)
 
     $xtpl->sbar_add(_('OOM reports'), '?page=oom_reports&action=list&vps=' . $vps->id . '&list=1');
     $xtpl->sbar_add(_('Configure OOM reports'), '?page=oom_reports&action=rule_list&vps=' . $vps->id);
-    $xtpl->sbar_add(_('Incident reports'), '?page=incidents&action=list&list=1&vps=' . $vps->id . '&return=' . $return_url);
+    vps_incident_sidebar($vps, $return_url);
 
     if (isAdmin()) {
         $xtpl->sbar_add(_('Report incident'), '?page=incidents&action=new&vps=' . $vps->id);
