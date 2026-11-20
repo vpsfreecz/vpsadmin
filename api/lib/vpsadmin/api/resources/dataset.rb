@@ -574,7 +574,9 @@ module VpsAdmin::API::Resources
 
           max_snapshots = ds.max_snapshots
 
-          error!("cannot make more than #{max_snapshots} snapshots") if ds.snapshots.count >= max_snapshots
+          if ds.snapshots.count >= max_snapshots
+            error!(VpsAdmin::API::I18n.message('errors.snapshot_limit_reached', limit: max_snapshots))
+          end
 
           dip = ds.primary_dataset_in_pool!
 

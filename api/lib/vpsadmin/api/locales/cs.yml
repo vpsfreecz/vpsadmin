@@ -2431,6 +2431,9 @@ cs:
       snapshot_download_no_common_source: snapshoty nemají společný dostupný zdroj
         pro inkrementální stažení
       snapshot_download_unavailable: snapshot není dostupný ke stažení
+      snapshot_limit_reached: Byl dosažen limit %{limit} snapshotů tohoto datasetu.
+        Počítají se všechny snapshoty bez ohledu na popisek. Zkontroluj seznam snapshotů;
+        pokud potřebuješ vyšší limit, kontaktuj podporu.
       vps_already_marked_for_deletion: VPS už je označeno ke smazání.
     password_changes:
       minimum_length_description: Heslo musí mít alespoň %{minimum} znaků
