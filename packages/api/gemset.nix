@@ -472,10 +472,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1lh0bbdpq5axqblwsw5qqdk43sd6zkfl0qg56kcbzmbhr8lwz5aw";
+      sha256 = "1k3rnk0ns9w0ypjciw79zq4zfmka9q93pmdn6haxvrsyzrcn7yhy";
       type = "gem";
     };
-    version = "0.24.3";
+    version = "0.25.0";
   };
   i18n = {
     dependencies = [ "concurrent-ruby" ];
@@ -937,10 +937,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "1isfvhl6r55ddxwq8qsmn6zbljfmzjgq5zszjhm7mg1y8rgciv0z";
+      sha256 = "1k0d8vpg160wjnp344wyn3jp70c8paz3nhglrzninihciz8c2dc2";
       type = "gem";
     };
-    version = "3.2.8";
+    version = "3.2.9";
   };
   rack-oauth2 = {
     dependencies = [
