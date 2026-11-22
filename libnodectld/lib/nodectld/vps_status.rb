@@ -11,7 +11,7 @@ module NodeCtld
     class Entry
       attr_reader :id, :read_hostname
       attr_accessor :exists, :running, :hostname, :uptime, :cpu_usage, :memory,
-                    :nproc, :loadavg, :in_rescue_mode
+                    :nproc, :loadavg, :in_rescue_mode, :usage_source
 
       def initialize(row)
         @skip = false
@@ -49,10 +49,10 @@ module NodeCtld
       @vps_autostart_status = VpsAutostartStatus.new
     end
 
-    # @param top_data [Hash] data from osctl ct top
-    def update(top_data)
+    # @param sample [CtTop::Sample] data from osctl ct top
+    def update(sample)
       @@mutex.synchronize do
-        @top_data = top_data
+        @sample = sample
         @host_uptime = SystemProbes::Uptime.new.uptime
 
         safe_update
@@ -60,18 +60,23 @@ module NodeCtld
     end
 
     def safe_update
-      vpsadmin_vpses = {}
-
       fetched_vpses = fetch_vpses
+      vpsadmin_vpses = fetched_vpses.filter_map do |vps|
+        pool_fs = vps['pool_fs']
+        next unless pool_fs.is_a?(String) && !pool_fs.empty?
 
-      fetched_vpses.each do |vps|
-        ent = Entry.new(vps)
-        vpsadmin_vpses[ent.id] = ent
-      end
+        [[pool_fs.split('/', 2).first, vps.fetch('id').to_s], Entry.new(vps)]
+      end.to_h
 
       t = Time.now
-      cts = ct_list
-      update_vps_autostart_status(fetched_vpses, cts, now: t)
+      grouped_cts = ct_list.group_by { |ct| [ct.pool, ct.id] }
+      cts = grouped_cts.values.filter_map { |rows| rows.first if rows.one? }
+      if cts.length == grouped_cts.length
+        update_vps_autostart_status(fetched_vpses, cts, now: t)
+      else
+        @vps_autostart_status.failed
+        log(:warn, :vps_status, 'Container list contains duplicate identities')
+      end
 
       begin
         lavgs = OsCtl::Lib::LoadAvgReader.read_for(cts)
@@ -83,19 +88,19 @@ module NodeCtld
       hostname_vpsadmin_vpses = []
 
       cts.each do |ct|
-        vpsadmin_vps = vpsadmin_vpses[ct.id]
-        next if vpsadmin_vps.nil?
+        vpsadmin_vps = vpsadmin_vpses[[ct.pool, ct.id]]
+        state = ct.state
+        next unless vpsadmin_vps && %w[running stopped].include?(state)
 
         vpsadmin_vps.exists = true
-        vpsadmin_vps.running = ct.state == 'running'
+        vpsadmin_vps.running = state == 'running'
 
         next unless vpsadmin_vps.running?
 
-        # Find matching stats from ct top
-        apply_usage_stats(vpsadmin_vps)
-
         run_or_skip(vpsadmin_vps) do
-          vpsadmin_vps.uptime = read_uptime(ct.init_pid)
+          start_ticks = read_init_start_ticks(ct.init_pid)
+          vpsadmin_vps.uptime = @host_uptime - (start_ticks / @tics_per_sec)
+          vpsadmin_vps.usage_source = [ct, start_ticks]
         end
 
         # Set loadavg
@@ -121,9 +126,10 @@ module NodeCtld
           osctl_parse(
             %i[ct ls],
             hostname_vpsadmin_vpses.map(&:id),
-            { output: %w[id hostname_readout].join(',') }
+            { output: %w[pool id hostname_readout].join(',') }
           ).each do |ct|
-            vpsadmin_vpses[ct[:id]].hostname = ct[:hostname_readout] || 'unable-to-read'
+            vps = vpsadmin_vpses[ct.values_at(:pool, :id)]
+            vps.hostname = ct[:hostname_readout] || 'unable-to-read' if vps
           end
         rescue SystemCommandFailed => e
           log(:warn, :vps_status, "Unable to read VPS hostnames: #{e.message}")
@@ -134,6 +140,7 @@ module NodeCtld
       vpsadmin_vpses.each_value do |vps|
         next unless vps.exists?
 
+        run_or_skip(vps) { apply_usage_stats(vps) } if vps.running? && !vps.skip?
         NodeBunny.publish_wait(
           @exchange,
           {
@@ -168,7 +175,10 @@ module NodeCtld
     end
 
     def ct_list
-      osctl_parse(%i[ct ls]).map { |v| OsCtlContainer.new(v) }
+      # This lookup supplies identity and state, not cgroup usage. In
+      # particular, a missing Top measurement must not break the inventory.
+      fields = %w[pool id group_path init_pid state autostart boot_dataset dataset]
+      osctl_parse(%i[ct ls], [], output: fields.join(',')).map { |v| OsCtlContainer.new(v) }
     end
 
     def update_vps_autostart_status(vpses, cts, now:)
@@ -186,36 +196,35 @@ module NodeCtld
     end
 
     def apply_usage_stats(vps)
-      st = @top_data.detect { |ct| ct[:id] == vps.id }
-
-      # It may happen that `osctl ct top` does not yet have information
-      # about a newly started VPS.
-      unless st
-        log(:warn, :vps, "VPS #{vps.id} not found in ct top")
+      ct, start_ticks = vps.usage_source
+      if @sample && read_init_start_ticks(ct.init_pid) != start_ticks
         vps.skip
         return
       end
 
-      vps.cpu_usage = st[:cpu_usage]
-      vps.memory = st[:memory] # in bytes
-      vps.nproc = st[:nproc]
+      now = Process.clock_gettime(Process::CLOCK_MONOTONIC, :nanosecond)
+      usage = @sample&.usage(ct, start_ticks:, now_ns: now)
+      if usage
+        vps.cpu_usage, vps.memory, vps.nproc = usage
+      else
+        vps.skip
+      end
     end
 
-    # Read the container's uptime
-    #
-    # The uptime of the container can be thought of as the time since its
-    # init process has started. Process start time can be found in
-    # `/proc/<pid>/stat`, the 22nd field, see proc(5). The value is stored
-    # in clock ticks since the system boot, so we divide that by ticks per
-    # second, and substract it from the host's uptime.
-    #
-    # @param init_pid [String,Integer]
-    def read_uptime(init_pid)
-      str = File.open(File.join('/proc', init_pid.to_s, 'stat'), 'r') do |file|
-        file.readline.strip
-      end
+    # Field 22 is the start time in clock ticks. The process name can contain
+    # spaces and closing parentheses, so split only after the last ')'.
+    def read_init_start_ticks(init_pid)
+      raise ArgumentError, 'Missing container init PID' unless init_pid.is_a?(Integer) && init_pid > 0
 
-      @host_uptime - (str.split[21].to_i / @tics_per_sec)
+      proc_stat = File.read("/proc/#{init_pid}/stat")
+      closing = proc_stat.rindex(')')
+      raise ArgumentError, 'Invalid container init stat' unless closing && proc_stat.start_with?("#{init_pid} (")
+
+      fields = proc_stat[(closing + 1)..].split
+      ticks = Integer(fields.fetch(19), 10)
+      raise ArgumentError, 'Invalid container init identity' unless ticks > 0 && !%w[Z X x].include?(fields.first)
+
+      ticks
     end
   end
 end
