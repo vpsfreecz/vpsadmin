@@ -14,6 +14,583 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+#: forms/admin_incidents.forms.php
+msgid "Incidents"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/vps.forms.php
+msgid "History"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/networking.forms.php
+#: pages/page_index.php
+msgid "Overview"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Reports"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/backup.forms.php forms/dns.forms.php
+#: forms/export.forms.php forms/incidents.forms.php forms/ip_release.forms.php
+#: forms/monitoring.forms.php forms/networking.forms.php
+#: forms/object_history.forms.php forms/oom_reports.forms.php
+#: forms/outage.forms.php forms/userdata.forms.php forms/userns.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
+#: pages/page_nas.php pages/page_networking.php pages/page_transactions.php
+msgid "Filters"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Node ID"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/dns.forms.php forms/export.forms.php
+#: forms/incidents.forms.php forms/ip_release.forms.php
+#: forms/monitoring.forms.php forms/networking.forms.php forms/outage.forms.php
+#: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
+#: forms/vps.forms.php pages/page_networking.php pages/page_transactions.php
+msgid "User ID"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/backup.forms.php
+#: forms/incidents.forms.php forms/networking.forms.php forms/outage.forms.php
+#: forms/vps.forms.php pages/page_networking.php
+msgid "VPS ID"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "All evaluations"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Matched evaluations"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Outstanding actions"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Reached thresholds and actions"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Scope"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/networking.forms.php
+#: pages/page_adminvps.php
+msgid "From"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/networking.forms.php
+#: pages/page_adminvps.php
+msgid "To"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incidents.forms.php
+msgid "No action"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+#: forms/incidents.forms.php
+msgid "VPS stop"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+#: forms/incidents.forms.php
+msgctxt "incident-policy-action"
+msgid "Warning"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/cluster.forms.php
+#: forms/dataset.forms.php forms/incident_policy.forms.php
+#: forms/ip_release.forms.php forms/oom_reports.forms.php lib/xtemplate.lib.php
+#: pages/page_transactions.php
+msgid "Action"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/cluster.forms.php forms/dns.forms.php
+#: forms/incident_policy.forms.php forms/networking.forms.php
+msgid "All"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incidents.forms.php
+msgid "Decision"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Action state"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Mail state"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Invalid configuration"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/dns.forms.php forms/export.forms.php
+#: forms/incident_policy.forms.php forms/outage.forms.php pages/page_adminm.php
+#: pages/page_adminvps.php public/index.php
+msgid "Status"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+#: forms/incidents.forms.php
+msgid "Mode"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+msgid "Observation only"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+msgid "Warnings and automatic shutdown"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+msgid "Warnings only"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+#: forms/ip_release.forms.php
+msgid "Allowed"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+msgid "Automatic shutdown"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Not allowed"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+#: forms/incidents.forms.php forms/ip_release.forms.php
+msgid "Policy"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Severity"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/backup.forms.php
+#: forms/cluster.forms.php forms/dns.forms.php forms/export.forms.php
+#: forms/incidents.forms.php forms/ip_release.forms.php
+#: forms/lifetimes.forms.php forms/monitoring.forms.php
+#: forms/networking.forms.php forms/object_history.forms.php
+#: forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/security_advisory.forms.php forms/userdata.forms.php
+#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
+#: pages/page_adminm.php pages/page_adminvps.php pages/page_console.php
+#: pages/page_lifetimes.php pages/page_networking.php
+#: pages/page_transactions.php
+msgid "User"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "30-day incident count"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "7-day incident count"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Reports until warning threshold"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+msgid "Last incident"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Reports until shutdown threshold"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Sort by"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Ascending"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Descending"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Direction"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/backup.forms.php forms/dns.forms.php
+#: forms/export.forms.php forms/incident_policy.forms.php
+#: forms/incidents.forms.php forms/monitoring.forms.php
+#: forms/networking.forms.php forms/object_history.forms.php
+#: forms/oom_reports.forms.php forms/outage.forms.php forms/userdata.forms.php
+#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
+#: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
+#: pages/page_transactions.php
+msgid "Limit"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/backup.forms.php forms/dns.forms.php
+#: forms/export.forms.php forms/incidents.forms.php forms/monitoring.forms.php
+#: forms/networking.forms.php forms/object_history.forms.php
+#: forms/oom_reports.forms.php forms/outage.forms.php forms/userdata.forms.php
+#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
+#: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
+#: pages/page_transactions.php
+msgid "Show"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/dns.forms.php
+#: forms/incident_policy.forms.php forms/incidents.forms.php
+#: lib/functions.lib.php
+msgid "Unknown"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgctxt "incident-policy-boolean"
+msgid "Unknown"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgctxt "incident-policy-boolean"
+msgid "No"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgctxt "incident-policy-boolean"
+msgid "Yes"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/dns.forms.php
+#: forms/incidents.forms.php
+msgid "Failed"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incidents.forms.php
+msgid "Recorded"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Recorded for audit"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/dataset.forms.php
+#: forms/incidents.forms.php
+msgid "Skipped"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Accepted by mail server"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incidents.forms.php
+msgid "Mail failed"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incidents.forms.php
+msgid "Mail not yet queued"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incidents.forms.php
+msgid "Mail outcome uncertain"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incidents.forms.php
+msgid "Mail queued"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incidents.forms.php
+msgid "Mail suppressed"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Completed"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "None"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Pending"
+msgstr ""
+
+#: forms/admin_incidents.forms.php pages/page_transactions.php
+msgid "Queued"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Suppressed"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Uncertain"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+msgctxt "incident-policy-column"
+msgid "Incidents"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+msgid "Period"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Reports remaining"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+#, php-format
+msgid "Last %d day"
+msgid_plural "Last %d days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+#: lib/functions.lib.php
+#, php-format
+msgid "%d day"
+msgid_plural "%d days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: forms/admin_incidents.forms.php
+msgid "Threshold reached"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "No recorded action"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Action created"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Action updated"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Confirmed shutdown"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Mail attempt finished"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Shared shutdown action"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+#: forms/vps.forms.php lib/xtemplate.lib.php pages/page_adminm.php
+#: public/index.php
+msgid "Transaction log"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+#: forms/incidents.forms.php
+msgid "Incident report"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/dns.forms.php forms/node.forms.php
+#: forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/security_advisory.forms.php forms/vps.forms.php
+#: pages/page_adminvps.php pages/page_cluster.php pages/page_index.php
+#: pages/page_networking.php pages/page_node.php pages/page_transactions.php
+msgid "Node"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Global mode"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Warning emails allowed"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Owner active"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Ownership transfer pending"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+msgid "Outstanding shutdown"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Counting since"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Last confirmed shutdown"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+msgid "Last warning queued"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Shutdown cooldown ends"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Warning cooldown ends"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incidents.forms.php
+#: forms/monitoring.forms.php
+msgid "Detected at"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incidents.forms.php
+msgid "Matched"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/dataset.forms.php
+#: forms/incidents.forms.php forms/ip_release.forms.php
+#: forms/lifetimes.forms.php forms/monitoring.forms.php forms/node.forms.php
+#: forms/outage.forms.php forms/security_advisory.forms.php
+#: forms/users.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: pages/page_lifetimes.php pages/page_transactions.php
+msgid "State"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+#: forms/node.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: pages/page_backup.php pages/page_cluster.php pages/page_console.php
+#: pages/page_dataset.php pages/page_dns.php pages/page_export.php
+#: pages/page_history.php pages/page_incidents.php pages/page_jumpto.php
+#: pages/page_lifetimes.php pages/page_monitoring.php pages/page_nas.php
+#: pages/page_networking.php pages/page_node.php pages/page_oom_reports.php
+#: pages/page_outage.php pages/page_redirect.php pages/page_reminder.php
+#: pages/page_transactions.php pages/page_userdata.php pages/page_userns.php
+msgid "Access forbidden"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Incident overview and history are unavailable on this API."
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "All with current matches"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Recorded evaluations and current outcomes"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Loaded at"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Report cutoff"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid ""
+"The cutoff sets the counting windows. Settings, ownership and action "
+"outcomes reflect the latest read."
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid ""
+"History shows saved evaluations and the latest outcomes, not every action "
+"change or retry. Mail acceptance does not confirm inbox delivery. Policies "
+"with the same shutdown action ID share one VPS shutdown."
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid ""
+"Reports remaining is the number needed to reach a threshold, not a promise "
+"of an action. Counts can fall as older reports leave the window."
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Current action outcome"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Evaluated at"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Saved counts and limits"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Saved evaluation"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/cluster.forms.php
+#: forms/dataset.forms.php forms/dns.forms.php forms/incidents.forms.php
+#: forms/lifetimes.forms.php forms/networking.forms.php
+#: forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/security_advisory.forms.php forms/userdata.forms.php
+#: forms/vps.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: pages/page_index.php pages/page_networking.php pages/page_transactions.php
+#: public/index.php
+msgid "VPS"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Counts, limits and remaining reports"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Latest action outcome"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Restrictions"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "No current matches for these filters."
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "No recorded evaluations for these filters."
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/node.forms.php
+msgid "Previous"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/vps.forms.php lib/xtemplate.lib.php
+msgid "Next"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Refresh"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+#, php-format
+msgid "Total: %d"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/ip_release.forms.php
+msgid "Invalid filter value."
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Unable to load incident overview or history."
+msgstr ""
+
 #: forms/backup.forms.php
 msgid "VPS backups"
 msgstr ""
@@ -24,26 +601,6 @@ msgstr ""
 
 #: forms/backup.forms.php pages/page_backup.php
 msgid "Downloads"
-msgstr ""
-
-#: forms/backup.forms.php forms/dns.forms.php forms/export.forms.php
-#: forms/incidents.forms.php forms/ip_release.forms.php
-#: forms/monitoring.forms.php forms/networking.forms.php
-#: forms/object_history.forms.php forms/oom_reports.forms.php
-#: forms/outage.forms.php forms/userdata.forms.php forms/userns.forms.php
-#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
-#: pages/page_nas.php pages/page_networking.php pages/page_transactions.php
-msgid "Filters"
-msgstr ""
-
-#: forms/backup.forms.php forms/dns.forms.php forms/export.forms.php
-#: forms/incident_policy.forms.php forms/incidents.forms.php
-#: forms/monitoring.forms.php forms/networking.forms.php
-#: forms/object_history.forms.php forms/oom_reports.forms.php
-#: forms/outage.forms.php forms/userdata.forms.php forms/userns.forms.php
-#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
-#: pages/page_nas.php pages/page_networking.php pages/page_transactions.php
-msgid "Limit"
 msgstr ""
 
 #: forms/backup.forms.php forms/dns.forms.php forms/export.forms.php
@@ -58,40 +615,12 @@ msgstr ""
 msgid "Member ID"
 msgstr ""
 
-#: forms/backup.forms.php forms/incidents.forms.php forms/networking.forms.php
-#: forms/outage.forms.php forms/vps.forms.php pages/page_networking.php
-msgid "VPS ID"
-msgstr ""
-
 #: forms/backup.forms.php
 msgid "Include subdatasets"
 msgstr ""
 
 #: forms/backup.forms.php
 msgid "Ignore datasets without snapshots"
-msgstr ""
-
-#: forms/backup.forms.php forms/dns.forms.php forms/export.forms.php
-#: forms/incidents.forms.php forms/monitoring.forms.php
-#: forms/networking.forms.php forms/object_history.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php forms/userdata.forms.php
-#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
-#: pages/page_transactions.php
-msgid "Show"
-msgstr ""
-
-#: forms/backup.forms.php forms/cluster.forms.php forms/dns.forms.php
-#: forms/export.forms.php forms/incidents.forms.php forms/ip_release.forms.php
-#: forms/lifetimes.forms.php forms/monitoring.forms.php
-#: forms/networking.forms.php forms/object_history.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php
-#: forms/security_advisory.forms.php forms/userdata.forms.php
-#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_adminvps.php pages/page_console.php
-#: pages/page_lifetimes.php pages/page_networking.php
-#: pages/page_transactions.php
-msgid "User"
 msgstr ""
 
 #: forms/backup.forms.php forms/dataset.forms.php forms/export.forms.php
@@ -250,16 +779,6 @@ msgstr ""
 
 #: forms/cluster.forms.php
 msgid "total"
-msgstr ""
-
-#: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
-#: forms/incidents.forms.php forms/lifetimes.forms.php
-#: forms/networking.forms.php forms/oom_reports.forms.php
-#: forms/outage.forms.php forms/security_advisory.forms.php
-#: forms/userdata.forms.php forms/vps.forms.php pages/page_adminm.php
-#: pages/page_adminvps.php pages/page_index.php pages/page_networking.php
-#: pages/page_transactions.php public/index.php
-msgid "VPS"
 msgstr ""
 
 #: forms/cluster.forms.php pages/page_adminvps.php
@@ -670,24 +1189,12 @@ msgstr ""
 msgid "Page"
 msgstr ""
 
-#: forms/cluster.forms.php forms/dataset.forms.php
-#: forms/incident_policy.forms.php forms/ip_release.forms.php
-#: forms/oom_reports.forms.php lib/xtemplate.lib.php
-#: pages/page_transactions.php
-msgid "Action"
-msgstr ""
-
 #: forms/cluster.forms.php forms/users.forms.php pages/page_adminm.php
 msgid "Language"
 msgstr ""
 
 #: forms/cluster.forms.php forms/dns.forms.php
 msgid "Content"
-msgstr ""
-
-#: forms/cluster.forms.php forms/dns.forms.php forms/incident_policy.forms.php
-#: forms/networking.forms.php
-msgid "All"
 msgstr ""
 
 #: forms/cluster.forms.php forms/users.forms.php
@@ -935,14 +1442,6 @@ msgstr ""
 msgid "On mount fail"
 msgstr ""
 
-#: forms/dataset.forms.php forms/incidents.forms.php forms/ip_release.forms.php
-#: forms/lifetimes.forms.php forms/monitoring.forms.php forms/node.forms.php
-#: forms/outage.forms.php forms/security_advisory.forms.php
-#: forms/users.forms.php pages/page_adminm.php pages/page_adminvps.php
-#: pages/page_lifetimes.php pages/page_transactions.php
-msgid "State"
-msgstr ""
-
 #: forms/dataset.forms.php
 msgid "About to be mounted"
 msgstr ""
@@ -953,10 +1452,6 @@ msgstr ""
 
 #: forms/dataset.forms.php
 msgid "Unmounted"
-msgstr ""
-
-#: forms/dataset.forms.php forms/incidents.forms.php
-msgid "Skipped"
 msgstr ""
 
 #: forms/dataset.forms.php
@@ -1054,13 +1549,6 @@ msgstr ""
 
 #: forms/dns.forms.php
 msgid "Resolvers"
-msgstr ""
-
-#: forms/dns.forms.php forms/node.forms.php forms/oom_reports.forms.php
-#: forms/outage.forms.php forms/security_advisory.forms.php forms/vps.forms.php
-#: pages/page_adminvps.php pages/page_cluster.php pages/page_index.php
-#: pages/page_networking.php pages/page_node.php pages/page_transactions.php
-msgid "Node"
 msgstr ""
 
 #: forms/dns.forms.php
@@ -1246,12 +1734,6 @@ msgstr ""
 msgid "Time"
 msgstr ""
 
-#: forms/dns.forms.php forms/export.forms.php forms/incident_policy.forms.php
-#: forms/outage.forms.php pages/page_adminm.php pages/page_adminvps.php
-#: public/index.php
-msgid "Status"
-msgstr ""
-
 #: forms/dns.forms.php
 msgid "Reason code"
 msgstr ""
@@ -1332,14 +1814,6 @@ msgstr ""
 
 #: forms/dns.forms.php
 msgid "Create a new secondary DNS zone"
-msgstr ""
-
-#: forms/dns.forms.php forms/export.forms.php forms/incidents.forms.php
-#: forms/ip_release.forms.php forms/monitoring.forms.php
-#: forms/networking.forms.php forms/outage.forms.php forms/userdata.forms.php
-#: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_networking.php pages/page_transactions.php
-msgid "User ID"
 msgstr ""
 
 #: forms/dns.forms.php
@@ -1560,11 +2034,6 @@ msgstr ""
 msgid "Reverse zone"
 msgstr ""
 
-#: forms/dns.forms.php forms/incident_policy.forms.php
-#: forms/incidents.forms.php lib/functions.lib.php
-msgid "Unknown"
-msgstr ""
-
 #: forms/dns.forms.php
 msgid "Internal zone"
 msgstr ""
@@ -1591,10 +2060,6 @@ msgstr ""
 
 #: forms/dns.forms.php
 msgid "Successful"
-msgstr ""
-
-#: forms/dns.forms.php forms/incidents.forms.php
-msgid "Failed"
 msgstr ""
 
 #: forms/dns.forms.php
@@ -1778,63 +2243,6 @@ msgid "Too many incident reports: warning limit reached"
 msgstr ""
 
 #: forms/incident_policy.forms.php forms/incidents.forms.php
-#: forms/ip_release.forms.php
-msgid "Policy"
-msgstr ""
-
-#: forms/incident_policy.forms.php
-msgctxt "incident-policy-column"
-msgid "Incidents"
-msgstr ""
-
-#: forms/incident_policy.forms.php
-msgid "Period"
-msgstr ""
-
-#: forms/incident_policy.forms.php forms/incidents.forms.php
-msgctxt "incident-policy-action"
-msgid "Warning"
-msgstr ""
-
-#: forms/incident_policy.forms.php forms/incidents.forms.php
-msgid "VPS stop"
-msgstr ""
-
-#: forms/incident_policy.forms.php
-#, php-format
-msgid "Last %d day"
-msgid_plural "Last %d days"
-msgstr[0] ""
-msgstr[1] ""
-
-#: forms/incident_policy.forms.php lib/functions.lib.php
-#, php-format
-msgid "%d day"
-msgid_plural "%d days"
-msgstr[0] ""
-msgstr[1] ""
-
-#: forms/incident_policy.forms.php
-msgid "Observation only"
-msgstr ""
-
-#: forms/incident_policy.forms.php
-msgid "Warnings only"
-msgstr ""
-
-#: forms/incident_policy.forms.php
-msgid "Warnings and automatic shutdown"
-msgstr ""
-
-#: forms/incident_policy.forms.php
-msgid "Last incident"
-msgstr ""
-
-#: forms/incident_policy.forms.php
-msgid "Last warning queued"
-msgstr ""
-
-#: forms/incident_policy.forms.php forms/incidents.forms.php
 msgid "Policy evaluated at"
 msgstr ""
 
@@ -1844,10 +2252,6 @@ msgstr ""
 
 #: forms/incident_policy.forms.php
 msgid "Policy evaluation failed"
-msgstr ""
-
-#: forms/incident_policy.forms.php forms/incidents.forms.php
-msgid "Incident report"
 msgstr ""
 
 #: forms/incident_policy.forms.php forms/incidents.forms.php
@@ -1883,15 +2287,7 @@ msgid "%s in %s"
 msgstr ""
 
 #: forms/incident_policy.forms.php
-msgid "Automatic shutdown"
-msgstr ""
-
-#: forms/incident_policy.forms.php
 msgid "Allow automatic shutdown"
-msgstr ""
-
-#: forms/incident_policy.forms.php forms/ip_release.forms.php
-msgid "Allowed"
 msgstr ""
 
 #: forms/incident_policy.forms.php
@@ -1914,15 +2310,6 @@ msgstr ""
 msgid "Automatic shutdown outcome uncertain"
 msgstr ""
 
-#: forms/incident_policy.forms.php forms/vps.forms.php lib/xtemplate.lib.php
-#: pages/page_adminm.php public/index.php
-msgid "Transaction log"
-msgstr ""
-
-#: forms/incident_policy.forms.php
-msgid "Outstanding shutdown"
-msgstr ""
-
 #: forms/incident_policy.forms.php
 msgid "Cooldown ends"
 msgstr ""
@@ -1935,24 +2322,8 @@ msgstr ""
 msgid "Incident limits are misconfigured."
 msgstr ""
 
-#: forms/incident_policy.forms.php forms/incidents.forms.php
-msgid "Mode"
-msgstr ""
-
 #: forms/incident_policy.forms.php
 msgid "Enter a positive whole number, or leave the limit empty."
-msgstr ""
-
-#: forms/incident_policy.forms.php forms/node.forms.php pages/page_adminm.php
-#: pages/page_adminvps.php pages/page_backup.php pages/page_cluster.php
-#: pages/page_console.php pages/page_dataset.php pages/page_dns.php
-#: pages/page_export.php pages/page_history.php pages/page_incidents.php
-#: pages/page_jumpto.php pages/page_lifetimes.php pages/page_monitoring.php
-#: pages/page_nas.php pages/page_networking.php pages/page_node.php
-#: pages/page_oom_reports.php pages/page_outage.php pages/page_redirect.php
-#: pages/page_reminder.php pages/page_transactions.php pages/page_userdata.php
-#: pages/page_userns.php
-msgid "Access forbidden"
 msgstr ""
 
 #: forms/incident_policy.forms.php
@@ -1976,28 +2347,8 @@ msgstr ""
 msgid "Escalation warning decision"
 msgstr ""
 
-#: forms/incidents.forms.php
-msgid "Mail not yet queued"
-msgstr ""
-
-#: forms/incidents.forms.php
-msgid "Mail queued"
-msgstr ""
-
 #: forms/incidents.forms.php forms/vps.forms.php pages/page_networking.php
 msgid "Sent"
-msgstr ""
-
-#: forms/incidents.forms.php
-msgid "Mail failed"
-msgstr ""
-
-#: forms/incidents.forms.php
-msgid "Mail outcome uncertain"
-msgstr ""
-
-#: forms/incidents.forms.php
-msgid "Mail suppressed"
 msgstr ""
 
 #: forms/incidents.forms.php
@@ -2015,10 +2366,6 @@ msgstr ""
 #: forms/incidents.forms.php forms/userns.forms.php pages/page_adminvps.php
 #: pages/page_cluster.php pages/page_jumpto.php pages/page_transactions.php
 msgid "ID"
-msgstr ""
-
-#: forms/incidents.forms.php forms/monitoring.forms.php
-msgid "Detected at"
 msgstr ""
 
 #: forms/incidents.forms.php forms/ip_release.forms.php
@@ -2088,27 +2435,11 @@ msgid "Yes"
 msgstr ""
 
 #: forms/incidents.forms.php
-msgid "Matched"
-msgstr ""
-
-#: forms/incidents.forms.php
-msgid "Recorded"
-msgstr ""
-
-#: forms/incidents.forms.php
 msgid "Error class"
 msgstr ""
 
 #: forms/incidents.forms.php
 msgid "Error stage"
-msgstr ""
-
-#: forms/incidents.forms.php
-msgid "No action"
-msgstr ""
-
-#: forms/incidents.forms.php
-msgid "Decision"
 msgstr ""
 
 #: forms/incidents.forms.php
@@ -2318,10 +2649,6 @@ msgstr ""
 
 #: forms/ip_release.forms.php
 msgid "Select address"
-msgstr ""
-
-#: forms/ip_release.forms.php
-msgid "Invalid filter value."
 msgstr ""
 
 #: forms/ip_release.forms.php
@@ -2819,10 +3146,6 @@ msgstr ""
 msgid "List incidents"
 msgstr ""
 
-#: forms/networking.forms.php pages/page_index.php
-msgid "Overview"
-msgstr ""
-
 #: forms/networking.forms.php pages/page_adminvps.php
 msgid "Network enabled"
 msgstr ""
@@ -2909,14 +3232,6 @@ msgstr ""
 
 #: forms/networking.forms.php
 msgid "IP address assignments"
-msgstr ""
-
-#: forms/networking.forms.php pages/page_adminvps.php
-msgid "From"
-msgstr ""
-
-#: forms/networking.forms.php pages/page_adminvps.php
-msgid "To"
 msgstr ""
 
 #: forms/networking.forms.php
@@ -3250,10 +3565,6 @@ msgstr ""
 
 #: forms/node.forms.php
 msgid "System"
-msgstr ""
-
-#: forms/node.forms.php
-msgid "Previous"
 msgstr ""
 
 #: forms/node.forms.php
@@ -5048,10 +5359,6 @@ msgstr ""
 msgid "Create a VPS: Select user (0/4)"
 msgstr ""
 
-#: forms/vps.forms.php lib/xtemplate.lib.php
-msgid "Next"
-msgstr ""
-
 #: forms/vps.forms.php
 msgid "Create a VPS: Select a location (1/4)"
 msgstr ""
@@ -5312,10 +5619,6 @@ msgstr ""
 
 #: forms/vps.forms.php
 msgid "Replace VPS"
-msgstr ""
-
-#: forms/vps.forms.php
-msgid "History"
 msgstr ""
 
 #: forms/vps.forms.php
@@ -8958,10 +9261,6 @@ msgstr ""
 
 #: pages/page_transactions.php
 msgid "Chained transactions"
-msgstr ""
-
-#: pages/page_transactions.php
-msgid "Queued"
 msgstr ""
 
 #: pages/page_transactions.php

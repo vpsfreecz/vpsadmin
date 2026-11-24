@@ -59,6 +59,7 @@ include WEBUI_ROOT . 'forms/userns.forms.php';
 include WEBUI_ROOT . 'forms/oom_reports.forms.php';
 include WEBUI_ROOT . 'forms/node.forms.php';
 include WEBUI_ROOT . 'forms/incidents.forms.php';
+include WEBUI_ROOT . 'forms/admin_incidents.forms.php';
 include WEBUI_ROOT . 'forms/dns.forms.php';
 include WEBUI_ROOT . 'forms/userdata.forms.php';
 
@@ -280,6 +281,7 @@ if (isLoggedIn()) {
     $xtpl->menu_add(_("Members"), '?page=adminm', ($_GET["page"] == 'adminm'));
     $xtpl->menu_add(_("VPS"), '?page=adminvps', ($_GET["page"] == 'adminvps'), false, 'vps.menu');
     if (isAdmin()) {
+        admin_incidents_menu();
         $xtpl->menu_add(_("Backups"), '?page=backup', ($_GET["page"] == 'backup'), false, 'backups.menu');
 
         if (NAS_PUBLIC || isAdmin()) {

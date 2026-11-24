@@ -1,7 +1,17 @@
 <?php
 
 if (isLoggedIn()) {
-    switch ($_GET['action'] ?? null) {
+    $incidentAction = admin_incidents_action();
+    admin_incidents_tabs($incidentAction);
+    switch ($incidentAction) {
+        case 'overview':
+            admin_incidents_page();
+            break;
+
+        case 'history':
+            admin_incidents_page(true);
+            break;
+
         case 'list':
             incident_list();
 
@@ -63,7 +73,9 @@ if (isLoggedIn()) {
             break;
     }
 
-    $xtpl->sbar_out(_('Incident reports'));
+    if (!isAdmin() || !in_array($incidentAction, ['overview', 'history'], true)) {
+        $xtpl->sbar_out(_('Incident reports'));
+    }
 
 } else {
     $xtpl->perex(
