@@ -14,7 +14,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: forms/admin_incidents.forms.php
+#: forms/admin_incidents.forms.php pages/page_incidents.php
 msgid "Incidents"
 msgstr ""
 
@@ -335,17 +335,15 @@ msgstr ""
 msgid "Uncertain"
 msgstr ""
 
-#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
-msgctxt "incident-policy-column"
-msgid "Incidents"
-msgstr ""
-
-#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
-msgid "Period"
-msgstr ""
-
-#: forms/admin_incidents.forms.php
-msgid "Reports remaining"
+#: forms/admin_incidents.forms.php forms/cluster.forms.php
+#: forms/dataset.forms.php forms/dns.forms.php forms/incidents.forms.php
+#: forms/lifetimes.forms.php forms/networking.forms.php
+#: forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/security_advisory.forms.php forms/userdata.forms.php
+#: forms/vps.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: pages/page_index.php pages/page_networking.php pages/page_transactions.php
+#: public/index.php
+msgid "VPS"
 msgstr ""
 
 #: forms/admin_incidents.forms.php forms/incident_policy.forms.php
@@ -362,6 +360,10 @@ msgid "%d day"
 msgid_plural "%d days"
 msgstr[0] ""
 msgstr[1] ""
+
+#: forms/admin_incidents.forms.php
+msgid "Reports remaining"
+msgstr ""
 
 #: forms/admin_incidents.forms.php
 msgid "Threshold reached"
@@ -402,6 +404,14 @@ msgstr ""
 msgid "Incident report"
 msgstr ""
 
+#: forms/admin_incidents.forms.php
+msgid "Request completed"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+msgid "Outstanding shutdown"
+msgstr ""
+
 #: forms/admin_incidents.forms.php forms/dns.forms.php forms/node.forms.php
 #: forms/oom_reports.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/vps.forms.php
@@ -426,10 +436,6 @@ msgstr ""
 msgid "Ownership transfer pending"
 msgstr ""
 
-#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
-msgid "Outstanding shutdown"
-msgstr ""
-
 #: forms/admin_incidents.forms.php
 msgid "Counting since"
 msgstr ""
@@ -450,13 +456,16 @@ msgstr ""
 msgid "Warning cooldown ends"
 msgstr ""
 
-#: forms/admin_incidents.forms.php forms/incidents.forms.php
-#: forms/monitoring.forms.php
-msgid "Detected at"
+#: forms/admin_incidents.forms.php forms/dns.forms.php
+#: forms/incidents.forms.php forms/monitoring.forms.php
+#: forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/security_advisory.forms.php forms/userns.forms.php
+#: forms/users.forms.php
+msgid "Details"
 msgstr ""
 
-#: forms/admin_incidents.forms.php forms/incidents.forms.php
-msgid "Matched"
+#: forms/admin_incidents.forms.php
+msgid "Decision at the time"
 msgstr ""
 
 #: forms/admin_incidents.forms.php forms/dataset.forms.php
@@ -466,6 +475,23 @@ msgstr ""
 #: forms/users.forms.php pages/page_adminm.php pages/page_adminvps.php
 #: pages/page_lifetimes.php pages/page_transactions.php
 msgid "State"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incidents.forms.php
+msgid "Matched"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Current outcome"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Policy key"
+msgstr ""
+
+#: forms/admin_incidents.forms.php forms/incidents.forms.php
+#: forms/monitoring.forms.php
+msgid "Detected at"
 msgstr ""
 
 #: forms/admin_incidents.forms.php forms/incident_policy.forms.php
@@ -489,73 +515,7 @@ msgid "All with current matches"
 msgstr ""
 
 #: forms/admin_incidents.forms.php
-msgid "Recorded evaluations and current outcomes"
-msgstr ""
-
-#: forms/admin_incidents.forms.php
-msgid "Loaded at"
-msgstr ""
-
-#: forms/admin_incidents.forms.php
 msgid "Report cutoff"
-msgstr ""
-
-#: forms/admin_incidents.forms.php
-msgid ""
-"The cutoff sets the counting windows. Settings, ownership and action "
-"outcomes reflect the latest read."
-msgstr ""
-
-#: forms/admin_incidents.forms.php
-msgid ""
-"History shows saved evaluations and the latest outcomes, not every action "
-"change or retry. Mail acceptance does not confirm inbox delivery. Policies "
-"with the same shutdown action ID share one VPS shutdown."
-msgstr ""
-
-#: forms/admin_incidents.forms.php
-msgid ""
-"Reports remaining is the number needed to reach a threshold, not a promise "
-"of an action. Counts can fall as older reports leave the window."
-msgstr ""
-
-#: forms/admin_incidents.forms.php
-msgid "Current action outcome"
-msgstr ""
-
-#: forms/admin_incidents.forms.php
-msgid "Evaluated at"
-msgstr ""
-
-#: forms/admin_incidents.forms.php
-msgid "Saved counts and limits"
-msgstr ""
-
-#: forms/admin_incidents.forms.php
-msgid "Saved evaluation"
-msgstr ""
-
-#: forms/admin_incidents.forms.php forms/cluster.forms.php
-#: forms/dataset.forms.php forms/dns.forms.php forms/incidents.forms.php
-#: forms/lifetimes.forms.php forms/networking.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php
-#: forms/security_advisory.forms.php forms/userdata.forms.php
-#: forms/vps.forms.php pages/page_adminm.php pages/page_adminvps.php
-#: pages/page_index.php pages/page_networking.php pages/page_transactions.php
-#: public/index.php
-msgid "VPS"
-msgstr ""
-
-#: forms/admin_incidents.forms.php
-msgid "Counts, limits and remaining reports"
-msgstr ""
-
-#: forms/admin_incidents.forms.php
-msgid "Latest action outcome"
-msgstr ""
-
-#: forms/admin_incidents.forms.php
-msgid "Restrictions"
 msgstr ""
 
 #: forms/admin_incidents.forms.php
@@ -564,6 +524,14 @@ msgstr ""
 
 #: forms/admin_incidents.forms.php
 msgid "No recorded evaluations for these filters."
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Read details"
+msgstr ""
+
+#: forms/admin_incidents.forms.php
+msgid "Loaded at"
 msgstr ""
 
 #: forms/admin_incidents.forms.php forms/node.forms.php
@@ -1579,13 +1547,6 @@ msgstr ""
 msgid "Source"
 msgstr ""
 
-#: forms/dns.forms.php forms/incidents.forms.php forms/monitoring.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php
-#: forms/security_advisory.forms.php forms/userns.forms.php
-#: forms/users.forms.php
-msgid "Details"
-msgstr ""
-
 #: forms/dns.forms.php
 msgid "Delete zone"
 msgstr ""
@@ -2240,6 +2201,15 @@ msgstr ""
 
 #: forms/incident_policy.forms.php
 msgid "Too many incident reports: warning limit reached"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgctxt "incident-policy-column"
+msgid "Incidents"
+msgstr ""
+
+#: forms/incident_policy.forms.php
+msgid "Period"
 msgstr ""
 
 #: forms/incident_policy.forms.php forms/incidents.forms.php

@@ -13,7 +13,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 
-#: forms/admin_incidents.forms.php
+#: forms/admin_incidents.forms.php pages/page_incidents.php
 msgid "Incidents"
 msgstr "Incidenty"
 
@@ -334,18 +334,16 @@ msgstr "potlačeno"
 msgid "Uncertain"
 msgstr "výsledek není známý"
 
-#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
-msgctxt "incident-policy-column"
-msgid "Incidents"
-msgstr "Počet incidentů"
-
-#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
-msgid "Period"
-msgstr "Období"
-
-#: forms/admin_incidents.forms.php
-msgid "Reports remaining"
-msgstr "Zbývající hlášení"
+#: forms/admin_incidents.forms.php forms/cluster.forms.php
+#: forms/dataset.forms.php forms/dns.forms.php forms/incidents.forms.php
+#: forms/lifetimes.forms.php forms/networking.forms.php
+#: forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/security_advisory.forms.php forms/userdata.forms.php
+#: forms/vps.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: pages/page_index.php pages/page_networking.php pages/page_transactions.php
+#: public/index.php
+msgid "VPS"
+msgstr "VPS"
 
 #: forms/admin_incidents.forms.php forms/incident_policy.forms.php
 #, php-format
@@ -363,6 +361,10 @@ msgid_plural "%d days"
 msgstr[0] "%d den"
 msgstr[1] "%d dny"
 msgstr[2] "%d dní"
+
+#: forms/admin_incidents.forms.php
+msgid "Reports remaining"
+msgstr "Zbývající hlášení"
 
 #: forms/admin_incidents.forms.php
 msgid "Threshold reached"
@@ -403,6 +405,14 @@ msgstr "Transakce"
 msgid "Incident report"
 msgstr "Zpráva o incidentu"
 
+#: forms/admin_incidents.forms.php
+msgid "Request completed"
+msgstr "Požadavek dokončen"
+
+#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+msgid "Outstanding shutdown"
+msgstr "Nevyřízené vypnutí"
+
 #: forms/admin_incidents.forms.php forms/dns.forms.php forms/node.forms.php
 #: forms/oom_reports.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/vps.forms.php
@@ -427,10 +437,6 @@ msgstr "Aktivní vlastník"
 msgid "Ownership transfer pending"
 msgstr "Probíhá změna vlastníka"
 
-#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
-msgid "Outstanding shutdown"
-msgstr "Nevyřízené vypnutí"
-
 #: forms/admin_incidents.forms.php
 msgid "Counting since"
 msgstr "Počítáno od"
@@ -451,14 +457,17 @@ msgstr "Konec ochranné lhůty pro vypnutí"
 msgid "Warning cooldown ends"
 msgstr "Konec ochranné lhůty pro upozornění"
 
-#: forms/admin_incidents.forms.php forms/incidents.forms.php
-#: forms/monitoring.forms.php
-msgid "Detected at"
-msgstr "Detekováno"
+#: forms/admin_incidents.forms.php forms/dns.forms.php
+#: forms/incidents.forms.php forms/monitoring.forms.php
+#: forms/oom_reports.forms.php forms/outage.forms.php
+#: forms/security_advisory.forms.php forms/userns.forms.php
+#: forms/users.forms.php
+msgid "Details"
+msgstr "Podrobnosti"
 
-#: forms/admin_incidents.forms.php forms/incidents.forms.php
-msgid "Matched"
-msgstr "Shoda s pravidlem"
+#: forms/admin_incidents.forms.php
+msgid "Decision at the time"
+msgstr "Tehdejší rozhodnutí"
 
 #: forms/admin_incidents.forms.php forms/dataset.forms.php
 #: forms/incidents.forms.php forms/ip_release.forms.php
@@ -468,6 +477,23 @@ msgstr "Shoda s pravidlem"
 #: pages/page_lifetimes.php pages/page_transactions.php
 msgid "State"
 msgstr "Stav"
+
+#: forms/admin_incidents.forms.php forms/incidents.forms.php
+msgid "Matched"
+msgstr "Shoda s pravidlem"
+
+#: forms/admin_incidents.forms.php
+msgid "Current outcome"
+msgstr "Aktuální výsledek"
+
+#: forms/admin_incidents.forms.php
+msgid "Policy key"
+msgstr "Klíč pravidla"
+
+#: forms/admin_incidents.forms.php forms/incidents.forms.php
+#: forms/monitoring.forms.php
+msgid "Detected at"
+msgstr "Detekováno"
 
 #: forms/admin_incidents.forms.php forms/incident_policy.forms.php
 #: forms/node.forms.php pages/page_adminm.php pages/page_adminvps.php
@@ -490,82 +516,8 @@ msgid "All with current matches"
 msgstr "VPS s aktuálními shodami"
 
 #: forms/admin_incidents.forms.php
-msgid "Recorded evaluations and current outcomes"
-msgstr "Uložená vyhodnocení a aktuální výsledky"
-
-#: forms/admin_incidents.forms.php
-msgid "Loaded at"
-msgstr "Načteno"
-
-#: forms/admin_incidents.forms.php
 msgid "Report cutoff"
 msgstr "Rozhodný čas pro hlášení"
-
-#: forms/admin_incidents.forms.php
-msgid ""
-"The cutoff sets the counting windows. Settings, ownership and action "
-"outcomes reflect the latest read."
-msgstr ""
-"Rozhodný čas určuje období pro počítání incidentů. Nastavení, vlastnictví a "
-"výsledky akcí odpovídají poslednímu načtení."
-
-#: forms/admin_incidents.forms.php
-msgid ""
-"History shows saved evaluations and the latest outcomes, not every action "
-"change or retry. Mail acceptance does not confirm inbox delivery. Policies "
-"with the same shutdown action ID share one VPS shutdown."
-msgstr ""
-"Historie zobrazuje uložená vyhodnocení a aktuální výsledky, nikoli každou "
-"změnu stavu nebo opakovaný pokus. Přijetí e-mailu serverem nepotvrzuje "
-"doručení do schránky. Pravidla se stejným ID akce vypnutí odkazují na jedno "
-"společné vypnutí VPS."
-
-#: forms/admin_incidents.forms.php
-msgid ""
-"Reports remaining is the number needed to reach a threshold, not a promise "
-"of an action. Counts can fall as older reports leave the window."
-msgstr ""
-"Zbývající hlášení udávají počet do dosažení limitu, nikoli příslib akce. "
-"Počty mohou klesat, jak starší hlášení opouštějí sledované období."
-
-#: forms/admin_incidents.forms.php
-msgid "Current action outcome"
-msgstr "Aktuální výsledek akce"
-
-#: forms/admin_incidents.forms.php
-msgid "Evaluated at"
-msgstr "Čas vyhodnocení"
-
-#: forms/admin_incidents.forms.php
-msgid "Saved counts and limits"
-msgstr "Uložené počty a limity"
-
-#: forms/admin_incidents.forms.php
-msgid "Saved evaluation"
-msgstr "Uložené vyhodnocení"
-
-#: forms/admin_incidents.forms.php forms/cluster.forms.php
-#: forms/dataset.forms.php forms/dns.forms.php forms/incidents.forms.php
-#: forms/lifetimes.forms.php forms/networking.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php
-#: forms/security_advisory.forms.php forms/userdata.forms.php
-#: forms/vps.forms.php pages/page_adminm.php pages/page_adminvps.php
-#: pages/page_index.php pages/page_networking.php pages/page_transactions.php
-#: public/index.php
-msgid "VPS"
-msgstr "VPS"
-
-#: forms/admin_incidents.forms.php
-msgid "Counts, limits and remaining reports"
-msgstr "Počty, limity a zbývající hlášení"
-
-#: forms/admin_incidents.forms.php
-msgid "Latest action outcome"
-msgstr "Výsledek poslední akce"
-
-#: forms/admin_incidents.forms.php
-msgid "Restrictions"
-msgstr "Omezení"
 
 #: forms/admin_incidents.forms.php
 msgid "No current matches for these filters."
@@ -574,6 +526,14 @@ msgstr "Těmto filtrům neodpovídá žádná aktuální shoda."
 #: forms/admin_incidents.forms.php
 msgid "No recorded evaluations for these filters."
 msgstr "Těmto filtrům neodpovídá žádné uložené vyhodnocení."
+
+#: forms/admin_incidents.forms.php
+msgid "Read details"
+msgstr "Údaje o načtení"
+
+#: forms/admin_incidents.forms.php
+msgid "Loaded at"
+msgstr "Načteno"
 
 #: forms/admin_incidents.forms.php forms/node.forms.php
 msgid "Previous"
@@ -1610,13 +1570,6 @@ msgstr "Role"
 msgid "Source"
 msgstr "Zdroj"
 
-#: forms/dns.forms.php forms/incidents.forms.php forms/monitoring.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php
-#: forms/security_advisory.forms.php forms/userns.forms.php
-#: forms/users.forms.php
-msgid "Details"
-msgstr "Podrobnosti"
-
 #: forms/dns.forms.php
 msgid "Delete zone"
 msgstr "Smazat zónu"
@@ -2275,6 +2228,15 @@ msgstr "Počet hlášení incidentů dosáhl limitu pro vypnutí VPS"
 #: forms/incident_policy.forms.php
 msgid "Too many incident reports: warning limit reached"
 msgstr "Počet hlášení incidentů dosáhl limitu pro upozornění"
+
+#: forms/incident_policy.forms.php
+msgctxt "incident-policy-column"
+msgid "Incidents"
+msgstr "Počet incidentů"
+
+#: forms/incident_policy.forms.php
+msgid "Period"
+msgstr "Období"
 
 #: forms/incident_policy.forms.php forms/incidents.forms.php
 msgid "Policy evaluated at"
@@ -9668,6 +9630,54 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "Recorded evaluations and current outcomes"
+#~ msgstr "Uložená vyhodnocení a aktuální výsledky"
+
+#~ msgid ""
+#~ "The cutoff sets the counting windows. Settings, ownership and action "
+#~ "outcomes reflect the latest read."
+#~ msgstr ""
+#~ "Rozhodný čas určuje období pro počítání incidentů. Nastavení, vlastnictví "
+#~ "a výsledky akcí odpovídají poslednímu načtení."
+
+#~ msgid ""
+#~ "History shows saved evaluations and the latest outcomes, not every action "
+#~ "change or retry. Mail acceptance does not confirm inbox delivery. "
+#~ "Policies with the same shutdown action ID share one VPS shutdown."
+#~ msgstr ""
+#~ "Historie zobrazuje uložená vyhodnocení a aktuální výsledky, nikoli každou "
+#~ "změnu stavu nebo opakovaný pokus. Přijetí e-mailu serverem nepotvrzuje "
+#~ "doručení do schránky. Pravidla se stejným ID akce vypnutí odkazují na "
+#~ "jedno společné vypnutí VPS."
+
+#~ msgid ""
+#~ "Reports remaining is the number needed to reach a threshold, not a "
+#~ "promise of an action. Counts can fall as older reports leave the window."
+#~ msgstr ""
+#~ "Zbývající hlášení udávají počet do dosažení limitu, nikoli příslib akce. "
+#~ "Počty mohou klesat, jak starší hlášení opouštějí sledované období."
+
+#~ msgid "Current action outcome"
+#~ msgstr "Aktuální výsledek akce"
+
+#~ msgid "Evaluated at"
+#~ msgstr "Čas vyhodnocení"
+
+#~ msgid "Saved counts and limits"
+#~ msgstr "Uložené počty a limity"
+
+#~ msgid "Saved evaluation"
+#~ msgstr "Uložené vyhodnocení"
+
+#~ msgid "Counts, limits and remaining reports"
+#~ msgstr "Počty, limity a zbývající hlášení"
+
+#~ msgid "Latest action outcome"
+#~ msgstr "Výsledek poslední akce"
+
+#~ msgid "Restrictions"
+#~ msgstr "Omezení"
 
 #~ msgid "Dispatched"
 #~ msgstr "odesláno ke zpracování"

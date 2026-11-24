@@ -30,9 +30,10 @@ final class AdminIncidentOverviewTest extends TestCase
     {
         global $api, $xtpl;
         self::assertSame('overview', admin_incidents_action());
-        admin_incidents_tabs(admin_incidents_action());
-        $xpath = $this->xpath($xtpl->text('main.table'));
-        self::assertSame('Overview', $xpath->evaluate('string(//a[@aria-current="page"])'));
+        admin_incidents_sidebar(admin_incidents_action());
+        $xtpl->sbar_out('Incidents');
+        $xpath = $this->xpath($xtpl->text('main.sidebar'));
+        self::assertSame('Overview', $xpath->evaluate('string(//a[strong[@aria-current="page"]])'));
         self::assertSame('?page=incidents&action=list&list=1', $xpath->evaluate('string(//a[@data-vpsadmin-doc-id="admin.incidents.list"]/@href)'));
         foreach (['list', 'show', 'new'] as $action) {
             $_GET['action'] = $action;
@@ -43,7 +44,8 @@ final class AdminIncidentOverviewTest extends TestCase
         self::assertNull(admin_incidents_action());
         $xtpl = $this->template();
         admin_incidents_menu();
-        admin_incidents_tabs('overview');
+        admin_incidents_sidebar('overview');
+        $xtpl->sbar_out('Incidents');
         admin_incidents_page();
         self::assertSame('', $xtpl->text('main.table'));
         self::assertStringContainsString('Access forbidden', $xtpl->text('main.perex'));
@@ -55,7 +57,7 @@ final class AdminIncidentOverviewTest extends TestCase
         global $api, $xtpl;
         require dirname(__DIR__, 2) . '/pages/page_incidents.php';
         self::assertSame('/incident_policy_exposures', $api->requests[0]['path']);
-        self::assertStringContainsString('admin.incidents.overview', $xtpl->text('main.table'));
+        self::assertStringContainsString('admin.incidents.overview', $xtpl->text('main.sidebar'));
         $_SESSION['is_admin'] = false;
         $api = $this->client();
         $xtpl = $this->template();
@@ -89,11 +91,12 @@ final class AdminIncidentOverviewTest extends TestCase
             }
             $api->setDescription($desc);
             $xtpl = $this->template();
-            admin_incidents_tabs('overview');
+            admin_incidents_sidebar('overview');
+            $xtpl->sbar_out('Incidents');
             admin_incidents_page();
             self::assertSame([], $api->requests, $missing);
             self::assertStringContainsString('Incident overview and history are unavailable on this API.', $xtpl->text('main.perex'), $missing);
-            self::assertStringContainsString('action=list', $xtpl->text('main.table'));
+            self::assertStringContainsString('action=list', $xtpl->text('main.sidebar'));
         }
     }
 
@@ -117,7 +120,7 @@ final class AdminIncidentOverviewTest extends TestCase
         $xpath = $this->xpath($html);
         self::assertSame(['Warning: Last 7 days', '2', '20', '3'], $this->countRow($xpath, 1));
         self::assertSame(['VPS stop: Last 30 days', '9', '10', 'Threshold reached'], $this->countRow($xpath, 2));
-        self::assertStringContainsString('<strong>Automatic shutdown:</strong> No<br>', $html);
+        self::assertStringContainsString('<dt>Automatic shutdown</dt><dd>No</dd>', $html);
         self::assertSame(['/incident_policy_exposures', '/incident_policies'], array_column($api->requests, 'path'));
         self::assertStringContainsString('action=incidents&amp;veid=17#incident-policy-alpha', $html);
         self::assertStringContainsString('action=history&amp;vps_id=17&amp;policy_key=alpha', $html);
@@ -143,10 +146,10 @@ final class AdminIncidentOverviewTest extends TestCase
         $html = $xtpl->text('main.table');
         self::assertSame(['Warning: Last 7 days', '4', 'Unknown', 'Unknown'], $this->countRow($this->xpath($html), 1));
         self::assertStringContainsString('Invalid configuration', $html);
-        self::assertStringContainsString('<strong>Action state:</strong> Unknown<br>', $html);
+        self::assertStringContainsString('<dt>Action state</dt><dd>Unknown</dd>', $html);
         self::assertStringContainsString('Mail outcome uncertain', $html);
         self::assertStringNotContainsString('future<state>', $html);
-        self::assertStringNotContainsString('<strong>Confirmed shutdown:</strong>', $html);
+        self::assertStringNotContainsString('<dt>Confirmed shutdown</dt>', $html);
     }
 
     public function testResourceFiltersFalsePaginationCutoffAndRefreshUseNormalClient(): void
@@ -188,16 +191,25 @@ final class AdminIncidentOverviewTest extends TestCase
         self::assertSame(888, $api->requests[0]['params']['incident_policy_evaluation']['user_id']);
         $html = $xtpl->text('main.table');
         self::assertStringContainsString('Retired_9', $html);
+        self::assertStringContainsString('VPS #999', $html);
         self::assertStringNotContainsString('veid=999', $html);
         self::assertStringNotContainsString('adminm&amp;action=edit&amp;id=888', $html);
         self::assertSame(['Warning: 7 days', '7', '5'], $this->countRow($this->xpath($html), 1));
         self::assertSame(['VPS stop: 30 days', '11', '10'], $this->countRow($this->xpath($html), 2));
-        self::assertStringContainsString('<strong>Action state:</strong> Completed<br>', $html);
-        self::assertStringContainsString('<strong>Mail state:</strong> Mail failed<br>', $html);
-        self::assertStringContainsString('<strong>Shared shutdown action:</strong> #61<br>', $html);
+        self::assertStringContainsString('<dt>Action state</dt><dd>Completed</dd>', $html);
+        self::assertStringContainsString('<dt>Mail state</dt><dd>Mail failed</dd>', $html);
+        self::assertStringContainsString('<dt>Shared shutdown action</dt><dd>#61</dd>', $html);
         self::assertStringContainsString('2026-11-24 12:30:00', $html);
         self::assertStringContainsString('chain=77', $html);
         self::assertStringContainsString('action=show&amp;id=41', $html);
+    }
+
+    public function testHistoricalVpsIdIsLabeledWithoutLinkAndNullIdentityStaysUnknown(): void
+    {
+        $row = (array) $this->history();
+        self::assertSame('VPS #999', admin_incidents_identity($row, false));
+        $row['vps_id'] = null;
+        self::assertSame('Unknown', admin_incidents_identity($row, false));
     }
 
     public function testHistoryUsesExportedDirectionOnlyContractWithoutSort(): void
@@ -270,10 +282,11 @@ final class AdminIncidentOverviewTest extends TestCase
         $api = $this->client();
         $api->reject = true;
         $xtpl = $this->template();
-        admin_incidents_tabs('overview');
+        admin_incidents_sidebar('overview');
+        $xtpl->sbar_out('Incidents');
         admin_incidents_page();
         self::assertStringNotContainsString('No current matches', $xtpl->text('main.table'));
-        self::assertStringContainsString('action=list', $xtpl->text('main.table'));
+        self::assertStringContainsString('action=list', $xtpl->text('main.sidebar'));
         self::assertStringNotContainsString('PRIVATE API failure', $xtpl->text('main.perex'));
         self::assertStringContainsString('Unable to load incident overview or history.', $xtpl->text('main.perex'));
     }
@@ -290,12 +303,149 @@ final class AdminIncidentOverviewTest extends TestCase
         $api = $this->client();
         unset($api->meta['next_offset']);
         $xtpl = $this->template();
-        admin_incidents_tabs('history');
+        admin_incidents_sidebar('history');
+        $xtpl->sbar_out('Incidents');
         admin_incidents_page(true);
         self::assertSame(['/incident_policy_evaluations'], array_column($api->requests, 'path'));
         self::assertStringContainsString('Unable to load incident overview or history.', $xtpl->text('main.perex'));
-        self::assertStringContainsString('action=list', $xtpl->text('main.table'));
+        self::assertStringContainsString('action=list', $xtpl->text('main.sidebar'));
         self::assertStringNotContainsString('No recorded evaluations', $xtpl->text('main.table'));
+    }
+
+    public function testSavedNoActionWithReachedThresholdHasNoInferredReasonAndDetailsStayClosed(): void
+    {
+        global $api, $xtpl;
+        $row = $this->history();
+        $row->decision = 'none';
+        $row->action_id = null;
+        $api->rows = [$row];
+        admin_incidents_page(true);
+        $xpath = $this->xpath($xtpl->text('main.table'));
+        $saved = $xpath->evaluate('string(//article/section[@data-incident-saved])');
+        self::assertStringContainsString('Decision at the time', $saved);
+        self::assertStringContainsString('No action', $saved);
+        self::assertStringContainsString('Shutdown limit reached', $saved);
+        foreach (['cooldown', 'exemption', 'duplicate', 'suppressed', 'Completed'] as $inferred) {
+            self::assertStringNotContainsString($inferred, $saved);
+        }
+        self::assertStringContainsString('No recorded action', $xpath->evaluate('string(//article/section[@data-incident-current])'));
+        self::assertSame(0, $xpath->query('//details[@open]')->length);
+        self::assertSame(1, $xpath->query('//article/details/summary')->length);
+        self::assertStringContainsString('Retired_9', $xpath->evaluate('string(//article/details)'));
+        self::assertSame(0, $xpath->query('//article//table')->length);
+    }
+
+    public function testCurrentOutcomeSeparatesRequestCompletionMailStatesAndPhysicalProof(): void
+    {
+        foreach (['pending', 'queued', 'sent', 'failed', 'uncertain', 'suppressed', null] as $mail) {
+            $row = (array) $this->history();
+            $row['action_kind'] = 'warning';
+            $row['mail_state'] = $mail;
+            $row['stop_completed_at'] = null;
+            $html = admin_incidents_outcome_summary($row, true);
+            self::assertStringContainsString('Request completed', $html);
+            self::assertStringContainsString(admin_incidents_enum($mail, 'mail'), $html);
+            self::assertStringNotContainsString('Confirmed shutdown', $html);
+            self::assertStringNotContainsString('delivered', $html);
+            self::assertSame($mail === 'sent', str_contains($html, 'Accepted by mail server'));
+        }
+        $row['action_kind'] = 'stop';
+        self::assertStringContainsString('VPS stop: Request completed', admin_incidents_outcome_summary($row, true));
+        $row['stop_completed_at'] = '2026-11-24T12:30:00Z';
+        $html = admin_incidents_outcome_summary($row, true);
+        self::assertStringContainsString('Confirmed shutdown: 2026-11-24 12:30:00', $html);
+        self::assertStringNotContainsString('Request completed', $html);
+        self::assertStringContainsString('<dt>Shared shutdown action</dt><dd>#61</dd>', admin_incidents_outcome($row, true));
+    }
+
+    public function testEvaluationExceptionsAndUnknownMembershipRemainVisible(): void
+    {
+        foreach (['error', 'skipped', 'audit_only'] as $state) {
+            foreach ([true, false, null] as $matched) {
+                $row = (array) $this->history();
+                $row['state'] = $state;
+                $row['matched'] = $matched;
+                $xpath = $this->xpath(admin_incidents_history_row($row));
+                $saved = $xpath->evaluate('string(//section[@data-incident-saved])');
+                self::assertStringContainsString(strip_tags(admin_incidents_enum($state, 'evaluation')), $saved);
+                self::assertStringContainsString(strip_tags(admin_incidents_bool($matched)), $saved);
+            }
+        }
+    }
+
+    public function testOverviewKeepsRemainingPermissionsAndAttentionVisibleWithAllFactsInDetails(): void
+    {
+        global $api, $xtpl;
+        $row = $this->exposure();
+        $row->warning_remaining = 1;
+        $row->stop_enforced = null;
+        $row->outstanding_stop_state = 'uncertain';
+        $row->outstanding_stop_action_id = 61;
+        $row->outstanding_stop_chain_id = 77;
+        $api->rows = [$row];
+        admin_incidents_page();
+        $xpath = $this->xpath($xtpl->text('main.table'));
+        self::assertStringContainsString('Reports remaining: 1', $xpath->evaluate('string(//article)'));
+        self::assertSame(1, $xpath->query('//article/p[contains(.,"Automatic shutdown: Unknown")]')->length);
+        self::assertStringContainsString('Outstanding shutdown: Uncertain', $xpath->evaluate('string(//article)'));
+        $details = $xpath->evaluate('string(//article/details)');
+        foreach (['Global mode', 'Warning emails allowed', 'Owner active', 'Ownership transfer pending', 'Counting since', '#61', '#77'] as $fact) {
+            self::assertStringContainsString($fact, $details);
+        }
+        self::assertSame(0, $xpath->query('//article/details[@open]')->length);
+        self::assertSame(['/incident_policy_exposures', '/incident_policies'], array_column($api->requests, 'path'));
+    }
+
+    public function testOnlyAdminOverviewAndHistoryReceiveSingleResponsiveViewportAndLocalStyle(): void
+    {
+        global $xtpl;
+        $index = file_get_contents(dirname(__DIR__, 2) . '/public/index.php');
+        self::assertStringContainsString("\$xtpl->assign('VIEWPORT', 'width=1150');", $index);
+        foreach ([false, true] as $admin) {
+            foreach (['overview', 'history', 'list', 'show', 'new', null] as $action) {
+                $xtpl = $this->template();
+                $xtpl->assign('VIEWPORT', 'width=1150');
+                $xtpl->assign('SCRIPT', '<script>window.retained = true;</script>');
+                $_SESSION['is_admin'] = $admin;
+                admin_incidents_layout($action);
+                $xtpl->parse('main');
+                $xpath = $this->xpath($xtpl->text('main'));
+                $responsive = $admin && in_array($action, ['overview', 'history'], true);
+                self::assertSame(1, $xpath->query('//meta[@name="viewport"]')->length);
+                self::assertSame($responsive ? 'width=device-width, initial-scale=1' : 'width=1150', $xpath->evaluate('string(//meta[@name="viewport"]/@content)'));
+                self::assertSame($responsive ? 1 : 0, $xpath->query('//link[@href="template/css/admin-incidents.css"]')->length);
+                self::assertStringContainsString('window.retained', $xtpl->text('main'));
+            }
+        }
+    }
+
+    public function testAuthenticatedHeaderRetainsLanguageSessionJumpNavigationAndSidebarControls(): void
+    {
+        global $xtpl;
+        require_once dirname(__DIR__, 2) . '/lib/login.lib.php';
+        $_SESSION['user'] = ['id' => 1, 'login' => 'test-admin'];
+        $_SESSION['user_accounts'] = ['test-admin', 'other-admin'];
+        $_SESSION['csrf_base'] = 'header-fixture';
+        $_SERVER['REQUEST_URI'] = '/?page=incidents&action=overview';
+        $xtpl->assign('VIEWPORT', 'width=1150');
+        $xtpl->assign('L_LOGOUT', 'Logout');
+        $xtpl->assign('L_LOGOUT_SWITCH', 'Switch user');
+        $xtpl->lang_add('en_US.utf8', 'gb', 'English', 'chosen');
+        $xtpl->lang_add('cs_CZ.utf8', 'cz', 'Čeština', '');
+        $xtpl->logbox(true, 'test-admin', true);
+        $xtpl->menu_add('Members', '?page=adminm');
+        admin_incidents_menu();
+        require dirname(__DIR__, 2) . '/pages/page_incidents.php';
+        $xtpl->parse('main');
+        $xpath = $this->xpath($xtpl->text('main'));
+        self::assertSame('true', $xpath->evaluate('string(//body/@data-admin-incidents)'));
+        self::assertSame(2, $xpath->query('//*[@id="slogan_wrap"]//*[@id="langbox"]//a')->length);
+        self::assertSame(1, $xpath->query('//*[@id="logbox"]//form[@id="jumpto"]//input[@name="search"]')->length);
+        self::assertSame(1, $xpath->query('//*[@id="logbox"]//form[@method="post" and contains(@action,"action=logout")]//input[@name="csrf_token"]')->length);
+        self::assertSame(1, $xpath->query('//*[@id="session-countdown"]')->length);
+        self::assertSame(3, $xpath->query('//*[@id="logout"]//ul/li/a')->length);
+        self::assertSame(2, $xpath->query('//*[@id="nav"]//a')->length);
+        self::assertSame(3, $xpath->query('//*[@id="aside"]//a[starts-with(@data-vpsadmin-doc-id,"admin.incidents.")]')->length);
     }
 
     private function template(): XTemplate
@@ -307,7 +457,7 @@ final class AdminIncidentOverviewTest extends TestCase
     {
         $dom = new DOMDocument();
         $old = libxml_use_internal_errors(true);
-        $dom->loadHTML('<html><body>' . $html . '</body></html>');
+        $dom->loadHTML(str_contains($html, '<html') ? $html : '<html><body>' . $html . '</body></html>');
         libxml_clear_errors();
         libxml_use_internal_errors($old);
         return new DOMXPath($dom);
@@ -315,7 +465,13 @@ final class AdminIncidentOverviewTest extends TestCase
 
     private function countRow(DOMXPath $xpath, int $number): array
     {
-        return array_map(static fn($cell) => trim($cell->textContent), iterator_to_array($xpath->query('(//table[thead/tr/th])[1]/tbody/tr[' . $number . ']/td')));
+        $row = $xpath->query('(//*[contains(@class,"admin-incident-counts")])[1]/p[' . $number . ']')->item(0);
+        $cells = [trim($xpath->evaluate('string(./strong)', $row)) . ' ' . trim($xpath->evaluate('string(./span[@data-period])', $row), '()'),
+            $xpath->evaluate('string(./span[@data-count])', $row), $xpath->evaluate('string(./span[@data-limit])', $row)];
+        if ($xpath->query('./span[@data-remaining]', $row)->length) {
+            $cells[] = str_replace('Reports remaining: ', '', $xpath->evaluate('string(./span[@data-remaining])', $row));
+        }
+        return $cells;
     }
 
     private function exposure(): object

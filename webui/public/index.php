@@ -85,6 +85,7 @@ if (isset($_SESSION["api_description"]) && $_SESSION["api_description"]) {
 
 // Create a template class
 $xtpl = new XTemplate(WEBUI_ROOT . 'template/template.html');
+$xtpl->assign('VIEWPORT', 'width=1150');
 // Create a langauge class
 $lang = new Lang($langs, $xtpl, $api, $webuiLocale);
 

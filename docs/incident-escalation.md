@@ -406,6 +406,27 @@ describe one physical stop. Queue time comes from the retained current MailLog;
 finish time comes from its Send transaction. Mail `sent` means SMTP
 acceptance, not inbox delivery. A completed stop can still have failed mail.
 
+### Incident views in the PHP WebUI
+
+Administrators switch between Overview, Reports and History in the Incidents
+sidebar. Reports retains its existing URLs and filters. Overview shows one entry
+per current VPS/policy match, with warning and shutdown counts, limits, remaining
+reports, threshold status and the latest outcome. Relevant restrictions stay
+visible. Details holds the other flags, dates and action information without
+another API request.
+
+History separates the decision and counts recorded at evaluation from the current
+action and email outcome. A reached threshold with decision `none` does not explain
+why no action was chosen. The page does not infer a reason from current settings,
+permissions, cooldowns or other actions. Details includes the original owner,
+saved membership, state and mode, timestamps and shared shutdown references.
+Mail acceptance and a confirmed VPS shutdown remain separate facts.
+
+The cutoff, offset pagination and Refresh behavior follow the contract above.
+Read details also shows when the response was loaded. Overview and History fit
+the normal content column beside the sidebar and adapt to narrow screens. Other
+routes retain their existing viewport and layout.
+
 ### Daily policy summary
 
 The optional registered `incident_policy_summary` hash adds three bounded
