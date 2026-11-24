@@ -1,0 +1,44 @@
+/* Only the administrator Overview and History pages load this stylesheet. */
+.admin-incidents-view { overflow-wrap: anywhere; }
+.admin-incidents-view .admin-incident-entry { margin: 12px 0; padding: 12px; border: 1px solid #B2DAFF; background: #fff; }
+.admin-incidents-view .admin-incident-entry h3 { margin: 0 0 8px; }
+.admin-incidents-view .admin-incident-entry h4 { margin: 10px 0 4px; }
+.admin-incidents-view .admin-incident-entry p { margin: 4px 0; text-align: left !important; }
+.admin-incidents-view .admin-incident-counts p { margin: 5px 0; }
+.admin-incidents-view [data-remaining] { display: block; }
+.admin-incidents-view details { margin-top: 8px; }
+.admin-incidents-view summary { cursor: pointer; font-weight: bold; }
+.admin-incidents-view .admin-incident-facts { margin: 8px 0; }
+.admin-incidents-view .admin-incident-facts > div { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr); gap: 8px; margin: 4px 0; }
+.admin-incidents-view dt { font-weight: bold; }
+.admin-incidents-view dd { margin: 0; min-width: 0; }
+@media (max-width: 700px) {
+  body[data-admin-incidents] .main { width: 100%; }
+  body[data-admin-incidents] #header,
+  body[data-admin-incidents] #nav { min-width: 0; }
+  body[data-admin-incidents] #header .main { box-sizing: border-box; padding: 0 15px; }
+  body[data-admin-incidents] #slogan_wrap { width: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  body[data-admin-incidents] #version,
+  body[data-admin-incidents] #slogan,
+  body[data-admin-incidents] #langbox { float: none; min-width: 0; overflow-wrap: anywhere; }
+  body[data-admin-incidents] #langbox ul { display: flex; flex-wrap: wrap; }
+  body[data-admin-incidents] #langbox li { float: none; }
+  body[data-admin-incidents] #logbox { position: static; width: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
+  body[data-admin-incidents] #logbox form { max-width: 100%; }
+  body[data-admin-incidents] #logbox #l_form { float: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; max-width: 100%; }
+  body[data-admin-incidents] #jumpto { float: none; position: static; width: auto; max-width: 100%; }
+  body[data-admin-incidents] #logbox input,
+  body[data-admin-incidents] #logout { max-width: 100%; box-sizing: border-box; }
+  body[data-admin-incidents] #logout .dropdown-content { position: static; min-width: 0; max-width: 100%; box-sizing: border-box; overflow-wrap: anywhere; }
+  body[data-admin-incidents] #nav li a { max-width: 100%; box-sizing: border-box; overflow-wrap: anywhere; }
+  body[data-admin-incidents] #cols .main { display: flex; flex-direction: column; background: #fff; }
+  body[data-admin-incidents] #content,
+  body[data-admin-incidents] #aside { float: none; width: auto; min-width: 0; }
+  body[data-admin-incidents] #aside { order: -1; padding: 10px 15px; }
+  body[data-admin-incidents] #content-in { padding: 0 15px; }
+  body[data-admin-incidents] form[name="admin-incident-filter"] table { width: 100%; }
+  body[data-admin-incidents] form[name="admin-incident-filter"] td { display: block; }
+  body[data-admin-incidents] form[name="admin-incident-filter"] input,
+  body[data-admin-incidents] form[name="admin-incident-filter"] select { max-width: 100%; box-sizing: border-box; }
+  .admin-incidents-view .admin-incident-facts > div { display: block; }
+}
