@@ -97,3 +97,84 @@ Payments:
 
 Incident reports: <%= @incident_reports[:new].count %> new
 <% end -%>
+<% if @incident_policy_summary -%>
+<% summary = @incident_policy_summary; value = ->(v) { v.nil? ? 'unknown' : v }; yes_no = ->(v) { v.nil? ? 'unknown' : v ? 'yes' : 'no' }; date = ->(v) { v ? local_time(v, '%Y-%m-%d %H:%M:%S %Z') : 'unknown' }; mail_state = ->(v) { v == 'sent' ? 'Accepted by mail server' : value.call(v) } -%>
+
+Incident policies
+Current matches at <%= date.call(summary[:as_of]) %>.
+Recorded activity period: <%= date.call(summary[:period_start]) %> to <%= date.call(summary[:period_end]) %> (up to, but not including, the end time).
+The cutoff sets the counting windows. Settings, ownership and outcomes reflect the state read for this report.
+<% overview = summary[:overview] -%>
+<% if overview[:rows].empty? -%>
+No current incident policy matches.
+<% else -%>
+
+VPS with current matches: showing <%= overview[:rows].length %> of <%= overview[:total_count] %>; omitted <%= overview[:omitted_count] %>.
+<% overview[:rows].each do |row| -%>
+- VPS #<%= row[:vps_id] %> <%= row[:hostname] %> | Owner #<%= row[:user_id] %> <%= row[:user_login] %> | <%= row[:label] %> (<%= row[:policy_key] %>)
+  Warning threshold (7 days): <%= row[:count_7d] %> / <%= value.call(row[:warning_limit]) %>, reports remaining <%= value.call(row[:warning_remaining]) %>; shutdown threshold (30 days): <%= row[:count_30d] %> / <%= value.call(row[:stop_limit]) %>, reports remaining <%= value.call(row[:stop_remaining]) %>.
+  Configuration valid: <%= yes_no.call(row[:configuration_valid]) %>; status: <%= value.call(row[:status]) %>; global/effective mode: <%= row[:global_mode] %> / <%= value.call(row[:effective_mode]) %>.
+  Warning emails allowed: <%= yes_no.call(row[:warning_permitted]) %>; automatic shutdown allowed: <%= yes_no.call(row[:stop_enforced]) %>; owner active: <%= yes_no.call(row[:owner_active]) %>; transfer pending: <%= yes_no.call(row[:transfer_pending]) %>.
+  Last incident: <%= date.call(row[:last_incident_at]) %>; counting since: <%= date.call(row[:accounting_since]) %>.
+  Last warning queued: <%= date.call(row[:last_warning_at]) %>; warning cooldown ends: <%= date.call(row[:next_warning_allowed_at]) %>.
+  Last confirmed shutdown: <%= date.call(row[:last_stop_at]) %>; shutdown cooldown ends: <%= date.call(row[:next_stop_allowed_at]) %>.
+  Outstanding shared shutdown: <%= row[:outstanding_stop_state] %> (action <%= value.call(row[:outstanding_stop_action_id]) %>, chain <%= value.call(row[:outstanding_stop_chain_id]) %>).
+<% if row[:latest_action_id] -%>
+  Latest action: <%= value.call(row[:latest_action_kind]) %> / <%= value.call(row[:latest_action_state]) %>; mail: <%= mail_state.call(row[:latest_mail_state]) %>.
+<% if row[:latest_stop_completed_at] -%>
+  Confirmed shutdown: <%= date.call(row[:latest_stop_completed_at]) %>.
+<% end -%>
+<% else -%>
+  No recorded action.
+<% end -%>
+<% %i[vps_url report_url policy_url transaction_url].each do |key| -%>
+<% if row[key] -%>
+  <%= key.to_s.sub('_url', '') %>: <%= row[key] %>
+<% end -%>
+<% end -%>
+<% end -%>
+Reports remaining is the number needed to reach a threshold. Counts can fall as older reports leave the window. Reaching a threshold or the end of a cooldown does not guarantee an action: settings, ownership and outstanding work can prevent it.
+<% end -%>
+<% if overview[:url] -%>
+Overview: <%= overview[:url] %>
+<% end -%>
+<% { activity: 'Recorded policy activity', outstanding: 'Outstanding policy actions now' }.each do |name, title| -%>
+<% collection = summary[name] -%>
+<% if collection[:rows].empty? -%>
+<%= name == :activity ? 'No recorded policy activity during this period.' : 'No outstanding policy actions.' %>
+<% else -%>
+
+<%= title %>: showing <%= collection[:rows].length %> of <%= collection[:total_count] %>; omitted <%= collection[:omitted_count] %>.
+<% collection[:rows].each do |row| -%>
+- Evaluation #<%= row[:id] %> | VPS #<%= value.call(row[:vps_id]) %> <%= row[:hostname] %> | Owner #<%= value.call(row[:user_id]) %> <%= row[:user_login] %> | <%= row[:label] %> (<%= row[:policy_key] %>)
+  Evaluated: <%= date.call(row[:evaluated_at]) %>; detected: <%= date.call(row[:detected_at]) %>; saved state: <%= row[:state] %>; decision: <%= row[:decision] %>.
+  Saved warning threshold (7 days): <%= value.call(row[:count_7d]) %> / <%= value.call(row[:warning_limit]) %>; saved shutdown threshold (30 days): <%= value.call(row[:count_30d]) %> / <%= value.call(row[:stop_limit]) %>; saved status: <%= value.call(row[:threshold_status]) %>.
+  Saved mode: <%= value.call(row[:effective_mode]) %>; automatic shutdown allowed: <%= yes_no.call(row[:stop_enforced]) %>.
+<% if name == :activity -%>
+  Activity: <%= date.call(row[:activity_at]) %> (<%= { 'evaluation' => 'evaluation', 'stop_completed' => 'confirmed shutdown', 'mail_queued' => 'mail queued', 'mail_finished' => 'mail attempt finished', 'action_updated' => 'failed or uncertain outcome last updated' }.fetch(row[:activity_basis], row[:activity_basis]) %>).
+<% end -%>
+<% if row[:action_id] -%>
+  Current action: #<%= value.call(row[:action_id]) %> <%= value.call(row[:action_kind]) %> / <%= value.call(row[:action_state]) %>; created <%= date.call(row[:action_created_at]) %>, updated <%= date.call(row[:action_updated_at]) %>.
+  Shared shutdown action ID: <%= value.call(row[:physical_stop_action_id]) %>; confirmed completion: <%= date.call(row[:stop_completed_at]) %>; chain: <%= value.call(row[:transaction_chain_id]) %>.
+  Current mail: <%= mail_state.call(row[:mail_state]) %>; queued: <%= date.call(row[:mail_queued_at]) %>; attempt finished: <%= date.call(row[:mail_finished_at]) %>.
+<% else -%>
+  No recorded action.
+<% end -%>
+<% %i[vps_url report_url policy_url transaction_url].each do |key| -%>
+<% if row[key] -%>
+  <%= key.to_s.sub('_url', '') %>: <%= row[key] %>
+<% end -%>
+<% end -%>
+<% end -%>
+<% end -%>
+<% if collection[:url] -%>
+History: <%= collection[:url] %>
+<% end -%>
+<% end -%>
+Rows with the same shutdown action ID share one VPS shutdown. A completed shutdown can have failed mail.
+Mail marked sent was accepted by the mail server; this does not confirm inbox delivery. Queued, suppressed, failed and uncertain mail has no confirmed acceptance.
+Activity includes recorded evaluation, shutdown and mail times and the latest update to a failed or uncertain outcome.
+Outcomes may have changed after the reporting period. This history does not record every state change or retry.
+The report covers a rolling 24 hours, not time since the previous successful report.
+Linked views use current state and may differ from this email.
+<% end -%>

@@ -321,6 +321,10 @@ module TransactionChains
                          .where('DATE_ADD(oom_preventions.created_at, INTERVAL 1 DAY) >= ?', t)
                          .order('created_at'),
 
+        incident_policy_summary: ::IncidentPolicyReadProjection.new(now:).daily_summary(
+          base_url: ::SysConfig.get(:webui, :base_url)
+        ),
+
         incident_reports: {
           new: ::IncidentReport
                .includes(:user, :vps)

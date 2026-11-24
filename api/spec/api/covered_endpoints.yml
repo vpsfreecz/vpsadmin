@@ -172,6 +172,8 @@ covered:
 - ip_release_request.notice#index
 - incident_policy#index
 - incident_policy#show
+- incident_policy_evaluation#index
+- incident_policy_exposure#index
 - incident_report#create
 - incident_report#index
 - incident_report#show

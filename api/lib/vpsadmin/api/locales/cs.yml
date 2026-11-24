@@ -56,6 +56,8 @@ cs:
         label: Název účtu
       accounted_by:
         label: Účtováno podle
+      accounting_since:
+        label: Počítá se od
       action:
         choices:
           approve:
@@ -69,6 +71,34 @@ cs:
           request_correction:
             label: vyžádat opravu
         label: Akce
+      action_created_at:
+        label: Čas vytvoření akce
+      action_id:
+        label: ID akce
+      action_kind:
+        choices:
+          stop:
+            label: vypnutí
+          warning:
+            label: upozornění
+        label: Typ akce
+      action_state:
+        choices:
+          completed:
+            label: dokončeno
+          failed:
+            label: selhalo
+          pending:
+            label: čeká
+          queued:
+            label: zařazeno do fronty
+          suppressed:
+            label: potlačeno
+          uncertain:
+            label: výsledek není známý
+        label: Stav akce
+      action_updated_at:
+        label: Poslední změna akce
       activate:
         label: Aktivovat účet
       active:
@@ -197,6 +227,10 @@ cs:
         label: Velikost ARC
       arch:
         label: Architektura
+      as_of:
+        description: Rozhodný čas počítání s přesností na sekundy v posledních 24
+          hodinách. Nastavení, vlastník a výsledky akcí odpovídají poslednímu načtení.
+        label: Rozhodný čas počítání
       assign_ip_address_id:
         label: Adresa dostupná pro přiřazení
       assigned:
@@ -435,8 +469,6 @@ cs:
         label: Konfigurace
       configuration_digest:
         label: Kontrolní součet konfigurace
-      configuration_valid:
-        label: Platná konfigurace
       configured_value:
         label: Nastavená hodnota
       confirmed:
@@ -568,12 +600,17 @@ cs:
         label: Závisí na
       description:
         label: Popis
-      detected_at:
-        label: Detekováno
       digest:
         label: Kontrolní součet
       direct:
         label: Přímé
+      direction:
+        choices:
+          asc:
+            label: vzestupně
+          desc:
+            label: sestupně
+        label: Směr řazení
       diskspace:
         description: Minimálně 1024, maximálně 1048576, krok je 1
         label: Diskový prostor
@@ -867,7 +904,8 @@ cs:
       free_chain:
         label: Volný řetězec
       from:
-        label: Od
+        description: Období zahrnuje začátek a nezahrnuje konec. U nedokončených akcí
+          se nepoužívá.
       from_bytes:
         description: Stránkovat podle příchozích/odchozích bajtů
         label: Od bajtů
@@ -1009,6 +1047,8 @@ cs:
       incident_policy:
         description: Klíč aktivního pravidla pro filtrování podle statusu incidentů.
         label: Klíč pravidla pro incidenty
+      incident_report_id:
+        label: ID zdrojového incidentu
       incident_status:
         choices:
           clear:
@@ -1152,8 +1192,6 @@ cs:
         label: Ks
       kvm:
         label: KVM
-      label:
-        label: Popisek
       last_activity_at:
         label: Poslední aktivita
       last_check_at:
@@ -1170,6 +1208,8 @@ cs:
         label: Výsledek posledního pokusu o uvolnění
       last_seen_at:
         label: Naposledy viděno
+      last_stop_at:
+        label: Poslední potvrzené vypnutí
       last_transfer_at:
         label: Poslední přenos
       last_transfer_log_id:
@@ -1195,15 +1235,62 @@ cs:
         label: Poslední použití
       last_warning_at:
         label: Poslední upozornění zařazené k odeslání
+      latest_action_chain_id:
+        label: ID transakčního řetězce poslední akce
+      latest_action_id:
+        label: ID poslední akce
+      latest_action_kind:
+        choices:
+          stop:
+            label: vypnutí
+          warning:
+            label: upozornění
+        label: Typ poslední akce
+      latest_action_state:
+        choices:
+          completed:
+            label: dokončeno
+          failed:
+            label: selhalo
+          pending:
+            label: čeká
+          queued:
+            label: zařazeno do fronty
+          suppressed:
+            label: potlačeno
+          uncertain:
+            label: výsledek není známý
+        label: Stav poslední akce
+      latest_mail_state:
+        choices:
+          failed:
+            label: odeslání selhalo
+          pending:
+            label: dosud nezařazeno
+          queued:
+            label: zařazeno k odeslání
+          sent:
+            label: přijato poštovním serverem
+          suppressed:
+            label: odeslání potlačeno
+          uncertain:
+            label: výsledek odeslání není známý
+        description: Odesláno znamená přijetí poštovním serverem, nikoli potvrzení
+          doručení do schránky.
+        label: Stav posledního e-mailu
+      latest_notice_report_id:
+        label: ID posledního souhrnného hlášení
       latest_release_attempt:
         label: Poslední pokus o uvolnění
+      latest_stop_completed_at:
+        description: Potvrzené vypnutí VPS nezávisle na dokončení upozornění nebo
+          odeslání e-mailu.
+        label: Poslední potvrzené vypnutí
       lazy:
         description: Pouze označit VPS jako smazanou
         label: Odložené smazání
       level:
         label: Úroveň přístupu
-      limit:
-        label: Limit
       livepatch_action:
         choices:
           applied:
@@ -1259,6 +1346,8 @@ cs:
         label: Platné DNS e-mailu
       mail_errors:
         label: Chyby e-mailu
+      mail_finished_at:
+        label: Čas dokončení pokusu o odeslání e-mailu
       mail_fraud_score:
         label: Rizikové skóre e-mailu
       mail_frequent_complainer:
@@ -1271,6 +1360,8 @@ cs:
         label: Zpráva e-mailové kontroly
       mail_overall_score:
         label: Celkové skóre e-mailu
+      mail_queued_at:
+        label: Čas zařazení e-mailu do fronty
       mail_recent_abuse:
         label: Nedávné zneužití e-mailu
       mail_recipient:
@@ -1281,6 +1372,23 @@ cs:
         label: SMTP skóre e-mailu
       mail_spam_trap_score:
         label: Spam trap skóre e-mailu
+      mail_state:
+        choices:
+          failed:
+            label: odeslání selhalo
+          pending:
+            label: dosud nezařazeno
+          queued:
+            label: zařazeno k odeslání
+          sent:
+            label: přijato poštovním serverem
+          suppressed:
+            label: odeslání potlačeno
+          uncertain:
+            label: výsledek odeslání není známý
+        description: Odesláno znamená přijetí poštovním serverem, nikoli potvrzení
+          doručení do schránky.
+        label: Stav e-mailu
       mail_success:
         label: Úspěch e-mailové kontroly
       mail_suspect:
@@ -1409,6 +1517,10 @@ cs:
         label: Heslo
       new_refquota:
         label: Nová kvóta datasetu (refquota)
+      next_stop_allowed_at:
+        label: Konec ochranné lhůty pro vypnutí
+      next_warning_allowed_at:
+        label: Konec ochranné lhůty pro upozornění
       no_start:
         description: Nespouštět VPS na cílovém nodu
         label: Nespouštět
@@ -1479,6 +1591,8 @@ cs:
         label: Klíč pravidla souhrnného hlášení
       notice_policy_label:
         label: Název pravidla souhrnného hlášení
+      notice_report_id:
+        label: ID souhrnného hlášení
       notified_at:
         label: Poslední výzva zařazená k odeslání
       ns_id:
@@ -1508,8 +1622,6 @@ cs:
         label: Zjištěno před
       observed_through:
         label: Pozorováno do
-      offset:
-        label: Offset
       on_start_fail:
         choices:
           fail_start:
@@ -1579,6 +1691,21 @@ cs:
         label: ID hlášení
       output:
         label: Výstup
+      outstanding_stop_action_id:
+        label: ID nedokončené společné akce vypnutí
+      outstanding_stop_chain_id:
+        label: ID transakčního řetězce nedokončeného vypnutí
+      outstanding_stop_state:
+        choices:
+          failed:
+            label: selhalo
+          none:
+            label: žádná
+          pending:
+            label: čeká
+          uncertain:
+            label: výsledek není známý
+        label: Stav nedokončené společné akce vypnutí
       over_refquota_seconds:
         label: Sekundy nad kvótou datasetu (refquota)
       owned:
@@ -1590,6 +1717,8 @@ cs:
           adresy a zakázané sítě; přiřazení vyžaduje povolenou síť a nesmí mu bránit
           rezervace.
         label: Vlastněné, nepřiřazené
+      owner_active:
+        label: Aktivní vlastník
       packets:
         label: Pakety
       packets_in:
@@ -1623,6 +1752,8 @@ cs:
         label: Typ protistrany
       pgtables_bytes:
         label: Pgtables bajty
+      physical_stop_action_id:
+        label: ID společné akce vypnutí VPS
       platform:
         choices:
           same:
@@ -1912,7 +2043,15 @@ cs:
       scan_percent:
         label: Scan percent
       scope:
-        label: Scope
+        choices:
+          all:
+            label: všechna vyhodnocení
+          matched:
+            label: všechny uložené shody
+          outstanding:
+            label: nevyřešené akce a e-maily
+          violations:
+            label: dosažené limity a akce
       secret:
         label: Tajný klíč
       security_advisory:
@@ -1964,6 +2103,27 @@ cs:
         label: Snapshot
       snapshot_revision:
         label: Revize snímku
+      sort:
+        choices:
+          count_30d:
+            label: počet incidentů za 30 dní
+          count_7d:
+            label: počet incidentů za 7 dní
+          last_incident_at:
+            label: poslední započítaný incident
+          policy_key:
+            label: klíč pravidla
+          severity:
+            label: priorita
+          stop_remaining:
+            label: počet incidentů do limitu pro vypnutí
+          user_login:
+            label: login vlastníka
+          vps_id:
+            label: ID VPS
+          warning_remaining:
+            label: počet incidentů do limitu pro upozornění
+        label: Řadit podle
       source:
         choices:
           current:
@@ -2024,7 +2184,7 @@ cs:
           approved:
             label: schváleno
           audit_only:
-            label: pouze evidováno
+            label: pouze audit
           awaiting:
             label: čeká
           cancelled:
@@ -2099,22 +2259,14 @@ cs:
             label: bez shody
           vulnerable:
             label: zranitelné
-        label: Stav
       status:
         choices:
-          clear:
-            label: pod limity
           failed:
             label: selhalo
-          near_limit:
-            label: blíží se limitu
-          stop_threshold:
-            label: dosažen limit pro vypnutí
+          invalid:
+            label: neplatná konfigurace
           success:
             label: úspěch
-          warning:
-            label: dosažen limit pro upozornění
-        label: Status
       stepsize:
         description: Kroky, po kterých se může iterovat alokovaná hodnota zdroje objektu
         label: Velikost kroku
@@ -2122,12 +2274,18 @@ cs:
         description: Provést konzistentní klon - před vytvořením snapshotu se původní
           VPS řádně vypne
         label: Vypnout
+      stop_completed_at:
+        description: Potvrzené vypnutí VPS nezávisle na dokončení upozornění nebo
+          odeslání e-mailu.
+        label: Potvrzené vypnutí
       stop_enforced:
-        label: Automatické vypnutí je povoleno
+        label: Automatické vypnutí povoleno
       stop_limit:
         label: Limit pro vypnutí
       stop_limit_override:
         label: Vlastní limit pro vypnutí
+      stop_remaining:
+        label: Počet incidentů do limitu pro vypnutí
       stop_vps:
         description: Vypnout VPS, pokud se extra místo používá příliš dlouho nebo
           proběhlo příliš mnoho rozšíření
@@ -2173,13 +2331,25 @@ cs:
       threads:
         description: Počet vláken NFS serveru.
         label: Vlákna
+      threshold_status:
+        choices:
+          clear:
+            label: pod limity
+          near_limit:
+            label: blízko limitu
+          stop_threshold:
+            label: limit pro vypnutí dosažen
+          warning:
+            label: limit pro upozornění dosažen
+        label: Uložené dosažení limitu
       through_status_id:
         label: ID posledního stavu
       time_zone:
         description: Identifikátor časové zóny IANA, např. Europe/Prague
         label: Časová zóna
       to:
-        label: Komu
+        description: Období zahrnuje začátek a nezahrnuje konec. U nedokončených akcí
+          se nepoužívá.
       to_date:
         label: Do data
       to_depth:
@@ -2221,6 +2391,8 @@ cs:
         label: Swap celkem
       total_vm:
         label: VM celkem
+      transaction_chain_id:
+        label: ID transakčního řetězce
       transaction_id:
         label: ID transakce
       transaction_type:
@@ -2229,6 +2401,8 @@ cs:
         description: Je-li to možné, ponechat IP adresy a přeúčtovat je do jiného
           prostředí nebo lokace
         label: Přenést IP adresy
+      transfer_pending:
+        label: Probíhá změna vlastníka
       transition:
         label: Probíhá přechod
       trigger_incident_report_id:
@@ -2363,12 +2537,12 @@ cs:
           secondary_type:
             label: sekundární
         label: Typ DNS zóny uživatele
+      user_id:
+        label: ID původního vlastníka
       user_ident:
         label: Uživatel ident
       user_ip_ownership:
         label: Uživatel vlastní IP adresy
-      user_login:
-        label: Přezdívka uživatele
       user_message:
         label: Uživatel zpráva
       user_namespace:
@@ -2435,7 +2609,6 @@ cs:
         label: Volné sloty VPS
       vps_id:
         description: Začátek rozsahu ID ve VPS
-        label: ID VPS
       vps_lifetime:
         description: v sekundách, 0 znamená bez omezení
         label: Výchozí životnost VPS
@@ -2466,6 +2639,10 @@ cs:
         label: Limit pro upozornění
       warning_limit_override:
         label: Vlastní limit pro upozornění
+      warning_permitted:
+        label: Upozornění e-mailem povoleno
+      warning_remaining:
+        label: Počet incidentů do limitu pro upozornění
       weekday:
         label: Den v týdnu
       year:
@@ -2586,6 +2763,25 @@ cs:
           vlastností VPS.
         unable_to_save_limits: Limity incidentů se nepodařilo uložit.
         unknown_policy: Neznámé pravidlo pro incidenty.
+      incident_policy_read:
+        choice: Nepodporovaná hodnota pro %{field}.
+        cutoff: Rozhodný čas počítání musí být v posledních 24 hodinách a nesmí být
+          v budoucnosti.
+        direction: Vyber vzestupné nebo sestupné řazení.
+        fields:
+          action_kind: Typ akce
+          action_state: Stav akce
+          decision: Rozhodnutí
+          effective_mode: Účinný režim
+          mail_state: Stav e-mailu
+          scope: Rozsah historie
+          status: Dosažení limitu
+        page: Počet vynechaných řádků musí být nezáporné celé číslo a velikost stránky
+          musí být od 1 do 100.
+        period: Začátek období musí předcházet konci. Konec nesmí být pozdější než
+          rozhodný čas a období smí trvat nejvýše 366 dní.
+        policy: Vyber aktivní pravidlo pro incidenty.
+        sort: Vyber podporované řazení.
       ip_release:
         access_denied: Tato výzva k uvolnění IP adres patří jinému uživateli.
         already_released: Některá z vybraných IP adres se právě uvolňuje nebo už byla
@@ -2636,6 +2832,33 @@ cs:
             systémové prostředky a omezoval tak dostupnost ostatních VPS na nodu.
 
             '
+    meta:
+      global:
+        output:
+          as_of:
+            description: Rozhodný čas počítání s přesností na sekundy v posledních
+              24 hodinách. Nastavení, vlastník a výsledky akcí odpovídají poslednímu
+              načtení.
+            label: Rozhodný čas počítání
+          from:
+            description: Období zahrnuje začátek a nezahrnuje konec. U nedokončených
+              akcí se nepoužívá.
+            label: Začátek období včetně
+          limit:
+            label: Řádků na stránce
+          next_offset:
+            label: Počet řádků před další stránkou
+          offset:
+            label: Počet vynechaných řádků
+          read_at:
+            description: Čas, kdy tento požadavek načetl aktuální nastavení a výsledky.
+            label: Čas načtení aktuálních údajů
+          to:
+            description: Období zahrnuje začátek a nezahrnuje konec. U nedokončených
+              akcí se nepoužívá.
+            label: Konec období vyjma
+          total_count:
+            label: Celkový počet odpovídajících řádků
     password_changes:
       minimum_length_description: Heslo musí mít alespoň %{minimum} znaků
     resources:
@@ -2643,6 +2866,8 @@ cs:
         attributes:
           id:
             label: ID
+          status:
+            label: Dosažení limitu
       cluster:
         actions:
           full_stats:
@@ -2681,6 +2906,8 @@ cs:
         attributes:
           id:
             label: ID
+          label:
+            label: Název pravidla
           name:
             label: Název zdroje pro interní účely
       cluster_resource_package:
@@ -2689,6 +2916,8 @@ cs:
             label: Vytvořeno
           id:
             label: ID
+          label:
+            label: Název pravidla
           updated_at:
             label: Aktualizováno
         item:
@@ -2699,6 +2928,8 @@ cs:
         attributes:
           id:
             label: ID
+          label:
+            label: Název pravidla
           name:
             label: Název
       dataset:
@@ -2741,10 +2972,14 @@ cs:
           attributes:
             created_at:
               label: Vytvořeno
+            from:
+              label: Začátek období včetně
             id:
               label: ID
             name:
               label: Název
+            to:
+              label: Konec období vyjma
         snapshot:
           attributes:
             created_at:
@@ -2753,6 +2988,8 @@ cs:
               label: Dataset
             id:
               label: ID
+            label:
+              label: Název pravidla
             name:
               label: Název
       dataset_expansion:
@@ -2765,6 +3002,8 @@ cs:
             label: ID
           original_refquota:
             label: Původní kvóta datasetu (refquota)
+          state:
+            label: Stav vyhodnocení
           vps:
             label: VPS
         history:
@@ -2779,8 +3018,12 @@ cs:
         attributes:
           id:
             label: ID
+          label:
+            label: Název pravidla
       debug:
         attributes:
+          limit:
+            label: Řádků na stránce
           size:
             label: Velikost
       default_object_cluster_resource:
@@ -2832,6 +3075,8 @@ cs:
           ip_addr:
             description: Více adres oddělených čárkou
             label: IP adresa
+          label:
+            label: Název pravidla
           location:
             description: Lokace, ve které lze tento resolver použít
           vps:
@@ -2867,6 +3112,8 @@ cs:
             label: DNS zóna
           id:
             label: ID
+          status:
+            label: Dosažení limitu
           updated_at:
             label: Aktualizováno
       dns_tsig_key:
@@ -2887,6 +3134,8 @@ cs:
             description: Povolit nebo zakázat tuto DNS zónu
           id:
             label: ID
+          label:
+            label: Název pravidla
           name:
             description: Plně kvalifikované doménové jméno
             label: Název
@@ -2927,6 +3176,7 @@ cs:
             label: ID
           label:
             description: Popisek prostředí
+            label: Název pravidla
           maintenance_lock:
             label: Zámek údržby
           maintenance_lock_reason:
@@ -2935,6 +3185,8 @@ cs:
           attributes:
             id:
               label: ID
+            label:
+              label: Název pravidla
       export:
         attributes:
           created_at:
@@ -3009,14 +3261,75 @@ cs:
         attributes:
           key:
             label: Klíč pravidla
+          label:
+            label: Název pravidla
           stop_period_days:
             label: Období pro vypnutí (dny)
           warning_period_days:
             label: Období pro upozornění (dny)
+      incident_policy_evaluation:
+        attributes:
+          detected_at:
+            label: Čas zjištění incidentu
+          from:
+            label: Začátek období včetně
+          id:
+            label: ID
+          label:
+            label: Název pravidla
+          limit:
+            label: Řádků na stránce
+          offset:
+            label: Počet vynechaných řádků
+          scope:
+            label: Rozsah historie
+          state:
+            label: Stav vyhodnocení
+          stop_period_days:
+            label: Období pro vypnutí ve dnech
+          to:
+            label: Konec období vyjma
+          user_login:
+            label: Login vlastníka
+          vps_id:
+            label: ID původní VPS
+          warning_period_days:
+            label: Období pro upozornění ve dnech
+      incident_policy_exposure:
+        attributes:
+          configuration_valid:
+            label: Platná konfigurace
+          id:
+            label: ID
+          label:
+            label: Název pravidla
+          limit:
+            label: Řádků na stránce
+          offset:
+            label: Počet vynechaných řádků
+          status:
+            choices:
+              clear:
+                label: pod limity
+              near_limit:
+                label: blízko limitu
+              stop_threshold:
+                label: limit pro vypnutí dosažen
+              warning:
+                label: limit pro upozornění dosažen
+            label: Dosažení limitu
+          stop_period_days:
+            label: Období pro vypnutí ve dnech
+          vps:
+            label: VPS
+          warning_period_days:
+            label: Období pro upozornění ve dnech
       incident_report:
         attributes:
           created_at:
             label: Přidáno
+          detected_at:
+            label: Čas zjištění incidentu
           id:
             label: ID
           ip_addr:
@@ -3025,6 +3338,10 @@ cs:
             label: VPS
         policy_evaluation:
           attributes:
+            label:
+              label: Název pravidla
+            state:
+              label: Stav vyhodnocení
             stop_period_days:
               label: Období pro vypnutí (dny)
             warning_period_days:
@@ -3035,6 +3352,8 @@ cs:
             label: Vytvořeno
           id:
             label: ID
+          state:
+            label: Stav vyhodnocení
       ip_address:
         attributes:
           addr:
@@ -3087,6 +3406,8 @@ cs:
               label: IP adresa
             size:
               label: Velikost přidělení
+            user_login:
+              label: Přezdívka uživatele
         attempt:
           attributes:
             created_at:
@@ -3095,6 +3416,8 @@ cs:
               label: Autor pokusu
             id:
               label: ID
+            state:
+              label: Stav vyhodnocení
             transaction_chain:
               label: Transakční řetězec
         attributes:
@@ -3110,6 +3433,8 @@ cs:
             label: ID
           size:
             label: Velikost přidělení
+          state:
+            label: Stav vyhodnocení
           transaction_chain:
             label: Transakční řetězec
         notice:
@@ -3124,6 +3449,8 @@ cs:
               label: ID
             mail_log:
               label: Záznam e-mailu
+            user_login:
+              label: Přezdívka uživatele
       ip_release_request:
         address:
           attributes:
@@ -3135,6 +3462,8 @@ cs:
               label: IP adresa
             size:
               label: Velikost přidělení
+            user_login:
+              label: Přezdívka uživatele
         attributes:
           addresses:
             description: Pole ID adres ve výzvě
@@ -3142,6 +3471,8 @@ cs:
             label: ID
           mail_log:
             label: Poslední výzva
+          user_login:
+            label: Přezdívka uživatele
         notice:
           attributes:
             created_at:
@@ -3154,12 +3485,16 @@ cs:
               label: ID
             mail_log:
               label: Záznam e-mailu
+            user_login:
+              label: Přezdívka uživatele
       language:
         attributes:
           code:
             label: Kód
           id:
             label: ID
+          label:
+            label: Název pravidla
       location:
         attributes:
           description:
@@ -3180,6 +3515,7 @@ cs:
             label: ID
           label:
             description: Popisek lokace
+            label: Název pravidla
           maintenance_lock:
             label: Zámek údržby
           maintenance_lock_reason:
@@ -3192,14 +3528,21 @@ cs:
         attributes:
           created_at:
             label: Vytvořeno
+          from:
+            label: Začátek období včetně
           id:
             label: ID
+          to:
+            label: Konec období vyjma
       mail_recipient:
         attributes:
           id:
             label: ID
           label:
             description: Uživatelsky srozumitelný popisek
+            label: Název pravidla
+          to:
+            label: Konec období vyjma
       mail_template:
         attributes:
           created_at:
@@ -3208,6 +3551,7 @@ cs:
             label: ID
           label:
             description: Uživatelsky srozumitelný popisek
+            label: Název pravidla
           name:
             description: Identifikátor šablony
             label: Název
@@ -3221,6 +3565,8 @@ cs:
           attributes:
             created_at:
               label: Vytvořeno
+            from:
+              label: Začátek období včetně
             id:
               label: ID
             language:
@@ -3233,6 +3579,8 @@ cs:
             label: Vytvořeno
           id:
             label: ID
+          label:
+            label: Název pravidla
           password:
             label: Heslo
           updated_at:
@@ -3267,6 +3615,8 @@ cs:
             label: ID
           send_mail:
             label: Odeslat e-mail
+          state:
+            label: Stav vyhodnocení
           stop_on_error:
             label: Zastavit při chybě
         vps_migration:
@@ -3283,6 +3633,8 @@ cs:
               label: ID
             maintenance_window:
               label: Okno údržby
+            state:
+              label: Stav vyhodnocení
             transaction_chain:
               label: Transakční řetězec
             vps:
@@ -3293,6 +3645,10 @@ cs:
             label: Vytvořeno
           id:
             label: ID
+          label:
+            label: Název pravidla
+          state:
+            label: Stav vyhodnocení
           updated_at:
             label: Aktualizováno
         log:
@@ -3313,6 +3669,8 @@ cs:
             description: Prostředí, kterému jsou adresy účtovány
           id:
             label: ID
+          label:
+            label: Název pravidla
           size:
             description: Počet možných host IP adres
             label: Velikost
@@ -3343,6 +3701,10 @@ cs:
         attributes:
           created_at:
             label: Vytvořeno
+          from:
+            label: Začátek období včetně
+          to:
+            label: Konec období vyjma
           updated_at:
             label: Aktualizováno
           vps:
@@ -3439,6 +3801,10 @@ cs:
             description: Název Node
           send_mail:
             label: Odeslat e-mail
+          state:
+            label: Stav vyhodnocení
+          status:
+            label: Dosažení limitu
           stop_on_error:
             label: Zastavit při chybě
           type:
@@ -3460,10 +3826,14 @@ cs:
             label: Název
         kernel_history:
           attributes:
+            from:
+              label: Začátek období včetně
             id:
               label: ID
             livepatch_action:
               description: Akce životního cyklu účinné živé záplaty
+            to:
+              label: Konec období vyjma
         status:
           attributes:
             cgroup_version:
@@ -3472,34 +3842,54 @@ cs:
               label: Nečinnost CPU
             created_at:
               label: Vytvořeno
+            from:
+              label: Začátek období včetně
             id:
               label: ID
+            to:
+              label: Konec období vyjma
             version:
               label: Verze
       node_cgroup_state:
         attributes:
           cgroup_version:
             label: Verze cgroup
+          from:
+            label: Začátek období včetně
           id:
             label: ID
+          to:
+            label: Konec období vyjma
       node_ebpf_program:
         attributes:
+          from:
+            label: Začátek období včetně
           id:
             label: ID eBPF programu
           name:
             label: Název eBPF programu
+          to:
+            label: Konec období vyjma
       node_ebpf_program_link:
         attributes:
+          from:
+            label: Začátek období včetně
           id:
             label: ID eBPF odkazu
           name:
             label: Název eBPF odkazu
+          to:
+            label: Konec období vyjma
       node_ebpf_program_object:
         attributes:
+          from:
+            label: Začátek období včetně
           id:
             label: ID eBPF objektu
           name:
             label: Název eBPF objektu
+          to:
+            label: Konec období vyjma
       node_kernel_configuration_option:
         attributes:
           id:
@@ -3508,8 +3898,12 @@ cs:
             label: Název volby konfigurace jádra
       node_kernel_event:
         attributes:
+          from:
+            label: Začátek období včetně
           id:
             label: ID události kernelu Node
+          to:
+            label: Konec období vyjma
         input:
           livepatch_action:
             description: Filtrovat podle akce životního cyklu účinné živé záplaty
@@ -3520,74 +3914,134 @@ cs:
         attributes:
           id:
             label: ID podkladů kernelu Node
+          offset:
+            label: Počet vynechaných řádků
       node_kernel_evidence_error:
         attributes:
+          from:
+            label: Začátek období včetně
           id:
             label: ID chyby podkladů kernelu Node
+          to:
+            label: Konec období vyjma
       node_kernel_history_gap:
         attributes:
+          from:
+            label: Začátek období včetně
           id:
             label: ID mezery v historii kernelu Node
+          to:
+            label: Konec období vyjma
       node_kernel_history_state:
         attributes:
+          from:
+            label: Začátek období včetně
           id:
             label: ID stavu historie kernelu Node
+          to:
+            label: Konec období vyjma
       node_kernel_livepatch:
         attributes:
+          from:
+            label: Začátek období včetně
           id:
             label: ID záznamu živé záplaty
+          to:
+            label: Konec období vyjma
       node_kernel_livepatch_patch:
         attributes:
+          from:
+            label: Začátek období včetně
           id:
             label: ID změny živé záplaty
           name:
             label: Název změny živé záplaty
+          to:
+            label: Konec období vyjma
           version:
             label: Verze změny živé záplaty
       node_kernel_module:
         attributes:
+          from:
+            label: Začátek období včetně
           id:
             label: ID modulu jádra
           name:
             label: Název modulu jádra
+          to:
+            label: Konec období vyjma
       node_kernel_parameter:
         attributes:
+          from:
+            label: Začátek období včetně
           id:
             label: ID parametru jádra
           name:
             label: Název parametru jádra
+          to:
+            label: Konec období vyjma
       node_software_change:
         attributes:
+          from:
+            label: Začátek období včetně
           id:
             label: ID změny softwaru
+          offset:
+            label: Počet vynechaných řádků
+          to:
+            label: Konec období vyjma
       node_software_deployment:
         attributes:
+          from:
+            label: Začátek období včetně
           id:
             label: ID nasazení softwaru
+          offset:
+            label: Počet vynechaných řádků
+          to:
+            label: Konec období vyjma
       node_software_version:
         attributes:
+          from:
+            label: Začátek období včetně
           id:
             label: ID verze softwaru
+          to:
+            label: Konec období vyjma
           version:
             label: Verze
       node_sysctl:
         attributes:
+          from:
+            label: Začátek období včetně
           id:
             label: ID sysctl
           name:
             label: Název sysctl
+          to:
+            label: Konec období vyjma
       node_sysctl_change:
         attributes:
+          from:
+            label: Začátek období včetně
           id:
             label: ID změny sysctl
           name:
             label: Název sysctl
+          offset:
+            label: Počet vynechaných řádků
+          to:
+            label: Konec období vyjma
       node_system_state:
         attributes:
           cgroup_version:
             label: Verze cgroup
+          from:
+            label: Začátek období včetně
           id:
             label: ID
+          to:
+            label: Konec období vyjma
       node_transfer_connection:
         attributes:
           created_at:
@@ -3636,12 +4090,16 @@ cs:
           attributes:
             id:
               label: ID
+            limit:
+              label: Řádků na stránce
       oom_report_rule:
         attributes:
           created_at:
             label: Vytvořeno
           id:
             label: ID
+          label:
+            label: Název pravidla
           updated_at:
             label: Aktualizováno
           vps:
@@ -3650,6 +4108,8 @@ cs:
         attributes:
           id:
             label: ID
+          label:
+            label: Název pravidla
       os_template:
         attributes:
           cgroup_version:
@@ -3667,6 +4127,7 @@ cs:
             description: Informace o šabloně
           label:
             description: Uživatelsky srozumitelný popisek
+            label: Název pravidla
           name:
             description: Název souboru šablony
             label: Název
@@ -3694,6 +4155,8 @@ cs:
             description: Filtrovat hlášení propojená s bezpečnostními upozorněními
           since:
             description: Filtrovat hlášení nahlášená od zadaného data
+          state:
+            label: Stav vyhodnocení
           type:
             label: Typ
           user:
@@ -3707,6 +4170,8 @@ cs:
               label: ID entity
             id:
               label: ID
+            label:
+              label: Název pravidla
             name:
               label: Název
         handler:
@@ -3737,6 +4202,8 @@ cs:
             label: Odeslat e-mail
           since:
             description: Filtrovat aktualizace nahlášené od zadaného data
+          state:
+            label: Stav vyhodnocení
           type:
             label: Typ
       password_change_log:
@@ -3783,12 +4250,16 @@ cs:
         attributes:
           id:
             label: ID
+          label:
+            label: Název pravidla
           maintenance_lock:
             label: Zámek údržby
           maintenance_lock_reason:
             label: Důvod údržby
           name:
             label: Název
+          state:
+            label: Stav vyhodnocení
           sync:
             description: Řídí chování synchronních požadavků
           used:
@@ -3857,6 +4328,8 @@ cs:
             label: Odeslat e-mail
           since:
             description: Filtrovat upozornění vytvořená od zadaného data
+          state:
+            label: Stav vyhodnocení
           updated_at:
             label: Aktualizováno
           vps:
@@ -3872,6 +4345,7 @@ cs:
               description: Node, pro který se zaznamenává stav expozice.
             state:
               description: Vyhodnocení, zda byl node dotčen a zda bylo provedeno ošetření.
+              label: Stav vyhodnocení
         output:
           external_id:
             description: Stabilní externí klíč idempotence zdroje bezpečnostního upozornění.
@@ -3930,6 +4404,7 @@ cs:
           state:
             description: Volitelná změna stavu upozornění, která se má použít s touto
               aktualizací.
+            label: Stav vyhodnocení
           updated_at:
             label: Aktualizováno
       snapshot_download:
@@ -3950,6 +4425,8 @@ cs:
             label: URL
       system_config:
         attributes:
+          label:
+            label: Název pravidla
           name:
             label: Název
           type:
@@ -3962,6 +4439,8 @@ cs:
             label: Dokončeno
           id:
             label: ID
+          label:
+            label: Název pravidla
           name:
             label: Název
           type:
@@ -3984,12 +4463,15 @@ cs:
             label: ID řetězce
           label:
             description: Uživatelsky srozumitelný název
+            label: Název pravidla
           name:
             description: Pouze pro interní použití
             label: Název
           size:
             description: Počet transakcí v řetězci
             label: Velikost
+          state:
+            label: Stav vyhodnocení
           user_session:
             label: Relace
       user:
@@ -4095,10 +4577,18 @@ cs:
           attributes:
             id:
               label: ID
+            label:
+              label: Název pravidla
+            to:
+              label: Konec období vyjma
         mail_template_recipient:
           attributes:
             id:
               label: ID
+            label:
+              label: Název pravidla
+            to:
+              label: Konec období vyjma
         output:
           object_state:
             choices:
@@ -4116,6 +4606,8 @@ cs:
               label: ID
             key:
               label: Veřejný klíč
+            label:
+              label: Název pravidla
             updated_at:
               label: Aktualizováno
         state_log:
@@ -4124,6 +4616,8 @@ cs:
               label: Expirace
             id:
               label: ID
+            state:
+              label: Stav vyhodnocení
         totp_device:
           attributes:
             code:
@@ -4132,6 +4626,8 @@ cs:
               label: Vytvořeno
             id:
               label: ID
+            label:
+              label: Název pravidla
             updated_at:
               label: Aktualizováno
             use_count:
@@ -4142,6 +4638,8 @@ cs:
               label: Vytvořeno
             id:
               label: ID
+            label:
+              label: Název pravidla
             updated_at:
               label: Aktualizováno
             use_count:
@@ -4160,6 +4658,8 @@ cs:
             label: Vytvořeno
           id:
             label: ID
+          label:
+            label: Název pravidla
           updated_at:
             label: Aktualizováno
         item:
@@ -4170,18 +4670,24 @@ cs:
         attributes:
           id:
             label: ID
+          offset:
+            label: Počet vynechaných řádků
           size:
             label: Velikost
       user_namespace_map:
         attributes:
           id:
             label: ID mapování
+          label:
+            label: Název pravidla
         entry:
           attributes:
             count:
               description: Počet mapovaných ID
             id:
               label: ID položky
+            vps_id:
+              label: ID původní VPS
       user_outage:
         attributes:
           id:
@@ -4212,6 +4718,10 @@ cs:
               label: Vytvořeno
             id:
               label: ID
+            label:
+              label: Název pravidla
+            state:
+              label: Stav vyhodnocení
             updated_at:
               label: Aktualizováno
         registration:
@@ -4228,6 +4738,8 @@ cs:
               label: Vytvořeno
             id:
               label: ID
+            label:
+              label: Název pravidla
             language:
               label: Jazyk
             node:
@@ -4236,6 +4748,8 @@ cs:
               label: Poznámky
             os_template:
               label: Distribuce
+            state:
+              label: Stav vyhodnocení
             updated_at:
               label: Aktualizováno
       user_security_advisory:
@@ -4259,6 +4773,12 @@ cs:
           ip_addr:
             description: Hledat v IP adrese API i klienta
             label: IP adresa
+          label:
+            label: Název pravidla
+          scope:
+            label: Rozsah historie
+          state:
+            label: Stav vyhodnocení
       vps:
         actions:
           clone:
@@ -4421,12 +4941,29 @@ cs:
           attributes:
             id:
               label: ID
+            label:
+              label: Název pravidla
             name:
               label: Název
         incident_policy:
           attributes:
+            configuration_valid:
+              label: Platná konfigurace
             key:
               label: Klíč pravidla
+            label:
+              label: Název pravidla
+            status:
+              choices:
+                clear:
+                  label: pod limity
+                near_limit:
+                  label: blíží se limitu
+                stop_threshold:
+                  label: dosažen limit pro vypnutí
+                warning:
+                  label: dosažen limit pro upozornění
+              label: Dosažení limitu
             stop_period_days:
               label: Období pro vypnutí (dny)
             warning_period_days:
@@ -4480,14 +5017,22 @@ cs:
               label: Expirace
             id:
               label: ID
+            state:
+              label: Stav vyhodnocení
         status:
           attributes:
             cpu_idle:
               label: Nečinnost CPU
             created_at:
               label: Vytvořeno
+            from:
+              label: Začátek období včetně
             id:
               label: ID
+            status:
+              label: Dosažení limitu
+            to:
+              label: Konec období vyjma
           input:
             is_running:
               label: Běží
@@ -4512,10 +5057,17 @@ cs:
             label: Vytvořeno
           id:
             label: ID
+          label:
+            label: Název pravidla
           updated_at:
             label: Aktualizováno
           vps:
             label: VPS
+      webauthn:
+        registration:
+          attributes:
+            label:
+              label: Název pravidla
       webui_user_setting:
         attributes:
           created_at:
