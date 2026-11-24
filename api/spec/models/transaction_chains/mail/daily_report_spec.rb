@@ -476,4 +476,39 @@ RSpec.describe TransactionChains::Mail::DailyReport do
       end
     end
   end
+
+  it 'renders the shared native-time incident payload through the real text and optional HTML builder' do
+    fixture_path = ENV.fetch('VPSADMIN_TEST_DAILY_REPORT_POLICY_FIXTURE', nil)
+    skip 'shared site payload fixture not selected' unless fixture_path
+
+    require fixture_path
+    report_time = Time.now.utc
+    chain = described_class.new
+    vars = chain.call_hooks_for(
+      :send, chain, args: [report_time - 86_400, report_time], initial: chain.send(:vars, report_time)
+    ).merge(base_url: 'https://webui.example.test/')
+    text = File.expand_path('../../../../notification_templates/templates/daily_report/email/en.text.erb', __dir__)
+    templates = { text: File.read(text) }
+    templates[:html] = File.read(ENV.fetch('VPSADMIN_TEST_DAILY_REPORT_HTML')) if ENV['VPSADMIN_TEST_DAILY_REPORT_HTML']
+    DailyReportIncidentPolicyFixture.variants.each do |name, payload|
+      templates.each do |format, source|
+        rendered = MailTemplateTranslation::TemplateBuilder.new(vars.merge(incident_policy_summary: payload)).build(source)
+        case name
+        when :missing
+          expect(rendered).not_to include('Current matches', 'Outstanding policy actions')
+        when :empty
+          expect(rendered).to include('No current incident policy matches', 'No recorded policy activity', 'No outstanding policy actions')
+        when :capped
+          expect(rendered.gsub(/<[^>]*>/, ' ').gsub(/\s+/, ' ')).to include('25 of 28')
+        else
+          expect(rendered).to include('mail server', 'uncertain')
+          expect(rendered).not_to include('<script>hostile') if format == :html
+        end
+        next unless ENV['VPSADMIN_TEST_DAILY_REPORT_PREVIEWS']
+
+        extension = format == :text ? 'txt' : 'html'
+        File.write(File.join(ENV.fetch('VPSADMIN_TEST_DAILY_REPORT_PREVIEWS'), "incident-policy-#{name}.#{extension}"), rendered)
+      end
+    end
+  end
 end
