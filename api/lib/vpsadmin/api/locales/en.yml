@@ -56,6 +56,8 @@ en:
         label: Account_name
       accounted_by:
         label: Accounted_by
+      accounting_since:
+        label: Counting since
       action:
         choices:
           approve:
@@ -69,6 +71,34 @@ en:
           request_correction:
             label: request_correction
         label: Action
+      action_created_at:
+        label: Action created at
+      action_id:
+        label: Action ID
+      action_kind:
+        choices:
+          stop:
+            label: Shutdown
+          warning:
+            label: Warning
+        label: Action kind
+      action_state:
+        choices:
+          completed:
+            label: Completed
+          failed:
+            label: Failed
+          pending:
+            label: Pending
+          queued:
+            label: Queued
+          suppressed:
+            label: Suppressed
+          uncertain:
+            label: Outcome uncertain
+        label: Action state
+      action_updated_at:
+        label: Action last updated at
       activate:
         label: Activate account
       active:
@@ -198,6 +228,10 @@ en:
         label: Arc_size
       arch:
         label: Arch
+      as_of:
+        description: Whole-second counting cutoff within the past 24 hours. Settings,
+          ownership and action outcomes reflect the latest read.
+        label: Counting cutoff
       assign_ip_address_id:
         label: Address available for assignment
       assigned:
@@ -434,8 +468,6 @@ en:
         label: Config
       configuration_digest:
         label: Configuration_digest
-      configuration_valid:
-        label: Configuration valid
       configured_value:
         label: Configured_value
       confirmed:
@@ -566,12 +598,17 @@ en:
         label: Depends on
       description:
         label: Description
-      detected_at:
-        label: Detected_at
       digest:
         label: Digest
       direct:
         label: Direct
+      direction:
+        choices:
+          asc:
+            label: Ascending
+          desc:
+            label: Descending
+        label: Direction
       diskspace:
         description: Minimally 1024, maximally 1048576, step size is 1
         label: Disk space
@@ -865,7 +902,8 @@ en:
       free_chain:
         label: Free chain
       from:
-        label: From
+        description: The period includes its start and excludes its end. Ignored for
+          outstanding actions.
       from_bytes:
         description: Paginate by in/out bytes
         label: From_bytes
@@ -1008,6 +1046,8 @@ en:
       incident_policy:
         description: Active policy key used by the incident status filter.
         label: Incident policy key
+      incident_report_id:
+        label: Source incident report ID
       incident_status:
         choices:
           clear:
@@ -1151,8 +1191,6 @@ en:
         label: Ks
       kvm:
         label: KVM
-      label:
-        label: Label
       last_activity_at:
         label: Last activity
       last_check_at:
@@ -1169,6 +1207,8 @@ en:
         label: Last release result
       last_seen_at:
         label: Last_seen_at
+      last_stop_at:
+        label: Last confirmed shutdown
       last_transfer_at:
         label: Last_transfer_at
       last_transfer_log_id:
@@ -1194,15 +1234,62 @@ en:
         label: Last_use_at
       last_warning_at:
         label: Last warning queued
+      latest_action_chain_id:
+        label: Latest action transaction chain ID
+      latest_action_id:
+        label: Latest action ID
+      latest_action_kind:
+        choices:
+          stop:
+            label: Shutdown
+          warning:
+            label: Warning
+        label: Latest action kind
+      latest_action_state:
+        choices:
+          completed:
+            label: Completed
+          failed:
+            label: Failed
+          pending:
+            label: Pending
+          queued:
+            label: Queued
+          suppressed:
+            label: Suppressed
+          uncertain:
+            label: Outcome uncertain
+        label: Latest action state
+      latest_mail_state:
+        choices:
+          failed:
+            label: Sending failed
+          pending:
+            label: Not yet queued
+          queued:
+            label: Queued for sending
+          sent:
+            label: Accepted by mail server
+          suppressed:
+            label: Sending suppressed
+          uncertain:
+            label: Sending outcome uncertain
+        description: Sent means acceptance by the mail server, without proof of inbox
+          delivery.
+        label: Latest email state
+      latest_notice_report_id:
+        label: Latest notice report ID
       latest_release_attempt:
         label: Latest release attempt
+      latest_stop_completed_at:
+        description: Confirmed VPS shutdown, independent of warning completion or
+          email delivery.
+        label: Latest confirmed shutdown
       lazy:
         description: Only mark VPS as deleted
         label: Lazy delete
       level:
         label: Access level
-      limit:
-        label: Limit
       livepatch_action:
         choices:
           applied:
@@ -1258,6 +1345,8 @@ en:
         label: Mail_dns_valid
       mail_errors:
         label: Mail_errors
+      mail_finished_at:
+        label: Email attempt finished at
       mail_fraud_score:
         label: Mail_fraud_score
       mail_frequent_complainer:
@@ -1270,6 +1359,8 @@ en:
         label: Mail_message
       mail_overall_score:
         label: Mail_overall_score
+      mail_queued_at:
+        label: Email queued at
       mail_recent_abuse:
         label: Mail_recent_abuse
       mail_recipient:
@@ -1280,6 +1371,23 @@ en:
         label: Mail_smtp_score
       mail_spam_trap_score:
         label: Mail_spam_trap_score
+      mail_state:
+        choices:
+          failed:
+            label: Sending failed
+          pending:
+            label: Not yet queued
+          queued:
+            label: Queued for sending
+          sent:
+            label: Accepted by mail server
+          suppressed:
+            label: Sending suppressed
+          uncertain:
+            label: Sending outcome uncertain
+        description: Sent means acceptance by the mail server, without proof of inbox
+          delivery.
+        label: Email state
       mail_success:
         label: Mail_success
       mail_suspect:
@@ -1411,6 +1519,10 @@ en:
         label: Password
       new_refquota:
         label: New refquota
+      next_stop_allowed_at:
+        label: Shutdown cooldown ends
+      next_warning_allowed_at:
+        label: Warning cooldown ends
       no_start:
         description: Do not start the VPS on the target node
         label: No start
@@ -1481,6 +1593,8 @@ en:
         label: Notice policy key
       notice_policy_label:
         label: Notice policy label
+      notice_report_id:
+        label: Notice report ID
       notified_at:
         label: Last notice queued
       ns_id:
@@ -1510,8 +1624,6 @@ en:
         label: Observed_before
       observed_through:
         label: Observed_through
-      offset:
-        label: Offset
       on_start_fail:
         choices:
           fail_start:
@@ -1581,6 +1693,21 @@ en:
         label: Outage_id
       output:
         label: Output
+      outstanding_stop_action_id:
+        label: Outstanding shared shutdown action ID
+      outstanding_stop_chain_id:
+        label: Outstanding shared shutdown transaction chain ID
+      outstanding_stop_state:
+        choices:
+          failed:
+            label: Failed
+          none:
+            label: None
+          pending:
+            label: Pending
+          uncertain:
+            label: Outcome uncertain
+        label: Outstanding shared shutdown state
       over_refquota_seconds:
         label: Over_refquota_seconds
       owned:
@@ -1590,6 +1717,8 @@ en:
         description: User-owned addresses or prefixes without an interface assignment,
           including reserved entries and disabled networks
         label: Owned, not assigned
+      owner_active:
+        label: Owner active
       packets:
         label: Packets
       packets_in:
@@ -1623,6 +1752,8 @@ en:
         label: Peer_type
       pgtables_bytes:
         label: Pgtables_bytes
+      physical_stop_action_id:
+        label: Shared VPS shutdown action ID
       platform:
         choices:
           same:
@@ -1911,7 +2042,15 @@ en:
       scan_percent:
         label: Scan_percent
       scope:
-        label: Scope
+        choices:
+          all:
+            label: All evaluations
+          matched:
+            label: All saved matches
+          outstanding:
+            label: Unresolved actions and emails
+          violations:
+            label: Reached thresholds and actions
       secret:
         label: Secret
       security_advisory:
@@ -1963,6 +2102,27 @@ en:
         label: Snapshot
       snapshot_revision:
         label: Snapshot_revision
+      sort:
+        choices:
+          count_30d:
+            label: 30-day incident count
+          count_7d:
+            label: 7-day incident count
+          last_incident_at:
+            label: Last counted incident
+          policy_key:
+            label: Policy key
+          severity:
+            label: Priority
+          stop_remaining:
+            label: Reports until shutdown threshold
+          user_login:
+            label: Owner login
+          vps_id:
+            label: VPS ID
+          warning_remaining:
+            label: Reports until warning threshold
+        label: Order by
       source:
         choices:
           current:
@@ -2098,22 +2258,14 @@ en:
             label: unmatched
           vulnerable:
             label: vulnerable
-        label: State
       status:
         choices:
-          clear:
-            label: Below limits
           failed:
             label: failed
-          near_limit:
-            label: Approaching a limit
-          stop_threshold:
-            label: Shutdown limit reached
+          invalid:
+            label: Invalid configuration
           success:
             label: success
-          warning:
-            label: Warning limit reached
-        label: Status
       stepsize:
         description: Steps in which the objects allocated resource value may be iterated
         label: Step size
@@ -2121,12 +2273,18 @@ en:
         description: Do a consistent clone - original VPS is shut down before making
           a snapshot
         label: Shutdown
+      stop_completed_at:
+        description: Confirmed VPS shutdown, independent of warning completion or
+          email delivery.
+        label: Confirmed shutdown
       stop_enforced:
         label: Automatic shutdown permitted
       stop_limit:
         label: Shutdown limit
       stop_limit_override:
         label: Shutdown limit override
+      stop_remaining:
+        label: Reports until shutdown threshold
       stop_vps:
         description: Shut down the VPS after extra space is used too long or there
           are too many expansions
@@ -2172,13 +2330,25 @@ en:
       threads:
         description: Number of NFS server threads.
         label: Threads
+      threshold_status:
+        choices:
+          clear:
+            label: Below thresholds
+          near_limit:
+            label: Near a threshold
+          stop_threshold:
+            label: Shutdown threshold reached
+          warning:
+            label: Warning threshold reached
+        label: Saved threshold status
       through_status_id:
         label: Through_status_id
       time_zone:
         description: IANA time zone identifier, e.g. Europe/Prague
         label: Time zone
       to:
-        label: To
+        description: The period includes its start and excludes its end. Ignored for
+          outstanding actions.
       to_date:
         label: To_date
       to_depth:
@@ -2221,6 +2391,8 @@ en:
         label: Total_swap
       total_vm:
         label: Total_vm
+      transaction_chain_id:
+        label: Transaction chain ID
       transaction_id:
         label: Transaction_id
       transaction_type:
@@ -2229,6 +2401,8 @@ en:
         description: If possible, keep IP addresses and recharge them to a different
           environment or location
         label: Transfer IP addresses
+      transfer_pending:
+        label: Ownership transfer pending
       transition:
         label: Transition
       trigger_incident_report_id:
@@ -2363,12 +2537,12 @@ en:
           secondary_type:
             label: secondary_type
         label: User_dns_zone_type
+      user_id:
+        label: Original owner ID
       user_ident:
         label: User_ident
       user_ip_ownership:
         label: User owns IP addresses
-      user_login:
-        label: User login
       user_message:
         label: User_message
       user_namespace:
@@ -2434,7 +2608,6 @@ en:
         label: Free VPS slots
       vps_id:
         description: Beginning of the ID range within VPS
-        label: Vps_id
       vps_lifetime:
         description: in seconds, 0 is unlimited
         label: Default VPS lifetime
@@ -2465,6 +2638,10 @@ en:
         label: Warning limit
       warning_limit_override:
         label: Warning limit override
+      warning_permitted:
+        label: Warning emails allowed
+      warning_remaining:
+        label: Reports until warning threshold
       weekday:
         label: Weekday
       year:
@@ -2587,6 +2764,25 @@ en:
           VPS properties.
         unable_to_save_limits: Unable to save incident limits.
         unknown_policy: Unknown incident policy.
+      incident_policy_read:
+        choice: Unsupported value for %{field}.
+        cutoff: The counting cutoff must be within the past 24 hours and cannot be
+          in the future.
+        direction: Select ascending or descending order.
+        fields:
+          action_kind: Action type
+          action_state: Action state
+          decision: Decision
+          effective_mode: Effective mode
+          mail_state: Email state
+          scope: History scope
+          status: Threshold status
+        page: The offset must be a non-negative integer and the page size must be
+          between 1 and 100.
+        period: The history period must start before it ends, end no later than the
+          cutoff, and span at most 366 days.
+        policy: Select an active incident policy.
+        sort: Select a supported sort order.
       ip_release:
         access_denied: This IP release request belongs to another user.
         already_released: A selected IP is being released or has already been released.
@@ -2636,6 +2832,32 @@ en:
             stopped.
 
             '
+    meta:
+      global:
+        output:
+          as_of:
+            description: Whole-second counting cutoff within the past 24 hours. Settings,
+              ownership and action outcomes reflect the latest read.
+            label: Counting cutoff
+          from:
+            description: The period includes its start and excludes its end. Ignored
+              for outstanding actions.
+            label: Period start (inclusive)
+          limit:
+            label: Rows per page
+          next_offset:
+            label: Next offset
+          offset:
+            label: Rows to skip
+          read_at:
+            description: Time when this request read the current settings and outcomes.
+            label: Current facts read at
+          to:
+            description: The period includes its start and excludes its end. Ignored
+              for outstanding actions.
+            label: Period end (exclusive)
+          total_count:
+            label: Total matching rows
     password_changes:
       minimum_length_description: The password must be at least %{minimum} characters
         long
@@ -2644,6 +2866,8 @@ en:
         attributes:
           id:
             label: Id
+          status:
+            label: Status
       cluster:
         actions:
           full_stats:
@@ -2682,6 +2906,8 @@ en:
         attributes:
           id:
             label: Id
+          label:
+            label: Label
           name:
             label: Resource name for internal purposes
       cluster_resource_package:
@@ -2690,6 +2916,8 @@ en:
             label: Created_at
           id:
             label: Id
+          label:
+            label: Label
           updated_at:
             label: Updated_at
         item:
@@ -2700,6 +2928,8 @@ en:
         attributes:
           id:
             label: Id
+          label:
+            label: Label
           name:
             label: Name
       dataset:
@@ -2742,10 +2972,14 @@ en:
           attributes:
             created_at:
               label: Created_at
+            from:
+              label: From
             id:
               label: Id
             name:
               label: Name
+            to:
+              label: To
         snapshot:
           attributes:
             created_at:
@@ -2754,6 +2988,8 @@ en:
               label: Dataset
             id:
               label: Id
+            label:
+              label: Label
             name:
               label: Name
       dataset_expansion:
@@ -2766,6 +3002,8 @@ en:
             label: ID
           original_refquota:
             label: Original reference quota
+          state:
+            label: State
           vps:
             label: VPS
         history:
@@ -2780,8 +3018,12 @@ en:
         attributes:
           id:
             label: ID
+          label:
+            label: Label
       debug:
         attributes:
+          limit:
+            label: Limit
           size:
             label: Size
       default_object_cluster_resource:
@@ -2833,6 +3075,8 @@ en:
           ip_addr:
             description: Multiple addresses separated by comma
             label: IP address
+          label:
+            label: Label
           location:
             description: Location this resolver can be used on
           vps:
@@ -2868,6 +3112,8 @@ en:
             label: DNS zone
           id:
             label: ID
+          status:
+            label: Status
           updated_at:
             label: Updated_at
       dns_tsig_key:
@@ -2888,6 +3134,8 @@ en:
             description: Enable or disable this DNS zone
           id:
             label: ID
+          label:
+            label: Label
           name:
             description: Fully qualified domain name
             label: Name
@@ -2928,6 +3176,7 @@ en:
             label: ID
           label:
             description: Environment label
+            label: Label
           maintenance_lock:
             label: Maintenance lock
           maintenance_lock_reason:
@@ -2936,6 +3185,8 @@ en:
           attributes:
             id:
               label: ID
+            label:
+              label: Label
       export:
         attributes:
           created_at:
@@ -3010,14 +3261,75 @@ en:
         attributes:
           key:
             label: Policy key
+          label:
+            label: Label
           stop_period_days:
             label: Shutdown period (days)
           warning_period_days:
             label: Warning period (days)
+      incident_policy_evaluation:
+        attributes:
+          detected_at:
+            label: Incident detected at
+          from:
+            label: Period start (inclusive)
+          id:
+            label: ID
+          label:
+            label: Policy name
+          limit:
+            label: Rows per page
+          offset:
+            label: Rows to skip
+          scope:
+            label: History scope
+          state:
+            label: Evaluation state
+          stop_period_days:
+            label: Shutdown period in days
+          to:
+            label: Period end (exclusive)
+          user_login:
+            label: Owner login
+          vps_id:
+            label: Original VPS ID
+          warning_period_days:
+            label: Warning period in days
+      incident_policy_exposure:
+        attributes:
+          configuration_valid:
+            label: Valid configuration
+          id:
+            label: ID
+          label:
+            label: Policy name
+          limit:
+            label: Rows per page
+          offset:
+            label: Rows to skip
+          status:
+            choices:
+              clear:
+                label: Below thresholds
+              near_limit:
+                label: Near a threshold
+              stop_threshold:
+                label: Shutdown threshold reached
+              warning:
+                label: Warning threshold reached
+            label: Threshold status
+          stop_period_days:
+            label: Shutdown period in days
+          vps:
+            label: VPS
+          warning_period_days:
+            label: Warning period in days
       incident_report:
         attributes:
           created_at:
             label: Created_at
+          detected_at:
+            label: Detected_at
           id:
             label: ID
           ip_addr:
@@ -3026,6 +3338,10 @@ en:
             label: VPS
         policy_evaluation:
           attributes:
+            label:
+              label: Label
+            state:
+              label: State
             stop_period_days:
               label: Shutdown period in days
             warning_period_days:
@@ -3036,6 +3352,8 @@ en:
             label: Created_at
           id:
             label: Id
+          state:
+            label: State
       ip_address:
         attributes:
           addr:
@@ -3088,6 +3406,8 @@ en:
               label: IP address
             size:
               label: Allocation size
+            user_login:
+              label: User login
         attempt:
           attributes:
             created_at:
@@ -3096,6 +3416,8 @@ en:
               label: Started by
             id:
               label: ID
+            state:
+              label: State
             transaction_chain:
               label: Transaction chain
         attributes:
@@ -3111,6 +3433,8 @@ en:
             label: ID
           size:
             label: Allocation size
+          state:
+            label: State
           transaction_chain:
             label: Transaction chain
         notice:
@@ -3125,6 +3449,8 @@ en:
               label: ID
             mail_log:
               label: Mail log
+            user_login:
+              label: User login
       ip_release_request:
         address:
           attributes:
@@ -3136,6 +3462,8 @@ en:
               label: IP address
             size:
               label: Allocation size
+            user_login:
+              label: User login
         attributes:
           addresses:
             description: Array of request address IDs
@@ -3143,6 +3471,8 @@ en:
             label: ID
           mail_log:
             label: Last notice
+          user_login:
+            label: User login
         notice:
           attributes:
             created_at:
@@ -3155,12 +3485,16 @@ en:
               label: ID
             mail_log:
               label: Mail log
+            user_login:
+              label: User login
       language:
         attributes:
           code:
             label: Code
           id:
             label: Id
+          label:
+            label: Label
       location:
         attributes:
           description:
@@ -3181,6 +3515,7 @@ en:
             label: ID
           label:
             description: Location label
+            label: Label
           maintenance_lock:
             label: Maintenance lock
           maintenance_lock_reason:
@@ -3193,14 +3528,21 @@ en:
         attributes:
           created_at:
             label: Created_at
+          from:
+            label: From
           id:
             label: Id
+          to:
+            label: To
       mail_recipient:
         attributes:
           id:
             label: Id
           label:
             description: Human-friendly label
+            label: Label
+          to:
+            label: To
       mail_template:
         attributes:
           created_at:
@@ -3209,6 +3551,7 @@ en:
             label: Id
           label:
             description: Human-friendly label
+            label: Label
           name:
             description: Template identifier
             label: Name
@@ -3222,6 +3565,8 @@ en:
           attributes:
             created_at:
               label: Created_at
+            from:
+              label: From
             id:
               label: Id
             language:
@@ -3234,6 +3579,8 @@ en:
             label: Created_at
           id:
             label: ID
+          label:
+            label: Label
           password:
             label: Password
           updated_at:
@@ -3268,6 +3615,8 @@ en:
             label: Id
           send_mail:
             label: Send_mail
+          state:
+            label: State
           stop_on_error:
             label: Stop_on_error
         vps_migration:
@@ -3284,6 +3633,8 @@ en:
               label: Id
             maintenance_window:
               label: Maintenance_window
+            state:
+              label: State
             transaction_chain:
               label: TransactionChain
             vps:
@@ -3294,6 +3645,10 @@ en:
             label: Created_at
           id:
             label: Id
+          label:
+            label: Label
+          state:
+            label: State
           updated_at:
             label: Updated_at
         log:
@@ -3314,6 +3669,8 @@ en:
             description: Environment to which the addresses are charged
           id:
             label: Id
+          label:
+            label: Label
           size:
             description: Number of possible host IP addresses
             label: Size
@@ -3344,6 +3701,10 @@ en:
         attributes:
           created_at:
             label: Created_at
+          from:
+            label: From
+          to:
+            label: To
           updated_at:
             label: Updated_at
           vps:
@@ -3440,6 +3801,10 @@ en:
             description: Node name
           send_mail:
             label: Send_mail
+          state:
+            label: State
+          status:
+            label: Status
           stop_on_error:
             label: Stop on error
           type:
@@ -3461,10 +3826,14 @@ en:
             label: Name
         kernel_history:
           attributes:
+            from:
+              label: From
             id:
               label: Id
             livepatch_action:
               description: Effective live patch lifecycle action
+            to:
+              label: To
         status:
           attributes:
             cgroup_version:
@@ -3473,34 +3842,54 @@ en:
               label: Cpu_idle
             created_at:
               label: Created_at
+            from:
+              label: From
             id:
               label: Id
+            to:
+              label: To
             version:
               label: Version
       node_cgroup_state:
         attributes:
           cgroup_version:
             label: Cgroup version
+          from:
+            label: From
           id:
             label: ID
+          to:
+            label: To
       node_ebpf_program:
         attributes:
+          from:
+            label: From
           id:
             label: Id
           name:
             label: Name
+          to:
+            label: To
       node_ebpf_program_link:
         attributes:
+          from:
+            label: From
           id:
             label: Id
           name:
             label: Name
+          to:
+            label: To
       node_ebpf_program_object:
         attributes:
+          from:
+            label: From
           id:
             label: Id
           name:
             label: Name
+          to:
+            label: To
       node_kernel_configuration_option:
         attributes:
           id:
@@ -3509,8 +3898,12 @@ en:
             label: Name
       node_kernel_event:
         attributes:
+          from:
+            label: From
           id:
             label: Id
+          to:
+            label: To
         input:
           livepatch_action:
             description: Filter by effective live patch lifecycle action
@@ -3521,74 +3914,134 @@ en:
         attributes:
           id:
             label: Id
+          offset:
+            label: Offset
       node_kernel_evidence_error:
         attributes:
+          from:
+            label: From
           id:
             label: Id
+          to:
+            label: To
       node_kernel_history_gap:
         attributes:
+          from:
+            label: From
           id:
             label: Id
+          to:
+            label: To
       node_kernel_history_state:
         attributes:
+          from:
+            label: From
           id:
             label: Id
+          to:
+            label: To
       node_kernel_livepatch:
         attributes:
+          from:
+            label: From
           id:
             label: Id
+          to:
+            label: To
       node_kernel_livepatch_patch:
         attributes:
+          from:
+            label: From
           id:
             label: Id
           name:
             label: Name
+          to:
+            label: To
           version:
             label: Version
       node_kernel_module:
         attributes:
+          from:
+            label: From
           id:
             label: Id
           name:
             label: Name
+          to:
+            label: To
       node_kernel_parameter:
         attributes:
+          from:
+            label: From
           id:
             label: Id
           name:
             label: Name
+          to:
+            label: To
       node_software_change:
         attributes:
+          from:
+            label: From
           id:
             label: Id
+          offset:
+            label: Offset
+          to:
+            label: To
       node_software_deployment:
         attributes:
+          from:
+            label: From
           id:
             label: Id
+          offset:
+            label: Offset
+          to:
+            label: To
       node_software_version:
         attributes:
+          from:
+            label: From
           id:
             label: Id
+          to:
+            label: To
           version:
             label: Version
       node_sysctl:
         attributes:
+          from:
+            label: From
           id:
             label: Id
           name:
             label: Name
+          to:
+            label: To
       node_sysctl_change:
         attributes:
+          from:
+            label: From
           id:
             label: Id
           name:
             label: Name
+          offset:
+            label: Offset
+          to:
+            label: To
       node_system_state:
         attributes:
           cgroup_version:
             label: Cgroup version
+          from:
+            label: From
           id:
             label: ID
+          to:
+            label: To
       node_transfer_connection:
         attributes:
           created_at:
@@ -3637,12 +4090,16 @@ en:
           attributes:
             id:
               label: Id
+            limit:
+              label: Limit
       oom_report_rule:
         attributes:
           created_at:
             label: Created_at
           id:
             label: Id
+          label:
+            label: Label
           updated_at:
             label: Updated_at
           vps:
@@ -3651,6 +4108,8 @@ en:
         attributes:
           id:
             label: Id
+          label:
+            label: Label
       os_template:
         attributes:
           cgroup_version:
@@ -3668,6 +4127,7 @@ en:
             description: Information about template
           label:
             description: Human-friendly label
+            label: Label
           name:
             description: Template file name
             label: Name
@@ -3695,6 +4155,8 @@ en:
             description: Filter outages linked to a security advisory
           since:
             description: Filter outages reported since specified date
+          state:
+            label: State
           type:
             label: Type
           user:
@@ -3708,6 +4170,8 @@ en:
               label: Entity_id
             id:
               label: Id
+            label:
+              label: Label
             name:
               label: Name
         handler:
@@ -3738,6 +4202,8 @@ en:
             label: Send mail
           since:
             description: Filter updates reported since specified date
+          state:
+            label: State
           type:
             label: Type
       password_change_log:
@@ -3784,12 +4250,16 @@ en:
         attributes:
           id:
             label: Id
+          label:
+            label: Label
           maintenance_lock:
             label: Maintenance lock
           maintenance_lock_reason:
             label: Maintenance reason
           name:
             label: Name
+          state:
+            label: State
           sync:
             description: Controls the behavior of synchronous requests
           used:
@@ -3856,6 +4326,8 @@ en:
             label: Send mail
           since:
             description: Filter advisories created since specified date
+          state:
+            label: State
           updated_at:
             label: Updated_at
           vps:
@@ -3872,6 +4344,7 @@ en:
             state:
               description: Assessment of whether the node was affected and whether
                 it has been mitigated.
+              label: State
         output:
           external_id:
             description: Stable external idempotency key for an advisory source.
@@ -3929,6 +4402,7 @@ en:
             label: Send mail
           state:
             description: Optional advisory state change to apply with this update.
+            label: State
           updated_at:
             label: Updated_at
       snapshot_download:
@@ -3949,6 +4423,8 @@ en:
             label: Url
       system_config:
         attributes:
+          label:
+            label: Label
           name:
             label: Name
           type:
@@ -3961,6 +4437,8 @@ en:
             label: Finished_at
           id:
             label: Id
+          label:
+            label: Label
           name:
             label: Name
           type:
@@ -3983,12 +4461,15 @@ en:
             label: Chain ID
           label:
             description: Human-friendly name
+            label: Label
           name:
             description: For internal use only
             label: Name
           size:
             description: Number of transactions in the chain
             label: Size
+          state:
+            label: State
           user_session:
             label: User session
       user:
@@ -4094,10 +4575,18 @@ en:
           attributes:
             id:
               label: Id
+            label:
+              label: Label
+            to:
+              label: To
         mail_template_recipient:
           attributes:
             id:
               label: Id
+            label:
+              label: Label
+            to:
+              label: To
         output:
           object_state:
             choices:
@@ -4115,6 +4604,8 @@ en:
               label: Id
             key:
               label: Public key
+            label:
+              label: Label
             updated_at:
               label: Updated at
         state_log:
@@ -4123,6 +4614,8 @@ en:
               label: Expiration
             id:
               label: Id
+            state:
+              label: State
         totp_device:
           attributes:
             code:
@@ -4131,6 +4624,8 @@ en:
               label: Created_at
             id:
               label: Id
+            label:
+              label: Label
             updated_at:
               label: Updated_at
             use_count:
@@ -4141,6 +4636,8 @@ en:
               label: Created_at
             id:
               label: Id
+            label:
+              label: Label
             updated_at:
               label: Updated_at
             use_count:
@@ -4159,6 +4656,8 @@ en:
             label: Created_at
           id:
             label: Id
+          label:
+            label: Label
           updated_at:
             label: Updated_at
         item:
@@ -4169,18 +4668,24 @@ en:
         attributes:
           id:
             label: ID
+          offset:
+            label: Offset
           size:
             label: Size
       user_namespace_map:
         attributes:
           id:
             label: Map ID
+          label:
+            label: Label
         entry:
           attributes:
             count:
               description: Number of mapped IDs
             id:
               label: Entry ID
+            vps_id:
+              label: Vps_id
       user_outage:
         attributes:
           id:
@@ -4211,6 +4716,10 @@ en:
               label: Created at
             id:
               label: Id
+            label:
+              label: Label
+            state:
+              label: State
             updated_at:
               label: Updated at
         registration:
@@ -4227,6 +4736,8 @@ en:
               label: Created at
             id:
               label: Id
+            label:
+              label: Label
             language:
               label: Language
             node:
@@ -4235,6 +4746,8 @@ en:
               label: Notes
             os_template:
               label: Distribution
+            state:
+              label: State
             updated_at:
               label: Updated at
       user_security_advisory:
@@ -4258,6 +4771,12 @@ en:
           ip_addr:
             description: Search both API and client IP address
             label: IP Address
+          label:
+            label: Label
+          scope:
+            label: Scope
+          state:
+            label: State
       vps:
         actions:
           clone:
@@ -4419,12 +4938,29 @@ en:
           attributes:
             id:
               label: Id
+            label:
+              label: Label
             name:
               label: Name
         incident_policy:
           attributes:
+            configuration_valid:
+              label: Configuration valid
             key:
               label: Policy key
+            label:
+              label: Label
+            status:
+              choices:
+                clear:
+                  label: Below limits
+                near_limit:
+                  label: Approaching a limit
+                stop_threshold:
+                  label: Shutdown limit reached
+                warning:
+                  label: Warning limit reached
+              label: Status
             stop_period_days:
               label: Shutdown period (days)
             warning_period_days:
@@ -4477,14 +5013,22 @@ en:
               label: Expiration
             id:
               label: Id
+            state:
+              label: State
         status:
           attributes:
             cpu_idle:
               label: Cpu_idle
             created_at:
               label: Created_at
+            from:
+              label: From
             id:
               label: Id
+            status:
+              label: Status
+            to:
+              label: To
           input:
             is_running:
               label: Is_running
@@ -4509,10 +5053,17 @@ en:
             label: Created at
           id:
             label: Id
+          label:
+            label: Label
           updated_at:
             label: Updated at
           vps:
             label: VPS
+      webauthn:
+        registration:
+          attributes:
+            label:
+              label: Label
       webui_user_setting:
         attributes:
           created_at:

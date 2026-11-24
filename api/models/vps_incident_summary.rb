@@ -18,7 +18,7 @@ class VpsIncidentSummary
     SQL
   end
 
-  def self.count_join(now, key)
+  def self.count_join(now, key, evaluated_before: nil)
     connection = Vps.connection
     quoted_now = connection.quote(now)
     week = connection.quote(now - (7 * IncidentEscalation::DAY))
@@ -30,9 +30,11 @@ class VpsIncidentSummary
           SUM(i.detected_at > #{month}) AS count30, MAX(i.detected_at) AS last_incident
         FROM incident_reports i JOIN incident_policy_evaluations e ON e.incident_report_id = i.id
           AND e.policy_key = #{quoted_key} AND e.matched = TRUE
+          #{"AND e.evaluated_at <= #{connection.quote(evaluated_before)}" if evaluated_before}
         JOIN vpses accounting_vps ON accounting_vps.id = i.vps_id
         #{accounting_join}
         WHERE i.user_id = accounting_vps.user_id AND i.detected_at <= #{quoted_now}
+          #{"AND (i.source_kind IS NULL OR i.source_kind != 'incident_policy_notice')" if evaluated_before}
           AND i.detected_at > #{month}
           AND (COALESCE(incident_chown.finished_at, accounting_vps.incident_accounting_since) IS NULL
             OR i.detected_at >= COALESCE(incident_chown.finished_at, accounting_vps.incident_accounting_since))

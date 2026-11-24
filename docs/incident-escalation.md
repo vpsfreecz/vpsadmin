@@ -351,3 +351,88 @@ schema/data when rolling software back to a compatible version and reconcile
 submitted work; completed stops are not undone. Deploy compatible typed clients
 and capability-gated frontends before enabling new calls. Source publication,
 client publication, activation and default-branch integration are separate steps.
+
+## Administrator overview and evaluation history
+
+`IncidentPolicyExposure.Index` (`GET /incident_policy_exposures`) lists active
+VPS/policy pairs with saved matches in the last 30 days. It includes physically
+stopped VPSes and inactive owners. A selector is never run by a read. Counts include reports
+from the current owner within the accounting period established by the latest
+successful ownership transfer, including transfers awaiting reconciliation. Generated notices do not count.
+
+The exposure API uses ordinary VPS, User and Node references. Its internal and
+mail projections retain flat IDs and presentation fields. Filters are `vps`,
+`user`, `node`, active `policy_key`, threshold `status` (including `invalid`),
+`effective_mode` and `stop_enforced`. The default includes all current matches.
+Ordering runs across VPS/policy pairs on the server before paging. `sort` accepts
+`severity`, `vps_id`, `user_login`, `policy_key`, `count_7d`, `count_30d`,
+`warning_remaining`, `stop_remaining` and `last_incident_at`; `direction` reverses
+only the primary key. Nulls sort last. Ties use the remaining
+count, latest incident time, VPS ID and binary policy key, in that order. Severity orders failed/uncertain
+shared stops, invalid configuration, pending shared stops, stop thresholds,
+warning thresholds, near limits and rows below the limits. Invalid limits stay null.
+
+`IncidentPolicyEvaluation.Index` (`GET /incident_policy_evaluations`) returns
+one row per saved evaluation, with at most one attached action. Original VPS/owner IDs and
+retired policy keys remain visible when their current names no longer exist.
+Saved counts, limits and decisions are never recomputed from current settings.
+Missing old facts remain null. Raw snapshots, selectors, private errors, mail
+bodies and recipients are excluded. Both actions, including their capability
+metadata, require the administrator role; support and member roles are denied.
+
+Both actions use offset paging: `offset` defaults to 0, `limit` to 25 (maximum
+100). Global metadata always includes `total_count`, `offset`, `limit`, nullable
+`next_offset`, `as_of` and `read_at`, including on an empty page. The optional
+`as_of` is normalized to whole UTC seconds and must be within the past 24 hours.
+Reuse the returned cutoff across pages; Refresh selects a new cutoff. It fixes
+count windows and excludes later evaluations, but does not freeze settings,
+ownership or current action outcomes across requests. Each collection selects
+its total, sorted page and mutable facts in one SQL statement. No read locks,
+selectors, reconciliation or writes are performed.
+
+History scopes are `violations` (default: a saved threshold or an action),
+`matched`, `all` and `outstanding`. Other filters are `policy_key`, original
+`vps_id`/`user_id`, saved `decision`, current `action_kind`, `action_state` and
+`mail_state`. Ordinary history uses `from <= evaluated_at < to`. The default period is
+the 30 days before the cutoff; the maximum span is 366 days. The outstanding scope ignores
+both dates and returns them as null: it includes unresolved non-suppressed work
+of any age. History orders by evaluation time then ID, in the same requested
+direction. Its global metadata also declares the effective `from` and `to`.
+
+Current action and mail outcomes can postdate the selected evaluation period.
+A confirmed shutdown requires a successful native Stop transaction.
+Completion of a warning action does not establish a shutdown. Rows sharing `physical_stop_action_id`
+describe one physical stop. Queue time comes from the retained current MailLog;
+finish time comes from its Send transaction. Mail `sent` means SMTP
+acceptance, not inbox delivery. A completed stop can still have failed mail.
+
+### Daily policy summary
+
+The optional registered `incident_policy_summary` hash adds three bounded
+collections to the existing daily report: all current matches, recorded activity
+in the rolling 24-hour period, and currently outstanding work of any age. They
+use the same whole-second UTC cutoff and shared read projection as the API.
+Each collection is internally consistent; the three collections do not form one
+immutable database snapshot. Each collection
+carries `total_count`, `rows`, `omitted_count` and a nullable prepared URL, with
+at most 25 rows after server ordering. Row times are native UTC `Time` values.
+Existing report sections, recipients and scheduling remain unchanged.
+
+Activity has one row per evaluation and includes a qualifying evaluation,
+confirmed shutdown, mail queue or finish time, or update to a failed or
+uncertain outcome during the period. Its `activity_at` is the latest qualifying time; ties prefer
+stop completion, mail finish, mail queue, evaluation, then action update. Old
+evaluations can appear when their stop or mail finishes in the period. The stored outcome and latest mail reference can change on retry, so these
+records do not capture every state change or retry. `action_updated` records
+the latest update, not the time of the first failure.
+
+Older producers can omit the hash; templates then omit these sections. Present
+empty collections say that no matches, activity or outstanding actions were
+found. Truncated collections state how many rows are shown, the total and how many
+were omitted. Links are
+prepared by the producer, nullable when the WebUI base URL is invalid, and may
+show later current state. Templates only format supplied facts. Rollback may
+remove these reads or sections without changing persisted evaluations/actions
+or existing API and report routes. Deploy the API before enabling new client
+calls, or retain capability guards; generated clients alone do not establish
+server support.

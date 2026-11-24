@@ -72,6 +72,7 @@ jobs:
             patterns: |
               spec/api/resources/vps_*_spec.rb
               spec/api/resources/incident_escalation_spec.rb
+              spec/api/resources/incident_policy_read_spec.rb
 
           - topic: platform-infrastructure
             patterns: |
