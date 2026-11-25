@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'open3'
+require 'rbconfig'
+
 RSpec.describe SysConfig do
   around do |example|
     registry = described_class.choices_registry.dup
@@ -88,6 +91,56 @@ RSpec.describe SysConfig do
       cfg = described_class.find_by!(category: rule.category, name: 'mode')
       expect(cfg.choices.map { |choice| choice[:value] }).to eq(%w[observe notify enforce])
       expect(cfg.value_nullable).to be(false)
+    end
+  end
+
+  it 'cold-loads existing mode declarations without changing stored values', :no_transaction do
+    mode = described_class.create!(category: 'incident_policy_cold_registration', name: 'mode',
+                                   data_type: 'String', value: 'retired-mode')
+
+    begin
+      script = <<~'RUBY'
+        require 'active_record'
+        require 'json'
+        require File.expand_path('lib/vpsadmin/api/incident_policy')
+
+        IncidentEscalation.configure do
+          rule(:cold_registration) do
+            labels en: 'Cold registration policy'
+            limits warning: 2, stop: 4
+            applies_if { false }
+          end
+        end
+
+        abort 'SysConfig was already loaded' if Object.const_defined?(:SysConfig)
+        ActiveRecord::Base.establish_connection(ENV.fetch('DATABASE_URL'))
+        existing = ActiveRecord::Base.connection.select_value(
+          "SELECT COUNT(*) FROM sysconfig WHERE category = 'incident_policy_cold_registration' AND name = 'mode'"
+        )
+        abort 'An existing mode row is required' unless existing.to_i == 1
+
+        ActiveRecord::Base.transaction do
+          require File.expand_path('lib/vpsadmin')
+          mode = SysConfig.find_by!(category: 'incident_policy_cold_registration', name: 'mode')
+          result = { value: mode.value, choices: mode.choice_contract.fetch(:values).keys,
+                     nullable: mode.value_nullable }
+          puts "SYSCONFIG_COLD_LOAD=#{JSON.generate(result)}"
+          raise ActiveRecord::Rollback
+        end
+      RUBY
+      stdout, stderr, status = Open3.capture3(
+        { 'RACK_ENV' => 'test' }, RbConfig.ruby, '-rbundler/setup', '-e', script,
+        chdir: File.expand_path('../..', __dir__)
+      )
+
+      expect(status.success?).to be(true), "#{stdout}\n#{stderr}"
+      result = stdout.lines.find { |line| line.start_with?('SYSCONFIG_COLD_LOAD=') }
+      expect(result).not_to be_nil
+      expect(JSON.parse(result.delete_prefix('SYSCONFIG_COLD_LOAD='))).to eq(
+        'value' => 'retired-mode', 'choices' => %w[observe notify enforce], 'nullable' => false
+      )
+    ensure
+      mode.delete
     end
   end
 end

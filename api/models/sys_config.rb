@@ -234,6 +234,15 @@ class SysConfig < ApplicationRecord
          'been applied yet'
   end
 
+  # Class-body registrations can inspect existing rows before loading finishes.
+  def localized_config?
+    if has_attribute?(:localized)
+      self.class.cast_boolean(self[:localized])
+    else
+      self.class.localized_registered?(category, name)
+    end
+  end
+
   register :core, :api_url, String, min_user_level: 0
   register :core, :auth_url, String, min_user_level: 0
   register :core, :support_mail, String, min_user_level: 0
@@ -274,14 +283,6 @@ class SysConfig < ApplicationRecord
 
   def localized
     localized_config?
-  end
-
-  def localized_config?
-    if has_attribute?(:localized)
-      self.class.cast_boolean(self[:localized])
-    else
-      self.class.localized_registered?(category, name)
-    end
   end
 
   def localized_value
