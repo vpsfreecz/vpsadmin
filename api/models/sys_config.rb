@@ -81,6 +81,8 @@ class SysConfig < ApplicationRecord
   end
 
   def validate_choice_value
+    return unless choice_contract
+
     errors.add(:value, :inclusion) unless choice_value_valid?(value)
   end
 

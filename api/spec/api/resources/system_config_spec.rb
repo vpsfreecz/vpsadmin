@@ -340,6 +340,73 @@ RSpec.describe 'VpsAdmin::API::Resources::SystemConfig' do
     end
   end
 
+  describe 'ordinary value preservation' do
+    it 'keeps scalar types through the real cleaner and persistence without choices' do
+      {
+        'String' => ['text', " text\n", '0', '', " \t\n ", nil],
+        'Text' => ["line one\nline two", '', nil],
+        'Integer' => [0, 23, -7, '0', '-7', nil],
+        'Float' => [0.0, 1.25, -2.5, '1.25', nil],
+        'Boolean' => [false, true, '0', '1', nil],
+        'Custom' => [false, true, 0, -3, 1.25, '', nil, [], {},
+                     { 'items' => [false, 0, '', nil, { 'key' => 'value' }] }]
+      }.each do |type, values|
+        cfg = SysConfig.create!(category:, name: "ordinary_#{type.downcase}", data_type: type,
+                                value: 'before', min_user_level: 99)
+
+        values.each do |value|
+          as(SpecSeed.admin) { json_put update_path(cfg.name), system_config: { value: } }
+          expected = value.is_a?(String) && value.strip.empty? ? nil : value
+
+          expect_status(200)
+          expect(json['status']).to be(true), "#{type} update failed"
+          expect(cfg.reload.value).to eql(expected), "#{type} changed scalar identity"
+          expect(system_config['value']).to eql(expected)
+        end
+      end
+    end
+
+    it 'parses Array and Hash YAML while preserving nested values and YAML null' do
+      {
+        'Array' => [[], [false, true, 0, -3, 1.25, '', nil, { 'key' => 'value' }], nil],
+        'Hash' => [{}, { 'false' => false, 'zero' => 0, 'empty' => '', 'unset' => nil,
+                         'nested' => [1.25, { 'key' => 'value' }] }, nil]
+      }.each do |type, values|
+        cfg = SysConfig.create!(category:, name: "ordinary_#{type.downcase}", data_type: type,
+                                value: nil, min_user_level: 99)
+
+        values.each do |value|
+          # Textarea form submissions can use CRLF instead of the API's LF.
+          [YAML.dump(value), YAML.dump(value).gsub("\n", "\r\n")].each do |yaml|
+            as(SpecSeed.admin) { json_put update_path(cfg.name), system_config: { value: yaml } }
+
+            expect_status(200)
+            expect(json['status']).to be(true)
+            expect(cfg.reload.value).to eql(value)
+            expect(YAML.safe_load(system_config['value'])).to eql(value)
+          end
+        end
+      end
+    end
+
+    it 'retains the existing omitted scalar reset and rejects invalid encoding before writes' do
+      cfg = SysConfig.find_by!(category:, name: 'public')
+      as(SpecSeed.admin) { json_put update_path(cfg.name), system_config: {} }
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(cfg.reload.value).to be_nil
+
+      cfg.update!(value: 'retained')
+      allow(SysConfig).to receive(:find_by!).and_call_original
+      invalid_json = "{\"system_config\":{\"value\":\"\xFF\"}}".dup.force_encoding(Encoding::UTF_8)
+      as(SpecSeed.admin) { put update_path(cfg.name), invalid_json, { 'CONTENT_TYPE' => 'application/json' } }
+
+      expect(json['status']).to be(false)
+      expect(SysConfig).not_to have_received(:find_by!)
+      expect(cfg.reload.value).to eq('retained')
+    end
+  end
+
   describe 'declared choices' do
     def expect_invalid_choice
       expect_status(200)

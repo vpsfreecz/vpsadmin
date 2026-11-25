@@ -87,7 +87,7 @@ module VpsAdmin::API::Resources
     end
 
     class Update < HaveAPI::Action
-      CleanedValue = Struct.new(:exact, :legacy)
+      CleanedValue = Struct.new(:exact, :normalized)
       private_constant :CleanedValue
 
       desc 'Update configuration variable'
@@ -97,8 +97,8 @@ module VpsAdmin::API::Resources
       input do
         use :all, include: %i[value]
         # Choice values need exact scalar identity, including empty strings.
-        # Run the original cleaner inside normal framework validation so ordinary
-        # values and field-scoped encoding errors keep their established behavior.
+        # Retain the original cleaner's normalized value for ordinary settings,
+        # including its normal field-scoped encoding errors.
         original_value = params.find { |parameter| parameter.name == :value }.dup
         patch :value, clean: ->(value) { CleanedValue.new(value, original_value.clean(value)) }
       end
@@ -119,7 +119,7 @@ module VpsAdmin::API::Resources
         value = input[:value]
 
         if value.is_a?(CleanedValue)
-          value = cfg.choice_contract ? value.exact : value.legacy
+          value = cfg.choice_contract ? value.exact : value.normalized
         end
 
         unless cfg.choice_value_valid?(value)
