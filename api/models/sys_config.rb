@@ -14,6 +14,75 @@ class SysConfig < ApplicationRecord
   }
 
   validate :validate_incident_escalation, if: -> { IncidentEscalation::RULES.values.any? { |rule| rule.category == category } && !new_record? && will_save_change_to_value? }
+  validate :validate_choice_value, if: -> { new_record? || will_save_change_to_value? }
+
+  # Declaration metadata is process-local; persisted values remain untouched.
+  def self.choices_registry
+    @choices_registry ||= {}
+  end
+
+  def self.normalize_choices(type, opts, existing)
+    declaration = opts[:choices]
+    return if declaration.nil?
+
+    unless [String, Integer].include?(type) &&
+           !cast_boolean(opts.fetch(:localized) { existing&.localized_config? })
+      raise ArgumentError, 'choices require a nonlocalized String or Integer setting'
+    end
+    unless declaration.is_a?(Hash) && declaration.keys == [:values] &&
+           declaration[:values].is_a?(Hash) && !declaration[:values].empty?
+      raise ArgumentError, 'choices require a nonempty values map'
+    end
+
+    nullable = opts.fetch(:nullable, true)
+    raise ArgumentError, 'choice nullability must be boolean' unless [true, false].include?(nullable)
+
+    values = declaration[:values].to_h do |value, label|
+      unless value.is_a?(type) && (type != Integer || value.abs <= 9_007_199_254_740_991)
+        raise ArgumentError, 'choice values must match the setting type and be safe JSON scalars'
+      end
+      unless (label.is_a?(String) && !label.strip.empty?) ||
+             (label.is_a?(HaveAPI::LocalizedMessage) && label.default.is_a?(String) && !label.default.strip.empty?)
+        raise ArgumentError, 'choice labels require a string or localized message with an English default'
+      end
+
+      [value.is_a?(String) ? value.dup.freeze : value, label.is_a?(String) ? label.dup.freeze : label]
+    end.freeze
+
+    default = opts[:default]
+    if (opts.has_key?(:default) || existing.nil?) &&
+       !((default.nil? && nullable) || values.keys.any? { |value| value.eql?(default) })
+      raise ArgumentError, 'choice default must be supported'
+    end
+
+    { values:, nullable: }.freeze
+  end
+
+  def choice_contract
+    self.class.choices_registry[self.class.localized_registration_key(category, name)]
+  end
+
+  def choices
+    choice_contract&.fetch(:values)&.map do |value, label|
+      { value:, label: HaveAPI.localize(label) }
+    end
+  end
+
+  def value_nullable
+    choice_contract&.fetch(:nullable)
+  end
+
+  def choice_value_valid?(candidate)
+    contract = choice_contract
+    return true unless contract
+    return contract[:nullable] if candidate.nil?
+
+    contract[:values].keys.any? { |value| value.eql?(candidate) }
+  end
+
+  def validate_choice_value
+    errors.add(:value, :inclusion) unless choice_value_valid?(value)
+  end
 
   def validate_incident_escalation
     values = self.class.where(category:).order(:id).lock.to_h { |row| [row.name, row.value] }.merge(name => value)
@@ -117,13 +186,16 @@ class SysConfig < ApplicationRecord
   # @option opts [String] default
   # @option opts [Integer] min_user_level
   # @option opts [Boolean] localized
+  # @option opts [Hash] choices ordered values-to-labels map
+  # @option opts [Boolean] nullable whether a choice setting accepts nil
   def self.register(category, name, type, opts = {})
+    cfg = find_by(category:, name:)
+    choices_registry[localized_registration_key(category, name)] = normalize_choices(type, opts, cfg)
+
     if opts.has_key?(:localized)
       localized_registry[localized_registration_key(category, name)] =
         cast_boolean(opts[:localized])
     end
-
-    cfg = find_by(category:, name:)
 
     if cfg
       %i[label description min_user_level].each do |opt|
@@ -143,6 +215,8 @@ class SysConfig < ApplicationRecord
     else
       attrs = opts.clone
       localized = attrs.delete(:localized)
+      attrs.delete(:choices)
+      attrs.delete(:nullable)
       attrs[:category] = category
       attrs[:name] = name
       attrs[:data_type] = type.to_s
@@ -173,7 +247,12 @@ class SysConfig < ApplicationRecord
   register :core, :ipv4_ddns_url, String, min_user_level: 99
   register :core, :ipv6_ddns_url, String, min_user_level: 99
   IncidentEscalation::RULES.each_value do |rule|
-    register rule.category, :mode, String, default: 'observe', min_user_level: 99
+    register rule.category, :mode, String, default: 'observe', min_user_level: 99, nullable: false,
+                                           choices: { values: {
+                                           'observe' => VpsAdmin::API::I18n.message('sysconfig.choices.incident_mode.observe', default: 'Observation only'),
+                                           'notify' => VpsAdmin::API::I18n.message('sysconfig.choices.incident_mode.notify', default: 'Warnings only'),
+                                           'enforce' => VpsAdmin::API::I18n.message('sysconfig.choices.incident_mode.enforce', default: 'Warnings and automatic shutdown')
+                                         } }
     register rule.category, :warning_limit, Integer, min_user_level: 99,
                                                      description: 'Global warning limit override. Null uses the limit declared in the policy.'
     register rule.category, :stop_limit, Integer, min_user_level: 99,

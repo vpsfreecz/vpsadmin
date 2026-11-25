@@ -1,0 +1,93 @@
+# frozen_string_literal: true
+
+RSpec.describe SysConfig do
+  around do |example|
+    registry = described_class.choices_registry.dup
+    example.run
+  ensure
+    described_class.choices_registry.replace(registry)
+  end
+
+  def register(type = String, **opts)
+    described_class.register(:spec_choices, :setting, type, **opts)
+    described_class.find_by!(category: 'spec_choices', name: 'setting')
+  end
+
+  let(:choices) { { values: { '' => 'Empty', 'valid' => 'Valid' } } }
+
+  it 'keeps empty-string choices distinct from nullable values' do
+    cfg = register(choices:, default: '')
+    expect(cfg.value).to eq('')
+    expect(cfg.value_nullable).to be(true)
+    expect(cfg.choices).to eq([{ value: '', label: 'Empty' }, { value: 'valid', label: 'Valid' }])
+    cfg.update!(value: nil)
+    expect(cfg.reload.value).to be_nil
+  end
+
+  it 'validates integer choices without accepting a string or float equivalent' do
+    cfg = register(Integer, choices: { values: { 0 => 'Zero', 2 => 'Two' } }, default: 0, nullable: false)
+    expect(cfg.value).to eq(0)
+    ['0', 0.0, nil, 3].each do |value|
+      expect { cfg.update!(value:) }.to raise_error(ActiveRecord::RecordInvalid)
+      cfg.reload
+    end
+    cfg.update!(value: 2)
+    expect(cfg.reload.value).to eq(2)
+  end
+
+  it 'localizes labels lazily with the declared English fallback' do
+    label = VpsAdmin::API::I18n.message('spec.missing_choice_label', default: 'Default label')
+    cfg = register(choices: { values: { 'valid' => label } }, default: 'valid')
+    expect(::I18n.with_locale(:en) { cfg.choices.first[:label] }).to eq('Default label')
+    expect(::I18n.with_locale(:cs) { cfg.choices.first[:label] }).to eq('Default label')
+  end
+
+  ['legacy', nil, 7].each do |legacy|
+    it "preserves unsupported #{legacy.inspect} on registration and metadata-only saves" do
+      cfg = described_class.create!(category: 'spec_choices', name: 'setting', data_type: 'String', value: legacy)
+      register(choices:, default: 'valid', nullable: false, label: 'Updated label')
+      expect(cfg.reload.value).to eq(legacy)
+      cfg.update!(description: 'Metadata only')
+      expect(cfg.reload.value).to eq(legacy)
+      cfg.update!(value: 'valid')
+      expect(cfg.reload.value).to eq('valid')
+    end
+  end
+
+  it 'replaces or removes declaration metadata without changing stored values' do
+    cfg = register(choices:, default: 'valid')
+    register(choices: { values: { 'new' => 'New' } }, default: 'new', nullable: false)
+    expect(cfg.reload.value).to eq('valid')
+    expect(cfg.choices).to eq([{ value: 'new', label: 'New' }])
+    register(choices: nil)
+    expect(cfg.choices).to be_nil
+    expect(cfg.value_nullable).to be_nil
+    cfg.update!(value: 'anything')
+  end
+
+  it 'rejects invalid declarations before creating a setting' do
+    [
+      [String, { choices: { values: {} } }],
+      [String, { choices: { values: { 1 => 'Wrong type' } } }],
+      [Integer, { choices: { values: { 9_007_199_254_740_992 => 'Too large' } } }],
+      [Boolean, { choices: { values: { true => 'Unsupported type' } } }],
+      [String, { choices:, localized: true }],
+      [String, { choices:, nullable: 'false' }],
+      [String, { choices: { values: { 'valid' => '' } } }],
+      [String, { choices: { values: { 'valid' => -> { 'Callback' } } } }],
+      [String, { choices:, default: 'missing' }],
+      [String, { choices:, nullable: false }]
+    ].each do |type, opts|
+      expect { register(type, **opts) }.to raise_error(ArgumentError)
+      expect(described_class.exists?(category: 'spec_choices', name: 'setting')).to be(false)
+    end
+  end
+
+  it 'registers mode choices for every incident-policy category' do
+    IncidentEscalation::RULES.each_value do |rule|
+      cfg = described_class.find_by!(category: rule.category, name: 'mode')
+      expect(cfg.choices.map { |choice| choice[:value] }).to eq(%w[observe notify enforce])
+      expect(cfg.value_nullable).to be(false)
+    end
+  end
+end

@@ -403,6 +403,10 @@ en:
         label: Charged environment
       checked_at:
         label: Checked_at
+      choices:
+        description: A list of value/label entries in declaration order. Labels use
+          the request language. A null value means no choices are declared.
+        label: Choices
       class_name:
         description: Search by concerned class name
       cleanup_state:
@@ -2570,6 +2574,10 @@ en:
         label: Userpick
       value:
         label: Value
+      value_nullable:
+        description: True if a null value is allowed, false otherwise. This field
+          is null when no choices are declared.
+        label: Value can be unset
       variant:
         label: Variant
       vendor:
@@ -5074,6 +5082,12 @@ en:
             label: Key
           updated_at:
             label: Updated_at
+    sysconfig:
+      choices:
+        incident_mode:
+          enforce: Warnings and automatic shutdown
+          notify: Warnings only
+          observe: Observation only
     transaction_chains:
       concerns:
         classes:

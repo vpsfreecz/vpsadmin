@@ -404,6 +404,11 @@ cs:
         label: Účtované prostředí
       checked_at:
         label: Zkontrolováno
+      choices:
+        description: Seznam položek s poli value a label v pořadí deklarace. Popisky
+          odpovídají jazyku požadavku. Hodnota null znamená, že nejsou deklarované
+          žádné možnosti.
+        label: Možnosti
       class_name:
         description: Hledat podle názvu dotčené třídy
       cleanup_state:
@@ -2571,6 +2576,10 @@ cs:
         label: Uživatelský výběr
       value:
         label: Hodnota
+      value_nullable:
+        description: Má hodnotu true, pokud je povolená hodnota null, jinak false.
+          Pokud nejsou deklarované žádné možnosti, má toto pole hodnotu null.
+        label: Hodnota může být nenastavená
       variant:
         label: Varianta
       vendor:
@@ -5078,6 +5087,12 @@ cs:
             label: Klíč
           updated_at:
             label: Aktualizováno
+    sysconfig:
+      choices:
+        incident_mode:
+          enforce: Upozornění a automatické vypnutí
+          notify: Pouze upozornění
+          observe: Pouze sledování
     transaction_chains:
       concerns:
         classes:

@@ -9,6 +9,12 @@ module VpsAdmin::API::Resources
       string :type, db_name: :data_type
       bool :localized
       custom :value, db_name: :get_value, nullable: true
+      custom :choices, nullable: true, label: 'Choices',
+                       desc: 'A list of value/label entries in declaration order. ' \
+                             'Labels use the request language. A null value means no choices are declared.'
+      bool :value_nullable, nullable: true, label: 'Value can be unset',
+                            desc: 'True if a null value is allowed, false otherwise. ' \
+                                  'This field is null when no choices are declared.'
       custom :localized_value, label: 'Localized value'
       string :label
       string :description
@@ -81,12 +87,20 @@ module VpsAdmin::API::Resources
     end
 
     class Update < HaveAPI::Action
+      CleanedValue = Struct.new(:exact, :legacy)
+      private_constant :CleanedValue
+
       desc 'Update configuration variable'
       route '{category}/{name}'
       http_method :put
 
       input do
         use :all, include: %i[value]
+        # Choice values need exact scalar identity, including empty strings.
+        # Run the original cleaner inside normal framework validation so ordinary
+        # values and field-scoped encoding errors keep their established behavior.
+        original_value = params.find { |parameter| parameter.name == :value }.dup
+        patch :value, clean: ->(value) { CleanedValue.new(value, original_value.clean(value)) }
       end
 
       output do
@@ -102,7 +116,17 @@ module VpsAdmin::API::Resources
           category: path_params['category'],
           name: path_params['name']
         )
-        cfg.set_value(input[:value])
+        value = input[:value]
+
+        if value.is_a?(CleanedValue)
+          value = cfg.choice_contract ? value.exact : value.legacy
+        end
+
+        unless cfg.choice_value_valid?(value)
+          cfg.errors.add(:value, :inclusion)
+          error!('Invalid configuration', cfg.errors.to_hash)
+        end
+        cfg.set_value(value)
         cfg.save!
         cfg
       rescue ActiveRecord::RecordInvalid => e

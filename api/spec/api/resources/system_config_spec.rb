@@ -339,4 +339,120 @@ RSpec.describe 'VpsAdmin::API::Resources::SystemConfig' do
       expect(json['status']).to be(false)
     end
   end
+
+  describe 'declared choices' do
+    def expect_invalid_choice
+      expect_status(200)
+      expect(json['status']).to be(false)
+      expect(json.dig('errors', 'value')).to include('is not included in the list')
+    end
+
+    around do |example|
+      registry = SysConfig.choices_registry.dup
+      example.run
+    ensure
+      SysConfig.choices_registry.replace(registry)
+      header 'Accept-Language', nil
+    end
+
+    before do
+      SysConfig.register(category, :choice, String, default: 'first', min_user_level: 0, nullable: false,
+                                                    choices: { values: {
+                                                     'first' => VpsAdmin::API::I18n.message('sysconfig.choices.incident_mode.observe', default: 'Observation only'),
+                                                     '' => 'Empty',
+                                                     '  ' => 'Spaces'
+                                                   } })
+      SysConfig.register(category, :integer_choice, Integer, default: 0, min_user_level: 99,
+                                                             choices: { values: { 0 => 'Zero', 2 => 'Two' } })
+    end
+
+    it 'adds typed metadata to public reads without exposing private settings' do
+      json_get index_path, system_config: { category: }
+      expect_status(200)
+      row = system_configs.find { |cfg| cfg['name'] == 'choice' }
+      expect(row['choices']).to eq([{ 'value' => 'first', 'label' => 'Observation only' }, { 'value' => '', 'label' => 'Empty' }, { 'value' => '  ', 'label' => 'Spaces' }])
+      expect(row['value_nullable']).to be(false)
+      expect(system_configs.map { |cfg| cfg['name'] }).not_to include('integer_choice')
+      expect(system_configs.find { |cfg| cfg['name'] == 'public' }).to include('choices' => nil, 'value_nullable' => nil)
+    end
+
+    it 'uses the explicit request language for labels and falls back to English' do
+      header 'Accept-Language', 'cs'
+      as(SpecSeed.admin) { json_get show_path('choice') }
+      expect_status(200)
+      expect(system_config['choices'].first['label']).to eq('Pouze sledování')
+      header 'Accept-Language', 'unsupported'
+      as(SpecSeed.admin) { json_get show_path('choice') }
+      expect_status(200)
+      expect(system_config['choices'].first['label']).to eq('Observation only')
+    end
+
+    it 'preserves integer zero and explicit nullable resets through Update' do
+      as(SpecSeed.admin) { json_put update_path('integer_choice'), system_config: { value: 2 } }
+      expect_status(200)
+      expect(system_config).to include('value' => 2, 'value_nullable' => true)
+      expect(system_config['choices']).to eq([{ 'value' => 0, 'label' => 'Zero' }, { 'value' => 2, 'label' => 'Two' }])
+      as(SpecSeed.admin) { json_put update_path('integer_choice'), system_config: { value: nil } }
+      expect_status(200)
+      expect(system_config['value']).to be_nil
+      as(SpecSeed.admin) { json_put update_path('integer_choice'), system_config: { value: 0 } }
+      expect_status(200)
+      expect(system_config['value']).to eq(0)
+    end
+
+    it 'allows the empty string while rejecting undeclared values, types and forbidden null' do
+      ['', '  '].each do |value|
+        as(SpecSeed.admin) { json_put update_path('choice'), system_config: { value: } }
+        expect_status(200)
+        expect(json['status']).to be(true)
+        expect(SysConfig.find_by!(category:, name: 'choice').value).to eq(value)
+      end
+      ['missing', 0, nil].each do |value|
+        as(SpecSeed.admin) { json_put update_path('choice'), system_config: { value: } }
+        expect_invalid_choice
+        expect(SysConfig.find_by!(category:, name: 'choice').value).to eq('  ')
+      end
+      as(SpecSeed.admin) { json_put update_path('integer_choice'), system_config: { value: '0' } }
+      expect_invalid_choice
+    end
+
+    it 'keeps the existing empty and whitespace reset behavior for settings without choices' do
+      ['', '  '].each do |value|
+        as(SpecSeed.admin) { json_put update_path('public'), system_config: { value: } }
+        expect_status(200)
+        expect(json['status']).to be(true)
+        expect(SysConfig.find_by!(category:, name: 'public').value).to be_nil
+      end
+      as(SpecSeed.admin) { json_put update_path('public'), system_config: {} }
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(SysConfig.find_by!(category:, name: 'public').value).to be_nil
+    end
+
+    it 'keeps malformed string encoding inside framework field validation' do
+      parameters = VpsAdmin::API::Resources::SystemConfig::Update.input.clone
+      parameters.params.map!(&:dup)
+      parameters.exec if parameters.params.empty?
+      values = { value: "\xFF".dup.force_encoding(Encoding::UTF_8) }
+      payload = parameters.namespace ? { parameters.namespace => values } : values
+
+      expect do
+        parameters.validate(payload)
+      end.to raise_error(HaveAPI::ValidationError) { |error|
+        expect(error.to_hash.keys).to eq([:value])
+        expect(error.to_hash[:value].first.key).to eq('haveapi.validation.invalid_string_encoding')
+      }
+    end
+
+    it 'returns unsupported stored values but rejects an explicit unchanged invalid write' do
+      cfg = SysConfig.find_by!(category:, name: 'choice')
+      cfg.update_column(:value, 'legacy')
+      json_get show_path('choice')
+      expect_status(200)
+      expect(system_config['value']).to eq('legacy')
+      as(SpecSeed.admin) { json_put update_path('choice'), system_config: { value: 'legacy' } }
+      expect_invalid_choice
+      expect(cfg.reload.value).to eq('legacy')
+    end
+  end
 end
