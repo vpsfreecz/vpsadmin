@@ -8,8 +8,9 @@ in a new temporary MariaDB database. It does not contact a deployed API or datab
 The export describes declared operations and parameters. Runtime permissions,
 owner restrictions, filtered responses and object-specific action preparation
 still apply. The generated schema must not be used as a user's permission set.
-For API work, follow [Generated client synchronization](#generated-client-synchronization)
-as part of task completion.
+For API work, start with the
+[API contract assessment](#generated-client-synchronization) below to decide
+whether export and client synchronization are required.
 
 ## Prepare and export
 
@@ -100,13 +101,38 @@ or reproducibility.
 
 ## Generated client synchronization
 
-Every API task must assess [Go](https://github.com/vpsfreecz/vpsadmin-go-client),
+Every API task starts by inspecting the complete task or branch base-to-head
+source diff for declared API contract changes: resources, actions, input/output
+parameters and requiredness, types, choices, nullability, defaults, routes,
+API/protocol versions, and metadata that affects the exported contract. Follow
+relevant plugin, concern and dynamic declaration sources, including indirectly
+derived declarations; file location alone does not establish an unchanged contract.
+
+If the declared contract is unchanged, record one concise source-based conclusion
+in the existing task or review record, with exact base/head revisions, relevant
+files and the reason. That record is sufficient: stop client synchronization
+before exporting schemas, creating client worktrees, regenerating, comparing or
+refreshing clients. Behavioral, authorization and internal-query fixes alone do
+not trigger mechanical client generation. Assess and test their runtime and
+compatibility effects as appropriate; behavior-dependent declarations still
+belong in the contract assessment.
+
+This conclusion applies to the task diff and does not certify global client
+freshness. Unrelated pre-existing client or saved-schema drift is separate scope
+and must not block completion of a declaration-neutral task.
+
+If a concrete uncertainty remains, inspect the specific declaration path or use
+the smallest focused check that resolves it. Do not automatically export or
+regenerate every client. Record the reason if that inspection establishes a
+contract change.
+
+For a declared-contract change, assess [Go](https://github.com/vpsfreecz/vpsadmin-go-client),
 [Rust](https://github.com/vpsfreecz/vpsadmin-rust-client) and
-[TypeScript](https://github.com/vpsfreecz/vpsadmin-typescript-client), including
-behavior-only work. Changes to the exported contract or generated output require
+[TypeScript](https://github.com/vpsfreecz/vpsadmin-typescript-client) using the
+full workflow below. Changes to the exported contract or generated output require
 client updates; unchanged clients need evidence against the assessed API revision.
-This is a contributor completion requirement; existing saved-input checks do not
-enforce API freshness.
+These are contributor completion requirements for contract-changing work;
+existing saved-input checks do not enforce API freshness.
 
 1. Export from the final clean, committed API source using the procedure above.
    Retain the raw schema, provenance and tooling lock unchanged, including exact
@@ -140,10 +166,11 @@ enforce API freshness.
    permits; otherwise integrate the API and then clients in one bounded approved
    batch. Cross-repository updates are not atomic: a failed integration leaves the
    task incomplete with an owner and next action. Refresh input evidence after a
-   rebase or intervening contract change. Complete the task only when every changed
-   client's final head is in its remote default branch and every unchanged client
-   has the revision-specific no-change evidence above. Client updates cannot be
-   left as an open follow-up to a completed API task.
+   rebase or intervening contract change. Complete this synchronization path only
+   when every changed client's final head is in its remote default branch and
+   every unchanged client has the revision-specific no-change evidence above.
+   Client updates cannot be left as an open follow-up to a completed
+   contract-changing API task.
 
 Ordinary generated-client synchronization requires no version bump, tag or package
 publication. Follow each client's release procedure when a release is needed.
