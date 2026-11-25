@@ -622,6 +622,43 @@ function system_config_form()
         $name = $opt->category . ':' . $opt->name;
         $value = $_POST[$name] ?? $opt->value;
 
+        try {
+            $choices = system_config_choices($opt->attributes());
+
+            if ($choices !== null) {
+                $value = $opt->value;
+                $submitted = $_POST['sysconfig_choices'][$name] ?? null;
+
+                if (is_string($submitted)) {
+                    try {
+                        $draft = json_decode($submitted, true, 512, JSON_THROW_ON_ERROR);
+
+                        if (is_string($draft) || is_int($draft) || $draft === null) {
+                            $value = $draft;
+                        }
+
+                    } catch (JsonException $e) {
+                        // Keep the authoritative value when the posted token is malformed.
+                    }
+                }
+
+                $xtpl->table_td(system_config_choice_html($name, $choices, $value));
+                $xtpl->table_tr();
+
+                if ($opt->description) {
+                    $xtpl->table_td($opt->description);
+                    $xtpl->table_tr();
+                }
+
+                continue;
+            }
+
+        } catch (UnexpectedValueException $e) {
+            $xtpl->table_td(h(_('Invalid configuration choices')));
+            $xtpl->table_tr();
+            continue;
+        }
+
         switch ($opt->type) {
             case 'String':
                 $xtpl->form_add_input_pure('text', '70', $name, $value);

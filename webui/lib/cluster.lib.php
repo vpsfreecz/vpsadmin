@@ -46,6 +46,11 @@ class SystemConfig implements Iterator
         return $this->cfg[$cat][$name]['type'];
     }
 
+    public function getOption($cat, $name)
+    {
+        return $this->cfg[$cat][$name];
+    }
+
     public function reload()
     {
         $this->loadConfig(true);
@@ -131,4 +136,153 @@ class SystemConfig implements Iterator
     {
         return $this->catIterator->valid() && $this->optIterator->valid();
     }
+}
+
+/** Validate runtime metadata independently of deployment-specific choice values. */
+function system_config_choices(array $option): ?array
+{
+    $choices = $option['choices'] ?? null;
+    $nullable = $option['value_nullable'] ?? null;
+
+    if ($choices === null && $nullable === null) {
+        return null;
+    }
+
+    if (!is_array($choices) || !$choices || !is_bool($nullable)
+        || !in_array($option['type'], ['String', 'Integer'], true)) {
+        throw new UnexpectedValueException('Invalid configuration choices');
+    }
+
+    $values = [];
+
+    foreach ($choices as $choice) {
+        $choice = is_object($choice) ? get_object_vars($choice) : $choice;
+
+        if (!is_array($choice) || !array_key_exists('value', $choice)
+            || !isset($choice['label']) || !is_string($choice['label']) || trim($choice['label']) === ''
+            || ($option['type'] === 'String' && !is_string($choice['value']))
+            || ($option['type'] === 'Integer' && (!is_int($choice['value']) || abs($choice['value']) > 9007199254740991))) {
+            throw new UnexpectedValueException('Invalid configuration choices');
+        }
+
+        $token = json_encode($choice['value'], JSON_THROW_ON_ERROR);
+
+        if (array_key_exists($token, $values)) {
+            throw new UnexpectedValueException('Invalid configuration choices');
+        }
+
+        $values[$token] = $choice['label'];
+    }
+
+    if ($nullable) {
+        $values['null'] = _('Unset');
+    }
+
+    return $values;
+}
+
+function system_config_choice_html(string $name, array $choices, $value): string
+{
+    $current = json_encode($value, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION);
+    $html = '<select name="sysconfig_choices[' . h($name) . ']">';
+
+    if (!array_key_exists($current, $choices)) {
+        $html .= '<option selected disabled value="' . h($current) . '">'
+            . h(_('Unsupported current value') . ': ' . $current) . '</option>';
+    }
+
+    foreach ($choices as $token => $label) {
+        $html .= '<option value="' . h((string) $token) . '"'
+            . ($current === (string) $token ? ' selected' : '') . '>' . h($label) . '</option>';
+    }
+
+    return $html . '</select>';
+}
+
+/** Decode only explicitly marked choice controls; old forms retain their path. */
+function system_config_changes(SystemConfig $config, array $post): array
+{
+    $changes = [];
+    $failed = [];
+    $submittedChoices = $post['sysconfig_choices'] ?? [];
+
+    foreach ($config as $key => $current) {
+        [$category, $name] = explode(':', $key);
+
+        try {
+            $choices = system_config_choices($config->getOption($category, $name));
+
+            if (is_array($submittedChoices) && array_key_exists($key, $submittedChoices)) {
+                if (!is_string($submittedChoices[$key])) {
+                    throw new UnexpectedValueException('Invalid choice token');
+                }
+
+                $value = json_decode($submittedChoices[$key], true, 512, JSON_THROW_ON_ERROR);
+
+                if (!is_string($value) && !is_int($value) && $value !== null) {
+                    throw new UnexpectedValueException('Invalid choice value');
+                }
+
+                if ($value === $current) {
+                    continue;
+                }
+
+                $token = json_encode($value, JSON_THROW_ON_ERROR);
+
+                if ($choices !== null && !array_key_exists($token, $choices)) {
+                    throw new UnexpectedValueException('Unsupported choice value');
+                }
+
+                $changes[] = [$category, $name, $value, true];
+                continue;
+            }
+
+            // A choice select with an unsupported disabled current option submits
+            // no value. Do not turn an absent field into a write.
+            if ($choices !== null && !array_key_exists($key, $post)) {
+                continue;
+            }
+
+            if ($config->getType($category, $name) === 'Boolean') {
+                $value = !empty($post[$key]);
+
+                if ((bool) $current !== $value) {
+                    $changes[] = [$category, $name, $value ? '1' : '0', false];
+                }
+
+            } elseif (array_key_exists($key, $post) && $post[$key] != $current) {
+                $changes[] = [$category, $name, $post[$key], false];
+            }
+
+        } catch (UnexpectedValueException|JsonException $e) {
+            $failed[] = $key;
+        }
+    }
+
+    return [$changes, $failed];
+}
+
+function system_config_update($api, string $category, string $name, $value, bool $choice)
+{
+    if (!$choice || !is_string($value) || trim($value) !== '') {
+        return $api->system_config->update($category, $name, ['value' => $value]);
+    }
+
+    // The dynamic client normalizes nullable blank Strings to null. Only this
+    // known non-null choice needs a local descriptor; cached metadata stays intact.
+    $action = $api->system_config->update;
+    $description = clone $action->getResource()->getDescription()->actions->{$action->name()};
+    $description->input = clone $description->input;
+    $description->input->parameters = clone $description->input->parameters;
+    $description->input->parameters->value = clone $description->input->parameters->value;
+    $description->input->parameters->value->nullable = false;
+    $exactAction = new \HaveAPI\Client\Action(
+        $action->getClient(),
+        $action->getResource(),
+        $action->name(),
+        $description,
+        []
+    );
+
+    return $exactAction->call($category, $name, ['value' => $value]);
 }

@@ -267,7 +267,7 @@ test.describe.serial('admin cluster browser coverage', () => {
     await logout(page, fixtures.admin.username);
   });
 
-  test('system config view submits unchanged values', async ({ page }) => {
+  test('system config choices preserve values and follow the selected language', async ({ page }) => {
     requireClusterAdminFixtures();
 
     await login(page, fixtures.admin);
@@ -276,8 +276,33 @@ test.describe.serial('admin cluster browser coverage', () => {
 
     const form = formByAction(page, 'action=sysconfig_save');
     await expect(form).toBeVisible();
+    const mode = form.locator('select[name^="sysconfig_choices["][name$=":mode]"]').first();
+    await expect(mode).toBeVisible();
+    await expect(mode.locator('option')).toHaveText([
+      'Observation only', 'Warnings only', 'Warnings and automatic shutdown',
+    ]);
+    const fieldName = await mode.getAttribute('name');
+    const originalValue = await mode.inputValue();
     await submitForm(form, 'Save changes');
     await expectNotification(page, 'Changes saved');
+
+    let currentForm = formByAction(page, 'action=sysconfig_save');
+    await expect(currentForm.locator(`select[name="${fieldName}"]`)).toHaveValue(originalValue);
+    await currentForm.locator(`select[name="${fieldName}"]`).selectOption(JSON.stringify('notify'));
+    await submitForm(currentForm, 'Save changes');
+    await expectNotification(page, 'Changes saved');
+    currentForm = formByAction(page, 'action=sysconfig_save');
+    await expect(currentForm.locator(`select[name="${fieldName}"]`)).toHaveValue(JSON.stringify('notify'));
+    await currentForm.locator(`select[name="${fieldName}"]`).selectOption(originalValue);
+    await submitForm(currentForm, 'Save changes');
+    await expectNotification(page, 'Changes saved');
+    await switchLanguage(page, 'cs_CZ.utf8');
+    currentForm = formByAction(page, 'action=sysconfig_save');
+    await expect(currentForm.locator(`select[name="${fieldName}"] option`)).toHaveText([
+      'Pouze sledování', 'Pouze upozornění', 'Upozornění a automatické vypnutí',
+    ]);
+    await expect(currentForm.locator(`select[name="${fieldName}"]`)).toHaveValue(originalValue);
+    await switchLanguage(page, 'en_US.utf8');
 
     await logout(page, fixtures.admin.username);
   });

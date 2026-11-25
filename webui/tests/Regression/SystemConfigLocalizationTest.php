@@ -17,6 +17,8 @@ class SystemConfigLocalizationOption
         public string $type,
         public string $value,
         public ?string $localized_value = null,
+        public ?array $choices = null,
+        public ?bool $value_nullable = null,
     ) {}
 
     public function attributes()
@@ -27,6 +29,8 @@ class SystemConfigLocalizationOption
             'type' => $this->type,
             'value' => $this->value,
             'localized_value' => $this->localized_value,
+            'choices' => $this->choices,
+            'value_nullable' => $this->value_nullable,
         ];
     }
 }
@@ -150,5 +154,31 @@ final class SystemConfigLocalizationTest extends TestCase
         $config = new SystemConfig($api);
 
         self::assertSame('Legacy sidebar', $config->getLocalized('webui', 'sidebar'));
+    }
+
+    public function testCachesApiChoiceLabelsPerSelectedLanguage(): void
+    {
+        require_once dirname(__DIR__, 2) . '/lib/cluster.lib.php';
+
+        foreach (['cs' => 'Český popisek', 'en' => 'English label'] as $language => $label) {
+            $_SESSION['spec_api_language'] = $language;
+            new SystemConfig(new SystemConfigLocalizationApi([
+                new SystemConfigLocalizationOption(
+                    'synthetic',
+                    'mode',
+                    'String',
+                    'stable',
+                    null,
+                    [['value' => 'stable', 'label' => $label]],
+                    false
+                ),
+            ]));
+        }
+
+        $_SESSION['spec_api_language'] = 'cs';
+        $unusedApi = new SystemConfigLocalizationApi([]);
+        $config = new SystemConfig($unusedApi);
+        self::assertSame('Český popisek', $config->getOption('synthetic', 'mode')['choices'][0]['label']);
+        self::assertSame(0, $unusedApi->system_config->calls);
     }
 }

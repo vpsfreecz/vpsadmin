@@ -1148,6 +1148,10 @@ msgid "Edit node"
 msgstr "Upravit node"
 
 #: forms/cluster.forms.php
+msgid "Invalid configuration choices"
+msgstr "Neplatné možnosti konfigurace"
+
+#: forms/cluster.forms.php
 #, php-format
 msgid "Message (%s)"
 msgstr "Zpráva (%s)"
@@ -6021,6 +6025,14 @@ msgstr "Líné smazání"
 #: forms/vps.forms.php
 msgid "Do not delete VPS immediately, but after passing of predefined time."
 msgstr "Neodstraňujte VPS okamžitě, ale po uplynutí předem definované doby."
+
+#: lib/cluster.lib.php
+msgid "Unset"
+msgstr "Nenastaveno"
+
+#: lib/cluster.lib.php
+msgid "Unsupported current value"
+msgstr "Nepodporovaná aktuální hodnota"
 
 #: lib/functions.lib.php
 msgid "(IMPORTANT: This template is currently disabled, it cannot be used)"

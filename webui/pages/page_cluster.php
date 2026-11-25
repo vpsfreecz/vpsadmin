@@ -70,32 +70,11 @@ if (isAdmin()) {
             csrf_check();
 
             $current_cfg = new SystemConfig($api, true);
-            $changes = [];
-
-            foreach ($current_cfg as $k => $v) {
-                [$cat, $name] = explode(':', $k);
-                $type = $current_cfg->getType($cat, $name);
-
-                if ($type === 'Boolean') {
-                    if ($v && !$_POST[$k]) {
-                        $changes[] = [$cat, $name, '0'];
-
-                    } elseif (!$v && $_POST[$k]) {
-                        $changes[] = [$cat, $name, '1'];
-                    }
-
-                } elseif ($_POST[$k] != $v) {
-                    $changes[] = [$cat, $name, $_POST[$k]];
-                }
-            }
-
-            $failed = [];
+            [$changes, $failed] = system_config_changes($current_cfg, $_POST);
 
             foreach ($changes as $change) {
                 try {
-                    $api->system_config->update($change[0], $change[1], [
-                        'value' => $change[2],
-                    ]);
+                    system_config_update($api, $change[0], $change[1], $change[2], $change[3]);
 
                 } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
                     $failed[] = $change[0] . ':' . $change[1];

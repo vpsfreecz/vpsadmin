@@ -1131,6 +1131,10 @@ msgid "Edit node"
 msgstr ""
 
 #: forms/cluster.forms.php
+msgid "Invalid configuration choices"
+msgstr ""
+
+#: forms/cluster.forms.php
 #, php-format
 msgid "Message (%s)"
 msgstr ""
@@ -5913,6 +5917,14 @@ msgstr ""
 
 #: forms/vps.forms.php
 msgid "Do not delete VPS immediately, but after passing of predefined time."
+msgstr ""
+
+#: lib/cluster.lib.php
+msgid "Unset"
+msgstr ""
+
+#: lib/cluster.lib.php
+msgid "Unsupported current value"
 msgstr ""
 
 #: lib/functions.lib.php
