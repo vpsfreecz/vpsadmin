@@ -282,7 +282,6 @@ if (isLoggedIn()) {
     $xtpl->menu_add(_("Members"), '?page=adminm', ($_GET["page"] == 'adminm'));
     $xtpl->menu_add(_("VPS"), '?page=adminvps', ($_GET["page"] == 'adminvps'), false, 'vps.menu');
     if (isAdmin()) {
-        admin_incidents_menu();
         $xtpl->menu_add(_("Backups"), '?page=backup', ($_GET["page"] == 'backup'), false, 'backups.menu');
 
         if (NAS_PUBLIC || isAdmin()) {
