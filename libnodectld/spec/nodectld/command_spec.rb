@@ -592,6 +592,39 @@ RSpec.describe NodeCtld::Command do
     )
   end
 
+  it 'confirms preservation and only successful cleanup after an irreversible suffix failure' do
+    chain_id = insert_chain(size: 4, progress: 0)
+    preserved = insert_cluster_resource_use(confirmed: 0)
+    removed = insert_cluster_resource_use(confirmed: 0)
+    remaining = insert_cluster_resource_use(confirmed: 0)
+    future_remaining = insert_cluster_resource_use(confirmed: 0)
+    metadata = insert_cluster_resource_use(confirmed: 1)
+    transfer = insert_transaction(transaction_chain_id: chain_id, handle: NodeCtldSpec::TestHandles::OK)
+    cleanup = insert_transaction(transaction_chain_id: chain_id, handle: NodeCtldSpec::TestHandles::OK,
+                                 depends_on_id: transfer, reversible: NodeCtldSpec::TxState::TX_NOT_REVERSIBLE)
+    failed = insert_transaction(transaction_chain_id: chain_id, handle: NodeCtldSpec::TestHandles::FAIL_EXEC,
+                                depends_on_id: cleanup, reversible: NodeCtldSpec::TxState::TX_NOT_REVERSIBLE)
+    future = insert_transaction(transaction_chain_id: chain_id, handle: NodeCtldSpec::TestHandles::OK,
+                                depends_on_id: failed, reversible: NodeCtldSpec::TxState::TX_NOT_REVERSIBLE)
+    [[transfer, preserved, 0], [cleanup, metadata, 5], [cleanup, removed, 4],
+     [failed, remaining, 4], [future, future_remaining, 4]].each do |tx, row, type|
+      insert_confirmation(transaction_id: tx, class_name: 'ClusterResourceUse', table_name: 'cluster_resource_uses',
+                          row_pks: { 'id' => row }, confirm_type: type)
+    end
+
+    [transfer, cleanup, failed].each { |tx| execute_and_save(tx) }
+
+    expect(chain_state(chain_id).fetch('state')).to eq(NodeCtldSpec::TxState::CHAIN_FAILED)
+    expect(sql_value('SELECT confirmed FROM cluster_resource_uses WHERE id = ?', preserved)).to eq(1)
+    expect(sql_value('SELECT COUNT(*) FROM cluster_resource_uses WHERE id = ?', removed)).to eq(0)
+    expect(sql_value('SELECT confirmed FROM cluster_resource_uses WHERE id = ?', remaining)).to eq(1)
+    expect(sql_value('SELECT confirmed FROM cluster_resource_uses WHERE id = ?', future_remaining)).to eq(1)
+    expect(sql_value('SELECT COUNT(*) FROM cluster_resource_uses WHERE id = ?', metadata)).to eq(0)
+    expect(transaction_output(transfer)).not_to have_key('rollback')
+    expect(transaction_output(cleanup)).not_to have_key('rollback')
+    expect(direction_output(future, :execute)).to include('error' => 'Dependency failed')
+  end
+
   it 'rolls back earlier successful steps when a later reversible step fails' do
     chain_id = insert_chain(size: 3, progress: 0)
     confirmation_row_id = insert_cluster_resource_use(confirmed: 0)

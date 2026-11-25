@@ -11,6 +11,31 @@ RSpec.describe TransactionChains::Dataset::GroupSnapshot do
 
   let(:user) { SpecSeed.user }
 
+  it 'executes a current shared plan action for every current member' do
+    pool = create_pool!(node: SpecSeed.node, role: :primary)
+    backup_pool = create_pool!(node: SpecSeed.other_node, role: :backup)
+    dataset_a, dip_a = create_dataset_with_pool!(user: user, pool: pool, name: "scheduled-a-#{SecureRandom.hex(4)}")
+    dataset_b, dip_b = create_dataset_with_pool!(user: user, pool: pool, name: "scheduled-b-#{SecureRandom.hex(4)}")
+    [dataset_a, dataset_b].each { |dataset| attach_dataset_to_pool!(dataset: dataset, pool: backup_pool) }
+    _, environment_plan = create_daily_backup_env_plan!(environment: pool.node.location.environment)
+    [dip_a, dip_b].each { |dip| dip.add_plan(environment_plan) }
+    action = dip_a.group_snapshots.first!.dataset_action
+
+    expect(dip_b.group_snapshots.first!.dataset_action_id).to eq(action.id)
+    chain, prepared = action.execute
+
+    expect(chain).to be_a(described_class)
+    expect(chain).to be_queued
+    expect(tx_classes(chain)).to eq([Transactions::Storage::CreateSnapshots])
+    expect(prepared.map(&:dataset_in_pool_id)).to contain_exactly(dip_a.id, dip_b.id)
+    snapshots = Snapshot.where(dataset_id: [dataset_a.id, dataset_b.id]).to_a
+    copies = SnapshotInPool.where(dataset_in_pool_id: [dip_a.id, dip_b.id]).to_a
+    expect(snapshots.size).to eq(2)
+    expect(copies.size).to eq(2)
+    expect(snapshots.map(&:confirmed)).to all(eq(:confirm_create))
+    expect(copies.map(&:confirmed)).to all(eq(:confirm_create))
+  end
+
   it 'creates one grouped snapshot transaction for all unlocked datasets' do
     pool = create_pool!(node: SpecSeed.node, role: :primary)
     dataset_a, dip_a = create_dataset_with_pool!(user: user, pool: pool, name: "group-a-#{SecureRandom.hex(4)}")

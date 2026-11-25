@@ -301,6 +301,8 @@ cs:
           je tento počet nulový. Použití na konkrétním VPS závisí také na lokaci,
           účelu sítě a limitech uživatele.
         label: Volné pro uživatele
+      backup_first:
+        label: Nejprve zálohovat existující snapshoty
       bcc:
         label: Bcc
       before_available:
@@ -1897,6 +1899,8 @@ cs:
         label: Velikost záznamu (recordsize)
       recovery_code:
         label: Obnovovací kód
+      recursive:
+        label: Včetně vnořených datasetů
       redirect_uri:
         label: Redirect URI
       refcompressratio:
@@ -5179,6 +5183,7 @@ cs:
           base_download: Stažení
           create: Vytvoření
           destroy: Smazání
+          disable_backups: Vypnutí záloh
           full_download: Stažení
           group_snapshot: Snapshot datasetu
           incremental_download: Stažení

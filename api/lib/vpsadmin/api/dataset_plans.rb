@@ -13,9 +13,10 @@ module VpsAdmin::API
     end
 
     class Executor
-      def initialize(plan, confirmation)
+      def initialize(plan, confirmation, keep_shared_group: false)
         @env_plan = plan
         @confirm = confirmation
+        @keep_shared_group = keep_shared_group
       end
 
       def add_group_snapshot(dip, min, hour, day, month, dow)
@@ -66,7 +67,7 @@ module VpsAdmin::API
           dataset_in_pool: dip
         ).take!
         action = gsnap.dataset_action
-        orphan_action = !action.group_snapshots.where.not(id: gsnap.id).exists?
+        orphan_action = !@keep_shared_group && !action.group_snapshots.where.not(id: gsnap.id).exists?
         task = ::RepeatableTask.find_for(action) if orphan_action
 
         if confirm?
@@ -120,10 +121,10 @@ module VpsAdmin::API
       end
 
       def del_backup(dip, *_)
-        plan = ::DatasetInPoolPlan.find_by!(
+        plan = ::DatasetInPoolPlan.where(
           environment_dataset_plan: @env_plan,
           dataset_in_pool: dip
-        )
+        ).take!
 
         ::DatasetAction.where(
           dataset_in_pool_plan: plan,
@@ -156,10 +157,11 @@ module VpsAdmin::API
     # Represents a single dataset plan.
     class Plan
       class BlockEnv
-        def initialize(direction, plan, confirmation = nil)
+        def initialize(direction, plan, confirmation = nil, keep_shared_group: false)
           @direction = direction
           @plan = plan
           @confirmation = confirmation
+          @keep_shared_group = keep_shared_group
         end
 
         def group_snapshot(dip, *)
@@ -173,7 +175,7 @@ module VpsAdmin::API
         protected
 
         def task(name, *)
-          @exec ||= Executor.new(@plan, @confirmation)
+          @exec ||= Executor.new(@plan, @confirmation, keep_shared_group: @keep_shared_group)
           @exec.method("#{@direction}_#{name}").call(*)
         end
       end
@@ -214,15 +216,15 @@ module VpsAdmin::API
         plan
       end
 
-      def unregister(dip, confirmation: nil)
+      def unregister(dip, confirmation: nil, keep_shared_group: false)
         ::DatasetInPoolPlan.transaction do
           env_ds_plan = env_dataset_plan(dip)
-          BlockEnv.new(:del, env_ds_plan, confirmation).instance_exec(dip, &@block)
+          BlockEnv.new(:del, env_ds_plan, confirmation, keep_shared_group:).instance_exec(dip, &@block)
 
-          plan = ::DatasetInPoolPlan.find_by!(
+          plan = ::DatasetInPoolPlan.where(
             environment_dataset_plan: env_ds_plan,
             dataset_in_pool: dip
-          )
+          ).take!
 
           if confirmation
             confirmation.just_destroy(plan)
@@ -263,6 +265,27 @@ module VpsAdmin::API
 
     def self.confirm
       VpsAdmin::Scheduler.regenerate
+    end
+
+    # Plan APIs and disablement share source resource locks. Refresh the source
+    # after acquisition so a loaded request cannot mutate it after a move.
+    def self.with_locked_source(dataset)
+      result = nil
+      ::DatasetInPool.transaction do
+        source = dataset.primary_dataset_in_pool!
+        locks = [source.acquire_lock]
+        begin
+          dataset.reload
+          current = dataset.dataset_in_pools.joins(:pool).where(pools: { role: %w[primary hypervisor] }).to_a
+          raise 'dataset source changed; retry' unless current.one? && current.first.id == source.id
+
+          source = current.first
+          result = yield(source)
+        ensure
+          locks.reverse_each(&:release)
+        end
+      end
+      result
     end
   end
 end

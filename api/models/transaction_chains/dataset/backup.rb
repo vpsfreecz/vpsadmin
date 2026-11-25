@@ -2,10 +2,15 @@ module TransactionChains
   # Encapsulates both Dataset::Snapshot and Dataset::Transfer.
   class Dataset::Backup < ::TransactionChain
     label 'Backup'
+    allow_empty
 
-    def link_chain(src_dataset_in_pool, dst_dataset_in_pool)
+    def link_chain(src_dataset_in_pool, dst_dataset_in_pool, expected_action: nil)
       lock(src_dataset_in_pool)
       lock(dst_dataset_in_pool)
+
+      if expected_action && !::DatasetAction.scheduled_for?(expected_action, action: :backup, source: src_dataset_in_pool, destination: dst_dataset_in_pool)
+        return
+      end
 
       concerns(:affect, [
                  src_dataset_in_pool.dataset.class.name,

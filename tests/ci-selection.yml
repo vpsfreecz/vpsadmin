@@ -293,6 +293,7 @@ select:
       - "api/models/transaction_chains/snapshot_in_pool/**"
       - "api/models/transactions/pool/**"
       - "api/models/transactions/storage/**"
+      - "api/lib/vpsadmin/api/dataset_plans.rb"
     tags: ["storage", "webui-storage-backup-export"]
 
   - paths:

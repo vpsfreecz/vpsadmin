@@ -75,6 +75,11 @@ and [VPS restore](../../api/models/transaction_chains/vps/restore.rb).
 
 ### Retention and removal
 
+Administrators can [disable scheduled backups and remove source snapshots](disable-backups.md).
+By default, the action copies existing snapshots to every open backup destination
+before removing plans and source snapshots. Removing a plan on its own leaves
+existing snapshots in place.
+
 Snapshot rotation uses `min_snapshots`, `max_snapshots`, and
 `snapshot_max_age`. Referenced snapshots are skipped. On source pools,
 rotation also checks that an open backup's live head retains a newer shared

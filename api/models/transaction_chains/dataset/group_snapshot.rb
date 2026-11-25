@@ -1,6 +1,7 @@
 module TransactionChains
   class Dataset::GroupSnapshot < ::TransactionChain
     label 'Snapshot dataset'
+    allow_empty
 
     def link_chain(dataset_in_pools, opts = {})
       snap = Time.new.strftime('%Y-%m-%dT%H:%M:%S')
@@ -16,6 +17,10 @@ module TransactionChains
             warn "dataset #{dip.id} is locked, skipping"
             next
           end
+        end
+
+        if opts[:expected_action] && !::DatasetAction.scheduled_for?(opts[:expected_action], action: :group_snapshot, source: dip)
+          next
         end
 
         s = ::Snapshot.create!(
@@ -34,6 +39,8 @@ module TransactionChains
 
         snapshots << sip
       end
+
+      return snapshots if snapshots.empty?
 
       append(
         Transactions::Storage::CreateSnapshots,

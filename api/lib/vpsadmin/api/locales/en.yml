@@ -300,6 +300,8 @@ en:
         description: Registered unowned, unassigned and unreserved addresses or prefixes;
           zero when the network is disabled
         label: Available to users
+      backup_first:
+        label: Back up existing snapshots first
       bcc:
         label: Bcc
       before_available:
@@ -1895,6 +1897,8 @@ en:
         label: Record size
       recovery_code:
         label: Recovery_code
+      recursive:
+        label: Include subdatasets
       redirect_uri:
         label: Redirect_uri
       refcompressratio:
@@ -5174,6 +5178,7 @@ en:
           base_download: Download
           create: Create
           destroy: Destroy
+          disable_backups: Disable backups
           full_download: Download
           group_snapshot: Snapshot dataset
           incremental_download: Download
