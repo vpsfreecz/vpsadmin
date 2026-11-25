@@ -335,14 +335,14 @@ msgstr ""
 msgid "Uncertain"
 msgstr ""
 
-#: forms/admin_incidents.forms.php forms/cluster.forms.php
-#: forms/dataset.forms.php forms/dns.forms.php forms/incidents.forms.php
-#: forms/lifetimes.forms.php forms/networking.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php
-#: forms/security_advisory.forms.php forms/userdata.forms.php
-#: forms/vps.forms.php pages/page_adminm.php pages/page_adminvps.php
-#: pages/page_index.php pages/page_networking.php pages/page_transactions.php
-#: public/index.php
+#: forms/admin_incidents.forms.php forms/backup.forms.php
+#: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
+#: forms/incidents.forms.php forms/lifetimes.forms.php
+#: forms/networking.forms.php forms/oom_reports.forms.php
+#: forms/outage.forms.php forms/security_advisory.forms.php
+#: forms/userdata.forms.php forms/vps.forms.php pages/page_adminm.php
+#: pages/page_adminvps.php pages/page_index.php pages/page_networking.php
+#: pages/page_transactions.php public/index.php
 msgid "VPS"
 msgstr ""
 
@@ -583,7 +583,7 @@ msgstr ""
 msgid "Member ID"
 msgstr ""
 
-#: forms/backup.forms.php
+#: forms/backup.forms.php forms/dataset.forms.php
 msgid "Include subdatasets"
 msgstr ""
 
@@ -591,8 +591,12 @@ msgstr ""
 msgid "Ignore datasets without snapshots"
 msgstr ""
 
+#: forms/backup.forms.php forms/dataset.forms.php pages/page_dataset.php
+msgid "Disable backups and remove local snapshots"
+msgstr ""
+
 #: forms/backup.forms.php forms/dataset.forms.php forms/export.forms.php
-#: pages/page_backup.php pages/page_nas.php
+#: pages/page_backup.php pages/page_dataset.php pages/page_nas.php
 msgid "Dataset"
 msgstr ""
 
@@ -987,10 +991,10 @@ msgid ""
 "addresses cannot be assigned until the network is enabled again."
 msgstr ""
 
-#: forms/cluster.forms.php forms/dns.forms.php forms/export.forms.php
-#: forms/monitoring.forms.php forms/networking.forms.php forms/users.forms.php
-#: forms/vps.forms.php pages/page_adminvps.php pages/page_backup.php
-#: pages/page_cluster.php pages/page_dataset.php
+#: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
+#: forms/export.forms.php forms/monitoring.forms.php forms/networking.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminvps.php
+#: pages/page_backup.php pages/page_cluster.php pages/page_dataset.php
 msgid "Confirm"
 msgstr ""
 
@@ -1097,8 +1101,8 @@ msgstr ""
 #: forms/export.forms.php forms/networking.forms.php
 #: forms/object_history.forms.php forms/oom_reports.forms.php
 #: forms/outage.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_backup.php pages/page_cluster.php pages/page_incidents.php
-#: pages/page_lifetimes.php pages/page_monitoring.php
+#: pages/page_backup.php pages/page_cluster.php pages/page_dataset.php
+#: pages/page_incidents.php pages/page_lifetimes.php pages/page_monitoring.php
 msgid "Back"
 msgstr ""
 
@@ -1385,6 +1389,23 @@ msgstr ""
 
 #: forms/dataset.forms.php
 msgid "Add backup plan"
+msgstr ""
+
+#: forms/dataset.forms.php
+msgid ""
+"Removing this plan stops the snapshots and transfers scheduled by it. "
+"Existing snapshots remain on primary and backup pools."
+msgstr ""
+
+#: forms/dataset.forms.php
+msgid ""
+"This removes the selected datasets from all backup plans and deletes their "
+"local snapshots. Backups are preserved. Re-enabling backups will require a "
+"full transfer."
+msgstr ""
+
+#: forms/dataset.forms.php
+msgid "Back up existing snapshots first"
 msgstr ""
 
 #: forms/dataset.forms.php
@@ -8382,6 +8403,18 @@ msgstr ""
 
 #: pages/page_console.php
 msgid "Root dataset mountpoint"
+msgstr ""
+
+#: pages/page_dataset.php
+msgid "Disabling backups is unavailable"
+msgstr ""
+
+#: pages/page_dataset.php
+msgid "Cannot disable backups"
+msgstr ""
+
+#: pages/page_dataset.php
+msgid "Backups are being disabled and local snapshots are being removed."
 msgstr ""
 
 #: pages/page_dataset.php

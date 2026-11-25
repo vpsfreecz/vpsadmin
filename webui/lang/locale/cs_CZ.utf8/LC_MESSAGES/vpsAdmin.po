@@ -334,14 +334,14 @@ msgstr "potlačeno"
 msgid "Uncertain"
 msgstr "výsledek není známý"
 
-#: forms/admin_incidents.forms.php forms/cluster.forms.php
-#: forms/dataset.forms.php forms/dns.forms.php forms/incidents.forms.php
-#: forms/lifetimes.forms.php forms/networking.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php
-#: forms/security_advisory.forms.php forms/userdata.forms.php
-#: forms/vps.forms.php pages/page_adminm.php pages/page_adminvps.php
-#: pages/page_index.php pages/page_networking.php pages/page_transactions.php
-#: public/index.php
+#: forms/admin_incidents.forms.php forms/backup.forms.php
+#: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
+#: forms/incidents.forms.php forms/lifetimes.forms.php
+#: forms/networking.forms.php forms/oom_reports.forms.php
+#: forms/outage.forms.php forms/security_advisory.forms.php
+#: forms/userdata.forms.php forms/vps.forms.php pages/page_adminm.php
+#: pages/page_adminvps.php pages/page_index.php pages/page_networking.php
+#: pages/page_transactions.php public/index.php
 msgid "VPS"
 msgstr "VPS"
 
@@ -584,7 +584,7 @@ msgstr "Od ID"
 msgid "Member ID"
 msgstr "ID člena"
 
-#: forms/backup.forms.php
+#: forms/backup.forms.php forms/dataset.forms.php
 msgid "Include subdatasets"
 msgstr "Zahrnout vnořené datasety"
 
@@ -592,8 +592,12 @@ msgstr "Zahrnout vnořené datasety"
 msgid "Ignore datasets without snapshots"
 msgstr "Ignorovat datasety bez snapshotů"
 
+#: forms/backup.forms.php forms/dataset.forms.php pages/page_dataset.php
+msgid "Disable backups and remove local snapshots"
+msgstr "Vypnout zálohování a odstranit místní snapshoty"
+
 #: forms/backup.forms.php forms/dataset.forms.php forms/export.forms.php
-#: pages/page_backup.php pages/page_nas.php
+#: pages/page_backup.php pages/page_dataset.php pages/page_nas.php
 msgid "Dataset"
 msgstr "Dataset"
 
@@ -1004,10 +1008,10 @@ msgstr ""
 "provoz pokračuje a již přijaté operace mohou doběhnout. Nepřiřazené adresy s "
 "vlastníkem lze přiřadit až po opětovném povolení sítě."
 
-#: forms/cluster.forms.php forms/dns.forms.php forms/export.forms.php
-#: forms/monitoring.forms.php forms/networking.forms.php forms/users.forms.php
-#: forms/vps.forms.php pages/page_adminvps.php pages/page_backup.php
-#: pages/page_cluster.php pages/page_dataset.php
+#: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
+#: forms/export.forms.php forms/monitoring.forms.php forms/networking.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminvps.php
+#: pages/page_backup.php pages/page_cluster.php pages/page_dataset.php
 msgid "Confirm"
 msgstr "Potvrdit"
 
@@ -1114,8 +1118,8 @@ msgstr "Přidat IP adresy"
 #: forms/export.forms.php forms/networking.forms.php
 #: forms/object_history.forms.php forms/oom_reports.forms.php
 #: forms/outage.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_backup.php pages/page_cluster.php pages/page_incidents.php
-#: pages/page_lifetimes.php pages/page_monitoring.php
+#: pages/page_backup.php pages/page_cluster.php pages/page_dataset.php
+#: pages/page_incidents.php pages/page_lifetimes.php pages/page_monitoring.php
 msgid "Back"
 msgstr "Zpět"
 
@@ -1409,6 +1413,28 @@ msgstr "Popis"
 #: forms/dataset.forms.php
 msgid "Add backup plan"
 msgstr "Přidat plán zálohování"
+
+#: forms/dataset.forms.php
+msgid ""
+"Removing this plan stops the snapshots and transfers scheduled by it. "
+"Existing snapshots remain on primary and backup pools."
+msgstr ""
+"Odebráním plánu se zastaví vytváření snapshotů a přenosy podle tohoto plánu. "
+"Existující snapshoty zůstanou na primárních i zálohovacích poolech."
+
+#: forms/dataset.forms.php
+msgid ""
+"This removes the selected datasets from all backup plans and deletes their "
+"local snapshots. Backups are preserved. Re-enabling backups will require a "
+"full transfer."
+msgstr ""
+"Tato akce odebere vybrané datasety ze všech zálohovacích plánů a odstraní "
+"jejich lokální snapshoty. Zálohy zůstanou zachované. Opětovné zapnutí "
+"zálohování bude vyžadovat úplný přenos."
+
+#: forms/dataset.forms.php
+msgid "Back up existing snapshots first"
+msgstr "Nejprve zálohovat existující snapshoty"
 
 #: forms/dataset.forms.php
 msgid "History identifier"
@@ -8568,6 +8594,18 @@ msgstr "Nouzový režim"
 #: pages/page_console.php
 msgid "Root dataset mountpoint"
 msgstr "Mountpoint kořenového datasetu"
+
+#: pages/page_dataset.php
+msgid "Disabling backups is unavailable"
+msgstr "Vypnutí zálohování není dostupné"
+
+#: pages/page_dataset.php
+msgid "Cannot disable backups"
+msgstr "Zálohování nelze vypnout"
+
+#: pages/page_dataset.php
+msgid "Backups are being disabled and local snapshots are being removed."
+msgstr "Vypíná se zálohování a odstraňují se lokální snapshoty."
 
 #: pages/page_dataset.php
 msgid "Dataset created"

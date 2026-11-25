@@ -72,6 +72,13 @@ function backup_vps_form()
     }
 
     foreach ($vpses as $vps) {
+        if (dataset_disable_backups_available()) {
+            $xtpl->perex(
+                h(_('VPS') . ' #' . $vps->id . ' ' . $vps->hostname),
+                '<a href="' . h(dataset_disable_backups_url($vps->dataset_id, true, $_SERVER['REQUEST_URI'])) . '">'
+                . h(_('Disable backups and remove local snapshots')) . '</a>'
+            );
+        }
         $params = ['dataset' => $vps->dataset_id];
 
         if (isAdmin() && !($_GET['subdatasets'] ?? false)) {

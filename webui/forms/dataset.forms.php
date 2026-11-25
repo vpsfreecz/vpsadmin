@@ -463,6 +463,15 @@ function dataset_edit_form()
         $xtpl->form_out(_('Register'));
     }
 
+    dataset_backup_plans_form($ds);
+
+    $xtpl->sbar_add(_("Back"), $_GET['return'] ?? $_POST['return'] ?? '');
+    $xtpl->sbar_out(_('Dataset'));
+}
+
+function dataset_backup_plans_form($ds)
+{
+    global $xtpl, $api;
     $xtpl->table_title(_('Backup plans'));
 
     $plans = $ds->plan->list();
@@ -487,10 +496,52 @@ function dataset_edit_form()
     $xtpl->table_td('');
     $xtpl->table_tr();
 
+    $xtpl->table_td(h(_('Removing this plan stops the snapshots and transfers scheduled by it. Existing snapshots remain on primary and backup pools.')), false, false, '3');
+    $xtpl->table_tr();
     $xtpl->form_out(_('Add'));
 
-    $xtpl->sbar_add(_("Back"), $_GET['return'] ?? $_POST['return'] ?? '');
-    $xtpl->sbar_out(_('Dataset'));
+    if (dataset_disable_backups_available()) {
+        dataset_disable_backups_form($ds->id, false, $_GET['return'] ?? $_POST['return'] ?? '');
+    }
+}
+
+function dataset_disable_backups_available()
+{
+    global $api;
+    if (!isAdmin() || !$api->dataset->disable_backups) {
+        return false;
+    }
+    $action = $api->dataset->disable_backups;
+    $input = $action->getParameters('input');
+    return $action->httpMethod() === 'POST'
+        && isset($input->recursive, $input->backup_first);
+}
+
+function dataset_disable_backups_url($dataset, $recursive = false, $return = '')
+{
+    return '?page=dataset&action=disable_backups&id=' . (int) $dataset
+        . '&recursive=' . ($recursive ? '1' : '0') . '&return=' . rawurlencode(local_redirect_target($return, '?page=dataset&action=edit&role=hypervisor&id=' . (int) $dataset));
+}
+
+function dataset_disable_backups_form($id, $recursive, $return)
+{
+    global $api, $xtpl;
+    $dataset = $api->dataset->find($id);
+    $title = _('Disable backups and remove local snapshots');
+    $xtpl->table_title($title);
+    $xtpl->form_create(dataset_disable_backups_url($dataset->id, $recursive, $return), 'post');
+    $csrf = 'dataset_disable_backups:' . $id;
+    csrf_token($csrf, 1);
+    $xtpl->form_csrf($csrf);
+    $xtpl->form_set_hidden_fields(['backup_first' => '0']);
+    $xtpl->table_td('<p>' . h(_('This removes the selected datasets from all backup plans and deletes their local snapshots. Backups are preserved. Re-enabling backups will require a full transfer.')) . '</p>', false, false, '2');
+    $xtpl->table_tr();
+    $xtpl->form_add_checkbox(_('Include subdatasets'), 'recursive', '1', $recursive);
+    $xtpl->form_add_checkbox(_('Back up existing snapshots first'), 'backup_first', '1', true);
+    $xtpl->table_td('<label for="disable-backups-confirm">' . h(_('Confirm')) . '</label>');
+    $xtpl->table_td('<input type="checkbox" name="confirm" id="disable-backups-confirm" value="1" required>');
+    $xtpl->table_tr();
+    $xtpl->form_out($title);
 }
 
 function dataset_snapshot_list($datasets, $vps = null)

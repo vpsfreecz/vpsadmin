@@ -4,6 +4,54 @@ if (isLoggedIn()) {
     $quotas = ['quota', 'refquota'];
 
     switch ($_GET['action'] ?? null) {
+        case 'disable_backups':
+            if (!dataset_disable_backups_available()) {
+                $xtpl->perex(_('Disabling backups is unavailable'), '');
+                break;
+            }
+            $dataset = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if (!$dataset) {
+                $xtpl->perex(_('Cannot disable backups'), '');
+                break;
+            }
+            $return = local_redirect_target($_GET['return'] ?? '', '?page=dataset&action=edit&role=hypervisor&id=' . $dataset);
+            $recursive = false;
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $recursive = $_POST['recursive'] ?? '0';
+                if (!in_array($recursive, ['0', '1'], true)) {
+                    throw new InvalidArgumentException('Invalid recursive');
+                }
+                $recursive = $recursive === '1';
+            }
+            if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['confirm'] ?? '') === '1') {
+                if (!is_string($_POST['csrf_token'] ?? null) || $_POST['csrf_token'] === '') {
+                    throw new CsrfTokenInvalid();
+                }
+                csrf_check('dataset_disable_backups:' . $dataset, $_POST['csrf_token']);
+                $backupFirst = $_POST['backup_first'] ?? '1';
+                if (!in_array($backupFirst, ['0', '1'], true)) {
+                    throw new InvalidArgumentException('Invalid backup_first');
+                }
+                try {
+                    $api->dataset($dataset)->disable_backups([
+                        'recursive' => $recursive,
+                        'backup_first' => $backupFirst === '1',
+                    ]);
+                    notify_user(_('Backups are being disabled and local snapshots are being removed.'));
+                    redirect($return);
+                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                    $xtpl->perex_format_errors(_('Cannot disable backups'), $e->getResponse());
+                    $_GET['role'] ??= 'hypervisor';
+                    dataset_edit_form();
+                }
+            } else {
+                $xtpl->title(_('Disable backups and remove local snapshots'));
+                dataset_disable_backups_form($dataset, $recursive, $return);
+                $xtpl->sbar_add(_('Back'), $return);
+                $xtpl->sbar_out(_('Dataset'));
+            }
+            break;
+
         case 'new':
             if (isset($_POST['name'])) {
                 csrf_check();
