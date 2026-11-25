@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 RSpec.describe 'VpsAdmin::API::Resources::IncidentReport' do
+  include CoreResourceSpecHelpers
+
   before do
     header 'Accept', 'application/json'
     SpecSeed.location
@@ -89,25 +91,6 @@ RSpec.describe 'VpsAdmin::API::Resources::IncidentReport' do
     expect(last_response.status).to eq(code), message
   end
 
-  def create_vps_row!(user:, node:, hostname:)
-    vps = Vps.new(
-      user_id: user.id,
-      node_id: node.id,
-      hostname: hostname,
-      os_template_id: SpecSeed.os_template.id
-    )
-
-    vps.object_state =
-      if Vps.respond_to?(:object_states) && Vps.object_states[:active]
-        Vps.object_states[:active]
-      else
-        0
-      end
-
-    vps.save!(validate: false)
-    vps
-  end
-
   def create_ip!(network:, addr:)
     IpAddress.create!(
       network: network,
@@ -170,8 +153,8 @@ RSpec.describe 'VpsAdmin::API::Resources::IncidentReport' do
 
   let(:seed) do
     base_time = Time.utc(2040, 1, 1, 12, 0, 0)
-    vps_user = create_vps_row!(user: SpecSeed.user, node: SpecSeed.node, hostname: 'spec-user-vps')
-    vps_other = create_vps_row!(user: SpecSeed.other_user, node: SpecSeed.node, hostname: 'spec-other-vps')
+    vps_user = create_vps!(user: SpecSeed.user, node: SpecSeed.node, hostname: 'spec-user-vps')
+    vps_other = create_vps!(user: SpecSeed.other_user, node: SpecSeed.node, hostname: 'spec-other-vps')
     ip_user = create_ip!(network: SpecSeed.network_v4, addr: '192.0.2.10')
     ip_other = create_ip!(network: SpecSeed.network_v4, addr: '192.0.2.11')
     assignment_user = create_assignment!(
@@ -356,20 +339,48 @@ RSpec.describe 'VpsAdmin::API::Resources::IncidentReport' do
     end
 
     it 'filters by ip_addr without leaking other users' do
-      as(SpecSeed.user) { json_get index_path, incident_report: { ip_addr: '192.0.2.10' } }
+      meta = { includes: 'vps,ip_address_assignment' }
+      as(SpecSeed.user) { json_get index_path, incident_report: { ip_addr: '192.0.2.10' }, _meta: meta }
 
       expect_status(200)
-      expect(report_ids).to contain_exactly(user_incident_newer.id, user_incident_older.id)
+      expect(json['status']).to be(true)
+      expect(report_ids).to eq([user_incident_newer.id, user_incident_older.id])
 
-      as(SpecSeed.user) { json_get index_path, incident_report: { ip_addr: '192.0.2.11' } }
+      as(SpecSeed.user) { json_get index_path, incident_report: { ip_addr: '192.0.2.11' }, _meta: meta }
 
       expect_status(200)
+      expect(json['status']).to be(true)
       expect(report_ids).to be_empty
 
       as(SpecSeed.admin) { json_get index_path, incident_report: { ip_addr: '192.0.2.11' } }
 
       expect_status(200)
       expect(report_ids).to contain_exactly(other_incident.id)
+    end
+
+    it 'orders IP-filtered reports with includes by their own detection time' do
+      install_generic_incident_policy_fixture
+      base_time = Time.utc(2040, 1, 1, 12)
+      # Notice order is the reverse of their nested trigger reports' order.
+      notices = [[base_time + 7200, base_time - 7200], [base_time + 3600, base_time - 3600]].map do |detected_at, trigger_time|
+        _trigger, evaluation = read_report(vps_user, detected_at: trigger_time)
+        notice = IncidentReport.create!(user: SpecSeed.user, vps: vps_user, ip_address_assignment: assignment_user,
+                                        subject: 'Warning', text: 'Warning', codename: 'manual_abuse',
+                                        source_kind: 'incident_policy_notice', detected_at:)
+        read_action(evaluation, kind: 'warning', notice_incident_report: notice)
+        notice
+      end
+
+      as(SpecSeed.admin) do
+        json_get index_path, incident_report: { ip_addr: '192.0.2.10' }, limit: 25,
+                             _meta: { includes: 'user,vps,ip_address_assignment', count: true }
+      end
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(report_ids).to eq([*notices.map(&:id), user_incident_newer.id, user_incident_older.id])
+      expect(json.dig('response', '_meta', 'total_count')).to eq(4)
+      expect(reports.map { |row| row.dig('ip_address_assignment', 'id') }).to all(eq(assignment_user.id))
     end
 
     it 'returns total_count meta when requested' do

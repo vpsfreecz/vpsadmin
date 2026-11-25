@@ -98,7 +98,7 @@ module VpsAdmin::API::Resources
       end
 
       def exec
-        with_desc_pagination(with_includes(query).includes(notice_action: :incident_report).order('detected_at DESC'))
+        with_desc_pagination(with_includes(query).includes(notice_action: :incident_report).order(detected_at: :desc))
       end
     end
 
