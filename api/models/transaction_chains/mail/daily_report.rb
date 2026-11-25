@@ -38,6 +38,9 @@ module TransactionChains
 
       {
         **VpsAdmin::API::DailyReportAuthentication.new(from: now - (24 * 60 * 60), to: now).vars,
+        vps_evidence_gains: VpsAdmin::API::DailyReportVpsEvidence.new(
+          from: now - 86_400, to: now, base_url: ::SysConfig.get(:webui, :base_url)
+        ).vars,
 
         date: {
           start: (now - (24 * 60 * 60)),

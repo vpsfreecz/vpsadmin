@@ -111,7 +111,7 @@ No current incident policy matches.
 
 VPS with current matches: showing <%= overview[:rows].length %> of <%= overview[:total_count] %>; omitted <%= overview[:omitted_count] %>.
 <% overview[:rows].each do |row| -%>
-- VPS #<%= row[:vps_id] %> <%= row[:hostname] %> | Owner #<%= row[:user_id] %> <%= row[:user_login] %> | <%= row[:label] %> (<%= row[:policy_key] %>)
+- VPS #<%= row[:vps_id] %> <%= row[:hostname] %> | Saved owner #<%= row[:user_id] %> <%= row[:user_login] %> | <%= row[:label] %> (<%= row[:policy_key] %>)
   Warning threshold (7 days): <%= row[:count_7d] %> / <%= value.call(row[:warning_limit]) %>, reports remaining <%= value.call(row[:warning_remaining]) %>; shutdown threshold (30 days): <%= row[:count_30d] %> / <%= value.call(row[:stop_limit]) %>, reports remaining <%= value.call(row[:stop_remaining]) %>.
   Configuration valid: <%= yes_no.call(row[:configuration_valid]) %>; status: <%= value.call(row[:status]) %>; global/effective mode: <%= row[:global_mode] %> / <%= value.call(row[:effective_mode]) %>.
   Warning emails allowed: <%= yes_no.call(row[:warning_permitted]) %>; automatic shutdown allowed: <%= yes_no.call(row[:stop_enforced]) %>; owner active: <%= yes_no.call(row[:owner_active]) %>; transfer pending: <%= yes_no.call(row[:transfer_pending]) %>.
@@ -177,4 +177,29 @@ Activity includes recorded evaluation, shutdown and mail times and the latest up
 Outcomes may have changed after the reporting period. This history does not record every state change or retry.
 The report covers a rolling 24 hours, not time since the previous successful report.
 Linked views use current state and may differ from this email.
+<% end -%>
+<% if @vps_evidence_gains -%>
+<% gains = @vps_evidence_gains; clean = ->(v) { v.to_s.gsub(/[\r\n\t]/, ' ') }; date = ->(v) { v ? local_time(v, '%Y-%m-%d %H:%M:%S %Z') : 'not available' }; seconds = ->(us) { whole, fraction = us.divmod(1_000_000); tail = format('%06d', fraction).sub(/0+\z/, ''); "#{whole}#{tail.empty? ? '' : ".#{tail}"}" } -%>
+
+VPS evidence credit gained
+Credit accepted after <%= date.call(gains[:from]) %> and up to and including <%= date.call(gains[:to]) %>. Repeated or overlapping contributions are counted only once.
+Generated at: <%= date.call(gains[:generated_at]) %>.
+<% if gains[:rows].empty? -%>
+No credit was recorded during this report period. This does not establish that the VPSes were monitored or healthy.
+<% else -%>
+<% gains[:by_signal].each do |total| -%>
+- <%= clean.call(total[:label]) %> (<%= clean.call(total[:signal]) %>): <%= seconds.call(total[:accepted_us]) %> s accepted; VPS / ownership periods: <%= total[:row_count] %>.
+<% end -%>
+<% gains[:rows].each do |row| -%>
+- VPS #<%= row[:vps_id] %><%= row[:hostname] ? " #{clean.call(row[:hostname])} (current hostname)" : '' %> | Saved owner #<%= row[:user_id] %><%= row[:user_login] ? " #{clean.call(row[:user_login])} (current login)" : '' %> | <%= clean.call(row[:label]) %> (<%= clean.call(row[:signal]) %>)
+  Accepted credit: <%= seconds.call(row[:accepted_us]) %> s; ownership period start: <%= date.call(row[:accounting_since]) %>.
+  First accepted: <%= date.call(row[:first_accepted_at]) %>; last accepted: <%= date.call(row[:last_accepted_at]) %>.
+<% if row[:vps_url] -%>
+  Current VPS details: <%= row[:vps_url] %>
+<% end -%>
+<% end -%>
+<% end -%>
+Each new contribution counts toward the period in which it was accepted, including observations that arrived late. Missing observations can make these totals lower bounds. Rolling-window credit is calculated separately.
+Credit is grouped by VPS and the owner at acceptance, with a separate row for each ownership period. Hostnames, logins and VPS links use current records when available.
+This report covers a rolling 24-hour period, independent of when the last report was sent successfully. Separate or delayed reports can overlap or leave gaps.
 <% end -%>

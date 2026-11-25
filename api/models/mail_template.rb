@@ -242,6 +242,7 @@ class MailTemplate < ApplicationRecord
   role :admin, label: 'System administrator'
 
   register :daily_report, vars: {
+    vps_evidence_gains: Hash,
     incident_policy_summary: Hash,
     date: Hash,
     users: Hash,

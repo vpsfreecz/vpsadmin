@@ -219,6 +219,32 @@ detail Evidence action and a positive-credit overview, with timezone-aware dates
 current settings and links to existing incident history. They do not poll or
 provide editing controls.
 
+## Daily accepted gains
+
+The existing administrator daily report adds `vps_evidence_gains`; it keeps the
+existing recipients, timer and rolling 24-hour period. A gain is a new disjoint
+live interval piece accepted in `(from, to]`, measured in integer microseconds.
+It is not a rolling-score difference or an occurrence-time total. A late valid
+piece counts when it is accepted, preserving its original occurrence endpoints.
+Exact duplicates and old overlaps add no gain. Acceptance timestamps commit with
+the receipt and ledger and are rolled back with stale or failed ingestion.
+Incident copies have no acceptance timestamp and never count as gains.
+
+The report includes every positive aggregate row, grouped by signal, VPS and
+original user/accounting epoch. Transfers do not assign old-owner gains to a new
+owner. Missing VPS/user records retain numeric identity; optional names and links
+refer to current records and do not reconstruct historical labels or placement.
+Signal totals include accepted microseconds and the number of aggregate rows.
+There is no top-N cut, per-sample list, daily cursor or inferred backfill.
+
+The period and generation time are UTC values rendered with an explicit
+recipient timezone. Values describe accepted evidence and can be lower bounds;
+rolling-window completeness does not certify daily collection. Gains remain when
+incident reporting is disabled. The existing report transaction saves the mail
+data once, so retries use the same gains. Independently scheduled or delayed
+reports can overlap or leave gaps; the period is not measured from the last successful
+email, and there is no exactly-once email or outage catch-up guarantee.
+
 ## Metrics
 
 The ordinary central base exporter retains its existing schedule and route.
