@@ -18,6 +18,7 @@ msgid "Incidents"
 msgstr "Incidenty"
 
 #: forms/admin_incidents.forms.php forms/vps.forms.php
+#: forms/vps_pressure_history.forms.php
 msgid "History"
 msgstr "Historie"
 
@@ -35,8 +36,9 @@ msgstr "Hlášení"
 #: forms/monitoring.forms.php forms/networking.forms.php
 #: forms/object_history.forms.php forms/oom_reports.forms.php
 #: forms/outage.forms.php forms/userdata.forms.php forms/userns.forms.php
-#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
-#: pages/page_nas.php pages/page_networking.php pages/page_transactions.php
+#: forms/users.forms.php forms/vps.forms.php forms/vps_evidence.forms.php
+#: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
+#: pages/page_transactions.php
 msgid "Filters"
 msgstr "Filtry"
 
@@ -48,13 +50,14 @@ msgstr "ID nodu"
 #: forms/incidents.forms.php forms/ip_release.forms.php
 #: forms/monitoring.forms.php forms/networking.forms.php forms/outage.forms.php
 #: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
-#: forms/vps.forms.php pages/page_networking.php pages/page_transactions.php
+#: forms/vps.forms.php forms/vps_evidence.forms.php pages/page_networking.php
+#: pages/page_transactions.php
 msgid "User ID"
 msgstr "ID uživatele"
 
 #: forms/admin_incidents.forms.php forms/backup.forms.php
 #: forms/incidents.forms.php forms/networking.forms.php forms/outage.forms.php
-#: forms/vps.forms.php pages/page_networking.php
+#: forms/vps.forms.php forms/vps_evidence.forms.php pages/page_networking.php
 msgid "VPS ID"
 msgstr "VPS ID"
 
@@ -127,7 +130,7 @@ msgstr "Stav akce"
 msgid "Mail state"
 msgstr "Stav e-mailu"
 
-#: forms/admin_incidents.forms.php
+#: forms/admin_incidents.forms.php forms/vps_evidence.forms.php
 msgid "Invalid configuration"
 msgstr "Neplatné nastavení"
 
@@ -184,8 +187,8 @@ msgstr "Závažnost"
 #: forms/oom_reports.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/userdata.forms.php
 #: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_adminvps.php pages/page_console.php
-#: pages/page_lifetimes.php pages/page_networking.php
+#: forms/vps_evidence.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: pages/page_console.php pages/page_lifetimes.php pages/page_networking.php
 #: pages/page_transactions.php
 msgid "User"
 msgstr "Uživatel"
@@ -203,6 +206,7 @@ msgid "Reports until warning threshold"
 msgstr "Hlášení zbývající do limitu pro upozornění"
 
 #: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+#: forms/vps_evidence.forms.php
 msgid "Last incident"
 msgstr "Poslední incident"
 
@@ -232,8 +236,8 @@ msgstr "Směr řazení"
 #: forms/networking.forms.php forms/object_history.forms.php
 #: forms/oom_reports.forms.php forms/outage.forms.php forms/userdata.forms.php
 #: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
-#: pages/page_transactions.php
+#: forms/vps_evidence.forms.php pages/page_adminm.php pages/page_nas.php
+#: pages/page_networking.php pages/page_transactions.php
 msgid "Limit"
 msgstr "Limit"
 
@@ -242,6 +246,7 @@ msgstr "Limit"
 #: forms/networking.forms.php forms/object_history.forms.php
 #: forms/oom_reports.forms.php forms/outage.forms.php forms/userdata.forms.php
 #: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
+#: forms/vps_evidence.forms.php forms/vps_pressure_history.forms.php
 #: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
 #: pages/page_transactions.php
 msgid "Show"
@@ -249,7 +254,7 @@ msgstr "Zobrazit"
 
 #: forms/admin_incidents.forms.php forms/dns.forms.php
 #: forms/incident_policy.forms.php forms/incidents.forms.php
-#: lib/functions.lib.php
+#: forms/vps_evidence.forms.php lib/functions.lib.php
 msgid "Unknown"
 msgstr "Neznámý"
 
@@ -339,9 +344,9 @@ msgstr "výsledek není známý"
 #: forms/incidents.forms.php forms/lifetimes.forms.php
 #: forms/networking.forms.php forms/oom_reports.forms.php
 #: forms/outage.forms.php forms/security_advisory.forms.php
-#: forms/userdata.forms.php forms/vps.forms.php pages/page_adminm.php
-#: pages/page_adminvps.php pages/page_index.php pages/page_networking.php
-#: pages/page_transactions.php public/index.php
+#: forms/userdata.forms.php forms/vps.forms.php forms/vps_evidence.forms.php
+#: pages/page_adminm.php pages/page_adminvps.php pages/page_index.php
+#: pages/page_networking.php pages/page_transactions.php public/index.php
 msgid "VPS"
 msgstr "VPS"
 
@@ -416,8 +421,9 @@ msgstr "Nevyřízené vypnutí"
 #: forms/admin_incidents.forms.php forms/dns.forms.php forms/node.forms.php
 #: forms/oom_reports.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/vps.forms.php
-#: pages/page_adminvps.php pages/page_cluster.php pages/page_index.php
-#: pages/page_networking.php pages/page_node.php pages/page_transactions.php
+#: forms/vps_evidence.forms.php pages/page_adminvps.php pages/page_cluster.php
+#: pages/page_index.php pages/page_networking.php pages/page_node.php
+#: pages/page_transactions.php
 msgid "Node"
 msgstr "Node"
 
@@ -461,7 +467,7 @@ msgstr "Konec ochranné lhůty pro upozornění"
 #: forms/incidents.forms.php forms/monitoring.forms.php
 #: forms/oom_reports.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/userns.forms.php
-#: forms/users.forms.php
+#: forms/users.forms.php forms/vps_evidence.forms.php
 msgid "Details"
 msgstr "Podrobnosti"
 
@@ -504,6 +510,7 @@ msgstr "Detekováno"
 #: pages/page_networking.php pages/page_node.php pages/page_oom_reports.php
 #: pages/page_outage.php pages/page_redirect.php pages/page_reminder.php
 #: pages/page_transactions.php pages/page_userdata.php pages/page_userns.php
+#: pages/page_vps_evidence.php
 msgid "Access forbidden"
 msgstr "Přístup zakázán"
 
@@ -536,12 +543,12 @@ msgid "Loaded at"
 msgstr "Načteno"
 
 #: forms/admin_incidents.forms.php forms/incidents.forms.php
-#: forms/node.forms.php
+#: forms/node.forms.php forms/vps_evidence.forms.php
 msgid "Previous"
 msgstr "Předchozí"
 
 #: forms/admin_incidents.forms.php forms/incidents.forms.php
-#: forms/vps.forms.php lib/xtemplate.lib.php
+#: forms/vps.forms.php forms/vps_evidence.forms.php lib/xtemplate.lib.php
 msgid "Next"
 msgstr "Další"
 
@@ -549,12 +556,13 @@ msgstr "Další"
 msgid "Refresh"
 msgstr "Obnovit"
 
-#: forms/admin_incidents.forms.php
+#: forms/admin_incidents.forms.php forms/vps_evidence.forms.php
 #, php-format
 msgid "Total: %d"
 msgstr "Celkem: %d"
 
 #: forms/admin_incidents.forms.php forms/ip_release.forms.php
+#: forms/vps_evidence.forms.php forms/vps_pressure_history.forms.php
 msgid "Invalid filter value."
 msgstr "Neplatná hodnota filtru."
 
@@ -2271,7 +2279,8 @@ msgctxt "incident-policy-column"
 msgid "Incidents"
 msgstr "Počet incidentů"
 
-#: forms/incident_policy.forms.php
+#: forms/incident_policy.forms.php forms/vps_evidence.forms.php
+#: forms/vps_pressure_history.forms.php
 msgid "Period"
 msgstr "Období"
 
@@ -2288,6 +2297,7 @@ msgid "Policy evaluation failed"
 msgstr "Vyhodnocení pravidel selhalo"
 
 #: forms/incident_policy.forms.php forms/incidents.forms.php
+#: forms/vps_evidence.forms.php
 msgid "Incident history"
 msgstr "Historie incidentů"
 
@@ -2459,12 +2469,12 @@ msgid "Report"
 msgstr "Zpráva"
 
 #: forms/incidents.forms.php forms/networking.forms.php forms/outage.forms.php
-#: pages/page_adminm.php
+#: forms/vps_evidence.forms.php pages/page_adminm.php
 msgid "No"
 msgstr "Žádný"
 
 #: forms/incidents.forms.php forms/networking.forms.php forms/outage.forms.php
-#: pages/page_adminm.php
+#: forms/vps_evidence.forms.php pages/page_adminm.php
 msgid "Yes"
 msgstr "Ano"
 
@@ -2496,7 +2506,7 @@ msgstr "Počty a limity byly uloženy při vyhodnocení tohoto hlášení."
 msgid "Other policy evaluations"
 msgstr "Ostatní vyhodnocení pravidel"
 
-#: forms/incidents.forms.php
+#: forms/incidents.forms.php forms/vps_evidence.forms.php
 #, php-format
 msgid "%s s"
 msgstr "%s s"
@@ -2530,12 +2540,12 @@ msgstr ""
 "Část pozorování chybí, takže započtený čas je dolní mez. Mezery mezi "
 "intervaly nedokazují, že v nich sledovaná podmínka nebyla splněna."
 
-#: forms/incidents.forms.php
+#: forms/incidents.forms.php forms/vps_evidence.forms.php
 #, php-format
 msgid "%s is greater than %s"
 msgstr "%s je větší než %s"
 
-#: forms/incidents.forms.php
+#: forms/incidents.forms.php forms/vps_evidence.forms.php
 msgid "Not available"
 msgstr "není k dispozici"
 
@@ -2551,7 +2561,7 @@ msgstr "Konec intervalu"
 msgid "Credited duration"
 msgstr "Započtený čas"
 
-#: forms/incidents.forms.php
+#: forms/incidents.forms.php forms/vps_evidence.forms.php
 msgid "Observed peak"
 msgstr "Pozorované maximum"
 
@@ -2560,7 +2570,7 @@ msgstr "Pozorované maximum"
 msgid "Credited time: %s s"
 msgstr "Započtený čas: %s s"
 
-#: forms/incidents.forms.php
+#: forms/incidents.forms.php forms/vps_evidence.forms.php
 #, php-format
 msgid "%s: %s"
 msgstr "%s: %s"
@@ -3192,7 +3202,7 @@ msgstr "Trvání"
 msgid "Event"
 msgstr "Událost"
 
-#: forms/monitoring.forms.php
+#: forms/monitoring.forms.php forms/vps_evidence.forms.php
 msgid "Issue"
 msgstr "Problém"
 
@@ -5676,7 +5686,7 @@ msgstr "Spravovat User data"
 msgid "Custom"
 msgstr "Vlastní"
 
-#: forms/vps.forms.php
+#: forms/vps.forms.php pages/page_vps_evidence.php
 msgid "VPS list"
 msgstr "Seznam VPS"
 
@@ -5803,6 +5813,10 @@ msgstr "Nahradit VPS"
 #: forms/vps.forms.php
 msgid "Configure OOM reports"
 msgstr "Konfigurace OOM reportů"
+
+#: forms/vps.forms.php forms/vps_evidence.forms.php pages/page_vps_evidence.php
+msgid "Memory pressure"
+msgstr "Paměťová zátěž"
 
 #: forms/vps.forms.php
 msgid "Report incident"
@@ -6123,6 +6137,173 @@ msgstr "Líné smazání"
 #: forms/vps.forms.php
 msgid "Do not delete VPS immediately, but after passing of predefined time."
 msgstr "Neodstraňujte VPS okamžitě, ale po uplynutí předem definované doby."
+
+#: forms/vps_evidence.forms.php
+msgid "Fresh observation"
+msgstr "Čerstvé pozorování"
+
+#: forms/vps_evidence.forms.php
+msgid "No observations"
+msgstr "bez pozorování"
+
+#: forms/vps_evidence.forms.php
+msgid "Stale observation"
+msgstr "Zastaralé pozorování"
+
+#: forms/vps_evidence.forms.php
+msgid "Ineligible"
+msgstr "Nesplňuje podmínky"
+
+#: forms/vps_evidence.forms.php
+msgid "Qualified"
+msgstr "Splňuje podmínky"
+
+#: forms/vps_evidence.forms.php forms/vps_pressure_history.forms.php
+#| msgid "Recorded"
+msgid "Recorded time"
+msgstr "Zaznamenaný čas"
+
+#: forms/vps_evidence.forms.php
+msgid "Window start"
+msgstr "Začátek okna"
+
+#: forms/vps_evidence.forms.php
+msgid "Window end"
+msgstr "Konec okna"
+
+#: forms/vps_evidence.forms.php
+msgid "Window length"
+msgstr "Délka okna"
+
+#: forms/vps_evidence.forms.php
+#| msgid "Report threshold"
+msgid "Reporting threshold"
+msgstr "Práh hlášení"
+
+#: forms/vps_evidence.forms.php
+msgid "Repeat period"
+msgstr "Interval opakování"
+
+#: forms/vps_evidence.forms.php forms/vps_pressure_history.forms.php
+msgid "Observation"
+msgstr "Pozorování"
+
+#: forms/vps_evidence.forms.php
+msgid "Qualification"
+msgstr "Splnění podmínek"
+
+#: forms/vps_evidence.forms.php
+msgid "Last observed"
+msgstr "Poslední pozorování"
+
+#: forms/vps_evidence.forms.php
+msgid "Observation age"
+msgstr "Stáří pozorování"
+
+#: forms/vps_evidence.forms.php
+msgid "Incident reporting enabled"
+msgstr "Hlášení incidentů povoleno"
+
+#: forms/vps_evidence.forms.php
+msgid "Current observations meet reporting criteria"
+msgstr "Aktuální pozorování splňují podmínky pro hlášení"
+
+#: forms/vps_evidence.forms.php
+msgid "Report due"
+msgstr "Podmínky pro nové hlášení splněny"
+
+#: forms/vps_evidence.forms.php
+msgid "Condition"
+msgstr "Podmínka"
+
+#: forms/vps_evidence.forms.php
+#| msgid "unavailable"
+msgid "Unavailable"
+msgstr "nedostupné"
+
+#: forms/vps_evidence.forms.php
+#, php-format
+#| msgid "Last %d day"
+#| msgid_plural "Last %d days"
+msgid "Last %s day"
+msgid_plural "Last %s days"
+msgstr[0] "Poslední %s den"
+msgstr[1] "Poslední %s dny"
+msgstr[2] "Posledních %s dní"
+
+#: forms/vps_evidence.forms.php
+#, php-format
+#| msgid "Last use"
+msgid "Last %s s"
+msgstr "Posledních %s s"
+
+#: forms/vps_evidence.forms.php
+#, php-format
+msgid "%s s recorded / %s s threshold; %s"
+msgstr "Zaznamenáno %s s / práh %s s; %s"
+
+#: forms/vps_evidence.forms.php
+#| msgid "No observations"
+msgid "Incomplete observations"
+msgstr "neúplná pozorování"
+
+#: forms/vps_evidence.forms.php
+#| msgid "Network disabled"
+msgid "Reporting disabled"
+msgstr "hlášení vypnuto"
+
+#: forms/vps_evidence.forms.php
+#| msgid "Current credit is unavailable."
+msgid "Memory pressure data is unavailable."
+msgstr "Údaje o paměťové zátěži nejsou dostupné."
+
+#: forms/vps_evidence.forms.php
+#| msgid "No current matches for these filters."
+msgid "No recorded time matches these filters."
+msgstr "Těmto filtrům neodpovídají žádné záznamy."
+
+#: forms/vps_evidence.forms.php
+msgid "Read at"
+msgstr "Načteno"
+
+#: forms/vps_evidence.forms.php
+#| msgid "Unable to access resource"
+msgid "Unable to load memory pressure data."
+msgstr "Údaje o paměťové zátěži se nepodařilo načíst."
+
+#: forms/vps_pressure_history.forms.php
+#| msgid "No kernel history is available yet."
+msgid "History is unavailable."
+msgstr "Historie není dostupná."
+
+#: forms/vps_pressure_history.forms.php
+#| msgid "Last %d day"
+#| msgid_plural "Last %d days"
+msgid "Last 30 days"
+msgstr "Posledních 30 dní"
+
+#: forms/vps_pressure_history.forms.php
+#| msgid "Last %d day"
+#| msgid_plural "Last %d days"
+msgid "Last 7 days"
+msgstr "Posledních 7 dní"
+
+#: forms/vps_pressure_history.forms.php
+msgid "Date (UTC)"
+msgstr "Datum (UTC)"
+
+#: forms/vps_pressure_history.forms.php
+#| msgid "No recorded action"
+msgid "No recorded data"
+msgstr "bez záznamů"
+
+#: forms/vps_pressure_history.forms.php
+msgid "Today (partial day)"
+msgstr "Dnes (část dne)"
+
+#: forms/vps_pressure_history.forms.php
+msgid "History for the current owner"
+msgstr "Historie současného vlastníka"
 
 #: lib/cluster.lib.php
 msgid "Unset"
@@ -7238,7 +7419,7 @@ msgstr "Platby"
 #: pages/page_monitoring.php pages/page_nas.php pages/page_networking.php
 #: pages/page_oom_reports.php pages/page_outage.php pages/page_redirect.php
 #: pages/page_reminder.php pages/page_transactions.php pages/page_userdata.php
-#: pages/page_userns.php
+#: pages/page_userns.php pages/page_vps_evidence.php
 msgid "You have to log in to be able to access vpsAdmin's functions"
 msgstr "Abyste měli přístup k funkcím vpsAdminu, musíte se přihlásit."
 
@@ -9752,6 +9933,58 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "Evidence"
+#~ msgstr "Podklady"
+
+#~ msgid "VPS evidence"
+#~ msgstr "Podklady VPS"
+
+#~ msgid "Credit in current window"
+#~ msgstr "Započtený čas v aktuálním okně"
+
+#~ msgid ""
+#~ "Zero recorded credit does not establish that this VPS was monitored or "
+#~ "that the condition was absent."
+#~ msgstr ""
+#~ "Nulový započtený čas nedokazuje, že VPS bylo sledováno ani že sledovaná "
+#~ "podmínka nebyla splněna."
+
+#~ msgid "VPS evidence is not available."
+#~ msgstr "Podklady VPS nejsou dostupné."
+
+#~ msgid ""
+#~ "Credit is the time recorded within the current rolling window. Daily "
+#~ "reports separately show credit gained when observations were accepted."
+#~ msgstr ""
+#~ "Započtený čas zahrnuje zaznamenané intervaly v aktuálním klouzavém okně. "
+#~ "Denní přehled zvlášť uvádí přírůstky podle času přijetí pozorování."
+
+#~ msgid ""
+#~ "Observations alone do not establish the cause of an incident. A fresh "
+#~ "observation must also meet the reporting criteria."
+#~ msgstr ""
+#~ "Samotná pozorování neprokazují příčinu incidentu. I čerstvé pozorování "
+#~ "musí splňovat podmínky pro hlášení."
+
+#~ msgid ""
+#~ "Some signals have invalid configuration; their credit is unavailable."
+#~ msgstr ""
+#~ "Některé signály mají neplatné nastavení. Jejich započtený čas není "
+#~ "dostupný."
+
+#~ msgid ""
+#~ "No VPS has recorded credit above zero for these filters. Missing "
+#~ "observations can leave relevant conditions unrecorded."
+#~ msgstr ""
+#~ "Těmto filtrům neodpovídá žádné VPS s kladným započteným časem. Pokud "
+#~ "pozorování chybí, nemusí být splnění sledovaných podmínek zaznamenáno."
+
+#~ msgid "Evidence is unavailable for the signals listed above."
+#~ msgstr "Podklady pro výše uvedené signály nejsou dostupné."
+
+#~ msgid "Unable to load VPS evidence."
+#~ msgstr "Podklady VPS se nepodařilo načíst."
 
 #~ msgid "Some changes were saved"
 #~ msgstr "Některé změny byly uloženy"

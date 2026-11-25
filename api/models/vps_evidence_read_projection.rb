@@ -32,23 +32,27 @@ class VpsEvidenceReadProjection
     result
   end
 
-  def positive(vps_id: nil, signal: nil, offset: 0, limit: 25)
+  def positive(vps_id: nil, user_id: nil, node_id: nil, location_id: nil, environment_id: nil, signal: nil, offset: 0, limit: 25)
     raise ArgumentError, 'Invalid evidence page' unless offset.is_a?(Integer) && offset >= 0 && limit.is_a?(Integer) && limit.between?(1, 100)
 
     VpsEvidence.definition(signal) if signal
-    collection(vps_id:, signal:, positive: true, offset:, limit:)
+    collection(vps_id:, user_id:, node_id:, location_id:, environment_id:, signal:, positive: true, offset:, limit:)
   end
 
   protected
 
   def q(value) = Vps.connection.quote(value)
 
-  def collection(vps_id:, positive:, offset:, limit:, signal: nil)
+  def collection(vps_id:, positive:, offset:, limit:, signal: nil, user_id: nil, node_id: nil, location_id: nil, environment_id: nil)
     selected = VpsEvidence::SIGNALS.keys.select { |key| !signal || signal == key }.sort
     unavailable = selected.reject { |key| @configs[key] }
     filters = ["v.object_state IN (#{%i[active suspended soft_delete].map { |state| q(Vps.object_states[state]) }.join(',')})"]
     filters << "v.user_id = #{q(@user.id)}" unless @user.role == :admin
     filters << "v.id = #{q(vps_id)}" if vps_id
+    filters << "v.user_id = #{q(user_id)}" if user_id
+    filters << "v.node_id = #{q(node_id)}" if node_id
+    filters << "n.location_id = #{q(location_id)}" if location_id
+    filters << "l.environment_id = #{q(environment_id)}" if environment_id
     authorized = <<~SQL
       SELECT v.id AS vps_id, v.user_id, v.node_id, v.hostname, v.incident_accounting_since AS accounting_since,
         v.incident_owner_transfer_chain_id IS NOT NULL AS transfer_pending,

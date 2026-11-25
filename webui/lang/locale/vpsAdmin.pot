@@ -19,6 +19,7 @@ msgid "Incidents"
 msgstr ""
 
 #: forms/admin_incidents.forms.php forms/vps.forms.php
+#: forms/vps_pressure_history.forms.php
 msgid "History"
 msgstr ""
 
@@ -36,8 +37,9 @@ msgstr ""
 #: forms/monitoring.forms.php forms/networking.forms.php
 #: forms/object_history.forms.php forms/oom_reports.forms.php
 #: forms/outage.forms.php forms/userdata.forms.php forms/userns.forms.php
-#: forms/users.forms.php forms/vps.forms.php pages/page_adminm.php
-#: pages/page_nas.php pages/page_networking.php pages/page_transactions.php
+#: forms/users.forms.php forms/vps.forms.php forms/vps_evidence.forms.php
+#: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
+#: pages/page_transactions.php
 msgid "Filters"
 msgstr ""
 
@@ -49,13 +51,14 @@ msgstr ""
 #: forms/incidents.forms.php forms/ip_release.forms.php
 #: forms/monitoring.forms.php forms/networking.forms.php forms/outage.forms.php
 #: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
-#: forms/vps.forms.php pages/page_networking.php pages/page_transactions.php
+#: forms/vps.forms.php forms/vps_evidence.forms.php pages/page_networking.php
+#: pages/page_transactions.php
 msgid "User ID"
 msgstr ""
 
 #: forms/admin_incidents.forms.php forms/backup.forms.php
 #: forms/incidents.forms.php forms/networking.forms.php forms/outage.forms.php
-#: forms/vps.forms.php pages/page_networking.php
+#: forms/vps.forms.php forms/vps_evidence.forms.php pages/page_networking.php
 msgid "VPS ID"
 msgstr ""
 
@@ -128,7 +131,7 @@ msgstr ""
 msgid "Mail state"
 msgstr ""
 
-#: forms/admin_incidents.forms.php
+#: forms/admin_incidents.forms.php forms/vps_evidence.forms.php
 msgid "Invalid configuration"
 msgstr ""
 
@@ -185,8 +188,8 @@ msgstr ""
 #: forms/oom_reports.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/userdata.forms.php
 #: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_adminvps.php pages/page_console.php
-#: pages/page_lifetimes.php pages/page_networking.php
+#: forms/vps_evidence.forms.php pages/page_adminm.php pages/page_adminvps.php
+#: pages/page_console.php pages/page_lifetimes.php pages/page_networking.php
 #: pages/page_transactions.php
 msgid "User"
 msgstr ""
@@ -204,6 +207,7 @@ msgid "Reports until warning threshold"
 msgstr ""
 
 #: forms/admin_incidents.forms.php forms/incident_policy.forms.php
+#: forms/vps_evidence.forms.php
 msgid "Last incident"
 msgstr ""
 
@@ -233,8 +237,8 @@ msgstr ""
 #: forms/networking.forms.php forms/object_history.forms.php
 #: forms/oom_reports.forms.php forms/outage.forms.php forms/userdata.forms.php
 #: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
-#: pages/page_transactions.php
+#: forms/vps_evidence.forms.php pages/page_adminm.php pages/page_nas.php
+#: pages/page_networking.php pages/page_transactions.php
 msgid "Limit"
 msgstr ""
 
@@ -243,6 +247,7 @@ msgstr ""
 #: forms/networking.forms.php forms/object_history.forms.php
 #: forms/oom_reports.forms.php forms/outage.forms.php forms/userdata.forms.php
 #: forms/userns.forms.php forms/users.forms.php forms/vps.forms.php
+#: forms/vps_evidence.forms.php forms/vps_pressure_history.forms.php
 #: pages/page_adminm.php pages/page_nas.php pages/page_networking.php
 #: pages/page_transactions.php
 msgid "Show"
@@ -250,7 +255,7 @@ msgstr ""
 
 #: forms/admin_incidents.forms.php forms/dns.forms.php
 #: forms/incident_policy.forms.php forms/incidents.forms.php
-#: lib/functions.lib.php
+#: forms/vps_evidence.forms.php lib/functions.lib.php
 msgid "Unknown"
 msgstr ""
 
@@ -340,9 +345,9 @@ msgstr ""
 #: forms/incidents.forms.php forms/lifetimes.forms.php
 #: forms/networking.forms.php forms/oom_reports.forms.php
 #: forms/outage.forms.php forms/security_advisory.forms.php
-#: forms/userdata.forms.php forms/vps.forms.php pages/page_adminm.php
-#: pages/page_adminvps.php pages/page_index.php pages/page_networking.php
-#: pages/page_transactions.php public/index.php
+#: forms/userdata.forms.php forms/vps.forms.php forms/vps_evidence.forms.php
+#: pages/page_adminm.php pages/page_adminvps.php pages/page_index.php
+#: pages/page_networking.php pages/page_transactions.php public/index.php
 msgid "VPS"
 msgstr ""
 
@@ -415,8 +420,9 @@ msgstr ""
 #: forms/admin_incidents.forms.php forms/dns.forms.php forms/node.forms.php
 #: forms/oom_reports.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/vps.forms.php
-#: pages/page_adminvps.php pages/page_cluster.php pages/page_index.php
-#: pages/page_networking.php pages/page_node.php pages/page_transactions.php
+#: forms/vps_evidence.forms.php pages/page_adminvps.php pages/page_cluster.php
+#: pages/page_index.php pages/page_networking.php pages/page_node.php
+#: pages/page_transactions.php
 msgid "Node"
 msgstr ""
 
@@ -460,7 +466,7 @@ msgstr ""
 #: forms/incidents.forms.php forms/monitoring.forms.php
 #: forms/oom_reports.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/userns.forms.php
-#: forms/users.forms.php
+#: forms/users.forms.php forms/vps_evidence.forms.php
 msgid "Details"
 msgstr ""
 
@@ -503,6 +509,7 @@ msgstr ""
 #: pages/page_networking.php pages/page_node.php pages/page_oom_reports.php
 #: pages/page_outage.php pages/page_redirect.php pages/page_reminder.php
 #: pages/page_transactions.php pages/page_userdata.php pages/page_userns.php
+#: pages/page_vps_evidence.php
 msgid "Access forbidden"
 msgstr ""
 
@@ -535,12 +542,12 @@ msgid "Loaded at"
 msgstr ""
 
 #: forms/admin_incidents.forms.php forms/incidents.forms.php
-#: forms/node.forms.php
+#: forms/node.forms.php forms/vps_evidence.forms.php
 msgid "Previous"
 msgstr ""
 
 #: forms/admin_incidents.forms.php forms/incidents.forms.php
-#: forms/vps.forms.php lib/xtemplate.lib.php
+#: forms/vps.forms.php forms/vps_evidence.forms.php lib/xtemplate.lib.php
 msgid "Next"
 msgstr ""
 
@@ -548,12 +555,13 @@ msgstr ""
 msgid "Refresh"
 msgstr ""
 
-#: forms/admin_incidents.forms.php
+#: forms/admin_incidents.forms.php forms/vps_evidence.forms.php
 #, php-format
 msgid "Total: %d"
 msgstr ""
 
 #: forms/admin_incidents.forms.php forms/ip_release.forms.php
+#: forms/vps_evidence.forms.php forms/vps_pressure_history.forms.php
 msgid "Invalid filter value."
 msgstr ""
 
@@ -2240,7 +2248,8 @@ msgctxt "incident-policy-column"
 msgid "Incidents"
 msgstr ""
 
-#: forms/incident_policy.forms.php
+#: forms/incident_policy.forms.php forms/vps_evidence.forms.php
+#: forms/vps_pressure_history.forms.php
 msgid "Period"
 msgstr ""
 
@@ -2257,6 +2266,7 @@ msgid "Policy evaluation failed"
 msgstr ""
 
 #: forms/incident_policy.forms.php forms/incidents.forms.php
+#: forms/vps_evidence.forms.php
 msgid "Incident history"
 msgstr ""
 
@@ -2427,12 +2437,12 @@ msgid "Report"
 msgstr ""
 
 #: forms/incidents.forms.php forms/networking.forms.php forms/outage.forms.php
-#: pages/page_adminm.php
+#: forms/vps_evidence.forms.php pages/page_adminm.php
 msgid "No"
 msgstr ""
 
 #: forms/incidents.forms.php forms/networking.forms.php forms/outage.forms.php
-#: pages/page_adminm.php
+#: forms/vps_evidence.forms.php pages/page_adminm.php
 msgid "Yes"
 msgstr ""
 
@@ -2464,7 +2474,7 @@ msgstr ""
 msgid "Other policy evaluations"
 msgstr ""
 
-#: forms/incidents.forms.php
+#: forms/incidents.forms.php forms/vps_evidence.forms.php
 #, php-format
 msgid "%s s"
 msgstr ""
@@ -2496,12 +2506,12 @@ msgid ""
 "Gaps do not establish that the condition was absent."
 msgstr ""
 
-#: forms/incidents.forms.php
+#: forms/incidents.forms.php forms/vps_evidence.forms.php
 #, php-format
 msgid "%s is greater than %s"
 msgstr ""
 
-#: forms/incidents.forms.php
+#: forms/incidents.forms.php forms/vps_evidence.forms.php
 msgid "Not available"
 msgstr ""
 
@@ -2517,7 +2527,7 @@ msgstr ""
 msgid "Credited duration"
 msgstr ""
 
-#: forms/incidents.forms.php
+#: forms/incidents.forms.php forms/vps_evidence.forms.php
 msgid "Observed peak"
 msgstr ""
 
@@ -2526,7 +2536,7 @@ msgstr ""
 msgid "Credited time: %s s"
 msgstr ""
 
-#: forms/incidents.forms.php
+#: forms/incidents.forms.php forms/vps_evidence.forms.php
 #, php-format
 msgid "%s: %s"
 msgstr ""
@@ -3121,7 +3131,7 @@ msgstr ""
 msgid "Event"
 msgstr ""
 
-#: forms/monitoring.forms.php
+#: forms/monitoring.forms.php forms/vps_evidence.forms.php
 msgid "Issue"
 msgstr ""
 
@@ -5562,7 +5572,7 @@ msgstr ""
 msgid "Custom"
 msgstr ""
 
-#: forms/vps.forms.php
+#: forms/vps.forms.php pages/page_vps_evidence.php
 msgid "VPS list"
 msgstr ""
 
@@ -5688,6 +5698,10 @@ msgstr ""
 
 #: forms/vps.forms.php
 msgid "Configure OOM reports"
+msgstr ""
+
+#: forms/vps.forms.php forms/vps_evidence.forms.php pages/page_vps_evidence.php
+msgid "Memory pressure"
 msgstr ""
 
 #: forms/vps.forms.php
@@ -6008,6 +6022,155 @@ msgstr ""
 
 #: forms/vps.forms.php
 msgid "Do not delete VPS immediately, but after passing of predefined time."
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Fresh observation"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "No observations"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Stale observation"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Ineligible"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Qualified"
+msgstr ""
+
+#: forms/vps_evidence.forms.php forms/vps_pressure_history.forms.php
+msgid "Recorded time"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Window start"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Window end"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Window length"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Reporting threshold"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Repeat period"
+msgstr ""
+
+#: forms/vps_evidence.forms.php forms/vps_pressure_history.forms.php
+msgid "Observation"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Qualification"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Last observed"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Observation age"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Incident reporting enabled"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Current observations meet reporting criteria"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Report due"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Condition"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Unavailable"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+#, php-format
+msgid "Last %s day"
+msgid_plural "Last %s days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: forms/vps_evidence.forms.php
+#, php-format
+msgid "Last %s s"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+#, php-format
+msgid "%s s recorded / %s s threshold; %s"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Incomplete observations"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Reporting disabled"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Memory pressure data is unavailable."
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "No recorded time matches these filters."
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Read at"
+msgstr ""
+
+#: forms/vps_evidence.forms.php
+msgid "Unable to load memory pressure data."
+msgstr ""
+
+#: forms/vps_pressure_history.forms.php
+msgid "History is unavailable."
+msgstr ""
+
+#: forms/vps_pressure_history.forms.php
+msgid "Last 30 days"
+msgstr ""
+
+#: forms/vps_pressure_history.forms.php
+msgid "Last 7 days"
+msgstr ""
+
+#: forms/vps_pressure_history.forms.php
+msgid "Date (UTC)"
+msgstr ""
+
+#: forms/vps_pressure_history.forms.php
+msgid "No recorded data"
+msgstr ""
+
+#: forms/vps_pressure_history.forms.php
+msgid "Today (partial day)"
+msgstr ""
+
+#: forms/vps_pressure_history.forms.php
+msgid "History for the current owner"
 msgstr ""
 
 #: lib/cluster.lib.php
@@ -7101,7 +7264,7 @@ msgstr ""
 #: pages/page_monitoring.php pages/page_nas.php pages/page_networking.php
 #: pages/page_oom_reports.php pages/page_outage.php pages/page_redirect.php
 #: pages/page_reminder.php pages/page_transactions.php pages/page_userdata.php
-#: pages/page_userns.php
+#: pages/page_userns.php pages/page_vps_evidence.php
 msgid "You have to log in to be able to access vpsAdmin's functions"
 msgstr ""
 

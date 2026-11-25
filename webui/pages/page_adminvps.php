@@ -244,6 +244,12 @@ if (isLoggedIn()) {
             vps_incident_page($vps);
             break;
 
+        case 'evidence':
+            $vps = $api->vps->show(api_get_uint('veid'));
+            vps_details_suite($vps);
+            vps_evidence_page($vps);
+            break;
+
         case 'info':
             $show_info = true;
             break;

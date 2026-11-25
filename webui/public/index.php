@@ -47,6 +47,7 @@ include WEBUI_ROOT . 'forms/dataset.forms.php';
 include WEBUI_ROOT . 'forms/export.forms.php';
 include WEBUI_ROOT . 'forms/vps.forms.php';
 include WEBUI_ROOT . 'forms/incident_policy.forms.php';
+include WEBUI_ROOT . 'forms/vps_evidence.forms.php';
 include WEBUI_ROOT . 'forms/users.forms.php';
 include WEBUI_ROOT . 'forms/lifetimes.forms.php';
 include WEBUI_ROOT . 'forms/object_history.forms.php';
@@ -200,6 +201,9 @@ try {
                 break;
             case 'incidents':
                 include WEBUI_ROOT . 'pages/page_incidents.php';
+                break;
+            case 'vps_evidence':
+                include WEBUI_ROOT . 'pages/page_vps_evidence.php';
                 break;
             case 'lang':
                 if (isset($_GET['newlang'])) {

@@ -10,6 +10,36 @@ const fixtures = readFixtures();
 const policyHeading = (page, key) => page.locator(`[id="incident-policy-${key}"]`).locator('..');
 const followingTable = (heading) => heading.locator('xpath=following-sibling::table[1]');
 
+test('VPS evidence navigation keeps empty data distinct from health and scopes member reads', async ({ page }) => {
+  const vpsId = fixtures.incidentPolicies.vpsId;
+  await login(page, fixtures.admin);
+  await gotoVpsDetail(page, vpsId);
+  await page.locator('[data-vpsadmin-doc-id="vps.evidence.menu"]').click();
+  await expect(page).toHaveURL(new RegExp(`action=evidence.*veid=${vpsId}`));
+  const detail = page.locator('[data-vpsadmin-doc-id="vps.evidence.page"]');
+  await expect(detail).toContainText('No observations');
+  await expect(detail).not.toContainText('Zero recorded credit does not establish');
+  await expect(detail.locator('form')).toHaveCount(0);
+  await expect(detail.getByRole('columnheader', { name: 'User', exact: true })).toHaveCount(1);
+  await expect(detail.getByRole('columnheader', { name: 'Node', exact: true })).toHaveCount(1);
+  await page.goto(`/?page=adminvps&action=list&user=${fixtures.user.id}`);
+  await page.locator('[data-vpsadmin-doc-id="vps-evidence.menu"]').click();
+  await expect(page.locator('[data-vpsadmin-doc-id="vps-evidence.overview"]')).toBeVisible();
+  await logout(page, fixtures.admin.username);
+
+  await login(page, fixtures.user);
+  await gotoVpsDetail(page, vpsId);
+  await page.locator('[data-vpsadmin-doc-id="vps.evidence.menu"]').click();
+  await expect(detail).toBeVisible();
+  await expect(detail.getByRole('columnheader', { name: /^(User|Node)$/ })).toHaveCount(0);
+  await expect(detail.locator('dt').filter({ hasText: /^Current observations meet reporting criteria$/ })
+    .locator('xpath=following-sibling::dd[1]')).toHaveText('No');
+  await page.goto(`/?page=vps_evidence&vps=${vpsId}`);
+  await expect(page.locator('[data-vpsadmin-doc-id="vps-evidence.overview"]'))
+    .toContainText('No recorded time matches these filters.');
+  await logout(page, fixtures.user.username);
+});
+
 async function expectPeriodRows(table, counts, limits, language = 'en', current = false) {
   await expect(table.locator('thead th')).toHaveText(language === 'cs'
     ? ['Období', 'Počet incidentů', 'Limit', 'Akce']

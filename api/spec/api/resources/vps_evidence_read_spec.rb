@@ -60,4 +60,27 @@ RSpec.describe VpsAdmin::API::Resources::VpsEvidence do
     expect(last_response.status).to eq(404)
     expect(VpsEvidenceState.find_by!(vps:).attributes).to eq(original)
   end
+
+  it 'supports intersected placement filters and admin-only owner selection without revealing foreign counts' do
+    accepted_evidence_fixture(vps, observed_at: now)
+    foreign = build_standalone_vps_fixture(user: SpecSeed.other_user).fetch(:vps)
+    accepted_evidence_fixture(foreign, observed_at: now + Rational(1, 1_000_000), sequence: 43)
+    filters = { vps: vps.id, node: vps.node_id, location: vps.node.location_id,
+                environment: vps.node.location.environment_id, user: vps.user_id }
+    read_as(SpecSeed.admin, '/vps_evidence', **filters, limit: 1)
+    expect(last_response.status).to eq(200), last_response.body
+    expect(json.dig('response', '_meta')).to include('total_count' => 1, 'next_offset' => nil)
+    expect(json.dig('response', 'vps_evidence').sole.dig('vps', 'id')).to eq(vps.id)
+    read_as(SpecSeed.other_user, '/vps_evidence', **filters.except(:user))
+    expect(json.dig('response', '_meta', 'total_count')).to eq(0)
+    expect(json.dig('response', 'vps_evidence')).to eq([])
+    read_as(vps.user, '/vps_evidence', user: foreign.user_id)
+    # HaveAPI omits blacklisted inputs, as on VPS Index; they cannot widen scope.
+    expect(json['status']).to be(true)
+    expect(json.dig('response', '_meta', 'total_count')).to eq(1)
+    expect(json.dig('response', 'vps_evidence').map { |row| row.dig('vps', 'id') }).to eq([vps.id])
+    expect(json.dig('response', 'vps_evidence').sole).not_to have_key('user')
+    read_as(vps.user, '/vps_evidence', node: 99_999_999)
+    expect(json['status']).to be(false)
+  end
 end

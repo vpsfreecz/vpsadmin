@@ -79,4 +79,20 @@ RSpec.describe VpsEvidenceReadProjection do
     expect(queries.length).to eq(1)
     expect(queries.sole).to include('COUNT(*)', 'vps_evidence_states', 'vps_current_statuses', 'LIMIT 1')
   end
+
+  it 'intersects placement and owner filters before totals and offset pagination' do
+    accepted_evidence_fixture(vps, observed_at: now)
+    other = build_standalone_vps_fixture(user: SpecSeed.other_user).fetch(:vps)
+    accepted_evidence_fixture(other, observed_at: now + Rational(1, 1_000_000), sequence: 43)
+    filters = { user_id: vps.user_id, node_id: vps.node_id, location_id: vps.node.location_id,
+                environment_id: vps.node.location.environment_id, signal: 'rtnl_latency' }
+    result = projection(SpecSeed.admin).positive(**filters, limit: 1)
+    expect(result[:rows].sole[:vps_id]).to eq(vps.id)
+    expect(result[:meta]).to include(total_count: 1, next_offset: nil)
+    expect(projection(SpecSeed.admin).positive(**filters, offset: 1)[:rows]).to be_empty
+    expect(projection.positive(user_id: other.user_id)[:meta][:total_count]).to eq(0)
+    expect(projection.positive(node_id: -1)[:meta][:total_count]).to eq(0)
+    expect(projection.positive(location_id: -1)[:rows]).to be_empty
+    expect(projection.positive(environment_id: -1)[:rows]).to be_empty
+  end
 end

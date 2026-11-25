@@ -929,6 +929,7 @@ function vps_list_form()
         $xtpl->sbar_add('<img src="template/icons/m_add.png"  title="' . _("New VPS") . '" /> ' . _("New VPS"), '?page=adminvps&section=vps&action=new-step-1', 'vps.create');
     }
 
+    vps_evidence_sidebar();
     $xtpl->sbar_add('<img src="template/icons/vps_ip_list.png" title="' . _("User data") . '" /> ' . _("User data"), '?page=userdata&action=list', 'userdata.menu');
     $xtpl->sbar_add('<img src="template/icons/vps_ip_list.png" title="' . _("User namespaces") . '" /> ' . _("User namespaces"), '?page=userns');
 }
@@ -980,6 +981,9 @@ function vps_details_submenu($vps)
     $xtpl->sbar_add(_('OOM reports'), '?page=oom_reports&action=list&vps=' . $vps->id . '&list=1');
     $xtpl->sbar_add(_('Configure OOM reports'), '?page=oom_reports&action=rule_list&vps=' . $vps->id);
     vps_incident_sidebar($vps, $return_url);
+    if (vps_evidence_resource($vps->id)) {
+        $xtpl->sbar_add(_('Memory pressure'), '?page=adminvps&action=evidence&veid=' . (int) $vps->id, 'vps.evidence.menu');
+    }
 
     if (isAdmin()) {
         $xtpl->sbar_add(_('Report incident'), '?page=incidents&action=new&vps=' . $vps->id);
