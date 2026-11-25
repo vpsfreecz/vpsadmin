@@ -16,6 +16,10 @@
 <% end -%>
 <p>Action: <%= ERB::Util.html_escape((@incident.vps_action).to_s) %></p>
 <pre style="white-space:pre-wrap;word-break:break-word;font:inherit;"><%= ERB::Util.html_escape((@incident.text).to_s) %></pre>
+<% if @vps_evidence.is_a?(Hash) && @vps_evidence[:detail_url] -%>
+<p><a href="<%= ERB::Util.html_escape(@vps_evidence[:detail_url]) %>">View all contributing intervals</a></p>
+<% end -%>
+
 <% policies = Array(@incident_policies).select do |policy|
      policy.is_a?(Hash) && !policy[:label].to_s.empty? &&
        %i[warning_period_days stop_period_days count_7d count_30d].all? { |key| policy[key].is_a?(Integer) && policy[key] >= 0 } &&

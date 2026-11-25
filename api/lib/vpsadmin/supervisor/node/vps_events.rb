@@ -34,6 +34,10 @@ module VpsAdmin::Supervisor
     protected
 
     def process_event(event)
+      if event['type'] == 'vps_evidence'
+        return ::VpsEvidence.ingest!(node, event['opts'])
+      end
+
       vps = ::Vps.find_by(id: event['id'], node_id: node.id)
       return if vps.nil?
 

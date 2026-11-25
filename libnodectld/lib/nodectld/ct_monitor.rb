@@ -95,6 +95,17 @@ module NodeCtld
           )
         end
 
+      when 'osctl_oomd_evidence'
+        opts = event[:opts]
+        # Keep every batch/part and target identity inside opts. Mapping and
+        # authoritative validation belong to the authenticated supervisor.
+        if opts.is_a?(Hash) && opts[:schema] == 1 && JSON.generate(opts).bytesize <= 16_384 &&
+           opts[:observed_at_us].is_a?(Integer) && opts[:observed_at_us] >= 0 &&
+           opts[:targets].is_a?(Array) && opts[:targets].size <= 16 &&
+           opts[:segments].is_a?(Array) && opts[:segments].size <= 16
+          send_event(nil, 'vps_evidence', opts, time: Time.at(Rational(opts[:observed_at_us], 1_000_000)))
+        end
+
       when 'osctld_shutdown'
         if Daemon.instance.node.any_osctl_pools?
           log(:info, 'osctld is shutting down, pausing')

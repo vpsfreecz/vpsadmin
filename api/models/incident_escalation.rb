@@ -36,7 +36,7 @@ class IncidentEscalation
 
   def self.serialized(vps, requires_new: false, &block)
     Vps.transaction(requires_new:) do
-      SysConfig.where(category: RULES.values.map(&:category)).order(:id).lock.load
+      SysConfig.where(category: RULES.values.map(&:category) + VpsEvidence.categories).order(:id).lock.load
       vps = Vps.lock.find_by(id: vps) unless vps.is_a?(Vps)
       vps ? vps.with_lock { block.call(vps) } : block.call(nil)
     end
@@ -368,7 +368,7 @@ class IncidentEscalation
   end
 
   def queue_incident_reports!
-    IncidentReport.ordinary.where(vps_id: @vps.id, source_kind: 'node_vps_event', notification_processed_at: nil).where.not(source_key: nil).lock.find_each do |incident|
+    IncidentReport.ordinary.where(vps_id: @vps.id, source_kind: %w[node_vps_event node_oomd_evidence], notification_processed_at: nil).where.not(source_key: nil).lock.find_each do |incident|
       # A delayed old-owner event is retained for audit, not mailed to a new owner.
       next unless incident.user_id == @vps.user_id
       next if incident.detected_at > incident.created_at

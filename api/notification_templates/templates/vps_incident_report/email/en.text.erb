@@ -14,6 +14,10 @@ Action: <%= @incident.vps_action %>
 
 <%= @incident.text %>
 
+<% if @vps_evidence.is_a?(Hash) && @vps_evidence[:detail_url] -%>
+View all contributing intervals: <%= @vps_evidence[:detail_url] %>
+<% end -%>
+
 <% policies = Array(@incident_policies).select do |policy|
      policy.is_a?(Hash) && !policy[:label].to_s.empty? &&
        %i[warning_period_days stop_period_days count_7d count_30d].all? { |key| policy[key].is_a?(Integer) && policy[key] >= 0 } &&

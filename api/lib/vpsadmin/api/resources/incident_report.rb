@@ -237,3 +237,85 @@ class VpsAdmin::API::Resources::IncidentReport::PolicyEvaluation < HaveAPI::Reso
     end
   end
 end
+
+class VpsAdmin::API::Resources::IncidentReport::EvidenceInterval < HaveAPI::Resource
+  route '{incident_report_id}/evidence_intervals'
+  desc 'Read the saved intervals contributing to a VPS evidence incident'
+
+  class Index < HaveAPI::Action
+    http_method :get
+    route ''
+    desc 'List the saved evidence intervals in chronological order'
+
+    input do
+      integer :offset, default: 0, fill: true, number: { min: 0 }, label: 'Rows to skip', desc: 'Zero-based offset in the saved chronological interval list.'
+      integer :limit, default: 25, fill: true, number: { min: 1, max: 100 }, label: 'Rows per page', desc: 'Maximum number of saved intervals returned, from 1 to 100.'
+    end
+
+    output(:object_list) do
+      integer :id, label: 'Saved interval ID', desc: 'ID of the interval saved with this incident.'
+      datetime :from_at, label: 'Interval start', desc: 'UTC start of the accepted contribution, including microseconds.'
+      datetime :to_at, label: 'Interval end', desc: 'UTC end of the accepted contribution, including microseconds.'
+      integer :credit_us, label: 'Credited microseconds', desc: 'Accepted duration in integer microseconds, clipped to the saved report window.'
+      string :measurement, nullable: true, label: 'Measurement', desc: 'Measurement identifier saved with this interval, or null when no peak was observed.'
+      string :peak_unit, nullable: true, label: 'Peak unit', desc: 'Unit of the saved peak value, or null when no peak was observed.'
+      integer :peak_value, nullable: true, label: 'Peak value', desc: 'Observed integer peak in the saved unit; null when no measurement is available.'
+      bool :peak_is_lower_bound, nullable: true, label: 'Peak is a lower bound', desc: 'True when the observed peak is a lower bound; null when no measurement is available.'
+    end
+
+    meta(:global) do
+      output do
+        integer :total_count, label: 'Total saved intervals', desc: 'Number of immutable intervals contributing to this report, before pagination.'
+        integer :offset, label: 'Rows to skip', desc: 'Zero-based offset in the saved chronological interval list.'
+        integer :limit, label: 'Rows per page', desc: 'Maximum number of saved intervals returned, from 1 to 100.'
+        integer :next_offset, nullable: true, label: 'Next page offset', desc: 'Offset for the next page, or null on the final page.'
+        bool :available, label: 'Saved evidence snapshot available', desc: 'False for an ordinary report without evidence accounting; saved configuration metadata is then null.'
+        bool :window_complete, nullable: true, label: 'Saved coverage complete', desc: 'Whether coverage was complete at evaluation; false means the accepted score is a lower bound.'
+        datetime :evaluated_at, nullable: true, label: 'Report evaluated at', desc: 'UTC time of the saved reporting decision, independent of current settings.'
+        datetime :window_from, nullable: true, label: 'Saved window start', desc: 'Open lower boundary of the window used for this report.'
+        datetime :window_to, nullable: true, label: 'Saved window end', desc: 'Closed upper boundary of the window used for this report.'
+        integer :window_seconds, nullable: true, label: 'Saved window in seconds', desc: 'Configured rolling window at evaluation, not its current value.'
+        integer :threshold_seconds, nullable: true, label: 'Saved threshold in seconds', desc: 'Configured reporting threshold at evaluation.'
+        integer :repeat_seconds, nullable: true, label: 'Saved repeat period in seconds', desc: 'Minimum period between accepted reports at evaluation.'
+        string :signal, nullable: true, label: 'Evidence signal', desc: 'Fixed signal saved with the report; null for a report without evidence.'
+        string :representation, nullable: true, label: 'Evidence representation', desc: 'Accounting representation saved with the report, independent of current settings.'
+        string :condition_measurement, nullable: true, label: 'Condition measurement', desc: 'Measurement used by the saved signal condition, or null without a condition.'
+        string :condition_operator, nullable: true, label: 'Condition operator', desc: 'Comparison used by the saved condition; gt means strictly greater than.'
+        integer :condition_value, nullable: true, label: 'Condition value', desc: 'Saved integer condition value in condition_unit; null without a condition.'
+        string :condition_unit, nullable: true, label: 'Condition unit', desc: 'Unit of the saved condition value, or null without a condition.'
+        integer :credit_us, nullable: true, label: 'Credited microseconds', desc: 'Accepted duration in integer microseconds, clipped to the saved report window.'
+        integer :qualification_interval_us, nullable: true, label: 'Qualification interval in microseconds', desc: 'Interval between source checks of the VPS qualification criteria at evaluation; observation timestamps retain their original resolution.'
+      end
+    end
+
+    authorize do |user|
+      allow if user.role == :admin
+      restrict user_id: user.id
+      allow
+    end
+
+    def prepare
+      @incident = ::IncidentReport.visible_in_owner_epoch(current_user).find_by!(with_restricted(id: path_params['incident_report_id']))
+    end
+
+    def exec
+      snapshot = @incident.evidence_snapshot || {}
+      scope = @incident.vps_evidence_intervals.order(:from_at, :id)
+      total = scope.count
+      meta = { total_count: total, offset: input[:offset], limit: input[:limit], available: !snapshot.empty?,
+               next_offset: input[:offset] + input[:limit] < total ? input[:offset] + input[:limit] : nil }
+      %w[signal representation window_complete evaluated_at window_from window_to window_seconds threshold_seconds repeat_seconds credit_us qualification_interval_us].each do |key|
+        value = snapshot[key]
+        meta[key.to_sym] = value
+      end
+      %w[measurement operator value unit].each { |key| meta[:"condition_#{key}"] = snapshot.dig('condition', key) }
+      set_meta(meta)
+      scope.offset(input[:offset]).limit(input[:limit]).map do |row|
+        # HaveAPI formats Time values to whole seconds. Canonical ISO strings
+        # preserve accepted microseconds within the existing Datetime type.
+        { id: row.id, from_at: row.from_at.iso8601(6), to_at: row.to_at.iso8601(6), credit_us: row.credit_us, measurement: row.measurement, peak_unit: row.peak_unit, peak_value: row.peak_value,
+          peak_is_lower_bound: row.peak_is_lower_bound }
+      end
+    end
+  end
+end

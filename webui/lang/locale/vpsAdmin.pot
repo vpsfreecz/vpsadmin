@@ -534,11 +534,13 @@ msgstr ""
 msgid "Loaded at"
 msgstr ""
 
-#: forms/admin_incidents.forms.php forms/node.forms.php
+#: forms/admin_incidents.forms.php forms/incidents.forms.php
+#: forms/node.forms.php
 msgid "Previous"
 msgstr ""
 
-#: forms/admin_incidents.forms.php forms/vps.forms.php lib/xtemplate.lib.php
+#: forms/admin_incidents.forms.php forms/incidents.forms.php
+#: forms/vps.forms.php lib/xtemplate.lib.php
 msgid "Next"
 msgstr ""
 
@@ -2460,6 +2462,73 @@ msgstr ""
 
 #: forms/incidents.forms.php
 msgid "Other policy evaluations"
+msgstr ""
+
+#: forms/incidents.forms.php
+#, php-format
+msgid "%s s"
+msgstr ""
+
+#: forms/incidents.forms.php
+msgid "RTNL latency"
+msgstr ""
+
+#: forms/incidents.forms.php
+msgid "Evidence intervals"
+msgstr ""
+
+#: forms/incidents.forms.php
+msgid "The saved intervals could not be loaded."
+msgstr ""
+
+#: forms/incidents.forms.php
+msgid "Observed evidence intervals"
+msgstr ""
+
+#: forms/incidents.forms.php
+#, php-format
+msgid "Showing %d of %d intervals."
+msgstr ""
+
+#: forms/incidents.forms.php
+msgid ""
+"Some observations are missing, so the credited duration is a lower bound. "
+"Gaps do not establish that the condition was absent."
+msgstr ""
+
+#: forms/incidents.forms.php
+#, php-format
+msgid "%s is greater than %s"
+msgstr ""
+
+#: forms/incidents.forms.php
+msgid "Not available"
+msgstr ""
+
+#: forms/incidents.forms.php
+msgid "Interval start"
+msgstr ""
+
+#: forms/incidents.forms.php
+msgid "Interval end"
+msgstr ""
+
+#: forms/incidents.forms.php
+msgid "Credited duration"
+msgstr ""
+
+#: forms/incidents.forms.php
+msgid "Observed peak"
+msgstr ""
+
+#: forms/incidents.forms.php
+#, php-format
+msgid "Credited time: %s s"
+msgstr ""
+
+#: forms/incidents.forms.php
+#, php-format
+msgid "%s: %s"
 msgstr ""
 
 #: forms/ip_release.forms.php

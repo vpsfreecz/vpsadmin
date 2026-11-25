@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_30_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_25_120000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -546,6 +546,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_180000) do
     t.string "source_action", limit: 16
     t.bigint "notification_chain_id"
     t.datetime "notification_processed_at"
+    t.text "evidence_snapshot", size: :long, collation: "utf8mb4_bin"
     t.index ["cpu_limit"], name: "index_incident_reports_on_cpu_limit"
     t.index ["created_at"], name: "index_incident_reports_on_created_at"
     t.index ["detected_at"], name: "index_incident_reports_on_detected_at"
@@ -557,6 +558,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_180000) do
     t.index ["user_id"], name: "index_incident_reports_on_user_id"
     t.index ["vps_id", "user_id", "codename", "detected_at"], name: "incident_reports_accounting"
     t.index ["vps_id"], name: "index_incident_reports_on_vps_id"
+    t.check_constraint "json_valid(`evidence_snapshot`)", name: "evidence_snapshot"
   end
 
   create_table "ip_address_assignments", charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
@@ -2245,6 +2247,62 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_180000) do
     t.integer "used_swap"
     t.integer "vps_id", null: false
     t.index ["vps_id"], name: "index_vps_current_statuses_on_vps_id", unique: true
+  end
+
+  create_table "vps_evidence_events", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.string "signal", limit: 64, null: false
+    t.bigint "node_id", null: false
+    t.string "producer_epoch", limit: 64, null: false
+    t.bigint "sequence", null: false
+    t.integer "part", null: false
+    t.integer "parts", null: false
+    t.string "digest", limit: 64, null: false
+    t.datetime "observed_at", null: false
+    t.datetime "received_at", null: false
+    t.text "facts", size: :long, null: false, collation: "utf8mb4_bin"
+    t.boolean "current_stream", default: false, null: false
+    t.index ["node_id", "signal", "current_stream"], name: "vps_evidence_stream_cursor"
+    t.index ["node_id", "signal", "observed_at", "id"], name: "vps_evidence_event_stream"
+    t.index ["node_id", "signal", "producer_epoch", "sequence", "part"], name: "vps_evidence_event_identity", unique: true
+    t.index ["received_at"], name: "index_vps_evidence_events_on_received_at"
+    t.check_constraint "json_valid(`facts`)", name: "facts"
+  end
+
+  create_table "vps_evidence_intervals", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.string "signal", limit: 64, null: false
+    t.bigint "vps_id", null: false
+    t.bigint "user_id", null: false
+    t.datetime "accounting_since"
+    t.bigint "incident_report_id"
+    t.datetime "from_at", null: false
+    t.datetime "to_at", null: false
+    t.bigint "credit_us", null: false
+    t.datetime "accepted_at"
+    t.string "measurement", limit: 64
+    t.string "peak_unit", limit: 32
+    t.bigint "peak_value"
+    t.boolean "peak_is_lower_bound"
+    t.text "evidence", size: :long, null: false, collation: "utf8mb4_bin"
+    t.index ["incident_report_id", "accepted_at"], name: "vps_evidence_interval_accepted"
+    t.index ["incident_report_id", "id"], name: "vps_evidence_interval_report"
+    t.index ["vps_id", "signal", "incident_report_id", "to_at"], name: "vps_evidence_interval_window"
+    t.check_constraint "json_valid(`evidence`)", name: "evidence"
+  end
+
+  create_table "vps_evidence_states", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.string "signal", limit: 64, null: false
+    t.bigint "vps_id", null: false
+    t.bigint "user_id", null: false
+    t.datetime "accounting_since"
+    t.bigint "accepted_us", default: 0, null: false
+    t.datetime "last_incident_at"
+    t.datetime "complete_since"
+    t.bigint "node_id"
+    t.datetime "observed_at"
+    t.text "target", size: :long, collation: "utf8mb4_bin"
+    t.index ["node_id", "signal"], name: "index_vps_evidence_states_on_node_id_and_signal"
+    t.index ["vps_id", "signal"], name: "index_vps_evidence_states_on_vps_id_and_signal", unique: true
+    t.check_constraint "json_valid(`target`)", name: "target"
   end
 
   create_table "vps_features", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|

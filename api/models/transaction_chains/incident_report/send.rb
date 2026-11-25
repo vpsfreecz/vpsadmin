@@ -22,6 +22,7 @@ module TransactionChains
                  user: inc.user,
                  vps: inc.vps,
                  incident: inc,
+                 vps_evidence: VpsAdmin::API::IncidentReports.vps_evidence_mail_projection(inc),
                  incident_policies: VpsAdmin::API::IncidentReports.mail_policies(inc, language: translation.language.code)
                }
              })

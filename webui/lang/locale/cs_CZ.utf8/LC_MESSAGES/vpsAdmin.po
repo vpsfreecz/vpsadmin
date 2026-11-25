@@ -535,11 +535,13 @@ msgstr "Údaje o načtení"
 msgid "Loaded at"
 msgstr "Načteno"
 
-#: forms/admin_incidents.forms.php forms/node.forms.php
+#: forms/admin_incidents.forms.php forms/incidents.forms.php
+#: forms/node.forms.php
 msgid "Previous"
 msgstr "Předchozí"
 
-#: forms/admin_incidents.forms.php forms/vps.forms.php lib/xtemplate.lib.php
+#: forms/admin_incidents.forms.php forms/incidents.forms.php
+#: forms/vps.forms.php lib/xtemplate.lib.php
 msgid "Next"
 msgstr "Další"
 
@@ -2493,6 +2495,75 @@ msgstr "Počty a limity byly uloženy při vyhodnocení tohoto hlášení."
 #: forms/incidents.forms.php
 msgid "Other policy evaluations"
 msgstr "Ostatní vyhodnocení pravidel"
+
+#: forms/incidents.forms.php
+#, php-format
+msgid "%s s"
+msgstr "%s s"
+
+#: forms/incidents.forms.php
+msgid "RTNL latency"
+msgstr "Latence RTNL"
+
+#: forms/incidents.forms.php
+msgid "Evidence intervals"
+msgstr "Intervaly pozorování"
+
+#: forms/incidents.forms.php
+msgid "The saved intervals could not be loaded."
+msgstr "Uložené intervaly se nepodařilo načíst."
+
+#: forms/incidents.forms.php
+msgid "Observed evidence intervals"
+msgstr "Zaznamenané intervaly"
+
+#: forms/incidents.forms.php
+#, php-format
+msgid "Showing %d of %d intervals."
+msgstr "Zobrazené intervaly: %d z %d."
+
+#: forms/incidents.forms.php
+msgid ""
+"Some observations are missing, so the credited duration is a lower bound. "
+"Gaps do not establish that the condition was absent."
+msgstr ""
+"Část pozorování chybí, takže započtený čas je dolní mez. Mezery mezi "
+"intervaly nedokazují, že v nich sledovaná podmínka nebyla splněna."
+
+#: forms/incidents.forms.php
+#, php-format
+msgid "%s is greater than %s"
+msgstr "%s je větší než %s"
+
+#: forms/incidents.forms.php
+msgid "Not available"
+msgstr "není k dispozici"
+
+#: forms/incidents.forms.php
+msgid "Interval start"
+msgstr "Začátek intervalu"
+
+#: forms/incidents.forms.php
+msgid "Interval end"
+msgstr "Konec intervalu"
+
+#: forms/incidents.forms.php
+msgid "Credited duration"
+msgstr "Započtený čas"
+
+#: forms/incidents.forms.php
+msgid "Observed peak"
+msgstr "Pozorované maximum"
+
+#: forms/incidents.forms.php
+#, php-format
+msgid "Credited time: %s s"
+msgstr "Započtený čas: %s s"
+
+#: forms/incidents.forms.php
+#, php-format
+msgid "%s: %s"
+msgstr "%s: %s"
 
 #: forms/ip_release.forms.php
 #, php-format
@@ -9684,6 +9755,12 @@ msgstr "Pomoc"
 
 #~ msgid "Some changes were saved"
 #~ msgstr "Některé změny byly uloženy"
+
+#~ msgid "RTNL intervals"
+#~ msgstr "Intervaly RTNL"
+
+#~ msgid "Peak response delay"
+#~ msgstr "Nejvyšší zpoždění odpovědi"
 
 #~ msgid "Recorded evaluations and current outcomes"
 #~ msgstr "Uložená vyhodnocení a aktuální výsledky"

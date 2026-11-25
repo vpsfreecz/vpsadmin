@@ -2,6 +2,15 @@ module VpsAdmin::API::Tasks
   class IncidentReport < Base
     # Process incident reports added by nodectl
     def process
+      ::VpsEvidenceState.find_each do |state|
+        next unless ::VpsEvidence::SIGNALS.has_key?(state.signal)
+
+        ::VpsEvidence.process!(::Vps.find(state.vps_id), state.signal)
+      rescue StandardError => e
+        warn "Unable to process VPS evidence for VPS #{state.vps_id}: #{e.class}"
+      end
+      ::VpsEvidence.prune!
+
       evaluated = ::IncidentReport.where(id: ::IncidentPolicyEvaluation.select(:incident_report_id))
       ::Vps.where(id: evaluated.select(:vps_id))
            .or(::Vps.where.not(incident_owner_transfer_chain_id: nil))

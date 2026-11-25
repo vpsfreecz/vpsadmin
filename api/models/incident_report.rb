@@ -1,9 +1,12 @@
 class IncidentReport < ApplicationRecord
+  attr_readonly :evidence_snapshot
+  attribute :evidence_snapshot, :json
   belongs_to :user
   belongs_to :vps
   belongs_to :ip_address_assignment
   belongs_to :filed_by, class_name: 'User'
   belongs_to :mailbox
+  has_many :vps_evidence_intervals, dependent: :delete_all
   has_many :incident_policy_evaluations, dependent: :delete_all
   has_one :notice_action, class_name: 'VpsIncidentAction', foreign_key: :notice_incident_report_id
 
@@ -16,7 +19,7 @@ class IncidentReport < ApplicationRecord
     where(<<~SQL.squish, user.id)
       (NOT EXISTS (SELECT 1 FROM incident_policy_evaluations visible_e
         WHERE visible_e.incident_report_id = incident_reports.id)
-        AND COALESCE(incident_reports.source_kind, '') <> 'incident_policy_notice') OR NOT EXISTS (
+        AND COALESCE(incident_reports.source_kind, '') NOT IN ('incident_policy_notice', 'node_oomd_evidence')) OR NOT EXISTS (
         SELECT 1 FROM vpses incident_vps WHERE incident_vps.id = incident_reports.vps_id
           AND incident_vps.user_id = ? AND incident_vps.incident_accounting_since IS NOT NULL
           AND (incident_reports.detected_at < incident_vps.incident_accounting_since OR

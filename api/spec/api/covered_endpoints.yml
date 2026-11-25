@@ -175,6 +175,7 @@ covered:
 - incident_policy#show
 - incident_policy_evaluation#index
 - incident_policy_exposure#index
+- incident_report.evidence_interval#index
 - incident_report#create
 - incident_report#index
 - incident_report#show
@@ -416,6 +417,7 @@ covered:
 - vps#stop
 - vps#swap_with
 - vps#update
+- vps.evidence#index
 - vps.incident_policy#index
 - vps.incident_policy#show
 - vps.incident_policy#update
@@ -441,6 +443,7 @@ covered:
 - vps.state_log#show
 - vps.status#index
 - vps.status#show
+- vps_evidence#index
 - vps_user_data#create
 - vps_user_data#delete
 - vps_user_data#deploy

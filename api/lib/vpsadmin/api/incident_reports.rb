@@ -67,6 +67,40 @@ module VpsAdmin::API
       end
     end
 
+    def self.vps_evidence_mail_projection(incident)
+      snapshot = incident.evidence_snapshot
+      return unless snapshot
+
+      rows = incident.vps_evidence_intervals.order(:from_at, :id).limit(5).map do |row|
+        { from_at: row.from_at, to_at: row.to_at, credit_us: row.credit_us, measurement: row.measurement, peak_unit: row.peak_unit, peak_value: row.peak_value,
+          peak_is_lower_bound: row.peak_is_lower_bound }
+      end
+      snapshot.symbolize_keys.merge(condition: snapshot['condition']&.symbolize_keys, intervals: rows, shown_count: rows.length,
+                                    total_count: snapshot.fetch('interval_count'), omitted_count: snapshot.fetch('interval_count') - rows.length,
+                                    detail_url: webui_url(page: 'incidents', action: 'show', id: incident.id))
+    end
+
+    def self.rtnl_event_message(vps:, user:, snapshot:, intervals:)
+      with_language(user) do
+        values = snapshot.symbolize_keys.merge(vps_id: vps.id, hostname: vps.hostname,
+                                               credit_seconds: snapshot.fetch('credit_us') / 1_000_000.0,
+                                               cutoff_seconds: snapshot.fetch('condition').fetch('value') / 1_000_000.0,
+                                               qualification_seconds: snapshot.fetch('qualification_interval_us') / 1_000_000.0,
+                                               shown: intervals.length, total: snapshot.fetch('interval_count'))
+        lines = [VpsAdmin::API::I18n.t('incident_reports.rtnl.text', **values)]
+        lines << VpsAdmin::API::I18n.t('incident_reports.rtnl.incomplete') unless snapshot.fetch('window_complete')
+        lines << VpsAdmin::API::I18n.t('incident_reports.rtnl.counts', **values)
+        intervals.each do |interval|
+          lines << VpsAdmin::API::I18n.t('incident_reports.rtnl.interval', from: interval.fetch(:from_at).iso8601(6),
+                                                                           to: interval.fetch(:to_at).iso8601(6),
+                                                                           credit: interval.fetch(:credit_us) / 1_000_000.0,
+                                                                           peak: interval.fetch(:peak_value) / 1_000_000.0,
+                                                                           lower_bound: interval[:peak_is_lower_bound] ? '≥' : '')
+        end
+        { subject: VpsAdmin::API::I18n.t('incident_reports.rtnl.subject'), text: "#{lines.join("\n\n")}\n" }
+      end
+    end
+
     # Entry point for incoming messages
     class Handler
       # @param mailbox [::Mailbox]

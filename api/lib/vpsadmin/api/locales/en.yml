@@ -461,6 +461,22 @@ en:
       concurrency:
         description: How many migrations run concurrently
         label: Concurrency
+      condition_measurement:
+        description: Measurement identifier in the fixed signal condition; null when
+          no condition is defined.
+        label: Condition measurement
+      condition_operator:
+        description: Comparison operator in the fixed signal condition; null when
+          no condition is defined.
+        label: Condition operator
+      condition_unit:
+        description: Unit of condition_value; null when no condition is defined.
+        label: Condition unit
+      condition_value:
+        description: Integer value in condition_unit for the fixed signal condition,
+          independent of duration and incident-count thresholds; null when no condition
+          is defined.
+        label: Condition value
       confidence:
         choices:
           exact:
@@ -474,6 +490,9 @@ en:
         label: Config
       configuration_digest:
         label: Configuration_digest
+      configuration_valid:
+        description: Whether the effective settings for this signal are valid. Missing
+          or stale observations do not make configuration invalid.
       configured_value:
         label: Configured_value
       confirmed:
@@ -910,6 +929,9 @@ en:
       from:
         description: The period includes its start and excludes its end. Ignored for
           outstanding actions.
+      from_at:
+        description: UTC start of the accepted contribution, including microseconds.
+        label: Interval start
       from_bytes:
         description: Paginate by in/out bytes
         label: From_bytes
@@ -979,8 +1001,6 @@ en:
         label: HostIpAddress
       host_pid:
         label: Host_pid
-      hostname:
-        label: Hostname
       hostname_any:
         label: Hostname_any
       hostname_exact:
@@ -1202,9 +1222,12 @@ en:
       last_check_at:
         label: Last_check_at
       last_incident_at:
-        label: Last incident
+        description: Last accepted incident time for this signal and owner accounting
+          period. Null without history or when ownership cannot be matched.
       last_observed_at:
-        label: Last observed at
+        description: Last stored source observation time for the matching owner accounting
+          period, even if stale. Null without history or when ownership cannot be
+          matched.
       last_report:
         label: Last report
       last_request_at:
@@ -1619,6 +1642,22 @@ en:
           suspended:
             label: Suspended
         label: Object state
+      observation_age_seconds:
+        description: Age of the last source observation at read_at, in seconds; null
+          when no observation is available.
+        label: Observation age in seconds
+      observation_state:
+        choices:
+          fresh:
+            label: fresh
+          no_data:
+            label: no_data
+          stale:
+            label: stale
+        description: Freshness of the available observation, separate from qualification
+          and reporting eligibility. With invalid settings, freshness uses the signal
+          default.
+        label: Observation freshness
       observed_after:
         description: Last observation before the change; null for the first known
           event
@@ -1869,6 +1908,17 @@ en:
           vps:
             label: vps
         label: Purpose
+      qualification:
+        choices:
+          ineligible:
+            label: ineligible
+          qualified:
+            label: qualified
+          unknown:
+            label: unknown
+        description: Last stored source assessment, which can remain visible after
+          it becomes stale. Null without history or when ownership cannot be matched.
+        label: Last source qualification
       quota:
         description: Limits the amount of space a dataset and all its descendants
           can consume
@@ -1937,18 +1987,39 @@ en:
         label: Remote console server
       remove:
         label: Remove exemption
+      repeat_seconds:
+        description: Effective minimum time between accepted incidents, in seconds;
+          null when configuration is invalid.
+        label: Current repeat period in seconds
       replace_ip_addresses:
         description: When migrating to another location, current IP addresses are
           replaced by addresses from the new location
         label: Replace IP addresses
       reply_to:
         label: Reply_to
+      report_due:
+        description: Whether reporting is enabled, current proof is eligible, credit
+          reaches the threshold and the repeat period has elapsed. Reading this value
+          creates no incident. Null when configuration is invalid.
+        label: Evidence incident is due
+      report_eligible:
+        description: Whether fresh source proof, current placement and VPS status
+          permit reporting, independently of enablement, credit threshold and repeat
+          period. Null when configuration is invalid.
+        label: Current observations meet reporting criteria
       report_schema_version:
         label: Report_schema_version
       reported_at:
         label: Reported_at
       reported_release:
         label: Reported_release
+      reporting_enabled:
+        description: Current reporting switch, independent of recorded credit; null
+          when configuration is invalid.
+        label: Incident reporting enabled
+      representation:
+        description: Accounting representation; currently qualified_duration.
+        label: Evidence representation
       request_count:
         label: Request count
       resource:
@@ -2097,6 +2168,12 @@ en:
         label: Shares IPv4 networks with location
       shares_v6_networks_with:
         label: Shares IPv4 networks with location
+      signal:
+        choices:
+          rtnl_latency:
+            label: rtnl_latency
+        description: Supported signal identifier; currently rtnl_latency.
+        label: Evidence signal
       since:
         label: Since
       since_kernel:
@@ -2338,6 +2415,10 @@ en:
       threads:
         description: Number of NFS server threads.
         label: Threads
+      threshold_seconds:
+        description: Effective credited-duration threshold for creating an incident,
+          in seconds; null when configuration is invalid.
+        label: Current reporting threshold in seconds
       threshold_status:
         choices:
           clear:
@@ -2357,6 +2438,9 @@ en:
       to:
         description: The period includes its start and excludes its end. Ignored for
           outstanding actions.
+      to_at:
+        description: UTC end of the accepted contribution, including microseconds.
+        label: Interval end
       to_date:
         label: To_date
       to_depth:
@@ -2656,6 +2740,23 @@ en:
         label: Reports until warning threshold
       weekday:
         label: Weekday
+      window_complete:
+        description: Whether recorded coverage spans the current window and the observation
+          is recent. This does not establish reporting eligibility. Null when configuration
+          is invalid.
+        label: Complete window coverage
+      window_from:
+        description: Excluded lower occurrence-time boundary in UTC with microseconds;
+          null when configuration is invalid.
+        label: Current window start
+      window_seconds:
+        description: Effective rolling window length in seconds; null when configuration
+          is invalid.
+        label: Current window in seconds
+      window_to:
+        description: Included upper occurrence-time boundary in UTC with microseconds,
+          equal to read_at; null when configuration is invalid.
+        label: Current window end
       year:
         label: Year
       year_of_birth:
@@ -2844,6 +2945,26 @@ en:
             stopped.
 
             '
+      rtnl:
+        counts: 'Contributing intervals shown: %{shown} of %{total}. Sign in to view
+          the complete list in the incident details. Peak values marked with ≥ are
+          lower bounds from probes that were still pending.'
+        incomplete: Some observations are missing, so the credited duration is a lower
+          bound. Gaps between the listed intervals do not establish that no delays
+          occurred.
+        interval: "%{from} to %{to} (UTC): credited time %{credit} s; peak RTNL latency
+          %{lower_bound}%{peak} s."
+        subject: Repeated RTNL response delays
+        text: 'VPS #%{vps_id} (%{hostname}) accumulated %{credit_seconds} s when its
+          resource use met the reporting criteria during RTNL delays. The window of
+          %{window_seconds} s ran from %{window_from} to %{window_to} (UTC), and the
+          report was evaluated at %{evaluated_at}. The reporting threshold was %{threshold_seconds}
+          s. Reports can repeat after %{repeat_seconds} s while the score remains
+          at or above the threshold. Only RTNL delay beyond %{cutoff_seconds} s per
+          probe is counted. VPS resource use was sampled every %{qualification_seconds}
+          s. These observations identify a possible contributor to the delays; they
+          do not prove that the VPS held the RTNL lock. The RTNL detector reports
+          incidents without restarting or stopping the VPS.'
     meta:
       global:
         output:
@@ -2851,6 +2972,37 @@ en:
             description: Whole-second counting cutoff within the past 24 hours. Settings,
               ownership and action outcomes reflect the latest read.
             label: Counting cutoff
+          available:
+            description: False for an ordinary report without evidence accounting;
+              saved configuration metadata is then null.
+            label: Saved evidence snapshot available
+          condition_measurement:
+            description: Measurement used by the saved signal condition, or null without
+              a condition.
+            label: Condition measurement
+          condition_operator:
+            description: Comparison used by the saved condition; gt means strictly
+              greater than.
+            label: Condition operator
+          condition_unit:
+            description: Unit of the saved condition value, or null without a condition.
+            label: Condition unit
+          condition_value:
+            description: Saved integer condition value in condition_unit; null without
+              a condition.
+            label: Condition value
+          configuration_valid:
+            description: Whether all selected signals have valid effective settings;
+              independent of observation availability.
+            label: Selected signal configurations are valid
+          credit_us:
+            description: Accepted duration in integer microseconds, clipped to the
+              saved report window.
+            label: Credited microseconds
+          evaluated_at:
+            description: UTC time of the saved reporting decision, independent of
+              current settings.
+            label: Report evaluated at
           from:
             description: The period includes its start and excludes its end. Ignored
               for outstanding actions.
@@ -2858,18 +3010,51 @@ en:
           limit:
             label: Rows per page
           next_offset:
-            label: Next offset
+            description: Offset for the next page, or null on the final page.
           offset:
             label: Rows to skip
-          read_at:
-            description: Time when this request read the current settings and outcomes.
-            label: Current facts read at
+          qualification_interval_us:
+            description: Interval between source checks of the VPS qualification criteria
+              at evaluation; observation timestamps retain their original resolution.
+            label: Qualification interval in microseconds
+          repeat_seconds:
+            description: Minimum period between accepted reports at evaluation.
+            label: Saved repeat period in seconds
+          representation:
+            description: Accounting representation saved with the report, independent
+              of current settings.
+            label: Evidence representation
+          signal:
+            description: Fixed signal saved with the report; null for a report without
+              evidence.
+            label: Evidence signal
+          threshold_seconds:
+            description: Configured reporting threshold at evaluation.
+            label: Saved threshold in seconds
           to:
             description: The period includes its start and excludes its end. Ignored
               for outstanding actions.
             label: Period end (exclusive)
-          total_count:
-            label: Total matching rows
+          unavailable_signals:
+            description: Sorted JSON string array without duplicates, containing only
+              selected supported signals with invalid effective settings. Bounded
+              by the supported signal list; [] when all selected settings are valid.
+              Missing or stale observations are separate.
+            label: Signals with invalid configuration
+          window_complete:
+            description: Whether coverage was complete at evaluation; false means
+              the accepted score is a lower bound.
+            label: Saved coverage complete
+          window_from:
+            description: Open lower boundary of the window used for this report.
+            label: Saved window start
+          window_seconds:
+            description: Configured rolling window at evaluation, not its current
+              value.
+            label: Saved window in seconds
+          window_to:
+            description: Closed upper boundary of the window used for this report.
+            label: Saved window end
     password_changes:
       minimum_length_description: The password must be at least %{minimum} characters
         long
@@ -3285,6 +3470,8 @@ en:
             label: Incident detected at
           from:
             label: Period start (inclusive)
+          hostname:
+            label: Hostname
           id:
             label: ID
           label:
@@ -3307,6 +3494,17 @@ en:
             label: Original VPS ID
           warning_period_days:
             label: Warning period in days
+        meta:
+          global:
+            output:
+              next_offset:
+                label: Next offset
+              read_at:
+                description: Time when this request read the current settings and
+                  outcomes.
+                label: Current facts read at
+              total_count:
+                label: Total matching rows
       incident_policy_exposure:
         attributes:
           configuration_valid:
@@ -3315,6 +3513,8 @@ en:
             label: ID
           label:
             label: Policy name
+          last_incident_at:
+            label: Last incident
           limit:
             label: Rows per page
           offset:
@@ -3336,6 +3536,17 @@ en:
             label: VPS
           warning_period_days:
             label: Warning period in days
+        meta:
+          global:
+            output:
+              next_offset:
+                label: Next offset
+              read_at:
+                description: Time when this request read the current settings and
+                  outcomes.
+                label: Current facts read at
+              total_count:
+                label: Total matching rows
       incident_report:
         attributes:
           created_at:
@@ -3348,6 +3559,52 @@ en:
             label: IP address
           vps:
             label: VPS
+        evidence_interval:
+          attributes:
+            credit_us:
+              description: Accepted duration in integer microseconds, clipped to the
+                saved report window.
+              label: Credited microseconds
+            id:
+              description: ID of the interval saved with this incident.
+              label: Saved interval ID
+            limit:
+              description: Maximum number of saved intervals returned, from 1 to 100.
+              label: Rows per page
+            measurement:
+              description: Measurement identifier saved with this interval, or null
+                when no peak was observed.
+              label: Measurement
+            offset:
+              description: Zero-based offset in the saved chronological interval list.
+              label: Rows to skip
+            peak_is_lower_bound:
+              description: True when the observed peak is a lower bound; null when
+                no measurement is available.
+              label: Peak is a lower bound
+            peak_unit:
+              description: Unit of the saved peak value, or null when no peak was
+                observed.
+              label: Peak unit
+            peak_value:
+              description: Observed integer peak in the saved unit; null when no measurement
+                is available.
+              label: Peak value
+          meta:
+            global:
+              output:
+                limit:
+                  description: Maximum number of saved intervals returned, from 1
+                    to 100.
+                next_offset:
+                  label: Next page offset
+                offset:
+                  description: Zero-based offset in the saved chronological interval
+                    list.
+                total_count:
+                  description: Number of immutable intervals contributing to this
+                    report, before pagination.
+                  label: Total saved intervals
         policy_evaluation:
           attributes:
             label:
@@ -3870,6 +4127,8 @@ en:
             label: From
           id:
             label: ID
+          last_observed_at:
+            label: Last observed at
           to:
             label: To
       node_ebpf_program:
@@ -4052,6 +4311,8 @@ en:
             label: From
           id:
             label: ID
+          last_observed_at:
+            label: Last observed at
           to:
             label: To
       node_transfer_connection:
@@ -4915,6 +5176,8 @@ en:
             label: Created at
           dataset:
             label: Dataset
+          hostname:
+            label: Hostname
           id:
             label: VPS id
           info:
@@ -4946,6 +5209,52 @@ en:
           attributes:
             expiration:
               label: Expiration date
+        evidence:
+          attributes:
+            configuration_valid:
+              label: Valid evidence configuration
+            credit_us:
+              description: Recorded duration in integer microseconds, clipped to the
+                current occurrence window. Null means unavailable. Zero means no recorded
+                credit, without establishing collection or VPS health.
+              label: Current credited microseconds
+            hostname:
+              description: Current VPS hostname, independent of names saved with incidents.
+              label: Current hostname
+            id:
+              description: Stable identifier for the VPS and supported signal pair.
+              label: VPS and signal ID
+            label:
+              description: Signal name in the response language.
+              label: Signal name
+            last_incident_at:
+              label: Last evidence incident
+            last_observed_at:
+              label: Last source observation
+            measurement:
+              description: Measurement identifier for the peak across contributing
+                intervals; null without a compatible peak.
+              label: Observed measurement
+            peak_is_lower_bound:
+              description: Whether the peak is a lower bound because a contributing
+                observation was still pending; null without a compatible peak.
+              label: Observed peak is a lower bound
+            peak_unit:
+              description: Unit of peak_value; null without a compatible peak.
+              label: Observed peak unit
+            peak_value:
+              description: Integer peak in peak_unit across contributing intervals;
+                null without a compatible measurement.
+              label: Observed peak
+            vps:
+              label: VPS
+          meta:
+            global:
+              output:
+                read_at:
+                  description: Single UTC instant used for this response and its occurrence
+                    window, with microsecond precision.
+                  label: Evidence read at
         feature:
           attributes:
             id:
@@ -4962,6 +5271,8 @@ en:
               label: Policy key
             label:
               label: Label
+            last_incident_at:
+              label: Last incident
             status:
               choices:
                 clear:
@@ -5047,6 +5358,68 @@ en:
           output:
             is_running:
               label: Running
+      vps_evidence:
+        attributes:
+          configuration_valid:
+            label: Valid evidence configuration
+          credit_us:
+            description: Recorded duration in integer microseconds, clipped to the
+              current occurrence window. Null means unavailable. Zero means no recorded
+              credit, without establishing collection or VPS health.
+            label: Current credited microseconds
+          hostname:
+            description: Current VPS hostname, independent of names saved with incidents.
+            label: Current hostname
+          id:
+            description: Stable identifier for the VPS and supported signal pair.
+            label: VPS and signal ID
+          label:
+            description: Signal name in the response language.
+            label: Signal name
+          last_incident_at:
+            label: Last evidence incident
+          last_observed_at:
+            label: Last source observation
+          limit:
+            description: Maximum number of rows returned, from 1 to 100.
+            label: Rows per page
+          measurement:
+            description: Measurement identifier for the peak across contributing intervals;
+              null without a compatible peak.
+            label: Observed measurement
+          offset:
+            description: Zero-based offset in the filtered positive-credit list.
+            label: Rows to skip
+          peak_is_lower_bound:
+            description: Whether the peak is a lower bound because a contributing
+              observation was still pending; null without a compatible peak.
+            label: Observed peak is a lower bound
+          peak_unit:
+            description: Unit of peak_value; null without a compatible peak.
+            label: Observed peak unit
+          peak_value:
+            description: Integer peak in peak_unit across contributing intervals;
+              null without a compatible measurement.
+            label: Observed peak
+          vps:
+            label: VPS
+        meta:
+          global:
+            output:
+              limit:
+                description: Maximum number of rows returned, from 1 to 100.
+              next_offset:
+                label: Next page offset
+              offset:
+                description: Zero-based offset in the filtered positive-credit list.
+              read_at:
+                description: Single UTC instant used for this response and its occurrence
+                  window, with microsecond precision.
+                label: Evidence read at
+              total_count:
+                description: Number of visible VPS and signal pairs with positive
+                  credit after filtering and before pagination.
+                label: Total authorized positive rows
       vps_outage:
         attributes:
           id:

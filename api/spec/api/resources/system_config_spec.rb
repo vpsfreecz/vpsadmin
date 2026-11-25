@@ -372,6 +372,68 @@ RSpec.describe 'VpsAdmin::API::Resources::SystemConfig' do
     end
   end
 
+  describe 'evidence reporting checkbox', :evidence_checkbox do
+    let(:enabled_config) { SysConfig.find_by!(category: 'vps_evidence_rtnl_latency', name: 'enabled') }
+    let(:enabled_path) { vpath('/system_configs/vps_evidence_rtnl_latency/enabled') }
+
+    it 'persists canonical editor strings as booleans when enabling and disabling' do
+      { '1' => true, '0' => false }.each do |value, expected|
+        as(SpecSeed.admin) { json_put enabled_path, system_config: { value: } }
+
+        expect_status(200)
+        expect(json['status']).to be(true)
+        expect(system_config['value']).to be(expected)
+        expect(enabled_config.reload.value).to be(expected)
+        expect(VpsEvidence.config('rtnl_latency')[:enabled]).to be(expected)
+      end
+    end
+
+    it 'preserves real booleans and null inheritance' do
+      [true, false, nil].each do |value|
+        as(SpecSeed.admin) { json_put enabled_path, system_config: { value: } }
+
+        expect_status(200)
+        expect(json['status']).to be(true)
+        expect(system_config['value']).to eql(value)
+        expect(enabled_config.reload.value).to eql(value)
+        expect(VpsEvidence.config('rtnl_latency')[:enabled]).to be(value || false)
+      end
+    end
+
+    it 'rejects noncanonical strings and integers without changing the current switch' do
+      enabled_config.update!(value: true)
+      ['true', 'false', '01', 1].each do |value|
+        as(SpecSeed.admin) { json_put enabled_path, system_config: { value: } }
+
+        expect_status(200)
+        expect(json['status']).to be(false)
+        expect(json.dig('errors', 'value')).not_to be_nil
+        expect(enabled_config.reload.value).to be(true)
+        expect(VpsEvidence.config('rtnl_latency')[:enabled]).to be(true)
+      end
+    end
+
+    it 'keeps unrelated Boolean strings and nested YAML values unchanged' do
+      ordinary = SysConfig.create!(category:, name: 'ordinary_checkbox', data_type: 'Boolean', value: false, min_user_level: 99)
+      %w[1 0].each do |value|
+        as(SpecSeed.admin) { json_put update_path(ordinary.name), system_config: { value: } }
+
+        expect_status(200)
+        expect(json['status']).to be(true)
+        expect(system_config['value']).to eql(value)
+        expect(ordinary.reload.value).to eql(value)
+      end
+
+      values = [false, 0, '', nil, { 'enabled' => '1' }]
+      as(SpecSeed.admin) { json_put update_path('array_value'), system_config: { value: YAML.dump(values) } }
+
+      expect_status(200)
+      expect(json['status']).to be(true)
+      expect(YAML.safe_load(system_config['value'])).to eq(values)
+      expect(SysConfig.find_by!(category:, name: 'array_value').value).to eq(values)
+    end
+  end
+
   describe 'ordinary value preservation' do
     it 'keeps scalar types through the real cleaner and persistence without choices' do
       {

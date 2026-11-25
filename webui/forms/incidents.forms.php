@@ -306,6 +306,7 @@ function incident_show($id)
 
     $xtpl->table_out();
     incident_policy_evaluations($inc);
+    incident_evidence_intervals($inc);
 }
 
 function incident_new($vps_id)
@@ -514,4 +515,91 @@ function incident_policy_evaluations($incident)
             incident_policy_evaluation_details($attrs, $context, true);
         }
     }
+}
+
+function incident_evidence_seconds(int $microseconds): string
+{
+    $fraction = rtrim(str_pad((string) ($microseconds % 1000000), 6, '0', STR_PAD_LEFT), '0');
+    return (string) intdiv($microseconds, 1000000) . ($fraction === '' ? '' : webui_decimal_separator() . $fraction);
+}
+
+function incident_evidence_quantity($value, $unit): ?string
+{
+    return $value !== null && $unit === 'microseconds'
+        ? sprintf(_('%s s'), incident_evidence_seconds($value))
+        : null;
+}
+
+function incident_evidence_measurement($measurement): ?string
+{
+    return ['rtnl_latency' => _('RTNL latency')][$measurement] ?? null;
+}
+
+function incident_evidence_intervals($incident)
+{
+    global $api, $xtpl;
+
+    $resource = $api->incident_report($incident->id)->evidence_interval;
+    if (!$resource || !$resource->index) {
+        return;
+    }
+    $offset = filter_var($_GET['evidence_offset'] ?? 0, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+    if ($offset === false) {
+        $offset = 0;
+    }
+    try {
+        $rows = $resource->index(['offset' => $offset, 'limit' => 25]);
+        $meta = (array) $rows->getMeta();
+    } catch (\HaveAPI\Client\Exception\Base $e) {
+        $xtpl->perex(_('Evidence intervals'), _('The saved intervals could not be loaded.'));
+        return;
+    }
+    if (($meta['available'] ?? false) !== true) {
+        return;
+    }
+    $xtpl->table_title(_('Observed evidence intervals'), 'incident-report.evidence-intervals');
+    $xtpl->table_td(h(sprintf(_('Showing %d of %d intervals.'), count($rows), $meta['total_count'])));
+    $xtpl->table_tr();
+    if (($meta['window_complete'] ?? false) !== true) {
+        $xtpl->table_td(h(_('Some observations are missing, so the credited duration is a lower bound. Gaps do not establish that the condition was absent.')));
+        $xtpl->table_tr();
+    }
+    if (($meta['condition_value'] ?? null) !== null) {
+        $measurement = incident_evidence_measurement($meta['condition_measurement']);
+        $quantity = incident_evidence_quantity($meta['condition_value'], $meta['condition_unit']);
+        $operator = ['gt' => _('%s is greater than %s')][$meta['condition_operator']] ?? null;
+        $condition = $measurement !== null && $quantity !== null && $operator !== null
+            ? sprintf($operator, $measurement, $quantity)
+            : _('Not available');
+        $xtpl->table_td(h($condition));
+        $xtpl->table_tr();
+    }
+    $xtpl->table_out();
+    $xtpl->table_td(h(_('Interval start')));
+    $xtpl->table_td(h(_('Interval end')));
+    $xtpl->table_td(h(_('Credited duration')));
+    $xtpl->table_td(h(_('Observed peak')));
+    $xtpl->table_tr();
+    foreach ($rows as $row) {
+        $xtpl->table_td(h(tolocaltz($row->from_at, 'Y-m-d H:i:s.u P')));
+        $xtpl->table_td(h(tolocaltz($row->to_at, 'Y-m-d H:i:s.u P')));
+        $xtpl->table_td(h(sprintf(_('Credited time: %s s'), incident_evidence_seconds($row->credit_us))));
+        $measurement = incident_evidence_measurement($row->measurement);
+        $quantity = incident_evidence_quantity($row->peak_value, $row->peak_unit);
+        $peak = $measurement !== null && $quantity !== null
+            ? sprintf(_('%s: %s'), $measurement, ($row->peak_is_lower_bound ? '≥' : '') . $quantity)
+            : _('Not available');
+        $xtpl->table_td(h($peak));
+        $xtpl->table_tr();
+    }
+    $xtpl->table_out();
+    $links = [];
+    foreach (['previous' => max(0, $offset - 25), 'next' => $meta['next_offset']] as $direction => $target) {
+        if (($direction === 'previous' && $offset === 0) || $target === null) {
+            continue;
+        }
+        $url = '?page=incidents&action=show&id=' . rawurlencode((string) $incident->id) . '&evidence_offset=' . rawurlencode((string) $target);
+        $links[] = '<a href="' . h($url) . '">' . h($direction === 'previous' ? _('Previous') : _('Next')) . '</a>';
+    }
+    $xtpl->parsed_blocks['main.table'] .= '<p>' . implode(' | ', $links) . '</p>';
 }

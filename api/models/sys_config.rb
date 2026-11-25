@@ -1,8 +1,10 @@
+require_relative 'vps_evidence'
+
 class SysConfig < ApplicationRecord
   self.table_name = 'sysconfig'
 
   serialize :value, coder: JSON
-  has_paper_trail only: [:value], on: [:update], if: ->(row) { IncidentEscalation::RULES.values.any? { |rule| rule.category == row.category } }
+  has_paper_trail only: [:value], on: [:update], if: ->(row) { IncidentEscalation::RULES.values.any? { |rule| rule.category == row.category } || VpsEvidence.categories.include?(row.category) }
   validates :name, presence: true
   validates :category, format: {
     with: /\A[a-zA-Z0-9_]{1,75}\z/,
@@ -93,6 +95,15 @@ class SysConfig < ApplicationRecord
     return unless choice_contract
 
     errors.add(:value, :inclusion) unless choice_value_valid?(value)
+  end
+
+  validate :validate_vps_evidence, if: -> { VpsEvidence.categories.include?(category) && !new_record? && will_save_change_to_value? }
+
+  def validate_vps_evidence
+    values = self.class.where(category:).order(:id).lock.to_h { |row| [row.name, row.value] }.merge(name => value)
+    VpsEvidence.config(VpsEvidence::SIGNALS.find { |_signal, handler| category == handler::CATEGORY }.first, values)
+  rescue ArgumentError => e
+    errors.add(:value, e.message)
   end
 
   def validate_incident_escalation
@@ -309,6 +320,12 @@ class SysConfig < ApplicationRecord
                                                   label: VpsAdmin::API::I18n.message('sysconfig.labels.incident_policy.stop_limit', default: 'Global shutdown threshold (30 days)'),
                                                   description: 'Global shutdown limit override. Null uses the limit declared in the policy.'
   end
+  VpsEvidence::SIGNALS.each_value do |handler|
+    handler::DEFAULTS.each_key do |key|
+      register handler::CATEGORY, key, key == :enabled ? Boolean : Integer, default: key == :enabled ? false : nil, min_user_level: 99,
+                                                                            description: key == :enabled ? 'Enable evidence incident reporting independently of collection.' : 'Runtime override. Null uses site or built-in evidence defaults.'
+    end
+  end
   register :dns, :protected_zones, Array, min_user_level: 99,
                                           label: VpsAdmin::API::I18n.message('sysconfig.labels.dns.protected_zones', default: 'Protected DNS zones')
 
@@ -333,6 +350,13 @@ class SysConfig < ApplicationRecord
   end
 
   def set_value(v)
+    if VpsEvidence.categories.include?(category) && name == 'enabled' && %w[0 1].include?(v)
+      v = v == '1'
+    end
+    if VpsEvidence.categories.include?(category) && VpsEvidence::NUMERIC_SETTINGS.include?(name.to_sym)
+      v = nil if v == ''
+      v = Integer(v, 10) if v.is_a?(String) && v.match?(/\A[0-9]+\z/)
+    end
     if IncidentEscalation::RULES.values.any? { |rule| rule.category == category } && %w[warning_limit stop_limit].include?(name) && v == ''
       v = nil
     end

@@ -463,6 +463,22 @@ cs:
       concurrency:
         description: Kolik migrací běží současně
         label: Souběžnost
+      condition_measurement:
+        description: Identifikátor veličiny v pevné podmínce signálu; pokud podmínka
+          není určena, null.
+        label: Veličina podmínky
+      condition_operator:
+        description: Operátor porovnání v pevné podmínce signálu; pokud podmínka není
+          určena, null.
+        label: Operátor podmínky
+      condition_unit:
+        description: Jednotka condition_value; pokud podmínka není určena, null.
+        label: Jednotka podmínky
+      condition_value:
+        description: Celočíselná hodnota v jednotce condition_unit pro pevnou podmínku
+          signálu, nezávislá na limitech doby a počtu incidentů; pokud podmínka není
+          určena, null.
+        label: Hodnota podmínky
       confidence:
         choices:
           exact:
@@ -476,6 +492,9 @@ cs:
         label: Konfigurace
       configuration_digest:
         label: Kontrolní součet konfigurace
+      configuration_valid:
+        description: Zda je výsledné nastavení tohoto signálu platné. Chybějící ani
+          zastaralá pozorování nezpůsobují neplatnost nastavení.
       configured_value:
         label: Nastavená hodnota
       confirmed:
@@ -913,6 +932,9 @@ cs:
       from:
         description: Období zahrnuje začátek a nezahrnuje konec. U nedokončených akcí
           se nepoužívá.
+      from_at:
+        description: Začátek započteného intervalu v UTC s přesností na mikrosekundy.
+        label: Začátek intervalu
       from_bytes:
         description: Stránkovat podle příchozích/odchozích bajtů
         label: Od bajtů
@@ -981,8 +1003,6 @@ cs:
         label: Host IP adresa
       host_pid:
         label: Host PID
-      hostname:
-        label: Hostname
       hostname_any:
         label: Libovolný hostname
       hostname_exact:
@@ -1204,9 +1224,12 @@ cs:
       last_check_at:
         label: Poslední kontrola
       last_incident_at:
-        label: Poslední incident
+        description: Čas posledního přijatého incidentu pro tento signál a období
+          vlastnictví. Bez historie nebo při neshodě vlastnictví je hodnota null.
       last_observed_at:
-        label: Poslední pozorování
+        description: Čas posledního uloženého pozorování zdroje pro odpovídající období
+          vlastnictví, i když je zastaralé. Bez historie nebo při neshodě vlastnictví
+          je hodnota null.
       last_report:
         label: Poslední hlášení
       last_request_at:
@@ -1618,6 +1641,22 @@ cs:
           suspended:
             label: pozastaveno
         label: Stav objektu
+      observation_age_seconds:
+        description: Stáří posledního pozorování zdroje v čase read_at, v sekundách;
+          pokud pozorování není dostupné, hodnota je null.
+        label: Stáří pozorování v sekundách
+      observation_state:
+        choices:
+          fresh:
+            label: aktuální
+          no_data:
+            label: bez dat
+          stale:
+            label: zastaralé
+        description: Aktuálnost dostupného pozorování, nezávislá na splnění podmínek
+          a způsobilosti k hlášení. Při neplatném nastavení se použije výchozí mez
+          stáří pro daný signál.
+        label: Aktuálnost pozorování
       observed_after:
         description: Poslední pozorování před změnou; u první známé události není
           uvedeno
@@ -1871,6 +1910,17 @@ cs:
           vps:
             label: VPS
         label: Účel
+      qualification:
+        choices:
+          ineligible:
+            label: nesplňuje podmínky
+          qualified:
+            label: splňuje podmínky
+          unknown:
+            label: neznámé
+        description: Poslední uložené vyhodnocení zdroje, které může zůstat viditelné
+          i po zastarání. Bez historie nebo při neshodě vlastnictví je hodnota null.
+        label: Poslední vyhodnocení podmínek zdrojem
       quota:
         description: Omezuje množství místa, které může spotřebovat dataset a všichni
           jeho potomci
@@ -1939,18 +1989,39 @@ cs:
         label: Server vzdálené konzole
       remove:
         label: Odstranit výjimku
+      repeat_seconds:
+        description: Výsledná nejkratší doba mezi přijatými incidenty v sekundách;
+          při neplatném nastavení null.
+        label: Aktuální doba do opakování v sekundách
       replace_ip_addresses:
         description: Při migraci do jiné lokace se aktuální IP adresy nahradí adresami
           z nové lokace
         label: Nahradit IP adresy
       reply_to:
         label: Reply-To
+      report_due:
+        description: Zda je hlášení zapnuté, aktuální podklady dovolují hlášení, započtený
+          čas dosáhl limitu a uplynula doba do opakování. Načtení hodnoty nevytváří
+          incident. Při neplatném nastavení je hodnota null.
+        label: Jsou splněny podmínky pro vytvoření incidentu
+      report_eligible:
+        description: Zda aktuální podklady zdroje, umístění a status VPS dovolují
+          hlášení, nezávisle na jeho zapnutí, limitu započteného času a době do opakování.
+          Při neplatném nastavení je hodnota null.
+        label: Aktuální pozorování splňují podmínky hlášení
       report_schema_version:
         label: Verze schématu hlášení
       reported_at:
         label: Nahlášeno
       reported_release:
         label: Hlášená verze jádra
+      reporting_enabled:
+        description: Aktuální přepínač hlášení, nezávislý na zaznamenaném započteném
+          čase; při neplatném nastavení null.
+        label: Hlášení incidentů zapnuto
+      representation:
+        description: Způsob vyhodnocování; nyní qualified_duration.
+        label: Způsob vyhodnocování podkladů
       request_count:
         label: Počet požadavků
       resource:
@@ -2099,6 +2170,12 @@ cs:
         label: Sdílí IPv4 sítě s lokací
       shares_v6_networks_with:
         label: Sdílí IPv6 sítě s lokací
+      signal:
+        choices:
+          rtnl_latency:
+            label: Latence RTNL
+        description: Identifikátor podporovaného signálu; nyní rtnl_latency.
+        label: Signál podkladů VPS
       since:
         label: Od
       since_kernel:
@@ -2340,6 +2417,10 @@ cs:
       threads:
         description: Počet vláken NFS serveru.
         label: Vlákna
+      threshold_seconds:
+        description: Výsledný limit započtené doby pro vytvoření incidentu v sekundách;
+          při neplatném nastavení null.
+        label: Aktuální limit pro hlášení v sekundách
       threshold_status:
         choices:
           clear:
@@ -2359,6 +2440,9 @@ cs:
       to:
         description: Období zahrnuje začátek a nezahrnuje konec. U nedokončených akcí
           se nepoužívá.
+      to_at:
+        description: Konec započteného intervalu v UTC s přesností na mikrosekundy.
+        label: Konec intervalu
       to_date:
         label: Do data
       to_depth:
@@ -2658,6 +2742,24 @@ cs:
         label: Počet incidentů do limitu pro upozornění
       weekday:
         label: Den v týdnu
+      window_complete:
+        description: Zda zaznamenané pokrytí zahrnuje celé aktuální okno a pozorování
+          není zastaralé. Samo o sobě nepotvrzuje způsobilost k hlášení. Při neplatném
+          nastavení je hodnota null.
+        label: Úplné pokrytí okna
+      window_from:
+        description: Dolní hranice podle času výskytu v UTC s mikrosekundami. Samotná
+          hranice do okna nepatří. Při neplatném nastavení je hodnota null.
+        label: Začátek aktuálního okna
+      window_seconds:
+        description: Výsledná délka klouzavého okna v sekundách; při neplatném nastavení
+          null.
+        label: Aktuální délka okna v sekundách
+      window_to:
+        description: Horní hranice podle času výskytu v UTC s mikrosekundami, shodná
+          s read_at. Samotná hranice do okna patří. Při neplatném nastavení je hodnota
+          null.
+        label: Konec aktuálního okna
       year:
         label: Rok
       year_of_birth:
@@ -2845,6 +2947,25 @@ cs:
             systémové prostředky a omezoval tak dostupnost ostatních VPS na nodu.
 
             '
+      rtnl:
+        counts: 'Zobrazené započtené intervaly: %{shown} z %{total}. Úplný seznam
+          najdeš po přihlášení v detailu incidentu. Maxima označená ≥ jsou dolní meze
+          z měření, která ještě čekala na odpověď.'
+        incomplete: Část pozorování chybí, takže započtený čas je dolní mez. Mezery
+          mezi uvedenými intervaly nedokazují, že v nich ke zpoždění nedocházelo.
+        interval: "%{from} – %{to} (UTC): započtený čas %{credit} s; nejvyšší latence
+          RTNL %{lower_bound}%{peak} s."
+        subject: Opakovaná zpoždění odpovědí RTNL
+        text: 'VPS #%{vps_id} (%{hostname}) nasbíralo %{credit_seconds} s, během nichž
+          jeho využití prostředků splňovalo podmínky pro hlášení a současně docházelo
+          ke zpoždění odpovědí RTNL. Sledované okno mělo %{window_seconds} s a trvalo
+          od %{window_from} do %{window_to} (UTC). Hlášení bylo vyhodnoceno %{evaluated_at}.
+          Limit pro hlášení byl %{threshold_seconds} s. Další incident lze nahlásit
+          po %{repeat_seconds} s, pokud skóre zůstává na limitu nebo nad ním. Z každého
+          měření RTNL se započítává jen zpoždění nad %{cutoff_seconds} s. Využití
+          prostředků VPS se vzorkovalo po %{qualification_seconds} s. Tato pozorování
+          ukazují na možnou souvislost se zpožděním, ale nedokazují, že VPS drželo
+          zámek RTNL. Detektor RTNL pouze hlásí incidenty, VPS nerestartuje ani nevypíná.'
     meta:
       global:
         output:
@@ -2853,6 +2974,37 @@ cs:
               24 hodinách. Nastavení, vlastník a výsledky akcí odpovídají poslednímu
               načtení.
             label: Rozhodný čas počítání
+          available:
+            description: U běžného incidentu bez podkladů VPS je hodnota false a metadata
+              uloženého nastavení jsou null.
+            label: Uložené podklady VPS jsou dostupné
+          condition_measurement:
+            description: Veličina použitá v uložené podmínce signálu, nebo null, pokud
+              podmínka není určena.
+            label: Veličina v podmínce
+          condition_operator:
+            description: Porovnání v uložené podmínce. Hodnota gt znamená ostře větší
+              než.
+            label: Operátor podmínky
+          condition_unit:
+            description: Jednotka hodnoty uložené podmínky, nebo null, pokud podmínka
+              není určena.
+            label: Jednotka podmínky
+          condition_value:
+            description: Uložená celočíselná hodnota podmínky v jednotce condition_unit,
+              nebo null, pokud podmínka není určena.
+            label: Hodnota podmínky
+          configuration_valid:
+            description: Zda mají všechny vybrané signály platné výsledné nastavení;
+              nezávisle na dostupnosti pozorování.
+            label: Nastavení vybraných signálů je platné
+          credit_us:
+            description: Započtená délka v celých mikrosekundách, oříznutá na uložené
+              okno incidentu.
+            label: Započtený čas v mikrosekundách
+          evaluated_at:
+            description: Čas uloženého rozhodnutí v UTC, nezávislý na aktuálním nastavení.
+            label: Čas vyhodnocení incidentu
           from:
             description: Období zahrnuje začátek a nezahrnuje konec. U nedokončených
               akcí se nepoužívá.
@@ -2860,18 +3012,55 @@ cs:
           limit:
             label: Řádků na stránce
           next_offset:
-            label: Počet řádků před další stránkou
+            description: Pozice začátku další stránky, nebo null na poslední stránce.
           offset:
             label: Počet vynechaných řádků
-          read_at:
-            description: Čas, kdy tento požadavek načetl aktuální nastavení a výsledky.
-            label: Čas načtení aktuálních údajů
+          qualification_interval_us:
+            description: Interval, ve kterém zdroj ověřoval podmínky VPS při vyhodnocení
+              incidentu. Časy pozorování si zachovávají původní rozlišení.
+            label: Interval ověřování podmínek v mikrosekundách
+          repeat_seconds:
+            description: Nejkratší doba mezi přijatými hlášeními platná při vyhodnocení
+              incidentu.
+            label: Uložená doba do opakování v sekundách
+          representation:
+            description: Způsob vyhodnocování podkladů uložený s incidentem, nezávislý
+              na aktuálním nastavení.
+            label: Způsob vyhodnocování podkladů
+          signal:
+            description: Signál uložený s incidentem, nebo null u incidentu bez podkladů
+              VPS.
+            label: Signál podkladů VPS
+          threshold_seconds:
+            description: Nastavený limit pro hlášení při vyhodnocení incidentu.
+            label: Uložený limit v sekundách
           to:
             description: Období zahrnuje začátek a nezahrnuje konec. U nedokončených
               akcí se nepoužívá.
             label: Konec období vyjma
-          total_count:
-            label: Celkový počet odpovídajících řádků
+          unavailable_signals:
+            description: Seřazené pole řetězců JSON bez duplicit, obsahující pouze
+              vybrané podporované signály s neplatným výsledným nastavením. Počet
+              položek je omezen seznamem podporovaných signálů. Při platném nastavení
+              všech vybraných signálů je pole []. Chybějící nebo zastaralá pozorování
+              se posuzují zvlášť.
+            label: Signály s neplatným nastavením
+          window_complete:
+            description: Zda bylo pokrytí při vyhodnocení úplné. Hodnota false znamená,
+              že započtené skóre je dolní mez.
+            label: Uložené pokrytí je úplné
+          window_from:
+            description: Dolní hranice okna použitého pro tento incident. Samotná
+              hranice do okna nepatří.
+            label: Začátek uloženého okna
+          window_seconds:
+            description: Nastavená délka klouzavého okna při vyhodnocení, nikoli aktuální
+              hodnota.
+            label: Uložená délka okna v sekundách
+          window_to:
+            description: Horní hranice okna použitého pro tento incident. Samotná
+              hranice do okna patří.
+            label: Konec uloženého okna
     password_changes:
       minimum_length_description: Heslo musí mít alespoň %{minimum} znaků
     resources:
@@ -3286,6 +3475,8 @@ cs:
             label: Čas zjištění incidentu
           from:
             label: Začátek období včetně
+          hostname:
+            label: Hostname
           id:
             label: ID
           label:
@@ -3308,6 +3499,17 @@ cs:
             label: ID původní VPS
           warning_period_days:
             label: Období pro upozornění ve dnech
+        meta:
+          global:
+            output:
+              next_offset:
+                label: Počet řádků před další stránkou
+              read_at:
+                description: Čas, kdy tento požadavek načetl aktuální nastavení a
+                  výsledky.
+                label: Čas načtení aktuálních údajů
+              total_count:
+                label: Celkový počet odpovídajících řádků
       incident_policy_exposure:
         attributes:
           configuration_valid:
@@ -3316,6 +3518,8 @@ cs:
             label: ID
           label:
             label: Název pravidla
+          last_incident_at:
+            label: Poslední incident
           limit:
             label: Řádků na stránce
           offset:
@@ -3337,6 +3541,17 @@ cs:
             label: VPS
           warning_period_days:
             label: Období pro upozornění ve dnech
+        meta:
+          global:
+            output:
+              next_offset:
+                label: Počet řádků před další stránkou
+              read_at:
+                description: Čas, kdy tento požadavek načetl aktuální nastavení a
+                  výsledky.
+                label: Čas načtení aktuálních údajů
+              total_count:
+                label: Celkový počet odpovídajících řádků
       incident_report:
         attributes:
           created_at:
@@ -3349,6 +3564,53 @@ cs:
             label: IP adresa
           vps:
             label: VPS
+        evidence_interval:
+          attributes:
+            credit_us:
+              description: Započtená délka v celých mikrosekundách, oříznutá na uložené
+                okno incidentu.
+              label: Započtený čas v mikrosekundách
+            id:
+              description: ID intervalu uloženého s tímto incidentem.
+              label: ID uloženého intervalu
+            limit:
+              description: Nejvyšší počet vrácených uložených intervalů, od 1 do 100.
+              label: Řádků na stránce
+            measurement:
+              description: Identifikátor měřené veličiny uložený s intervalem, nebo
+                null, pokud maximum nebylo pozorováno.
+              label: Měřená veličina
+            offset:
+              description: Pozice v chronologickém seznamu uložených intervalů, počítaná
+                od nuly.
+              label: Počet vynechaných řádků
+            peak_is_lower_bound:
+              description: True, pokud je pozorované maximum dolní mez. Pokud měření
+                není dostupné, hodnota je null.
+              label: Maximum je dolní mez
+            peak_unit:
+              description: Jednotka uloženého maxima, nebo null, pokud maximum nebylo
+                pozorováno.
+              label: Jednotka maxima
+            peak_value:
+              description: Pozorované maximum jako celé číslo v uložené jednotce.
+                Pokud měření není dostupné, hodnota je null.
+              label: Hodnota maxima
+          meta:
+            global:
+              output:
+                limit:
+                  description: Nejvyšší počet vrácených uložených intervalů, od 1
+                    do 100.
+                next_offset:
+                  label: Počet řádků před další stránkou
+                offset:
+                  description: Pozice v chronologickém seznamu uložených intervalů,
+                    počítaná od nuly.
+                total_count:
+                  description: Počet neměnných intervalů přispívajících k tomuto incidentu,
+                    před stránkováním.
+                  label: Celkový počet uložených intervalů
         policy_evaluation:
           attributes:
             label:
@@ -3871,6 +4133,8 @@ cs:
             label: Začátek období včetně
           id:
             label: ID
+          last_observed_at:
+            label: Poslední pozorování
           to:
             label: Konec období vyjma
       node_ebpf_program:
@@ -4053,6 +4317,8 @@ cs:
             label: Začátek období včetně
           id:
             label: ID
+          last_observed_at:
+            label: Poslední pozorování
           to:
             label: Konec období vyjma
       node_transfer_connection:
@@ -4919,6 +5185,8 @@ cs:
             label: Vytvořeno
           dataset:
             label: Dataset
+          hostname:
+            label: Hostname
           id:
             label: ID VPS
           info:
@@ -4950,6 +5218,54 @@ cs:
           attributes:
             expiration:
               label: Datum expirace
+        evidence:
+          attributes:
+            configuration_valid:
+              label: Platné nastavení podkladů
+            credit_us:
+              description: Zaznamenaná doba v celých mikrosekundách, oříznutá na aktuální
+                okno podle času výskytu. Null znamená nedostupnou hodnotu. Nula znamená,
+                že není zaznamenán žádný započtený čas; nepotvrzuje běh sběru ani
+                zdravý stav VPS.
+              label: Aktuální započtený čas v mikrosekundách
+            hostname:
+              description: Aktuální hostname VPS, nezávislý na názvech uložených u
+                incidentů.
+              label: Aktuální hostname
+            id:
+              description: Stálý identifikátor dvojice VPS a podporovaného signálu.
+              label: ID VPS a signálu
+            label:
+              description: Název signálu v jazyce odpovědi.
+              label: Název signálu
+            last_incident_at:
+              label: Poslední incident z podkladů VPS
+            last_observed_at:
+              label: Poslední pozorování zdroje
+            measurement:
+              description: Identifikátor veličiny pro maximum z přispívajících intervalů;
+                bez srovnatelného maxima null.
+              label: Pozorovaná veličina
+            peak_is_lower_bound:
+              description: Zda je maximum dolní mez, protože některé přispívající
+                pozorování ještě probíhalo; bez srovnatelného maxima null.
+              label: Pozorované maximum je dolní mez
+            peak_unit:
+              description: Jednotka peak_value; bez srovnatelného maxima null.
+              label: Jednotka pozorovaného maxima
+            peak_value:
+              description: Celočíselné maximum z přispívajících intervalů v jednotce
+                peak_unit; bez srovnatelného měření null.
+              label: Pozorované maximum
+            vps:
+              label: VPS
+          meta:
+            global:
+              output:
+                read_at:
+                  description: Jediný čas v UTC použitý pro tuto odpověď a její okno
+                    podle výskytu, s přesností na mikrosekundy.
+                  label: Čas načtení podkladů
         feature:
           attributes:
             id:
@@ -4966,6 +5282,8 @@ cs:
               label: Klíč pravidla
             label:
               label: Název pravidla
+            last_incident_at:
+              label: Poslední incident
             status:
               choices:
                 clear:
@@ -5052,6 +5370,71 @@ cs:
           output:
             is_running:
               label: Běží
+      vps_evidence:
+        attributes:
+          configuration_valid:
+            label: Platné nastavení podkladů
+          credit_us:
+            description: Zaznamenaná doba v celých mikrosekundách, oříznutá na aktuální
+              okno podle času výskytu. Null znamená nedostupnou hodnotu. Nula znamená,
+              že není zaznamenán žádný započtený čas; nepotvrzuje běh sběru ani zdravý
+              stav VPS.
+            label: Aktuální započtený čas v mikrosekundách
+          hostname:
+            description: Aktuální hostname VPS, nezávislý na názvech uložených u incidentů.
+            label: Aktuální hostname
+          id:
+            description: Stálý identifikátor dvojice VPS a podporovaného signálu.
+            label: ID VPS a signálu
+          label:
+            description: Název signálu v jazyce odpovědi.
+            label: Název signálu
+          last_incident_at:
+            label: Poslední incident z podkladů VPS
+          last_observed_at:
+            label: Poslední pozorování zdroje
+          limit:
+            description: Nejvyšší počet vrácených řádků, od 1 do 100.
+            label: Řádků na stránce
+          measurement:
+            description: Identifikátor veličiny pro maximum z přispívajících intervalů;
+              bez srovnatelného maxima null.
+            label: Pozorovaná veličina
+          offset:
+            description: Pozice ve filtrovaném seznamu s kladným započteným časem,
+              počítaná od nuly.
+            label: Počet vynechaných řádků
+          peak_is_lower_bound:
+            description: Zda je maximum dolní mez, protože některé přispívající pozorování
+              ještě probíhalo; bez srovnatelného maxima null.
+            label: Pozorované maximum je dolní mez
+          peak_unit:
+            description: Jednotka peak_value; bez srovnatelného maxima null.
+            label: Jednotka pozorovaného maxima
+          peak_value:
+            description: Celočíselné maximum z přispívajících intervalů v jednotce
+              peak_unit; bez srovnatelného měření null.
+            label: Pozorované maximum
+          vps:
+            label: VPS
+        meta:
+          global:
+            output:
+              limit:
+                description: Nejvyšší počet vrácených řádků, od 1 do 100.
+              next_offset:
+                label: Pozice další stránky
+              offset:
+                description: Pozice ve filtrovaném seznamu s kladným započteným časem,
+                  počítaná od nuly.
+              read_at:
+                description: Jediný čas v UTC použitý pro tuto odpověď a její okno
+                  podle výskytu, s přesností na mikrosekundy.
+                label: Čas načtení podkladů
+              total_count:
+                description: Počet dostupných dvojic VPS a signálu s kladným započteným
+                  časem po filtrování a před stránkováním.
+                label: Celkový počet dostupných řádků s kladným časem
       vps_outage:
         attributes:
           id:

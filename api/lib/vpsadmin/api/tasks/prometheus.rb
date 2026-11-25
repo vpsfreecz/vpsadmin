@@ -15,6 +15,14 @@ module VpsAdmin::API::Tasks
     def initialize
       super
       @registry = ::Prometheus::Client.registry
+      @evidence = %i[credit_seconds last_incident_timestamp_seconds report_due observation_age_seconds window_complete].to_h do |name|
+        [name, registry.gauge(:"vpsadmin_vps_evidence_#{name}", docstring: "VPS evidence #{name}", labels: %i[vps_id signal])]
+      end
+      @evidence_accepted = registry.counter(:vpsadmin_vps_evidence_accepted_seconds_total, docstring: 'Deduplicated received duration credit in the current owner accounting epoch', labels: %i[vps_id signal])
+      @evidence_config = %i[window_seconds threshold_seconds repeat_seconds freshness_seconds].to_h do |name|
+        [name, registry.gauge(:"vpsadmin_vps_evidence_#{name}", docstring: "Configured evidence #{name}", labels: [:signal])]
+      end
+      @evidence_exported = registry.gauge(:vpsadmin_vps_evidence_export_timestamp_seconds, docstring: 'VPS evidence export time')
 
       @user_count = registry.gauge(
         :vpsadmin_user_count,
@@ -525,6 +533,7 @@ module VpsAdmin::API::Tasks
       end
 
       export_password_events
+      export_vps_evidence
 
       save('vpsadmin-base')
     end
@@ -569,6 +578,28 @@ module VpsAdmin::API::Tasks
     protected
 
     attr_reader :registry
+
+    def export_vps_evidence
+      now = Time.now.utc
+      ::VpsEvidence::SIGNALS.each_key do |signal|
+        settings = ::VpsEvidence.config(signal)
+        @evidence_config.each { |name, metric| metric.set(settings.fetch(name), labels: { signal: }) }
+      end
+      @evidence_exported.set(now.to_f)
+      ::VpsEvidenceState.includes(vps: %i[user vps_current_status]).find_each do |state|
+        vps = state.vps
+        next unless vps && vps.object_state != 'hard_delete' && ::VpsEvidence::SIGNALS.has_key?(state.signal)
+
+        facts = ::VpsEvidence.projection(vps, state, now:)
+        labels = { vps_id: vps.id, signal: state.signal }
+        @evidence[:credit_seconds].set(facts[:credit_us] / 1_000_000.0, labels:)
+        @evidence_accepted.increment(by: facts[:accepted_us] / 1_000_000.0, labels:)
+        @evidence[:last_incident_timestamp_seconds].set(facts[:last_incident_at]&.to_f || 0, labels:)
+        @evidence[:report_due].set(facts[:report_due] ? 1 : 0, labels:)
+        @evidence[:window_complete].set(facts[:window_complete] ? 1 : 0, labels:)
+        @evidence[:observation_age_seconds].set(facts[:observation_age_seconds] || Float::INFINITY, labels:)
+      end
+    end
 
     def export_password_events
       events = ::PasswordEventCounter.where(

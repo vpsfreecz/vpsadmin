@@ -9,6 +9,9 @@ These pages describe vpsAdmin for developers and operators. Start with the
   provenance for client generation.
 - [System configuration](system-configuration.md): generic choices, localized
   labels, validation and compatibility.
+
+- [VPS evidence and duration reports](vps-evidence.md): accepted intervals, reporting,
+  freshness, delivery gaps and incident details.
 - [Incident escalation](incident-escalation.md): thresholds, summaries,
   administrator settings, event identity, ownership and recovery.
 - [Transactions](transactions.md): node commands, chains, resource locks, and
