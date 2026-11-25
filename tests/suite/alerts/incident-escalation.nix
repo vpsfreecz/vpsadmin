@@ -29,7 +29,7 @@ import ../../make-test.nix (
     ];
     machines = import ../../machines/cluster/1-node.nix args;
 
-    testScript = common + ''
+    testScripts.default.script = common + ''
       before(:suite) do
         setup_alerts_cluster(services, node)
         services.wait_for_service('vpsadmin-supervisor.service')
