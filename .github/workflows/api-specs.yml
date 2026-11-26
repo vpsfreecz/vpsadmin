@@ -252,6 +252,8 @@ jobs:
         working-directory: api
         env:
           TOPIC: ${{ matrix.topic }}
+          # Keep temporary MariaDB files under the standard local temp root.
+          TMPDIR: /tmp
         run: |
           set -euo pipefail
           mapfile -t files < "tmp/rspec-files-$SPEC_MODE-$TOPIC.txt"
@@ -396,6 +398,8 @@ jobs:
         working-directory: api
         env:
           TOPIC: ${{ matrix.topic }}
+          # Keep temporary MariaDB files under the standard local temp root.
+          TMPDIR: /tmp
         run: |
           set -euo pipefail
           mapfile -t files < "tmp/rspec-files-$SPEC_MODE-$TOPIC.txt"
