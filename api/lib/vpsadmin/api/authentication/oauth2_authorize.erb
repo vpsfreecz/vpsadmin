@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="<%= Rack::Utils.escape_html(html_lang) %>">
+<html lang="<%= Rack::Utils.escape_html(html_lang) %>" data-appearance="<%= appearance || 'auto' %>">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -10,6 +10,7 @@
       body { margin-top: 40px; }
       .input-group-prepend span { min-width: 42px; }
     </style>
+    <%= Authentication::Appearance.head(appearance) %>
     <script type="text/javascript">
       function onLoginFormSubmit() {
         setTimeout(function() {
@@ -161,7 +162,8 @@
         <div class="col-sm-6 col-lg-4 mx-auto">
           <div class="card">
             <article class="card-body">
-              <img src="<%= logo_url %>" class="card-img-top" alt="vpsFree.cz">
+              <%= Authentication::Appearance.controls %>
+              <%= Authentication::Appearance.brand %>
               <h4 class="card-title text-center mb-4 mt-1"><%= html_t.call(:heading) %></h4>
               <h5 class="card-subtitle text-center text-muted mb-2"><%= client.name %></h5>
               <hr>
@@ -183,6 +185,10 @@
               </div>
 
               <form action="<%= authorize_path %>" method="post" onsubmit="onLoginFormSubmit();" id="loginForm">
+                <input type="hidden" name="theme" value="<%= appearance || 'auto' %>" data-appearance-field>
+                <% if return_theme -%>
+                  <input type="hidden" name="theme_return" value="1">
+                <% end -%>
                 <% oauth2_params(oauth2_request).each do |k, v| -%>
                   <input type="hidden" name="<%= k %>" value="<%= Rack::Utils.escape_html(v) %>">
                 <% end -%>
@@ -300,7 +306,7 @@
                   <small>
                     <% if step == :credentials -%>
                       <% if password_recovery_enabled -%>
-                        <a href="<%= Rack::Utils.escape_html(password_recovery_path) %>"><%= html_t.call(:forgot_password) %></a>
+                        <a data-appearance-link href="<%= Rack::Utils.escape_html(password_recovery_path) %>"><%= html_t.call(:forgot_password) %></a>
                       <% else -%>
                         <%= html_t.call(:forgot_password_before) %> <a href="mailto:<%= Rack::Utils.escape_html(support_mail) %>"><%= html_t.call(:support) %></a><%= html_t.call(:forgot_password_after) %>
                       <% end -%>

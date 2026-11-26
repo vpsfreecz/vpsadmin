@@ -27,6 +27,8 @@ These pages describe vpsAdmin for developers and operators. Start with the
   and SDK compatibility.
 - [HTTP logging and OAuth callbacks](http-log-protection.md): frontend, HAProxy
   and PHP defaults, TLS composition and deployment boundaries.
+- [OAuth appearance and branding](oauth-appearance.md): browser preferences,
+  client theme exchange, declarative logos and recovery behavior.
 - [Storage](storage/README.md): datasets, pools, snapshots, and operations.
   - [Disabling backups](storage/disable-backups.md)
   - [Backup branching](storage/branching.md)

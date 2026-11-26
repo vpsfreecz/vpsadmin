@@ -8,6 +8,8 @@
     <title>vpsAdmin Passkey Registration</title>
     <style>
       body { margin-top: 40px; }
+      .authentication-brand { margin-bottom: 1rem; text-align: center; }
+      .authentication-logo, .authentication-logo svg { max-width: 100%; height: auto; }
     </style>
   </head>
   <body>
@@ -16,7 +18,7 @@
         <div class="col-sm-6 col-lg-4 mx-auto">
           <div class="card">
             <article class="card-body">
-              <img src="<%= ERB::Util.html_escape(logo_url.to_s) %>" class="card-img-top" alt="vpsFree.cz">
+              <%= Authentication::Appearance.brand(scheme: 'light') %>
               <h4 class="card-title text-center mb-4 mt-1">Register passkey into vpsAdmin</h4>
               <hr>
               <div id="alert-area"></div>

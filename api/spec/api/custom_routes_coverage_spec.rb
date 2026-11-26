@@ -6,6 +6,8 @@ RSpec.describe 'VpsAdmin::API' do
   describe 'Custom route coverage' do
     it 'ensures all known custom routes are listed as covered' do
       known = [
+        'GET /_auth/appearance/logo/dark',
+        'GET /_auth/appearance/logo/light',
         'GET /metrics',
         'GET /oauth2/password-reset',
         'GET /oauth2/password-reset/complete',

@@ -2663,6 +2663,11 @@ cs:
       year_of_birth:
         label: Rok narození
     auth:
+      appearance:
+        auto: Automatický
+        dark: Tmavý
+        label: Vzhled
+        light: Světlý
       oauth2:
         account_login: Login
         cancel: Zrušit
@@ -5103,7 +5108,6 @@ cs:
           auth_url: URL autentizační služby
           ipv4_ddns_url: URL dynamického DNS pro IPv4
           ipv6_ddns_url: URL dynamického DNS pro IPv6
-          logo_url: URL loga
           password_recovery_enabled: Povolit obnovení hesla
           snapshot_download_base_url: Základní URL pro stahování snapshotů
           support_mail: E-mailová adresa podpory

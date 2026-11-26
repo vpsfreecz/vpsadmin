@@ -23,7 +23,6 @@ module VpsAdmin::API
 
     def render(params, access_token:)
       redirect_uri = params['redirect_uri']
-      logo_url = ::SysConfig.get(:core, :logo_url)
 
       @template.result(binding)
     end

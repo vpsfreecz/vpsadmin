@@ -2661,6 +2661,11 @@ en:
       year_of_birth:
         label: Year of birth
     auth:
+      appearance:
+        auto: Automatic
+        dark: Dark
+        label: Appearance
+        light: Light
       oauth2:
         account_login: Login
         cancel: Cancel
@@ -5098,7 +5103,6 @@ en:
           auth_url: Authentication service URL
           ipv4_ddns_url: IPv4 dynamic DNS URL
           ipv6_ddns_url: IPv6 dynamic DNS URL
-          logo_url: Logo URL
           password_recovery_enabled: Allow password recovery
           snapshot_download_base_url: Snapshot download base URL
           support_mail: Support email address

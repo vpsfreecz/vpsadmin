@@ -1,0 +1,11 @@
+<fieldset class="appearance-controls" hidden>
+  <legend class="appearance-sr-only"><%= labels.fetch('label') %></legend>
+  <% { 'light' => '<circle cx="12" cy="12" r="4"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M4 20l2-2M18 6l2-2"/>',
+       'dark' => '<path d="M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z"/>',
+       'auto' => '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M12 17v4m-5 0h10"/>' }.each do |value, icon| %>
+    <label title="<%= labels.fetch(value) %>">
+      <input type="radio" name="appearance-selection" value="<%= value %>">
+      <span class="appearance-choice"><svg viewBox="0 0 24 24" aria-hidden="true"><%= icon %></svg><span class="appearance-sr-only"><%= labels.fetch(value) %></span></span>
+    </label>
+  <% end %>
+</fieldset>

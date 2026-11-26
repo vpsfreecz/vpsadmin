@@ -35,10 +35,10 @@ RSpec.describe VpsAdmin::API do
     values.each { |value| expect(html.include?(value)).to be(false), "Unexpected documentation text: #{value}" }
   end
 
-  it 'mounts the matching generators for API 7.0 only', :documentation_profile do
-    expect(HaveAPI::GoClient::VERSION).to eq(HaveAPI::VERSION)
-    expect(HaveAPI::RustClient::VERSION).to eq(HaveAPI::VERSION)
-    expect(HaveAPI::TypeScriptClient::VERSION).to eq(HaveAPI::VERSION)
+  it 'mounts the explicitly pinned generators for API 7.0 only', :documentation_profile do
+    expect(HaveAPI::GoClient::VERSION).to eq('0.32.2')
+    expect(HaveAPI::RustClient::VERSION).to eq('0.32.2')
+    expect(HaveAPI::TypeScriptClient::VERSION).to eq('0.32.2')
     expect(server.documentation_client_profiles('7.0').keys).to contain_exactly(:go, :rust, :typescript)
     expect(server.documentation_client_profiles('6.0')).to be_empty
   end

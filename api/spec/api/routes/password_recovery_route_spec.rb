@@ -10,9 +10,10 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     ensure_available_node_status!(SpecSeed.node)
     SysConfig.find_or_create_by!(category: 'core', name: 'password_recovery_enabled').update!(value: true)
     SysConfig.find_or_create_by!(category: 'core', name: 'auth_url').update!(value: 'http://example.org')
-    SysConfig.find_or_create_by!(category: 'core', name: 'logo_url').update!(
-      value: 'https://assets.example.test/vpsfree-logo.png'
-    )
+    allow(VpsAdmin::API::DeploymentConfig).to receive(:dig).with('authentication', 'logo_file')
+                                                           .and_return(File.expand_path('../../../lib/vpsadmin/api/authentication/assets/vpsadmin.svg', __dir__))
+    allow(VpsAdmin::API::DeploymentConfig).to receive(:dig).with('authentication', 'light_logo_file').and_return(nil)
+    allow(VpsAdmin::API::DeploymentConfig).to receive(:dig).with('authentication', 'dark_logo_file').and_return(nil)
     SysConfig.find_or_create_by!(category: 'core', name: 'support_mail').update!(value: 'support@example.test')
   end
 
@@ -39,11 +40,11 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(last_response.content_type).to start_with('text/html')
     expect(last_response.body).to include('<!DOCTYPE html>')
     expect(last_response.body).to include(
-      '<img class="logo" src="https://assets.example.test/vpsfree-logo.png" alt="vpsFree.cz">'
+      '<img class="authentication-logo authentication-logo-light" src="/_auth/appearance/logo/light" alt="vpsAdmin">'
     )
     expect(last_response.body).to include("<h1>#{heading}</h1>", message)
     expect(last_response.body).to include(
-      "<a class=\"button\" href=\"/oauth2/password-reset?#{query}\">#{request_new_link}</a>"
+      "<a class=\"button\" data-appearance-link href=\"/oauth2/password-reset?#{query}\">#{request_new_link}</a>"
     )
 
     if client
@@ -141,14 +142,14 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
     expect(last_response.body).not_to include('We will not disclose')
     expect(last_response.body).not_to include('email will explain how to contact support')
     expect(last_response.body).to include(
-      '<img class="logo" src="https://assets.example.test/vpsfree-logo.png" alt="vpsFree.cz">'
+      '<img class="authentication-logo authentication-logo-light" src="/_auth/appearance/logo/light" alt="vpsAdmin">'
     )
     expect(last_response.headers['Cache-Control']).to include('no-store')
     expect(last_response.headers['Referrer-Policy']).to eq('no-referrer')
     expect(last_response.headers['X-Frame-Options']).to eq('DENY')
     expect(last_response.headers['Content-Security-Policy']).to include("frame-ancestors 'none'")
     expect(last_response.headers['Content-Security-Policy']).to include(
-      "img-src 'self' https://assets.example.test"
+      "img-src 'self';"
     )
   end
 
@@ -159,6 +160,26 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
       message: 'This password recovery link is invalid, expired, or has already been used.'
     )
     expect(last_response.body).not_to include('<h1>Password changed.</h1>')
+  end
+
+  it 'keeps appearance on recovery forms and same-origin redirects without extending the service return' do
+    client = create_oauth2_client!(authorization_start_uri: 'https://service.example.test/sign-in')
+    get '/oauth2/password-reset', theme: 'dark', theme_return: '1', client_id: client.client_id
+    expect(last_response.body).to include('data-appearance="dark"', 'name="theme" value="dark"')
+    expect(last_response.body).not_to include('name="theme_return"', 'https://service.example.test/sign-in?theme')
+    post '/oauth2/password-reset', theme: 'dark', client_id: client.client_id,
+                                   identifier: 'unknown@example.test', csrf_token: csrf_from_body
+    expect(last_response.status).to eq(303)
+    expect(URI.parse(last_response.headers['Location']).query).to include('theme=dark')
+    follow_redirect!
+    expect(last_response.body).to include('data-appearance="dark"')
+  end
+
+  it 'uses same-origin logo routes for automatic scheme changes' do
+    get '/oauth2/password-reset', theme: 'auto'
+    expect(last_response.headers['Content-Security-Policy']).to include("img-src 'self';")
+    expect(last_response.body).to include('/_auth/appearance/logo/light', '/_auth/appearance/logo/dark')
+    expect(last_response.body).not_to include('/nix/store/')
   end
 
   it 'centers links that restart sign-in from the request and sent pages' do
@@ -253,14 +274,13 @@ RSpec.describe VpsAdmin::API::Authentication::PasswordRecovery do
   end
 
   it 'omits a logo that cannot be loaded safely' do
-    SysConfig.find_by!(category: 'core', name: 'logo_url').update!(
-      value: 'javascript:alert(1)'
-    )
+    allow(VpsAdmin::API::DeploymentConfig).to receive(:dig).with('authentication', 'logo_file')
+                                                           .and_return('javascript:alert(1)')
 
     get '/oauth2/password-reset'
 
     expect(last_response.status).to eq(200)
-    expect(last_response.body).not_to include('class="logo"')
+    expect(last_response.body).to include('aria-label="vpsAdmin"')
     expect(last_response.headers['Content-Security-Policy']).to include("img-src 'self'")
     expect(last_response.headers['Content-Security-Policy']).not_to include('javascript:')
   end

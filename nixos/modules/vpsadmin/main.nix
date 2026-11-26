@@ -56,6 +56,19 @@ in
         '';
       };
 
+      authentication = genAttrs [ "logo" "lightLogo" "darkLogo" ] (
+        name:
+        mkOption {
+          type = types.nullOr types.path;
+          default = null;
+          description = ''
+            Public authentication logo file, copied into the system closure and
+            served by the API. Supports PNG, JPEG, WebP and self-contained SVG.
+            A scheme-specific logo takes precedence over the common logo.
+          '';
+        }
+      );
+
       rabbitmq = {
         hosts = mkOption {
           type = types.listOf types.str;

@@ -6,9 +6,8 @@ RSpec.describe VpsAdmin::API::Authentication::WebauthnRegister do
   let(:user) { SpecSeed.user }
 
   before do
-    SysConfig.find_or_create_by!(category: 'core', name: 'logo_url').update!(
-      value: 'https://assets.example.test/logo.png'
-    )
+    allow(VpsAdmin::API::DeploymentConfig).to receive(:dig).with('authentication', 'light_logo_file')
+                                                           .and_return(File.expand_path('../../../../../lib/vpsadmin/api/authentication/assets/vpsadmin.svg', __dir__))
   end
 
   it 'returns an HTML body with token header, redirect URI, and logo URL' do
@@ -27,6 +26,7 @@ RSpec.describe VpsAdmin::API::Authentication::WebauthnRegister do
     expect(body).not_to include('/webauthn/registration/begin?')
     expect(body).not_to include('/webauthn/registration/finish?')
     expect(body).to include('https://app.example.test/passkey')
-    expect(body).to include('https://assets.example.test/logo.png')
+    expect(body).to include('/_auth/appearance/logo/light')
+    expect(body).not_to include('/_auth/appearance/logo/dark')
   end
 end

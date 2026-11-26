@@ -45,18 +45,22 @@ module VpsAdmin
       api.action_state = ActionState
       api.documentation_clients('7.0',
                                 go: {
+                                  generator_version: '0.32.2',
                                   import_path: 'github.com/vpsfreecz/vpsadmin-go-client/client'
                                 },
                                 rust: {
+                                  generator_version: '0.32.2',
                                   crate_name: 'vpsadmin-client'
                                 },
                                 typescript: {
+                                  generator_version: '0.32.2',
                                   package_name: 'vpsadmin-typescript-client'
                                 })
 
       authenticate(api)
 
       api.connect_hook(:pre_mount) do |ret, _, sinatra|
+        Authentication::Appearance.register_routes(sinatra)
         Authentication::PasswordRecovery.register_routes(sinatra)
 
         sinatra.get '/metrics' do

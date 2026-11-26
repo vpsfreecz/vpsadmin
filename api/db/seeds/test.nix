@@ -379,13 +379,6 @@ in
         }
         {
           category = "core";
-          name = "logo_url";
-          value = "http://webui.vpsadmin.test/logo.png";
-          min_user_level = 0;
-          data_type = "String";
-        }
-        {
-          category = "core";
           name = "webauthn_rp_name";
           value = "vpsAdmin";
           min_user_level = 99;

@@ -127,7 +127,7 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do # rubocop:disable 
     result = config.handle_get_authorize(
       sinatra_handler: handler,
       sinatra_request: request,
-      sinatra_params: {},
+      sinatra_params: { theme: 'dark', theme_return: '1' },
       oauth2_request:,
       oauth2_response: response,
       client:
@@ -137,6 +137,20 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do # rubocop:disable 
     expect(response.content_type).to eq('text/html')
     expect(response.body).to include(client.name)
     expect(response.body).to include('Log in')
+    expect(response.body).to include('data-appearance="dark"', 'name="theme" value="dark"', 'name="theme_return" value="1"')
+    expect(response.body).to include('aria-label="vpsAdmin"')
+  end
+
+  it 'returns a cosmetic preference only for an explicit capability and valid scalar enum' do
+    args = { oauth2_request:, auth_result: nil }
+    expect(config.authorization_response_params(**args, sinatra_params: { theme: 'auto', theme_return: '1' }))
+      .to eq(theme: 'auto')
+    [{ theme: 'dark' }, { theme: 'dark', theme_return: ['1'] },
+     { theme: ['dark'], theme_return: '1' }, { theme: 'unknown', theme_return: '1' }].each do |params|
+      expect(config.authorization_response_params(**args, sinatra_params: params)).to eq({})
+    end
+    expect(oauth2_request.state).to eq('state-1')
+    expect(oauth2_request.redirect_uri).to eq(client.redirect_uri)
   end
 
   it 'shows a completed recovery on the credentials form instead of using SSO' do
@@ -462,7 +476,7 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do # rubocop:disable 
     )
 
     expect(result).to be_nil
-    expect(response.body).to include('<html lang="cs">')
+    expect(response.body).to match(/<html\s+lang="cs"(?:\s[^>]*)?>/)
     expect(response.body).to include('Přihlásit se pomocí vpsAdminu')
     expect(response.body).to include('value="Přihlásit se"')
     expect(response.body).to include('name="ui_locales" value="cs-CZ"')
@@ -503,7 +517,9 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do # rubocop:disable 
       sinatra_params: {
         login_credentials: '1',
         user: user.login,
-        password: 'secret'
+        password: 'secret',
+        theme: 'dark',
+        theme_return: '1'
       },
       oauth2_request:,
       oauth2_response: response,
@@ -515,6 +531,7 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do # rubocop:disable 
     expect(result.auth_token).to be_mfa
     expect(response.body).to include(result.auth_token.to_s)
     expect(response.body).to include('TOTP code')
+    expect(response.body).to include('name="theme" value="dark"', 'name="theme_return" value="1"')
   end
 
   it 'renders passkey MFA without automatically starting WebAuthn' do
@@ -542,7 +559,7 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do # rubocop:disable 
     expect(response.body).to include('async function webAuthn(event)')
     expect(response.body).to include('onclick="webAuthn(event);"')
     expect(response.body).not_to include('webAuthn();')
-    expect(response.body).not_to include('DOMContentLoaded')
+    expect(response.body).not_to match(/addEventListener\([^;]*webAuthn/m)
   end
 
   it 'completes TOTP authentication and creates an authorization code' do
@@ -692,7 +709,9 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do # rubocop:disable 
         auth_token: auth_token.to_s,
         user: 'submitted-login',
         new_password1: 'new-password-1',
-        new_password2: 'new-password-2'
+        new_password2: 'new-password-2',
+        theme: 'light',
+        theme_return: '1'
       },
       oauth2_request:,
       oauth2_response: response,
@@ -703,6 +722,7 @@ RSpec.describe VpsAdmin::API::Authentication::OAuth2Config do # rubocop:disable 
     expect(result.complete).to be(false)
     expect(result).to be_reset_password
     expect(result.errors).to include(:passwords_do_not_match)
+    expect(response.body).to include('name="theme" value="light"', 'name="theme_return" value="1"')
     expect(response.body).to include('passwords do not match')
     expect(response.body).to include(
       '<label for="reset-login">Login</label>'

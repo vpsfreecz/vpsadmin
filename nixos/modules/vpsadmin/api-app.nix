@@ -19,9 +19,53 @@ let
     ;
 
   vpsadminCfg = config.vpsadmin;
-  deploymentConfigJson = pkgs.writeText "deployment.json" (
-    builtins.toJSON vpsadminCfg.deploymentConfig
+  logoKeys = {
+    logo = "logo_file";
+    lightLogo = "light_logo_file";
+    darkLogo = "dark_logo_file";
+  };
+  authentication = vpsadminCfg.deploymentConfig.authentication or { };
+  copyLogo =
+    name:
+    let
+      basename = builtins.unsafeDiscardStringContext (
+        builtins.baseNameOf vpsadminCfg.authentication.${name}
+      );
+      extension = lib.toLower (lib.last (lib.splitString "." basename));
+      source = builtins.path {
+        path = vpsadminCfg.authentication.${name};
+        name = "vpsadmin-${name}-${basename}";
+      };
+    in
+    pkgs.runCommand "vpsadmin-${name}-logo.${extension}" { src = source; } ''
+      if ! test -f "$src" || ! test -r "$src"; then
+        echo "Authentication logo must be a readable regular file" >&2
+        exit 1
+      fi
+      case ${lib.escapeShellArg extension} in
+        png|jpg|jpeg|webp|svg) ;;
+        *) echo "Unsupported authentication logo file extension" >&2; exit 1 ;;
+      esac
+      cp -- "$src" "$out"
+      chmod 0444 "$out"
+    '';
+  logoFiles = lib.mapAttrs' (name: key: lib.nameValuePair key (toString (copyLogo name))) (
+    lib.filterAttrs (name: _: vpsadminCfg.authentication.${name} != null) logoKeys
   );
+  deploymentConfigJson =
+    assert lib.assertMsg (builtins.isAttrs authentication)
+      "vpsadmin.deploymentConfig.authentication must be an attribute set";
+    assert lib.assertMsg
+      (!(lib.any (key: builtins.hasAttr key authentication) (builtins.attrValues logoKeys)))
+      "Use vpsadmin.authentication logo options instead of reserved deploymentConfig authentication file keys";
+    pkgs.writeText "deployment.json" (
+      builtins.toJSON (
+        vpsadminCfg.deploymentConfig
+        // {
+          authentication = authentication // logoFiles;
+        }
+      )
+    );
 
   databaseYml = pkgs.writeText "database.yml" ''
     production:

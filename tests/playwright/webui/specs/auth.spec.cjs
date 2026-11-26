@@ -164,7 +164,7 @@ test('OAuth forgot-password link reaches the recovery form', async ({ page }) =>
   await forgotPassword.click();
 
   await expect(page).toHaveURL(/auth\.vpsadmin\.test\/oauth2\/password-reset/);
-  await expect(page.getByRole('img', { name: 'vpsFree.cz' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'vpsAdmin', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Reset your password' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Back to sign in' })).toHaveCSS(
     'text-align',
@@ -256,7 +256,7 @@ test('expired password recovery form offers a new link and sign-in', async ({ pa
   await page.context().clearCookies();
   await page.getByRole('button', { name: 'Change password' }).click();
 
-  await expect(page.getByRole('img', { name: 'vpsFree.cz' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'vpsAdmin', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', {
     name: 'Password recovery could not continue',
   })).toBeVisible();
@@ -289,7 +289,7 @@ test('invalid Czech password recovery link stays on the branded page', async ({ 
     { waitUntil: 'domcontentloaded' },
   );
 
-  await expect(page.getByRole('img', { name: 'vpsFree.cz' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'vpsAdmin', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', {
     name: 'V obnovení hesla nejde pokračovat',
   })).toBeVisible();

@@ -63,19 +63,6 @@ module VpsAdmin::API
         I18N_KEYS.map { |key| "auth.password_recovery.#{key}" }
       end
 
-      def configured_logo
-        value = ::SysConfig.get(:core, :logo_url).to_s.strip
-        return if value.empty?
-
-        uri = URI.parse(value)
-        return unless uri.is_a?(URI::HTTP) && %w[http https].include?(uri.scheme)
-        return if uri.host.blank? || uri.userinfo.present? || uri.fragment.present?
-
-        { url: value, origin: uri.origin }
-      rescue URI::InvalidURIError
-        nil
-      end
-
       def register_routes(sinatra)
         controller = self
         sinatra.before "#{BASE_PATH}*" do
@@ -83,8 +70,6 @@ module VpsAdmin::API
             halt 404, VpsAdmin::API::I18n.t('errors.object_not_found')
           end
 
-          logo = controller.configured_logo
-          image_sources = ["'self'", logo&.fetch(:origin)].compact.join(' ')
           headers(
             'Cache-Control' => 'no-store, max-age=0',
             'Pragma' => 'no-cache',
@@ -94,7 +79,7 @@ module VpsAdmin::API
             'Content-Security-Policy' => "default-src 'none'; " \
                                          "style-src 'unsafe-inline'; " \
                                          "script-src 'unsafe-inline'; " \
-                                         "img-src #{image_sources}; " \
+                                         "img-src 'self'; " \
                                          "connect-src 'self'; form-action 'self'; " \
                                          "base-uri 'none'; frame-ancestors 'none'"
           )
@@ -703,6 +688,7 @@ module VpsAdmin::API
     end
 
     def redirect_to(path, query = {})
+      query = query.merge(theme: Authentication::Appearance.preference(@params))
       values = query.compact.reject { |_, value| value.to_s.empty? }
       target = values.empty? ? path : "#{path}?#{URI.encode_www_form(values)}"
       @handler.redirect(target, 303)
@@ -717,7 +703,8 @@ module VpsAdmin::API
       selected_locale = recovery ? recovery.password_recovery_request.locale : locale
       values = {
         client_id: client&.client_id,
-        ui_locales: selected_locale
+        ui_locales: selected_locale,
+        theme: Authentication::Appearance.preference(@params)
       }.compact.reject { |_, value| value.to_s.empty? }
 
       values.empty? ? path : "#{path}?#{URI.encode_www_form(values)}"
@@ -758,7 +745,7 @@ module VpsAdmin::API
       mfa_explanation_key = mfa_explanation_key(mfa_methods)
       error = locals[:error]
       support_mail = ::SysConfig.get(:core, :support_mail).to_s
-      logo_url = self.class.configured_logo&.fetch(:url)
+      appearance = Authentication::Appearance.preference(@params)
       html_lang = locale.to_s
       t = ->(key, **values) { text(key, **values) }
       html_t = ->(key, **values) { Rack::Utils.escape_html(t.call(key, **values)) }

@@ -17,17 +17,19 @@ the user's package manager selects a release. The server does not resolve
 registry versions. SDK versions, API 7.0 and HaveAPI generator versions are
 separate identities.
 
-The API bundle includes `haveapi-go-client`, `haveapi-rust-client` and
-`haveapi-typescript-client` at the same version as `haveapi`. HaveAPI loads the
-generators during profile registration and builds their private structural
+The API bundle explicitly pins its `haveapi-go-client`, `haveapi-rust-client`
+and `haveapi-typescript-client` profiles to generator version 0.32.2, independently
+of the server version. HaveAPI loads the generators during profile
+registration, checks those fixed versions and builds their private structural
 models at the end of mounting. Missing generators, incompatible versions and
 invalid profiles fail startup. HTML requests use the current user's authorized
 description and samples. They do not fetch schemas, generate SDKs or run
 compilers.
 
-The selected HaveAPI source reuses unchanged, owned context fields when deriving
-documentation panels and copies explicitly supplied replacements. Container and string inputs
-are detached from caller-owned data, including mutable children of shallow-frozen
+The compatible HaveAPI development source reuses unchanged, owned context fields
+when deriving documentation panels and copies explicitly supplied replacements.
+Container and string inputs are detached from caller-owned data, including mutable
+children of shallow-frozen
 containers. Generated examples read the selected action and authentication
 provider from the current request's authorized description. Context reuse
 preserves each request's authorization and locale; it does not cache pages or
@@ -59,15 +61,25 @@ GET/HEAD links redirect to the default overview without challenging, signing
 out or clearing a session. Use Documentation settings for OAuth sign-in,
 sign-out, optional Switch user and theme choices.
 
-## Released gem packaging and documentation sign-in
+<a id="released-gem-packaging-and-documentation-sign-in"></a>
 
-The API server and four Ruby client/generator gems use the same HaveAPI release
-series from RubyGems. The released server gem includes its generated
-README, internal guides, JSON schema and documentation assets. Check the
-installed documentation contents and all five loaded gem paths when updating
-the bundle. A successful Ruby require alone does not prove that the assets were
-packaged. The PHP and browser JavaScript clients use their own released
-packages; external SDK dependencies remain separate.
+## Server packaging and documentation sign-in
+
+The Nix API bundle, ordinary development shells and normal CI use released
+HaveAPI dependencies. Before enabling theme exchange in production, select a
+HaveAPI release containing the theme response hook and documentation theme
+support. Explicit source overrides are for development checks; those checks do
+not verify a released artifact.
+
+The Go, Rust and TypeScript profiles explicitly require their actual released
+generator version 0.32.2. HaveAPI checks that fixed version and fails startup on
+a mismatch. This is independent of the server version; a profile neither
+discovers nor downloads a generator dynamically.
+
+Check the installed README, shared internal guides, JSON schema, documentation
+assets and all five loaded gem paths when updating the bundle. A successful Ruby
+require does not prove that assets were packaged. PHP and browser JavaScript
+clients use their own released packages. External SDK dependencies remain separate.
 
 Use the existing configure-before-mount hook for documentation sign-in. Copy
 [`api/config/api.rb.example`](../api/config/api.rb.example) to the API's private
@@ -96,8 +108,8 @@ switching. The sample sends `close_sso=1` when Switch user revokes its token.
 This closes the associated SSO session. Closing SSO does not itself revoke
 other authorizations' access tokens; existing provider logout preferences still
 apply. Ordinary sign-out does not send this parameter. The revoke option
-requires HaveAPI 0.32.1 or later in the 0.32 series. Do not reuse PHP or React
-client credentials.
+is supported by published HaveAPI 0.32.1 or later in
+the 0.32 series. Do not reuse PHP or React client credentials.
 
 HaveAPI obtains authorize, token and revoke URLs from the default API version's
 OAuth provider metadata. vpsAdmin derives those URLs from `core.auth_url`, or

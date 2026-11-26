@@ -282,8 +282,6 @@ class SysConfig < ApplicationRecord
                                                        label: VpsAdmin::API::I18n.message('sysconfig.labels.core.password_recovery_enabled', default: 'Allow password recovery')
   register :core, :transaction_key, Text, min_user_level: 99,
                                           label: VpsAdmin::API::I18n.message('sysconfig.labels.core.transaction_key', default: 'Transaction signing key')
-  register :core, :logo_url, String, min_user_level: 0,
-                                     label: VpsAdmin::API::I18n.message('sysconfig.labels.core.logo_url', default: 'Logo URL')
   register :node, :public_key, Text,
            label: VpsAdmin::API::I18n.message('sysconfig.labels.node.public_key', default: 'Node public key')
   register :node, :private_key, Text,

@@ -1,5 +1,7 @@
 # List of custom routes covered by request specs
 covered_custom_routes:
+- "GET /_auth/appearance/logo/dark"
+- "GET /_auth/appearance/logo/light"
 - "GET /metrics"
 - "GET /oauth2/password-reset"
 - "GET /oauth2/password-reset/complete"

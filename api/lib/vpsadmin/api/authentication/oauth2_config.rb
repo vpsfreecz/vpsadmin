@@ -106,6 +106,11 @@ module VpsAdmin::API
       end
     end
 
+    def authorization_response_params(sinatra_params:, oauth2_request:, auth_result:)
+      theme = Authentication::Appearance.preference(sinatra_params)
+      Authentication::Appearance.return_theme?(sinatra_params) && theme ? { theme: theme } : {}
+    end
+
     # @return [AuthResult, nil]
     def handle_get_authorize(sinatra_handler:, sinatra_request:, sinatra_params:, oauth2_request:, oauth2_response:, client:)
       completed_recovery, completion_shown = completed_password_recovery(
@@ -425,6 +430,8 @@ module VpsAdmin::API
     # @param auth_result [AuthResult]
     def render_authorize_page(oauth2_request:, oauth2_response:, sinatra_params:, client:, devices:, auth_result: nil, sinatra_request: nil, password_recovery_completed: false)
       # Variables passed to the ERB template
+      appearance = Authentication::Appearance.preference(sinatra_params)
+      return_theme = Authentication::Appearance.return_theme?(sinatra_params)
       auth_token = auth_result && auth_result.auth_token
       user = if auth_token && auth_result.reset_password
                auth_result.user&.login || auth_token.user.login
@@ -451,6 +458,7 @@ module VpsAdmin::API
       support_mail = ::SysConfig.get(:core, :support_mail)
       password_recovery_enabled = ::SysConfig.get(:core, :password_recovery_enabled)
       password_recovery_query = { client_id: client.client_id }
+      password_recovery_query[:theme] = appearance if appearance
       password_recovery_query[:ui_locales] = ui_locales if ui_locales.present?
       if user.present? && user.length <= ::PasswordRecoverySubmission::IDENTIFIER_LIMIT
         password_recovery_query[:identifier] = user
@@ -1084,10 +1092,6 @@ module VpsAdmin::API
         end
 
       [skip_until, v]
-    end
-
-    def logo_url
-      ::SysConfig.get(:core, :logo_url)
     end
   end
 end

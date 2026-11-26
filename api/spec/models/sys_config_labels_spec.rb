@@ -56,7 +56,8 @@ RSpec.describe SysConfig do
     czech = ::I18n.t('vpsadmin.sysconfig.labels', locale: :cs)
     static = english.except(:incident_policy)
     static = static.slice(:core, :node, :dns) if ENV['VPSADMIN_PLUGINS'] == 'none'
-    expect(static.values.sum(&:length)).to eq(ENV['VPSADMIN_PLUGINS'] == 'none' ? 15 : 34)
+    expect(static.fetch(:core)).not_to have_key(:logo_url)
+    expect(static.values.sum(&:length)).to eq(ENV['VPSADMIN_PLUGINS'] == 'none' ? 14 : 33)
 
     static.each do |category, settings|
       settings.each do |name, label|
