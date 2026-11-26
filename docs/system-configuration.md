@@ -28,6 +28,22 @@ supplied default must be allowed, and a new nonnullable setting requires a valid
 default. Empty-string choices and Integer zero are valid. Null means unset; it
 does not imply inheritance or a default unless the setting defines that behavior.
 
+## Setting labels and editing
+
+Bundled settings and configured incident-policy fields have English and Czech
+labels. `label:` can be a String or a `HaveAPI::LocalizedMessage` created with
+`VpsAdmin::API::I18n.message` and a nonempty English default. Registration stores
+the English default as label metadata. The API resolves the display label for
+each request through its existing `label` field. Plain String labels and rows
+without a localized declaration keep their stored label. The PHP editor uses
+the setting name when the label is empty.
+
+The label catalog keys are `sysconfig.labels.<category>.<name>`; dynamic policies
+share `sysconfig.labels.incident_policy.*`. The normal catalog scanner includes
+bundled plugin `meta.rb` files. Labels do not alter `category`, `name`, visibility
+or stored values. `localized: true` continues to describe translated setting
+values, such as HTML or ERB content.
+
 ## API and editors
 
 SystemConfig Index, Show and Update return these additional fields:

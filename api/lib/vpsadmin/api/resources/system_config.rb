@@ -16,7 +16,7 @@ module VpsAdmin::API::Resources
                             desc: 'True if a null value is allowed, false otherwise. ' \
                                   'This field is null when no choices are declared.'
       custom :localized_value, label: 'Localized value'
-      string :label
+      string :label, db_name: :display_label
       string :description
       integer :min_user_level
     end

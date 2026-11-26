@@ -17,6 +17,15 @@ class SysConfig < ApplicationRecord
   validate :validate_choice_value, if: -> { new_record? || will_save_change_to_value? }
 
   # Declaration metadata is process-local; persisted values remain untouched.
+  def self.label_registry
+    @label_registry ||= {}
+  end
+
+  def display_label
+    message = self.class.label_registry[self.class.localized_registration_key(category, name)]
+    message ? HaveAPI.localize(message) : self[:label]
+  end
+
   def self.choices_registry
     @choices_registry ||= {}
   end
@@ -183,7 +192,7 @@ class SysConfig < ApplicationRecord
   # @param name [Symbol]
   # @param type [Object]
   # @param opts [Hash]
-  # @option opts [String] label
+  # @option opts [String, HaveAPI::LocalizedMessage] label
   # @option opts [String] description
   # @option opts [String] default
   # @option opts [Integer] min_user_level
@@ -191,8 +200,22 @@ class SysConfig < ApplicationRecord
   # @option opts [Hash] choices ordered values-to-labels map
   # @option opts [Boolean] nullable whether a choice setting accepts nil
   def self.register(category, name, type, opts = {})
+    label = opts[:label]
+    if label.is_a?(HaveAPI::LocalizedMessage)
+      unless label.default.is_a?(String) && !label.default.strip.empty?
+        raise ArgumentError, 'localized labels require a nonempty English default'
+      end
+
+      opts = opts.merge(label: label.default)
+    end
+
     cfg = find_by(category:, name:)
     choices_registry[localized_registration_key(category, name)] = normalize_choices(type, opts, cfg)
+    if label.is_a?(HaveAPI::LocalizedMessage)
+      label_registry[localized_registration_key(category, name)] = label
+    else
+      label_registry.delete(localized_registration_key(category, name))
+    end
 
     if opts.has_key?(:localized)
       localized_registry[localized_registration_key(category, name)] =
@@ -243,33 +266,51 @@ class SysConfig < ApplicationRecord
     end
   end
 
-  register :core, :api_url, String, min_user_level: 0
-  register :core, :auth_url, String, min_user_level: 0
-  register :core, :support_mail, String, min_user_level: 0
-  register :core, :snapshot_download_base_url, String
-  register :core, :totp_issuer, String, default: 'vpsAdmin', min_user_level: 99
-  register :core, :webauthn_rp_name, String, default: 'vpsAdmin', min_user_level: 99
-  register :core, :password_recovery_enabled, Boolean, default: false, min_user_level: 99
-  register :core, :transaction_key, Text, min_user_level: 99
-  register :core, :logo_url, String, min_user_level: 0
-  register :node, :public_key, Text
-  register :node, :private_key, Text
-  register :node, :key_type, String
-  register :core, :ipv4_ddns_url, String, min_user_level: 99
-  register :core, :ipv6_ddns_url, String, min_user_level: 99
+  register :core, :api_url, String, min_user_level: 0,
+                                    label: VpsAdmin::API::I18n.message('sysconfig.labels.core.api_url', default: 'API URL')
+  register :core, :auth_url, String, min_user_level: 0,
+                                     label: VpsAdmin::API::I18n.message('sysconfig.labels.core.auth_url', default: 'Authentication service URL')
+  register :core, :support_mail, String, min_user_level: 0,
+                                         label: VpsAdmin::API::I18n.message('sysconfig.labels.core.support_mail', default: 'Support email address')
+  register :core, :snapshot_download_base_url, String,
+           label: VpsAdmin::API::I18n.message('sysconfig.labels.core.snapshot_download_base_url', default: 'Snapshot download base URL')
+  register :core, :totp_issuer, String, default: 'vpsAdmin', min_user_level: 99,
+                                        label: VpsAdmin::API::I18n.message('sysconfig.labels.core.totp_issuer', default: 'TOTP issuer name')
+  register :core, :webauthn_rp_name, String, default: 'vpsAdmin', min_user_level: 99,
+                                             label: VpsAdmin::API::I18n.message('sysconfig.labels.core.webauthn_rp_name', default: 'WebAuthn service name')
+  register :core, :password_recovery_enabled, Boolean, default: false, min_user_level: 99,
+                                                       label: VpsAdmin::API::I18n.message('sysconfig.labels.core.password_recovery_enabled', default: 'Allow password recovery')
+  register :core, :transaction_key, Text, min_user_level: 99,
+                                          label: VpsAdmin::API::I18n.message('sysconfig.labels.core.transaction_key', default: 'Transaction signing key')
+  register :core, :logo_url, String, min_user_level: 0,
+                                     label: VpsAdmin::API::I18n.message('sysconfig.labels.core.logo_url', default: 'Logo URL')
+  register :node, :public_key, Text,
+           label: VpsAdmin::API::I18n.message('sysconfig.labels.node.public_key', default: 'Node public key')
+  register :node, :private_key, Text,
+           label: VpsAdmin::API::I18n.message('sysconfig.labels.node.private_key', default: 'Node private key')
+  register :node, :key_type, String,
+           label: VpsAdmin::API::I18n.message('sysconfig.labels.node.key_type', default: 'Node key type')
+  register :core, :ipv4_ddns_url, String, min_user_level: 99,
+                                          label: VpsAdmin::API::I18n.message('sysconfig.labels.core.ipv4_ddns_url', default: 'IPv4 dynamic DNS URL')
+  register :core, :ipv6_ddns_url, String, min_user_level: 99,
+                                          label: VpsAdmin::API::I18n.message('sysconfig.labels.core.ipv6_ddns_url', default: 'IPv6 dynamic DNS URL')
   IncidentEscalation::RULES.each_value do |rule|
     register rule.category, :mode, String, default: 'observe', min_user_level: 99, nullable: false,
+                                           label: VpsAdmin::API::I18n.message('sysconfig.labels.incident_policy.mode', default: 'Global policy mode'),
                                            choices: { values: {
                                            'observe' => VpsAdmin::API::I18n.message('sysconfig.choices.incident_mode.observe', default: 'Observation only'),
                                            'notify' => VpsAdmin::API::I18n.message('sysconfig.choices.incident_mode.notify', default: 'Warnings only'),
                                            'enforce' => VpsAdmin::API::I18n.message('sysconfig.choices.incident_mode.enforce', default: 'Warnings and automatic shutdown')
                                          } }
     register rule.category, :warning_limit, Integer, min_user_level: 99,
+                                                     label: VpsAdmin::API::I18n.message('sysconfig.labels.incident_policy.warning_limit', default: 'Global warning threshold (7 days)'),
                                                      description: 'Global warning limit override. Null uses the limit declared in the policy.'
     register rule.category, :stop_limit, Integer, min_user_level: 99,
+                                                  label: VpsAdmin::API::I18n.message('sysconfig.labels.incident_policy.stop_limit', default: 'Global shutdown threshold (30 days)'),
                                                   description: 'Global shutdown limit override. Null uses the limit declared in the policy.'
   end
-  register :dns, :protected_zones, Array, min_user_level: 99
+  register :dns, :protected_zones, Array, min_user_level: 99,
+                                          label: VpsAdmin::API::I18n.message('sysconfig.labels.dns.protected_zones', default: 'Protected DNS zones')
 
   def get_value
     case data_type

@@ -5088,6 +5088,52 @@ en:
           enforce: Warnings and automatic shutdown
           notify: Warnings only
           observe: Observation only
+      labels:
+        core:
+          api_url: API URL
+          auth_url: Authentication service URL
+          ipv4_ddns_url: IPv4 dynamic DNS URL
+          ipv6_ddns_url: IPv6 dynamic DNS URL
+          logo_url: Logo URL
+          password_recovery_enabled: Allow password recovery
+          snapshot_download_base_url: Snapshot download base URL
+          support_mail: Support email address
+          totp_issuer: TOTP issuer name
+          transaction_key: Transaction signing key
+          webauthn_rp_name: WebAuthn service name
+        dns:
+          protected_zones: Protected DNS zones
+        incident_policy:
+          mode: Global policy mode
+          stop_limit: Global shutdown threshold (30 days)
+          warning_limit: Global warning threshold (7 days)
+        node:
+          key_type: Node key type
+          private_key: Node private key
+          public_key: Node public key
+        plugin_outage_reports:
+          announce_message_id: Announce message ID
+          update_message_id: Update message ID
+        plugin_payments:
+          conversion_rates: Currency conversion rates
+          default_currency: Default currency
+          default_monthly_payment: Default monthly payment
+          fio_api_tokens: API tokens
+          payment_instructions: Payment instructions
+          user_message_regexps: Payment matching patterns
+        plugin_requests:
+          currencies: Currencies
+          ipqs_key: IPQualityScore API key
+          message_id: Message ID
+        webui:
+          base_url: Web UI URL
+          document_title: Web UI page title
+          goresheat_url: Goresheat URL
+          index_info_box_content: Home page information box content
+          index_info_box_title: Home page information box title
+          munin_url: Munin URL
+          noticeboard: Noticeboard
+          sidebar: Sidebar content
     transaction_chains:
       concerns:
         classes:

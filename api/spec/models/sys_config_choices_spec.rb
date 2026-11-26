@@ -6,9 +6,11 @@ require 'rbconfig'
 RSpec.describe SysConfig do
   around do |example|
     registry = described_class.choices_registry.dup
+    labels = described_class.label_registry.dup
     example.run
   ensure
     described_class.choices_registry.replace(registry)
+    described_class.label_registry.replace(labels)
   end
 
   def register(type = String, **opts)
@@ -48,8 +50,11 @@ RSpec.describe SysConfig do
   ['legacy', nil, 7].each do |legacy|
     it "preserves unsupported #{legacy.inspect} on registration and metadata-only saves" do
       cfg = described_class.create!(category: 'spec_choices', name: 'setting', data_type: 'String', value: legacy)
-      register(choices:, default: 'valid', nullable: false, label: 'Updated label')
+      register(choices:, default: 'valid', nullable: false,
+               label: VpsAdmin::API::I18n.message('sysconfig.labels.core.api_url', default: 'API URL'))
       expect(cfg.reload.value).to eq(legacy)
+      expect(cfg.label).to eq('API URL')
+      expect(::I18n.with_locale(:cs) { cfg.display_label }).to eq('URL API')
       cfg.update!(description: 'Metadata only')
       expect(cfg.reload.value).to eq(legacy)
       cfg.update!(value: 'valid')
@@ -97,6 +102,10 @@ RSpec.describe SysConfig do
   it 'cold-loads existing mode declarations without changing stored values', :no_transaction do
     mode = described_class.create!(category: 'incident_policy_cold_registration', name: 'mode',
                                    data_type: 'String', value: 'retired-mode')
+    warning = described_class.create!(category: 'incident_policy_cold_registration', name: 'warning_limit',
+                                      data_type: 'Integer', value: nil)
+    stop = described_class.create!(category: 'incident_policy_cold_registration', name: 'stop_limit',
+                                   data_type: 'Integer', value: 0)
 
     begin
       script = <<~'RUBY'
@@ -115,15 +124,21 @@ RSpec.describe SysConfig do
         abort 'SysConfig was already loaded' if Object.const_defined?(:SysConfig)
         ActiveRecord::Base.establish_connection(ENV.fetch('DATABASE_URL'))
         existing = ActiveRecord::Base.connection.select_value(
-          "SELECT COUNT(*) FROM sysconfig WHERE category = 'incident_policy_cold_registration' AND name = 'mode'"
+          "SELECT COUNT(*) FROM sysconfig WHERE category = 'incident_policy_cold_registration' AND name IN ('mode', 'warning_limit', 'stop_limit')"
         )
-        abort 'An existing mode row is required' unless existing.to_i == 1
+        abort 'Existing policy rows are required' unless existing.to_i == 3
 
         ActiveRecord::Base.transaction do
           require File.expand_path('lib/vpsadmin')
           mode = SysConfig.find_by!(category: 'incident_policy_cold_registration', name: 'mode')
+          thresholds = %w[warning_limit stop_limit].to_h do |name|
+            setting = SysConfig.find_by!(category: mode.category, name:)
+            [name, { value: setting.value, label: setting.label,
+                     czech_label: ::I18n.with_locale(:cs) { setting.display_label } }]
+          end
           result = { value: mode.value, choices: mode.choice_contract.fetch(:values).keys,
-                     nullable: mode.value_nullable }
+                     nullable: mode.value_nullable, label: mode.label,
+                     czech_label: ::I18n.with_locale(:cs) { mode.display_label }, thresholds: }
           puts "SYSCONFIG_COLD_LOAD=#{JSON.generate(result)}"
           raise ActiveRecord::Rollback
         end
@@ -137,10 +152,19 @@ RSpec.describe SysConfig do
       result = stdout.lines.find { |line| line.start_with?('SYSCONFIG_COLD_LOAD=') }
       expect(result).not_to be_nil
       expect(JSON.parse(result.delete_prefix('SYSCONFIG_COLD_LOAD='))).to eq(
-        'value' => 'retired-mode', 'choices' => %w[observe notify enforce], 'nullable' => false
+        'value' => 'retired-mode', 'choices' => %w[observe notify enforce], 'nullable' => false,
+        'label' => 'Global policy mode', 'czech_label' => 'Globální režim pravidla',
+        'thresholds' => {
+          'warning_limit' => { 'value' => nil, 'label' => 'Global warning threshold (7 days)',
+                               'czech_label' => 'Globální limit pro upozornění (7 dní)' },
+          'stop_limit' => { 'value' => 0, 'label' => 'Global shutdown threshold (30 days)',
+                            'czech_label' => 'Globální limit pro vypnutí (30 dní)' }
+        }
       )
     ensure
       mode.delete
+      warning&.delete
+      stop&.delete
     end
   end
 end

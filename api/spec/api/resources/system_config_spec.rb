@@ -119,6 +119,38 @@ RSpec.describe 'VpsAdmin::API::Resources::SystemConfig' do
     expect(last_response.status).to eq(code), message
   end
 
+  describe 'localized setting labels' do
+    around do |example|
+      registry = SysConfig.label_registry.dup
+      example.run
+    ensure
+      SysConfig.label_registry.replace(registry)
+      header 'Accept-Language', nil
+    end
+
+    it 'uses each request language in Index, Show and Update without changing stored labels or values' do
+      SysConfig.register(category, :public, String,
+                         label: VpsAdmin::API::I18n.message('sysconfig.labels.core.api_url', default: 'API URL'))
+
+      { 'en' => 'API URL', 'cs' => 'URL API' }.each do |language, label|
+        header 'Accept-Language', language
+        json_get index_path, system_config: { category: }
+        expect_status(200)
+        expect(system_configs.find { |row| row['name'] == 'public' }).to include('label' => label, 'value' => 'pub')
+        expect(system_configs.map { |row| row['name'] }).not_to include('hidden')
+
+        json_get show_path('public')
+        expect_status(200)
+        expect(system_config).to include('label' => label, 'value' => 'pub', 'localized' => false)
+
+        as(SpecSeed.admin) { json_put update_path('public'), system_config: { value: 'pub' } }
+        expect_status(200)
+        expect(system_config).to include('label' => label, 'value' => 'pub', 'localized' => false)
+        expect(SysConfig.find_by!(category:, name: 'public').label).to eq('API URL')
+      end
+    end
+  end
+
   describe 'Index' do
     it 'shows only public config for unauthenticated users' do
       json_get index_path, system_config: { category: category }

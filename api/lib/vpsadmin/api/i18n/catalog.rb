@@ -28,6 +28,7 @@ module VpsAdmin
           'api/lib/vpsadmin/api/operations/**/*.rb',
           'api/lib/vpsadmin/api/resources/**/*.rb',
           'api/models/**/*.rb',
+          'plugins/*/meta.rb',
           'plugins/*/api/lib/**/*.rb',
           'plugins/*/api/models/**/*.rb',
           'plugins/*/api/resources/**/*.rb'

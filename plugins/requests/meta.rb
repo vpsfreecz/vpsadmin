@@ -9,14 +9,15 @@ VpsAdmin::API::Plugin.register(:requests) do
   config do
     SysConfig.register :plugin_requests, :message_id, String,
                        default: '<vpsadmin-request-%{id}-%{mail_id}@vpsadmin.vpsfree.cz>',
-                       label: 'Message ID',
+                       label: VpsAdmin::API::I18n.message('sysconfig.labels.plugin_requests.message_id', default: 'Message ID'),
                        description: 'Mail header Message-ID used to put e-mails into threads',
                        min_user_level: 99
     SysConfig.register :plugin_requests, :currencies, String, default: 'eur,czk',
-                                                              label: 'Currencies',
+                                                              label: VpsAdmin::API::I18n.message('sysconfig.labels.plugin_requests.currencies', default: 'Currencies'),
                                                               description: 'Comma separated list of accepted currencies in registration',
                                                               min_user_level: 99
     SysConfig.register :plugin_requests, :ipqs_key, String,
+                       label: VpsAdmin::API::I18n.message('sysconfig.labels.plugin_requests.ipqs_key', default: 'IPQualityScore API key'),
                        min_user_level: 99
 
     vars = {

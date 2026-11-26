@@ -5093,6 +5093,52 @@ cs:
           enforce: Upozornění a automatické vypnutí
           notify: Pouze upozornění
           observe: Pouze sledování
+      labels:
+        core:
+          api_url: URL API
+          auth_url: URL autentizační služby
+          ipv4_ddns_url: URL dynamického DNS pro IPv4
+          ipv6_ddns_url: URL dynamického DNS pro IPv6
+          logo_url: URL loga
+          password_recovery_enabled: Povolit obnovení hesla
+          snapshot_download_base_url: Základní URL pro stahování snapshotů
+          support_mail: E-mailová adresa podpory
+          totp_issuer: Název vydavatele TOTP
+          transaction_key: Klíč pro podepisování transakcí
+          webauthn_rp_name: Název služby WebAuthn
+        dns:
+          protected_zones: Chráněné DNS zóny
+        incident_policy:
+          mode: Globální režim pravidla
+          stop_limit: Globální limit pro vypnutí (30 dní)
+          warning_limit: Globální limit pro upozornění (7 dní)
+        node:
+          key_type: Typ klíče nodu
+          private_key: Soukromý klíč nodu
+          public_key: Veřejný klíč nodu
+        plugin_outage_reports:
+          announce_message_id: Message-ID oznámení
+          update_message_id: Message-ID aktualizace
+        plugin_payments:
+          conversion_rates: Směnné kurzy
+          default_currency: Výchozí měna
+          default_monthly_payment: Výchozí měsíční platba
+          fio_api_tokens: API tokeny
+          payment_instructions: Pokyny k platbě
+          user_message_regexps: Vzory pro přiřazení plateb
+        plugin_requests:
+          currencies: Přijímané měny
+          ipqs_key: API klíč IPQualityScore
+          message_id: Message-ID zpráv s požadavky
+        webui:
+          base_url: URL webového rozhraní
+          document_title: Titulek webového rozhraní
+          goresheat_url: URL Goresheatu
+          index_info_box_content: Obsah informačního boxu na úvodní stránce
+          index_info_box_title: Nadpis informačního boxu na úvodní stránce
+          munin_url: URL Muninu
+          noticeboard: Nástěnka
+          sidebar: Obsah postranního panelu
     transaction_chains:
       concerns:
         classes:
