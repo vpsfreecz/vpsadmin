@@ -11,16 +11,16 @@ class DatasetAction < ApplicationRecord
   def execute
     case action.to_sym
     when :snapshot
-      TransactionChains::Dataset::Snapshot.fire(src_dataset_in_pool)
+      TransactionChains::Dataset::Snapshot.fire(src_dataset_in_pool, expected_action: id)
 
     when :transfer
-      TransactionChains::Dataset::Transfer.fire(src_dataset_in_pool, dst_dataset_in_pool)
+      TransactionChains::Dataset::Transfer.fire(src_dataset_in_pool, dst_dataset_in_pool, expected_action: id)
 
     when :rollback
       raise 'not supported'
 
     when :backup
-      TransactionChains::Dataset::Backup.fire(src_dataset_in_pool, dst_dataset_in_pool)
+      TransactionChains::Dataset::Backup.fire(src_dataset_in_pool, dst_dataset_in_pool, expected_action: id)
 
     when :group_snapshot
       do_group_snapshots
@@ -38,6 +38,19 @@ class DatasetAction < ApplicationRecord
       dips << dip
     end
 
-    TransactionChains::Dataset::GroupSnapshot.fire(dips) unless dips.none?
+    TransactionChains::Dataset::GroupSnapshot.fire(dips, expected_action: id) unless dips.none?
+  end
+
+  # Called after the chain acquires its source lock, never on the stale Ruby
+  # action loaded by a scheduler worker before plan removal.
+  def self.scheduled_for?(id, action:, source:, destination: nil)
+    query = where(id: id, action: actions.fetch(action.to_s)).lock
+    if action == :group_snapshot
+      query.joins(:group_snapshots).where(group_snapshots: { dataset_in_pool_id: source.id }).exists?
+    else
+      query = query.where(src_dataset_in_pool_id: source.id)
+      query = query.where(dst_dataset_in_pool_id: destination.id) if destination
+      query.exists?
+    end
   end
 end

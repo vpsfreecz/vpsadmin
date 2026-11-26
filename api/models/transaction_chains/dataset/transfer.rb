@@ -1,6 +1,7 @@
 module TransactionChains
   class Dataset::Transfer < ::TransactionChain
     label 'Transfer'
+    allow_empty
 
     def link_chain(src_dataset_in_pool, dst_dataset_in_pool, **opts)
       # FIXME: in theory, the transfer does not have to lock whole datasets.
@@ -9,6 +10,10 @@ module TransactionChains
       # for all its snapshots.
       lock(src_dataset_in_pool)
       lock(dst_dataset_in_pool)
+
+      if opts[:expected_action] && !::DatasetAction.scheduled_for?(opts[:expected_action], action: :transfer, source: src_dataset_in_pool, destination: dst_dataset_in_pool)
+        return
+      end
 
       tree = nil
       branch = nil
@@ -187,7 +192,7 @@ module TransactionChains
       unless branch
         branch = ::Branch.create!(
           dataset_tree: tree,
-          name: Time.new.strftime('%Y-%m-%dT%H:%M:%S'),
+          name: Time.now.strftime('%Y-%m-%dT%H:%M:%S'),
           head: true,
           confirmed: ::Branch.confirmed(:confirm_create)
         )

@@ -472,6 +472,34 @@ module VpsAdmin::API::Resources
       end
     end
 
+    class DisableBackups < HaveAPI::Action
+      desc 'Disable scheduled backups and remove source snapshots'
+      route '{%{resource}_id}/disable_backups'
+      http_method :post
+      blocking true
+
+      input do
+        bool :recursive, default: false, fill: true, label: 'Include subdatasets'
+        bool :backup_first, default: true, fill: true, label: 'Back up existing snapshots first'
+      end
+
+      authorize do |user|
+        allow if user.role == :admin
+      end
+
+      def exec
+        dataset = ::Dataset.find(path_params['dataset_id'])
+        @chain, = VpsAdmin::API::Operations::Dataset::DisableBackups.run(dataset, **input)
+        ok!
+      rescue VpsAdmin::API::Operations::Dataset::DisableBackups::Rejected => e
+        error!(e.message)
+      end
+
+      def state_id
+        @chain.id
+      end
+    end
+
     class Snapshot < HaveAPI::Resource
       route '{dataset_id}/snapshots'
       model ::Snapshot
@@ -791,20 +819,22 @@ module VpsAdmin::API::Resources
 
         def exec
           s = ::Dataset.find_by!(with_restricted(id: path_params['dataset_id']))
-          dip = s.primary_dataset_in_pool!
-          submitted_plan = input[:environment_dataset_plan]
-          plan_def = VpsAdmin::API::DatasetPlans.plans[submitted_plan.dataset_plan.name.to_sym]
-          env_plan = plan_def.env_dataset_plan(dip)
+          VpsAdmin::API::DatasetPlans.with_locked_source(s) do |dip|
+            error!('Insufficient permission') if current_user.role != :admin && s.user_id != current_user.id
+            submitted_plan = input[:environment_dataset_plan]
+            plan_def = VpsAdmin::API::DatasetPlans.plans[submitted_plan.dataset_plan.name.to_sym]
+            env_plan = plan_def.env_dataset_plan(dip)
 
-          if submitted_plan.id != env_plan.id
-            error!('environment dataset plan does not belong to the dataset environment')
+            if submitted_plan.id != env_plan.id
+              error!('environment dataset plan does not belong to the dataset environment')
+            end
+
+            error!('Insufficient permission') if !env_plan.user_add && current_user.role != :admin
+
+            object_state_check!(s, s.user)
+
+            dip.add_plan(env_plan)
           end
-
-          error!('Insufficient permission') if !env_plan.user_add && current_user.role != :admin
-
-          object_state_check!(s, s.user)
-
-          dip.add_plan(env_plan)
         end
       end
 
@@ -821,17 +851,18 @@ module VpsAdmin::API::Resources
 
         def exec
           ds = ::Dataset.find_by!(with_restricted(id: path_params['dataset_id']))
-          dip = ds.primary_dataset_in_pool!
+          VpsAdmin::API::DatasetPlans.with_locked_source(ds) do |dip|
+            error!('Insufficient permission') if current_user.role != :admin && ds.user_id != current_user.id
+            dip_plan = dip.dataset_in_pool_plans.find(path_params['plan_id'])
 
-          dip_plan = dip.dataset_in_pool_plans.find(path_params['plan_id'])
+            if !dip_plan.environment_dataset_plan.user_remove && current_user.role != :admin
+              error!('Insufficient permission')
+            end
 
-          if !dip_plan.environment_dataset_plan.user_remove && current_user.role != :admin
-            error!('Insufficient permission')
+            object_state_check!(ds, ds.user)
+
+            dip.del_plan(dip_plan)
           end
-
-          object_state_check!(ds, ds.user)
-
-          dip.del_plan(dip_plan)
           ok!
         end
       end
