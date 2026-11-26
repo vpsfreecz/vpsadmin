@@ -1147,7 +1147,12 @@ msgstr "Zaregistrovat nový server do clusteru"
 msgid "Edit node"
 msgstr "Upravit node"
 
-#: forms/cluster.forms.php
+#: forms/cluster.forms.php forms/outage.forms.php forms/vps.forms.php
+#: pages/page_adminvps.php
+msgid "Cancel"
+msgstr "Zrušit"
+
+#: forms/cluster.forms.php pages/page_cluster.php
 msgid "Invalid configuration choices"
 msgstr "Neplatné možnosti konfigurace"
 
@@ -2935,7 +2940,7 @@ msgstr "Poslední pokus o uvolnění"
 msgid "Result"
 msgstr "Výsledek"
 
-#: forms/ip_release.forms.php pages/page_adminvps.php
+#: forms/ip_release.forms.php pages/page_adminvps.php pages/page_cluster.php
 msgid "Error"
 msgstr "Chyba"
 
@@ -4063,10 +4068,6 @@ msgstr "Změnit stav"
 #: forms/outage.forms.php
 msgid "Announce"
 msgstr "Oznámit"
-
-#: forms/outage.forms.php forms/vps.forms.php pages/page_adminvps.php
-msgid "Cancel"
-msgstr "Zrušit"
 
 #: forms/outage.forms.php
 msgid "Resolve"
@@ -8189,16 +8190,16 @@ msgid "Manage Cluster"
 msgstr "Správa clusteru"
 
 #: pages/page_cluster.php
-msgid "Some changes were saved"
-msgstr "Některé změny byly uloženy"
-
-#: pages/page_cluster.php
-msgid "The following options failed:"
-msgstr "Následující možnosti se nezdařily:"
+msgid "Choose a setting to edit."
+msgstr "Vyber nastavení, které chceš upravit."
 
 #: pages/page_cluster.php
 msgid "Changes sucessfully saved."
 msgstr "Změny byly úspěšně uloženy."
+
+#: pages/page_cluster.php
+msgid "The following options failed:"
+msgstr "Následující možnosti se nezdařily:"
 
 #: pages/page_cluster.php
 msgid "New DNS Server"
@@ -9642,6 +9643,9 @@ msgstr "Upravit pole nápovědy"
 #: public/index.php
 msgid "Help"
 msgstr "Pomoc"
+
+#~ msgid "Some changes were saved"
+#~ msgstr "Některé změny byly uloženy"
 
 #~ msgid "Recorded evaluations and current outcomes"
 #~ msgstr "Uložená vyhodnocení a aktuální výsledky"

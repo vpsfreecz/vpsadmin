@@ -1130,7 +1130,12 @@ msgstr ""
 msgid "Edit node"
 msgstr ""
 
-#: forms/cluster.forms.php
+#: forms/cluster.forms.php forms/outage.forms.php forms/vps.forms.php
+#: pages/page_adminvps.php
+msgid "Cancel"
+msgstr ""
+
+#: forms/cluster.forms.php pages/page_cluster.php
 msgid "Invalid configuration choices"
 msgstr ""
 
@@ -2875,7 +2880,7 @@ msgstr ""
 msgid "Result"
 msgstr ""
 
-#: forms/ip_release.forms.php pages/page_adminvps.php
+#: forms/ip_release.forms.php pages/page_adminvps.php pages/page_cluster.php
 msgid "Error"
 msgstr ""
 
@@ -3979,10 +3984,6 @@ msgstr ""
 
 #: forms/outage.forms.php
 msgid "Announce"
-msgstr ""
-
-#: forms/outage.forms.php forms/vps.forms.php pages/page_adminvps.php
-msgid "Cancel"
 msgstr ""
 
 #: forms/outage.forms.php
@@ -8004,15 +8005,15 @@ msgid "Manage Cluster"
 msgstr ""
 
 #: pages/page_cluster.php
-msgid "Some changes were saved"
-msgstr ""
-
-#: pages/page_cluster.php
-msgid "The following options failed:"
+msgid "Choose a setting to edit."
 msgstr ""
 
 #: pages/page_cluster.php
 msgid "Changes sucessfully saved."
+msgstr ""
+
+#: pages/page_cluster.php
+msgid "The following options failed:"
 msgstr ""
 
 #: pages/page_cluster.php

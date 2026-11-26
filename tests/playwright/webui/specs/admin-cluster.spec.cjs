@@ -267,41 +267,77 @@ test.describe.serial('admin cluster browser coverage', () => {
     await logout(page, fixtures.admin.username);
   });
 
-  test('system config choices preserve values and follow the selected language', async ({ page }) => {
+  test('system config edits one setting and localizes labels and choices', async ({ page }) => {
     requireClusterAdminFixtures();
 
     await login(page, fixtures.admin);
     await gotoCluster(page, 'sysconfig');
     await expect(content(page)).toContainText('System config');
+    await expect(content(page)).toContainText('API URL');
+    await expect(formByAction(page, 'action=sysconfig_save')).toHaveCount(0);
 
-    const form = formByAction(page, 'action=sysconfig_save');
-    await expect(form).toBeVisible();
-    const mode = form.locator('select[name^="sysconfig_choices["][name$=":mode]"]').first();
-    await expect(mode).toBeVisible();
+    const editHref = await page.locator('a[href*="action=sysconfig_edit"][href*="name=mode"]').first().getAttribute('href');
+    const editUrl = new URL(editHref, page.url());
+    const category = editUrl.searchParams.get('category');
+    const warningUrl = new URL(editUrl);
+    warningUrl.searchParams.set('name', 'warning_limit');
+    const saves = [];
+    page.on('request', request => {
+      const url = new URL(request.url());
+      if (request.method() === 'POST' && url.searchParams.get('action') === 'sysconfig_save') {
+        saves.push([url.searchParams.get('category'), url.searchParams.get('name')]);
+      }
+    });
+
+    await page.goto(warningUrl.toString());
+    const warning = await page.locator(`input[name="${category}:warning_limit"]`).inputValue();
+    await page.getByRole('link', { name: 'Cancel', exact: true }).click();
+    await page.goto(editUrl.toString());
+    let form = formByAction(page, 'action=sysconfig_save');
+    let mode = form.locator('select[name^="sysconfig_choices["][name$=":mode]"]');
+    await expect(mode).toHaveCount(1);
     await expect(mode.locator('option')).toHaveText([
       'Observation only', 'Warnings only', 'Warnings and automatic shutdown',
     ]);
-    const fieldName = await mode.getAttribute('name');
     const originalValue = await mode.inputValue();
-    await submitForm(form, 'Save changes');
+    const changedValue = originalValue === JSON.stringify('notify') ? JSON.stringify('observe') : JSON.stringify('notify');
+    await mode.selectOption(changedValue);
+    await page.getByRole('link', { name: 'Cancel', exact: true }).click();
+    expect(saves).toEqual([]);
+
+    await page.goto(editUrl.toString());
+    form = formByAction(page, 'action=sysconfig_save');
+    mode = form.locator('select[name^="sysconfig_choices["]');
+    await expect(mode).toHaveValue(originalValue);
+    await submitForm(form, 'Save');
     await expectNotification(page, 'Changes saved');
 
-    let currentForm = formByAction(page, 'action=sysconfig_save');
-    await expect(currentForm.locator(`select[name="${fieldName}"]`)).toHaveValue(originalValue);
-    await currentForm.locator(`select[name="${fieldName}"]`).selectOption(JSON.stringify('notify'));
-    await submitForm(currentForm, 'Save changes');
+    await page.goto(editUrl.toString());
+    form = formByAction(page, 'action=sysconfig_save');
+    await form.locator('select[name^="sysconfig_choices["]').selectOption(changedValue);
+    await submitForm(form, 'Save');
     await expectNotification(page, 'Changes saved');
-    currentForm = formByAction(page, 'action=sysconfig_save');
-    await expect(currentForm.locator(`select[name="${fieldName}"]`)).toHaveValue(JSON.stringify('notify'));
-    await currentForm.locator(`select[name="${fieldName}"]`).selectOption(originalValue);
-    await submitForm(currentForm, 'Save changes');
+    await page.goto(editUrl.toString());
+    form = formByAction(page, 'action=sysconfig_save');
+    await expect(form.locator('select[name^="sysconfig_choices["]')).toHaveValue(changedValue);
+    await form.locator('select[name^="sysconfig_choices["]').selectOption(originalValue);
+    await submitForm(form, 'Save');
     await expectNotification(page, 'Changes saved');
+    expect(saves).toEqual([[category, 'mode'], [category, 'mode'], [category, 'mode']]);
+
+    await page.goto(warningUrl.toString());
+    await expect(page.locator(`input[name="${category}:warning_limit"]`)).toHaveValue(warning);
+    await page.getByRole('link', { name: 'Cancel', exact: true }).click();
     await switchLanguage(page, 'cs_CZ.utf8');
-    currentForm = formByAction(page, 'action=sysconfig_save');
-    await expect(currentForm.locator(`select[name="${fieldName}"] option`)).toHaveText([
+    await expect(content(page)).toContainText('URL API');
+    await expect(content(page)).toContainText('Globální režim pravidla');
+    await page.goto(editUrl.toString());
+    form = formByAction(page, 'action=sysconfig_save');
+    await expect(form.locator('select[name^="sysconfig_choices["] option')).toHaveText([
       'Pouze sledování', 'Pouze upozornění', 'Upozornění a automatické vypnutí',
     ]);
-    await expect(currentForm.locator(`select[name="${fieldName}"]`)).toHaveValue(originalValue);
+    await expect(form.locator('select[name^="sysconfig_choices["]')).toHaveValue(originalValue);
+    await page.getByRole('link', { name: 'Zrušit', exact: true }).click();
     await switchLanguage(page, 'en_US.utf8');
 
     await logout(page, fixtures.admin.username);

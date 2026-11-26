@@ -24,6 +24,8 @@ final class SystemConfigChoicesTest extends TestCase
         require_once dirname(__DIR__, 2) . '/lib/functions.lib.php';
         require_once dirname(__DIR__, 2) . '/lib/cluster.lib.php';
         $_SESSION = [];
+        $_POST = [];
+        $_SERVER['REQUEST_METHOD'] = 'GET';
     }
 
     private function option(array $overrides = []): array
@@ -41,27 +43,6 @@ final class SystemConfigChoicesTest extends TestCase
         ], $overrides);
     }
 
-    private function config(array $option): SystemConfig
-    {
-        $api = new class ($option) {
-            public $system_config;
-
-            public function __construct(array $option)
-            {
-                $this->system_config = new class ($option) {
-                    public function __construct(private array $option) {}
-
-                    public function index()
-                    {
-                        return [new SystemConfigChoiceOption($this->option)];
-                    }
-                };
-            }
-        };
-
-        return new SystemConfig($api, true, 'en');
-    }
-
     public function testNullableEmptyStringAndLiteralNullRemainDistinct(): void
     {
         $option = $this->option(['choices' => [
@@ -71,7 +52,7 @@ final class SystemConfigChoicesTest extends TestCase
         $choices = system_config_choices($option);
 
         self::assertSame(['""', '"null"', 'null'], array_keys($choices));
-        $config = $this->config($option);
+        $config = $option;
         self::assertSame([[['synthetic', 'setting', null, true]], []], system_config_changes($config, [
             'sysconfig_choices' => ['synthetic:setting' => 'null'],
         ]));
@@ -82,11 +63,11 @@ final class SystemConfigChoicesTest extends TestCase
 
     public function testSavesIntegerZeroAsAnIntegerAndRejectsStringEquivalent(): void
     {
-        $config = $this->config($this->option([
+        $config = $this->option([
             'type' => 'Integer', 'value' => 2,
             'choices' => [['value' => 0, 'label' => 'Zero'], ['value' => 2, 'label' => 'Two']],
             'value_nullable' => false,
-        ]));
+        ]);
 
         self::assertSame([[['synthetic', 'setting', 0, true]], []], system_config_changes($config, [
             'sysconfig_choices' => ['synthetic:setting' => '0'],
@@ -103,15 +84,15 @@ final class SystemConfigChoicesTest extends TestCase
 
         self::assertStringContainsString('<option selected disabled value="null">', $html);
         self::assertSame(1, substr_count($html, 'selected'));
-        self::assertSame([[], []], system_config_changes($this->config($option), []));
-        self::assertSame([[], []], system_config_changes($this->config($option), [
+        self::assertSame([[], []], system_config_changes($option, []));
+        self::assertSame([[], []], system_config_changes($option, [
             'sysconfig_choices' => ['synthetic:setting' => 'null'],
         ]));
     }
 
     public function testSelectedUnchangedValidChoiceDoesNotWrite(): void
     {
-        self::assertSame([[], []], system_config_changes($this->config($this->option()), [
+        self::assertSame([[], []], system_config_changes($this->option(), [
             'sysconfig_choices' => ['synthetic:setting' => '"first"'],
         ]));
     }
@@ -126,7 +107,7 @@ final class SystemConfigChoicesTest extends TestCase
 
         self::assertStringContainsString('<option selected disabled value="0.0">', $html);
         self::assertSame(1, substr_count($html, 'selected'));
-        self::assertSame([[], []], system_config_changes($this->config($option), []));
+        self::assertSame([[], []], system_config_changes($option, []));
     }
 
     public function testEscapesTokensAndApiLabels(): void
@@ -145,7 +126,7 @@ final class SystemConfigChoicesTest extends TestCase
     {
         $option = $this->option(['choices' => [['value' => 1, 'label' => 'Wrong type']]]);
 
-        self::assertSame([[], ['synthetic:setting']], system_config_changes($this->config($option), [
+        self::assertSame([[], ['synthetic:setting']], system_config_changes($option, [
             'synthetic:setting' => 'replacement',
         ]));
     }
@@ -155,10 +136,10 @@ final class SystemConfigChoicesTest extends TestCase
         $option = $this->option();
         unset($option['choices'], $option['value_nullable']);
         self::assertNull(system_config_choices($option));
-        self::assertSame([[['synthetic', 'setting', 'replacement', false]], []], system_config_changes($this->config($option), [
+        self::assertSame([[['synthetic', 'setting', 'replacement', false]], []], system_config_changes($option, [
             'synthetic:setting' => 'replacement',
         ]));
-        self::assertSame([[['synthetic', 'setting', 'replacement', false]], []], system_config_changes($this->config($this->option()), [
+        self::assertSame([[['synthetic', 'setting', 'replacement', false]], []], system_config_changes($this->option(), [
             'synthetic:setting' => 'replacement',
         ]));
     }
@@ -166,13 +147,13 @@ final class SystemConfigChoicesTest extends TestCase
     public function testNonchoiceCheckboxKeepsUncheckedSaveBehavior(): void
     {
         $option = $this->option(['type' => 'Boolean', 'value' => true, 'choices' => null, 'value_nullable' => null]);
-        self::assertSame([[['synthetic', 'setting', '0', false]], []], system_config_changes($this->config($option), []));
+        self::assertSame([[['synthetic', 'setting', '0', false]], []], system_config_changes($option, []));
     }
 
     public function testRejectsMalformedChoiceTokens(): void
     {
         foreach (['{invalid', '[]', 'true', '9007199254740992', null] as $token) {
-            self::assertSame([[], ['synthetic:setting']], system_config_changes($this->config($this->option()), [
+            self::assertSame([[], ['synthetic:setting']], system_config_changes($this->option(), [
                 'sysconfig_choices' => ['synthetic:setting' => $token],
             ]));
         }
@@ -184,21 +165,6 @@ final class SystemConfigChoicesTest extends TestCase
         global $api, $xtpl;
 
         $option = $this->option();
-        $api = new class ($option) {
-            public $system_config;
-
-            public function __construct(array $option)
-            {
-                $this->system_config = new class ($option) {
-                    public function __construct(private array $option) {}
-
-                    public function index()
-                    {
-                        return [new SystemConfigChoiceOption($this->option)];
-                    }
-                };
-            }
-        };
         $xtpl = new class {
             public array $calls = [];
 
@@ -208,7 +174,7 @@ final class SystemConfigChoicesTest extends TestCase
             }
         };
         $_POST = ['sysconfig_choices' => ['synthetic:setting' => '""']];
-        system_config_form();
+        system_config_form(new SystemConfigChoiceOption($option));
         $rendered = json_encode($xtpl->calls);
 
         self::assertStringContainsString('sysconfig_choices[synthetic:setting]', $rendered);

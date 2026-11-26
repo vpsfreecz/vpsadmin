@@ -594,102 +594,139 @@ function node_update_form($id)
     $xtpl->form_out(_("Save"));
 }
 
-function system_config_form()
+function system_config_list()
 {
     global $xtpl, $api;
 
     $xtpl->title2(_("System config"));
-    $xtpl->form_create('?page=cluster&action=sysconfig_save', 'post');
+    $lastCategory = null;
 
-    $options = $api->system_config->index();
-    $last_cat = null;
-
-    foreach ($options as $opt) {
-        if ($last_cat === null || $last_cat != $opt->category) {
-            $xtpl->table_td($opt->category, '#5EAFFF; color:#FFF; font-weight:bold;', false, 2);
+    foreach ($api->system_config->index() as $option) {
+        if ($lastCategory !== $option->category) {
+            $xtpl->table_td(h($option->category), '#5EAFFF; color:#FFF; font-weight:bold;', false, 3);
             $xtpl->table_tr();
-            $last_cat = $opt->category;
+            $lastCategory = $option->category;
         }
 
-        $xtpl->table_td(
-            ($opt->label ? $opt->label : $opt->name) . ':',
-            false,
-            false,
-            '1',
-            $opt->description ? '2' : '1'
-        );
-
-        $name = $opt->category . ':' . $opt->name;
-        $value = $_POST[$name] ?? $opt->value;
-
-        try {
-            $choices = system_config_choices($opt->attributes());
-
-            if ($choices !== null) {
-                $value = $opt->value;
-                $submitted = $_POST['sysconfig_choices'][$name] ?? null;
-
-                if (is_string($submitted)) {
-                    try {
-                        $draft = json_decode($submitted, true, 512, JSON_THROW_ON_ERROR);
-
-                        if (is_string($draft) || is_int($draft) || $draft === null) {
-                            $value = $draft;
-                        }
-
-                    } catch (JsonException $e) {
-                        // Keep the authoritative value when the posted token is malformed.
-                    }
-                }
-
-                $xtpl->table_td(system_config_choice_html($name, $choices, $value));
-                $xtpl->table_tr();
-
-                if ($opt->description) {
-                    $xtpl->table_td($opt->description);
-                    $xtpl->table_tr();
-                }
-
-                continue;
-            }
-
-        } catch (UnexpectedValueException $e) {
-            $xtpl->table_td(h(_('Invalid configuration choices')));
-            $xtpl->table_tr();
-            continue;
-        }
-
-        switch ($opt->type) {
-            case 'String':
-                $xtpl->form_add_input_pure('text', '70', $name, $value);
-                break;
-
-            case 'Text':
-            case 'Custom':
-            case 'Hash':
-            case 'Array':
-                $xtpl->form_add_textarea_pure('70', '15', $name, $value);
-                break;
-
-            case 'Integer':
-            case 'Float':
-                $xtpl->form_add_number_pure($name, $value);
-                break;
-
-            case 'Boolean':
-                $xtpl->form_add_checkbox_pure($name, '1', $value ? true : false);
-                break;
-        }
-
+        $query = http_build_query([
+            'page' => 'cluster', 'action' => 'sysconfig_edit',
+            'category' => $option->category, 'name' => $option->name,
+        ], '', '&', PHP_QUERY_RFC3986);
+        $xtpl->table_td(h($option->label ?: $option->name));
+        $xtpl->table_td(h($option->category . ':' . $option->name));
+        $xtpl->table_td('<a href="?' . h($query) . '">' . h(_('Edit')) . '</a>');
         $xtpl->table_tr();
-
-        if ($opt->description) {
-            $xtpl->table_td($opt->description);
-            $xtpl->table_tr();
-        }
     }
 
-    $xtpl->form_out(_("Save changes"));
+    $xtpl->table_out();
+}
+
+function system_config_cancel_link()
+{
+    global $xtpl;
+
+    $xtpl->sbar_add(_('Cancel'), '?page=cluster&action=sysconfig');
+}
+
+function system_config_form($opt)
+{
+    global $xtpl;
+
+    $xtpl->title2(_('Edit') . ': ' . h($opt->label ?: $opt->name));
+    $xtpl->table_td(h($opt->category . ':' . $opt->name), false, false, 2);
+    $xtpl->table_tr();
+    $query = http_build_query([
+        'page' => 'cluster', 'action' => 'sysconfig_save',
+        'category' => $opt->category, 'name' => $opt->name,
+    ], '', '&', PHP_QUERY_RFC3986);
+    $xtpl->form_create('?' . $query, 'post', 'generic_form', false);
+    $xtpl->form_csrf('system_config');
+
+    $xtpl->table_td(
+        h($opt->label ? $opt->label : $opt->name) . ':',
+        false,
+        false,
+        '1',
+        $opt->description ? '2' : '1'
+    );
+
+    $name = $opt->category . ':' . $opt->name;
+    $value = $_POST[$name] ?? $opt->value;
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && $opt->type === 'Boolean') {
+        $value = !empty($_POST[$name]);
+    }
+
+    try {
+        $choices = system_config_choices($opt->attributes());
+
+        if ($choices !== null) {
+            $value = $opt->value;
+            $submitted = $_POST['sysconfig_choices'][$name] ?? null;
+
+            if (is_string($submitted)) {
+                try {
+                    $draft = json_decode($submitted, true, 512, JSON_THROW_ON_ERROR);
+
+                    if (is_string($draft) || is_int($draft) || $draft === null) {
+                        $value = $draft;
+                    }
+
+                } catch (JsonException $e) {
+                    // Keep the authoritative value when the posted token is malformed.
+                }
+            }
+
+            $xtpl->table_td(system_config_choice_html($name, $choices, $value));
+            $xtpl->table_tr();
+
+            if ($opt->description) {
+                $xtpl->table_td($opt->description);
+                $xtpl->table_tr();
+            }
+
+            $xtpl->form_out(_('Save'));
+            system_config_cancel_link();
+            return;
+        }
+
+    } catch (UnexpectedValueException $e) {
+        $xtpl->table_td(h(_('Invalid configuration choices')));
+        $xtpl->table_tr();
+        $xtpl->form_out_raw();
+        system_config_cancel_link();
+        return;
+    }
+
+    switch ($opt->type) {
+        case 'String':
+            $xtpl->form_add_input_pure('text', '70', $name, $value);
+            break;
+
+        case 'Text':
+        case 'Custom':
+        case 'Hash':
+        case 'Array':
+            $xtpl->form_add_textarea_pure('70', '15', $name, $value);
+            break;
+
+        case 'Integer':
+        case 'Float':
+            $xtpl->form_add_number_pure($name, $value);
+            break;
+
+        case 'Boolean':
+            $xtpl->form_add_checkbox_pure($name, '1', $value ? true : false);
+            break;
+    }
+
+    $xtpl->table_tr();
+
+    if ($opt->description) {
+        $xtpl->table_td($opt->description);
+        $xtpl->table_tr();
+    }
+    $xtpl->form_out(_('Save'));
+    system_config_cancel_link();
 }
 
 function news_log_message_payload()

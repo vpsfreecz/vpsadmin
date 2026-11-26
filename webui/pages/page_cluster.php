@@ -61,41 +61,61 @@ if (isAdmin()) {
             break;
 
         case "sysconfig":
-            system_config_form();
-
+            system_config_list();
             $xtpl->sbar_add(_("Back"), '?page=cluster');
             break;
 
+        case "sysconfig_edit":
         case "sysconfig_save":
-            csrf_check();
+            $target = system_config_target($_GET);
+            $saving = $_GET['action'] === 'sysconfig_save';
+            $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
-            $current_cfg = new SystemConfig($api, true);
-            [$changes, $failed] = system_config_changes($current_cfg, $_POST);
-
-            foreach ($changes as $change) {
-                try {
-                    system_config_update($api, $change[0], $change[1], $change[2], $change[3]);
-
-                } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
-                    $failed[] = $change[0] . ':' . $change[1];
-                }
-            }
-
-            $config->reload();
-
-            if (count($failed)) {
-                $xtpl->perex(
-                    _("Some changes were saved"),
-                    _("The following options failed:") . '<br>'
-                    . implode("\n<br>\n", $failed)
-                );
-                system_config_form();
-
-            } else {
-                notify_user(_("Changes saved"), _("Changes sucessfully saved."));
+            if ($target === null || $method !== ($saving ? 'POST' : 'GET')) {
+                notify_user(_('Choose a setting to edit.'));
                 redirect('?page=cluster&action=sysconfig');
             }
 
+            if ($saving) {
+                csrf_check('system_config');
+            }
+
+            $option = null;
+
+            try {
+                $option = $api->system_config->show($target[0], $target[1]);
+
+                if (!$saving) {
+                    system_config_form($option);
+                    break;
+                }
+
+                [$changes, $failed] = system_config_changes($option->attributes(), $_POST);
+
+                if ($failed) {
+                    $xtpl->perex(_('Invalid configuration choices'));
+                    system_config_form($option);
+                    break;
+                }
+
+                if ($changes) {
+                    system_config_update($api, ...$changes[0]);
+                    $config->reload();
+                }
+
+                notify_user(_("Changes saved"), _("Changes sucessfully saved."));
+                redirect('?page=cluster&action=sysconfig');
+
+            } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+                $xtpl->perex(_('Error'), _('The following options failed:') . '<br>'
+                    . h($target[0] . ':' . $target[1]));
+
+                if ($option !== null) {
+                    system_config_form($option);
+                } else {
+                    system_config_list();
+                }
+            }
             break;
 
         case "dns":

@@ -199,64 +199,77 @@ function system_config_choice_html(string $name, array $choices, $value): string
     return $html . '</select>';
 }
 
-/** Decode only explicitly marked choice controls; old forms retain their path. */
-function system_config_changes(SystemConfig $config, array $post): array
+/** Resolve one explicit route target; posted setting fields never choose a row. */
+function system_config_target(array $query): ?array
 {
+    foreach (['category', 'name'] as $field) {
+        if (!isset($query[$field]) || !is_string($query[$field])
+            || !preg_match('/\A[A-Za-z0-9_]{1,75}\z/', $query[$field])) {
+            return null;
+        }
+    }
+
+    return [$query['category'], $query['name']];
+}
+
+/** Decode the selected row using the existing ordinary and marked-choice paths. */
+function system_config_changes(array $option, array $post): array
+{
+    $category = $option['category'];
+    $name = $option['name'];
+    $key = $category . ':' . $name;
+    $current = $option['value'];
     $changes = [];
     $failed = [];
     $submittedChoices = $post['sysconfig_choices'] ?? [];
 
-    foreach ($config as $key => $current) {
-        [$category, $name] = explode(':', $key);
+    try {
+        $choices = system_config_choices($option);
 
-        try {
-            $choices = system_config_choices($config->getOption($category, $name));
-
-            if (is_array($submittedChoices) && array_key_exists($key, $submittedChoices)) {
-                if (!is_string($submittedChoices[$key])) {
-                    throw new UnexpectedValueException('Invalid choice token');
-                }
-
-                $value = json_decode($submittedChoices[$key], true, 512, JSON_THROW_ON_ERROR);
-
-                if (!is_string($value) && !is_int($value) && $value !== null) {
-                    throw new UnexpectedValueException('Invalid choice value');
-                }
-
-                if ($value === $current) {
-                    continue;
-                }
-
-                $token = json_encode($value, JSON_THROW_ON_ERROR);
-
-                if ($choices !== null && !array_key_exists($token, $choices)) {
-                    throw new UnexpectedValueException('Unsupported choice value');
-                }
-
-                $changes[] = [$category, $name, $value, true];
-                continue;
+        if (is_array($submittedChoices) && array_key_exists($key, $submittedChoices)) {
+            if (!is_string($submittedChoices[$key])) {
+                throw new UnexpectedValueException('Invalid choice token');
             }
 
-            // A choice select with an unsupported disabled current option submits
-            // no value. Do not turn an absent field into a write.
-            if ($choices !== null && !array_key_exists($key, $post)) {
-                continue;
+            $value = json_decode($submittedChoices[$key], true, 512, JSON_THROW_ON_ERROR);
+
+            if (!is_string($value) && !is_int($value) && $value !== null) {
+                throw new UnexpectedValueException('Invalid choice value');
             }
 
-            if ($config->getType($category, $name) === 'Boolean') {
-                $value = !empty($post[$key]);
-
-                if ((bool) $current !== $value) {
-                    $changes[] = [$category, $name, $value ? '1' : '0', false];
-                }
-
-            } elseif (array_key_exists($key, $post) && $post[$key] != $current) {
-                $changes[] = [$category, $name, $post[$key], false];
+            if ($value === $current) {
+                return [$changes, $failed];
             }
 
-        } catch (UnexpectedValueException|JsonException $e) {
-            $failed[] = $key;
+            $token = json_encode($value, JSON_THROW_ON_ERROR);
+
+            if ($choices !== null && !array_key_exists($token, $choices)) {
+                throw new UnexpectedValueException('Unsupported choice value');
+            }
+
+            $changes[] = [$category, $name, $value, true];
+            return [$changes, $failed];
         }
+
+        // A choice select with an unsupported disabled current option submits
+        // no value. Do not turn an absent field into a write.
+        if ($choices !== null && !array_key_exists($key, $post)) {
+            return [$changes, $failed];
+        }
+
+        if ($option['type'] === 'Boolean') {
+            $value = !empty($post[$key]);
+
+            if ((bool) $current !== $value) {
+                $changes[] = [$category, $name, $value ? '1' : '0', false];
+            }
+
+        } elseif (array_key_exists($key, $post) && $post[$key] != $current) {
+            $changes[] = [$category, $name, $post[$key], false];
+        }
+
+    } catch (UnexpectedValueException|JsonException $e) {
+        $failed[] = $key;
     }
 
     return [$changes, $failed];
