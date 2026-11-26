@@ -44,11 +44,13 @@ bundled plugin `meta.rb` files. Labels do not alter `category`, `name`, visibili
 or stored values. `localized: true` continues to describe translated setting
 values, such as HTML or ERB content.
 
-In the PHP WebUI, System config lists settings with an Edit link. Edit opens one
-setting. Save updates only that setting and skips unchanged values. Cancel
-returns to the list without saving. If the API rejects an update, the editor
-keeps the submitted draft. Bulk forms without a selected category and name are
-rejected without updates.
+In the PHP WebUI, System config lists each setting with an Edit icon and its value
+on the next row. String and YAML values are displayed as supplied by the API;
+other values use JSON notation. HTML is shown as text. Edit opens one setting.
+Save updates only that setting and skips unchanged values. Cancel and the sidebar
+Back link return to the list without saving. If the API rejects an update, the
+editor keeps the submitted draft. Bulk forms without a selected category and name
+are rejected without updates.
 
 The editor uses the `system_config` CSRF namespace. A bulk-save handler that
 checks the `common` namespace rejects these forms before updating settings,

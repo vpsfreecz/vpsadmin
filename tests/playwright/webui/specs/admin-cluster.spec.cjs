@@ -277,6 +277,10 @@ test.describe.serial('admin cluster browser coverage', () => {
     await expect(formByAction(page, 'action=sysconfig_save')).toHaveCount(0);
 
     const editHref = await page.locator('a[href*="action=sysconfig_edit"][href*="name=mode"]').first().getAttribute('href');
+    const editIcon = page.locator('a[href*="action=sysconfig_edit"][href*="name=mode"]').first().getByRole('img', { name: 'Edit', exact: true });
+    await expect(editIcon).toHaveAttribute('src', 'template/icons/edit.png');
+    await expect(editIcon.locator('..')).toHaveAttribute('title', 'Edit');
+    await expect(editIcon.locator('xpath=ancestor::tr/following-sibling::tr[1]').locator('code')).toBeVisible();
     const editUrl = new URL(editHref, page.url());
     const category = editUrl.searchParams.get('category');
     const warningUrl = new URL(editUrl);
@@ -294,6 +298,8 @@ test.describe.serial('admin cluster browser coverage', () => {
     await page.getByRole('link', { name: 'Cancel', exact: true }).click();
     await page.goto(editUrl.toString());
     let form = formByAction(page, 'action=sysconfig_save');
+    await expect(form.getByRole('link', { name: 'Cancel', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Back', exact: true })).toBeVisible();
     let mode = form.locator('select[name^="sysconfig_choices["][name$=":mode]"]');
     await expect(mode).toHaveCount(1);
     await expect(mode.locator('option')).toHaveText([
@@ -336,6 +342,8 @@ test.describe.serial('admin cluster browser coverage', () => {
     await expect(form.locator('select[name^="sysconfig_choices["] option')).toHaveText([
       'Pouze sledování', 'Pouze upozornění', 'Upozornění a automatické vypnutí',
     ]);
+    await expect(form.getByRole('link', { name: 'Zrušit', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Zpět', exact: true })).toBeVisible();
     await expect(form.locator('select[name^="sysconfig_choices["]')).toHaveValue(originalValue);
     await page.getByRole('link', { name: 'Zrušit', exact: true }).click();
     await switchLanguage(page, 'en_US.utf8');

@@ -119,7 +119,7 @@ final class SystemConfigSelectedSettingTest extends TestCase
         self::assertSame($common['before'], $common['after']);
     }
 
-    public function testListAndEditAreReadOnlyAndCancelIsAGetLink(): void
+    public function testListAndEditAreReadOnlyWithFormCancelAndSidebarBack(): void
     {
         $list = $this->submit('string', [], ['action' => 'sysconfig', 'method' => 'GET']);
         self::assertSame([], $list['updates']);
@@ -128,10 +128,63 @@ final class SystemConfigSelectedSettingTest extends TestCase
         $edit = $this->submit('string', [], ['action' => 'sysconfig_edit', 'method' => 'GET']);
         self::assertSame([], $edit['updates']);
         self::assertContains(['form_csrf', ['system_config']], $edit['rendered']);
-        self::assertContains(['sbar_add', ['Cancel', '?page=cluster&action=sysconfig']], $edit['rendered']);
+        self::assertContains(['form_out', ['Save', null, '<a href="?page=cluster&amp;action=sysconfig">Cancel</a>']], $edit['rendered']);
+        self::assertContains(['sbar_add', ['Back', '?page=cluster&action=sysconfig']], $edit['rendered']);
+        self::assertNotContains(['sbar_add', ['Cancel', '?page=cluster&action=sysconfig']], $edit['rendered']);
         $hidden = $this->submit('hidden', [], ['action' => 'sysconfig_edit', 'method' => 'GET']);
         self::assertSame([], $hidden['updates']);
         self::assertStringNotContainsString('form_create', json_encode($hidden['rendered']));
+    }
+
+    public static function displayedValues(): array
+    {
+        return [
+            'html' => ['String', '<b title="test">& text</b>', '&lt;b title=&quot;test&quot;&gt;&amp; text&lt;/b&gt;'],
+            'erb' => ['String', '<%= value %>', '&lt;%= value %&gt;'],
+            'yaml' => ['Hash', "---\r\ncs: '<b>text</b>'\r\nen: text\r\n", "---\r\ncs: &#039;&lt;b&gt;text&lt;/b&gt;&#039;\r\nen: text\r\n"],
+            'empty' => ['String', '', ''],
+            'null' => ['String', null, 'null'],
+            'false' => ['Boolean', false, 'false'],
+            'true' => ['Boolean', true, 'true'],
+            'zero' => ['Integer', 0, '0'],
+            'custom' => ['Custom', ['<b>', false, 0, null], '[&quot;\u003Cb\u003E&quot;,false,0,null]'],
+        ];
+    }
+
+    #[DataProvider('displayedValues')]
+    public function testListShowsEscapedValueOnItsOwnRow(string $type, $value, string $expected): void
+    {
+        $result = $this->submit('string', [], ['action' => 'sysconfig', 'method' => 'GET',
+            'selected_row' => ['type' => $type, 'value' => $value, 'localized_value' => 'Do not render this resolved value']]);
+        self::assertSame([], $result['updates']);
+        $calls = $result['rendered'];
+        $key = array_search(['table_td', ['ordinary:string']], $calls, true);
+        self::assertNotFalse($key);
+        self::assertSame(['table_tr', []], $calls[$key + 2]);
+        self::assertSame(['table_td', ['<code style="white-space: pre-wrap;">' . $expected . '</code>', false, false, 3]], $calls[$key + 3]);
+        self::assertSame(['table_tr', []], $calls[$key + 4]);
+        self::assertStringNotContainsString('Do not render this resolved value', json_encode($calls));
+        self::assertStringNotContainsString('hidden fixture', json_encode($calls));
+    }
+
+    public function testListEditIconKeepsItsEncodedTargetAndAccessibleLabel(): void
+    {
+        $result = $this->submit('string', [], ['action' => 'sysconfig', 'method' => 'GET']);
+        $html = implode('', array_map(fn($call) => $call[0] === 'table_td' ? $call[1][0] : '', $result['rendered']));
+        self::assertStringContainsString('<a href="?page=cluster&amp;action=sysconfig_edit&amp;category=ordinary&amp;name=string" title="Edit"><img src="template/icons/edit.png" alt="Edit"></a>', $html);
+        self::assertStringNotContainsString('>Edit</a>', $html);
+        self::assertSame([], $result['updates']);
+    }
+
+    public function testDisabledChoiceEditorRetainsCancelAndBackWithoutSave(): void
+    {
+        $result = $this->submit('choice', [], ['action' => 'sysconfig_edit', 'method' => 'GET',
+            'selected_row' => ['choices' => []]]);
+        self::assertContains(['form_out_raw', []], $result['rendered']);
+        self::assertContains(['table_td', ['<a href="?page=cluster&amp;action=sysconfig">Cancel</a>', false, false, 2]], $result['rendered']);
+        self::assertContains(['sbar_add', ['Back', '?page=cluster&action=sysconfig']], $result['rendered']);
+        self::assertSame([], array_filter($result['rendered'], fn($call) => $call[0] === 'form_out'));
+        self::assertSame([], $result['updates']);
     }
 
     public function testApiFailureRetainsSelectedDraftWithoutEchoingErrorPayload(): void
@@ -197,6 +250,10 @@ final class SystemConfigSelectedSettingTest extends TestCase
             }
             unset($row);
             $options = json_decode(file_get_contents('php://stdin'), true, 512, JSON_THROW_ON_ERROR);
+            if (isset($options['selected_row'])) {
+                $name = $options['target']['name'];
+                $rows[$name] = array_replace($rows[$name], $options['selected_row']);
+            }
             $api = new class ('https://api.example.test') extends \HaveAPI\Client {
                 public array $rows = [];
                 public array $updates = [];
@@ -232,7 +289,8 @@ final class SystemConfigSelectedSettingTest extends TestCase
             $output = (object) ['category' => (object) ['type' => 'String'],
                 'name' => (object) ['type' => 'String'], 'type' => (object) ['type' => 'String'],
                 'label' => (object) ['type' => 'String'], 'description' => (object) ['type' => 'String'],
-                'choices' => (object) ['type' => 'Custom'], 'value_nullable' => (object) ['type' => 'Boolean'], 'value' => (object) ['type' => 'Custom']];
+                'choices' => (object) ['type' => 'Custom'], 'value_nullable' => (object) ['type' => 'Boolean'], 'value' => (object) ['type' => 'Custom'],
+                'localized_value' => (object) ['type' => 'Custom']];
             $api->setDescription((object) [
                 'authentication' => (object) ['token' => (object) ['http_header' => 'X-Test-Token',
                     'resources' => (object) ['token' => (object) []]]],

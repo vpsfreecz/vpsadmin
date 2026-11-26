@@ -614,18 +614,33 @@ function system_config_list()
         ], '', '&', PHP_QUERY_RFC3986);
         $xtpl->table_td(h($option->label ?: $option->name));
         $xtpl->table_td(h($option->category . ':' . $option->name));
-        $xtpl->table_td('<a href="?' . h($query) . '">' . h(_('Edit')) . '</a>');
+        $xtpl->table_td('<a href="?' . h($query) . '" title="' . h(_('Edit')) . '">'
+            . '<img src="template/icons/edit.png" alt="' . h(_('Edit')) . '"></a>');
+        $xtpl->table_tr();
+
+        $value = is_string($option->value) ? $option->value : webui_json($option->value);
+        $xtpl->table_td('<code style="white-space: pre-wrap;">' . h($value) . '</code>', false, false, 3);
         $xtpl->table_tr();
     }
 
     $xtpl->table_out();
 }
 
-function system_config_cancel_link()
+function system_config_form_footer(bool $canSave = true)
 {
     global $xtpl;
 
-    $xtpl->sbar_add(_('Cancel'), '?page=cluster&action=sysconfig');
+    $cancel = '<a href="?page=cluster&amp;action=sysconfig">' . h(_('Cancel')) . '</a>';
+
+    if ($canSave) {
+        $xtpl->form_out(_('Save'), null, $cancel);
+    } else {
+        $xtpl->table_td($cancel, false, false, 2);
+        $xtpl->table_tr();
+        $xtpl->form_out_raw();
+    }
+
+    $xtpl->sbar_add(_('Back'), '?page=cluster&action=sysconfig');
 }
 
 function system_config_form($opt)
@@ -684,16 +699,14 @@ function system_config_form($opt)
                 $xtpl->table_tr();
             }
 
-            $xtpl->form_out(_('Save'));
-            system_config_cancel_link();
+            system_config_form_footer();
             return;
         }
 
     } catch (UnexpectedValueException $e) {
         $xtpl->table_td(h(_('Invalid configuration choices')));
         $xtpl->table_tr();
-        $xtpl->form_out_raw();
-        system_config_cancel_link();
+        system_config_form_footer(false);
         return;
     }
 
@@ -725,8 +738,7 @@ function system_config_form($opt)
         $xtpl->table_td($opt->description);
         $xtpl->table_tr();
     }
-    $xtpl->form_out(_('Save'));
-    system_config_cancel_link();
+    system_config_form_footer();
 }
 
 function news_log_message_payload()
