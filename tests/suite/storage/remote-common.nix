@@ -94,6 +94,74 @@
     output.dig('_meta', 'action_state_id') || output.dig('response', '_meta', 'action_state_id')
   end
 
+  def dataset_backup_plan_rows(services, dip_id)
+    services.mariadb_json_rows(sql: <<~SQL)
+      SELECT JSON_OBJECT('id', id, 'environment_dataset_plan_id', environment_dataset_plan_id)
+      FROM dataset_in_pool_plans
+      WHERE dataset_in_pool_id = #{Integer(dip_id)}
+      ORDER BY id
+    SQL
+  end
+
+  def ensure_dataset_backup_plan(services, dataset_id:)
+    definition = services.api_ruby_json(code: <<~RUBY)
+      source = Dataset.find(#{Integer(dataset_id)}).primary_dataset_in_pool!
+      plan = VpsAdmin::API::DatasetPlans.plans.fetch(:daily_backup)
+      env = EnvironmentDatasetPlan.find_or_create_by!(
+        dataset_plan: plan.dataset_plan,
+        environment: source.pool.node.location.environment
+      ) do |record|
+        record.user_add = true
+        record.user_remove = true
+      end
+      puts JSON.dump(id: env.id, source_id: source.id)
+    RUBY
+
+    unless dataset_backup_plan_rows(services, definition.fetch('source_id')).any? { |row| row.fetch('environment_dataset_plan_id') == definition.fetch('id') }
+      services.vpsadminctl.succeeds(
+        args: ['dataset.plan', 'create', dataset_id.to_s],
+        parameters: { environment_dataset_plan: definition.fetch('id') }
+      )
+    end
+    definition.fetch('id')
+  end
+
+  def disable_backups(services, dataset_id:)
+    _, output = services.vpsadminctl.succeeds(
+      args: ['dataset', 'disable_backups', dataset_id.to_s],
+      opts: { block: false },
+      parameters: { backup_first: true, recursive: false }
+    )
+    chain_id = action_state_id(output)
+    raise "disable_backups returned no task receipt: #{output.inspect}" unless chain_id
+
+    { 'chain_id' => chain_id }
+  end
+
+  def backup_send_snapshot_names(services, chain_id)
+    services.api_ruby_json(code: <<~RUBY)
+      sends = Transaction.where(
+        transaction_chain_id: #{Integer(chain_id)},
+        handle: Transactions::Storage::Send.t_type
+      ).order(:id)
+      puts JSON.dump(sends.map { |tx| JSON.parse(tx.input).fetch('input').fetch('snapshots').map { |s| s.fetch('name') } })
+    RUBY
+  end
+
+  def confirmed_backup_snapshot_ids(services, dip_id)
+    services.mariadb_json_rows(sql: <<~SQL).map { |row| row.fetch('id') }
+      SELECT DISTINCT JSON_OBJECT('id', sip.snapshot_id)
+      FROM snapshot_in_pool_in_branches e
+      INNER JOIN snapshot_in_pools sip ON sip.id = e.snapshot_in_pool_id
+      INNER JOIN branches b ON b.id = e.branch_id
+      INNER JOIN dataset_trees t ON t.id = b.dataset_tree_id
+      INNER JOIN dataset_in_pools dip ON dip.id = t.dataset_in_pool_id
+      WHERE dip.id = #{Integer(dip_id)} AND sip.dataset_in_pool_id = dip.id
+        AND e.confirmed = 1 AND sip.confirmed = 1 AND b.confirmed = 1
+        AND t.confirmed = 1 AND dip.confirmed = 1
+    SQL
+  end
+
   def storage_tx_types(services)
     services.api_ruby_json(code: <<~RUBY)
       puts JSON.dump(

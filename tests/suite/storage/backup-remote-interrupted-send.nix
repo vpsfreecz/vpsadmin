@@ -16,8 +16,8 @@ import ../../make-test.nix (
     name = "storage-backup-remote-interrupted-send";
 
     description = ''
-      Interrupt remote backup on the sender side, verify cleanup of partial
-      state and port reservations, and confirm a later backup succeeds.
+      Interrupt backup-first preservation on the sender side, retain source
+      data and plans, then deliberately retry the ordinary operation.
     '';
 
     tags = [
@@ -30,7 +30,7 @@ import ../../make-test.nix (
 
     testScript = common + ''
       describe 'remote backup interrupted on send', order: :defined do
-        it 'fails cleanly when the sender side is interrupted and later backup still works' do
+        it 'keeps source data and plans after failed preservation and allows a deliberate retry' do
           setup = create_remote_backup_vps(
             services,
             primary_node: node1,
@@ -42,6 +42,18 @@ import ../../make-test.nix (
             primary_pool_fs: primary_pool_fs,
             backup_pool_fs: backup_pool_fs
           )
+          services.succeeds('systemctl stop vpsadmin-scheduler.service')
+          ensure_dataset_backup_plan(services, dataset_id: setup.fetch('dataset_id'))
+          [setup.fetch('src_dip_id'), setup.fetch('dst_dip_id')].each do |copy|
+            set_snapshot_retention(services, dip_id: copy, min_snapshots: 100,
+                                   max_snapshots: 100, snapshot_max_age: 0)
+          end
+          plans_before = dataset_backup_plan_rows(services, setup.fetch('src_dip_id'))
+          expect(plans_before).not_to be_empty
+          base_checksum = write_dataset_payload(
+            node1, dataset_path: setup.fetch('primary_dataset_path'),
+            relative_path: 'var/tmp/send.bin', mib: 8
+          )
 
           base = create_and_backup_snapshot(
             services,
@@ -51,7 +63,7 @@ import ../../make-test.nix (
             dst_dip_id: setup.fetch('dst_dip_id'),
             label: 'interrupt-send-s1'
           )
-          write_dataset_payload(
+          checksum = write_dataset_payload(
             node1,
             dataset_path: setup.fetch('primary_dataset_path'),
             relative_path: 'var/tmp/send.bin',
@@ -76,12 +88,8 @@ import ../../make-test.nix (
             command: faulty_mbuffer
           )
 
-          response = fire_backup_async(
-            services,
-            admin_user_id: admin_user_id,
-            src_dip_id: setup.fetch('src_dip_id'),
-            dst_dip_id: setup.fetch('dst_dip_id')
-          )
+          source_before = snapshot_rows_for_dip(services, setup.fetch('src_dip_id'))
+          response = disable_backups(services, dataset_id: setup.fetch('dataset_id'))
 
           wait_for_chain_states_local(
             services,
@@ -119,13 +127,22 @@ import ../../make-test.nix (
           expect(backup_names).to include(base.fetch('name'))
           expect(backup_names).not_to include(snap2.fetch('name'))
           expect(chain_port_reservations(services, response.fetch('chain_id'))).to eq([])
+          expect(snapshot_rows_for_dip(services, setup.fetch('src_dip_id'))).to eq(source_before)
+          expect(dataset_backup_plan_rows(services, setup.fetch('src_dip_id'))).to eq(plans_before)
+          expect(file_checksum(node1, dataset_path: setup.fetch('primary_dataset_path'),
+                               relative_path: 'var/tmp/send.bin')).to eq(checksum)
+          destroys = failure_details.select { |tx| tx.fetch('handle') == tx_types(services).fetch('destroy_snapshot') }
+          expect(destroys.size).to eq(source_before.size)
+          expect(destroys.map { |tx| tx.fetch('error') }).to all(eq('Dependency failed'))
+          # Both source snapshots still contain their original data. The failed
+          # preservation has not reached source destruction or plan removal.
+          [[base, base_checksum], [snap2, checksum]].each do |snapshot, expected_checksum|
+            expect(file_checksum(node1, dataset_path: setup.fetch('primary_dataset_path'),
+                                 relative_path: ".zfs/snapshot/#{snapshot.fetch('name')}/var/tmp/send.bin")).to eq(expected_checksum)
+          end
 
-          retry_response = fire_backup(
-            services,
-            admin_user_id: admin_user_id,
-            src_dip_id: setup.fetch('src_dip_id'),
-            dst_dip_id: setup.fetch('dst_dip_id')
-          )
+          retry_response = disable_backups(services, dataset_id: setup.fetch('dataset_id'))
+          services.wait_for_chain_state(retry_response.fetch('chain_id'), state: :done, timeout: 1200)
 
           expect(retry_response.fetch('chain_id')).not_to be_nil
           expect(
@@ -135,6 +152,17 @@ import ../../make-test.nix (
               include_names: [snap2.fetch('name')]
             )
           ).to include(snap2.fetch('name'))
+          expect(snapshot_rows_for_dip(services, setup.fetch('src_dip_id'))).to be_empty
+          expect(dataset_backup_plan_rows(services, setup.fetch('src_dip_id'))).to be_empty
+          expect(head_branch_row(services, setup.fetch('dst_dip_id'))).to be_nil
+          head = branch_rows_for_dip(services, setup.fetch('dst_dip_id')).last
+          backup_path = branch_dataset_path(backup_pool_fs, setup.fetch('dataset_full_name'), head)
+          expect(file_checksum(node1, dataset_path: setup.fetch('primary_dataset_path'),
+                               relative_path: 'var/tmp/send.bin')).to eq(checksum)
+          [[base, base_checksum], [snap2, checksum]].each do |snapshot, expected_checksum|
+            expect(file_checksum(node2, dataset_path: backup_path,
+                                 relative_path: ".zfs/snapshot/#{snapshot.fetch('name')}/var/tmp/send.bin")).to eq(expected_checksum)
+          end
         end
       end
     '';
