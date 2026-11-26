@@ -334,14 +334,14 @@ msgstr "potlačeno"
 msgid "Uncertain"
 msgstr "výsledek není známý"
 
-#: forms/admin_incidents.forms.php forms/cluster.forms.php
-#: forms/dataset.forms.php forms/dns.forms.php forms/incidents.forms.php
-#: forms/lifetimes.forms.php forms/networking.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php
-#: forms/security_advisory.forms.php forms/userdata.forms.php
-#: forms/vps.forms.php pages/page_adminm.php pages/page_adminvps.php
-#: pages/page_index.php pages/page_networking.php pages/page_transactions.php
-#: public/index.php
+#: forms/admin_incidents.forms.php forms/backup.forms.php
+#: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
+#: forms/incidents.forms.php forms/lifetimes.forms.php
+#: forms/networking.forms.php forms/oom_reports.forms.php
+#: forms/outage.forms.php forms/security_advisory.forms.php
+#: forms/userdata.forms.php forms/vps.forms.php pages/page_adminm.php
+#: pages/page_adminvps.php pages/page_index.php pages/page_networking.php
+#: pages/page_transactions.php public/index.php
 msgid "VPS"
 msgstr "VPS"
 
@@ -394,9 +394,9 @@ msgstr "Pokus o odeslání dokončen"
 msgid "Shared shutdown action"
 msgstr "Společná akce vypnutí"
 
-#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
-#: forms/vps.forms.php lib/xtemplate.lib.php pages/page_adminm.php
-#: public/index.php
+#: forms/admin_incidents.forms.php forms/dataset.forms.php
+#: forms/incident_policy.forms.php forms/vps.forms.php lib/xtemplate.lib.php
+#: pages/page_adminm.php public/index.php
 msgid "Transaction log"
 msgstr "Transakce"
 
@@ -591,6 +591,10 @@ msgstr "Zahrnout vnořené datasety"
 #: forms/backup.forms.php
 msgid "Ignore datasets without snapshots"
 msgstr "Ignorovat datasety bez snapshotů"
+
+#: forms/backup.forms.php forms/dataset.forms.php
+msgid "Disable backups and remove local snapshots"
+msgstr "Vypnout zálohování a odstranit místní snapshoty"
 
 #: forms/backup.forms.php forms/dataset.forms.php forms/export.forms.php
 #: pages/page_backup.php pages/page_nas.php
@@ -1004,10 +1008,10 @@ msgstr ""
 "provoz pokračuje a již přijaté operace mohou doběhnout. Nepřiřazené adresy s "
 "vlastníkem lze přiřadit až po opětovném povolení sítě."
 
-#: forms/cluster.forms.php forms/dns.forms.php forms/export.forms.php
-#: forms/monitoring.forms.php forms/networking.forms.php forms/users.forms.php
-#: forms/vps.forms.php pages/page_adminvps.php pages/page_backup.php
-#: pages/page_cluster.php pages/page_dataset.php
+#: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
+#: forms/export.forms.php forms/monitoring.forms.php forms/networking.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminvps.php
+#: pages/page_backup.php pages/page_cluster.php pages/page_dataset.php
 msgid "Confirm"
 msgstr "Potvrdit"
 
@@ -1404,6 +1408,62 @@ msgstr "Popis"
 #: forms/dataset.forms.php
 msgid "Add backup plan"
 msgstr "Přidat plán zálohování"
+
+#: forms/dataset.forms.php
+msgid "Removing this plan stops the snapshots and transfers scheduled by it. Existing snapshots remain on primary and backup pools."
+msgstr "Odebráním plánu se zastaví vytváření snapshotů a přenosy podle tohoto plánu. Existující snapshoty zůstanou na primárních i zálohovacích poolech."
+
+#: forms/dataset.forms.php
+msgid "This action applies to dataset {dataset} and its existing subdatasets. Separately mounted datasets outside this subtree are excluded."
+msgstr "Akce se vztahuje na dataset {dataset} a jeho existující vnořené datasety. Nevztahuje se na samostatně připojené datasety mimo tento podstrom."
+
+#: forms/dataset.forms.php
+msgid "This action applies to dataset {dataset}."
+msgstr "Akce se vztahuje na dataset {dataset}."
+
+#: forms/dataset.forms.php
+msgid "This removes all primary snapshots, including manual snapshots. Existing backup-pool snapshots remain under their normal retention rules. Reenabling backups starts a new tree with a full transfer."
+msgstr "Odstraní se všechny snapshoty z primárního úložiště včetně ručně vytvořených. Snapshoty na zálohovacích poolech zůstanou zachované podle běžných pravidel uchovávání. Po opětovném zapnutí zálohování vznikne nový strom s plným přenosem dat."
+
+#: forms/dataset.forms.php
+msgid "Back up existing snapshots first"
+msgstr "Nejprve zálohovat existující snapshoty"
+
+#: forms/dataset.forms.php
+msgid "Back up existing snapshots to all configured open backup destinations before removing primary snapshots. If a snapshot cannot be preserved by the normal transfer, cleanup does not start. This may take time."
+msgstr "Před odstraněním snapshotů z primárního úložiště zazálohovat existující snapshoty do všech nastavených otevřených zálohovacích úložišť. Pokud některý snapshot nepůjde zazálohovat běžným přenosem, odstraňování nezačne. Přenos může trvat delší dobu."
+
+#: forms/dataset.forms.php
+msgid "This backs up existing snapshots. It does not create a new snapshot of the current filesystem."
+msgstr "Zálohují se existující snapshoty. Nový snapshot aktuálního stavu souborového systému se nevytváří."
+
+#: forms/dataset.forms.php
+msgid "If you turn this option off, cleanup permanently deletes snapshots that exist only on primary storage."
+msgstr "Pokud tuto možnost vypneš, při odstraňování se nenávratně smažou snapshoty, které existují jen na primárním úložišti."
+
+#: forms/dataset.forms.php
+msgid "Backups are disabled and primary snapshots have been removed."
+msgstr "Zálohování je vypnuté a snapshoty z primárního úložiště byly odstraněny."
+
+#: forms/dataset.forms.php
+msgid "The request outcome is unknown. Check the task status before trying again."
+msgstr "Výsledek požadavku není známý. Než akci zopakuješ, zkontroluj stav úlohy."
+
+#: forms/dataset.forms.php
+msgid "Cannot disable backups"
+msgstr "Zálohování nelze vypnout"
+
+#: forms/dataset.forms.php
+msgid "The task failed. Some changes may have completed. Check the task details before trying again."
+msgstr "Úloha selhala. Některé změny už mohly proběhnout. Než akci zopakuješ, zkontroluj podrobnosti úlohy."
+
+#: forms/dataset.forms.php
+msgid "The task is running. It will continue if you close this page."
+msgstr "Úloha běží. Bude pokračovat i po zavření stránky."
+
+#: forms/dataset.forms.php
+msgid "Disabling backups is unavailable"
+msgstr "Vypnutí zálohování není dostupné"
 
 #: forms/dataset.forms.php
 msgid "History identifier"

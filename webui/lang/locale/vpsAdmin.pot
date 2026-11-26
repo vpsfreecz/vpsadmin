@@ -335,14 +335,14 @@ msgstr ""
 msgid "Uncertain"
 msgstr ""
 
-#: forms/admin_incidents.forms.php forms/cluster.forms.php
-#: forms/dataset.forms.php forms/dns.forms.php forms/incidents.forms.php
-#: forms/lifetimes.forms.php forms/networking.forms.php
-#: forms/oom_reports.forms.php forms/outage.forms.php
-#: forms/security_advisory.forms.php forms/userdata.forms.php
-#: forms/vps.forms.php pages/page_adminm.php pages/page_adminvps.php
-#: pages/page_index.php pages/page_networking.php pages/page_transactions.php
-#: public/index.php
+#: forms/admin_incidents.forms.php forms/backup.forms.php
+#: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
+#: forms/incidents.forms.php forms/lifetimes.forms.php
+#: forms/networking.forms.php forms/oom_reports.forms.php
+#: forms/outage.forms.php forms/security_advisory.forms.php
+#: forms/userdata.forms.php forms/vps.forms.php pages/page_adminm.php
+#: pages/page_adminvps.php pages/page_index.php pages/page_networking.php
+#: pages/page_transactions.php public/index.php
 msgid "VPS"
 msgstr ""
 
@@ -393,9 +393,9 @@ msgstr ""
 msgid "Shared shutdown action"
 msgstr ""
 
-#: forms/admin_incidents.forms.php forms/incident_policy.forms.php
-#: forms/vps.forms.php lib/xtemplate.lib.php pages/page_adminm.php
-#: public/index.php
+#: forms/admin_incidents.forms.php forms/dataset.forms.php
+#: forms/incident_policy.forms.php forms/vps.forms.php lib/xtemplate.lib.php
+#: pages/page_adminm.php public/index.php
 msgid "Transaction log"
 msgstr ""
 
@@ -589,6 +589,10 @@ msgstr ""
 
 #: forms/backup.forms.php
 msgid "Ignore datasets without snapshots"
+msgstr ""
+
+#: forms/backup.forms.php forms/dataset.forms.php
+msgid "Disable backups and remove local snapshots"
 msgstr ""
 
 #: forms/backup.forms.php forms/dataset.forms.php forms/export.forms.php
@@ -987,10 +991,10 @@ msgid ""
 "addresses cannot be assigned until the network is enabled again."
 msgstr ""
 
-#: forms/cluster.forms.php forms/dns.forms.php forms/export.forms.php
-#: forms/monitoring.forms.php forms/networking.forms.php forms/users.forms.php
-#: forms/vps.forms.php pages/page_adminvps.php pages/page_backup.php
-#: pages/page_cluster.php pages/page_dataset.php
+#: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
+#: forms/export.forms.php forms/monitoring.forms.php forms/networking.forms.php
+#: forms/users.forms.php forms/vps.forms.php pages/page_adminvps.php
+#: pages/page_backup.php pages/page_cluster.php pages/page_dataset.php
 msgid "Confirm"
 msgstr ""
 
@@ -1380,6 +1384,79 @@ msgstr ""
 
 #: forms/dataset.forms.php
 msgid "Add backup plan"
+msgstr ""
+
+#: forms/dataset.forms.php
+msgid ""
+"Removing this plan stops the snapshots and transfers scheduled by it. "
+"Existing snapshots remain on primary and backup pools."
+msgstr ""
+
+#: forms/dataset.forms.php
+msgid ""
+"This action applies to dataset {dataset} and its existing subdatasets. "
+"Separately mounted datasets outside this subtree are excluded."
+msgstr ""
+
+#: forms/dataset.forms.php
+msgid "This action applies to dataset {dataset}."
+msgstr ""
+
+#: forms/dataset.forms.php
+msgid ""
+"This removes all primary snapshots, including manual snapshots. Existing "
+"backup-pool snapshots remain under their normal retention rules. Reenabling "
+"backups starts a new tree with a full transfer."
+msgstr ""
+
+#: forms/dataset.forms.php
+msgid "Back up existing snapshots first"
+msgstr ""
+
+#: forms/dataset.forms.php
+msgid ""
+"Back up existing snapshots to all configured open backup destinations before "
+"removing primary snapshots. If a snapshot cannot be preserved by the normal "
+"transfer, cleanup does not start. This may take time."
+msgstr ""
+
+#: forms/dataset.forms.php
+msgid ""
+"This backs up existing snapshots. It does not create a new snapshot of the "
+"current filesystem."
+msgstr ""
+
+#: forms/dataset.forms.php
+msgid ""
+"If you turn this option off, cleanup permanently deletes snapshots that "
+"exist only on primary storage."
+msgstr ""
+
+#: forms/dataset.forms.php
+msgid "Backups are disabled and primary snapshots have been removed."
+msgstr ""
+
+#: forms/dataset.forms.php
+msgid ""
+"The request outcome is unknown. Check the task status before trying again."
+msgstr ""
+
+#: forms/dataset.forms.php
+msgid "Cannot disable backups"
+msgstr ""
+
+#: forms/dataset.forms.php
+msgid ""
+"The task failed. Some changes may have completed. Check the task details "
+"before trying again."
+msgstr ""
+
+#: forms/dataset.forms.php
+msgid "The task is running. It will continue if you close this page."
+msgstr ""
+
+#: forms/dataset.forms.php
+msgid "Disabling backups is unavailable"
 msgstr ""
 
 #: forms/dataset.forms.php

@@ -463,6 +463,15 @@ function dataset_edit_form()
         $xtpl->form_out(_('Register'));
     }
 
+    dataset_backup_plans_form($ds);
+
+    $xtpl->sbar_add(_("Back"), $_GET['return'] ?? $_POST['return'] ?? '');
+    $xtpl->sbar_out(_('Dataset'));
+}
+
+function dataset_backup_plans_form($ds)
+{
+    global $xtpl, $api;
     $xtpl->table_title(_('Backup plans'));
 
     $plans = $ds->plan->list();
@@ -489,8 +498,164 @@ function dataset_edit_form()
 
     $xtpl->form_out(_('Add'));
 
-    $xtpl->sbar_add(_("Back"), $_GET['return'] ?? $_POST['return'] ?? '');
+    $xtpl->perex('', h(_('Removing this plan stops the snapshots and transfers scheduled by it. Existing snapshots remain on primary and backup pools.')));
+    if (dataset_disable_backups_available()) {
+        $xtpl->perex('', '<a href="' . h(dataset_disable_backups_url($ds->id, false, $_GET['return'] ?? $_POST['return'] ?? '')) . '">'
+            . h(_('Disable backups and remove local snapshots')) . '</a>');
+    }
+}
+
+function dataset_disable_backups_available()
+{
+    global $api;
+    if (!isAdmin() || !$api->dataset->disable_backups) {
+        return false;
+    }
+    $action = $api->dataset->disable_backups;
+    $input = $action->getParameters('input');
+    return $action->httpMethod() === 'POST'
+        && isset($input->recursive, $input->backup_first)
+        && $api->action_state && $api->action_state->poll;
+}
+
+function dataset_disable_backups_url($dataset, $recursive = false, $return = '')
+{
+    return '?page=dataset&action=disable_backups&id=' . (int) $dataset
+        . '&recursive=' . ($recursive ? '1' : '0') . '&return=' . rawurlencode(local_redirect_target($return));
+}
+
+// Missing input keeps the safe default; only the confirmation's explicit zero opts out.
+function dataset_disable_backups_option($post)
+{
+    if (!isset($post['backup_first'])) {
+        return true;
+    }
+    if (!in_array($post['backup_first'], ['0', '1'], true)) {
+        throw new InvalidArgumentException('Invalid backup_first');
+    }
+    return $post['backup_first'] === '1';
+}
+
+function dataset_disable_backups_submit($api, $dataset, $recursive, $backupFirst)
+{
+    try {
+        $response = $api->dataset($dataset)->disable_backups([
+            'recursive' => $recursive, 'backup_first' => $backupFirst,
+        ]);
+        $chain = $response->getMeta()->action_state_id ?? null;
+    } catch (\HaveAPI\Client\Exception\ActionFailed $e) {
+        return ['state' => 'rejected', 'error' => $e->getResponse()->getMessage()];
+    } catch (\Throwable $e) {
+        return ['state' => 'unknown'];
+    }
+    if (!is_int($chain) || $chain < 1) {
+        return ['state' => 'unknown'];
+    }
+    try {
+        $state = $api->action_state($chain)->poll(['timeout' => 15])->getResponse();
+        if (($state->finished ?? null) === false) {
+            return ['state' => 'pending', 'chain' => $chain];
+        }
+        if (($state->finished ?? null) === true && is_bool($state->status ?? null)) {
+            return ['state' => $state->status ? 'complete' : 'failed', 'chain' => $chain];
+        }
+    } catch (\Throwable $e) {
+        // Keep the known task for reconciliation; never replay the mutation.
+    }
+    return ['state' => 'unknown', 'chain' => $chain];
+}
+
+function dataset_disable_backups_scope($api, $dataset)
+{
+    $datasets = [];
+    $from = 0;
+    do {
+        $page = $api->dataset->list(['dataset' => $dataset->id, 'limit' => 100, 'from_id' => $from]);
+        foreach ($page as $selected) {
+            $datasets[] = $selected;
+            $from = max($from, (int) $selected->id);
+        }
+    } while (count($page) === 100);
+    return $datasets;
+}
+
+function dataset_disable_backups_form($id, $recursive, $return, $result = null)
+{
+    global $api, $xtpl;
+    $dataset = $api->dataset->find($id);
+    $title = _('Disable backups and remove local snapshots');
+    $xtpl->title($title);
+    $scope = $recursive
+        ? _('This action applies to dataset {dataset} and its existing subdatasets. Separately mounted datasets outside this subtree are excluded.')
+        : _('This action applies to dataset {dataset}.');
+    $xtpl->perex('', h(str_replace('{dataset}', $dataset->name . ' (#' . $dataset->id . ')', $scope)));
+
+    if ($result === null) {
+        $datasets = $recursive ? dataset_disable_backups_scope($api, $dataset) : [$dataset];
+        foreach ($datasets as $selected) {
+            $xtpl->table_td(h($selected->name) . ' (#' . (int) $selected->id . ')');
+            $xtpl->table_tr();
+        }
+        $xtpl->table_out();
+        $xtpl->perex('', h(_('This removes all primary snapshots, including manual snapshots. Existing backup-pool snapshots remain under their normal retention rules. Reenabling backups starts a new tree with a full transfer.')));
+        $xtpl->form_create(dataset_disable_backups_url($dataset->id, $recursive, $return), 'post');
+        $csrf = 'dataset_disable_backups:' . $id . ':' . (int) $recursive;
+        csrf_token($csrf, 1);
+        $xtpl->form_csrf($csrf);
+        $xtpl->form_set_hidden_fields(['backup_first' => '0']);
+        $xtpl->form_add_checkbox(_('Back up existing snapshots first'), 'backup_first', '1', true);
+        $xtpl->table_td(h(_('Back up existing snapshots to all configured open backup destinations before removing primary snapshots. If a snapshot cannot be preserved by the normal transfer, cleanup does not start. This may take time.'))
+            . '<br>' . h(_('This backs up existing snapshots. It does not create a new snapshot of the current filesystem.'))
+            . '<br><strong>' . h(_('If you turn this option off, cleanup permanently deletes snapshots that exist only on primary storage.')) . '</strong>');
+        $xtpl->table_tr();
+        $xtpl->form_add_checkbox(_('Confirm'), 'confirm', '1');
+        $xtpl->form_out($title);
+    } else {
+        $messages = [
+            'complete' => _('Backups are disabled and primary snapshots have been removed.'),
+            'unknown' => _('The request outcome is unknown. Check the task status before trying again.'),
+            'rejected' => _('Cannot disable backups'),
+            'failed' => _('The task failed. Some changes may have completed. Check the task details before trying again.'),
+            'pending' => _('The task is running. It will continue if you close this page.'),
+        ];
+        if ($result['state'] === 'complete') {
+            $dataset->plan->list();
+        }
+        $xtpl->perex('', h($messages[$result['state']]));
+        if (isset($result['error'])) {
+            $xtpl->perex('', h($result['error']));
+        }
+        $task = isset($result['chain']) ? '?page=transactions&chain=' . (int) $result['chain'] : '?page=transactions';
+        $xtpl->perex('', '<a href="' . h($task) . '">'
+            . h(_('Transaction log')) . '</a>');
+    }
+    $xtpl->sbar_add(_('Back'), $return);
     $xtpl->sbar_out(_('Dataset'));
+}
+
+function dataset_disable_backups_page()
+{
+    global $api, $xtpl;
+    if (!dataset_disable_backups_available()) {
+        $xtpl->perex(_('Disabling backups is unavailable'), '');
+        return;
+    }
+    $dataset = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    $recursive = ($_GET['recursive'] ?? '0') === '1';
+    if (!$dataset) {
+        $xtpl->perex(_('Cannot disable backups'), '');
+        return;
+    }
+    $return = local_redirect_target($_GET['return'] ?? '?page=dataset&action=edit&role=hypervisor&id=' . $dataset);
+    $result = null;
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['confirm'] ?? '') === '1') {
+        if (!is_string($_POST['csrf_token'] ?? null) || $_POST['csrf_token'] === '') {
+            throw new CsrfTokenInvalid();
+        }
+        csrf_check('dataset_disable_backups:' . $dataset . ':' . (int) $recursive, $_POST['csrf_token']);
+        $result = dataset_disable_backups_submit($api, $dataset, $recursive, dataset_disable_backups_option($_POST));
+    }
+    dataset_disable_backups_form($dataset, $recursive, $return, $result);
 }
 
 function dataset_snapshot_list($datasets, $vps = null)

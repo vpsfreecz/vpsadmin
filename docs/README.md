@@ -28,8 +28,11 @@ These pages describe vpsAdmin for developers and operators. Start with the
 - [HTTP logging and OAuth callbacks](http-log-protection.md): frontend, HAProxy
   and PHP defaults, TLS composition and deployment boundaries.
 - [Storage](storage/README.md): datasets, pools, snapshots, and operations.
+  - [Disabling backups](storage/disable-backups.md)
   - [Backup branching](storage/branching.md)
   - [Snapshot downloads and local backups](storage/download.md)
+- [PHP WebUI backup cleanup](webui-backup-cleanup.md): confirmation, ordinary
+  task receipts and failure handling.
 - [Czech translation conventions](i18n-cs.md)
 
 For member guides, see the [Czech knowledge base](https://kb.vpsfree.cz/) or

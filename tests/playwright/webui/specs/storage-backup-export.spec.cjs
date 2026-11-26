@@ -294,9 +294,14 @@ test.describe.serial('storage, backup, dataset, and export browser coverage', ()
       page,
       `action=edit&role=primary&id=${s.datasets.user_edit.id}`,
     );
+    await expect(page.locator('a[href*="action=disable_backups"]')).toHaveCount(0);
+    await expect(page.locator('#content-in')).toContainText('Existing snapshots remain on primary and backup pools.');
     await expect(userEditForm.locator('input[name="admin_override"]')).toHaveCount(0);
     await expect(userEditForm.locator('input[name="inherit_atime"]')).toHaveCount(1);
     await expect(userEditForm.locator('input[name="atime"]')).toHaveCount(1);
+    await page.goto(`/?page=dataset&action=disable_backups&id=${s.datasets.user_edit.id}`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#content-in')).toContainText('Disabling backups is unavailable');
+    await expect(formByAction(page, 'action=disable_backups')).toHaveCount(0);
 
     await editMount(page, s.mounts.user_edit, 'skip');
     await toggleMount(page, s.mounts.user_toggle);
@@ -353,6 +358,42 @@ test.describe.serial('storage, backup, dataset, and export browser coverage', ()
     await deleteExportHost(page, s.exports.host_delete);
 
     await logout(page, fixtures.user.username);
+  });
+
+  test('administrator backup cleanup confirmation is scoped and localized', async ({ page }) => {
+    const s = requireStorageFixtures();
+    await login(page, fixtures.admin);
+    const variants = [
+      ['en_US.utf8', 'Back up existing snapshots first', 'Existing snapshots remain on primary and backup pools.', 'If you turn this option off, cleanup permanently deletes'],
+      ['cs_CZ.utf8', 'Nejprve zálohovat existující snapshoty', 'Existující snapshoty zůstanou na primárních i zálohovacích poolech.', 'Pokud tuto možnost vypneš'],
+    ];
+    for (const [locale, checkboxLabel, planHelp, lossWarning] of variants) {
+      await openDatasetEdit(page, s.datasets.user_edit.id, 'primary');
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+        page.locator(`#langbox a[href*="newlang=${encodeURIComponent(locale)}"]`).click(),
+      ]);
+      await expect(page.locator('#content-in')).toContainText(planHelp);
+      const link = page.locator(`a[href*="action=disable_backups"][href*="id=${s.datasets.user_edit.id}"]`);
+      await expect(link).toHaveAttribute('href', /recursive=0/);
+      await link.click();
+      const form = formByAction(page, 'action=disable_backups');
+      await expect(form).toHaveAttribute('method', 'post');
+      await expect(form.locator('input[type="checkbox"][name="backup_first"]')).toBeChecked();
+      await expect(form).toContainText(checkboxLabel);
+      await expect(form).toContainText(lossWarning);
+      await expect(form.locator('input[name="confirm"]')).not.toBeChecked();
+      await expect(form.locator('input[name="csrf_token"]')).toHaveCount(1);
+      await expect(page.locator('#content-in')).toContainText(s.datasets.user_edit.name);
+    }
+    await page.goto(`/?page=backup&action=vps&vps=${s.vps.backup.id}`, { waitUntil: 'domcontentloaded' });
+    const recursiveLink = page.locator(`a[href*="action=disable_backups"][href*="recursive=1"]`);
+    await expect(recursiveLink).toHaveCount(1);
+    await recursiveLink.click();
+    await expect(formByAction(page, 'action=disable_backups')).toHaveAttribute('action', /recursive=1/);
+    // Leave shared destructive fixtures intact; one-call task handling and failure
+    // cases have real-client PHPUnit coverage and storage integration coverage.
+    await logout(page, fixtures.admin.username);
   });
 
 });

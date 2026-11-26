@@ -4,6 +4,10 @@ if (isLoggedIn()) {
     $quotas = ['quota', 'refquota'];
 
     switch ($_GET['action'] ?? null) {
+        case 'disable_backups':
+            dataset_disable_backups_page();
+            break;
+
         case 'new':
             if (isset($_POST['name'])) {
                 csrf_check();
