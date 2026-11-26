@@ -131,6 +131,12 @@ in
             node_addr = cfg.socketAddress;
             net_interfaces = [ "eth1" ];
             transaction_public_key = "/etc/vpsadmin/transaction.key";
+
+            # Keep test queues ready after restarts; delay tests can override these defaults.
+            queues = {
+              zfs_send.start_delay = lib.mkDefault 0;
+              zfs_recv.start_delay = lib.mkDefault 0;
+            };
           };
         };
       };
