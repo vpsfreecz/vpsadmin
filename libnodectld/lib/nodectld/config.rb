@@ -166,6 +166,12 @@ module NodeCtld
       pool_interval: 60
     },
 
+    zfs: {
+      send: {
+        compressed: true
+      }
+    },
+
     mailer: {
       smtp_server: 'localhost',
       smtp_port: 25,
@@ -305,7 +311,7 @@ module NodeCtld
         return true
       end
 
-      @cfg = merge(IMPLICIT_CONFIG, tmp)
+      candidate = merge(IMPLICIT_CONFIG, tmp)
 
       SECRET_CONFIGS.each do |pattern|
         Dir.glob(pattern).each do |secret_cfg|
@@ -316,15 +322,15 @@ module NodeCtld
             return false
           end
 
-          @cfg = merge(@cfg, tmp)
+          candidate = merge(candidate, tmp)
         end
       end
 
-      case @cfg[:mode]
+      case candidate[:mode]
       when 'standard'
         # pass
       when 'minimal'
-        @cfg = merge(@cfg, {
+        candidate = merge(candidate, {
                        vpsadmin: {
                          update_vps_status: false
                        },
@@ -344,16 +350,17 @@ module NodeCtld
                        console: { enable: false }
                      })
       else
-        warn "Unsupported runtime mode '#{@cfg[:mode]}'"
+        warn "Unsupported runtime mode '#{candidate[:mode]}'"
         return false
       end
 
-      if @cfg[:vpsadmin][:node_name].nil?
+      if candidate[:vpsadmin][:node_name].nil?
         host_parts = Socket.gethostname.split('.')
 
-        @cfg[:vpsadmin][:node_name] = host_parts[0..1].join('.') if host_parts.length > 2
+        candidate[:vpsadmin][:node_name] = host_parts[0..1].join('.') if host_parts.length > 2
       end
 
+      @cfg = candidate
       load_db_settings if db
 
       true
@@ -377,11 +384,12 @@ module NodeCtld
     end
 
     def reload
-      sync do
+      loaded = sync do
         load
       end
 
-      call_on_update
+      call_on_update if loaded
+      loaded
     end
 
     def get(*args)
@@ -413,8 +421,11 @@ module NodeCtld
     end
 
     def patch(what)
+      changes = symbolize_keys(what)
+      validate_zfs_send_config(changes)
+
       sync do
-        @cfg = merge(@cfg, symbolize_keys(what))
+        @cfg = merge(@cfg, changes)
       end
 
       call_on_update
@@ -433,7 +444,9 @@ module NodeCtld
     end
 
     def load_yaml(v)
-      YAML.safe_load(v, permitted_classes: [Symbol], symbolize_names: true)
+      cfg = YAML.safe_load(v, permitted_classes: [Symbol], symbolize_names: true)
+      validate_zfs_send_config(cfg)
+      cfg
     end
 
     def symbolize_keys(value)
@@ -463,6 +476,21 @@ module NodeCtld
     end
 
     protected
+
+    def validate_zfs_send_config(cfg)
+      return unless cfg.is_a?(Hash) && cfg.has_key?(:zfs)
+
+      zfs = cfg[:zfs]
+      raise ArgumentError, 'zfs must be a mapping' unless zfs.is_a?(Hash)
+      return unless zfs.has_key?(:send)
+
+      send = zfs[:send]
+      raise ArgumentError, 'zfs.send must be a mapping' unless send.is_a?(Hash)
+      return unless send.has_key?(:compressed)
+      return if [true, false].include?(send[:compressed])
+
+      raise ArgumentError, 'zfs.send.compressed must be a boolean'
+    end
 
     def call_on_update
       @on_update.each_value(&:call)

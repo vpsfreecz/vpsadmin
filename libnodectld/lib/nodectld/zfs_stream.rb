@@ -2,12 +2,12 @@ require 'libosctl'
 
 module NodeCtld
   class ZfsStream < OsCtl::Lib::Zfs::Stream
-    def initialize(fs, snapshot, from_snapshot = nil)
+    def initialize(fs, snapshot, from_snapshot = nil, compressed: $CFG.get(:zfs, :send, :compressed))
       super(
         build_path(fs),
         snapshot,
         from_snapshot,
-        compressed: false,
+        compressed: compressed,
         properties: false,
         large_block: true,
       )

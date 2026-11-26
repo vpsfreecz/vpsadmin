@@ -66,4 +66,33 @@ RSpec.describe NodeCtld::ZfsStream do
       ]
     )
   end
+
+  describe 'send policy' do
+    [true, false].each do |compressed|
+      it "uses captured compressed=#{compressed} for full send and estimate" do
+        allow($CFG).to receive(:get).with(:zfs, :send, :compressed).and_return(compressed, !compressed)
+        configured = described_class.new({ pool: 'tank', dataset: 'dataset' }, 'target')
+        flag = compressed ? '-c ' : ''
+        estimate_flags = compressed ? '-nvc' : '-nv'
+        allow(configured).to receive(:zfs).with(:send, estimate_flags, 'tank/dataset@target')
+                         .and_return(double(output: 'total estimated size is 1M'))
+
+        expect(configured.send(:full_zfs_send_cmd)).to eq("zfs send #{flag}-L -v tank/dataset@target")
+        expect(configured.size).to eq(1)
+        expect($CFG).to have_received(:get).with(:zfs, :send, :compressed).once
+      end
+
+      it "preserves intermediary snapshots for incremental compressed=#{compressed}" do
+        configured = described_class.new({ pool: 'tank', dataset: 'dataset' }, 'target', 'base', compressed: compressed)
+        flag = compressed ? '-c ' : ''
+        estimate_flags = compressed ? '-nvc -I @base' : '-nv -I @base'
+        allow(configured).to receive(:zfs).with(:send, estimate_flags, 'tank/dataset@target')
+                         .and_return(double(output: 'total estimated size is 2M'))
+
+        expect(configured.send(:full_zfs_send_cmd))
+          .to eq("zfs send #{flag}-L -v -I @base tank/dataset@target")
+        expect(configured.size).to eq(2)
+      end
+    end
+  end
 end

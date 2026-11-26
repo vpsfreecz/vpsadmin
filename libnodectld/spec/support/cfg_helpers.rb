@@ -88,6 +88,11 @@ module NodeCtldSpec
           console: {
             enable: true
           },
+          zfs: {
+            send: {
+              compressed: true
+            }
+          },
           route_check: {
             default_timeout: 30
           },

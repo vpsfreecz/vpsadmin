@@ -92,4 +92,77 @@ RSpec.describe NodeCtld::AppConfig do
       end
     end
   end
+
+  [nil, true, false].each do |compressed|
+    it "loads #{compressed.inspect} compressed-send policy with missing meaning true" do
+      config = { vpsadmin: { node_name: 'test-node' } }
+      config[:zfs] = { send: { compressed: compressed } } unless compressed.nil?
+      allow(File).to receive(:read).with(cfg.file).and_return(config.to_yaml)
+      allow(Dir).to receive(:glob).and_return([])
+
+      expect(cfg.load(false)).to be(true)
+      expect(cfg.get(:zfs, :send, :compressed)).to be(compressed.nil? ? true : compressed)
+    end
+  end
+
+  [nil, 'false', 0, [], {}].each do |compressed|
+    it "rejects #{compressed.inspect} as a compressed-send setting" do
+      yaml = { zfs: { send: { compressed: compressed } } }.to_yaml
+
+      expect { cfg.load_yaml(yaml) }.to raise_error(ArgumentError, 'zfs.send.compressed must be a boolean')
+    end
+  end
+
+  it 'accepts a boolean runtime patch' do
+    cfg.patch('zfs' => { 'send' => { 'compressed' => false } })
+
+    expect(cfg.get(:zfs, :send, :compressed)).to be(false)
+  end
+
+  it 'rejects a string runtime patch without changing the selected policy' do
+    expect { cfg.patch('zfs' => { 'send' => { 'compressed' => 'false' } }) }
+      .to raise_error(ArgumentError, 'zfs.send.compressed must be a boolean')
+    expect(cfg.get(:zfs, :send, :compressed)).to be(true)
+  end
+
+  it 'reports an invalid YAML setting instead of loading it' do
+    allow(File).to receive(:read).with(cfg.file).and_return('zfs: {send: {compressed: "false"}}')
+
+    expect { expect(cfg.load(false)).to be(false) }
+      .to output(/zfs.send.compressed must be a boolean/).to_stderr
+    expect(cfg.get(:zfs, :send, :compressed)).to be(true)
+  end
+
+  ['zfs: false', 'zfs: {send: false}'].each do |yaml|
+    it "rejects malformed policy mappings in #{yaml}" do
+      expect { cfg.load_yaml(yaml) }.to raise_error(ArgumentError, /must be a mapping/)
+    end
+  end
+
+  it 'preserves the active policy and skips callbacks when a secret reload is rejected' do
+    secret_file = '/test/nodectld-secret.yml'
+    cfg.patch(zfs: { send: { compressed: false } })
+    previous = Marshal.load(Marshal.dump(cfg.get))
+    callback = instance_spy(Proc)
+    cfg.on_update(:spec) { callback.call }
+    allow(File).to receive(:read).with(cfg.file).and_return('vpsadmin: {node_name: test-node}')
+    allow(Dir).to receive(:glob).and_return([secret_file], [])
+    allow(File).to receive(:read).with(secret_file).and_return('zfs: {send: {compressed: "false"}}')
+    allow(cfg).to receive(:load_db_settings)
+
+    expect { expect(cfg.reload).to be(false) }
+      .to output(/zfs.send.compressed must be a boolean/).to_stderr
+    expect(cfg.get(:zfs, :send, :compressed)).to be(false)
+    expect(cfg.get).to eq(previous)
+    expect(callback).not_to have_received(:call)
+    expect(cfg).not_to have_received(:load_db_settings)
+
+    allow(Dir).to receive(:glob).and_return([secret_file], [])
+    allow(File).to receive(:read).with(secret_file).and_return('zfs: {send: {compressed: true}}')
+
+    expect(cfg.reload).to be(true)
+    expect(cfg.get(:zfs, :send, :compressed)).to be(true)
+    expect(callback).to have_received(:call).once
+    expect(cfg).to have_received(:load_db_settings).once
+  end
 end

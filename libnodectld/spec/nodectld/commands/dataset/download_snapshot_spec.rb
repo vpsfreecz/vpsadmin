@@ -121,7 +121,7 @@ RSpec.describe NodeCtld::Commands::Dataset::DownloadSnapshot do
     allow(cmd).to receive(:zfs).and_return(double(output: (8 * 1024 * 1024).to_s))
 
     allow(cmd).to receive(:pipe_cmd).with(
-      "zfs send #{pool_fs}/user.dataset@snap-2 | gzip"
+      "zfs send -c #{pool_fs}/user.dataset@snap-2 | gzip"
     ) do
       FileUtils.mkdir_p(cmd.send(:secret_dir_path))
       File.binwrite(cmd.send(:file_path), 'stream')
@@ -130,7 +130,7 @@ RSpec.describe NodeCtld::Commands::Dataset::DownloadSnapshot do
 
     expect(cmd.exec).to eq(ret: :ok)
     expect(cmd).to have_received(:pipe_cmd).with(
-      "zfs send #{pool_fs}/user.dataset@snap-2 | gzip"
+      "zfs send -c #{pool_fs}/user.dataset@snap-2 | gzip"
     )
   end
 
@@ -147,7 +147,7 @@ RSpec.describe NodeCtld::Commands::Dataset::DownloadSnapshot do
     allow(NodeCtld::ZfsStream).to receive(:new).and_return(stream)
 
     allow(cmd).to receive(:pipe_cmd).with(
-      "zfs send -I @snap-1 #{pool_fs}/user.dataset@snap-2 | gzip"
+      "zfs send -c -I @snap-1 #{pool_fs}/user.dataset@snap-2 | gzip"
     ) do
       FileUtils.mkdir_p(cmd.send(:secret_dir_path))
       File.binwrite(cmd.send(:file_path), 'incremental')
@@ -156,7 +156,7 @@ RSpec.describe NodeCtld::Commands::Dataset::DownloadSnapshot do
 
     expect(cmd.exec).to eq(ret: :ok)
     expect(cmd).to have_received(:pipe_cmd).with(
-      "zfs send -I @snap-1 #{pool_fs}/user.dataset@snap-2 | gzip"
+      "zfs send -c -I @snap-1 #{pool_fs}/user.dataset@snap-2 | gzip"
     )
   end
 
@@ -164,5 +164,40 @@ RSpec.describe NodeCtld::Commands::Dataset::DownloadSnapshot do
     cmd = build_command(file_name: 'download.dat.gz', format: 'stream')
 
     expect(cmd.rollback).to eq(ret: :ok)
+  end
+
+  [true, false].each do |compressed|
+    it "keeps captured compressed=#{compressed} between estimate and incremental download" do
+      db = instance_spy(NodeCtld::Db, prepared: nil, close: nil)
+      stream = instance_double(NodeCtld::ZfsStream, size: 12)
+      cmd = build_command(file_name: 'download.inc.dat.gz', format: 'incremental_stream', from_snapshot: 'snap-1')
+      allow(NodeCtld::Db).to receive(:new).and_return(db)
+      allow($CFG).to receive(:get).with(:zfs, :send, :compressed).and_return(compressed, !compressed)
+      allow(NodeCtld::ZfsStream).to receive(:new).with(
+        { pool: pool_fs, tree: nil, branch: nil, dataset: 'user.dataset' },
+        'snap-2', 'snap-1', compressed: compressed
+      ).and_return(stream)
+      allow(cmd).to receive(:pipe_cmd) do
+        File.binwrite(cmd.send(:file_path), 'incremental')
+      end
+
+      expect(cmd.exec).to eq(ret: :ok)
+      flag = compressed ? '-c ' : ''
+      expect(cmd).to have_received(:pipe_cmd)
+        .with("zfs send #{flag}-I @snap-1 #{pool_fs}/user.dataset@snap-2 | gzip")
+      expect($CFG).to have_received(:get).with(:zfs, :send, :compressed).once
+    end
+  end
+
+  it 'omits compressed blocks from a full stream when disabled' do
+    db = instance_spy(NodeCtld::Db, prepared: nil, close: nil)
+    cmd = build_command(file_name: 'download.dat.gz', format: 'stream')
+    $CFG.patch(zfs: { send: { compressed: false } })
+    allow(NodeCtld::Db).to receive(:new).and_return(db)
+    allow(cmd).to receive(:zfs).and_return(double(output: (8 * 1024 * 1024).to_s))
+    allow(cmd).to receive(:pipe_cmd) { File.binwrite(cmd.send(:file_path), 'stream') }
+
+    expect(cmd.exec).to eq(ret: :ok)
+    expect(cmd).to have_received(:pipe_cmd).with("zfs send #{pool_fs}/user.dataset@snap-2 | gzip")
   end
 end

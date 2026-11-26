@@ -58,6 +58,37 @@ Source: [snapshot](../../api/models/transaction_chains/dataset/snapshot.rb),
 [transfer](../../api/models/transaction_chains/dataset/transfer.rb), and
 [send](../../api/models/transaction_chains/dataset/send.rb).
 
+### Compressed streams
+
+nodectld sends compressed ZFS blocks by default for dataset transfers, backups,
+restores and snapshot stream downloads. This uses `zfs send -c`; it preserves
+stored compression instead of recompressing blocks according to the destination
+dataset's compression property.
+
+The sender and receiver must support the stream's compression features and
+algorithms, such as `lz4_compress` or `zstd_compress`. Check their ZFS versions
+and pool features before enabling compressed sends to an older receiver.
+To disable compressed blocks for fresh nodectld streams, set a boolean in the
+node's YAML configuration:
+
+```yaml
+zfs:
+  send:
+    compressed: false
+```
+
+The equivalent Nix setting is
+`vpsadmin.nodectld.settings.zfs.send.compressed = false;`. The default is true.
+Strings, including `"false"`, are rejected. Use YAML or Nix for this setting:
+`nodectl set config` passes boolean-looking values as strings. Each fresh stream
+uses the same value for its estimate and send. Changing the setting does not
+rewrite received data or existing download files.
+
+VPS migration, clone and replacement use osctld's policy through `osctl`,
+configured separately with `osctld.settings.zfs.send.compressed`. See
+[snapshot downloads](download.md#formats-and-incremental-history) for the
+compatibility requirements of streams downloaded to other ZFS systems.
+
 ### Rollback and restore
 
 For a snapshot present on the primary pool, rollback can use the local ZFS

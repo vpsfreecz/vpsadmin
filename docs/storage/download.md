@@ -12,6 +12,15 @@ URL, preparation status, checksum, and expiration.
 | `stream` | A full ZFS send stream compressed with gzip. |
 | `incremental_stream` | A gzip-compressed incremental ZFS stream from `from_snapshot` to the selected snapshot. |
 
+Both ZFS stream formats include compressed ZFS blocks by default, in addition
+to the outer gzip compression. The receiving ZFS implementation and pool must
+support the source blocks' compression features and algorithms. This also
+applies when `vpsadminctl backup` receives the downloaded stream locally.
+The node operator can disable compressed blocks using
+[`zfs.send.compressed`](README.md#compressed-streams). Downloads use gzip
+wrapping in either mode and omit the large-block flag `-L`. The `archive`
+format does not use ZFS send streams.
+
 Incremental downloads require snapshots from the same dataset with matching
 `history_id` values and a usable source for the pair. The base snapshot must
 precede the target. `Dataset.current_history_id` identifies the current

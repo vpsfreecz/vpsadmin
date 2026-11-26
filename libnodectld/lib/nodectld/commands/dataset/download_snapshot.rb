@@ -8,6 +8,7 @@ module NodeCtld
     needs :system, :zfs, :pool
 
     def exec
+      @send_compressed = $CFG.get(:zfs, :send, :compressed)
       ds = "#{@pool_fs}/#{@dataset_name}"
       ds += "/#{@tree}/#{@branch}" if @tree
 
@@ -56,7 +57,7 @@ module NodeCtld
                                  tree: @tree,
                                  branch: @branch,
                                  dataset: @dataset_name
-                               }, @snapshot, @from_snapshot)
+                               }, @snapshot, @from_snapshot, compressed: @send_compressed)
         size = stream.size
 
       else
@@ -101,11 +102,15 @@ module NodeCtld
     end
 
     def stream(ds)
-      pipe_cmd("zfs send #{ds}@#{@snapshot} | gzip")
+      pipe_cmd("zfs send #{compressed_flag}#{ds}@#{@snapshot} | gzip")
     end
 
     def incremental_stream(ds)
-      pipe_cmd("zfs send -I @#{@from_snapshot} #{ds}@#{@snapshot} | gzip")
+      pipe_cmd("zfs send #{compressed_flag}-I @#{@from_snapshot} #{ds}@#{@snapshot} | gzip")
+    end
+
+    def compressed_flag
+      @send_compressed ? '-c ' : ''
     end
 
     def secret_dir_path
