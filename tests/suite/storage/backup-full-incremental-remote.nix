@@ -55,6 +55,9 @@ import ../../make-test.nix (
         end
 
         it 'backs up the first snapshot over the remote send/recv path' do
+          @content1 = "remote backup version 1\n" * 1024
+          write_dataset_text(node1, dataset_path: @setup.fetch('primary_dataset_path'),
+                             relative_path: 'var/tmp/backup-integrity.txt', content: @content1)
           @snap1 = create_and_backup_snapshot(
             services,
             admin_user_id: admin_user_id,
@@ -94,9 +97,15 @@ import ../../make-test.nix (
               timeout: 30
             )
           ).to be(true)
+          @backup_path = branch_dataset_path(backup_pool_fs, @setup.fetch('dataset_full_name'), @head_branch)
+          expect(read_dataset_text(node2, dataset_path: @backup_path,
+                                   relative_path: ".zfs/snapshot/#{@snap1.fetch('name')}/var/tmp/backup-integrity.txt")).to eq(@content1)
         end
 
         it 'keeps only the latest shared source snapshot after the second backup rotation' do
+          @content2 = "remote backup version 2\n" * 1024
+          write_dataset_text(node1, dataset_path: @setup.fetch('primary_dataset_path'),
+                             relative_path: 'var/tmp/backup-integrity.txt', content: @content2)
           @snap2 = create_and_backup_snapshot(
             services,
             admin_user_id: admin_user_id,
@@ -120,9 +129,16 @@ import ../../make-test.nix (
               timeout: 30
             )
           ).to be(true)
+          [[@snap1, @content1], [@snap2, @content2]].each do |snapshot, content|
+            expect(read_dataset_text(node2, dataset_path: @backup_path,
+                                     relative_path: ".zfs/snapshot/#{snapshot.fetch('name')}/var/tmp/backup-integrity.txt")).to eq(content)
+          end
         end
 
         it 'continues incremental backups on the same remote head branch' do
+          @content3 = "remote backup version 3\n" * 1024
+          write_dataset_text(node1, dataset_path: @setup.fetch('primary_dataset_path'),
+                             relative_path: 'var/tmp/backup-integrity.txt', content: @content3)
           @snap3 = create_and_backup_snapshot(
             services,
             admin_user_id: admin_user_id,
@@ -154,6 +170,10 @@ import ../../make-test.nix (
               timeout: 30
             )
           ).to be(true)
+          [[@snap2, @content2], [@snap3, @content3]].each do |snapshot, content|
+            expect(read_dataset_text(node2, dataset_path: @backup_path,
+                                     relative_path: ".zfs/snapshot/#{snapshot.fetch('name')}/var/tmp/backup-integrity.txt")).to eq(content)
+          end
         end
       end
     '';

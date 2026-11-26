@@ -120,6 +120,31 @@ import ../../make-test.nix (
           )
 
           node.succeeds("test -f #{Shellwords.escape(file_path)}")
+
+          base_download = create_snapshot_download(
+            services,
+            snapshot_id: from_snapshot.fetch('id'),
+            format: 'stream',
+            send_mail: false
+          )
+          base_row = wait_for_snapshot_download_ready(services, base_download.fetch('id'))
+          base_path = download_file_path(pool_fs: primary_pool_fs,
+                                         secret_key: base_row.fetch('secret_key'), file_name: base_row.fetch('file_name'))
+          received_dataset = 'tank/download-incremental-readback'
+          begin
+            [base_path, file_path].each_with_index do |stream_path, index|
+              receive = "gzip -dc #{Shellwords.escape(stream_path)} | zfs recv -F -u #{received_dataset}"
+              node.succeeds("bash -o pipefail -c #{Shellwords.escape(receive)}", timeout: 300)
+              expected = index == 0 ? "base version\n" : "next version\n"
+              expect(read_dataset_text(node, dataset_path: received_dataset, relative_path: 'root/base.txt')).to eq(expected)
+            end
+            [[from_snapshot, "base version\n"], [target_snapshot, "next version\n"]].each do |snapshot, content|
+              expect(read_dataset_text(node, dataset_path: received_dataset,
+                                       relative_path: ".zfs/snapshot/#{snapshot.fetch('name')}/root/base.txt")).to eq(content)
+            end
+          ensure
+            node.succeeds("zfs destroy -r #{received_dataset}", timeout: 60) if node.zfs_exists?(received_dataset, type: 'filesystem', timeout: 30)
+          end
         end
       end
     '';

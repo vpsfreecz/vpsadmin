@@ -25,6 +25,7 @@ import ../../make-test.nix (
 
     testScript = ''
       require 'json'
+      require 'shellwords'
 
       admin_user_id = ${toString adminUser.id}
       node_id = ${toString nodeSeed.id}
@@ -146,6 +147,21 @@ import ../../make-test.nix (
         ].join('/')
       end
 
+      def write_backup_content(node, dataset_path, content)
+        _, mountpoint = node.succeeds("zfs get -H -o value mountpoint #{Shellwords.escape(dataset_path)}")
+        path = File.join(mountpoint.strip, 'var/tmp/backup-integrity.txt')
+        node.succeeds("mkdir -p #{Shellwords.escape(File.dirname(path))}")
+        node.succeeds("printf %s #{Shellwords.escape(content)} > #{Shellwords.escape(path)} && sync")
+      end
+
+      def expect_backup_content(node, dataset_path, snapshot, content)
+        node.succeeds("zfs mount #{Shellwords.escape(dataset_path)} >/dev/null 2>&1 || true")
+        _, mountpoint = node.succeeds("zfs get -H -o value mountpoint #{Shellwords.escape(dataset_path)}")
+        path = File.join(mountpoint.strip, '.zfs/snapshot', snapshot, 'var/tmp/backup-integrity.txt')
+        _, output = node.succeeds("cat #{Shellwords.escape(path)}")
+        expect(output).to eq(content)
+      end
+
       configure_examples do |config|
         config.default_order = :defined
       end
@@ -245,6 +261,8 @@ import ../../make-test.nix (
         end
 
         it 'backs up the first snapshot into the first tree and head branch' do
+          @content1 = "local backup version 1\n" * 1024
+          write_backup_content(node, @primary_dataset_path, @content1)
           @snap1 = create_snapshot(services, dataset_id: @dataset_id, dip_id: @src_dip_id, label: 'backup-full-1')
           fire_backup(services, admin_user_id: admin_user_id, src_dip_id: @src_dip_id, dst_dip_id: @dst_dip_id)
 
@@ -255,9 +273,12 @@ import ../../make-test.nix (
           expect(services.mariadb_scalar(sql: "SELECT COUNT(*) FROM dataset_trees WHERE dataset_in_pool_id = #{@dst_dip_id}")).to eq('1')
           expect(snapshot_rows_for_dip(services, @dst_dip_id).map { |row| row.fetch('name') }).to include(@snap1.fetch('name'))
           expect(node.zfs_exists?("#{@head_branch_dataset_path}@#{@snap1.fetch('name')}", type: 'snapshot', timeout: 30)).to be(true)
+          expect_backup_content(node, @head_branch_dataset_path, @snap1.fetch('name'), @content1)
         end
 
         it 'reuses the same tree and branch for the next incremental backup' do
+          @content2 = "local backup version 2\n" * 1024
+          write_backup_content(node, @primary_dataset_path, @content2)
           @snap2 = create_snapshot(services, dataset_id: @dataset_id, dip_id: @src_dip_id, label: 'backup-full-2')
           fire_backup(services, admin_user_id: admin_user_id, src_dip_id: @src_dip_id, dst_dip_id: @dst_dip_id)
 
@@ -269,6 +290,8 @@ import ../../make-test.nix (
             @snap1.fetch('name'),
             @snap2.fetch('name')
           )
+          expect_backup_content(node, @head_branch_dataset_path, @snap1.fetch('name'), @content1)
+          expect_backup_content(node, @head_branch_dataset_path, @snap2.fetch('name'), @content2)
         end
 
         it 'keeps only the latest shared source snapshot after the previous backup rotation' do
@@ -279,6 +302,8 @@ import ../../make-test.nix (
         end
 
         it 'keeps using the same backup tree and branch after rotation for the third backup' do
+          @content3 = "local backup version 3\n" * 1024
+          write_backup_content(node, @primary_dataset_path, @content3)
           @snap3 = create_snapshot(services, dataset_id: @dataset_id, dip_id: @src_dip_id, label: 'backup-full-3')
           fire_backup(services, admin_user_id: admin_user_id, src_dip_id: @src_dip_id, dst_dip_id: @dst_dip_id)
 
@@ -289,6 +314,8 @@ import ../../make-test.nix (
           expect(head_branch.fetch('branch_id')).to eq(@head_branch.fetch('branch_id'))
           expect(backup_snapshot_names).to include(@snap2.fetch('name'), @snap3.fetch('name'))
           expect(node.zfs_exists?("#{branch_dataset_path(backup_pool_fs, @dataset_full_name, head_branch)}@#{@snap3.fetch('name')}", type: 'snapshot', timeout: 30)).to be(true)
+          expect_backup_content(node, @head_branch_dataset_path, @snap2.fetch('name'), @content2)
+          expect_backup_content(node, @head_branch_dataset_path, @snap3.fetch('name'), @content3)
         end
       end
     '';

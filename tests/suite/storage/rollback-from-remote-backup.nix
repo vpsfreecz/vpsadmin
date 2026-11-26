@@ -43,12 +43,16 @@ import ../../make-test.nix (
             primary_pool_fs: primary_pool_fs,
             backup_pool_fs: backup_pool_fs
           )
+          set_snapshot_retention(services, dip_id: @setup.fetch('src_dip_id'),
+                                 min_snapshots: 1, max_snapshots: 1, snapshot_max_age: 0)
         end
 
         it 'builds remote backup history and rolls back to the middle snapshot' do
           @snapshots = []
 
           3.times do |i|
+            write_dataset_text(node1, dataset_path: @setup.fetch('primary_dataset_path'),
+                               relative_path: 'etc/restore-marker', content: "restore version #{i + 1}\n")
             @snapshots << create_and_backup_snapshot(
               services,
               admin_user_id: admin_user_id,
@@ -60,6 +64,12 @@ import ../../make-test.nix (
           end
 
           @history_before = current_history_id(services, @setup.fetch('dataset_id'))
+          expect(snapshot_rows_for_dip(services, @setup.fetch('src_dip_id')).map { |row| row.fetch('id') })
+            .not_to include(@snapshots[1].fetch('id'))
+          expect(node1.zfs_exists?("#{@setup.fetch('primary_dataset_path')}@#{@snapshots[1].fetch('name')}",
+                                   type: 'snapshot', timeout: 30)).to be(false)
+          expect(snapshot_rows_for_dip(services, @setup.fetch('dst_dip_id')).map { |row| row.fetch('id') })
+            .to include(@snapshots[1].fetch('id'))
 
           rollback = rollback_dataset_to_snapshot(
             services,
@@ -71,6 +81,8 @@ import ../../make-test.nix (
           services.wait_for_chain_state(@rollback_chain_id, state: :done)
           services.wait_for_branch_count(@setup.fetch('dst_dip_id'), count: 2)
           wait_for_vps_running(services, @setup.fetch('vps_id'))
+          expect(read_dataset_text(node1, dataset_path: @setup.fetch('primary_dataset_path'),
+                                   relative_path: 'etc/restore-marker')).to eq("restore version 2\n")
         end
 
         it 'records rollback branching on the remote backup dataset' do
@@ -89,6 +101,11 @@ import ../../make-test.nix (
           expect(s2_entry.fetch('reference_count')).to be >= 1
           expect(current_history_id(services, @setup.fetch('dataset_id'))).to eq(@history_before + 1)
           expect(rollback_handles).to include(tx_types(services).fetch('branch_dataset'))
+          expect(rollback_handles).to include(
+            tx_types(services).fetch('send'),
+            tx_types(services).fetch('recv'),
+            tx_types(services).fetch('recv_check')
+          )
           expect(rollback_handles).not_to include(tx_types(services).fetch('local_send'))
           expect(
             node2.zfs_exists?(
@@ -102,6 +119,8 @@ import ../../make-test.nix (
         end
 
         it 'continues future backups on the new head branch over the remote send path' do
+          write_dataset_text(node1, dataset_path: @setup.fetch('primary_dataset_path'),
+                             relative_path: 'etc/restore-marker', content: "restore version 4\n")
           @snap4 = create_and_backup_snapshot(
             services,
             admin_user_id: admin_user_id,
@@ -126,6 +145,10 @@ import ../../make-test.nix (
             tx_types(services).fetch('recv_check')
           )
           expect(backup_handles).not_to include(tx_types(services).fetch('local_send'))
+          backup_path = branch_dataset_path(backup_pool_fs, @setup.fetch('dataset_full_name'), current_head)
+          expect(read_dataset_text(node2, dataset_path: backup_path,
+                                   relative_path: ".zfs/snapshot/#{@snap4.fetch('name')}/etc/restore-marker"))
+            .to eq("restore version 4\n")
         end
       end
     '';

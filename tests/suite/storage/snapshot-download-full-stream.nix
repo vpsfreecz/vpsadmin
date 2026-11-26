@@ -96,6 +96,19 @@ import ../../make-test.nix (
           )
 
           node.succeeds("test -f #{Shellwords.escape(file_path)}")
+
+          received_dataset = 'tank/download-full-readback'
+          begin
+            receive = "gzip -dc #{Shellwords.escape(file_path)} | zfs recv -u #{received_dataset}"
+            node.succeeds("bash -o pipefail -c #{Shellwords.escape(receive)}", timeout: 300)
+            expect(read_dataset_text(node, dataset_path: received_dataset,
+                                     relative_path: 'root/stream.txt')).to eq("stream sentinel\n")
+            expect(read_dataset_text(node, dataset_path: received_dataset,
+                                     relative_path: ".zfs/snapshot/#{snapshot.fetch('name')}/root/stream.txt"))
+              .to eq("stream sentinel\n")
+          ensure
+            node.succeeds("zfs destroy -r #{received_dataset}", timeout: 60) if node.zfs_exists?(received_dataset, type: 'filesystem', timeout: 30)
+          end
         end
       end
     '';
