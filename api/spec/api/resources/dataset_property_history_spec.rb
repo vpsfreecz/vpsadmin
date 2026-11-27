@@ -74,6 +74,55 @@ RSpec.describe 'VpsAdmin::API::Resources::Dataset property history actions' do #
   end
 
   describe 'Index' do
+    it 'rejects ordered cursor anchors excluded by name, date or dataset scope' do
+      excluded_name = create_history(property: quota_prop, value: 10, created_at: Time.utc(2024, 1, 1))
+      excluded_date = create_history(property: used_prop, value: 10, created_at: Time.utc(2024, 1, 1))
+      deleted = create_history(property: used_prop, value: 10, created_at: Time.utc(2024, 1, 1))
+      deleted_id = deleted.id
+      deleted.destroy!
+      foreign_ds, = create_dataset_with_pool!(user: other_user, pool: pool, name: 'cursor-foreign')
+      foreign = create_history(property: foreign_ds.dataset_properties.find_by!(name: 'used'),
+                               value: 10, created_at: Time.utc(2024, 1, 3))
+
+      [2_147_483_647, deleted_id, excluded_name.id, foreign.id].each do |cursor|
+        as(user) { json_get property_history_path(dataset.id), property_history: { from_id: cursor, name: 'used' } }
+        expect_status(400)
+        expect(json['status']).to be(false)
+      end
+
+      as(user) do
+        json_get property_history_path(dataset.id), property_history: {
+          from_id: excluded_date.id, from: Time.utc(2024, 1, 2).iso8601
+        }
+      end
+      expect_status(400)
+    end
+
+    %i[member admin].each do |role|
+      it "traverses ordered cursor pages by descending timestamp and ID for #{role}" do
+        rows = [2, 5, 1, 5, 3, 4].map do |day|
+          create_history(property: used_prop, value: day, created_at: Time.utc(2024, 1, day))
+        end
+        expected = rows.sort_by { |row| [row.created_at, row.id] }.reverse.map(&:id)
+        actor = role == :admin ? SpecSeed.admin : user
+        collected = []
+        cursor = nil
+
+        4.times do
+          params = { limit: 2, name: 'used', from: Time.utc(2024, 1, 1).iso8601,
+                     to: Time.utc(2024, 1, 5).iso8601 }
+          params[:from_id] = cursor if cursor
+          as(actor) { json_get property_history_path(dataset.id), property_history: params }
+          expect_status(200)
+          ids = history_rows.map { |row| row['id'] }
+          collected.concat(ids)
+          cursor = ids.last unless ids.empty?
+        end
+
+        expect(history_rows).to be_empty
+        expect(collected).to eq(expected)
+      end
+    end
     it 'rejects unauthenticated access' do
       json_get property_history_path(dataset.id)
 

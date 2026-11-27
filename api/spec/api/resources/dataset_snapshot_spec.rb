@@ -86,6 +86,53 @@ RSpec.describe 'VpsAdmin::API::Resources::Dataset snapshot actions' do # rubocop
   end
 
   describe 'Index' do
+    it 'rejects ordered cursor anchors from missing, deleted, foreign or different datasets' do
+      foreign_ds, foreign_dip = create_dataset_with_pool!(user: other_user, pool: pool, name: 'cursor-foreign')
+      foreign, = create_snapshot!(dataset: foreign_ds, dip: foreign_dip)
+      own, = create_snapshot!(dataset: dataset, dip: dip)
+      deleted, deleted_sip = create_snapshot!(dataset: dataset, dip: dip)
+      deleted_id = deleted.id
+      deleted_sip.destroy!
+      deleted.destroy!
+
+      [2_147_483_647, foreign.id, deleted_id].each do |cursor|
+        as(user) { json_get snapshots_path(dataset.id), snapshot: { from_id: cursor } }
+        expect_status(400)
+        expect(json['status']).to be(false)
+      end
+
+      as(other_user) { json_get snapshots_path(dataset.id), snapshot: { from_id: own.id } }
+      expect_status(400)
+      as(SpecSeed.admin) { json_get snapshots_path(foreign_ds.id), snapshot: { from_id: own.id } }
+      expect_status(400)
+    end
+
+    %i[member admin].each do |role|
+      it "traverses ordered cursor pages by timestamp and ID for #{role}" do
+        rows = [5, 1, 3, 1, 4, 2].map do |day|
+          snap, = create_snapshot!(dataset: dataset, dip: dip)
+          snap.update!(created_at: Time.utc(2024, 1, day))
+          snap
+        end
+        expected = rows.sort_by { |row| [row.created_at, row.id] }.map(&:id)
+        actor = role == :admin ? SpecSeed.admin : user
+        collected = []
+        cursor = nil
+
+        4.times do
+          params = { limit: 2 }
+          params[:from_id] = cursor if cursor
+          as(actor) { json_get snapshots_path(dataset.id), snapshot: params }
+          expect_status(200)
+          ids = snapshots.map { |row| row['id'] }
+          collected.concat(ids)
+          cursor = ids.last unless ids.empty?
+        end
+
+        expect(snapshots).to be_empty
+        expect(collected).to eq(expected)
+      end
+    end
     it 'rejects unauthenticated access' do
       json_get snapshots_path(dataset.id)
 
