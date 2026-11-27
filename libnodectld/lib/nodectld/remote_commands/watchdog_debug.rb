@@ -9,6 +9,7 @@ module NodeCtld::RemoteCommands
         ret: :ok,
         output: {
           last_transaction_check_monotonic: @daemon.last_transaction_check_monotonic,
+          last_transaction_progress_monotonic: @daemon.last_transaction_progress_monotonic,
           transaction_thread: {
             status: thread&.status,
             backtrace: thread&.backtrace || []

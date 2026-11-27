@@ -15,13 +15,15 @@ RSpec.describe NodeCtld::RemoteCommands::WatchdogDebug do
     daemon = instance_double(
       NodeCtldSpec::FakeDaemon,
       transaction_thread: thread,
-      last_transaction_check_monotonic: 34.5
+      last_transaction_check_monotonic: 34.5,
+      last_transaction_progress_monotonic: 56.5
     )
 
     expect(described_class.new({}, daemon).exec).to eq(
       ret: :ok,
       output: {
         last_transaction_check_monotonic: 34.5,
+        last_transaction_progress_monotonic: 56.5,
         transaction_thread: {
           status: 'sleep',
           backtrace: ['daemon.rb:123:in `check_commands?`']

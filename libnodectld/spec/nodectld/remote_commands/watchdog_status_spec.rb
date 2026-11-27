@@ -10,14 +10,16 @@ RSpec.describe NodeCtld::RemoteCommands::WatchdogStatus do
     daemon = instance_double(
       NodeCtldSpec::FakeDaemon,
       start_monotonic: 12.5,
-      last_transaction_check_monotonic: 34.5
+      last_transaction_check_monotonic: 34.5,
+      last_transaction_progress_monotonic: 56.5
     )
 
     expect(described_class.new({}, daemon).exec).to eq(
       ret: :ok,
       output: {
         start_monotonic: 12.5,
-        last_transaction_check_monotonic: 34.5
+        last_transaction_check_monotonic: 34.5,
+        last_transaction_progress_monotonic: 56.5
       }
     )
   end

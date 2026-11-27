@@ -41,6 +41,7 @@ module NodeCtld
 
     attr_reader :start_time, :ct_top, :node, :console, :queues,
                 :last_transaction_check, :last_transaction_check_monotonic,
+                :last_transaction_progress_monotonic,
                 :start_monotonic, :transaction_thread, :vps_status
 
     def initialize
@@ -140,11 +141,15 @@ module NodeCtld
         end
       end
 
-      return if @queues.full?
+      if @queues.full?
+        record_transaction_progress
+        return
+      end
 
       @@mutex.synchronize do
         unless @@run
           exit(@@exitstatus) if can_stop?
+          record_transaction_progress
           return
         end
       end
@@ -181,7 +186,7 @@ module NodeCtld
       raise TransactionCheckError if update_rs.nil?
 
       @last_transaction_check = Time.now
-      @last_transaction_check_monotonic = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      @last_transaction_check_monotonic = record_transaction_progress
 
       @skipped_transaction_checks ||= 0
 
@@ -269,6 +274,12 @@ module NodeCtld
           LIMIT #{limit}"
         )
       end
+    end
+
+    # Only the transaction loop can report progress, after a successful poll or
+    # an intentional skip. A responsive control thread must not hide a stall.
+    def record_transaction_progress
+      @last_transaction_progress_monotonic = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     end
 
     def do_commands(db)

@@ -203,7 +203,8 @@ module NodeCtld
         begin
           response = get_daemon_response(:watchdog_status)
           if response[:status] == 'ok'
-            last_check = response[:response][:last_transaction_check_monotonic]
+            last_check = response[:response][:last_transaction_progress_monotonic] ||
+                         response[:response][:last_transaction_check_monotonic]
           end
         rescue StandardError => e
           log "Watchdog: Failed to check daemon status: #{e.message} (#{e.class})"

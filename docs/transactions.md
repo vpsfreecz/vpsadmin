@@ -91,3 +91,6 @@ attention. Inspect transaction output and actual node state before retrying or
 resolving it. Chain state, command results, confirmations, and resource locks
 together describe the outcome; an API request being accepted does not mean
 that its node operation has completed.
+
+For polling stalls, watchdog recovery and service control, see
+[Operating nodectld](operations/nodectld.md).

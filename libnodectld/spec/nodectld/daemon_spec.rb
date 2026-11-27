@@ -224,6 +224,7 @@ RSpec.describe NodeCtld::Daemon do
     expect(daemon.check_commands?(shared_db)).to be(true)
     expect(daemon.last_transaction_check).to be_a(Time)
     expect(daemon.last_transaction_check_monotonic).to eq(456.5)
+    expect(daemon.last_transaction_progress_monotonic).to eq(456.5)
   end
 
   it 'does not record a failed transaction metadata poll' do
@@ -237,6 +238,56 @@ RSpec.describe NodeCtld::Daemon do
     end.to raise_error(NodeCtld::TransactionCheckError)
     expect(daemon.last_transaction_check).to eq(Time.at(123))
     expect(daemon.last_transaction_check_monotonic).to eq(456.5)
+    expect(daemon.last_transaction_progress_monotonic).to be_nil
+  end
+
+  describe 'watchdog progress when polling is intentionally skipped' do
+    let(:queues) { daemon.instance_variable_get(:@queues) }
+
+    before do
+      daemon.resume
+      allow(queues).to receive_messages(each_value: nil, full?: false)
+      allow(NodeCtld::Db).to receive(:new)
+      allow(Process).to receive(:clock_gettime)
+        .with(Process::CLOCK_MONOTONIC).and_return(456.5)
+    end
+
+    it 'keeps a paused transaction loop healthy without inventing a database poll' do
+      daemon.pause
+      daemon.work
+
+      expect(daemon.last_transaction_progress_monotonic).to eq(456.5)
+      expect(daemon.last_transaction_check_monotonic).to be_nil
+      expect(NodeCtld::Db).not_to have_received(:new)
+    end
+
+    it 'records progress while every queue is full' do
+      allow(queues).to receive(:full?).and_return(true)
+      daemon.work
+
+      expect(daemon.last_transaction_progress_monotonic).to eq(456.5)
+      expect(daemon.last_transaction_check_monotonic).to be_nil
+      expect(NodeCtld::Db).not_to have_received(:new)
+    end
+
+    it 'lets a graceful restart wait for active workers' do
+      previous_status = daemon.exitstatus
+      described_class.safe_exit(NodeCtld::EXIT_RESTART)
+      allow(daemon).to receive(:can_stop?).and_return(false)
+      daemon.work
+
+      expect(daemon.last_transaction_progress_monotonic).to eq(456.5)
+      expect(NodeCtld::Db).not_to have_received(:new)
+    ensure
+      described_class.safe_exit(previous_status)
+    end
+
+    it 'does not report progress before worker completion checks finish' do
+      allow(queues).to receive(:each_value).and_raise(NodeCtld::TransactionCheckError)
+
+      expect { daemon.work }.to raise_error(NodeCtld::TransactionCheckError)
+      expect(daemon.last_transaction_progress_monotonic).to be_nil
+    end
   end
 
   it 'skips execute commands while the chain is blocked' do

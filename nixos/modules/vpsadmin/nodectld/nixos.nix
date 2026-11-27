@@ -53,9 +53,16 @@ in
           "VPSADMIN_REVISION=${toString vpsadminRev}"
         ];
         Type = "simple";
-        ExecStart = "${pkgs.nodectld}/bin/nodectld --no-wrapper";
-        Restart = "on-failure";
+        # The wrapper runs the transaction watchdog, including on mailers and DNS servers.
+        ExecStart = "${pkgs.nodectld}/bin/nodectld";
+        # Watchdog recovery can exit the wrapper successfully. Explicit systemd
+        # stops still suppress automatic restart.
+        Restart = "always";
         RestartSec = 5;
+        # Let the wrapper stop its child (TERM, then KILL after 60 seconds),
+        # with a final whole-cgroup deadline if the wrapper itself gets stuck.
+        KillMode = "mixed";
+        TimeoutStopSec = 90;
       };
     };
 

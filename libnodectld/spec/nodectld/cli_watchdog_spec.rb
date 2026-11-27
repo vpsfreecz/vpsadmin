@@ -8,6 +8,32 @@ require_relative '../../../nodectld/lib/nodectld/cli'
 RSpec.describe NodeCtld::Cli do
   subject(:cli) { described_class.allocate }
 
+  describe '#run_watchdog' do
+    [
+      [{ last_transaction_progress_monotonic: 95.0, last_transaction_check_monotonic: 12.0 }, 95.0],
+      [{ last_transaction_check_monotonic: 12.0 }, 12.0],
+      [{}, nil]
+    ].each do |response, expected_check|
+      it "uses the available progress timestamp from #{response.inspect}" do
+        watchdog_cli = described_class.allocate
+        queue = instance_double(OsCtl::Lib::Queue)
+        allow(queue).to receive(:pop).and_return(nil, :stop)
+        watchdog_cli.instance_variable_set(:@watchdog_queue, queue)
+        state = instance_double(NodeCtld::TransactionWatchdog)
+        allow(NodeCtld::TransactionWatchdog).to receive(:new).and_return(state)
+        allow(state).to receive(:observe).and_return(NodeCtld::TransactionWatchdog::Result.new)
+        allow(watchdog_cli).to receive_messages(
+          monotonic_now: 100.0,
+          get_daemon_response: { status: 'ok', response: }
+        )
+
+        watchdog_cli.send(:run_watchdog, 123, daemon_started_at: 1.0)
+
+        expect(state).to have_received(:observe).with(now: 100.0, last_check: expected_check)
+      end
+    end
+  end
+
   describe '#get_daemon_response' do
     it 'uses one deadline for the greeting and command response' do
       cli_class = Class.new(described_class) do

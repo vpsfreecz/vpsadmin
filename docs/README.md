@@ -13,6 +13,8 @@ These pages describe vpsAdmin for developers and operators. Start with the
   administrator settings, event identity, ownership and recovery.
 - [Transactions](transactions.md): node commands, chains, resource locks, and
   database confirmations.
+- [Operating nodectld](operations/nodectld.md): minimal mode, watchdog recovery,
+  service control and stalled-work diagnosis.
 - [Security advisories](security-advisories.md): original corrections,
   announcements, preconditions and affected-user snapshots.
 - [IP ownership, accounting and locking](ip-locking.md)

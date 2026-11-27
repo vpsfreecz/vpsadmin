@@ -33,6 +33,7 @@ testLib.makeTests [
   "admin/scheduler-socket-control"
   "admin/nodectl-read-and-queue-control"
   "admin/nodectl-refresh-and-runtime-state"
+  "admin/nodectld-minimal-watchdog"
   "admin/remote-mount-state"
   "admin/location-network-primary-switch"
   "alerts/incident-escalation"
