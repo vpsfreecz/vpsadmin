@@ -58,6 +58,15 @@ Source: [snapshot](../../api/models/transaction_chains/dataset/snapshot.rb),
 [transfer](../../api/models/transaction_chains/dataset/transfer.rb), and
 [send](../../api/models/transaction_chains/dataset/send.rb).
 
+The snapshot-creation API rejects a request when the logical dataset's total
+`Snapshot` count reaches the largest `max_snapshots` value among its pool copies.
+The count includes snapshots with and without a user label; it is not limited to
+the current page or primary pool. This creation guard is separate from rotation.
+The API translates the limit error using `Accept-Language`, with the user's
+language as fallback. Its guidance points to the snapshot list and support for
+a higher limit; it does not suggest deletion to a caller who may lack permission.
+The guard and ownership restrictions are unchanged by localization.
+
 ### Rollback and restore
 
 For a snapshot present on the primary pool, rollback can use the local ZFS
