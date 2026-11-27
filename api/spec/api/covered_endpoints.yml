@@ -83,6 +83,8 @@ covered:
 - dataset#index
 - dataset#inherit
 - dataset#migrate
+- dataset#preview_snapshot_removal
+- dataset#remove_snapshots
 - dataset#show
 - dataset#update
 - dataset_expansion#create
