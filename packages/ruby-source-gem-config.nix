@@ -27,7 +27,10 @@ let
           type = "gem";
         };
 
-        src = repoPath;
+        # Development dependencies must not become source gem candidates.
+        src = builtins.filterSource (
+          path: type: !(type == "directory" && baseNameOf path == ".gems")
+        ) repoPath;
         dontBuild = false;
 
         unpackPhase = ''
