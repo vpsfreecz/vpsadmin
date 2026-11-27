@@ -18,7 +18,7 @@ async function openWebuiLogin(page, user) {
     await page.goto(params, { waitUntil: 'domcontentloaded' });
   } else {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await expect(loginButton(page)).toHaveValue('Log in');
+    await expect(loginButton(page)).toHaveValue(/^(?:Log in|Přihlásit se)$/);
     await loginButton(page).click({ noWaitAfter: true });
   }
 
@@ -37,7 +37,7 @@ async function login(page, account) {
   await submitCredentials(page, account.username, account.password);
   try {
     await expect(logoutButton(page)).toHaveValue(
-      new RegExp(`Logout \\(${account.username}\\)`),
+      new RegExp(`(?:Logout|Odhlásit) \\(${account.username}\\)`),
       { timeout: 60000 },
     );
   } catch (error) {
@@ -54,9 +54,9 @@ async function login(page, account) {
 }
 
 async function logout(page, username) {
-  await expect(logoutButton(page)).toHaveValue(new RegExp(`Logout \\(${username}\\)`));
+  await expect(logoutButton(page)).toHaveValue(new RegExp(`(?:Logout|Odhlásit) \\(${username}\\)`));
   await logoutButton(page).click({ noWaitAfter: true });
-  await expect(loginButton(page)).toHaveValue('Log in');
+  await expect(loginButton(page)).toHaveValue(/^(?:Log in|Přihlásit se)$/);
 }
 
 async function openAccountMenu(page) {
