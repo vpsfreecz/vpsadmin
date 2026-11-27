@@ -296,6 +296,7 @@ test.describe.serial('storage, backup, dataset, and export browser coverage', ()
     );
     await expect(page.locator('a[href*="action=disable_backups"]')).toHaveCount(0);
     await expect(formByAction(page, 'action=disable_backups')).toHaveCount(0);
+    await expect(formByAction(page, 'action=remove_snapshots')).toHaveCount(0);
     await expect(formByAction(page, 'action=plan_add')).toContainText('Existing snapshots remain on primary and backup pools.');
     await expect(userEditForm.locator('input[name="admin_override"]')).toHaveCount(0);
     await expect(userEditForm.locator('input[name="inherit_atime"]')).toHaveCount(1);
@@ -303,6 +304,9 @@ test.describe.serial('storage, backup, dataset, and export browser coverage', ()
     await page.goto(`/?page=dataset&action=disable_backups&id=${s.datasets.user_edit.id}`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('#content')).toContainText('Disabling backups is unavailable');
     await expect(formByAction(page, 'action=disable_backups')).toHaveCount(0);
+    await page.goto(`/?page=dataset&action=remove_snapshots&id=${s.datasets.user_edit.id}`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#content')).toContainText('Snapshot removal is unavailable');
+    await expect(formByAction(page, 'action=remove_snapshots')).toHaveCount(0);
 
     await editMount(page, s.mounts.user_edit, 'skip');
     await toggleMount(page, s.mounts.user_toggle);
@@ -411,4 +415,48 @@ test.describe.serial('storage, backup, dataset, and export browser coverage', ()
     await logout(page, fixtures.admin.username);
   });
 
+  test('administrator snapshot removal reviews inventory before a distinct final confirmation', async ({ page }) => {
+    const s = requireStorageFixtures();
+    await login(page, fixtures.admin);
+    const variants = [
+      ['en_US.utf8', 'Preview snapshot removal', 'Continue to final confirmation', 'Final confirmation of snapshot removal', 'Back to review'],
+      ['cs_CZ.utf8', 'Zobrazit náhled odstranění snapshotů', 'Pokračovat k závěrečnému potvrzení', 'Závěrečné potvrzení odstranění snapshotů', 'Zpět na kontrolu'],
+    ];
+    const viewports = [{ width: 1280, height: 720 }, { width: 390, height: 844 }];
+    const cases = viewports.flatMap((viewport) => variants.map((variant) => [viewport, ...variant]));
+    for (const [viewport, locale, previewLabel, continueLabel, finalTitle, backLabel] of cases) {
+      await page.setViewportSize(viewport);
+      await openDatasetEdit(page, s.datasets.snapshot_create.id, 'primary');
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+        page.locator(`#langbox a[href*="newlang=${encodeURIComponent(locale)}"]`).click(),
+      ]);
+      const options = formByAction(page, 'action=remove_snapshots');
+      await expect(options).toBeVisible();
+      await expect(options.locator('input[type="checkbox"][name="recursive"]')).not.toBeChecked();
+      await expect(options.locator('input[type="checkbox"][name="disable_plans"]')).toBeChecked();
+      await submitForm(options, previewLabel);
+      const review = page.locator('form').filter({ has: page.locator('input[name="phase"][value="continue"]') });
+      await expect(review).toBeVisible();
+      await expect(page.locator('#content')).toContainText('Webui user snapshot create');
+      await expect(review.locator('input[name="acknowledge"]')).not.toBeChecked();
+      await expect(page.locator('input[name="confirm"]')).toHaveCount(0);
+      const digest = await review.locator('input[name="manifest_digest"]').inputValue();
+      expect(digest).toMatch(/^v1:[a-f0-9]{64}$/);
+      await review.locator('input[name="acknowledge"]').check();
+      await submitForm(review, continueLabel);
+      await expect(page.locator('#content')).toContainText(finalTitle);
+      const final = page.locator('form').filter({ has: page.locator('input[name="phase"][value="remove"]') });
+      await expect(final.locator('input[name="confirm"]')).not.toBeChecked();
+      await expect(final.locator('input[name="confirm"]')).toHaveAttribute('required', '');
+      await expect(final.locator('input[name="manifest_digest"]')).toHaveValue(digest);
+      await final.getByRole('button', { name: backLabel, exact: true }).click();
+      await expect(review).toBeVisible();
+      await expect(review.locator('input[name="acknowledge"]')).not.toBeChecked();
+      await expect(review.locator('input[name="manifest_digest"]')).toHaveValue(digest);
+      // Leave shared destructive fixtures intact; real-client and storage tests
+      // cover final submission and actual history deletion/live-file preservation.
+    }
+    await logout(page, fixtures.admin.username);
+  });
 });

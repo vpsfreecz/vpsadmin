@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../lib/dataset_snapshot_removal.lib.php';
+
 $DATASET_PROPERTIES = ['compression', 'recordsize', 'atime', 'relatime', 'sync'];
 $DATASET_UNITS_TR = ["m" => 1, "g" => 1024, "t" => 1024 * 1024];
 
@@ -502,6 +504,9 @@ function dataset_backup_plans_form($ds)
 
     if (dataset_disable_backups_available()) {
         dataset_disable_backups_form($ds->id, false, $_GET['return'] ?? $_POST['return'] ?? '');
+    }
+    if (dataset_snapshot_removal_available()) {
+        dataset_snapshot_removal_options_form($ds->id, $_GET['return'] ?? $_POST['return'] ?? '');
     }
 }
 

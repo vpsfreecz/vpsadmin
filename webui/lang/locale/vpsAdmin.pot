@@ -19,6 +19,7 @@ msgid "Incidents"
 msgstr ""
 
 #: forms/admin_incidents.forms.php forms/vps.forms.php
+#: lib/dataset_snapshot_removal.lib.php
 msgid "History"
 msgstr ""
 
@@ -106,7 +107,8 @@ msgstr ""
 
 #: forms/admin_incidents.forms.php forms/cluster.forms.php
 #: forms/dataset.forms.php forms/incident_policy.forms.php
-#: forms/ip_release.forms.php forms/oom_reports.forms.php lib/xtemplate.lib.php
+#: forms/ip_release.forms.php forms/oom_reports.forms.php
+#: lib/dataset_snapshot_removal.lib.php lib/xtemplate.lib.php
 #: pages/page_transactions.php
 msgid "Action"
 msgstr ""
@@ -315,7 +317,7 @@ msgstr ""
 msgid "Completed"
 msgstr ""
 
-#: forms/admin_incidents.forms.php
+#: forms/admin_incidents.forms.php lib/dataset_snapshot_removal.lib.php
 msgid "None"
 msgstr ""
 
@@ -584,6 +586,7 @@ msgid "Member ID"
 msgstr ""
 
 #: forms/backup.forms.php forms/dataset.forms.php
+#: lib/dataset_snapshot_removal.lib.php
 msgid "Include subdatasets"
 msgstr ""
 
@@ -596,11 +599,13 @@ msgid "Disable backups and remove local snapshots"
 msgstr ""
 
 #: forms/backup.forms.php forms/dataset.forms.php forms/export.forms.php
-#: pages/page_backup.php pages/page_dataset.php pages/page_nas.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_backup.php
+#: pages/page_dataset.php pages/page_nas.php
 msgid "Dataset"
 msgstr ""
 
-#: forms/backup.forms.php forms/export.forms.php pages/page_backup.php
+#: forms/backup.forms.php forms/export.forms.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_backup.php
 msgid "Snapshot"
 msgstr ""
 
@@ -792,7 +797,8 @@ msgstr ""
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
 #: forms/node.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_cluster.php pages/page_transactions.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_cluster.php
+#: pages/page_transactions.php
 msgid "Name"
 msgstr ""
 
@@ -1016,7 +1022,8 @@ msgstr ""
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/monitoring.forms.php
 #: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
-#: pages/page_adminm.php pages/page_backup.php pages/page_cluster.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_adminm.php
+#: pages/page_backup.php pages/page_cluster.php
 msgid "Label"
 msgstr ""
 
@@ -1101,8 +1108,9 @@ msgstr ""
 #: forms/export.forms.php forms/networking.forms.php
 #: forms/object_history.forms.php forms/oom_reports.forms.php
 #: forms/outage.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_backup.php pages/page_cluster.php pages/page_dataset.php
-#: pages/page_incidents.php pages/page_lifetimes.php pages/page_monitoring.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_backup.php
+#: pages/page_cluster.php pages/page_dataset.php pages/page_incidents.php
+#: pages/page_lifetimes.php pages/page_monitoring.php
 msgid "Back"
 msgstr ""
 
@@ -1257,7 +1265,7 @@ msgid ""
 "having this package."
 msgstr ""
 
-#: forms/dataset.forms.php
+#: forms/dataset.forms.php lib/dataset_snapshot_removal.lib.php
 msgid "Datasets"
 msgstr ""
 
@@ -1460,7 +1468,8 @@ msgstr ""
 msgid "Waiting for mount"
 msgstr ""
 
-#: forms/dataset.forms.php forms/users.forms.php pages/page_adminvps.php
+#: forms/dataset.forms.php forms/users.forms.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_adminvps.php
 msgid "Disable"
 msgstr ""
 
@@ -2363,7 +2372,8 @@ msgstr ""
 msgid "Assignment ID"
 msgstr ""
 
-#: forms/incidents.forms.php forms/userns.forms.php pages/page_adminvps.php
+#: forms/incidents.forms.php forms/userns.forms.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_adminvps.php
 #: pages/page_cluster.php pages/page_jumpto.php pages/page_transactions.php
 msgid "ID"
 msgstr ""
@@ -2425,12 +2435,12 @@ msgid "Report"
 msgstr ""
 
 #: forms/incidents.forms.php forms/networking.forms.php forms/outage.forms.php
-#: pages/page_adminm.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_adminm.php
 msgid "No"
 msgstr ""
 
 #: forms/incidents.forms.php forms/networking.forms.php forms/outage.forms.php
-#: pages/page_adminm.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_adminm.php
 msgid "Yes"
 msgstr ""
 
@@ -2623,11 +2633,11 @@ msgstr ""
 msgid "Disabled"
 msgstr ""
 
-#: forms/ip_release.forms.php
+#: forms/ip_release.forms.php lib/dataset_snapshot_removal.lib.php
 msgid "Closed"
 msgstr ""
 
-#: forms/ip_release.forms.php
+#: forms/ip_release.forms.php lib/dataset_snapshot_removal.lib.php
 msgid "Open"
 msgstr ""
 
@@ -3658,7 +3668,8 @@ msgstr ""
 msgid "Detailed output"
 msgstr ""
 
-#: forms/object_history.forms.php forms/users.forms.php pages/page_adminm.php
+#: forms/object_history.forms.php forms/users.forms.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_adminm.php
 #: pages/page_adminvps.php pages/page_transactions.php
 msgid "Created at"
 msgstr ""
@@ -3684,7 +3695,8 @@ msgstr ""
 msgid "Killed process"
 msgstr ""
 
-#: forms/oom_reports.forms.php forms/users.forms.php pages/page_adminm.php
+#: forms/oom_reports.forms.php forms/users.forms.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_adminm.php
 msgid "Count"
 msgstr ""
 
@@ -5947,6 +5959,204 @@ msgstr ""
 
 #: lib/cluster.lib.php
 msgid "Unsupported current value"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid ""
+"The snapshot inventory is incomplete or unsupported. Request a new preview."
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php pages/page_ip_release.php
+msgid "Invalid form value."
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Snapshot removal is unavailable"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "The review has changed. Request a new preview and confirm it again."
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid ""
+"The submission outcome is unknown. Inspect the existing tasks and remaining "
+"history before trying again."
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Snapshot and backup history removal has been queued."
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Confirm the reviewed inventory before continuing."
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Cannot remove snapshots"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "The history has changed. Request a new preview and confirm it again."
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Remove all snapshots and backup history"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid ""
+"Preview all source and backup snapshots, branches and trees that will be "
+"removed. The live dataset and its files are preserved."
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Remove selected datasets from backup plans"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid ""
+"If plans remain enabled, scheduled snapshots and backups can recreate "
+"history after removal."
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Preview snapshot removal"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Item"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Removal summary"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Pool copies"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Snapshot locations"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Snapshots"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Dataset branches"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Dataset trees"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Backup plans to disable"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Branch membership"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Dataset branch"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Origin membership"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Snapshot copy"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Dataset trees to remove"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Head"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Dataset branches to remove"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Dataset tree"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Retain"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Backup plan effects"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Environment plan"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Membership"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Plan"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Final confirmation of snapshot removal"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Review snapshot removal"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Scope: dataset and subdatasets"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Scope: this dataset only"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Backup plans remain enabled and can recreate history."
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "The selected datasets will be removed from backup plans."
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid ""
+"All listed snapshots, branches and trees will be permanently deleted. The "
+"live dataset and its files are preserved. Deletion cannot be undone. If the "
+"task fails, some history may already be deleted."
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Confirm permanent removal"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "I have reviewed the complete inventory"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Change options"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Back to review"
+msgstr ""
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Continue to final confirmation"
 msgstr ""
 
 #: lib/functions.lib.php
@@ -8845,10 +9055,6 @@ msgstr ""
 
 #: pages/page_ip_release.php
 msgid "This action is available only to administrators."
-msgstr ""
-
-#: pages/page_ip_release.php
-msgid "Invalid form value."
 msgstr ""
 
 #: pages/page_ip_release.php

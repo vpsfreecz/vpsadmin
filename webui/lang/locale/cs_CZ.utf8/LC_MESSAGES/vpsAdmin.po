@@ -18,6 +18,7 @@ msgid "Incidents"
 msgstr "Incidenty"
 
 #: forms/admin_incidents.forms.php forms/vps.forms.php
+#: lib/dataset_snapshot_removal.lib.php
 msgid "History"
 msgstr "Historie"
 
@@ -105,7 +106,8 @@ msgstr "Upozornění"
 
 #: forms/admin_incidents.forms.php forms/cluster.forms.php
 #: forms/dataset.forms.php forms/incident_policy.forms.php
-#: forms/ip_release.forms.php forms/oom_reports.forms.php lib/xtemplate.lib.php
+#: forms/ip_release.forms.php forms/oom_reports.forms.php
+#: lib/dataset_snapshot_removal.lib.php lib/xtemplate.lib.php
 #: pages/page_transactions.php
 msgid "Action"
 msgstr "Akce"
@@ -314,7 +316,7 @@ msgstr "Odeslání e-mailu je potlačeno"
 msgid "Completed"
 msgstr "dokončeno"
 
-#: forms/admin_incidents.forms.php
+#: forms/admin_incidents.forms.php lib/dataset_snapshot_removal.lib.php
 msgid "None"
 msgstr "žádné"
 
@@ -585,6 +587,7 @@ msgid "Member ID"
 msgstr "ID člena"
 
 #: forms/backup.forms.php forms/dataset.forms.php
+#: lib/dataset_snapshot_removal.lib.php
 msgid "Include subdatasets"
 msgstr "Zahrnout vnořené datasety"
 
@@ -597,11 +600,13 @@ msgid "Disable backups and remove local snapshots"
 msgstr "Vypnout zálohování a odstranit místní snapshoty"
 
 #: forms/backup.forms.php forms/dataset.forms.php forms/export.forms.php
-#: pages/page_backup.php pages/page_dataset.php pages/page_nas.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_backup.php
+#: pages/page_dataset.php pages/page_nas.php
 msgid "Dataset"
 msgstr "Dataset"
 
-#: forms/backup.forms.php forms/export.forms.php pages/page_backup.php
+#: forms/backup.forms.php forms/export.forms.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_backup.php
 msgid "Snapshot"
 msgstr "Snapshot"
 
@@ -793,7 +798,8 @@ msgstr "Seznam nodů"
 #: forms/cluster.forms.php forms/dataset.forms.php forms/dns.forms.php
 #: forms/node.forms.php forms/outage.forms.php
 #: forms/security_advisory.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_cluster.php pages/page_transactions.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_cluster.php
+#: pages/page_transactions.php
 msgid "Name"
 msgstr "Název"
 
@@ -1033,7 +1039,8 @@ msgstr "Přidat lokaci"
 
 #: forms/cluster.forms.php forms/dataset.forms.php forms/monitoring.forms.php
 #: forms/userdata.forms.php forms/userns.forms.php forms/users.forms.php
-#: pages/page_adminm.php pages/page_backup.php pages/page_cluster.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_adminm.php
+#: pages/page_backup.php pages/page_cluster.php
 msgid "Label"
 msgstr "Označení"
 
@@ -1118,8 +1125,9 @@ msgstr "Přidat IP adresy"
 #: forms/export.forms.php forms/networking.forms.php
 #: forms/object_history.forms.php forms/oom_reports.forms.php
 #: forms/outage.forms.php forms/users.forms.php forms/vps.forms.php
-#: pages/page_backup.php pages/page_cluster.php pages/page_dataset.php
-#: pages/page_incidents.php pages/page_lifetimes.php pages/page_monitoring.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_backup.php
+#: pages/page_cluster.php pages/page_dataset.php pages/page_incidents.php
+#: pages/page_lifetimes.php pages/page_monitoring.php
 msgid "Back"
 msgstr "Zpět"
 
@@ -1278,7 +1286,7 @@ msgstr ""
 "<b>Upozornění:</b> Zdroj bude také okamžitě odebrán všem uživatelům, kteří "
 "mají tento balíček."
 
-#: forms/dataset.forms.php
+#: forms/dataset.forms.php lib/dataset_snapshot_removal.lib.php
 msgid "Datasets"
 msgstr "Datasety"
 
@@ -1488,7 +1496,8 @@ msgstr "Probíhá pokus o připojení"
 msgid "Waiting for mount"
 msgstr "Čekání na připojení"
 
-#: forms/dataset.forms.php forms/users.forms.php pages/page_adminvps.php
+#: forms/dataset.forms.php forms/users.forms.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_adminvps.php
 msgid "Disable"
 msgstr "Vypnout"
 
@@ -2395,7 +2404,8 @@ msgstr "Všechna pravidla"
 msgid "Assignment ID"
 msgstr "ID přidělení"
 
-#: forms/incidents.forms.php forms/userns.forms.php pages/page_adminvps.php
+#: forms/incidents.forms.php forms/userns.forms.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_adminvps.php
 #: pages/page_cluster.php pages/page_jumpto.php pages/page_transactions.php
 msgid "ID"
 msgstr "ID"
@@ -2457,12 +2467,12 @@ msgid "Report"
 msgstr "Zpráva"
 
 #: forms/incidents.forms.php forms/networking.forms.php forms/outage.forms.php
-#: pages/page_adminm.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_adminm.php
 msgid "No"
 msgstr "Žádný"
 
 #: forms/incidents.forms.php forms/networking.forms.php forms/outage.forms.php
-#: pages/page_adminm.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_adminm.php
 msgid "Yes"
 msgstr "Ano"
 
@@ -2663,11 +2673,11 @@ msgstr "Ponechat"
 msgid "Disabled"
 msgstr "Zakázáno"
 
-#: forms/ip_release.forms.php
+#: forms/ip_release.forms.php lib/dataset_snapshot_removal.lib.php
 msgid "Closed"
 msgstr "uzavřeno"
 
-#: forms/ip_release.forms.php
+#: forms/ip_release.forms.php lib/dataset_snapshot_removal.lib.php
 msgid "Open"
 msgstr "otevřeno"
 
@@ -3737,7 +3747,8 @@ msgstr "Objekt ID"
 msgid "Detailed output"
 msgstr "Detailní výstup"
 
-#: forms/object_history.forms.php forms/users.forms.php pages/page_adminm.php
+#: forms/object_history.forms.php forms/users.forms.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_adminm.php
 #: pages/page_adminvps.php pages/page_transactions.php
 msgid "Created at"
 msgstr "Vytvořeno"
@@ -3763,7 +3774,8 @@ msgstr "Pravidlo ID"
 msgid "Killed process"
 msgstr "Zabitý proces"
 
-#: forms/oom_reports.forms.php forms/users.forms.php pages/page_adminm.php
+#: forms/oom_reports.forms.php forms/users.forms.php
+#: lib/dataset_snapshot_removal.lib.php pages/page_adminm.php
 msgid "Count"
 msgstr "Počet"
 
@@ -6060,6 +6072,214 @@ msgstr "Nenastaveno"
 #: lib/cluster.lib.php
 msgid "Unsupported current value"
 msgstr "Nepodporovaná aktuální hodnota"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid ""
+"The snapshot inventory is incomplete or unsupported. Request a new preview."
+msgstr ""
+"Seznam snapshotů je neúplný nebo má nepodporovaný formát. Načti nový náhled."
+
+#: lib/dataset_snapshot_removal.lib.php pages/page_ip_release.php
+msgid "Invalid form value."
+msgstr "Neplatná hodnota ve formuláři."
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Snapshot removal is unavailable"
+msgstr "Odstranění snapshotů není dostupné"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "The review has changed. Request a new preview and confirm it again."
+msgstr "Kontrolované údaje se změnily. Načti nový náhled a znovu jej potvrď."
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid ""
+"The submission outcome is unknown. Inspect the existing tasks and remaining "
+"history before trying again."
+msgstr ""
+"Výsledek požadavku není známý. Před dalším pokusem zkontroluj existující "
+"úlohy a zbývající historii."
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Snapshot and backup history removal has been queued."
+msgstr "Smazání snapshotů a historie záloh bylo zařazeno do fronty."
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Confirm the reviewed inventory before continuing."
+msgstr "Před pokračováním potvrď zkontrolovaný seznam."
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Cannot remove snapshots"
+msgstr "Snapshoty nelze odstranit"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "The history has changed. Request a new preview and confirm it again."
+msgstr "Historie se změnila. Načti nový náhled a znovu jej potvrď."
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Remove all snapshots and backup history"
+msgstr "Odstranit všechny snapshoty a historii záloh"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid ""
+"Preview all source and backup snapshots, branches and trees that will be "
+"removed. The live dataset and its files are preserved."
+msgstr ""
+"Zobraz náhled všech zdrojových i záložních snapshotů, větví a stromů, které "
+"budou odstraněny. Živý dataset a jeho soubory zůstanou zachované."
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Remove selected datasets from backup plans"
+msgstr "Odebrat vybrané datasety z plánů záloh"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid ""
+"If plans remain enabled, scheduled snapshots and backups can recreate "
+"history after removal."
+msgstr ""
+"Pokud plány zůstanou zapnuté, naplánované snapshoty a zálohy mohou po "
+"odstranění historii znovu vytvořit."
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Preview snapshot removal"
+msgstr "Zobrazit náhled odstranění snapshotů"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Item"
+msgstr "Položka"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Removal summary"
+msgstr "Souhrn odstranění"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Pool copies"
+msgstr "Kopie na poolech"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Snapshot locations"
+msgstr "Umístění snapshotů"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Snapshots"
+msgstr "Snapshoty"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Dataset branches"
+msgstr "Větve datasetu"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Dataset trees"
+msgstr "Stromy datasetu"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Backup plans to disable"
+msgstr "Přiřazení k plánům k odebrání"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Branch membership"
+msgstr "Záznam ve větvi"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Dataset branch"
+msgstr "Větev datasetu"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Origin membership"
+msgstr "Zdrojový záznam ve větvi"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Snapshot copy"
+msgstr "Kopie snapshotu"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Dataset trees to remove"
+msgstr "Stromy datasetu k odstranění"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Head"
+msgstr "Aktuální"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Dataset branches to remove"
+msgstr "Větve datasetu k odstranění"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Dataset tree"
+msgstr "Strom datasetu"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Retain"
+msgstr "Ponechat"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Backup plan effects"
+msgstr "Změny zálohovacích plánů"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Environment plan"
+msgstr "Plán prostředí"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Membership"
+msgstr "Přiřazení"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Plan"
+msgstr "Plán"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Final confirmation of snapshot removal"
+msgstr "Závěrečné potvrzení odstranění snapshotů"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Review snapshot removal"
+msgstr "Kontrola odstranění snapshotů"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Scope: dataset and subdatasets"
+msgstr "Rozsah: dataset a vnořené datasety"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Scope: this dataset only"
+msgstr "Rozsah: pouze tento dataset"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Backup plans remain enabled and can recreate history."
+msgstr "Zálohovací plány zůstanou zapnuté a mohou historii znovu vytvořit."
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "The selected datasets will be removed from backup plans."
+msgstr "Vybrané datasety budou odebrány z plánů záloh."
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid ""
+"All listed snapshots, branches and trees will be permanently deleted. The "
+"live dataset and its files are preserved. Deletion cannot be undone. If the "
+"task fails, some history may already be deleted."
+msgstr ""
+"Všechny uvedené snapshoty, větve a stromy budou trvale smazány. Živý dataset "
+"a jeho soubory zůstanou zachovány. Smazání nelze vrátit zpět. Pokud úloha "
+"selže, část historie už může být smazaná."
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Confirm permanent removal"
+msgstr "Potvrdit trvalé odstranění"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "I have reviewed the complete inventory"
+msgstr "Zkontroloval jsem úplný seznam"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Change options"
+msgstr "Změnit volby"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Back to review"
+msgstr "Zpět na kontrolu"
+
+#: lib/dataset_snapshot_removal.lib.php
+msgid "Continue to final confirmation"
+msgstr "Pokračovat k závěrečnému potvrzení"
 
 #: lib/functions.lib.php
 msgid "(IMPORTANT: This template is currently disabled, it cannot be used)"
@@ -9038,10 +9258,6 @@ msgstr "Přístup odepřen"
 #: pages/page_ip_release.php
 msgid "This action is available only to administrators."
 msgstr "Tato akce je dostupná pouze administrátorům."
-
-#: pages/page_ip_release.php
-msgid "Invalid form value."
-msgstr "Neplatná hodnota ve formuláři."
 
 #: pages/page_ip_release.php
 msgid "The address selection was incomplete. Reload the form and try again."

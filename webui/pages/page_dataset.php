@@ -4,6 +4,10 @@ if (isLoggedIn()) {
     $quotas = ['quota', 'refquota'];
 
     switch ($_GET['action'] ?? null) {
+        case 'remove_snapshots':
+            dataset_snapshot_removal_page();
+            break;
+
         case 'disable_backups':
             if (!dataset_disable_backups_available()) {
                 $xtpl->perex(_('Disabling backups is unavailable'), '');
