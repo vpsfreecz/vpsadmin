@@ -618,6 +618,8 @@ cs:
           desc:
             label: sestupně
         label: Směr řazení
+      disable_plans:
+        label: Odebrat vybrané datasety z plánů záloh
       diskspace:
         description: Minimálně 1024, maximálně 1048576, krok je 1
         label: Diskový prostor
@@ -1436,6 +1438,10 @@ cs:
           'true':
             label: ano
         label: Spravováno
+      manifest:
+        label: Seznam snapshotů
+      manifest_version:
+        label: Verze seznamu snapshotů
       map_mode:
         choices:
           native:
@@ -2822,6 +2828,8 @@ cs:
       snapshot_download_no_common_source: snapshoty nemají společný dostupný zdroj
         pro inkrementální stažení
       snapshot_download_unavailable: snapshot není dostupný ke stažení
+      snapshot_removal_stale_preview: Seznam snapshotů se změnil. Načti nový náhled
+        a znovu jej potvrď.
       vps_already_marked_for_deletion: VPS už je označeno ke smazání.
     incident_reports:
       notices:
@@ -2977,6 +2985,12 @@ cs:
             description: Vlastník datasetu
           vps:
             label: VPS
+        input:
+          manifest_digest:
+            label: Otisk potvrzeného seznamu snapshotů
+        output:
+          manifest_digest:
+            label: Otisk seznamu snapshotů
         plan:
           attributes:
             id:
@@ -5190,6 +5204,7 @@ cs:
           inherit: Zdědění vlastností datasetu
           migrate: Migrace
           remove_download: Odebrání stažení
+          remove_snapshots: Smazání snapshotů
           rollback: Rollback
           rotate: Rotace
           send: Odeslání

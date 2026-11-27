@@ -128,7 +128,11 @@ RSpec.describe TransactionChains::SnapshotInPool::Destroy do
     end
 
     expect(confirmation).to be_present
-    expect(confirmation.attr_changes).to eq('snapshot_id' => nil)
+    expect(confirmation.attr_changes).to eq('snapshot_id' => nil, 'from_snapshot_id' => nil)
+    # edit_after leaves both references intact until successful confirmation.
+    download = SnapshotDownload.find(confirmation.row_pks.fetch('id'))
+    expect(download.snapshot_id).to eq(snap.id)
+    expect(download.from_snapshot_id).to eq(snap.id)
   end
 
   it 'decrements the parent snapshot reference_count when destroying a dependent branch entry' do

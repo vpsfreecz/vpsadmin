@@ -29,6 +29,7 @@ These pages describe vpsAdmin for developers and operators. Start with the
   and PHP defaults, TLS composition and deployment boundaries.
 - [Storage](storage/README.md): datasets, pools, snapshots, and operations.
   - [Disabling backups](storage/disable-backups.md)
+  - [Removing all dataset snapshots](storage/remove-snapshots.md)
   - [Backup branching](storage/branching.md)
   - [Snapshot downloads and local backups](storage/download.md)
 - [PHP WebUI backup cleanup](webui-backup-cleanup.md): confirmation, ordinary

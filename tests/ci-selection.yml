@@ -277,6 +277,7 @@ select:
 
   - paths:
       - "tests/suite/storage/*.nix"
+      - "webui/lib/dataset_snapshot_removal.lib.php"
       - "api/lib/vpsadmin/api/operations/dataset/**"
       - "api/lib/vpsadmin/api/resources/dataset*.rb"
       - "api/lib/vpsadmin/api/resources/pool.rb"

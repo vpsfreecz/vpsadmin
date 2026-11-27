@@ -500,6 +500,59 @@ module VpsAdmin::API::Resources
       end
     end
 
+    class PreviewSnapshotRemoval < HaveAPI::Action
+      desc 'Preview removal of all dataset snapshots'
+      route '{%{resource}_id}/preview_snapshot_removal'
+      http_method :post
+
+      input do
+        bool :recursive, default: false, fill: true, label: 'Include subdatasets'
+        bool :disable_plans, default: true, fill: true, label: 'Remove selected datasets from backup plans'
+      end
+
+      output(:hash) do
+        integer :manifest_version, label: 'Snapshot inventory version'
+        string :manifest_digest, label: 'Snapshot inventory digest'
+        custom :manifest, label: 'Snapshot inventory'
+      end
+
+      authorize { |user| allow if user.role == :admin }
+
+      def exec
+        VpsAdmin::API::Operations::Dataset::RemoveSnapshots.new.preview(::Dataset.find(path_params['dataset_id']), **input)
+      rescue VpsAdmin::API::Operations::Dataset::DisableBackups::Rejected => e
+        error!(e.message)
+      end
+    end
+
+    class RemoveSnapshots < HaveAPI::Action
+      desc 'Remove all dataset snapshots and backup history'
+      route '{%{resource}_id}/remove_snapshots'
+      http_method :post
+      blocking true
+
+      input do
+        bool :recursive, default: false, fill: true, label: 'Include subdatasets'
+        bool :disable_plans, default: true, fill: true, label: 'Remove selected datasets from backup plans'
+        string :manifest_digest, required: true, label: 'Reviewed snapshot inventory digest'
+      end
+
+      authorize { |user| allow if user.role == :admin }
+
+      def exec
+        @chain, = VpsAdmin::API::Operations::Dataset::RemoveSnapshots.run(::Dataset.find(path_params['dataset_id']), **input)
+        ok!
+      rescue VpsAdmin::API::Operations::Dataset::RemoveSnapshots::StalePreview
+        error!(VpsAdmin::API::I18n.message('errors.snapshot_removal_stale_preview'), { manifest_digest: ['stale_preview'] })
+      rescue VpsAdmin::API::Operations::Dataset::DisableBackups::Rejected => e
+        error!(e.message)
+      end
+
+      def state_id
+        @chain.id
+      end
+    end
+
     class Snapshot < HaveAPI::Resource
       route '{dataset_id}/snapshots'
       model ::Snapshot

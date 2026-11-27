@@ -96,8 +96,11 @@ module TransactionChains
 
       # Make download link orphans
       append(Transactions::Utils::NoOp, args: sip.dataset_in_pool.pool.node_id) do
-        ::SnapshotDownload.where(snapshot: sip.snapshot).each do |dl|
-          edit(dl, snapshot_id: nil)
+        ::SnapshotDownload.where(snapshot: sip.snapshot).or(::SnapshotDownload.where(from_snapshot: sip.snapshot)).each do |dl|
+          changes = {}
+          changes[:snapshot_id] = nil if dl.snapshot_id == sip.snapshot_id
+          changes[:from_snapshot_id] = nil if dl.from_snapshot_id == sip.snapshot_id
+          edit(dl, changes)
         end
       end
     end

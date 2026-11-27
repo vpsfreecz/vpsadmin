@@ -615,6 +615,8 @@ en:
           desc:
             label: Descending
         label: Direction
+      disable_plans:
+        label: Remove selected datasets from backup plans
       diskspace:
         description: Minimally 1024, maximally 1048576, step size is 1
         label: Disk space
@@ -1435,6 +1437,10 @@ en:
           'true':
             label: 'true'
         label: Managed
+      manifest:
+        label: Snapshot inventory
+      manifest_version:
+        label: Snapshot inventory version
       map_mode:
         choices:
           native:
@@ -2819,6 +2825,8 @@ en:
       snapshot_download_no_common_source: snapshots do not have a common available
         source for incremental download
       snapshot_download_unavailable: snapshot is not available for download
+      snapshot_removal_stale_preview: The snapshot inventory has changed. Request
+        a new preview and confirm it again.
       vps_already_marked_for_deletion: This VPS is already marked for deletion.
     incident_reports:
       notices:
@@ -2976,6 +2984,12 @@ en:
             description: Dataset owner
           vps:
             label: VPS
+        input:
+          manifest_digest:
+            label: Reviewed snapshot inventory digest
+        output:
+          manifest_digest:
+            label: Snapshot inventory digest
         plan:
           attributes:
             id:
@@ -5185,6 +5199,7 @@ en:
           inherit: Inherit dataset properties
           migrate: Migrate
           remove_download: Remove
+          remove_snapshots: Remove snapshots
           rollback: Rollback
           rotate: Rotate
           send: Send

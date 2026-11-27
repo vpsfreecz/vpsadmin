@@ -75,6 +75,10 @@ and [VPS restore](../../api/models/transaction_chains/vps/restore.rb).
 
 ### Retention and removal
 
+Administrators can [review and remove all dataset snapshots](remove-snapshots.md),
+including backup trees and branches, while retaining live datasets and backup
+destination associations.
+
 Administrators can [disable scheduled backups and remove source snapshots](disable-backups.md).
 By default, the action copies existing snapshots to every open backup destination
 before removing plans and source snapshots. Removing a plan on its own leaves
