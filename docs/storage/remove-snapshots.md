@@ -105,6 +105,14 @@ Retained backup destination shells accept a fresh tree and full first transfer
 when schedules resume; later transfers can be incremental again. No database
 migration, storage format or node command change is required. Deploy compatible
 API support before exposing the actions in clients, and complete or reconcile
-pending tasks before backend rollback. Schema/client synchronization follows
-[the API export procedure](../api-schema-export.md). Rollback cannot restore
-deleted snapshots or removed schedules.
+pending tasks before backend rollback.
+
+Transaction chains retain their class name in the database, including completed
+tasks. Every API process that reads this history needs the
+`TransactionChains::Dataset::RemoveSnapshots` class. Once a removal chain exists,
+a rollback must retain a compatible definition of that class or stay on a
+compatible backend. Completing pending tasks alone does not make an older backend
+safe. Do not delete or rewrite historical chain rows to enable rollback.
+
+Schema/client synchronization follows [the API export procedure](../api-schema-export.md).
+Rollback cannot restore deleted snapshots or removed schedules.
