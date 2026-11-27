@@ -5103,7 +5103,27 @@ import ../make-test.nix (
 
           describe 'webui storage backup export browser flow' do
             it 'passes Playwright storage, backup, dataset, and export tests' do
-              run_playwright('storage-backup-export', 'specs/storage-backup-export.spec.cjs')
+              playwright_error = nil
+              begin
+                run_playwright('storage-backup-export', 'specs/storage-backup-export.spec.cjs')
+              rescue StandardError => e
+                playwright_error = e
+                raise
+              ensure
+                begin
+                  artifact_name = 'webui-storage-backup-export-artifacts.tar'
+                  guest_archive = "/tmp/#{artifact_name}"
+                  services.succeeds("${pkgs.gnutar}/bin/tar -cf #{guest_archive} -C /tmp/vpsadmin-webui-playwright-results-storage-backup-export .")
+                  host_archive = services.pull_file(guest_archive)
+                  retained_archive = File.join(File.dirname(host_archive, 3), artifact_name)
+                  FileUtils.cp(host_archive, retained_archive)
+                  warn "[storage-backup-export] Retained browser artifacts: #{retained_archive}"
+                rescue StandardError => e
+                  raise unless playwright_error
+
+                  warn "Unable to retain storage-backup-export browser artifacts: #{e.message}"
+                end
+              end
             end
           end
         '';

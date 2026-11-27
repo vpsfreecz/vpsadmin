@@ -66,7 +66,7 @@ async function openDatasetEdit(page, datasetId, role = 'primary') {
     `/?page=dataset&action=edit&role=${role}&id=${datasetId}&return=%2F%3Fpage%3Dbackup`,
     { waitUntil: 'domcontentloaded' },
   );
-  await expect(page.locator('#content-in')).toContainText('Edit dataset');
+  await expect(page.locator('#content-in')).toContainText(/Edit dataset|Upravit dataset/);
 }
 
 async function submitDatasetEdit(page, datasetId, role = 'primary', options = {}) {

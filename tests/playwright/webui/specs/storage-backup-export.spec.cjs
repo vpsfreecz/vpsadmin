@@ -415,7 +415,7 @@ test.describe.serial('storage, backup, dataset, and export browser coverage', ()
     await logout(page, fixtures.admin.username);
   });
 
-  test('administrator snapshot removal reviews inventory before a distinct final confirmation', async ({ page }) => {
+  test('administrator snapshot removal reviews inventory before a distinct final confirmation', async ({ page }, testInfo) => {
     const s = requireStorageFixtures();
     await login(page, fixtures.admin);
     const variants = [
@@ -435,6 +435,8 @@ test.describe.serial('storage, backup, dataset, and export browser coverage', ()
       await expect(options).toBeVisible();
       await expect(options.locator('input[type="checkbox"][name="recursive"]')).not.toBeChecked();
       await expect(options.locator('input[type="checkbox"][name="disable_plans"]')).toBeChecked();
+      const imagePrefix = `snapshot-removal-${locale}-${viewport.width}x${viewport.height}`;
+      await page.screenshot({ path: testInfo.outputPath(`${imagePrefix}-options.png`), fullPage: true });
       await submitForm(options, previewLabel);
       const review = page.locator('form').filter({ has: page.locator('input[name="phase"][value="continue"]') });
       await expect(review).toBeVisible();
@@ -443,6 +445,7 @@ test.describe.serial('storage, backup, dataset, and export browser coverage', ()
       await expect(page.locator('input[name="confirm"]')).toHaveCount(0);
       const digest = await review.locator('input[name="manifest_digest"]').inputValue();
       expect(digest).toMatch(/^v1:[a-f0-9]{64}$/);
+      await page.screenshot({ path: testInfo.outputPath(`${imagePrefix}-review.png`), fullPage: true });
       await review.locator('input[name="acknowledge"]').check();
       await submitForm(review, continueLabel);
       await expect(page.locator('#content')).toContainText(finalTitle);
@@ -450,6 +453,7 @@ test.describe.serial('storage, backup, dataset, and export browser coverage', ()
       await expect(final.locator('input[name="confirm"]')).not.toBeChecked();
       await expect(final.locator('input[name="confirm"]')).toHaveAttribute('required', '');
       await expect(final.locator('input[name="manifest_digest"]')).toHaveValue(digest);
+      await page.screenshot({ path: testInfo.outputPath(`${imagePrefix}-final.png`), fullPage: true });
       await final.getByRole('button', { name: backLabel, exact: true }).click();
       await expect(review).toBeVisible();
       await expect(review.locator('input[name="acknowledge"]')).not.toBeChecked();
