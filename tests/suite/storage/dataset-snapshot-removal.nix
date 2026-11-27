@@ -55,7 +55,7 @@ import ../../make-test.nix (
             expect(cached_plan_jobs(@unrelated.fetch('dataset_in_pool_id'))).to eq(@unrelated_jobs)
           end
 
-          it 'prepares nested rollback, shared and empty histories on two backup pools' do
+          before(:context) do
             @setup = create_remote_backup_vps_with_backups(
               services, primary_node: node1, backup_node: node2,
               admin_user_id: admin_user_id, primary_node_id: node1_id, backup_node_id: node2_id,
@@ -102,9 +102,13 @@ import ../../make-test.nix (
             @child_snapshots = snapshot_rows_for_dip(services, @child.fetch('dip_id'))
             @child_backup_proof = backup_storage_proof(*@child_backups.first)
 
-            @unrelated = create_top_level_dataset(
-              services, admin_user_id: admin_user_id, pool_id: @setup.fetch('primary_pool_id'), dataset_name: 'removal-unrelated'
+            unrelated_vps = create_vps(
+              services, admin_user_id: admin_user_id, node_id: node1_id, hostname: 'removal-unrelated'
             )
+            wait_until_block_succeeds(name: 'unrelated VPS dataset info available') do
+              @unrelated = dataset_info(services, unrelated_vps.fetch('id'))
+              !@unrelated.nil?
+            end
             @unrelated_path = "#{primary_pool_fs}/#{@unrelated.fetch('dataset_full_name')}"
             destination = ensure_dataset_in_pool(
               services, admin_user_id: admin_user_id, dataset_id: @unrelated.fetch('dataset_id'),
