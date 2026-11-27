@@ -274,11 +274,24 @@ import ../../make-test.nix (
             group = jobs.select { |job| job.fetch('kind') == 'group_snapshot' }
             backups = jobs.select { |job| job.fetch('kind') == 'backup' }
             expect(group.size).to eq(1)
-            expect(backups.size).to eq(2)
+            # The ordinary daily plan selects one open backup destination.
+            # Exercise that retained action and use an ordinary explicit backup
+            # for the other pool, preserving both-pool continuation coverage.
+            expect(backups.size).to eq(1)
+            scheduled_destination = backups.fetch(0).fetch('destination')
+            expect(root_backups.map(&:first)).to include(scheduled_destination)
+            continue_backup = lambda do |destination|
+              if destination == scheduled_destination
+                run_cached_jobs(backups, @setup.fetch('src_dip_id')).fetch(0)
+              else
+                fire_backup(services, admin_user_id: admin_user_id,
+                            src_dip_id: @setup.fetch('src_dip_id'), dst_dip_id: destination).fetch('chain_id')
+              end
+            end
             run_cached_jobs(group, @setup.fetch('src_dip_id')).each { |id| expect_removal_done(id) }
             first = snapshot_rows_for_dip(services, @setup.fetch('src_dip_id')).last
-            backups.each do |job|
-              id = run_cached_jobs([job], @setup.fetch('src_dip_id')).fetch(0)
+            root_backups.each do |destination, _|
+              id = continue_backup.call(destination)
               expect_removal_done(id)
               expect(chain_transactions(services, id).map { |tx| tx.fetch('handle') }).to include(tx_types(services).fetch('create_tree'))
               expect(backup_send_snapshot_names(services, id)).to eq([[first.fetch('name')]])
@@ -287,13 +300,14 @@ import ../../make-test.nix (
             run_cached_jobs(group, @setup.fetch('src_dip_id')).each { |id| expect_removal_done(id) }
             second = snapshot_rows_for_dip(services, @setup.fetch('src_dip_id')).last
             expect(second.fetch('id')).not_to eq(first.fetch('id'))
-            backups.each do |job|
-              id = run_cached_jobs([job], @setup.fetch('src_dip_id')).fetch(0)
+            root_backups.each do |destination, _|
+              id = continue_backup.call(destination)
               expect_removal_done(id)
               expect(chain_transactions(services, id).map { |tx| tx.fetch('handle') }).not_to include(tx_types(services).fetch('create_tree'))
               expect(backup_send_snapshot_names(services, id)).to eq([[first.fetch('name'), second.fetch('name')]])
             end
             expect(root_backups.map { |id, _| head_tree_row(services, id) }).to eq(heads)
+            expect(cached_plan_jobs(@setup.fetch('src_dip_id'))).to eq(jobs)
             root_backups.each do |id, path|
               report = backup_storage_proof(id, path)
               expect(report.fetch('snapshots').map { |row| row.fetch('id') }).to include(first.fetch('id'), second.fetch('id'))
