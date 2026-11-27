@@ -247,10 +247,9 @@ GEM
     rubocop-rake (0.7.1)
       lint_roller (~> 1.1)
       rubocop (>= 1.72.1)
-    rubocop-rspec (3.10.2)
+    rubocop-rspec (3.11.0)
       lint_roller (~> 1.1)
-      regexp_parser (>= 2.0)
-      rubocop (~> 1.86, >= 1.86.2)
+      rubocop (~> 1.92)
     ruby-progressbar (1.13.0)
     rubyzip (3.2.2)
     safety_net_attestation (0.5.0)
@@ -299,7 +298,7 @@ GEM
       safety_net_attestation (~> 0.5.0)
       tpm-key_attestation (~> 0.14.0)
     webrick (1.9.2)
-    yard (0.9.45)
+    yard (0.9.46)
 
 PLATFORMS
   aarch64-linux-gnu
