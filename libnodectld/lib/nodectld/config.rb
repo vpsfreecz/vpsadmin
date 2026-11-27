@@ -338,6 +338,8 @@ module NodeCtld
                        exports: { enable: false },
                        osctl_exporter: { enable: false },
                        vps_ssh_host_keys: { enable: false },
+                       vps_os_release: { enable: false },
+                       export_mounts: { enable: false },
                        dataset_expander: { enable: false },
                        console: { enable: false }
                      })
