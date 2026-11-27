@@ -83,6 +83,7 @@ testLib.makeTests [
   "storage/branching-shared-snapshot-prune"
   "storage/source-rotation-after-backup-prune"
   "storage/branching-destroy"
+  "storage/dataset-snapshot-removal"
   "storage/snapshot-download-incremental-branch-mismatch"
   "storage/dataset-destroy-after-rollback-history"
   "storage/dataset-destroy-complex-history"
