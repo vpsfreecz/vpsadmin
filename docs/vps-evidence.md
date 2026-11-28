@@ -138,8 +138,8 @@ The rolling window clips interval endpoints using occurrence time, including
 expiration without new events. Pruning removes a live interval only when both
 retention periods have expired: its end is older than the configured window plus
 freshness, and its acceptance timestamp is older than 24 hours plus 300 seconds.
-This preserves daily gains even with a short rolling window. Retention remains
-within the maximum seven-day window plus freshness. Enlarging a window beyond
+This preserves daily gains even with a short rolling window. This live-interval retention remains within the maximum seven-day window plus
+freshness. Enlarging a window beyond
 retained history leaves it incomplete. Accepted counters use receipt time
 and do not backfill Prometheus occurrence history.
 
@@ -180,9 +180,11 @@ the PHP section checks its capability.
 
 `GET /vpses/{vps_id}/evidence` returns every supported signal, including recorded
 zero and no-data rows. `GET /vps_evidence` returns only exact positive credit,
-including subsecond durations, with optional VPS/signal filters, offset 0 and
+including subsecond durations, with optional VPS, signal, node, location and environment filters, offset 0 and
 limit 25 (maximum 100). Order is signal, descending credited microseconds, then
-VPS ID. Members can read their current VPSes; administrators can read all under
+VPS ID. Administrators can also filter by user. Placement filters describe the
+current node/location/environment and intersect the authorized VPS scope before
+aggregation, counts and pagination. Members can read their current VPSes; administrators can read all under
 the normal VPS lifecycle visibility. Current ownership and accounting epochs are
 filtered in SQL before counts and paging, including changes after parent lookup.
 Reads never ingest, prune, reconcile or create incidents.
@@ -215,9 +217,64 @@ Peaks use compatible typed measurements from contributing intervals and retain
 the lower-bound flag when any contributing observation was pending. Dates retain
 microseconds. Member responses omit administrative owner/node references and
 never expose raw receipt, target or run data. The PHP views use the existing VPS
-detail Evidence action and a positive-credit overview, with timezone-aware dates,
-current settings and links to existing incident history. They do not poll or
-provide editing controls.
+detail Memory pressure action and a positive-only fleet table. They show exact
+recorded duration, the configured period and an accessible reporting-threshold
+meter, with timezone-aware current-window dates and links to existing incident
+history. Administrator owner/node links use the ordinary authorized destinations.
+New filter controls appear only when the API declares those inputs. They do not
+poll or provide editing controls.
+
+## Recorded pressure history
+
+`GET /vps_pressure_history` reads the requested VPS's current ownership period.
+The required `vps` input selects one VPS; `days` accepts 7 or 30 and defaults to 7.
+The response contains one ascending row per UTC calendar day, including today's
+partial day. Row boundaries are UTC midnight and next midnight, including for
+today; `read_at` identifies the consistent read and does not clip already
+accepted pieces within the existing two-second future tolerance. Next-day
+pieces remain in their own day until that day enters the requested range. Each row has an integer-microsecond recorded duration or null when
+no contribution was recorded. Missing days remain unknown, rather than measured
+zero. Historical values are not compared with today's reporting threshold.
+
+The daily total is a compact record of newly accepted, disjoint occurrence-time
+pieces. The acceptance transaction splits each new piece at UTC midnight using
+integer microseconds and updates its UTC-day/VPS/signal/original-user/accounting-
+epoch identity. Duplicates and overlaps add no repeated time. Receipt, ledger,
+counters and daily totals commit or roll back together, including when reporting
+is disabled. A genuine null accounting epoch keeps a null timestamp and a
+distinct canonical key; it does not acquire a synthetic historical start time.
+
+Daily totals retain the last 32 UTC calendar days, including today. Existing
+scheduled pruning owns cleanup; reads never prune. Raw intervals and receipts
+keep their existing retention and deduplication rules. History is populated by
+newly accepted pieces after the writer is installed. It does not backfill old
+live intervals, incident snapshots, metrics or daily mail. Neither a missing bin
+nor the earliest retained contribution establishes a continuous observation
+period. `first_recorded_at` is the earliest stored first-acceptance timestamp
+among positive rows within the retained 32-day range for the current ownership
+epoch, independently of the requested 7/30 days. It excludes expired rows
+awaiting pruning and a future next-day bucket, and may move after pruning.
+`range_from`/`range_to` are the half-open requested calendar range;
+`total_recorded_us` sums only returned positive rows and is null without any.
+`accounting_since` preserves the actual nullable current epoch;
+`ownership_limited` is true when that epoch is later than the requested start.
+`available` can be true with no rows recorded.
+
+Authorization uses current VPS ownership and the exact accounting epoch before
+selecting totals. Pending owner transfers or a known state/epoch mismatch make
+history unavailable. An absent state alone does not invalidate matching daily
+rows. Members cannot read foreign VPSes, and even administrators' ordinary
+history view excludes previous owners' periods. Placement filters on the fleet
+view do not reconstruct historical placement.
+
+Install the additive `20261128100000` migration before deploying the matching
+API, ingestion and scheduled-task code. The migration extends the existing evidence schema without modifying its
+tables or data. Older readers tolerate the additional table, but old
+writers cannot populate it: mixed-writer and rollback periods can have missing
+history. A software rollback preserves the daily table and data. Dropping the
+table is a destructive disposable-development migration check, not a runtime
+recovery step. The PHP history section checks API capability before making the
+new call.
 
 ## Daily accepted gains
 

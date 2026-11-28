@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_25_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_28_100000) do
   create_table "auth_tokens", id: { type: :integer, unsigned: true }, charset: "utf8mb3", collation: "utf8mb3_czech_ci", force: :cascade do |t|
     t.string "api_ip_addr", limit: 46
     t.string "api_ip_ptr"
@@ -2247,6 +2247,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_25_120000) do
     t.integer "used_swap"
     t.integer "vps_id", null: false
     t.index ["vps_id"], name: "index_vps_current_statuses_on_vps_id", unique: true
+  end
+
+  create_table "vps_evidence_daily_totals", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.date "day", null: false
+    t.bigint "vps_id", null: false
+    t.string "signal", limit: 64, null: false
+    t.bigint "user_id", null: false
+    t.datetime "accounting_since"
+    t.string "accounting_epoch_key", limit: 27, null: false
+    t.bigint "recorded_us", default: 0, null: false
+    t.datetime "first_accepted_at", null: false
+    t.datetime "last_accepted_at", null: false
+    t.index ["day"], name: "index_vps_evidence_daily_totals_on_day"
+    t.index ["vps_id", "signal", "user_id", "accounting_epoch_key", "day"], name: "vps_evidence_daily_identity", unique: true
   end
 
   create_table "vps_evidence_events", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|

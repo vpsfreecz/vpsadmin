@@ -444,6 +444,7 @@ covered:
 - vps.status#index
 - vps.status#show
 - vps_evidence#index
+- vps_pressure_history#index
 - vps_user_data#create
 - vps_user_data#delete
 - vps_user_data#deploy

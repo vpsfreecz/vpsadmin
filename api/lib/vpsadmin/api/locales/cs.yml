@@ -601,6 +601,13 @@ cs:
         label: Plány datasetu
       date:
         label: Datum
+      days:
+        choices:
+          '30':
+            label: 30 dní
+          '7':
+            label: 7 dní
+        label: Počet kalendářních dní
       deadline:
         description: Orientační datum uvolnění nepoužívaných IP adres
         label: Plánované datum uvolnění
@@ -932,9 +939,6 @@ cs:
       from:
         description: Období zahrnuje začátek a nezahrnuje konec. U nedokončených akcí
           se nepoužívá.
-      from_at:
-        description: Začátek započteného intervalu v UTC s přesností na mikrosekundy.
-        label: Začátek intervalu
       from_bytes:
         description: Stránkovat podle příchozích/odchozích bajtů
         label: Od bajtů
@@ -1777,6 +1781,10 @@ cs:
         label: Parametr
       parent:
         label: Rodič
+      partial_day:
+        description: Hodnota true platí pouze pro dnešek. Hodnota false nepotvrzuje
+          úplnost pozorování.
+        label: Část dne
       passed:
         label: Prošlo
       passphrase:
@@ -1944,6 +1952,11 @@ cs:
         label: Nedávné od
       reconstructed:
         label: Rekonstruováno
+      recorded_us:
+        description: Kladný součet dob přijatých úseků podle času výskytu v tomto
+          kalendářním dni UTC a aktuálním období vlastníka. Bez příspěvků nebo při
+          nedostupné historii je hodnota null.
+        label: Zaznamenaný čas v mikrosekundách
       recordsize:
         description: Určuje doporučenou velikost bloku pro soubory v souborovém systému
         label: Velikost záznamu (recordsize)
@@ -2440,9 +2453,6 @@ cs:
       to:
         description: Období zahrnuje začátek a nezahrnuje konec. U nedokončených akcí
           se nepoužívá.
-      to_at:
-        description: Konec započteného intervalu v UTC s přesností na mikrosekundy.
-        label: Konec intervalu
       to_date:
         label: Do data
       to_depth:
@@ -2969,15 +2979,15 @@ cs:
     meta:
       global:
         output:
+          accounting_since:
+            description: Skutečný aktuální počátek účtování VPS. Hodnota null zůstává
+              neznámá.
+            label: Počátek účtování současného vlastníka
           as_of:
             description: Rozhodný čas počítání s přesností na sekundy v posledních
               24 hodinách. Nastavení, vlastník a výsledky akcí odpovídají poslednímu
               načtení.
             label: Rozhodný čas počítání
-          available:
-            description: U běžného incidentu bez podkladů VPS je hodnota false a metadata
-              uloženého nastavení jsou null.
-            label: Uložené podklady VPS jsou dostupné
           condition_measurement:
             description: Veličina použitá v uložené podmínce signálu, nebo null, pokud
               podmínka není určena.
@@ -3005,6 +3015,12 @@ cs:
           evaluated_at:
             description: Čas uloženého rozhodnutí v UTC, nezávislý na aktuálním nastavení.
             label: Čas vyhodnocení incidentu
+          first_recorded_at:
+            description: Nejstarší uchovaný čas prvního přijetí kladného denního záznamu
+              v posledních 32 dnech UTC pro toto VPS, signál a aktuální období vlastníka.
+              Nejde o první výskyt ani důkaz úplnosti pozorování. Po promazání historie
+              se může posunout.
+            label: První uchovaný záznam
           from:
             description: Období zahrnuje začátek a nezahrnuje konec. U nedokončených
               akcí se nepoužívá.
@@ -3015,10 +3031,21 @@ cs:
             description: Pozice začátku další stránky, nebo null na poslední stránce.
           offset:
             label: Počet vynechaných řádků
+          ownership_limited:
+            description: Hodnota true znamená, že accounting_since není null a je
+              pozdější než range_from.
+            label: Historie omezená vlastnictvím
           qualification_interval_us:
             description: Interval, ve kterém zdroj ověřoval podmínky VPS při vyhodnocení
               incidentu. Časy pozorování si zachovávají původní rozlišení.
             label: Interval ověřování podmínek v mikrosekundách
+          range_from:
+            description: Půlnoc UTC na začátku prvního vráceného dne včetně.
+            label: Začátek období včetně
+          range_to:
+            description: Půlnoc UTC na začátku zítřejšího dne; tato hranice se do
+              období nezahrnuje.
+            label: Konec období vyjma
           repeat_seconds:
             description: Nejkratší doba mezi přijatými hlášeními platná při vyhodnocení
               incidentu.
@@ -3034,10 +3061,19 @@ cs:
           threshold_seconds:
             description: Nastavený limit pro hlášení při vyhodnocení incidentu.
             label: Uložený limit v sekundách
+          timezone:
+            choices:
+              utc:
+                label: UTC
+            label: Časová zóna historie
           to:
             description: Období zahrnuje začátek a nezahrnuje konec. U nedokončených
               akcí se nepoužívá.
             label: Konec období vyjma
+          total_recorded_us:
+            description: Přesný součet vrácených kladných denních hodnot. Bez příspěvků
+              nebo při nedostupné historii je hodnota null.
+            label: Součet zaznamenaného času v mikrosekundách
           unavailable_signals:
             description: Seřazené pole řetězců JSON bez duplicit, obsahující pouze
               vybrané podporované signály s neplatným výsledným nastavením. Počet
@@ -3570,6 +3606,9 @@ cs:
               description: Započtená délka v celých mikrosekundách, oříznutá na uložené
                 okno incidentu.
               label: Započtený čas v mikrosekundách
+            from_at:
+              description: Začátek započteného intervalu v UTC s přesností na mikrosekundy.
+              label: Začátek intervalu
             id:
               description: ID intervalu uloženého s tímto incidentem.
               label: ID uloženého intervalu
@@ -3596,9 +3635,16 @@ cs:
               description: Pozorované maximum jako celé číslo v uložené jednotce.
                 Pokud měření není dostupné, hodnota je null.
               label: Hodnota maxima
+            to_at:
+              description: Konec započteného intervalu v UTC s přesností na mikrosekundy.
+              label: Konec intervalu
           meta:
             global:
               output:
+                available:
+                  description: U běžného incidentu bez podkladů VPS je hodnota false
+                    a metadata uloženého nastavení jsou null.
+                  label: Uložené podklady VPS jsou dostupné
                 limit:
                   description: Nejvyšší počet vrácených uložených intervalů, od 1
                     do 100.
@@ -5441,6 +5487,31 @@ cs:
             label: ID
           vps:
             label: VPS
+      vps_pressure_history:
+        attributes:
+          from_at:
+            description: Půlnoc UTC na začátku dne včetně.
+            label: Začátek dne
+          id:
+            label: Datum (UTC)
+          to_at:
+            description: Půlnoc UTC na začátku následujícího dne; tato hranice se
+              do dne nezahrnuje. Platí i pro dnešek.
+            label: Konec dne
+          vps:
+            label: VPS
+        meta:
+          global:
+            output:
+              available:
+                description: Hodnota false znamená probíhající změnu vlastníka nebo
+                  známý nesoulad stavu s obdobím vlastníka. I při hodnotě true nemusí
+                  být zaznamenané žádné příspěvky.
+                label: Historie je dostupná
+              read_at:
+                description: Čas konzistentního načtení v UTC. Neořezává již přijaté
+                  příspěvky v denních součtech.
+                label: Čas načtení
       vps_security_advisory:
         attributes:
           id:

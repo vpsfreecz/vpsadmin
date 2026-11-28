@@ -124,9 +124,11 @@ class VpsEvidence
     end
     pieces.each do |a, b|
       credit = ((b.to_r - a.to_r) * 1_000_000).to_i
+      accepted_at = Time.now.utc
       VpsEvidenceInterval.create!(interval.merge(vps:, user_id: vps.user_id, signal: state.signal,
                                                  accounting_since: vps.incident_accounting_since,
-                                                 from_at: a, to_at: b, credit_us: credit, accepted_at: Time.now.utc))
+                                                 from_at: a, to_at: b, credit_us: credit, accepted_at:))
+      VpsEvidenceDailyTotal.record_piece!(vps:, signal: state.signal, from_at: a, to_at: b, accepted_at:)
       state.accepted_us += credit
     end
   end
@@ -199,6 +201,7 @@ class VpsEvidence
   end
 
   def self.prune!(now: Time.now.utc)
+    VpsEvidenceDailyTotal.prune!(now:)
     SIGNALS.each_key do |signal|
       settings = config(signal)
       floor = now - settings[:window_seconds] - settings[:freshness_seconds]

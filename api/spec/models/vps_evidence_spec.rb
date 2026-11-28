@@ -173,6 +173,7 @@ RSpec.describe VpsEvidence do
     expect(VpsEvidenceEvent.count).to eq(0)
     expect(VpsEvidenceInterval.count).to eq(0)
     expect(VpsEvidenceState.count).to eq(0)
+    expect(VpsEvidenceDailyTotal.count).to eq(0)
   end
 
   it 'invalidates retained proof on a new producer epoch even on a zero-target heartbeat' do

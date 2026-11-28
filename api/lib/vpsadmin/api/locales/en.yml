@@ -599,6 +599,13 @@ en:
         label: Dataset plans
       date:
         label: Date
+      days:
+        choices:
+          '30':
+            label: '30'
+          '7':
+            label: '7'
+        label: Calendar days
       deadline:
         description: Advisory date for releasing unused IP addresses
         label: Planned release date
@@ -929,9 +936,6 @@ en:
       from:
         description: The period includes its start and excludes its end. Ignored for
           outstanding actions.
-      from_at:
-        description: UTC start of the accepted contribution, including microseconds.
-        label: Interval start
       from_bytes:
         description: Paginate by in/out bytes
         label: From_bytes
@@ -1776,6 +1780,9 @@ en:
         label: Parameter
       parent:
         label: Parent
+      partial_day:
+        description: True only for today. False does not establish complete observations.
+        label: Partial day
       passed:
         label: Passed
       passphrase:
@@ -1942,6 +1949,11 @@ en:
         label: Recent_since
       reconstructed:
         label: Reconstructed
+      recorded_us:
+        description: Positive total duration of accepted contributions occurring in
+          this UTC day and current accounting period; null if no contribution was
+          recorded or history is unavailable.
+        label: Recorded microseconds
       recordsize:
         description: Specifies a suggested block size for files in the file system
         label: Record size
@@ -2438,9 +2450,6 @@ en:
       to:
         description: The period includes its start and excludes its end. Ignored for
           outstanding actions.
-      to_at:
-        description: UTC end of the accepted contribution, including microseconds.
-        label: Interval end
       to_date:
         label: To_date
       to_depth:
@@ -2968,14 +2977,14 @@ en:
     meta:
       global:
         output:
+          accounting_since:
+            description: Actual start of the VPS's current accounting period; null
+              when unknown.
+            label: Current accounting period start
           as_of:
             description: Whole-second counting cutoff within the past 24 hours. Settings,
               ownership and action outcomes reflect the latest read.
             label: Counting cutoff
-          available:
-            description: False for an ordinary report without evidence accounting;
-              saved configuration metadata is then null.
-            label: Saved evidence snapshot available
           condition_measurement:
             description: Measurement used by the saved signal condition, or null without
               a condition.
@@ -3003,6 +3012,12 @@ en:
             description: UTC time of the saved reporting decision, independent of
               current settings.
             label: Report evaluated at
+          first_recorded_at:
+            description: Earliest first-acceptance timestamp among positive rows in
+              the retained 32 UTC days for this VPS, signal and current ownership
+              epoch. Not first occurrence, first-ever recording or coverage; can move
+              after pruning.
+            label: First retained recording
           from:
             description: The period includes its start and excludes its end. Ignored
               for outstanding actions.
@@ -3013,10 +3028,20 @@ en:
             description: Offset for the next page, or null on the final page.
           offset:
             label: Rows to skip
+          ownership_limited:
+            description: True when accounting_since is set and is later than range_from.
+            label: History limited by ownership
           qualification_interval_us:
             description: Interval between source checks of the VPS qualification criteria
               at evaluation; observation timestamps retain their original resolution.
             label: Qualification interval in microseconds
+          range_from:
+            description: Included UTC midnight at the start of the first returned
+              day.
+            label: Range start
+          range_to:
+            description: Excluded UTC midnight following today.
+            label: Range end
           repeat_seconds:
             description: Minimum period between accepted reports at evaluation.
             label: Saved repeat period in seconds
@@ -3031,10 +3056,19 @@ en:
           threshold_seconds:
             description: Configured reporting threshold at evaluation.
             label: Saved threshold in seconds
+          timezone:
+            choices:
+              utc:
+                label: UTC
+            label: History timezone
           to:
             description: The period includes its start and excludes its end. Ignored
               for outstanding actions.
             label: Period end (exclusive)
+          total_recorded_us:
+            description: Exact sum of returned positive daily totals; null if none
+              or unavailable.
+            label: Total recorded microseconds
           unavailable_signals:
             description: Sorted JSON string array without duplicates, containing only
               selected supported signals with invalid effective settings. Bounded
@@ -3565,6 +3599,9 @@ en:
               description: Accepted duration in integer microseconds, clipped to the
                 saved report window.
               label: Credited microseconds
+            from_at:
+              description: UTC start of the accepted contribution, including microseconds.
+              label: Interval start
             id:
               description: ID of the interval saved with this incident.
               label: Saved interval ID
@@ -3590,9 +3627,16 @@ en:
               description: Observed integer peak in the saved unit; null when no measurement
                 is available.
               label: Peak value
+            to_at:
+              description: UTC end of the accepted contribution, including microseconds.
+              label: Interval end
           meta:
             global:
               output:
+                available:
+                  description: False for an ordinary report without evidence accounting;
+                    saved configuration metadata is then null.
+                  label: Saved evidence snapshot available
                 limit:
                   description: Maximum number of saved intervals returned, from 1
                     to 100.
@@ -5426,6 +5470,29 @@ en:
             label: Id
           vps:
             label: VPS
+      vps_pressure_history:
+        attributes:
+          from_at:
+            description: Included UTC midnight boundary.
+            label: Day start
+          id:
+            label: UTC date
+          to_at:
+            description: Excluded next UTC midnight, including for today.
+            label: Day end
+          vps:
+            label: VPS
+        meta:
+          global:
+            output:
+              available:
+                description: False for pending ownership transfer or a known state/epoch
+                  mismatch. True can still have no recorded contributions.
+                label: History available
+              read_at:
+                description: UTC instant of the consistent read, not a clipping boundary
+                  for daily totals.
+                label: Read at
       vps_security_advisory:
         attributes:
           id:
