@@ -31,6 +31,7 @@ import ../make-test.nix (
     '';
     webuiTestScriptCommon = common + ''
       require 'shellwords'
+      require 'tmpdir'
 
       configure_examples do |config|
         config.default_order = :defined
@@ -551,6 +552,8 @@ import ../make-test.nix (
 
         safe_name = script_name.gsub(/[^A-Za-z0-9_.-]/, '-')
         spec_args = specs.map { |spec| Shellwords.escape(spec) }.join(' ')
+        result_dir = "/tmp/vpsadmin-webui-playwright-results-#{safe_name}"
+        capture_results = specs.include?('--trace=on')
 
         wait_for_webui_transaction_chains_idle
 
@@ -567,7 +570,7 @@ import ../make-test.nix (
             export VPSADMIN_WEBUI_FIXTURES=#{WEBUI_FIXTURES}
             export VPSADMIN_WEBUI_REVISION="$(${pkgs.jq}/bin/jq --raw-output .revision /etc/vpsadmin/build-info.json)"
             export VPSADMIN_WEBUI_VERSION="$(${pkgs.jq}/bin/jq --raw-output .version /etc/vpsadmin/build-info.json)"
-            result_dir=/tmp/vpsadmin-webui-playwright-results-#{safe_name}
+            result_dir=#{Shellwords.escape(result_dir)}
 
             rm -rf "$HOME" "$result_dir"
             mkdir -p "$HOME"
@@ -596,13 +599,34 @@ import ../make-test.nix (
           playwright_failed = true
           raise
         ensure
+          cleanup_error = nil
+
+          if capture_results
+            begin
+              guest_archive = "#{result_dir}.tar.gz"
+              services.succeeds(
+                "tar -czf #{Shellwords.escape(guest_archive)} -C #{Shellwords.escape(result_dir)} ."
+              )
+              pulled_archive = services.pull_file(guest_archive)
+              # OSVM removes its shared transfer directory during native teardown.
+              artifact_dir = Dir.mktmpdir("playwright-#{safe_name}-", @opts.fetch(:state_dir))
+              host_archive = File.join(artifact_dir, 'results.tar.gz')
+              File.open(host_archive, 'wb', 0o600) { |file| IO.copy_stream(pulled_archive, file) }
+              puts "[run_playwright] retained artifacts: #{host_archive}"
+            rescue StandardError => e
+              cleanup_error = e
+              warn "Unable to retain Playwright artifacts for #{script_name}: #{e.message}"
+            end
+          end
+
           begin
             wait_for_webui_transaction_chains_idle
           rescue StandardError => e
-            raise unless playwright_failed
-
-            warn "Unable to wait for webui transaction chains after #{script_name} failed: #{e.message}"
+            cleanup_error ||= e
+            warn "Unable to wait for webui transaction chains after #{script_name}: #{e.message}"
           end
+
+          raise cleanup_error if cleanup_error && !playwright_failed
         end
       end
 
@@ -5013,7 +5037,7 @@ import ../make-test.nix (
         script = webuiTestScriptCommon + ''
           describe 'webui user VPS core browser flow' do
             it 'passes Playwright user VPS core tests' do
-              run_playwright('vps-user-core', 'specs/vps-user-core.spec.cjs', timeout: 2700)
+              run_playwright('vps-user-core', 'specs/vps-user-core.spec.cjs', '--trace=on', timeout: 2700)
             end
           end
         '';
@@ -5043,7 +5067,7 @@ import ../make-test.nix (
         script = webuiTestScriptCommon + ''
           describe 'webui admin VPS core browser flow' do
             it 'passes Playwright admin VPS core tests' do
-              run_playwright('vps-admin-core', 'specs/vps-admin-core.spec.cjs')
+              run_playwright('vps-admin-core', 'specs/vps-admin-core.spec.cjs', '--trace=on')
             end
           end
         '';
