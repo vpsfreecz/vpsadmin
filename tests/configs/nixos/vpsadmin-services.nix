@@ -281,6 +281,9 @@ in
     ];
 
     systemd.services = {
+      # Start the readiness deadline after the local API has initialized.
+      vpsadmin-api-wait-online.after = [ "vpsadmin-api.service" ];
+
       "container@mailer" = {
         after = [
           "vpsadmin-database-setup.service"
