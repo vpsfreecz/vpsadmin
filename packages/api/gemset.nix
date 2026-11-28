@@ -548,10 +548,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "00sdj8gvv0hvz4kc2l6i5x6wx9k7hn2mddznxgh778sb597zgy6k";
+      sha256 = "1bb0zgvnf7w3lgx11zyqrzyhpj9s970mrv85k9dzss4sdwp00h42";
       type = "gem";
     };
-    version = "3.3.1";
+    version = "3.3.2";
   };
   language_server-protocol = {
     groups = [
