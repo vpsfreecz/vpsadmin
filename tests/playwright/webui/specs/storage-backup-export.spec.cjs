@@ -368,47 +368,68 @@ test.describe.serial('storage, backup, dataset, and export browser coverage', ()
       ['en_US.utf8', 'Back up existing snapshots first', 'Existing snapshots remain on primary and backup pools.', 'This removes the selected datasets from all backup plans and deletes their local snapshots. Backups are preserved. Re-enabling backups will require a full transfer.', 'Confirm'],
       ['cs_CZ.utf8', 'Nejprve zálohovat existující snapshoty', 'Existující snapshoty zůstanou na primárních i zálohovacích poolech.', 'Tato akce odebere vybrané datasety ze všech zálohovacích plánů a odstraní jejich lokální snapshoty. Zálohy zůstanou zachované. Opětovné zapnutí zálohování bude vyžadovat úplný přenos.', 'Potvrdit'],
     ];
-    for (const [locale, checkboxLabel, planHelp, paragraph, confirmLabel] of variants) {
-      await openDatasetEdit(page, s.datasets.user_edit.id, 'primary');
-      await Promise.all([
-        page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
-        page.locator(`#langbox a[href*="newlang=${encodeURIComponent(locale)}"]`).click(),
-      ]);
-      await expect(formByAction(page, 'action=plan_add')).toContainText(planHelp);
-      await expect(page.locator('a[href*="action=disable_backups"]')).toHaveCount(0);
-      const form = formByAction(page, 'action=disable_backups');
-      await expect(form).toBeVisible();
-      expect(await form.evaluate(el => el.previousElementSibling.previousElementSibling.getAttribute('action'))).toContain('action=plan_add');
-      await expect(form).toHaveAttribute('method', 'post');
-      const recursive = form.locator('input[type="checkbox"][name="recursive"]');
-      const backupFirst = form.locator('input[type="checkbox"][name="backup_first"]');
-      await expect(recursive).not.toBeChecked();
-      await expect(backupFirst).toBeChecked();
-      await expect(form).toContainText(checkboxLabel);
-      await expect(form.locator('p')).toHaveCount(1);
-      await expect(form.locator('p')).toHaveText(paragraph);
-      await expect(form.locator('ul')).toHaveCount(0);
-      expect(await form.locator('tr').evaluateAll(rows => rows.filter(row => row.cells.length > 0).every(row => [...row.cells].reduce((width, cell) => width + cell.colSpan, 0) === 2))).toBe(true);
-      const confirm = form.locator('input[name="confirm"]');
-      await expect(confirm).not.toBeChecked();
-      await expect(confirm).toHaveAttribute('required', '');
-      expect(await confirm.evaluate(el => el.validity.valueMissing)).toBe(true);
-      await expect(form.locator('input[name="csrf_token"]')).toHaveCount(1);
-      await expect(form.locator('label[for="disable-backups-confirm"]')).toHaveText(confirmLabel);
-      expect(new URL(await form.getAttribute('action'), page.url()).searchParams.get('id')).toBe(String(s.datasets.user_edit.id));
-      await recursive.check();
-      await expect(backupFirst).toBeChecked();
-      await backupFirst.uncheck();
-      await expect(recursive).toBeChecked();
+    let assertionError;
+    try {
+      for (const [locale, checkboxLabel, planHelp, paragraph, confirmLabel] of variants) {
+        await openDatasetEdit(page, s.datasets.user_edit.id, 'primary');
+        await Promise.all([
+          page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+          page.locator(`#langbox a[href*="newlang=${encodeURIComponent(locale)}"]`).click(),
+        ]);
+        await expect(formByAction(page, 'action=plan_add')).toContainText(planHelp);
+        await expect(page.locator('a[href*="action=disable_backups"]')).toHaveCount(0);
+        const form = formByAction(page, 'action=disable_backups');
+        await expect(form).toBeVisible();
+        expect(await form.evaluate(el => el.previousElementSibling.previousElementSibling.getAttribute('action'))).toContain('action=plan_add');
+        await expect(form).toHaveAttribute('method', 'post');
+        const recursive = form.locator('input[type="checkbox"][name="recursive"]');
+        const backupFirst = form.locator('input[type="checkbox"][name="backup_first"]');
+        await expect(recursive).not.toBeChecked();
+        await expect(backupFirst).toBeChecked();
+        await expect(form).toContainText(checkboxLabel);
+        await expect(form.locator('p')).toHaveCount(1);
+        await expect(form.locator('p')).toHaveText(paragraph);
+        await expect(form.locator('ul')).toHaveCount(0);
+        expect(await form.locator('tr').evaluateAll(rows => rows.filter(row => row.cells.length > 0).every(row => [...row.cells].reduce((width, cell) => width + cell.colSpan, 0) === 2))).toBe(true);
+        const confirm = form.locator('input[name="confirm"]');
+        await expect(confirm).not.toBeChecked();
+        await expect(confirm).toHaveAttribute('required', '');
+        expect(await confirm.evaluate(el => el.validity.valueMissing)).toBe(true);
+        await expect(form.locator('input[name="csrf_token"]')).toHaveCount(1);
+        await expect(form.locator('label[for="disable-backups-confirm"]')).toHaveText(confirmLabel);
+        expect(new URL(await form.getAttribute('action'), page.url()).searchParams.get('id')).toBe(String(s.datasets.user_edit.id));
+        await recursive.check();
+        await expect(backupFirst).toBeChecked();
+        await backupFirst.uncheck();
+        await expect(recursive).toBeChecked();
+      }
+      await page.goto(`/?page=backup&action=vps&vps=${s.vps.backup.id}`, { waitUntil: 'domcontentloaded' });
+      const recursiveLink = page.locator(`a[href*="action=disable_backups"][href*="recursive=1"]`);
+      await expect(recursiveLink).toHaveCount(1);
+      await recursiveLink.click();
+      await expect(formByAction(page, 'action=disable_backups').locator('input[name="recursive"]')).not.toBeChecked();
+    } catch (error) {
+      assertionError = error;
+      throw error;
+    } finally {
+      try {
+        await Promise.all([
+          page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+          page.locator('#langbox a[href*="newlang=en_US.utf8"]').click(),
+        ]);
+        // Leave shared destructive fixtures intact and restore the English account.
+        await logout(page, fixtures.admin.username);
+      } catch (cleanupError) {
+        if (assertionError) {
+          throw new AggregateError(
+            [assertionError, cleanupError],
+            'Backup cleanup assertions and English locale restoration both failed',
+            { cause: assertionError },
+          );
+        }
+        throw cleanupError;
+      }
     }
-    await page.goto(`/?page=backup&action=vps&vps=${s.vps.backup.id}`, { waitUntil: 'domcontentloaded' });
-    const recursiveLink = page.locator(`a[href*="action=disable_backups"][href*="recursive=1"]`);
-    await expect(recursiveLink).toHaveCount(1);
-    await recursiveLink.click();
-    await expect(formByAction(page, 'action=disable_backups').locator('input[name="recursive"]')).not.toBeChecked();
-    // Leave shared destructive fixtures intact; one-call task handling and failure
-    // cases have real-client PHPUnit coverage and storage integration coverage.
-    await logout(page, fixtures.admin.username);
   });
 
 });
